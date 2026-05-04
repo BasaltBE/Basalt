@@ -1,14 +1,15 @@
 using Basalt.Binary;
 using Basalt.RakNet.Packets.Types;
+using System.Net;
 
 namespace Basalt.RakNet.Packets;
 
-public struct OpenConnectionReplyTwo(long serverId = 0, Address clientAddress = default, ushort mtu = 0, bool serverSecurity = false)
+public struct OpenConnectionReplyTwo(long serverId, SocketAddress clientAddress, ushort mtu = 0, bool serverSecurity = false)
 {
     public const byte PacketId = 0x08;
 
     public long ServerId = serverId;
-    public Address ClientAddress = clientAddress;
+    public SocketAddress ClientAddress = clientAddress;
     public ushort MTU = mtu;
     public bool ServerSecurity = serverSecurity;
 
@@ -20,8 +21,7 @@ public struct OpenConnectionReplyTwo(long serverId = 0, Address clientAddress = 
         long ServerId = src.ReadInt64(offset, false);
         offset += 8;
 
-        Address ClientAddress = Address.Read(src, out int AddressBytesRead, offset);
-        offset += AddressBytesRead;
+        SocketAddress ClientAddress = SocketAddress.Read(src, ref offset);
 
         ushort MTU = src.ReadUInt16(offset, false);
         offset += 2;
@@ -42,7 +42,7 @@ public struct OpenConnectionReplyTwo(long serverId = 0, Address clientAddress = 
         dest.WriteInt64(packet.ServerId, offset, false);
         offset += 8;
 
-        offset += Address.Write(packet.ClientAddress, dest, offset);
+        packet.ClientAddress.Write(dest, ref offset);
 
         dest.WriteUInt16(packet.MTU, offset, false);
         offset += 2;

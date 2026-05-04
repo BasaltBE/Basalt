@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Net;
 using System.Security.Cryptography;
 
@@ -5,40 +6,50 @@ namespace Basalt.RakNet.Packets.Types;
 
 public static class ConnectionCookie
 {
-    public static uint Create(IPEndPoint endpoint, ReadOnlySpan<byte> secret, uint? window = null)
+    public static uint Create(SocketAddress address, ReadOnlySpan<byte> secret, uint? window = null)
     {
-        uint Window = window ?? (uint)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
+        uint _win = window ?? (uint)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
 
-        Span<byte> Input = stackalloc byte[24];
+        Span<byte> input = stackalloc byte[24];
         int offset = 0;
 
-        byte[] AddressBytes = endpoint.Address.GetAddressBytes();
-        Input[offset++] = (byte)AddressBytes.Length;
-        AddressBytes.CopyTo(Input[offset..]);
-        offset += AddressBytes.Length;
+        ReadOnlySpan<byte> addressBytes = address.Family == System.Net.Sockets.AddressFamily.InterNetwork ?
+            address.GetIPv4AddressBytes() : address.GetIPv6AddressBytes();
 
-        Input[offset++] = (byte)(endpoint.Port >> 8);
-        Input[offset++] = (byte)endpoint.Port;
+        input[offset++] = (byte)addressBytes.Length;
+        addressBytes.CopyTo(input[offset..]);
+        offset += addressBytes.Length;
 
-        Input[offset++] = (byte)(Window >> 24);
-        Input[offset++] = (byte)(Window >> 16);
-        Input[offset++] = (byte)(Window >> 8);
-        Input[offset++] = (byte)Window;
+        BinaryPrimitives.WriteUInt16BigEndian(input[offset..], address.GetPort());
+        offset += 2;
+        /*
+        input[offset++] = (byte)(endpoint.Port >> 8);
+        input[offset++] = (byte)endpoint.Port;*/
+        /*
+        input[offset++] = (byte)(_win >> 24);
+        input[offset++] = (byte)(_win >> 16);
+        input[offset++] = (byte)(_win >> 8);
+        input[offset++] = (byte)_win;*/
 
-        byte[] Hash = HMACSHA256.HashData(secret, Input[..offset]);
-        return ((uint)Hash[0] << 24) | ((uint)Hash[1] << 16) | ((uint)Hash[2] << 8) | Hash[3];
+
+        BinaryPrimitives.WriteUInt32BigEndian(input[offset..], _win);
+        offset += 4;
+
+
+        byte[] hash = HMACSHA256.HashData(secret, input[..offset]);
+        return ((uint)hash[0] << 24) | ((uint)hash[1] << 16) | ((uint)hash[2] << 8) | hash[3];
     }
 
-    public static bool Validate(IPEndPoint endpoint, ReadOnlySpan<byte> secret, uint cookie)
+    public static bool Validate(SocketAddress address, ReadOnlySpan<byte> secret, uint cookie)
     {
-        uint Current = Create(endpoint, secret);
-        if (cookie == Current)
+        uint current = Create(address, secret);
+        if (cookie == current)
         {
             return true;
         }
 
-        uint PreviousWindow = (uint)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30) - 1;
-        uint Previous = Create(endpoint, secret, PreviousWindow);
-        return cookie == Previous;
+        uint previousWindow = (uint)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30) - 1;
+        uint previous = Create(address, secret, previousWindow);
+        return cookie == previous;
     }
 }

@@ -17,19 +17,35 @@ namespace Basalt.RakNet
         public event Action<NetworkConnection>? OnDisconnected;
         public event Action<NetworkConnection, ReadOnlyMemory<byte>>? OnMessage;
 
-        public ulong ServerGuid = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
+        public ulong ServerGuid = unchecked((ulong)Random.Shared.NextInt64());
         public string Advertisement = "MCPE;Basalt;924;1.21.90;0;10;03124212345;Bedrock level;Survival;1;19132;19133;";
         public bool EnableCookies = true; // all dat is temporary, we can move it to options or som else
 
         private readonly byte[] CookieSecret = RandomNumberGenerator.GetBytes(32);
         private Socket? Listener;
 
+        public async ValueTask Start()
+        {
+            byte[] buffer = new byte[2048];
+            Listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Listener.Bind(new IPEndPoint(IPAddress.Any, 19132));
+            SocketAddress recieve = new(AddressFamily.InterNetwork);
+            while (true)
+            {
+                int received = await Listener.ReceiveFromAsync(buffer, SocketFlags.None, recieve);
+                if (received > 0)
+                    RecieveFrom(recieve, buffer.AsSpan(0, received));
+            }
+        }
+
         public void Listen(int port = 19132)
         {
-            Listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            /*
             Listener.Bind(new IPEndPoint(IPAddress.Any, port));
 
             byte[] Frame = FramesPool.Rent(2048);
+
+
             try
             {
                 while (true)
@@ -42,10 +58,10 @@ namespace Basalt.RakNet
             finally
             {
                 FramesPool.Return(Frame);
-            }
+            }*/
         }
 
-        public void RecieveFrom(EndPoint endpoint, ReadOnlySpan<byte> message)
+        public void RecieveFrom(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             if (message.Length < 1 || Listener is null)
             {
@@ -78,7 +94,7 @@ namespace Basalt.RakNet
             }
         }
 
-        private void HandleUnconnectedPing(EndPoint endpoint, ReadOnlySpan<byte> message)
+        private void HandleUnconnectedPing(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             UnconnectedPing Ping = UnconnectedPing.Deserialize(message);
             UnconnectedPong Pong = new(Ping.Time, ServerGuid, Advertisement);
@@ -94,7 +110,7 @@ namespace Basalt.RakNet
             }
         }
 
-        private void HandleOpenConnectionRequestOne(EndPoint endpoint, ReadOnlySpan<byte> message)
+        private void HandleOpenConnectionRequestOne(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             if (message.Length < 1 + Magic.MAGIC_LENGTH + 1)
             {
@@ -104,9 +120,9 @@ namespace Basalt.RakNet
             byte ProtocolVersion = message[1 + Magic.MAGIC_LENGTH];
             ushort MTU = (ushort)Math.Clamp(message.Length + 28, 576, 1492);
             uint? Cookie = null;
-            if (EnableCookies && endpoint is IPEndPoint IpEndPoint)
+            if (EnableCookies /* && endpoint is IPEndPoint IpEndPoint*/)
             {
-                Cookie = ConnectionCookie.Create(IpEndPoint, CookieSecret);
+                Cookie = ConnectionCookie.Create(endpoint, CookieSecret);
             }
 
             OpenConnectionReplyOne Reply = new((long)ServerGuid, Cookie, MTU);
@@ -124,21 +140,21 @@ namespace Basalt.RakNet
             Console.WriteLine($"OpenConnectionRequestOne from {endpoint} protocol={ProtocolVersion} mtu={MTU}");
         }
 
-        private void HandleOpenConnectionRequestTwo(EndPoint endpoint, ReadOnlySpan<byte> message)
+        private void HandleOpenConnectionRequestTwo(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             OpenConnectionRequestTwo Request = OpenConnectionRequestTwo.Deserialize(message);
 
-            if (EnableCookies && endpoint is IPEndPoint IpEndPoint)
+            if (EnableCookies)
             {
-                if (!Request.Cookie.HasValue || !ConnectionCookie.Validate(IpEndPoint, CookieSecret, Request.Cookie.Value))
+                if (!Request.Cookie.HasValue || !ConnectionCookie.Validate(endpoint, CookieSecret, Request.Cookie.Value))
                 {
                     Console.WriteLine($"Dropped OpenConnectionRequestTwo invalid cookie from {endpoint}");
                     return;
                 }
+                //return;
             }
 
-            Address ClientAddress = Address.FromEndPoint(endpoint);
-            OpenConnectionReplyTwo Reply = new((long)ServerGuid, ClientAddress, Request.MTU, false);
+            OpenConnectionReplyTwo Reply = new((long)ServerGuid, endpoint, Request.MTU, false);
 
             byte[] ReplyFrame = FramesPool.Rent(2048);
             try
