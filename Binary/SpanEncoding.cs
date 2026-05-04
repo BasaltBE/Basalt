@@ -5,7 +5,7 @@ namespace Basalt.Binary
 {
     public static partial class SpanEncodingExtensions {
 #if BIGENDIAN
-        public const bool IsLittleEndian = fasle;
+        public const bool IsLittleEndian = false;
 #else
         public const bool IsLittleEndian = true;
 #endif
@@ -25,38 +25,42 @@ namespace Basalt.Binary
             {
                 if (IsLittleEndian != littleEndian)
                     value = BinaryPrimitives.ReverseEndianness(value);
-
                 MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteUInt16(ushort value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteUInt16LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteUInt16BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteInt32(int value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteInt32LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteInt32BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteUInt32(uint value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteUInt32LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteUInt32BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteInt64(long value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteInt64LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteInt64BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteUInt64(ulong value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteUInt64LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteUInt64BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                MemoryMarshal.Write(source[offset..], value);
             }
         }
         extension(ReadOnlySpan<byte> source)
@@ -73,38 +77,50 @@ namespace Basalt.Binary
 
             public short ReadInt16(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadInt16LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadInt16BigEndian(source[offset..]);
+                short value = MemoryMarshal.Read<short>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
 
             public ushort ReadUInt16(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadUInt16LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadUInt16BigEndian(source[offset..]);
+                ushort value = MemoryMarshal.Read<ushort>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
 
             public int ReadInt32(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadInt32LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadInt32BigEndian(source[offset..]);
+                int value = MemoryMarshal.Read<int>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
 
             public uint ReadUInt32(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadUInt32LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadUInt32BigEndian(source[offset..]);
+                uint value = MemoryMarshal.Read<uint>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
 
             public long ReadInt64(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadInt64LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadInt64BigEndian(source[offset..]);
+                long value = MemoryMarshal.Read<long>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
 
             public ulong ReadUInt64(int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) return BinaryPrimitives.ReadUInt64LittleEndian(source[offset..]);
-                return BinaryPrimitives.ReadUInt64BigEndian(source[offset..]);
+                ulong value = MemoryMarshal.Read<ulong>(source[offset..]);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+                return value;
             }
         }
     }
