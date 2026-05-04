@@ -1,4 +1,6 @@
 using Basalt.Binary;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Basalt.RakNet.Packets.Types;
 
@@ -100,5 +102,26 @@ public struct Address(byte version = 4, byte[]? ip = null, ushort port = 0)
         }
 
         throw new InvalidOperationException("Invalid address version.");
+    }
+
+    public static Address FromEndPoint(EndPoint endpoint)
+    {
+        if (endpoint is not IPEndPoint IpEndPoint)
+        {
+            return new(4, new byte[16], 0);
+        }
+
+        if (IpEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            return new(6, IpEndPoint.Address.GetAddressBytes(), (ushort)IpEndPoint.Port);
+        }
+
+        byte[] Ip = new byte[16];
+        byte[] SourceIp = IpEndPoint.Address.GetAddressBytes();
+        Ip[0] = SourceIp[0];
+        Ip[1] = SourceIp[1];
+        Ip[2] = SourceIp[2];
+        Ip[3] = SourceIp[3];
+        return new(4, Ip, (ushort)IpEndPoint.Port);
     }
 }
