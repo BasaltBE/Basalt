@@ -154,8 +154,7 @@ namespace Basalt.Binary
             public int WriteString(ReadOnlySpan<char> value, int length, int offset = 0)
             {
                 int written = Encoding.UTF8.GetBytes(value, source.Slice(offset, length));
-                if (written != length)
-                    throw new ArgumentOutOfRangeException(nameof(length));
+                ArgumentOutOfRangeException.ThrowIfNotEqual(length, written);
                 return length;
             }
         }
