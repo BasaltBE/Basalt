@@ -1,8 +1,14 @@
 using System.Buffers.Binary;
+using System.Runtime.InteropServices;
 
 namespace Basalt.Binary
 {
     public static partial class SpanEncodingExtensions {
+#if BIGENDIAN
+        public const bool IsLittleEndian = fasle;
+#else
+        public const bool IsLittleEndian = true;
+#endif
         extension(Span<byte> source)
         {
             public void WriteInt8(sbyte value, int offset = 0)
@@ -17,8 +23,10 @@ namespace Basalt.Binary
 
             public void WriteInt16(short value, int offset = 0, bool littleEndian = true)
             {
-                if (littleEndian) BinaryPrimitives.WriteInt16LittleEndian(source[offset..], value);
-                else BinaryPrimitives.WriteInt16BigEndian(source[offset..], value);
+                if (IsLittleEndian != littleEndian)
+                    value = BinaryPrimitives.ReverseEndianness(value);
+
+                MemoryMarshal.Write(source[offset..], value);
             }
 
             public void WriteUInt16(ushort value, int offset = 0, bool littleEndian = true)
