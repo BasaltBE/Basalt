@@ -1,4 +1,4 @@
-﻿using Basalt.RakNet;
+using Basalt.RakNet;
 
 namespace Basalt.Core
 {
@@ -6,11 +6,9 @@ namespace Basalt.Core
     {
         static void Main(string[] args)
         {
- 
-            // no suggestions for me nothing wont even show errors            NetworkServer server = new();
-            // ok, f it, do you want to continue or not?
-
-            //answer here: ...
+            NetworkServer Server = new();
+            Console.WriteLine("`Basalt RakNet listening on 0.0.0.0:19132");
+            Server.Listen(19132);
         }
     }
 }
