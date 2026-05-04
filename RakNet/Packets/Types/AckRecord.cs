@@ -52,6 +52,7 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
             return [];
         }
 
+        // Sort so we can collapse consecutive values into range records.
         uint[] sorted = sequences.ToArray();
         Array.Sort(sorted);
 
@@ -64,6 +65,7 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
             uint current = sorted[i];
             if (current == last)
             {
+                // Skip duplicates.
                 continue;
             }
 
@@ -102,6 +104,7 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
             uint end = record.End;
             if (end > record.Start && end - record.Start > maxRangeLength)
             {
+                // Clamp huge ranges to avoid pathological payload expansion.
                 end = record.Start + maxRangeLength;
             }
 

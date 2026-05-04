@@ -35,12 +35,14 @@ public struct Ack(AckRecord[]? records = null)
             int remaining = src.Length - offset;
             if (remaining < 4)
             {
+                // Smallest possible record is: type + single triad.
                 break;
             }
 
             bool isSingle = src.ReadUInt8(offset) != 0;
             if (!isSingle && remaining < 7)
             {
+                // Range record needs: type + start triad + end triad.
                 break;
             }
 
