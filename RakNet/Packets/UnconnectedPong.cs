@@ -18,18 +18,18 @@ public struct UnconnectedPong(long time = 0, ulong guid = 0, string advertisemen
         dest.WriteUInt8(PacketId, offset);
         offset += 1;
 
-        dest.WriteInt64(packet.Time, offset, true);
+        dest.WriteInt64(packet.Time, offset, false);
         offset += 8;
 
-        dest.WriteUInt64(packet.Guid, offset, true);
+        dest.WriteUInt64(packet.Guid, offset, false);
         offset += 8;
+
+        Magic.Write(dest, offset);
+        offset += Magic.MAGIC_LENGTH;
 
         int AdvertisementByteLength = Encoding.UTF8.GetByteCount(packet.Advertisement);
         dest.WriteUInt16((ushort)AdvertisementByteLength, offset, false);
         offset += 2;
-
-        Magic.Write(dest, offset);
-        offset += Magic.MAGIC_LENGTH;
 
         dest.WriteString(packet.Advertisement, AdvertisementByteLength, offset);
         offset += AdvertisementByteLength;
@@ -40,17 +40,17 @@ public struct UnconnectedPong(long time = 0, ulong guid = 0, string advertisemen
     public static UnconnectedPong Deserialize(ReadOnlySpan<byte> src)
     {
         int offset = 1;
-        long Time = src.ReadInt64(offset, true);
+        long Time = src.ReadInt64(offset, false);
         offset += 8;
 
-        ulong Guid = src.ReadUInt64(offset, true);
+        ulong Guid = src.ReadUInt64(offset, false);
         offset += 8;
+
+        offset += Magic.MAGIC_LENGTH;
 
         ushort AdvertisementLength = src.ReadUInt16(offset, false);
         offset += 2;
 
-        offset += Magic.MAGIC_LENGTH;
-        
         return new(
             Time,
             Guid,
