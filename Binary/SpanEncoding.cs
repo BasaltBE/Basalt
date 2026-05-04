@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System;
+using System.Text;
 
 namespace Basalt.Binary
 {
@@ -63,6 +64,25 @@ namespace Basalt.Binary
                     source[offset + 1] = (byte)(value >> 8);
                     source[offset + 2] = (byte)value;
                 }
+            }
+
+            public int WriteVarUInt(uint value, int offset = 0)
+            {
+                int index = 0;
+                while (value >= 0x80)
+                {
+                    source[offset + index] = (byte)(value | 0x80);
+                    value >>= 7;
+                    index++;
+                }
+
+                source[offset + index] = (byte)value;
+                return index + 1;
+            }
+
+            public int WriteVarInt(int value, int offset = 0)
+            {
+                return source.WriteVarUInt(unchecked((uint)value), offset);
             }
 
             public void WriteInt16(short value, int offset = 0, bool littleEndian = true)
@@ -130,6 +150,14 @@ namespace Basalt.Binary
                     bits = BinaryPrimitives.ReverseEndianness(bits);
                 MemoryMarshal.Write(source[offset..], bits);
             }
+
+            public int WriteString(ReadOnlySpan<char> value, int length, int offset = 0)
+            {
+                int written = Encoding.UTF8.GetBytes(value, source.Slice(offset, length));
+                if (written != length)
+                    throw new ArgumentOutOfRangeException(nameof(length));
+                return length;
+            }
         }
         extension(ReadOnlySpan<byte> source)
         {
@@ -150,6 +178,11 @@ namespace Basalt.Binary
 
             public uint ReadVarUInt(int offset = 0)
             {
+                return source.ReadVarUInt(out _, offset);
+            }
+
+            public uint ReadVarUInt(out int bytesRead, int offset = 0)
+            {
                 uint value = 0;
                 int shift = 0;
 
@@ -158,16 +191,25 @@ namespace Basalt.Binary
                     byte current = source[offset + i];
                     value |= (uint)(current & 0x7F) << shift;
                     if ((current & 0x80) == 0)
+                    {
+                        bytesRead = i + 1;
                         return value;
+                    }
                     shift += 7;
                 }
 
+                bytesRead = 0;
                 throw new FormatException("VarUInt is too long.");
             }
 
             public int ReadVarInt(int offset = 0)
             {
-                return unchecked((int)source.ReadVarUInt(offset));
+                return source.ReadVarInt(out _, offset);
+            }
+
+            public int ReadVarInt(out int bytesRead, int offset = 0)
+            {
+                return unchecked((int)source.ReadVarUInt(out bytesRead, offset));
             }
 
             public uint ReadUInt24(int offset = 0, bool littleEndian = true)
@@ -247,6 +289,11 @@ namespace Basalt.Binary
                 if (IsLittleEndian != littleEndian)
                     bits = BinaryPrimitives.ReverseEndianness(bits);
                 return BitConverter.Int64BitsToDouble(bits);
+            }
+
+            public string ReadString(int length, int offset = 0)
+            {
+                return Encoding.UTF8.GetString(source.Slice(offset, length));
             }
         }
     }
