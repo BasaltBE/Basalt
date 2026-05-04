@@ -17,7 +17,7 @@ public struct OpenConnectionReplyTwo(long serverId = 0, Address clientAddress = 
         int offset = 1;
         offset += Magic.MAGIC_LENGTH;
 
-        long ServerId = src.ReadInt64(offset, true);
+        long ServerId = src.ReadInt64(offset, false);
         offset += 8;
 
         Address ClientAddress = Address.Read(src, out int AddressBytesRead, offset);
@@ -39,7 +39,7 @@ public struct OpenConnectionReplyTwo(long serverId = 0, Address clientAddress = 
         Magic.Write(dest, offset);
         offset += Magic.MAGIC_LENGTH;
 
-        dest.WriteInt64(packet.ServerId, offset, true);
+        dest.WriteInt64(packet.ServerId, offset, false);
         offset += 8;
 
         offset += Address.Write(packet.ClientAddress, dest, offset);

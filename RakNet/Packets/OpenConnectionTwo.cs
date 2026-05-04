@@ -21,7 +21,7 @@ public struct OpenConnectionRequestTwo(long clientId = 0, Address serverAddress 
         uint? Cookie = null;
         if (Remaining != 17 && Remaining != 39)
         {
-            Cookie = src.ReadUInt32(offset, true);
+            Cookie = src.ReadUInt32(offset, false);
             offset += 4;
 
             offset += 1;
@@ -33,7 +33,7 @@ public struct OpenConnectionRequestTwo(long clientId = 0, Address serverAddress 
         ushort MTU = src.ReadUInt16(offset, false);
         offset += 2;
 
-        long ClientId = src.ReadInt64(offset, true);
+        long ClientId = src.ReadInt64(offset, false);
         return new(ClientId, ServerAddress, Cookie, MTU);
     }
 
@@ -48,7 +48,7 @@ public struct OpenConnectionRequestTwo(long clientId = 0, Address serverAddress 
 
         if (packet.Cookie.HasValue)
         {
-            dest.WriteUInt32(packet.Cookie.Value, offset, true);
+            dest.WriteUInt32(packet.Cookie.Value, offset, false);
             offset += 4;
 
             dest.WriteUInt8(0, offset);
@@ -60,7 +60,7 @@ public struct OpenConnectionRequestTwo(long clientId = 0, Address serverAddress 
         dest.WriteUInt16(packet.MTU, offset, false);
         offset += 2;
 
-        dest.WriteInt64(packet.ClientId, offset, true);
+        dest.WriteInt64(packet.ClientId, offset, false);
         offset += 8;
 
         return offset;

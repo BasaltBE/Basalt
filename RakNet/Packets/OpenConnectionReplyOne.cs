@@ -17,7 +17,7 @@ public struct OpenConnectionReplyOne(long serverId = 0, uint? cookie = null, ush
         int offset = 1;
         offset += Magic.MAGIC_LENGTH;
 
-        long ServerId = src.ReadInt64(offset, true);
+        long ServerId = src.ReadInt64(offset, false);
         offset += 8;
 
         bool HasSecurity = src.ReadBool(offset);
@@ -26,7 +26,7 @@ public struct OpenConnectionReplyOne(long serverId = 0, uint? cookie = null, ush
         uint? Cookie = null;
         if (HasSecurity)
         {
-            Cookie = src.ReadUInt32(offset, true);
+            Cookie = src.ReadUInt32(offset, false);
             offset += 4;
         }
 
@@ -43,7 +43,7 @@ public struct OpenConnectionReplyOne(long serverId = 0, uint? cookie = null, ush
         Magic.Write(dest, offset);
         offset += Magic.MAGIC_LENGTH;
 
-        dest.WriteInt64(packet.ServerId, offset, true);
+        dest.WriteInt64(packet.ServerId, offset, false);
         offset += 8;
 
         dest.WriteBool(packet.Cookie.HasValue, offset);
@@ -51,7 +51,7 @@ public struct OpenConnectionReplyOne(long serverId = 0, uint? cookie = null, ush
 
         if (packet.Cookie.HasValue)
         {
-            dest.WriteUInt32(packet.Cookie.Value, offset, true);
+            dest.WriteUInt32(packet.Cookie.Value, offset, false);
             offset += 4;
         }
 
