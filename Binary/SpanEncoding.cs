@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
+using System;
 
 namespace Basalt.Binary
 {
@@ -10,6 +11,27 @@ namespace Basalt.Binary
 #else
         public const bool IsLittleEndian = true;
 #endif
+
+        public static uint ZigZag(int value)
+        {
+            return (uint)((value << 1) ^ (value >> 31));
+        }
+
+        public static int ZigZag(uint value)
+        {
+            return (int)((value >> 1) ^ (uint)-(int)(value & 1));
+        }
+
+        public static ulong ZigZong(long value)
+        {
+            return (ulong)((value << 1) ^ (value >> 63));
+        }
+
+        public static long ZigZong(ulong value)
+        {
+            return (long)((value >> 1) ^ (ulong)-(long)(value & 1));
+        }
+
         extension(Span<byte> source)
         {
             public void WriteInt8(sbyte value, int offset = 0)
@@ -124,6 +146,28 @@ namespace Basalt.Binary
             public bool ReadBool(int offset = 0)
             {
                 return source[offset] != 0;
+            }
+
+            public uint ReadVarUInt(int offset = 0)
+            {
+                uint value = 0;
+                int shift = 0;
+
+                for (int i = 0; i < 5; i++)
+                {
+                    byte current = source[offset + i];
+                    value |= (uint)(current & 0x7F) << shift;
+                    if ((current & 0x80) == 0)
+                        return value;
+                    shift += 7;
+                }
+
+                throw new FormatException("VarUInt is too long.");
+            }
+
+            public int ReadVarInt(int offset = 0)
+            {
+                return unchecked((int)source.ReadVarUInt(offset));
             }
 
             public uint ReadUInt24(int offset = 0, bool littleEndian = true)
