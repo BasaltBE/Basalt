@@ -1,4 +1,5 @@
 ﻿using Basalt.Binary;
+using Basalt.RakNet.Packets.Types;
 
 namespace Basalt.RakNet.Packets;
 
@@ -12,20 +13,31 @@ public struct OpenConnectionRequestOne(byte protocolVersion, ushort mtu)
 
     public static OpenConnectionRequestOne Deserialize(ReadOnlySpan<byte> src)
     {
-        return new(src.ReadInt64(1, false), src.ReadUInt64(1 + 8 + Magic.MAGIC_LENGTH, false));
+        int offset = 1;
+        offset += Magic.MAGIC_LENGTH;
+
+        byte ProtocolVersion = src.ReadUInt8(offset);
+        offset += 1;
+
+        ushort MTU = src.ReadUInt16(offset, false);
+        return new(ProtocolVersion, MTU);
     }
 
-    public static int Serialize(OpenConnectionRequestOne ping, Span<byte> dest)
+    public static int Serialize(OpenConnectionRequestOne packet, Span<byte> dest)
     {
-        // Do we? the packet id?
-        dest.WriteUInt8(PacketId);
+        int offset = 0;
+        dest.WriteUInt8(PacketId, offset);
+        offset += 1;
 
+        Magic.Write(dest, offset);
+        offset += Magic.MAGIC_LENGTH;
 
-        dest.WriteInt64(ping.Time, 1, true);
-        Magic.Write(dest, 1 + 8);
-        dest.WriteUInt64(ping.Guid, 1 + 8 + Magic.MAGIC_LENGTH, true);
+        dest.WriteUInt8(packet.ProtocolVersion, offset);
+        offset += 1;
 
-        // Return the size written
-        return 1 + 8 + Magic.MAGIC_LENGTH + 8;
+        dest.WriteUInt16(packet.MTU, offset, false);
+        offset += 2;
+
+        return offset;
     }
 }
