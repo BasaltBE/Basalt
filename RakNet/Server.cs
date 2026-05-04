@@ -86,11 +86,38 @@ namespace Basalt.RakNet
                     HandleOpenConnectionRequestTwo(endpoint, message);
                     break;
                 }
+                case >= 0x80 and <= 0x8d:
+                {
+                    HandleFrameSet(endpoint, message);
+                    break;
+                }
                 default:
                 {
                     Console.WriteLine($"Unhandled packet 0x{PacketId:X2} from {endpoint} ({message.Length} bytes)");
                     break;
                 }
+            }
+        }
+
+        private void HandleFrameSet(SocketAddress endpoint, ReadOnlySpan<byte> message)
+        {
+            try
+            {
+                FrameSet frameSet = FrameSet.Deserialize(message);
+                foreach (Frame frame in frameSet.Frames)
+                {
+                    string payloadHex = Convert.ToHexString(frame.Buffer);
+                    if (payloadHex.Length > 256)
+                    {
+                        payloadHex = payloadHex[..256] + "...";
+                    }
+
+                    Console.WriteLine($"Frame Buffer from {endpoint}: {payloadHex}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Invalid FrameSet from {endpoint}: {ex.Message}");
             }
         }
 
