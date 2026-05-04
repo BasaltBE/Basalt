@@ -16,13 +16,7 @@ namespace Basalt.RakNet
 
         public void RecieveFrom(EndPoint endpoint, ReadOnlySpan<byte> message)
         {
-
-        }
-
-        // Yea this is ass so far
-        public void Main()
-        {
-            Socket socket = new(SocketType.Dgram, ProtocolType.Udp);
+            
         }
     }
 }
