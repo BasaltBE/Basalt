@@ -1,4 +1,4 @@
-﻿namespace Basalt
+﻿namespace Basalt.Core
 {
     internal class Program
     {

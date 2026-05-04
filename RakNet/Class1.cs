@@ -1,4 +1,4 @@
-﻿namespace RakNet
+﻿namespace Basalt.RakNet
 {
     public class Class1
     {
