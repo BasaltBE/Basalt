@@ -18,7 +18,7 @@ public sealed class ResourcePackInfo
 
     public void Read(ref BinaryReader reader)
     {
-        Uuid = UuidType.Read(ref reader);
+        Uuid = UUID.Read(ref reader);
         Version = reader.ReadVarString();
         Size = reader.ReadUInt64(true);
         ContentKey = reader.ReadVarString();
@@ -32,7 +32,7 @@ public sealed class ResourcePackInfo
 
     public void Write(ref BinaryWriter writer)
     {
-        UuidType.Write(ref writer, Uuid);
+        UUID.Write(ref writer, Uuid);
         writer.WriteVarString(Version);
         writer.WriteUInt64(Size, true);
         writer.WriteVarString(ContentKey);
