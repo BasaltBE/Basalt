@@ -77,6 +77,9 @@ public sealed class NetworkHandler
                     case PacketId.RequestNetworkSettings:
                         RequestNetworkSettings.Handle(_server, connection, buffer);
                         break;
+                    case PacketId.ResourcePackClientResponse:
+                        ResourcePackClientResponse.Handle(_server, connection, buffer);
+                        break;
                     default:
                         Console.WriteLine($"Unhandled 0x{(byte)id:X2} ({buffer.Length} bytes)");
                         break;
