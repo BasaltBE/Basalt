@@ -9,6 +9,7 @@ public sealed class Server
     private readonly NetworkHandler _network;
 
     public ServerOptions Options { get; }
+    public NetworkHandler Network => _network;
 
     public Server(ServerOptions options = default)
     {
