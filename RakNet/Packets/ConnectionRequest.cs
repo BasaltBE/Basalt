@@ -45,7 +45,12 @@ public struct ConnectionRequest(
         bool doSecurity = src.ReadBool(offset);
         offset += 1;
 
-        if (src.Length < offset + 32 + 1 + 294)
+        if (!doSecurity)
+        {
+            return new(clientGuid, clientSendTime, false, [], false, []);
+        }
+
+        if (src.Length < offset + 32 + 1)
         {
             throw new InvalidOperationException("Invalid ConnectionRequest payload length.");
         }
@@ -56,7 +61,17 @@ public struct ConnectionRequest(
         bool doIdentity = src.ReadBool(offset);
         offset += 1;
 
-        byte[] identityProof = src.Slice(offset, 294).ToArray();
+        byte[] identityProof = [];
+        if (doIdentity)
+        {
+            if (src.Length < offset + 294)
+            {
+                throw new InvalidOperationException("Invalid ConnectionRequest identity payload length.");
+            }
+
+            identityProof = src.Slice(offset, 294).ToArray();
+        }
+
         return new(clientGuid, clientSendTime, doSecurity, clientProof, doIdentity, identityProof);
     }
 
@@ -75,6 +90,11 @@ public struct ConnectionRequest(
         dest.WriteBool(packet.DoSecurity, offset);
         offset += 1;
 
+        if (!packet.DoSecurity)
+        {
+            return offset;
+        }
+
         packet.ClientProof.AsSpan(0, Math.Min(packet.ClientProof.Length, 32)).CopyTo(dest[offset..]);
         if (packet.ClientProof.Length < 32)
         {
@@ -84,6 +104,11 @@ public struct ConnectionRequest(
 
         dest.WriteBool(packet.DoIdentity, offset);
         offset += 1;
+
+        if (!packet.DoIdentity)
+        {
+            return offset;
+        }
 
         packet.IdentityProof.AsSpan(0, Math.Min(packet.IdentityProof.Length, 294)).CopyTo(dest[offset..]);
         if (packet.IdentityProof.Length < 294)
