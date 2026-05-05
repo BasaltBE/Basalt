@@ -62,6 +62,6 @@ public static class Login
         var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
         server.Players[connection] = player;
 
-        Console.WriteLine($"Player {identity.Username} has logged in!");
+        Logger.Info($"Player {identity.Username} has logged in!");
     }
 }

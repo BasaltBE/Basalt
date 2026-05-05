@@ -1,0 +1,33 @@
+namespace Basalt;
+
+public enum LogColor
+{
+    Black,
+    DarkBlue,
+    DarkGreen,
+    DarkAqua,
+    DarkRed,
+    DarkPurple,
+    Gold,
+    Gray,
+    DarkGray,
+    Blue,
+    Green,
+    Aqua,
+    Red,
+    LightPurple,
+    Yellow,
+    White,
+    MinecoinGold,
+    MaterialQuartz,
+    MaterialIron,
+    MaterialNetherite,
+    MaterialRedstone,
+    MaterialCopper,
+    MaterialGold,
+    MaterialEmerald,
+    MaterialDiamond,
+    MaterialLapis,
+    MaterialAmethyst,
+    Reset,
+}

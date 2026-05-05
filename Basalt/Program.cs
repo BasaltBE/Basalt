@@ -4,9 +4,10 @@ namespace Basalt.Core
     {
         static void Main(string[] args)
         {
+            Logger.Init();
             Server server = new();
 
-            Console.WriteLine("Basalt RakNet listening on 0.0.0.0:19132");
+            Logger.Info("Basalt listening on 0.0.0.0:19132");
             server.Start();
         }
     }
