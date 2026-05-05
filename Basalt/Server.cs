@@ -8,8 +8,11 @@ public sealed class Server
     private readonly NetworkServer _raknet;
     private readonly NetworkHandler _network;
 
-    public Server()
+    public ServerOptions Options { get; }
+
+    public Server(ServerOptions options = default)
     {
+        Options = options == default ? new ServerOptions() : options;
         _raknet = new NetworkServer();
         _network = new NetworkHandler(this);
         _raknet.OnMessage += _network.HandlePacket;
@@ -19,6 +22,5 @@ public sealed class Server
     {
         _raknet.Start().AsTask().Wait();
     }
-
   
 }
