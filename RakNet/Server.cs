@@ -9,6 +9,7 @@ namespace Basalt.RakNet
 {
     public class NetworkServer
     {
+        public RaknetServerOptions Options { get; }
         public readonly ArrayPool<byte> FramesPool = ArrayPool<byte>.Create(
             maxArrayLength: 2048,
             maxArraysPerBucket: 4096
@@ -18,17 +19,22 @@ namespace Basalt.RakNet
         public event Action<NetworkConnection, ReadOnlyMemory<byte>>? OnMessage;
 
         public ulong ServerGuid = unchecked((ulong)Random.Shared.NextInt64());
-        public string Advertisement = "MCPE;Basalt;924;1.21.90;0;10;03124212345;Bedrock level;Survival;1;19132;19133;";
-        public bool EnableCookies = true; // all dat is temporary, we can move it to options or som else
 
         private readonly byte[] CookieSecret = RandomNumberGenerator.GetBytes(32);
+        private readonly Dictionary<EndpointKey, NetworkServerConnection> Connections = [];
         private Socket? Listener;
+
+        public NetworkServer(RaknetServerOptions options = default)
+        {
+            Options = options.Equals(default(RaknetServerOptions)) ? new RaknetServerOptions() : options;
+        }
 
         public async ValueTask Start()
         {
             byte[] buffer = new byte[2048];
             Listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             Listener.Bind(new IPEndPoint(IPAddress.Any, 19132));
+            _ = RunTickLoop();
             SocketAddress recieve = new(AddressFamily.InterNetwork);
             while (true)
             {
@@ -37,30 +43,6 @@ namespace Basalt.RakNet
                     RecieveFrom(recieve, buffer.AsSpan(0, received));
             }
         }
-
-        public void Listen(int port = 19132)
-        {
-            /*
-            Listener.Bind(new IPEndPoint(IPAddress.Any, port));
-
-            byte[] Frame = FramesPool.Rent(2048);
-
-
-            try
-            {
-                while (true)
-                {
-                    EndPoint RemoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    int Length = Listener.ReceiveFrom(Frame, ref RemoteEndPoint);
-                    RecieveFrom(RemoteEndPoint, Frame.AsSpan(0, Length));
-                }
-            }
-            finally
-            {
-                FramesPool.Return(Frame);
-            }*/
-        }
-
         public void RecieveFrom(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             if (message.Length < 1 || Listener is null)
@@ -91,9 +73,18 @@ namespace Basalt.RakNet
                     HandleFrameSet(endpoint, message);
                     break;
                 }
+                case Ack.PacketId:
+                {
+                    HandleAck(endpoint, message);
+                    break;
+                }
+                case Nack.PacketId:
+                {
+                    HandleNack(endpoint, message);
+                    break;
+                }
                 default:
                 {
-                    Console.WriteLine($"Unhandled packet 0x{PacketId:X2} from {endpoint} ({message.Length} bytes)");
                     break;
                 }
             }
@@ -104,27 +95,46 @@ namespace Basalt.RakNet
             try
             {
                 FrameSet frameSet = FrameSet.Deserialize(message);
-                foreach (Frame frame in frameSet.Frames)
+                EndpointKey endpointKey = new(endpoint);
+                if (Connections.TryGetValue(endpointKey, out NetworkServerConnection? connection))
                 {
-                    string payloadHex = Convert.ToHexString(frame.Buffer);
-                    if (payloadHex.Length > 256)
-                    {
-                        payloadHex = payloadHex[..256] + "...";
-                    }
-
-                    Console.WriteLine($"Frame Buffer from {endpoint}: {payloadHex}");
+                    connection.HandleFrameSet(frameSet);
+                    return;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Invalid FrameSet from {endpoint}: {ex.Message}");
             }
+        }
+
+        private void HandleAck(SocketAddress endpoint, ReadOnlySpan<byte> message)
+        {
+            EndpointKey key = new(endpoint);
+            if (!Connections.TryGetValue(key, out NetworkServerConnection? connection))
+            {
+                return;
+            }
+
+            Ack ack = Ack.Deserialize(message);
+            connection.HandleAck(ack);
+        }
+
+        private void HandleNack(SocketAddress endpoint, ReadOnlySpan<byte> message)
+        {
+            EndpointKey key = new(endpoint);
+            if (!Connections.TryGetValue(key, out NetworkServerConnection? connection))
+            {
+                return;
+            }
+
+            Nack nack = Nack.Deserialize(message);
+            connection.HandleNack(nack);
         }
 
         private void HandleUnconnectedPing(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             UnconnectedPing Ping = UnconnectedPing.Deserialize(message);
-            UnconnectedPong Pong = new(Ping.Time, ServerGuid, Advertisement);
+            UnconnectedPong Pong = new(Ping.Time, ServerGuid, Options.Advertisement);
             byte[] ReplyFrame = FramesPool.Rent(2048);
             try
             {
@@ -145,9 +155,9 @@ namespace Basalt.RakNet
             }
 
             byte ProtocolVersion = message[1 + Magic.MAGIC_LENGTH];
-            ushort MTU = (ushort)Math.Clamp(message.Length + 28, 576, 1492);
+            ushort MTU = (ushort)Math.Clamp(message.Length + 28, (int)(ushort)576, (int)Options.MaxMtu);
             uint? Cookie = null;
-            if (EnableCookies /* && endpoint is IPEndPoint IpEndPoint*/)
+            if (Options.EnableCookies /* && endpoint is IPEndPoint IpEndPoint*/)
             {
                 Cookie = ConnectionCookie.Create(endpoint, CookieSecret);
             }
@@ -163,25 +173,23 @@ namespace Basalt.RakNet
             {
                 FramesPool.Return(ReplyFrame);
             }
-
-            Console.WriteLine($"OpenConnectionRequestOne from {endpoint} protocol={ProtocolVersion} mtu={MTU}");
         }
 
         private void HandleOpenConnectionRequestTwo(SocketAddress endpoint, ReadOnlySpan<byte> message)
         {
             OpenConnectionRequestTwo Request = OpenConnectionRequestTwo.Deserialize(message);
 
-            if (EnableCookies)
+            if (Options.EnableCookies)
             {
                 if (!Request.Cookie.HasValue || !ConnectionCookie.Validate(endpoint, CookieSecret, Request.Cookie.Value))
                 {
-                    Console.WriteLine($"Dropped OpenConnectionRequestTwo invalid cookie from {endpoint}");
                     return;
                 }
                 //return;
             }
 
-            OpenConnectionReplyTwo Reply = new((long)ServerGuid, endpoint, Request.MTU, false);
+            ushort selectedMtu = Math.Clamp(Request.MTU, (ushort)576, Options.MaxMtu);
+            OpenConnectionReplyTwo Reply = new((long)ServerGuid, endpoint, selectedMtu, false);
 
             byte[] ReplyFrame = FramesPool.Rent(2048);
             try
@@ -194,7 +202,90 @@ namespace Basalt.RakNet
                 FramesPool.Return(ReplyFrame);
             }
 
-            Console.WriteLine($"OpenConnectionRequestTwo from {endpoint} mtu={Request.MTU} guid={Request.ClientId}");
+            SocketAddress connectionEndpoint = CloneEndpoint(endpoint);
+            EndpointKey connectionKey = new(connectionEndpoint);
+            if (Connections.ContainsKey(connectionKey))
+            {
+                return;
+            }
+
+            NetworkServerConnection connection = new(Listener!, connectionEndpoint, Request.ClientId, selectedMtu);
+            connection.Connected += connected => OnConnected?.Invoke(connected);
+            connection.Disconnected += disconnected =>
+            {
+                if (disconnected is NetworkServerConnection serverConnection)
+                {
+                    Connections.Remove(new EndpointKey(serverConnection.Endpoint));
+                }
+
+                OnDisconnected?.Invoke(disconnected);
+            };
+            connection.Message += (source, payload) => OnMessage?.Invoke(source, payload);
+            if (Connections.Count >= Options.MaxConnections)
+            {
+                return;
+            }
+
+            Connections[connectionKey] = connection;
+        }
+
+        private async Task RunTickLoop()
+        {
+            PeriodicTimer timer = new(TimeSpan.FromMilliseconds(50));
+            while (await timer.WaitForNextTickAsync())
+            {
+                long now = Environment.TickCount64;
+                foreach (NetworkServerConnection connection in Connections.Values)
+                {
+                    connection.Tick(now);
+                }
+            }
+        }
+
+        private static SocketAddress CloneEndpoint(SocketAddress endpoint)
+        {
+            SocketAddress clone = new(endpoint.Family, endpoint.Size);
+            for (int i = 0; i < endpoint.Size; i++)
+            {
+                clone[i] = endpoint[i];
+            }
+
+            return clone;
+        }
+
+        private readonly struct EndpointKey : IEquatable<EndpointKey>
+        {
+            private readonly AddressFamily family;
+            private readonly byte[] bytes;
+
+            public EndpointKey(SocketAddress endpoint)
+            {
+                family = endpoint.Family;
+                bytes = endpoint.Buffer.Span.Slice(0, endpoint.Size).ToArray();
+            }
+
+            public bool Equals(EndpointKey other)
+            {
+                if (family != other.family || bytes.Length != other.bytes.Length)
+                {
+                    return false;
+                }
+
+                return bytes.AsSpan().SequenceEqual(other.bytes);
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is EndpointKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                HashCode hash = new();
+                hash.Add((int)family);
+                hash.AddBytes(bytes);
+                return hash.ToHashCode();
+            }
         }
 
     }
