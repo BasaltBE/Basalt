@@ -59,55 +59,55 @@ namespace Basalt.Binary
             Offset += sizeof(byte);
         }
 
-        public void WriteInt16(short value, bool littleEndian = true)
+        public void WriteInt16(short value, bool littleEndian = false)
         {
             Buffer.WriteInt16(value, Offset, littleEndian);
             Offset += sizeof(short);
         }
 
-        public void WriteUInt16(ushort value, bool littleEndian = true)
+        public void WriteUInt16(ushort value, bool littleEndian = false)
         {
             Buffer.WriteUInt16(value, Offset, littleEndian);
             Offset += sizeof(ushort);
         }
 
-        public void WriteInt32(int value, bool littleEndian = true)
+        public void WriteInt32(int value, bool littleEndian = false)
         {
             Buffer.WriteInt32(value, Offset, littleEndian);
             Offset += sizeof(int);
         }
 
-        public void WriteUInt32(uint value, bool littleEndian = true)
+        public void WriteUInt32(uint value, bool littleEndian = false)
         {
             Buffer.WriteUInt32(value, Offset, littleEndian);
             Offset += sizeof(uint);
         }
 
-        public void WriteInt64(long value, bool littleEndian = true)
+        public void WriteInt64(long value, bool littleEndian = false)
         {
             Buffer.WriteInt64(value, Offset, littleEndian);
             Offset += sizeof(long);
         }
 
-        public void WriteUInt64(ulong value, bool littleEndian = true)
+        public void WriteUInt64(ulong value, bool littleEndian = false)
         {
             Buffer.WriteUInt64(value, Offset, littleEndian);
             Offset += sizeof(ulong);
         }
 
-        public void WriteF16(Half value, bool littleEndian = true)
+        public void WriteF16(Half value, bool littleEndian = false)
         {
             Buffer.WriteF16(value, Offset, littleEndian);
             Offset += sizeof(short);
         }
 
-        public void WriteF32(float value, bool littleEndian = true)
+        public void WriteF32(float value, bool littleEndian = false)
         {
             Buffer.WriteF32(value, Offset, littleEndian);
             Offset += sizeof(int);
         }
 
-        public void WriteF64(double value, bool littleEndian = true)
+        public void WriteF64(double value, bool littleEndian = false)
         {
             Buffer.WriteF64(value, Offset, littleEndian);
             Offset += sizeof(long);
@@ -147,7 +147,7 @@ namespace Basalt.Binary
         public int WriteZigZag(int value) => WriteVarUInt(SpanEncodingExtensions.ZigZag(value));
         public int WriteZigZong(long value) => WriteVarULong(SpanEncodingExtensions.ZigZong(value));
 
-        public int WriteString16(ReadOnlySpan<char> value, bool littleEndian = true)
+        public int WriteString16(ReadOnlySpan<char> value, bool littleEndian = false)
         {
             int length = System.Text.Encoding.UTF8.GetByteCount(value);
             if (length > ushort.MaxValue)
@@ -166,7 +166,7 @@ namespace Basalt.Binary
             return prefix + WriteStringRaw(value, length);
         }
 
-        public int WriteString32(ReadOnlySpan<char> value, bool littleEndian = true)
+        public int WriteString32(ReadOnlySpan<char> value, bool littleEndian = false)
         {
             int length = System.Text.Encoding.UTF8.GetByteCount(value);
             WriteUInt32((uint)length, littleEndian);

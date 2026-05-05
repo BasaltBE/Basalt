@@ -63,63 +63,63 @@ namespace Basalt.Binary
             return value;
         }
 
-        public short ReadInt16(bool littleEndian = true)
+        public short ReadInt16(bool littleEndian = false)
         {
             short value = Buffer.ReadInt16(Offset, littleEndian);
             Offset += sizeof(short);
             return value;
         }
 
-        public ushort ReadUInt16(bool littleEndian = true)
+        public ushort ReadUInt16(bool littleEndian = false)
         {
             ushort value = Buffer.ReadUInt16(Offset, littleEndian);
             Offset += sizeof(ushort);
             return value;
         }
 
-        public int ReadInt32(bool littleEndian = true)
+        public int ReadInt32(bool littleEndian = false)
         {
             int value = Buffer.ReadInt32(Offset, littleEndian);
             Offset += sizeof(int);
             return value;
         }
 
-        public uint ReadUInt32(bool littleEndian = true)
+        public uint ReadUInt32(bool littleEndian = false)
         {
             uint value = Buffer.ReadUInt32(Offset, littleEndian);
             Offset += sizeof(uint);
             return value;
         }
 
-        public long ReadInt64(bool littleEndian = true)
+        public long ReadInt64(bool littleEndian = false)
         {
             long value = Buffer.ReadInt64(Offset, littleEndian);
             Offset += sizeof(long);
             return value;
         }
 
-        public ulong ReadUInt64(bool littleEndian = true)
+        public ulong ReadUInt64(bool littleEndian = false)
         {
             ulong value = Buffer.ReadUInt64(Offset, littleEndian);
             Offset += sizeof(ulong);
             return value;
         }
 
-        public Half ReadF16(bool littleEndian = true)
+        public Half ReadF16(bool littleEndian = false)
         {
             Half value = Buffer.ReadF16(Offset, littleEndian);
             Offset += sizeof(short);
             return value;
         }
 
-        public float ReadF32(bool littleEndian = true)
+        public float ReadF32(bool littleEndian = false)
         {
             float value = Buffer.ReadF32(Offset, littleEndian);
             Offset += sizeof(int);
             return value;
         }
 
-        public double ReadF64(bool littleEndian = true)
+        public double ReadF64(bool littleEndian = false)
         {
             double value = Buffer.ReadF64(Offset, littleEndian);
             Offset += sizeof(long);
@@ -164,7 +164,7 @@ namespace Basalt.Binary
         public int ReadZigZag() => SpanEncodingExtensions.ZigZag(ReadVarUInt());
         public long ReadZigZong() => SpanEncodingExtensions.ZigZong(ReadVarULong());
 
-        public string ReadString16(bool littleEndian = true)
+        public string ReadString16(bool littleEndian = false)
         {
             ushort length = ReadUInt16(littleEndian);
             string value = Buffer.ReadString(length, Offset);
@@ -180,7 +180,7 @@ namespace Basalt.Binary
             return value;
         }
 
-        public string ReadString32(bool littleEndian = true)
+        public string ReadString32(bool littleEndian = false)
         {
             int length = checked((int)ReadUInt32(littleEndian));
             string value = Buffer.ReadString(length, Offset);
