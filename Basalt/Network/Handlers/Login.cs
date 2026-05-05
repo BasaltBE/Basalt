@@ -50,7 +50,7 @@ public static class Login
             HasAddons = false,
             HasScripts = false,
             ForceDisableVibrantVisuals = false,
-            WorldTemplateUuid = "00000000-0000-0000-0000-000000000000",
+            WorldTemplateUuid = Guid.Empty,
             WorldTemplateVersion = "",
             Packs = []
         };
