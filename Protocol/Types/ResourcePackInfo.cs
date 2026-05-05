@@ -18,11 +18,7 @@ public sealed class ResourcePackInfo
 
     public void Read(ref BinaryReader reader)
     {
-        Span<byte> uuidBytes = stackalloc byte[16];
-        reader.ReadBytes(16).CopyTo(uuidBytes);
-        uuidBytes[..8].Reverse();
-        uuidBytes[8..].Reverse();
-        Uuid = new Guid(uuidBytes);
+        Uuid = UuidType.Read(ref reader);
         Version = reader.ReadVarString();
         Size = reader.ReadUInt64(true);
         ContentKey = reader.ReadVarString();
@@ -36,10 +32,7 @@ public sealed class ResourcePackInfo
 
     public void Write(ref BinaryWriter writer)
     {
-        byte[] uuidBytes = Uuid.ToByteArray();
-        uuidBytes[..8].Reverse();
-        uuidBytes[8..].Reverse();
-        writer.WriteBytes(uuidBytes);
+        UuidType.Write(ref writer, Uuid);
         writer.WriteVarString(Version);
         writer.WriteUInt64(Size, true);
         writer.WriteVarString(ContentKey);
