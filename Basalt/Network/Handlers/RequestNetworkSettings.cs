@@ -1,8 +1,8 @@
 using Basalt.Core;
+using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using BinaryReader = Basalt.Binary.BinaryReader;
 
 namespace Basalt.Network.Handlers;
 
@@ -12,7 +12,24 @@ public static class RequestNetworkSettings
     {
         RequestNetworkSettingsPacket packet = new();
         packet.Deserialize(packetBuffer);
-        Console.WriteLine($"RequestNetworkSettings protocol={packet.ProtocolVersion}");
+        
+        if (packet.ProtocolVersion != ProtocolInfo.ProtocolVersion)
+        {
+            DisconnectReason reason = packet.ProtocolVersion < ProtocolInfo.ProtocolVersion
+                ? DisconnectReason.OutdatedClient
+                : DisconnectReason.OutdatedServer;
+
+            DisconnectPacket disconnect = new()
+            {
+                Reason = reason,
+                HideDisconnectionScreen = true,
+                Message = "",
+                FilteredMessage = ""
+            };
+
+            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            return;
+        }
 
         NetworkSettingsPacket response = new(
             compressionThreshold: server.Options.CompressionThreshold,
