@@ -21,11 +21,11 @@ public sealed record RequestNetworkSettingsPacket : DataPacket
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        ProtocolVersion = reader.ReadInt32();
+        ProtocolVersion = reader.ReadInt32(false);
     }
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteInt32(ProtocolVersion);
+        writer.WriteInt32(ProtocolVersion, false);
     }
 }

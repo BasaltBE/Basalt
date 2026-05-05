@@ -170,6 +170,8 @@ namespace Basalt.RakNet
 
         protected abstract void SendMessage(ReadOnlySpan<byte> raw);
 
+        public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered) => SendPayload(payload, reliability);
+
         protected void SendPayload(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered, byte orderingChannel = 0)
         {
             if (NeedsOrdering(reliability) && orderingChannel >= MaxOrderChannels)
