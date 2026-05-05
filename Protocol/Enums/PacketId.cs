@@ -7,6 +7,7 @@ namespace Basalt.Protocol.Enums
         Disconnect = 0x05,
         ResourcePacksInfo = 0x06,
         ResourcePackStack = 0x07,
+        ResourcePackClientResponse = 0x08,
         NetworkSettings = 0x8f,
         RequestNetworkSettings = 0xc1
     }
