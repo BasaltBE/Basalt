@@ -4,6 +4,12 @@
         "**/.svn": true,
         "**/.hg": true,
         "**/.DS_Store": true,
-        "**/Thumbs.db": true
-    }
+        "**/Thumbs.db": true,
+        "Basalt/obj": true,
+        "Basalt/bin": true
+    },
+    "hide-files.files": [
+        "Basalt/obj",
+        "Basalt/bin"
+    ]
 }
