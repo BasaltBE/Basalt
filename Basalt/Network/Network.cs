@@ -17,6 +17,17 @@ public sealed class NetworkHandler
 
     public NetworkHandler(Server server) => _server = server;
 
+    public void HandleDisconnected(NetworkConnection connection)
+    {
+        if (_server.Players.Remove(connection, out Player? player))
+        {
+            Console.WriteLine($"Player {player.Username} disconnected.");
+            return;
+        }
+
+        Console.WriteLine("Connection disconnected.");
+    }
+
     public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
     {
         ReadOnlySpan<byte> span = payload.Span;
@@ -60,6 +71,9 @@ public sealed class NetworkHandler
                 PacketId id = (PacketId)new BinaryReader(buffer).ReadVarInt();
                 switch (id)
                 {
+                    case PacketId.Login:
+                        Login.Handle(_server, connection, buffer);
+                        break;
                     case PacketId.RequestNetworkSettings:
                         RequestNetworkSettings.Handle(_server, connection, buffer);
                         break;
@@ -170,4 +184,3 @@ public sealed class NetworkHandler
         finally { ArrayPool<byte>.Shared.Return(final); }
     }
 }
-
