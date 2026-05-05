@@ -6,10 +6,12 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "Basalt/obj": true,
-        "Basalt/bin": true
+        "Basalt/bin": true,
+        "Protocol/obj": true
     },
     "hide-files.files": [
         "Basalt/obj",
-        "Basalt/bin"
+        "Basalt/bin",
+        "Protocol/obj"
     ]
 }
