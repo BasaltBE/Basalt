@@ -45,7 +45,7 @@ public sealed class Skin
     public bool Trusted { get; set; }
     public bool OverrideAppearance { get; set; }
 
-    public void Deserialize(ref BinaryReader reader)
+    public void Read(ref BinaryReader reader)
     {
         SkinID = reader.ReadVarString();
         PlayFabID = reader.ReadVarString();
@@ -56,7 +56,7 @@ public sealed class Skin
         Animations = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
         {
             SkinAnimation value = new();
-            value.Deserialize(ref r);
+            value.Read(ref r);
             return value;
         });
         CapeImageWidth = reader.ReadUInt32(true);
@@ -72,13 +72,13 @@ public sealed class Skin
         PersonaPieces = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
         {
             PersonaPiece value = new();
-            value.Deserialize(ref r);
+            value.Read(ref r);
             return value;
         });
         PieceTintColours = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
         {
             PersonaPieceTintColour value = new();
-            value.Deserialize(ref r);
+            value.Read(ref r);
             return value;
         });
 
@@ -91,7 +91,7 @@ public sealed class Skin
         OverrideAppearance = reader.ReadBool();
     }
 
-    public void Serialize(ref BinaryWriter writer)
+    public void Write(ref BinaryWriter writer)
     {
         writer.WriteVarString(SkinID);
         writer.WriteVarString(PlayFabID);
@@ -99,7 +99,7 @@ public sealed class Skin
         writer.WriteUInt32(SkinImageWidth, true);
         writer.WriteUInt32(SkinImageHeight, true);
         ProtocolTypeIO.WriteByteArray(ref writer, SkinData);
-        ProtocolTypeIO.WriteList(ref writer, Animations, static (ref BinaryWriter w, SkinAnimation value) => value.Serialize(ref w));
+        ProtocolTypeIO.WriteList(ref writer, Animations, static (ref BinaryWriter w, SkinAnimation value) => value.Write(ref w));
         writer.WriteUInt32(CapeImageWidth, true);
         writer.WriteUInt32(CapeImageHeight, true);
         ProtocolTypeIO.WriteByteArray(ref writer, CapeData);
@@ -110,8 +110,8 @@ public sealed class Skin
         writer.WriteVarString(FullID);
         writer.WriteVarString(ArmSize);
         writer.WriteVarString(SkinColour);
-        ProtocolTypeIO.WriteList(ref writer, PersonaPieces, static (ref BinaryWriter w, PersonaPiece value) => value.Serialize(ref w));
-        ProtocolTypeIO.WriteList(ref writer, PieceTintColours, static (ref BinaryWriter w, PersonaPieceTintColour value) => value.Serialize(ref w));
+        ProtocolTypeIO.WriteList(ref writer, PersonaPieces, static (ref BinaryWriter w, PersonaPiece value) => value.Write(ref w));
+        ProtocolTypeIO.WriteList(ref writer, PieceTintColours, static (ref BinaryWriter w, PersonaPieceTintColour value) => value.Write(ref w));
 
         Validate();
 
@@ -154,7 +154,7 @@ public sealed class SkinAnimation
     public float FrameCount { get; set; }
     public uint ExpressionType { get; set; }
 
-    public void Deserialize(ref BinaryReader reader)
+    public void Read(ref BinaryReader reader)
     {
         ImageWidth = reader.ReadUInt32(true);
         ImageHeight = reader.ReadUInt32(true);
@@ -164,7 +164,7 @@ public sealed class SkinAnimation
         ExpressionType = reader.ReadUInt32(true);
     }
 
-    public void Serialize(ref BinaryWriter writer)
+    public void Write(ref BinaryWriter writer)
     {
         writer.WriteUInt32(ImageWidth, true);
         writer.WriteUInt32(ImageHeight, true);
@@ -183,7 +183,7 @@ public sealed class PersonaPiece
     public bool Default { get; set; }
     public string ProductID { get; set; } = string.Empty;
 
-    public void Deserialize(ref BinaryReader reader)
+    public void Read(ref BinaryReader reader)
     {
         PieceID = reader.ReadVarString();
         PieceType = reader.ReadVarString();
@@ -192,7 +192,7 @@ public sealed class PersonaPiece
         ProductID = reader.ReadVarString();
     }
 
-    public void Serialize(ref BinaryWriter writer)
+    public void Write(ref BinaryWriter writer)
     {
         writer.WriteVarString(PieceID);
         writer.WriteVarString(PieceType);
@@ -207,13 +207,13 @@ public sealed class PersonaPieceTintColour
     public string PieceType { get; set; } = string.Empty;
     public List<string> Colours { get; set; } = [];
 
-    public void Deserialize(ref BinaryReader reader)
+    public void Read(ref BinaryReader reader)
     {
         PieceType = reader.ReadVarString();
         Colours = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) => r.ReadVarString());
     }
 
-    public void Serialize(ref BinaryWriter writer)
+    public void Write(ref BinaryWriter writer)
     {
         writer.WriteVarString(PieceType);
         ProtocolTypeIO.WriteList(ref writer, Colours, static (ref BinaryWriter w, string value) => w.WriteVarString(value));
