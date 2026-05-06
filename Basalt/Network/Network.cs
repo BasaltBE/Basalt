@@ -80,6 +80,12 @@ public sealed class NetworkHandler
                     case PacketId.ResourcePackClientResponse:
                         ResourcePackClientResponse.Handle(_server, connection, buffer);
                         break;
+                    case PacketId.RequestChunkRadius:
+                        RequestChunkRadius.Handle(_server, connection, buffer);
+                        break;
+                    case PacketId.SetLocalPlayerAsInitialized:
+                        SetLocalPlayerAsInitialized.Handle(_server, connection, buffer);
+                        break;
                     case PacketId.PlayerAuthInput:
                         PlayerAuthInput.Handle(_server, connection, buffer);
                         break;
