@@ -6,7 +6,10 @@ namespace Basalt.Protocol.Packets;
 
 public sealed record RequestChunkRadiusPacket : DataPacket
 {
+    // Max chunk radius in the players settings
     public int ChunkRadius { get; set; }
+    // Max chunk radius the client thinks is best depending on the device specs
+    // Or reasonable rendering distance
     public byte MaxChunkRadius { get; set; }
 
     public override PacketId PacketId => PacketId.RequestChunkRadius;
