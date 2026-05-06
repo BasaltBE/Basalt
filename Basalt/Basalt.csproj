@@ -15,4 +15,12 @@
     <ProjectReference Include="..\RakNet\RakNet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\Protocol\Data\*.json">
+      <Link>Protocol\Data\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
