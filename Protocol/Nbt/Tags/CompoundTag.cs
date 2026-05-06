@@ -4,7 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Nbt;
 
-public sealed class CompoundTag : BaseTag
+public class CompoundTag : BaseTag
 {
     public override TagType Type => TagType.Compound;
     public Dictionary<string, BaseTag> Values { get; } = new(StringComparer.Ordinal);
