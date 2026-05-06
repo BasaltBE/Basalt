@@ -19,7 +19,5 @@ public sealed class ExperimentData
         writer.WriteVarString(Name);
         writer.WriteBool(Enabled);
     }
-
-    public void Deserialize(ref BinaryReader reader) => Read(ref reader);
-    public void Serialize(ref BinaryWriter writer) => Write(ref writer);
 }
+

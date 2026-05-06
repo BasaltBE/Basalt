@@ -80,6 +80,9 @@ public sealed class NetworkHandler
                     case PacketId.ResourcePackClientResponse:
                         ResourcePackClientResponse.Handle(_server, connection, buffer);
                         break;
+                    case PacketId.PlayerAuthInput:
+                        PlayerAuthInput.Handle(_server, connection, buffer);
+                        break;
                     default:
                         Console.WriteLine($"Unhandled 0x{(byte)id:X2} ({buffer.Length} bytes)");
                         break;
@@ -128,11 +131,7 @@ public sealed class NetworkHandler
             BinaryWriter writer = new(frameBuffer);
             foreach (var packet in pks)
             {
-                BinaryWriter pkgWriter = new(pkgBuffer);
-                pkgWriter.WriteVarInt((int)packet.PacketId);
-                packet.Serialize(ref pkgWriter);
-                
-                ReadOnlySpan<byte> data = pkgWriter.GetBuffer();
+                ReadOnlySpan<byte> data = packet.Serialize(pkgBuffer);
                 writer.WriteVarInt(data.Length);
                 writer.WriteBytes(data);
             }
@@ -187,3 +186,4 @@ public sealed class NetworkHandler
         finally { ArrayPool<byte>.Shared.Return(final); }
     }
 }
+

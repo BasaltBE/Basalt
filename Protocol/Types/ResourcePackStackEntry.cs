@@ -27,7 +27,5 @@ public sealed class ResourcePackStackEntry
         writer.WriteVarString(Version);
         writer.WriteVarString(SubPackName);
     }
-
-    public void Deserialize(ref BinaryReader reader) => Read(ref reader);
-    public void Serialize(ref BinaryWriter writer) => Write(ref writer);
 }
+

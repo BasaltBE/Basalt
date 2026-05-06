@@ -11,7 +11,7 @@ public sealed class OptionalValue<T>
     public bool HasValue { get; set; }
     public T? Value { get; set; }
 
-    public void Deserialize(ref BinaryReader reader, ReaderDelegate read)
+    public void Read(ref BinaryReader reader, ReaderDelegate read)
     {
         HasValue = reader.ReadBool();
         if (!HasValue)
@@ -23,7 +23,7 @@ public sealed class OptionalValue<T>
         Value = read(ref reader);
     }
 
-    public void Serialize(ref BinaryWriter writer, WriterDelegate write)
+    public void Write(ref BinaryWriter writer, WriterDelegate write)
     {
         writer.WriteBool(HasValue);
         if (!HasValue)
@@ -39,3 +39,4 @@ public sealed class OptionalValue<T>
         write(ref writer, Value);
     }
 }
+

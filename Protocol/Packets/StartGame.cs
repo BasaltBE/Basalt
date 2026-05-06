@@ -142,7 +142,7 @@ public sealed record StartGamePacket : DataPacket
         for (int i = 0; i < experimentCount; i++)
         {
             ExperimentData experiment = new();
-            experiment.Deserialize(ref reader);
+            experiment.Read(ref reader);
             Experiments.Add(experiment);
         }
 
@@ -166,7 +166,7 @@ public sealed record StartGamePacket : DataPacket
         LimitedWorldDepth = reader.ReadInt32(true);
         NewNether = reader.ReadBool();
         EducationSharedResourceUri.Read(ref reader);
-        ForceExperimentalGameplay.Deserialize(ref reader, static (ref BinaryReader r) => r.ReadBool());
+        ForceExperimentalGameplay.Read(ref reader, static (ref BinaryReader r) => r.ReadBool());
         ChatRestrictionLevel = (ChatRestrictionLevel)reader.ReadUInt8();
         DisablePlayerInteractions = reader.ReadBool();
         LevelId = reader.ReadVarString();
@@ -195,7 +195,7 @@ public sealed record StartGamePacket : DataPacket
         ClientSideGeneration = reader.ReadBool();
         UseBlockNetworkIdHashes = reader.ReadBool();
         ServerAuthoritativeSound = reader.ReadBool();
-        ServerJoinInformation.Deserialize(ref reader, static (ref BinaryReader r) =>
+        ServerJoinInformation.Read(ref reader, static (ref BinaryReader r) =>
         {
             ServerJoinInformation value = new();
             value.Read(ref r);
@@ -251,7 +251,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteUInt32((uint)Experiments.Count, true);
         for (int i = 0; i < Experiments.Count; i++)
         {
-            Experiments[i].Serialize(ref writer);
+            Experiments[i].Write(ref writer);
         }
 
         writer.WriteBool(ExperimentsPreviouslyToggled);
@@ -274,7 +274,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteInt32(LimitedWorldDepth, true);
         writer.WriteBool(NewNether);
         EducationSharedResourceUri.Write(ref writer);
-        ForceExperimentalGameplay.Serialize(ref writer, static (ref BinaryWriter w, bool value) => w.WriteBool(value));
+        ForceExperimentalGameplay.Write(ref writer, static (ref BinaryWriter w, bool value) => w.WriteBool(value));
         writer.WriteUInt8((byte)ChatRestrictionLevel);
         writer.WriteBool(DisablePlayerInteractions);
         writer.WriteVarString(LevelId);
@@ -300,10 +300,11 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteBool(ClientSideGeneration);
         writer.WriteBool(UseBlockNetworkIdHashes);
         writer.WriteBool(ServerAuthoritativeSound);
-        ServerJoinInformation.Serialize(ref writer, static (ref BinaryWriter w, ServerJoinInformation value) => value.Write(ref w));
+        ServerJoinInformation.Write(ref writer, static (ref BinaryWriter w, ServerJoinInformation value) => value.Write(ref w));
         writer.WriteVarString(ServerId);
         writer.WriteVarString(ScenarioId);
         writer.WriteVarString(WorldId);
         writer.WriteVarString(OwnerId);
     }
 }
+

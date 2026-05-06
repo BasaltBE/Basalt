@@ -24,7 +24,7 @@ public sealed record ResourcePackStackPacket : DataPacket
         for (int i = 0; i < packsLength; i++)
         {
             ResourcePackStackEntry pack = new();
-            pack.Deserialize(ref reader);
+            pack.Read(ref reader);
             Packs.Add(pack);
         }
         BaseGameVersion = reader.ReadVarString();
@@ -33,7 +33,7 @@ public sealed record ResourcePackStackPacket : DataPacket
         for (int i = 0; i < experimentsLength; i++)
         {
             ExperimentData experiment = new();
-            experiment.Deserialize(ref reader);
+            experiment.Read(ref reader);
             Experiments.Add(experiment);
         }
         ExperimentsPreviouslyToggled = reader.ReadBool();
@@ -46,15 +46,16 @@ public sealed record ResourcePackStackPacket : DataPacket
         writer.WriteVarUInt((uint)Packs.Count);
         for (int i = 0; i < Packs.Count; i++)
         {
-            Packs[i].Serialize(ref writer);
+            Packs[i].Write(ref writer);
         }
         writer.WriteVarString(BaseGameVersion);
         writer.WriteUInt32((uint)Experiments.Count, true);
         for (int i = 0; i < Experiments.Count; i++)
         {
-            Experiments[i].Serialize(ref writer);
+            Experiments[i].Write(ref writer);
         }
         writer.WriteBool(ExperimentsPreviouslyToggled);
         writer.WriteBool(IncludeEditorPacks);
     }
 }
+

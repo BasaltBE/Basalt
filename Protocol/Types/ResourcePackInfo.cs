@@ -43,7 +43,5 @@ public sealed class ResourcePackInfo
         writer.WriteBool(RtxEnabled);
         writer.WriteVarString(DownloadUrl);
     }
-
-    public void Deserialize(ref BinaryReader reader) => Read(ref reader);
-    public void Serialize(ref BinaryWriter writer) => Write(ref writer);
 }
+

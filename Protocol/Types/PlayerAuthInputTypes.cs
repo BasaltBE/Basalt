@@ -121,13 +121,13 @@ public sealed class FullContainerName
     public void Read(ref BinaryReader reader)
     {
         ContainerId = reader.ReadUInt8();
-        DynamicContainerId.Deserialize(ref reader, static (ref BinaryReader r) => r.ReadUInt32(true));
+        DynamicContainerId.Read(ref reader, static (ref BinaryReader r) => r.ReadUInt32(true));
     }
 
     public void Write(ref BinaryWriter writer)
     {
         writer.WriteUInt8(ContainerId);
-        DynamicContainerId.Serialize(ref writer, static (ref BinaryWriter w, uint value) => w.WriteUInt32(value, true));
+        DynamicContainerId.Write(ref writer, static (ref BinaryWriter w, uint value) => w.WriteUInt32(value, true));
     }
 }
 
@@ -780,3 +780,4 @@ public sealed class PlayerBlockAction
         }
     }
 }
+
