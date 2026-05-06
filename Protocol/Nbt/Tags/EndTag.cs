@@ -3,6 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Nbt;
 
+// Useless todo but for the sake of consistency xd
 public sealed class EndTag : BaseTag
 {
     public override TagType Type => TagType.End;
