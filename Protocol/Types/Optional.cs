@@ -1,17 +1,11 @@
+namespace Basalt.Protocol.Types;
+
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Protocol.Types;
-
-public class OptionalValue<T>
+public sealed class Optional<T> : OptionalValue<T> where T : DataType, new()
 {
-    public delegate T ReaderDelegate(ref BinaryReader reader);
-    public delegate void WriterDelegate(ref BinaryWriter writer, T value);
-
-    public bool HasValue { get; set; }
-    public T? Value { get; set; }
-
-    public void Read(ref BinaryReader reader, ReaderDelegate read)
+    public void Read(ref BinaryReader reader)
     {
         HasValue = reader.ReadBool();
         if (!HasValue)
@@ -20,10 +14,12 @@ public class OptionalValue<T>
             return;
         }
 
-        Value = read(ref reader);
+        T value = new();
+        value.Read(ref reader);
+        Value = value;
     }
 
-    public void Write(ref BinaryWriter writer, WriterDelegate write)
+    public void Write(ref BinaryWriter writer)
     {
         writer.WriteBool(HasValue);
         if (!HasValue)
@@ -36,7 +32,7 @@ public class OptionalValue<T>
             throw new InvalidOperationException("Optional value is marked as present but Value is null.");
         }
 
-        write(ref writer, Value);
+        Value.Write(ref writer);
     }
 }
 
