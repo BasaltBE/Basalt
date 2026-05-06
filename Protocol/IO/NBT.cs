@@ -8,26 +8,23 @@ public static class NBT
 {
     public static BaseTag ReadTag(ref BinaryReader reader, TagType type, ReadWriteOptions options, bool canHaveName)
     {
-        BaseTag tag = type switch
+        return type switch
         {
-            TagType.End => new EndTag(),
-            TagType.Byte => new ByteTag(),
-            TagType.Short => new ShortTag(),
-            TagType.Int => new IntTag(),
-            TagType.Long => new LongTag(),
-            TagType.Float => new FloatTag(),
-            TagType.Double => new DoubleTag(),
-            TagType.ByteList => new ByteListTag(),
-            TagType.String => new StringTag(),
-            TagType.List => new ListTag(),
-            TagType.Compound => new CompoundTag(),
-            TagType.IntList => new IntListTag(),
-            TagType.LongList => new LongListTag(),
+            TagType.End => EndTag.Read(ref reader, options, canHaveName),
+            TagType.Byte => ByteTag.Read(ref reader, options, canHaveName),
+            TagType.Short => ShortTag.Read(ref reader, options, canHaveName),
+            TagType.Int => IntTag.Read(ref reader, options, canHaveName),
+            TagType.Long => LongTag.Read(ref reader, options, canHaveName),
+            TagType.Float => FloatTag.Read(ref reader, options, canHaveName),
+            TagType.Double => DoubleTag.Read(ref reader, options, canHaveName),
+            TagType.ByteList => ByteListTag.Read(ref reader, options, canHaveName),
+            TagType.String => StringTag.Read(ref reader, options, canHaveName),
+            TagType.List => ListTag.Read(ref reader, options, canHaveName),
+            TagType.Compound => CompoundTag.Read(ref reader, options, canHaveName),
+            TagType.IntList => IntListTag.Read(ref reader, options, canHaveName),
+            TagType.LongList => LongListTag.Read(ref reader, options, canHaveName),
             _ => throw new InvalidOperationException($"Unsupported NBT tag type: {type}.")
         };
-
-        tag.Read(ref reader, options with { Type = false }, canHaveName);
-        return tag;
     }
 
     public static void WriteTag(ref BinaryWriter writer, BaseTag tag, ReadWriteOptions options, bool canHaveName)
@@ -37,6 +34,7 @@ public static class NBT
             writer.WriteInt8((sbyte)tag.Type);
         }
 
-        tag.Write(ref writer, options with { Type = false }, canHaveName);
+        tag.Write(ref writer, options, canHaveName);
     }
 }
+

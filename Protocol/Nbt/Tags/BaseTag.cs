@@ -10,7 +10,6 @@ public abstract class BaseTag
     public string? Name { get; set; }
 
     public abstract object? ToJsonValue();
-    public abstract void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true);
     public abstract void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true);
 
     protected static string ReadString(ref BinaryReader reader, bool varInt)
@@ -82,3 +81,4 @@ public abstract class BaseTag
         }
     }
 }
+

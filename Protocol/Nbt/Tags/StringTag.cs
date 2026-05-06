@@ -9,16 +9,6 @@ public sealed class StringTag : BaseTag
     public string Value { get; set; } = string.Empty;
     public override object ToJsonValue() => Value;
 
-    public override void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
-    {
-        if (canHaveName && options.Name)
-        {
-            Name = ReadName(ref reader, options.VarInt);
-        }
-
-        Value = ReadString(ref reader, options.VarInt);
-    }
-
     public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
@@ -28,4 +18,17 @@ public sealed class StringTag : BaseTag
 
         WriteString(ref writer, Value, options.VarInt);
     }
+
+    public static StringTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    {
+        ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
+        string? name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null;
+        return new StringTag
+        {
+            Name = name,
+            Value = ReadString(ref reader, effective.VarInt)
+        };
+    }
 }
+
+

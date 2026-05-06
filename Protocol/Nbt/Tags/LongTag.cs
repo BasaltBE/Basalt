@@ -9,16 +9,6 @@ public sealed class LongTag : BaseTag
     public long Value { get; set; }
     public override object ToJsonValue() => Value;
 
-    public override void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
-    {
-        if (canHaveName && options.Name)
-        {
-            Name = ReadName(ref reader, options.VarInt);
-        }
-
-        Value = reader.ReadInt64(true);
-    }
-
     public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
@@ -28,4 +18,17 @@ public sealed class LongTag : BaseTag
 
         writer.WriteInt64(Value, true);
     }
+
+    public static LongTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    {
+        ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
+        string? name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null;
+        return new LongTag
+        {
+            Name = name,
+            Value = reader.ReadInt64(true)
+        };
+    }
 }
+
+

@@ -10,21 +10,6 @@ public sealed class IntListTag : BaseTag
     public List<int> Values { get; } = [];
     public override object ToJsonValue() => Values;
 
-    public override void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
-    {
-        if (canHaveName && options.Name)
-        {
-            Name = ReadName(ref reader, options.VarInt);
-        }
-
-        int length = ReadLength(ref reader, options.VarInt);
-        Values.Clear();
-        for (int i = 0; i < length; i++)
-        {
-            Values.Add(reader.ReadInt32(true));
-        }
-    }
-
     public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
@@ -39,4 +24,24 @@ public sealed class IntListTag : BaseTag
             writer.WriteInt32(span[i], true);
         }
     }
+
+    public static IntListTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    {
+        ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
+        IntListTag tag = new IntListTag
+        {
+            Name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null
+        };
+
+        int length = ReadLength(ref reader, effective.VarInt);
+        tag.Values.Capacity = Math.Max(tag.Values.Capacity, length);
+        for (int i = 0; i < length; i++)
+        {
+            tag.Values.Add(reader.ReadInt32(true));
+        }
+
+        return tag;
+    }
 }
+
+

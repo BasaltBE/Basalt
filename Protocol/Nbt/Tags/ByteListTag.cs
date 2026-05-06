@@ -10,22 +10,6 @@ public sealed class ByteListTag : BaseTag
     public List<byte> Values { get; } = [];
     public override object ToJsonValue() => Values;
 
-    public override void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
-    {
-        if (canHaveName && options.Name)
-        {
-            Name = ReadName(ref reader, options.VarInt);
-        }
-
-        int length = ReadLength(ref reader, options.VarInt);
-        ReadOnlySpan<byte> bytes = reader.ReadBytes(length);
-        Values.Clear();
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            Values.Add(bytes[i]);
-        }
-    }
-
     public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
@@ -36,4 +20,25 @@ public sealed class ByteListTag : BaseTag
         WriteLength(ref writer, Values.Count, options.VarInt);
         writer.WriteBytes(CollectionsMarshal.AsSpan(Values));
     }
+
+    public static ByteListTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    {
+        ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
+        ByteListTag tag = new ByteListTag
+        {
+            Name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null
+        };
+
+        int length = ReadLength(ref reader, effective.VarInt);
+        ReadOnlySpan<byte> bytes = reader.ReadBytes(length);
+        tag.Values.Capacity = Math.Max(tag.Values.Capacity, length);
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            tag.Values.Add(bytes[i]);
+        }
+
+        return tag;
+    }
 }
+
+

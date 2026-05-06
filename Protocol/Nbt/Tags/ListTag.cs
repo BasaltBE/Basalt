@@ -20,25 +20,6 @@ public sealed class ListTag : BaseTag
         return values;
     }
 
-    public override void Read(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
-    {
-        if (canHaveName && options.Name)
-        {
-            Name = ReadName(ref reader, options.VarInt);
-        }
-
-        TagType elementType = (TagType)reader.ReadInt8();
-        int length = ReadLength(ref reader, options.VarInt);
-
-        Values.Clear();
-        Values.Capacity = Math.Max(Values.Capacity, length);
-        for (int i = 0; i < length; i++)
-        {
-            BaseTag item = NBT.ReadTag(ref reader, elementType, options with { Name = false, Type = false }, false);
-            Values.Add(item);
-        }
-    }
-
     public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
@@ -47,6 +28,7 @@ public sealed class ListTag : BaseTag
         }
 
         TagType elementType = Values.Count == 0 ? TagType.Byte : Values[0].Type;
+        ReadWriteOptions payloadOptions = options with { Name = false, Type = false };
         writer.WriteInt8((sbyte)elementType);
         WriteLength(ref writer, Values.Count, options.VarInt);
 
@@ -57,7 +39,31 @@ public sealed class ListTag : BaseTag
                 throw new InvalidOperationException("NBT list elements must share a single type.");
             }
 
-            NBT.WriteTag(ref writer, Values[i], options with { Name = false, Type = false }, false);
+            NBT.WriteTag(ref writer, Values[i], payloadOptions, false);
         }
     }
+
+    public static ListTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    {
+        ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
+        ListTag tag = new ListTag
+        {
+            Name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null
+        };
+
+        TagType elementType = (TagType)reader.ReadInt8();
+        int length = ReadLength(ref reader, effective.VarInt);
+        ReadWriteOptions payloadOptions = effective with { Name = false, Type = false };
+
+        tag.Values.Capacity = Math.Max(tag.Values.Capacity, length);
+        for (int i = 0; i < length; i++)
+        {
+            BaseTag item = NBT.ReadTag(ref reader, elementType, payloadOptions, false);
+            tag.Values.Add(item);
+        }
+
+        return tag;
+    }
 }
+
+
