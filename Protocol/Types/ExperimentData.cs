@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ExperimentData
+public sealed class ExperimentData : DataType
 {
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; }
@@ -20,4 +20,5 @@ public sealed class ExperimentData
         writer.WriteBool(Enabled);
     }
 }
+
 

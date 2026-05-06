@@ -4,7 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct Vec2f
+public struct Vec2f : DataType
 {
     public float X { get; set; }
     public float Y { get; set; }
@@ -22,7 +22,7 @@ public struct Vec2f
     }
 }
 
-public sealed class ItemStack
+public sealed class ItemStack : DataType
 {
     public int NetworkId { get; set; }
     public ushort Count { get; set; }
@@ -64,7 +64,7 @@ public sealed class ItemStack
     }
 }
 
-public sealed class ItemInstance
+public sealed class ItemInstance : DataType
 {
     public ItemStack Stack { get; set; } = new();
     public int StackNetworkId { get; set; }
@@ -113,7 +113,7 @@ public sealed class ItemInstance
     }
 }
 
-public sealed class FullContainerName
+public sealed class FullContainerName : DataType
 {
     public byte ContainerId { get; set; }
     public OptionalValue<uint> DynamicContainerId { get; set; } = new();
@@ -131,7 +131,7 @@ public sealed class FullContainerName
     }
 }
 
-public sealed class StackRequestSlotInfo
+public sealed class StackRequestSlotInfo : DataType
 {
     public FullContainerName Container { get; set; } = new();
     public byte Slot { get; set; }
@@ -159,7 +159,7 @@ public interface IStackRequestAction
     void Write(ref BinaryWriter writer);
 }
 
-public sealed class RawStackRequestAction : IStackRequestAction
+public sealed class RawStackRequestAction : IStackRequestAction, DataType
 {
     public byte Type { get; set; }
     public byte[] Data { get; set; } = [];
@@ -168,7 +168,7 @@ public sealed class RawStackRequestAction : IStackRequestAction
     public void Write(ref BinaryWriter writer) => writer.WriteBytes(Data);
 }
 
-public sealed class ItemDescriptorCount
+public sealed class ItemDescriptorCount : DataType
 {
     public byte DescriptorType { get; set; }
     public short NetworkId { get; set; }
@@ -236,7 +236,7 @@ public sealed class ItemDescriptorCount
     }
 }
 
-public sealed class ItemStackRequest
+public sealed class ItemStackRequest : DataType
 {
     public int RequestId { get; set; }
     public List<IStackRequestAction> Actions { get; set; } = [];
@@ -287,7 +287,7 @@ public sealed class ItemStackRequest
     }
 }
 
-public sealed class LegacySetItemSlot
+public sealed class LegacySetItemSlot : DataType
 {
     public byte ContainerId { get; set; }
     public byte[] Slots { get; set; } = [];
@@ -306,7 +306,7 @@ public sealed class LegacySetItemSlot
     }
 }
 
-public sealed class UseItemTransactionData
+public sealed class UseItemTransactionData : DataType
 {
     public int LegacyRequestId { get; set; }
     public List<LegacySetItemSlot> LegacySetItemSlots { get; set; } = [];
@@ -392,7 +392,7 @@ public sealed class UseItemTransactionData
     }
 }
 
-public sealed class InventoryAction
+public sealed class InventoryAction : DataType
 {
     public uint SourceType { get; set; }
     public int WindowId { get; set; }
@@ -464,14 +464,14 @@ public static class StackRequestActions
     };
 }
 
-public sealed class EmptyStackRequestAction(byte type) : IStackRequestAction
+public sealed class EmptyStackRequestAction(byte type) : IStackRequestAction, DataType
 {
     public byte ActionType => type;
     public void Read(ref BinaryReader reader) {}
     public void Write(ref BinaryWriter writer) {}
 }
 
-public sealed class TransferStackRequestAction(byte type) : IStackRequestAction
+public sealed class TransferStackRequestAction(byte type) : IStackRequestAction, DataType
 {
     public byte ActionType => type;
     public byte Count { get; set; }
@@ -493,7 +493,7 @@ public sealed class TransferStackRequestAction(byte type) : IStackRequestAction
     }
 }
 
-public sealed class SwapStackRequestAction : IStackRequestAction
+public sealed class SwapStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 2;
     public StackRequestSlotInfo Source { get; set; } = new();
@@ -512,7 +512,7 @@ public sealed class SwapStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class DropStackRequestAction : IStackRequestAction
+public sealed class DropStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 3;
     public byte Count { get; set; }
@@ -534,7 +534,7 @@ public sealed class DropStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction
+public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, DataType
 {
     public byte ActionType => type;
     public byte Count { get; set; }
@@ -553,7 +553,7 @@ public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction
     }
 }
 
-public sealed class CreateStackRequestAction : IStackRequestAction
+public sealed class CreateStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 6;
     public byte ResultsSlot { get; set; }
@@ -561,7 +561,7 @@ public sealed class CreateStackRequestAction : IStackRequestAction
     public void Write(ref BinaryWriter writer) => writer.WriteUInt8(ResultsSlot);
 }
 
-public sealed class BeaconPaymentStackRequestAction : IStackRequestAction
+public sealed class BeaconPaymentStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 10;
     public int PrimaryEffect { get; set; }
@@ -578,7 +578,7 @@ public sealed class BeaconPaymentStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class MineBlockStackRequestAction : IStackRequestAction
+public sealed class MineBlockStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 11;
     public int HotbarSlot { get; set; }
@@ -598,7 +598,7 @@ public sealed class MineBlockStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class CraftRecipeStackRequestAction : IStackRequestAction
+public sealed class CraftRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 12;
     public uint RecipeNetworkId { get; set; }
@@ -615,7 +615,7 @@ public sealed class CraftRecipeStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction
+public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 13;
     public uint RecipeNetworkId { get; set; }
@@ -651,7 +651,7 @@ public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class CraftCreativeStackRequestAction : IStackRequestAction
+public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 14;
     public uint CreativeItemNetworkId { get; set; }
@@ -668,7 +668,7 @@ public sealed class CraftCreativeStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction
+public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 15;
     public uint RecipeNetworkId { get; set; }
@@ -685,7 +685,7 @@ public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestAction
+public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 16;
     public uint RecipeNetworkId { get; set; }
@@ -705,7 +705,7 @@ public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestActio
     }
 }
 
-public sealed class CraftLoomRecipeStackRequestAction : IStackRequestAction
+public sealed class CraftLoomRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 17;
     public string Pattern { get; set; } = string.Empty;
@@ -722,7 +722,7 @@ public sealed class CraftLoomRecipeStackRequestAction : IStackRequestAction
     }
 }
 
-public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestAction
+public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 19;
     public List<ItemStack> ResultItems { get; set; } = [];
@@ -754,7 +754,7 @@ public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestActi
     }
 }
 
-public sealed class PlayerBlockAction
+public sealed class PlayerBlockAction : DataType
 {
     public int Action { get; set; }
     public BlockPos BlockPos { get; set; }
@@ -780,4 +780,5 @@ public sealed class PlayerBlockAction
         }
     }
 }
+
 

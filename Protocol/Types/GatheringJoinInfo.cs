@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class GatheringJoinInfo
+public sealed class GatheringJoinInfo : DataType
 {
     public Guid ExperienceId { get; set; } = Guid.Empty;
     public string ExperienceName { get; set; } = string.Empty;
@@ -38,3 +38,5 @@ public sealed class GatheringJoinInfo
         writer.WriteVarString(ServerId);
     }
 }
+
+

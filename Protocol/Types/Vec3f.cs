@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct Vec3f
+public struct Vec3f : DataType
 {
     public float X { get; set; }
     public float Y { get; set; }
@@ -23,3 +23,4 @@ public struct Vec3f
         writer.WriteF32(Z, true);
     }
 }
+

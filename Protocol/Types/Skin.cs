@@ -17,7 +17,7 @@ public static class SkinExpressionType
     public const uint Blinking = 1;
 }
 
-public sealed class Skin
+public sealed class Skin : DataType
 {
     public string SkinID { get; set; } = string.Empty;
     public string PlayFabID { get; set; } = string.Empty;
@@ -145,7 +145,7 @@ public sealed class Skin
     }
 }
 
-public sealed class SkinAnimation
+public sealed class SkinAnimation : DataType
 {
     public uint ImageWidth { get; set; }
     public uint ImageHeight { get; set; }
@@ -175,7 +175,7 @@ public sealed class SkinAnimation
     }
 }
 
-public sealed class PersonaPiece
+public sealed class PersonaPiece : DataType
 {
     public string PieceID { get; set; } = string.Empty;
     public string PieceType { get; set; } = string.Empty;
@@ -202,7 +202,7 @@ public sealed class PersonaPiece
     }
 }
 
-public sealed class PersonaPieceTintColour
+public sealed class PersonaPieceTintColour : DataType
 {
     public string PieceType { get; set; } = string.Empty;
     public List<string> Colours { get; set; } = [];
@@ -258,3 +258,4 @@ file static class ProtocolTypeIO
     public delegate T ReadItem<out T>(ref BinaryReader reader);
     public delegate void WriteItem<T>(ref BinaryWriter writer, T value);
 }
+

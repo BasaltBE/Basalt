@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class StoreEntryPointInfo
+public sealed class StoreEntryPointInfo : DataType
 {
     public string StoreId { get; set; } = string.Empty;
     public string StoreName { get; set; } = string.Empty;
@@ -20,3 +20,5 @@ public sealed class StoreEntryPointInfo
         writer.WriteVarString(StoreName);
     }
 }
+
+

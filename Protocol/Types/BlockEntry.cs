@@ -5,7 +5,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class BlockEntry
+public sealed class BlockEntry : DataType
 {
     private static readonly ReadWriteOptions NetworkOptions = new(Name: true, Type: true, VarInt: true);
 
@@ -24,3 +24,4 @@ public sealed class BlockEntry
         NBT.WriteTag(ref writer, Properties, NetworkOptions, canHaveName: true);
     }
 }
+

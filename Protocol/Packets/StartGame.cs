@@ -65,7 +65,7 @@ public sealed record StartGamePacket : DataPacket
     public int LimitedWorldDepth { get; set; }
     public bool NewNether { get; set; }
     public EducationSharedResourceUri EducationSharedResourceUri { get; set; } = new();
-    public OptionalValue<bool> ForceExperimentalGameplay { get; set; } = new();
+    public Optional<BoolType> ForceExperimentalGameplay { get; set; } = new();
     public ChatRestrictionLevel ChatRestrictionLevel { get; set; }
     public bool DisablePlayerInteractions { get; set; }
     public string LevelId { get; set; } = string.Empty;
@@ -166,7 +166,7 @@ public sealed record StartGamePacket : DataPacket
         LimitedWorldDepth = reader.ReadInt32(true);
         NewNether = reader.ReadBool();
         EducationSharedResourceUri.Read(ref reader);
-        ForceExperimentalGameplay.Read(ref reader, static (ref BinaryReader r) => r.ReadBool());
+        ForceExperimentalGameplay.Read(ref reader);
         ChatRestrictionLevel = (ChatRestrictionLevel)reader.ReadUInt8();
         DisablePlayerInteractions = reader.ReadBool();
         LevelId = reader.ReadVarString();
@@ -274,7 +274,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteInt32(LimitedWorldDepth, true);
         writer.WriteBool(NewNether);
         EducationSharedResourceUri.Write(ref writer);
-        ForceExperimentalGameplay.Write(ref writer, static (ref BinaryWriter w, bool value) => w.WriteBool(value));
+        ForceExperimentalGameplay.Write(ref writer);
         writer.WriteUInt8((byte)ChatRestrictionLevel);
         writer.WriteBool(DisablePlayerInteractions);
         writer.WriteVarString(LevelId);

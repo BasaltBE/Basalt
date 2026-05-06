@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PlayerMovementSettings
+public sealed class PlayerMovementSettings : DataType
 {
     public int RewindHistorySize { get; set; }
     public bool ServerAuthoritativeBlockBreaking { get; set; }
@@ -20,3 +20,4 @@ public sealed class PlayerMovementSettings
         writer.WriteBool(ServerAuthoritativeBlockBreaking);
     }
 }
+

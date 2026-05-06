@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ResourcePackStackEntry
+public sealed class ResourcePackStackEntry : DataType
 {
     public Guid Uuid { get; set; } = Guid.Empty;
     public string Version { get; set; } = "1.0.0";
@@ -28,4 +28,5 @@ public sealed class ResourcePackStackEntry
         writer.WriteVarString(SubPackName);
     }
 }
+
 

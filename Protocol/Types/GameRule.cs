@@ -4,11 +4,14 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class GameRule
+public sealed class GameRule : DataType
 {
     public string Name { get; set; } = string.Empty;
     public bool CanBeModifiedByPlayer { get; set; }
     public object Value { get; set; } = false;
+
+    public void Read(ref BinaryReader reader) => ReadLegacy(ref reader);
+    public void Write(ref BinaryWriter writer) => WriteLegacy(ref writer);
 
     public void ReadLegacy(ref BinaryReader reader)
     {
@@ -61,3 +64,4 @@ public sealed class GameRule
         }
     }
 }
+

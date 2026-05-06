@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct BlockPos
+public struct BlockPos : DataType
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -23,3 +23,4 @@ public struct BlockPos
         writer.WriteZigZag(Z);
     }
 }
+

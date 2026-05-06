@@ -119,7 +119,7 @@ public static class ResourcePackClientResponse
                         ButtonName = string.Empty,
                         LinkUri = string.Empty
                     },
-                    ForceExperimentalGameplay = new OptionalValue<bool> { HasValue = false },
+                    ForceExperimentalGameplay = new Optional<BoolType> { HasValue = false },
                     ChatRestrictionLevel = ChatRestrictionLevel.None,
                     DisablePlayerInteractions = false,
                     LevelId = "BasaltWorld",

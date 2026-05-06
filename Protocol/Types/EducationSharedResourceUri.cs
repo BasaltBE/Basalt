@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class EducationSharedResourceUri
+public sealed class EducationSharedResourceUri : DataType
 {
     public string ButtonName { get; set; } = string.Empty;
     public string LinkUri { get; set; } = string.Empty;
@@ -20,3 +20,4 @@ public sealed class EducationSharedResourceUri
         writer.WriteVarString(LinkUri);
     }
 }
+
