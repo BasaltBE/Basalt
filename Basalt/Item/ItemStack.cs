@@ -5,6 +5,7 @@ namespace Basalt.Item;
 public sealed class ItemStack
 {
     private static int _nextNetworkStackId;
+    private readonly List<Traits.ItemTrait> _traits = [];
 
     public ItemType Type { get; }
     public string Identifier => Type.Identifier;
@@ -78,5 +79,30 @@ public sealed class ItemStack
     public static ItemStack Empty()
     {
         return new ItemStack(ItemType.Air, 0, 0);
+    }
+
+    public T AddTrait<T>(T trait) where T : Traits.ItemTrait
+    {
+        ArgumentNullException.ThrowIfNull(trait);
+        _traits.Add(trait);
+        return trait;
+    }
+
+    public bool HasTrait<T>() where T : Traits.ItemTrait
+    {
+        return GetTrait<T>() is not null;
+    }
+
+    public T? GetTrait<T>() where T : Traits.ItemTrait
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            if (_traits[i] is T typed)
+            {
+                return typed;
+            }
+        }
+
+        return null;
     }
 }
