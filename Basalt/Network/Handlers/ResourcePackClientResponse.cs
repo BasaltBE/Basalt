@@ -6,6 +6,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
+using Basalt.Entity.Traits.Types;
 
 namespace Basalt.Network.Handlers;
 
@@ -63,9 +64,9 @@ public static class ResourcePackClientResponse
 
                 StartGamePacket startGame = new()
                 {
-                    EntityUniqueId = 1,
-                    EntityRuntimeId = 1,
-                    PlayerGameMode = 1,
+                    EntityUniqueId = (long)player.RuntimeId,
+                    EntityRuntimeId = player.RuntimeId,
+                    PlayerGameMode = 0,
                     PlayerPosition = new Vec3f { X = 0f, Y = -57f, Z = 0f },
                     Pitch = 0f,
                     Yaw = 0f,
@@ -74,7 +75,7 @@ public static class ResourcePackClientResponse
                     UserDefinedBiomeName = "plains",
                     Dimension = 0,
                     Generator = 1,
-                    WorldGameMode = 1,
+                    WorldGameMode = 0,
                     Hardcore = false,
                     Difficulty = 1,
                     WorldSpawn = new BlockPos { X = 0, Y = -58, Z = 0 },
@@ -152,6 +153,11 @@ public static class ResourcePackClientResponse
                     OwnerId = player.Xuid
                 };
                 player.Position = startGame.PlayerPosition;
+                var dimension = server.World.GetDimension(DimensionType.Overworld);
+                if (dimension is not null)
+                {
+                    player.SpawnIn(dimension, new EntitySpawnOptions(InitialSpawn: true));
+                }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
                 AvailableActorIdentifiersPacket actorIdentifiers = new()
