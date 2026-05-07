@@ -1,11 +1,15 @@
+using Basalt.Entity.Traits;
+
 namespace Basalt.Entity;
 
 public sealed class EntityType
 {
     private static readonly Dictionary<string, EntityType> Registry = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
 
     public string Identifier { get; }
     public IReadOnlyList<string> Components { get; }
+    public IReadOnlyDictionary<string, Type> Traits => _traits;
     public static IReadOnlyDictionary<string, EntityType> Types => Registry;
 
     public EntityType(string identifier, IEnumerable<string>? components)
@@ -33,5 +37,10 @@ public sealed class EntityType
     public static void EnsureRegistryCapacity(int capacity)
     {
         Registry.EnsureCapacity(capacity);
+    }
+
+    public void RegisterTrait(Type traitType, string identifier)
+    {
+        _traits.TryAdd(identifier, traitType);
     }
 }
