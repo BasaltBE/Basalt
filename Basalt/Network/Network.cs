@@ -48,7 +48,7 @@ public sealed class NetworkHandler
             ReadOnlySpan<byte> framed;
             if (method == CompressionMethod.Zlib)
             {
-                decompressed = ArrayPool<byte>.Shared.Rent(1024 * 1024);
+                decompressed = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 4);
                 int size = Decompress(span, decompressed);
                 framed = decompressed.AsSpan(0, size);
             }
@@ -163,7 +163,7 @@ public sealed class NetworkHandler
 
             if (m == CompressionMethod.Zlib)
             {
-                byte[] compressed = ArrayPool<byte>.Shared.Rent(frame.Length + 256);
+                byte[] compressed = ArrayPool<byte>.Shared.Rent(frame.Length + 1024 * 1024);
                 try
                 {
                     int size = Compress(frame, compressed);
@@ -188,8 +188,8 @@ public sealed class NetworkHandler
 
     public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> pks, CompressionMethod? method = null)
     {
-        byte[] frameBuffer = ArrayPool<byte>.Shared.Rent(1024 * 512);
-        byte[] pkgBuffer = ArrayPool<byte>.Shared.Rent(1024 * 64);
+        byte[] frameBuffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 8);
+        byte[] pkgBuffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 4);
 
         try
         {
@@ -209,7 +209,7 @@ public sealed class NetworkHandler
 
             if (m == CompressionMethod.Zlib)
             {
-                byte[] compressed = ArrayPool<byte>.Shared.Rent(frame.Length + 256);
+                byte[] compressed = ArrayPool<byte>.Shared.Rent(frame.Length + 1024 * 1024);
                 try
                 {
                     int size = Compress(frame, compressed);
