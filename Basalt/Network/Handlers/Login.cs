@@ -60,6 +60,8 @@ public static class Login
 
 
         var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
+        player.Connection = connection;
+        player.Network = server.Network;
         server.Players[connection] = player;
 
         Logger.Info($"Player {identity.Username} has logged in!");
