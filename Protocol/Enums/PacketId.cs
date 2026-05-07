@@ -17,6 +17,7 @@ namespace Basalt.Protocol.Enums
         ChunkRadiusUpdated = 0x46,
         SetLocalPlayerAsInitialized = 0x71,
         NetworkStackLatency = 0x73,
+        AvailableActorIdentifiers = 0x77,
         NetworkChunkPublisherUpdate = 0x79,
         NetworkSettings = 0x8f,
         PlayerAuthInput = 0x90,
