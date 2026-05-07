@@ -1,4 +1,5 @@
 using Basalt.Block;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.World.Dimension.Generation;
 using Basalt.World.Dimension.Provider;
@@ -15,6 +16,10 @@ public sealed class Dimension : IDisposable
 
     public string Identifier { get; }
     public DimensionType Type { get; }
+    public Difficulty Difficulty { get; set; } = Difficulty.Normal;
+    public global::Basalt.World.World? World { get; internal set; }
+    public global::Basalt.World.DimensionGameRules Gamerules { get; } = new();
+    internal Action<DataPacket>? PacketBroadcaster { get; set; }
 
     public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null)
     {
@@ -160,6 +165,11 @@ public sealed class Dimension : IDisposable
     public void Dispose()
     {
         SaveDirtyChunks();
+    }
+
+    public void Broadcast(DataPacket packet)
+    {
+        PacketBroadcaster?.Invoke(packet);
     }
 
     private static long HashChunk(int x, int z)
