@@ -156,7 +156,7 @@ public static class ResourcePackClientResponse
                 var dimension = server.World.GetDimension(DimensionType.Overworld);
                 if (dimension is not null)
                 {
-                    player.SpawnIn(dimension, new EntitySpawnOptions(InitialSpawn: true));
+                    player.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: true));
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
