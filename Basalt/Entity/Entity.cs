@@ -1,11 +1,34 @@
 using Basalt.Protocol.Types;
+using Basalt.Entity.Traits;
+using Basalt.Entity.Traits.Enums;
+using Basalt.Entity.Traits.Types;
+using Basalt.Core;
+using Basalt.World.Dimension;
+using Basalt.Traits;
+using Basalt.Containers;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Entity;
 
 public class Entity
 {
-    public readonly string Identifier;
+    private static ulong _runtimeCounter;
+    private readonly List<EntityTrait> _traits = [];
+
+    public EntityType Type { get; }
+    public string Identifier => Type.Identifier;
+    public ulong RuntimeId { get; } = ++_runtimeCounter;
     public Vec3f Position { get; set; }
+    public EntityAttributes Attributes { get; } = new();
+    public EntityActorFlags Flags { get; }
+    public EntityActorMetadata Metadata { get; }
+    public Dimension? Dimension { get; private set; }
+    public bool IsAlive { get; private set; }
+    public bool IsSprinting { get; set; }
+    public bool IsSwimming { get; set; }
+    public IReadOnlyList<EntityTrait> Traits => _traits;
+    private readonly HashSet<EffectType> _effects = [];
 
     public Entity(string identifier)
     {
@@ -14,6 +37,230 @@ public class Entity
             throw new ArgumentException("Entity identifier cannot be empty.", nameof(identifier));
         }
 
-        Identifier = identifier;
+        Type = EntityType.GetOrPlayer(identifier);
+        Flags = new EntityActorFlags(this);
+        Metadata = new EntityActorMetadata(this);
+        foreach (Type traitType in Type.Traits.Values)
+        {
+            if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
+            {
+                AddTrait(trait);
+            }
+        }
+    }
+
+    public T AddTrait<T>(T trait) where T : EntityTrait
+    {
+        ArgumentNullException.ThrowIfNull(trait);
+        _traits.Add(trait);
+        trait.OnAdd();
+        return trait;
+    }
+
+    public bool RemoveTrait(EntityTrait trait)
+    {
+        ArgumentNullException.ThrowIfNull(trait);
+
+        if (!_traits.Remove(trait))
+        {
+            return false;
+        }
+
+        trait.OnRemove();
+        return true;
+    }
+
+    public T? GetTrait<T>() where T : EntityTrait
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            if (_traits[i] is T typed)
+            {
+                return typed;
+            }
+        }
+
+        return null;
+    }
+
+    public bool HasTrait<T>() where T : EntityTrait
+    {
+        return GetTrait<T>() is not null;
+    }
+
+    public void TickTraits(ulong currentTick, uint deltaTick)
+    {
+        TraitOnTickDetails details = new(currentTick, deltaTick);
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            EntityTrait trait = _traits[i];
+            trait.OnTick(details);
+            if (trait.ShouldRandomTick())
+            {
+                trait.OnRandomTick();
+            }
+        }
+    }
+
+    public void Spawn(Dimension dimension, EntitySpawnOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(dimension);
+        Dimension = dimension;
+        IsAlive = true;
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnSpawn(options);
+        }
+    }
+
+    public void Despawn(EntityDespawnOptions options)
+    {
+        IsAlive = false;
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnDespawn(options);
+        }
+
+        Dimension = null;
+    }
+
+    public void OnDeath(EntityDeathOptions options)
+    {
+        IsAlive = false;
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnDeath(options);
+        }
+    }
+
+    public void Kill(EntityDeathOptions options)
+    {
+        OnDeath(options);
+    }
+
+    public void OnTeleport(EntityTeleportOptions options)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnTeleport(options);
+        }
+    }
+
+    public void OnInteract(Player player, EntityInteractMethod method)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnInteract(player, method);
+        }
+    }
+
+    public void OnContainerUpdate(Container container)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnContainerUpdate(container);
+        }
+    }
+
+    public void OnFallOnBlock(EntityFallOnBlockTraitEvent @event)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnFallOnBlock(@event);
+        }
+    }
+
+    public void OnRendered(EntityRenderedOptions options)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnRendered(options);
+        }
+    }
+
+    public bool IsPlayer()
+    {
+        return string.Equals(Identifier, EntityIdentifier.Player.ToIdentifierString(), StringComparison.Ordinal);
+    }
+
+    public Vec3f GetHeadLocation()
+    {
+        return new Vec3f
+        {
+            X = Position.X,
+            Y = Position.Y + 1.62f,
+            Z = Position.Z
+        };
+    }
+
+    public bool HasEffect(EffectType effectType)
+    {
+        return _effects.Contains(effectType);
+    }
+
+    public void AddEffect(EffectType effectType)
+    {
+        _effects.Add(effectType);
+    }
+
+    public void RemoveEffect(EffectType effectType)
+    {
+        _effects.Remove(effectType);
+    }
+
+    internal void SendActorFlagsUpdate()
+    {
+        if (Dimension is null)
+        {
+            return;
+        }
+
+        SetActorDataPacket packet = new()
+        {
+            RuntimeId = RuntimeId,
+            Tick = Dimension.World?.CurrentTick ?? 0,
+            Metadata =
+            [
+                new ActorMetadataItem
+                {
+                    Id = ActorDataId.Reserved0,
+                    Type = ActorDataType.Long,
+                    Value = Flags.Lower64()
+                },
+                new ActorMetadataItem
+                {
+                    Id = ActorDataId.Reserved092,
+                    Type = ActorDataType.Long,
+                    Value = Flags.Upper64()
+                }
+            ]
+        };
+
+        Dimension.Broadcast(packet);
+    }
+
+    internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value)
+    {
+        if (Dimension is null)
+        {
+            return;
+        }
+
+        SetActorDataPacket packet = new()
+        {
+            RuntimeId = RuntimeId,
+            Tick = Dimension.World?.CurrentTick ?? 0,
+            Metadata =
+            [
+                new ActorMetadataItem
+                {
+                    Id = id,
+                    Type = type,
+                    Value = value
+                }
+            ]
+        };
+
+        Dimension.Broadcast(packet);
     }
 }
