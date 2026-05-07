@@ -27,6 +27,8 @@ public static class PlayerAuthInput
 
         if (horizontalDistanceSquared > MaxHorizontalDeltaPerTickSquared)
         {
+            Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z})");
+            
             CorrectPlayerMovePredictionPacket correction = new()
             {
                 PredictionType = PredictionType.Player,
