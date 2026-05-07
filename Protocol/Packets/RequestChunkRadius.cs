@@ -16,13 +16,13 @@ public sealed record RequestChunkRadiusPacket : DataPacket
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        ChunkRadius = reader.ReadZigZag();
+        ChunkRadius = reader.ReadVarInt();
         MaxChunkRadius = reader.ReadUInt8();
     }
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteZigZag(ChunkRadius);
+        writer.WriteVarInt(ChunkRadius);
         writer.WriteUInt8(MaxChunkRadius);
     }
 }
