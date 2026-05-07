@@ -6,6 +6,30 @@ namespace Basalt.Protocol.IO;
 
 public static class NBT
 {
+    public static T Read<T>(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true) where T : BaseTag
+    {
+        TagType rootType = (TagType)reader.ReadInt8();
+        BaseTag tag = ReadTag(ref reader, rootType, options, canHaveName);
+
+        if (tag is T typed)
+        {
+            return typed;
+        }
+
+        throw new InvalidOperationException($"Unexpected root NBT tag type '{rootType}' for requested '{typeof(T).Name}'.");
+    }
+
+    public static CompoundTag ReadRootCompoundTag(ref BinaryReader reader, ReadWriteOptions options, bool canHaveName = true)
+    {
+        TagType rootType = (TagType)reader.ReadInt8();
+        if (rootType != TagType.Compound)
+        {
+            throw new InvalidOperationException($"Unexpected root NBT tag type '{rootType}'.");
+        }
+
+        return CompoundTag.Read(ref reader, options, canHaveName);
+    }
+
     public static BaseTag ReadTag(ref BinaryReader reader, TagType type, ReadWriteOptions options, bool canHaveName)
     {
         return type switch
