@@ -12,6 +12,7 @@ public sealed class World : IDisposable
 
     public string Name { get; }
     public WorldProvider Provider { get; }
+    public ulong CurrentTick { get; private set; }
 
     public World(string name, WorldProvider? provider = null)
     {
@@ -81,6 +82,7 @@ public sealed class World : IDisposable
 
     public void AddDimension(DimensionInstance dimension)
     {
+        dimension.World = this;
         _dimensions[dimension.Identifier] = dimension;
     }
 
@@ -123,5 +125,10 @@ public sealed class World : IDisposable
 
         _dimensions.Clear();
         Provider.Dispose();
+    }
+
+    public void Tick()
+    {
+        CurrentTick++;
     }
 }
