@@ -1,4 +1,5 @@
 using Basalt.Core;
+using Basalt.Item;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -151,13 +152,16 @@ public static class ResourcePackClientResponse
                 };
                 player.Position = startGame.PlayerPosition;
 
+                byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
+
                 PlayStatusPacket spawnStatus = new()
                 {
                     Status = PlayStatus.PlayerSpawn
                 };
 
+                server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 server.Network.SendPackets(connection, [startGame, spawnStatus]);
-                Console.WriteLine($"Resource pack flow completed. Sent StartGame + PlayerSpawn to {player.Username}.");
+                Console.WriteLine($"Resource pack flow completed. Sent ItemRegistry + StartGame + PlayerSpawn to {player.Username}.");
                 return;
 
             default:
@@ -165,4 +169,5 @@ public static class ResourcePackClientResponse
                 return;
         }
     }
+
 }
