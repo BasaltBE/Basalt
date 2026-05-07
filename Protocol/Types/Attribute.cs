@@ -9,6 +9,8 @@ public sealed class Attribute : DataType
     public float Min { get; set; }
     public float Max { get; set; }
     public float Current { get; set; }
+    public float DefaultMin { get; set; }
+    public float DefaultMax { get; set; }
     public float Default { get; set; }
     public AttributeName Name { get; set; }
 
@@ -17,6 +19,8 @@ public sealed class Attribute : DataType
         Min = min;
         Max = max;
         Current = current;
+        DefaultMin = min;
+        DefaultMax = max;
         Default = defaultValue;
         Name = name;
     }
@@ -30,8 +34,20 @@ public sealed class Attribute : DataType
         Min = reader.ReadF32(true);
         Max = reader.ReadF32(true);
         Current = reader.ReadF32(true);
+        DefaultMin = reader.ReadF32(true);
+        DefaultMax = reader.ReadF32(true);
         Default = reader.ReadF32(true);
         Name = AttributeNameHelper.FromProtocolString(reader.ReadVarString());
+        int modifiers = reader.ReadVarInt();
+        for (int i = 0; i < modifiers; i++)
+        {
+            _ = reader.ReadVarString();
+            _ = reader.ReadVarString();
+            _ = reader.ReadVarString();
+            _ = reader.ReadF32(true);
+            _ = reader.ReadInt32(true);
+            _ = reader.ReadBool();
+        }
     }
 
     public void Write(ref BinaryWriter writer)
@@ -39,13 +55,16 @@ public sealed class Attribute : DataType
         writer.WriteF32(Min, true);
         writer.WriteF32(Max, true);
         writer.WriteF32(Current, true);
+        writer.WriteF32(DefaultMin, true);
+        writer.WriteF32(DefaultMax, true);
         writer.WriteF32(Default, true);
         writer.WriteVarString(Name.ToProtocolString());
+        writer.WriteVarInt(0);
     }
 
     public static List<Attribute> ReadList(ref BinaryReader reader)
     {
-        int count = checked((int)reader.ReadVarUInt());
+        int count = reader.ReadVarInt();
         List<Attribute> attributes = new(count);
         for (int i = 0; i < count; i++)
         {
@@ -59,7 +78,7 @@ public sealed class Attribute : DataType
 
     public static void WriteList(ref BinaryWriter writer, IReadOnlyList<Attribute> attributes)
     {
-        writer.WriteVarUInt((uint)attributes.Count);
+        writer.WriteVarInt(attributes.Count);
         for (int i = 0; i < attributes.Count; i++)
         {
             attributes[i].Write(ref writer);
