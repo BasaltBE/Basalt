@@ -1,8 +1,11 @@
+using Basalt.Protocol.Types;
+
 namespace Basalt.Entity;
 
 public class Entity
 {
     public readonly string Identifier;
+    public Vec3f Position { get; set; }
 
     public Entity(string identifier)
     {
