@@ -15,9 +15,9 @@ public sealed record SetActorDataPacket : DataPacket
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        RuntimeId = reader.ReadVarULong();
+        RuntimeId = unchecked((ulong)reader.ReadVarLong());
 
-        int metadataCount = checked((int)reader.ReadVarUInt());
+        int metadataCount = reader.ReadVarInt();
         Metadata = new List<ActorMetadataItem>(metadataCount);
         for (int i = 0; i < metadataCount; i++)
         {
@@ -26,34 +26,34 @@ public sealed record SetActorDataPacket : DataPacket
             Metadata.Add(item);
         }
 
-        int intPropertyCount = checked((int)reader.ReadVarUInt());
+        int intPropertyCount = reader.ReadVarInt();
         for (int i = 0; i < intPropertyCount; i++)
         {
             _ = reader.ReadVarInt();
-            _ = reader.ReadVarInt();
+            _ = reader.ReadZigZag();
         }
 
-        int floatPropertyCount = checked((int)reader.ReadVarUInt());
+        int floatPropertyCount = reader.ReadVarInt();
         for (int i = 0; i < floatPropertyCount; i++)
         {
             _ = reader.ReadVarInt();
             _ = reader.ReadF32(true);
         }
 
-        Tick = reader.ReadVarULong();
+        Tick = unchecked((ulong)reader.ReadVarLong());
     }
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteVarULong(RuntimeId);
-        writer.WriteVarUInt((uint)Metadata.Count);
+        writer.WriteVarLong(unchecked((long)RuntimeId));
+        writer.WriteVarInt(Metadata.Count);
         for (int i = 0; i < Metadata.Count; i++)
         {
             Metadata[i].Write(ref writer);
         }
 
-        writer.WriteVarUInt(0);
-        writer.WriteVarUInt(0);
-        writer.WriteVarULong(Tick);
+        writer.WriteVarInt(0);
+        writer.WriteVarInt(0);
+        writer.WriteVarLong(unchecked((long)Tick));
     }
 }
