@@ -18,10 +18,10 @@ public sealed class ActorMetadataItem : DataType
         {
             ActorDataType.Byte => reader.ReadInt8(),
             ActorDataType.Short => reader.ReadInt16(true),
-            ActorDataType.Int => reader.ReadVarInt(),
+            ActorDataType.Int => reader.ReadZigZag(),
             ActorDataType.Float => reader.ReadF32(true),
             ActorDataType.String => reader.ReadVarString(),
-            ActorDataType.Long => reader.ReadVarLong(),
+            ActorDataType.Long => reader.ReadZigZong(),
             ActorDataType.Vec3 =>
                 new Vec3f
                 {
@@ -46,7 +46,7 @@ public sealed class ActorMetadataItem : DataType
                 writer.WriteInt16(Convert.ToInt16(Value), true);
                 break;
             case ActorDataType.Int:
-                writer.WriteVarInt(Convert.ToInt32(Value));
+                writer.WriteZigZag(Convert.ToInt32(Value));
                 break;
             case ActorDataType.Float:
                 writer.WriteF32(Convert.ToSingle(Value), true);
@@ -55,7 +55,7 @@ public sealed class ActorMetadataItem : DataType
                 writer.WriteVarString(Convert.ToString(Value) ?? string.Empty);
                 break;
             case ActorDataType.Long:
-                writer.WriteVarLong(Convert.ToInt64(Value));
+                writer.WriteZigZong(Convert.ToInt64(Value));
                 break;
             case ActorDataType.Vec3:
                 if (Value is not Vec3f vec3)
