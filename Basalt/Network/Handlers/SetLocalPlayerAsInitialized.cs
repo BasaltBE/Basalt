@@ -1,9 +1,11 @@
 using Basalt.Core;
 using Basalt.Entity.Traits.Attribute;
+using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
+using Basalt.Traits;
 
 namespace Basalt.Network.Handlers;
 
@@ -58,6 +60,12 @@ public static class SetLocalPlayerAsInitialized
         }
 
         server.Network.SendPacket(connection, actorData);
+
+        PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
+        if (chunkRendering is not null)
+        {
+            chunkRendering.ApplyViewDistance(chunkRendering.ViewDistance);
+        }
 
         Logger.Info($"Player {player.Username} has spawned.");
     }
