@@ -8,6 +8,7 @@ public sealed class EntityEquipmentTrait : EntityTrait
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
     public new static readonly string[] Components = ["minecraft:equipment"];
 
+    // TODO Once container is implemented
     public List<ItemStack?> Armor { get; } = [null, null, null, null];
 
     public EntityEquipmentTrait(Entity entity) : base(entity)
