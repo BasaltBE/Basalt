@@ -10,6 +10,8 @@ namespace Basalt.Protocol.Enums
         ResourcePackClientResponse = 0x08,
         StartGame = 0x0b,
         MovePlayer = 0x13,
+        InventoryTransaction = 0x1e,
+        Interact = 0x21,
         LevelChunk = 0x3a,
         RequestChunkRadius = 0x45,
         ChunkRadiusUpdated = 0x46,
@@ -18,7 +20,10 @@ namespace Basalt.Protocol.Enums
         NetworkChunkPublisherUpdate = 0x79,
         NetworkSettings = 0x8f,
         PlayerAuthInput = 0x90,
+        ItemStackRequest = 0x93,
+        ItemStackResponse = 0x94,
         CorrectPlayerMovePrediction = 0xa1,
+        ItemRegistry = 0xa2,
         RequestNetworkSettings = 0xc1
     }
 }
