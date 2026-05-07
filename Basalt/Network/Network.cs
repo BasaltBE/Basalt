@@ -89,6 +89,15 @@ public sealed class NetworkHandler
                     case PacketId.PlayerAuthInput:
                         PlayerAuthInput.Handle(_server, connection, buffer);
                         break;
+                    case PacketId.Interact:
+                        Interact.Handle(_server, connection, buffer);
+                        break;
+                    case PacketId.InventoryTransaction:
+                        InventoryTransaction.Handle(_server, connection, buffer);
+                        break;
+                    case PacketId.ItemStackRequest:
+                        ItemStackRequest.Handle(_server, connection, buffer);
+                        break;
                     default:
                         Console.WriteLine($"Unhandled 0x{(byte)id:X2} ({buffer.Length} bytes)");
                         break;
@@ -125,6 +134,56 @@ public sealed class NetworkHandler
     public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? method = null)
     {
         SendPackets(connection, [packet], method);
+    }
+
+    public void SendSerializedPacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetPayload, CompressionMethod? method = null)
+    {
+        int packetBufferSize = packetPayload.Length + 16;
+        byte[] packetBuffer = ArrayPool<byte>.Shared.Rent(packetBufferSize);
+        byte[] frameBuffer = ArrayPool<byte>.Shared.Rent(packetBufferSize + 16);
+
+        try
+        {
+            BinaryWriter packetWriter = new(packetBuffer);
+            packetWriter.WriteVarInt((int)packetId);
+            packetWriter.WriteBytes(packetPayload);
+
+            BinaryWriter frameWriter = new(frameBuffer);
+            ReadOnlySpan<byte> packetData = packetWriter.GetBuffer();
+            frameWriter.WriteVarInt(packetData.Length);
+            frameWriter.WriteBytes(packetData);
+
+            ReadOnlySpan<byte> frame = frameWriter.GetBuffer();
+            CompressionMethod m = method ?? _server.Options.CompressionMethod;
+
+            if (m != CompressionMethod.None && frame.Length < _server.Options.CompressionThreshold)
+            {
+                m = CompressionMethod.None;
+            }
+
+            if (m == CompressionMethod.Zlib)
+            {
+                byte[] compressed = ArrayPool<byte>.Shared.Rent(frame.Length + 256);
+                try
+                {
+                    int size = Compress(frame, compressed);
+                    SendFramed(connection, compressed.AsSpan(0, size), m);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(compressed);
+                }
+            }
+            else
+            {
+                SendFramed(connection, frame, m);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(packetBuffer);
+            ArrayPool<byte>.Shared.Return(frameBuffer);
+        }
     }
 
     public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> pks, CompressionMethod? method = null)
