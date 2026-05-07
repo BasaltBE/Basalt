@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Basalt.Entity.Traits;
 using Basalt.Protocol.Nbt;
 
 namespace Basalt.Entity;
@@ -14,6 +15,7 @@ public sealed class EntityPalette
     public static void Initialize()
     {
         LoadVanilla();
+        EntityTraitRegistry.RegisterFromAssembly(typeof(EntityTraitRegistry).Assembly);
     }
 
     public IReadOnlyDictionary<string, EntityType> Types => EntityType.Types;
@@ -26,6 +28,16 @@ public sealed class EntityPalette
     public EntityType ResolveType(string identifier)
     {
         return EntityType.GetOrPlayer(identifier);
+    }
+
+    public void RegisterTrait<TTrait>() where TTrait : EntityTrait
+    {
+        EntityTraitRegistry.Register<TTrait>();
+    }
+
+    public void RegisterTrait(params Type[] traitTypes)
+    {
+        EntityTraitRegistry.Register(traitTypes);
     }
 
     public static CompoundTag BuildAvailableActorIdentifiersTag()
@@ -84,9 +96,14 @@ public sealed class EntityPalette
                 }
 
                 _ = new EntityType(entry.Identifier, entry.Components);
+                EntityTraitRegistry.BindTraitsToType(EntityType.Get(entry.Identifier)!);
             }
 
-            _ = EntityType.Get(PlayerIdentifier) ?? new EntityType(PlayerIdentifier, []);
+            if (EntityType.Get(PlayerIdentifier) is null)
+            {
+                _ = new EntityType(PlayerIdentifier, []);
+                EntityTraitRegistry.BindTraitsToType(EntityType.Get(PlayerIdentifier)!);
+            }
             _vanillaLoaded = true;
         }
     }
