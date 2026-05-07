@@ -11,6 +11,8 @@ public sealed class Server
 {
     private readonly NetworkServer _raknet;
     private readonly NetworkHandler _network;
+    private CancellationTokenSource? _tickCancellation;
+    private Task? _tickLoopTask;
 
     public readonly Dictionary<NetworkConnection, Player> Players = new();
 
@@ -27,11 +29,41 @@ public sealed class Server
         _raknet.OnDisconnected += _network.HandleDisconnected;
 
         World = CreateDefaultWorld();
+        AttachWorldBroadcasts(World);
     }
 
     public void Start()
     {
         _raknet.Start().AsTask().Wait();
+        _tickCancellation = new CancellationTokenSource();
+        _tickLoopTask = RunTickLoopAsync(_tickCancellation.Token);
+    }
+
+    public void Stop()
+    {
+        CancellationTokenSource? cancellation = _tickCancellation;
+        Task? tickLoopTask = _tickLoopTask;
+        _tickCancellation = null;
+        _tickLoopTask = null;
+
+        if (cancellation is null)
+        {
+            return;
+        }
+
+        cancellation.Cancel();
+
+        try
+        {
+            tickLoopTask?.Wait();
+        }
+        catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException))
+        {
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
     }
 
     public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs)
@@ -74,5 +106,44 @@ public sealed class Server
         world.RegisterGenerator<SuperFlatGenerator>("superflat");
         world.CreateDimension("overworld", DimensionType.Overworld, "superflat");
         return world;
+    }
+
+    private void AttachWorldBroadcasts(WorldInstance world)
+    {
+        foreach (var dimension in world.Dimensions)
+        {
+            dimension.PacketBroadcaster = packet =>
+            {
+                foreach ((NetworkConnection connection, Player player) in Players)
+                {
+                    if (player.Dimension != dimension)
+                    {
+                        continue;
+                    }
+
+                    _network.SendPacket(connection, packet);
+                }
+            };
+        }
+    }
+
+    private async Task RunTickLoopAsync(CancellationToken cancellationToken)
+    {
+        using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(50));
+        while (await timer.WaitForNextTickAsync(cancellationToken))
+        {
+            Tick();
+        }
+    }
+
+    private void Tick()
+    {
+        World.Tick();
+        ulong tick = World.CurrentTick;
+
+        foreach (KeyValuePair<NetworkConnection, Player> entry in Players)
+        {
+            entry.Value.TickTraits(tick, 1);
+        }
     }
 }
