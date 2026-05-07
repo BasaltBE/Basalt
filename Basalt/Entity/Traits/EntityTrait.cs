@@ -11,8 +11,8 @@ namespace Basalt.Entity.Traits;
 
 public abstract class EntityTrait : Trait
 {
-    public static ReadOnlySpan<EntityIdentifier> Types => [];
-    public static ReadOnlySpan<string> Components => [];
+    public static readonly EntityIdentifier[] Types = [];
+    public static readonly string[] Components = [];
 
     protected Entity Entity { get; }
 
@@ -40,7 +40,7 @@ public abstract class EntityTrait : Trait
     {
     }
 
-    public virtual void OnInteract(Player player, EntityInteractMethod method)
+    public virtual void OnInteract(global::Basalt.Core.Player player, EntityInteractMethod method)
     {
     }
 
