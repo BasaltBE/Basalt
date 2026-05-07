@@ -5,7 +5,7 @@ namespace Basalt.Entity;
 public sealed class EntityActorFlags
 {
     private readonly Entity _entity;
-    private readonly HashSet<ActorFlag> _flags = [];
+    private UInt128 _value;
 
     public EntityActorFlags(Entity entity)
     {
@@ -14,41 +14,37 @@ public sealed class EntityActorFlags
 
     public bool GetActorFlag(ActorFlag flag)
     {
-        return _flags.Contains(flag);
+        int shift = (int)flag;
+        return ((_value >> shift) & 1) != 0;
     }
 
     public void SetActorFlag(ActorFlag flag, bool value)
     {
-        bool changed;
+        int shift = (int)flag;
+        UInt128 mask = (UInt128)1 << shift;
+        UInt128 before = _value;
         if (value)
         {
-            changed = _flags.Add(flag);
+            _value |= mask;
         }
         else
         {
-            changed = _flags.Remove(flag);
+            _value &= ~mask;
         }
 
-        if (changed)
+        if (_value != before)
         {
             _entity.SendActorFlagsUpdate();
         }
     }
 
-    public long ToMask()
+    public long Lower64()
     {
-        long mask = 0;
-        foreach (ActorFlag flag in _flags)
-        {
-            int bit = (int)flag;
-            if ((uint)bit >= 63)
-            {
-                continue;
-            }
+        return unchecked((long)(ulong)(_value & ulong.MaxValue));
+    }
 
-            mask |= 1L << bit;
-        }
-
-        return mask;
+    public long Upper64()
+    {
+        return unchecked((long)(ulong)(_value >> 64));
     }
 }
