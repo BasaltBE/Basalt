@@ -12,11 +12,11 @@ public sealed record ChunkRadiusUpdatedPacket : DataPacket
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        ChunkRadius = reader.ReadZigZag();
+        ChunkRadius = reader.ReadVarInt();
     }
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteZigZag(ChunkRadius);
+        writer.WriteVarInt(ChunkRadius);
     }
 }
