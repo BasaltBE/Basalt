@@ -244,53 +244,57 @@ namespace Basalt.RakNet
 
             int maxDatagram = Math.Max(256, MaxMtu - 36);
             byte[] datagramBuffer = new byte[Math.Max(2048, MaxMtu * 2)];
-            List<Frame> packedFrames = [];
-            int currentSize = DatagramHeaderSize;
 
             while (outgoingFrames.Count > 0)
             {
-                Frame frame = outgoingFrames.First!.Value.Frame;
-                int frameSize = Frame.Write(frame, datagramBuffer, 0);
-                // Keep datagram under MTU envelope; spill remaining frames to next tick.
-                if (packedFrames.Count > 0 && currentSize + frameSize > maxDatagram)
+                List<Frame> packedFrames = [];
+                int currentSize = DatagramHeaderSize;
+
+                while (outgoingFrames.Count > 0)
+                {
+                    Frame frame = outgoingFrames.First!.Value.Frame;
+                    int frameSize = Frame.Write(frame, datagramBuffer, 0);
+                    // Keep datagram under MTU envelope; spill remaining frames to next datagram.
+                    if (packedFrames.Count > 0 && currentSize + frameSize > maxDatagram)
+                    {
+                        break;
+                    }
+
+                    if (currentSize + frameSize > datagramBuffer.Length)
+                    {
+                        break;
+                    }
+
+                    outgoingFrames.RemoveFirst();
+                    packedFrames.Add(frame);
+                    currentSize += frameSize;
+                }
+
+                if (packedFrames.Count == 0)
                 {
                     break;
                 }
 
-                if (currentSize + frameSize > datagramBuffer.Length)
+                uint sequence = sendSequence++;
+                FrameSet frameSet = new(sequence, [.. packedFrames]);
+                int length = FrameSet.Serialize(frameSet, datagramBuffer);
+                SendMessage(datagramBuffer.AsSpan(0, length));
+
+                bool hasReliable = false;
+                for (int i = 0; i < packedFrames.Count; i++)
                 {
-                    break;
+                    if (NeedsReliableIndex(packedFrames[i].Reliability))
+                    {
+                        hasReliable = true;
+                        break;
+                    }
                 }
 
-                outgoingFrames.RemoveFirst();
-                packedFrames.Add(frame);
-                currentSize += frameSize;
-            }
-
-            if (packedFrames.Count == 0)
-            {
-                return;
-            }
-
-            uint sequence = sendSequence++;
-            FrameSet frameSet = new(sequence, [.. packedFrames]);
-            int length = FrameSet.Serialize(frameSet, datagramBuffer);
-            SendMessage(datagramBuffer.AsSpan(0, length));
-
-            bool hasReliable = false;
-            for (int i = 0; i < packedFrames.Count; i++)
-            {
-                if (NeedsReliableIndex(packedFrames[i].Reliability))
+                if (hasReliable)
                 {
-                    hasReliable = true;
-                    break;
+                    // Track reliable datagrams until ACK, NACK, or timeout-based resend.
+                    pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
                 }
-            }
-
-            if (hasReliable)
-            {
-                // Track reliable datagrams until ACK, NACK, or timeout-based resend.
-                pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
             }
         }
 
