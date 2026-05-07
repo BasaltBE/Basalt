@@ -34,7 +34,6 @@ public static class AttributeNameExtensions
         AttributeName.Health => "minecraft:health",
         AttributeName.HorseJumpStrength => "minecraft:horse.jump_strength",
         AttributeName.KnockbackResistance => "minecraft:knockback_resistance",
-        AttributeName.KnockbackResistence => "minecraft:knockback_resistance",
         AttributeName.LavaMovement => "minecraft:lava_movement",
         AttributeName.Luck => "minecraft:luck",
         AttributeName.Movement => "minecraft:movement",
