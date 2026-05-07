@@ -12,8 +12,8 @@ public sealed class ActorMetadataItem : DataType
 
     public void Read(ref BinaryReader reader)
     {
-        Id = (ActorDataId)reader.ReadVarUInt();
-        Type = (ActorDataType)reader.ReadVarUInt();
+        Id = (ActorDataId)reader.ReadVarInt();
+        Type = (ActorDataType)reader.ReadVarInt();
         Value = Type switch
         {
             ActorDataType.Byte => reader.ReadInt8(),
@@ -35,8 +35,8 @@ public sealed class ActorMetadataItem : DataType
 
     public void Write(ref BinaryWriter writer)
     {
-        writer.WriteVarUInt((uint)Id);
-        writer.WriteVarUInt((uint)Type);
+        writer.WriteVarInt((int)Id);
+        writer.WriteVarInt((int)Type);
         switch (Type)
         {
             case ActorDataType.Byte:
