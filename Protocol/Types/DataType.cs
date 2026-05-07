@@ -9,3 +9,9 @@ public interface DataType
     void Write(ref BinaryWriter writer);
 }
 
+public interface DataType<TParameter> : DataType
+{
+    void Read(ref BinaryReader reader, TParameter parameter);
+    void Write(ref BinaryWriter writer, TParameter parameter);
+}
+
