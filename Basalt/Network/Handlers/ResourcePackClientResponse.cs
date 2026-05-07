@@ -149,6 +149,7 @@ public static class ResourcePackClientResponse
                     WorldId = string.Empty,
                     OwnerId = player.Xuid
                 };
+                player.Position = startGame.PlayerPosition;
 
                 PlayStatusPacket spawnStatus = new()
                 {
