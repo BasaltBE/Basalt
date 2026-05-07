@@ -12,7 +12,8 @@ public static class RequestChunkRadius
         RequestChunkRadiusPacket packet = new();
         packet.Deserialize(packetBuffer);
 
-        int radius = Math.Clamp(packet.ChunkRadius, 1, 12);
+        int requestedRadius = Math.Max(packet.ChunkRadius, packet.MaxChunkRadius);
+        int radius = Math.Clamp(requestedRadius, 4, 16);
         ChunkRadiusUpdatedPacket response = new()
         {
             ChunkRadius = radius
@@ -30,6 +31,7 @@ public static class RequestChunkRadius
             return;
         }
 
-        chunkRendering.SetViewDistance(radius);
+        chunkRendering.ApplyViewDistance(radius);
+        Logger.Info($"[{player.Username}] Requested chunk radius: {packet.ChunkRadius} (Max: {packet.MaxChunkRadius}), accepted: {radius}");
     }
 }
