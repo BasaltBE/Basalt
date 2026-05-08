@@ -5,7 +5,7 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemInstance : DataType
 {
-    public ItemStack Stack { get; set; } = new();
+    public NetworkItemStackDescriptor Stack { get; set; } = new();
     public int StackNetworkId { get; set; }
 
     public void Read(ref BinaryReader reader)
@@ -13,19 +13,19 @@ public sealed class ItemInstance : DataType
         Stack.NetworkId = reader.ReadZigZag();
         if (Stack.NetworkId == 0)
         {
-            Stack.Count = 0;
-            Stack.MetadataValue = 0;
-            Stack.BlockRuntimeId = 0;
+            Stack.StackSize = 0;
+            Stack.Metadata = 0;
+            Stack.NetworkBlockId = 0;
             Stack.ExtraData = [];
             StackNetworkId = 0;
             return;
         }
 
-        Stack.Count = reader.ReadUInt16(true);
-        Stack.MetadataValue = reader.ReadVarUInt();
+        Stack.StackSize = reader.ReadUInt16(true);
+        Stack.Metadata = reader.ReadVarUInt();
         bool hasNetId = reader.ReadBool();
         StackNetworkId = hasNetId ? reader.ReadZigZag() : 0;
-        Stack.BlockRuntimeId = reader.ReadZigZag();
+        Stack.NetworkBlockId = reader.ReadZigZag();
         Stack.ExtraData = reader.ReadBytes(checked((int)reader.ReadVarUInt())).ToArray();
     }
 
@@ -37,8 +37,8 @@ public sealed class ItemInstance : DataType
             return;
         }
 
-        writer.WriteUInt16(Stack.Count, true);
-        writer.WriteVarUInt(Stack.MetadataValue);
+        writer.WriteUInt16(Stack.StackSize, true);
+        writer.WriteVarUInt(Stack.Metadata);
         bool hasNetId = StackNetworkId != 0;
         writer.WriteBool(hasNetId);
         if (hasNetId)
@@ -46,7 +46,7 @@ public sealed class ItemInstance : DataType
             writer.WriteZigZag(StackNetworkId);
         }
 
-        writer.WriteZigZag(Stack.BlockRuntimeId);
+        writer.WriteZigZag(Stack.NetworkBlockId);
         byte[] extraData = Stack.ExtraData.Length == 0 ? [0, 0] : Stack.ExtraData;
         writer.WriteVarUInt((uint)extraData.Length);
         writer.WriteBytes(extraData);
