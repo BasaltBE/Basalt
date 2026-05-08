@@ -171,7 +171,7 @@ public class Entity
         }
     }
 
-    public void OnContainerUpdate(Container container)
+    public void OnContainerUpdate(Basalt.Containers.Container container)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
