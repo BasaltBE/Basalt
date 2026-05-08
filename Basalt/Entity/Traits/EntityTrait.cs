@@ -40,6 +40,10 @@ public abstract class EntityTrait : Trait
     {
     }
 
+    public virtual void OnMove(EntityMoveOptions details)
+    {
+    }
+
     public virtual void OnInteract(global::Basalt.Core.Player player, EntityInteractMethod method)
     {
     }
