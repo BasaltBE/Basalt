@@ -1,4 +1,6 @@
 using Basalt.Block;
+using Basalt.Item.Components;
+using Basalt.Item.Traits;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 
@@ -17,6 +19,10 @@ public sealed class ItemType
     public IReadOnlyList<string> Tags { get; }
     public CompoundTag Properties { get; }
     public BlockType? BlockType { get; }
+    public ItemTypeComponentCollection Components { get; }
+    public IReadOnlyDictionary<string, Type> Traits => _traits;
+
+    private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
 
     public static IReadOnlyDictionary<string, ItemType> Types => Registry;
     public static ItemType Air => GetOrAir("minecraft:air");
@@ -37,10 +43,12 @@ public sealed class ItemType
         Version = version;
         Tags = tags is null ? [] : [.. tags];
         Properties = properties ?? new CompoundTag();
+        Components = new ItemTypeComponentCollection(this, Properties);
         BlockType = Block.BlockType.Get(identifier);
 
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
+        ItemTraitRegistry.BindTraitsToType(this);
     }
 
     public static ItemType? Get(string identifier)
@@ -61,6 +69,16 @@ public sealed class ItemType
     public static List<ItemType> GetAll()
     {
         return [.. Registry.Values];
+    }
+
+    public void RegisterTrait(Type traitType, string identifier)
+    {
+        if (!typeof(ItemTrait).IsAssignableFrom(traitType) || traitType.IsAbstract)
+        {
+            return;
+        }
+
+        _traits.TryAdd(identifier, traitType);
     }
 
     public static void EnsureRegistryCapacity(int capacity)
