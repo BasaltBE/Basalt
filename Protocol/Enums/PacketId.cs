@@ -8,6 +8,7 @@ namespace Basalt.Protocol.Enums
         ResourcePacksInfo = 0x06,
         ResourcePackStack = 0x07,
         ResourcePackClientResponse = 0x08,
+        Text = 0x09,
         StartGame = 0x0b,
         MovePlayer = 0x13,
         ActorEvent = 0x1b,
