@@ -66,7 +66,14 @@ public sealed class ItemInstanceUserData : DataType<int?>
 
         if (networkId == ProtocolInfo.ShieldNetworkId)
         {
-            Ticking = reader.ReadInt64(true);
+            if (reader.Remaining >= sizeof(long))
+            {
+                Ticking = reader.ReadInt64(true);
+            }
+            else
+            {
+                Ticking = null;
+            }
         }
         else
         {
