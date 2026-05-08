@@ -49,8 +49,12 @@ public sealed record PlayerAuthInputPacket : DataPacket
     {
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
-        Position.Read(ref reader);
-        MoveVector.Read(ref reader);
+        Vec3f position = Position;
+        position.Read(ref reader);
+        Position = position;
+        Vec2f moveVector = MoveVector;
+        moveVector.Read(ref reader);
+        MoveVector = moveVector;
         HeadYaw = reader.ReadF32(true);
 
         ReadInputFlags(ref reader);
@@ -61,7 +65,9 @@ public sealed record PlayerAuthInputPacket : DataPacket
         InteractPitch = reader.ReadF32(true);
         InteractYaw = reader.ReadF32(true);
         Tick = reader.ReadVarULong();
-        Delta.Read(ref reader);
+        Vec3f delta = Delta;
+        delta.Read(ref reader);
+        Delta = delta;
 
         if (HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
         {
@@ -87,13 +93,21 @@ public sealed record PlayerAuthInputPacket : DataPacket
 
         if (HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
         {
-            VehicleRotation.Read(ref reader);
+            Vec2f vehicleRotation = VehicleRotation;
+            vehicleRotation.Read(ref reader);
+            VehicleRotation = vehicleRotation;
             ClientPredictedVehicle = reader.ReadZigZong();
         }
 
-        AnalogueMoveVector.Read(ref reader);
-        CameraOrientation.Read(ref reader);
-        RawMoveVector.Read(ref reader);
+        Vec2f analogueMoveVector = AnalogueMoveVector;
+        analogueMoveVector.Read(ref reader);
+        AnalogueMoveVector = analogueMoveVector;
+        Vec3f cameraOrientation = CameraOrientation;
+        cameraOrientation.Read(ref reader);
+        CameraOrientation = cameraOrientation;
+        Vec2f rawMoveVector = RawMoveVector;
+        rawMoveVector.Read(ref reader);
+        RawMoveVector = rawMoveVector;
     }
 
     public override void Serialize(ref BinaryWriter writer)
