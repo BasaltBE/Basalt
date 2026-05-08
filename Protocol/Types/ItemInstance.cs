@@ -16,7 +16,7 @@ public sealed class ItemInstance : DataType
             Stack.StackSize = 0;
             Stack.Metadata = 0;
             Stack.NetworkBlockId = 0;
-            Stack.ExtraData = [];
+            Stack.ExtraData = null;
             StackNetworkId = 0;
             return;
         }
@@ -26,7 +26,22 @@ public sealed class ItemInstance : DataType
         bool hasNetId = reader.ReadBool();
         StackNetworkId = hasNetId ? reader.ReadZigZag() : 0;
         Stack.NetworkBlockId = reader.ReadZigZag();
-        Stack.ExtraData = reader.ReadBytes(checked((int)reader.ReadVarUInt())).ToArray();
+
+        int extrasLength = checked((int)reader.ReadVarUInt());
+        if (extrasLength == 0)
+        {
+            Stack.ExtraData = null;
+            return;
+        }
+
+        int extrasEndOffset = reader.Offset + extrasLength;
+        ItemInstanceUserData extraData = new();
+        extraData.Read(ref reader, Stack.NetworkId);
+        Stack.ExtraData = extraData;
+        if (reader.Offset < extrasEndOffset)
+        {
+            reader.Seek(extrasEndOffset);
+        }
     }
 
     public void Write(ref BinaryWriter writer)
@@ -47,8 +62,17 @@ public sealed class ItemInstance : DataType
         }
 
         writer.WriteZigZag(Stack.NetworkBlockId);
-        byte[] extraData = Stack.ExtraData.Length == 0 ? [0, 0] : Stack.ExtraData;
-        writer.WriteVarUInt((uint)extraData.Length);
-        writer.WriteBytes(extraData);
+        if (Stack.ExtraData is null)
+        {
+            writer.WriteVarUInt(0);
+            return;
+        }
+
+        byte[] payloadBuffer = new byte[8192];
+        BinaryWriter payloadWriter = new(payloadBuffer);
+        Stack.ExtraData.Write(ref payloadWriter, Stack.NetworkId);
+        ReadOnlySpan<byte> payload = payloadWriter.GetBuffer();
+        writer.WriteVarUInt((uint)payload.Length);
+        writer.WriteBytes(payload);
     }
 }
