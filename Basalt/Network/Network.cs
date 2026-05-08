@@ -85,47 +85,60 @@ public sealed class NetworkHandler
                 ReadOnlySpan<byte> buffer = reader.ReadBytes(length);
                 if (buffer.Length == 0) continue;
 
-                BinaryReader headerReader = new(buffer);
-                uint rawHeader = headerReader.ReadVarUInt();
-                int packetId = (int)(rawHeader & 0x3FF);
-                switch (packetId)
+                try
                 {
-                    case (int)PacketId.Login:
-                        Login.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.RequestNetworkSettings:
-                        RequestNetworkSettings.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.ResourcePackClientResponse:
-                        ResourcePackClientResponse.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.RequestChunkRadius:
-                        RequestChunkRadius.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.SetLocalPlayerAsInitialized:
-                        SetLocalPlayerAsInitialized.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.PlayerAuthInput:
-                        PlayerAuthInput.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.Interact:
-                        Interact.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.InventoryTransaction:
-                        InventoryTransaction.Handle(_server, connection, buffer);
-                        break;
-                    case (int)PacketId.ItemStackRequest:
-                        ItemStackRequest.Handle(_server, connection, buffer);
-                        break;
-                    default:
-                        Console.WriteLine($"Unhandled raw=0x{rawHeader:X} id=0x{packetId:X} ({buffer.Length} bytes)");
-                        break;
+                    BinaryReader headerReader = new(buffer);
+                    uint rawHeader = headerReader.ReadVarUInt();
+                    int packetId = (int)(rawHeader & 0x3FF);
+                    switch (packetId)
+                    {
+                        case (int)PacketId.Login:
+                            Login.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.RequestNetworkSettings:
+                            RequestNetworkSettings.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.ResourcePackClientResponse:
+                            ResourcePackClientResponse.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.RequestChunkRadius:
+                            RequestChunkRadius.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.SetLocalPlayerAsInitialized:
+                            SetLocalPlayerAsInitialized.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.PlayerAuthInput:
+                            PlayerAuthInput.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.Interact:
+                            Interact.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.ContainerClose:
+                            ContainerClose.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.InventoryTransaction:
+                            InventoryTransaction.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.ItemStackRequest:
+                            ItemStackRequest.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.ClientCacheStatus:
+                            ClientCacheStatus.Handle(_server, connection, buffer);
+                            break;
+                        default:
+                            Console.WriteLine($"Unhandled raw=0x{rawHeader:X} id=0x{packetId:X} ({buffer.Length} bytes)");
+                            break;
+                    }
+                }
+                catch (Exception packetEx)
+                {
+                    Console.WriteLine($"Packet decode/handle error ({length} bytes): {packetEx}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Network error: {ex.Message}");
+            Console.WriteLine($"Network error: {ex}");
         }
         finally
         {
