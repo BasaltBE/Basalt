@@ -130,5 +130,9 @@ public sealed class World : IDisposable
     public void Tick()
     {
         CurrentTick++;
+        foreach (DimensionInstance dimension in _dimensions.Values)
+        {
+            dimension.Tick(CurrentTick, 1);
+        }
     }
 }
