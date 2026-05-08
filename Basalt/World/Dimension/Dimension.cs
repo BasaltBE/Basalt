@@ -11,6 +11,8 @@ namespace Basalt.World.Dimension;
 public sealed class Dimension : IDisposable
 {
     private readonly Dictionary<long, ChunkColumn> _chunks;
+    private readonly Dictionary<long, int> _chunkViewers;
+    private readonly HashSet<global::Basalt.Entity.Entity> _entities;
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
 
@@ -26,11 +28,15 @@ public sealed class Dimension : IDisposable
         Identifier = identifier;
         Type = type;
         _chunks = [];
+        _chunkViewers = [];
+        _entities = [];
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
     }
 
     public int ChunkCount => _chunks.Count;
+    public int ChunkViewerCount => _chunkViewers.Count;
+    public IReadOnlyCollection<global::Basalt.Entity.Entity> Entities => _entities;
 
     public bool HasChunk(int x, int z)
     {
@@ -87,7 +93,14 @@ public sealed class Dimension : IDisposable
     public bool RemoveChunk(int x, int z)
     {
         _provider.DeleteChunk(x, z);
-        return _chunks.Remove(HashChunk(x, z));
+        long hash = HashChunk(x, z);
+        if (!_chunks.TryGetValue(hash, out ChunkColumn? chunk))
+        {
+            return false;
+        }
+
+        chunk.ReleaseMemory();
+        return _chunks.Remove(hash);
     }
 
     public void SaveDirtyChunks()
@@ -130,7 +143,71 @@ public sealed class Dimension : IDisposable
             chunk.Dirty = false;
         }
 
+        chunk.ReleaseMemory();
         return _chunks.Remove(hash);
+    }
+
+    public void AddChunkViewer(int x, int z)
+    {
+        long hash = HashChunk(x, z);
+        if (_chunkViewers.TryGetValue(hash, out int count))
+        {
+            _chunkViewers[hash] = count + 1;
+            return;
+        }
+
+        _chunkViewers[hash] = 1;
+    }
+
+    public bool RemoveChunkViewer(int x, int z)
+    {
+        long hash = HashChunk(x, z);
+        if (!_chunkViewers.TryGetValue(hash, out int count))
+        {
+            return false;
+        }
+
+        if (count <= 1)
+        {
+            _chunkViewers.Remove(hash);
+            return true;
+        }
+
+        _chunkViewers[hash] = count - 1;
+        return true;
+    }
+
+    public bool HasChunkViewers(int x, int z)
+    {
+        return _chunkViewers.ContainsKey(HashChunk(x, z));
+    }
+
+    public int UnloadUnviewedChunks(int limit, bool save = true)
+    {
+        if (_chunks.Count == 0 || limit <= 0)
+        {
+            return 0;
+        }
+
+        int unloaded = 0;
+        List<long> hashes = [.. _chunks.Keys];
+        for (int i = 0; i < hashes.Count && unloaded < limit; i++)
+        {
+            long hash = hashes[i];
+            if (_chunkViewers.ContainsKey(hash))
+            {
+                continue;
+            }
+
+            int x = (int)(hash >> 32);
+            int z = (int)hash;
+            if (UnloadChunk(x, z, save))
+            {
+                unloaded++;
+            }
+        }
+
+        return unloaded;
     }
 
     public IEnumerable<ChunkColumn> GetChunks()
@@ -167,9 +244,43 @@ public sealed class Dimension : IDisposable
         SaveDirtyChunks();
     }
 
+    public void Tick(ulong currentTick, uint deltaTick)
+    {
+        if (currentTick % 20 == 0 && _chunks.Count > 0)
+        {
+            int unloadLimit = Math.Min(Math.Max(_chunks.Count / 8, 32), 256);
+            _ = UnloadUnviewedChunks(unloadLimit, save: true);
+        }
+
+        if (_entities.Count == 0)
+        {
+            return;
+        }
+
+        foreach (global::Basalt.Entity.Entity entity in _entities.ToArray())
+        {
+            if (!entity.IsAlive || entity.Dimension != this)
+            {
+                continue;
+            }
+
+            entity.TickTraits(currentTick, deltaTick);
+        }
+    }
+
     public void Broadcast(DataPacket packet)
     {
         PacketBroadcaster?.Invoke(packet);
+    }
+
+    internal void AddEntity(global::Basalt.Entity.Entity entity)
+    {
+        _entities.Add(entity);
+    }
+
+    internal void RemoveEntity(global::Basalt.Entity.Entity entity)
+    {
+        _entities.Remove(entity);
     }
 
     private static long HashChunk(int x, int z)
