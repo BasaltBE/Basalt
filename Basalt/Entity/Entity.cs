@@ -94,10 +94,17 @@ public class Entity
         for (int i = 0; i < _traits.Count; i++)
         {
             EntityTrait trait = _traits[i];
-            trait.OnTick(details);
-            if (trait.ShouldRandomTick())
+            try
             {
-                trait.OnRandomTick();
+                trait.OnTick(details);
+                if (trait.ShouldRandomTick())
+                {
+                    trait.OnRandomTick();
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Trait tick failed for {Identifier} ({trait.Identifier}): {exception}");
             }
         }
     }
@@ -107,6 +114,7 @@ public class Entity
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
+        dimension.AddEntity(this);
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnSpawn(options);
@@ -115,6 +123,7 @@ public class Entity
 
     public void Despawn(EntityDespawnOptions options)
     {
+        Dimension?.RemoveEntity(this);
         IsAlive = false;
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -143,6 +152,14 @@ public class Entity
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnTeleport(options);
+        }
+    }
+
+    public void OnMove(EntityMoveOptions options)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            _traits[i].OnMove(options);
         }
     }
 
