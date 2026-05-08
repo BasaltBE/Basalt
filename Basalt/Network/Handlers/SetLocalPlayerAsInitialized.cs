@@ -6,6 +6,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using Basalt.Traits;
+using Basalt.Entity.Traits.Types;
 
 namespace Basalt.Network.Handlers;
 
@@ -64,8 +65,17 @@ public static class SetLocalPlayerAsInitialized
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is not null)
         {
-            chunkRendering.ApplyViewDistance(chunkRendering.ViewDistance);
+            chunkRendering.StartChunkLoad();
         }
+
+        DebugTrait? debugTrait = player.GetTrait<DebugTrait>();
+        if (debugTrait is null)
+        {
+            debugTrait = player.AddTrait(new DebugTrait(player));
+            debugTrait.OnSpawn(new EntitySpawnOptions(InitialSpawn: false));
+        }
+
+       
 
         Logger.Info($"Player {player.Username} has spawned.");
     }
