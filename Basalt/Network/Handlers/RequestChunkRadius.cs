@@ -12,8 +12,10 @@ public static class RequestChunkRadius
         RequestChunkRadiusPacket packet = new();
         packet.Deserialize(packetBuffer);
 
-        int requestedRadius = Math.Max(packet.ChunkRadius, packet.MaxChunkRadius);
-        int radius = Math.Clamp(requestedRadius, 4, 16);
+        int requestedRadius = packet.MaxChunkRadius > 0
+            ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
+            : packet.ChunkRadius;
+        int radius = Math.Clamp(requestedRadius, 4, 22);
         ChunkRadiusUpdatedPacket response = new()
         {
             ChunkRadius = radius
