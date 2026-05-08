@@ -21,6 +21,11 @@ public sealed class NetworkHandler
     {
         if (_server.Players.Remove(connection, out Player? player))
         {
+            if (player.IsAlive && player.Dimension is not null)
+            {
+                player.Despawn(new Basalt.Entity.Traits.Types.EntityDespawnOptions(Disconnected: true));
+            }
+
             Console.WriteLine($"Player {player.Username} disconnected.");
             return;
         }
@@ -62,44 +67,58 @@ public sealed class NetworkHandler
             BinaryReader reader = new(framed);
             while (reader.Remaining > 0)
             {
-                int length = reader.ReadVarInt();
-                if (length <= 0 || length > reader.Remaining) break;
+                int length;
+                try
+                {
+                    length = checked((int)reader.ReadVarUInt());
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+
+                if (length <= 0 || length > reader.Remaining)
+                {
+                    break;
+                }
 
                 ReadOnlySpan<byte> buffer = reader.ReadBytes(length);
                 if (buffer.Length == 0) continue;
 
-                PacketId id = (PacketId)new BinaryReader(buffer).ReadVarInt();
-                switch (id)
+                BinaryReader headerReader = new(buffer);
+                uint rawHeader = headerReader.ReadVarUInt();
+                int packetId = (int)(rawHeader & 0x3FF);
+                switch (packetId)
                 {
-                    case PacketId.Login:
+                    case (int)PacketId.Login:
                         Login.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.RequestNetworkSettings:
+                    case (int)PacketId.RequestNetworkSettings:
                         RequestNetworkSettings.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.ResourcePackClientResponse:
+                    case (int)PacketId.ResourcePackClientResponse:
                         ResourcePackClientResponse.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.RequestChunkRadius:
+                    case (int)PacketId.RequestChunkRadius:
                         RequestChunkRadius.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.SetLocalPlayerAsInitialized:
+                    case (int)PacketId.SetLocalPlayerAsInitialized:
                         SetLocalPlayerAsInitialized.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.PlayerAuthInput:
+                    case (int)PacketId.PlayerAuthInput:
                         PlayerAuthInput.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.Interact:
+                    case (int)PacketId.Interact:
                         Interact.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.InventoryTransaction:
+                    case (int)PacketId.InventoryTransaction:
                         InventoryTransaction.Handle(_server, connection, buffer);
                         break;
-                    case PacketId.ItemStackRequest:
+                    case (int)PacketId.ItemStackRequest:
                         ItemStackRequest.Handle(_server, connection, buffer);
                         break;
                     default:
-                        Console.WriteLine($"Unhandled 0x{(byte)id:X2} ({buffer.Length} bytes)");
+                        Console.WriteLine($"Unhandled raw=0x{rawHeader:X} id=0x{packetId:X} ({buffer.Length} bytes)");
                         break;
                 }
             }
