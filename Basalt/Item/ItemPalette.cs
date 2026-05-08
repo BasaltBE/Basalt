@@ -1,7 +1,9 @@
 using Basalt.Binary;
+using Basalt.Item.Traits;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 using System.Text.Json;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -19,6 +21,7 @@ public sealed class ItemPalette
     public static void Initialize()
     {
         LoadVanilla();
+        ItemTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
     }
 
     public IReadOnlyDictionary<string, ItemType> Types => ItemType.Types;
