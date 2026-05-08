@@ -259,6 +259,17 @@ public sealed class Chunk
         return true;
     }
 
+
+    // I know this is bad
+    public void ReleaseMemory()
+    {
+        Cache = null;
+        _blocks.Clear();
+        _entities.Clear();
+        Array.Clear(SubChunks, 0, SubChunks.Length);
+        Dirty = false;
+    }
+
     public Chunk Insert(Chunk source)
     {
         if (X != source.X || Z != source.Z)
