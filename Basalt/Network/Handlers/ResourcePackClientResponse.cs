@@ -64,7 +64,7 @@ public static class ResourcePackClientResponse
 
                 StartGamePacket startGame = new()
                 {
-                    EntityUniqueId = (long)player.RuntimeId,
+                    EntityUniqueId = player.UniqueId,
                     EntityRuntimeId = player.RuntimeId,
                     PlayerGameMode = 0,
                     PlayerPosition = new Vec3f { X = 0f, Y = -57f, Z = 0f },
@@ -160,6 +160,7 @@ public static class ResourcePackClientResponse
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
+                byte[] creativeContentPayload = ItemPalette.GetCreativeContentPayload();
                 AvailableActorIdentifiersPacket actorIdentifiers = new()
                 {
                     Data = EntityPalette.BuildAvailableActorIdentifiersTag()
@@ -171,8 +172,9 @@ public static class ResourcePackClientResponse
                 };
 
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
+                server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 server.Network.SendPackets(connection, [actorIdentifiers, startGame, spawnStatus]);
-                Console.WriteLine($"Resource pack flow completed. Sent ItemRegistry + AvailableActorIdentifiers + StartGame + PlayerSpawn to {player.Username}.");
+                Console.WriteLine($"Resource pack flow completed. Sent ItemRegistry + CreativeContent + AvailableActorIdentifiers + StartGame + PlayerSpawn to {player.Username}.");
                 return;
 
             default:
