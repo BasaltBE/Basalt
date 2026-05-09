@@ -1,5 +1,6 @@
 using Basalt.Item;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Nbt;
 
 namespace Basalt.Entity.Traits;
 
@@ -24,5 +25,41 @@ public sealed class EntityEquipmentTrait : EntityTrait
         }
 
         return clone;
+    }
+
+    public override void OnRead(CompoundTag tag)
+    {
+        ListTag? armorTag = tag.Get<ListTag>("armor");
+        if (armorTag is null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < Armor.Count; i++)
+        {
+            Armor[i] = null;
+        }
+
+        for (int i = 0; i < armorTag.Values.Count && i < Armor.Count; i++)
+        {
+            if (armorTag.Values[i] is not CompoundTag itemTag)
+            {
+                continue;
+            }
+
+            Armor[i] = ItemStack.Deserialize(itemTag);
+        }
+    }
+
+    public override void OnWrite(CompoundTag tag)
+    {
+        ListTag armorTag = new() { Name = "armor" };
+        for (int i = 0; i < Armor.Count; i++)
+        {
+            ItemStack? armor = Armor[i];
+            armorTag.Values.Add(armor is null ? new CompoundTag() : armor.Serialize());
+        }
+
+        tag.Set("armor", armorTag);
     }
 }
