@@ -1,3 +1,4 @@
+using Basalt.Protocol.Enums;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -5,24 +6,26 @@ namespace Basalt.Protocol.Types;
 
 public sealed class PlayerBlockAction : DataType
 {
-    public int Action { get; set; }
+    public PlayerActionType Action { get; set; }
     public BlockPos BlockPos { get; set; }
     public int Face { get; set; }
 
     public void Read(ref BinaryReader reader)
     {
-        Action = reader.ReadZigZag();
-        if (Action is 0 or 1 or 18 or 26 or 27)
+        Action = (PlayerActionType)reader.ReadZigZag();
+        if (Action is PlayerActionType.StartDestroyBlock or PlayerActionType.AbortDestroyBlock or PlayerActionType.CrackBlock or PlayerActionType.PredictDestroyBlock or PlayerActionType.ContinueDestroyBlock)
         {
-            BlockPos.Read(ref reader);
+            BlockPos pos = BlockPos;
+            pos.Read(ref reader);
+            BlockPos = pos;
             Face = reader.ReadZigZag();
         }
     }
 
     public void Write(ref BinaryWriter writer)
     {
-        writer.WriteZigZag(Action);
-        if (Action is 0 or 1 or 18 or 26 or 27)
+        writer.WriteZigZag((int)Action);
+        if (Action is PlayerActionType.StartDestroyBlock or PlayerActionType.AbortDestroyBlock or PlayerActionType.CrackBlock or PlayerActionType.PredictDestroyBlock or PlayerActionType.ContinueDestroyBlock)
         {
             BlockPos.Write(ref writer);
             writer.WriteZigZag(Face);
