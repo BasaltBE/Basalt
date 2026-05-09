@@ -7,22 +7,22 @@ namespace Basalt.Protocol.Packets;
 
 public sealed record InventoryContentPacket : DataPacket
 {
-    public uint WindowId { get; set; }
-    public List<ItemInstance> Content { get; set; } = [];
+    public int WindowId { get; set; }
+    public List<NetworkItemStackDescriptor> Content { get; set; } = [];
     public FullContainerName Container { get; set; } = new();
-    public ItemInstance StorageItem { get; set; } = new();
+    public NetworkItemStackDescriptor StorageItem { get; set; } = new();
 
     public override PacketId PacketId => PacketId.InventoryContent;
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        WindowId = reader.ReadVarUInt();
+        WindowId = reader.ReadVarInt();
 
         int count = checked((int)reader.ReadVarUInt());
-        Content = new List<ItemInstance>(count);
+        Content = new List<NetworkItemStackDescriptor>(count);
         for (int i = 0; i < count; i++)
         {
-            ItemInstance item = new();
+            NetworkItemStackDescriptor item = new();
             item.Read(ref reader);
             Content.Add(item);
         }
@@ -33,7 +33,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteVarUInt(WindowId);
+        writer.WriteVarInt(WindowId);
         writer.WriteVarUInt((uint)Content.Count);
         for (int i = 0; i < Content.Count; i++)
         {
