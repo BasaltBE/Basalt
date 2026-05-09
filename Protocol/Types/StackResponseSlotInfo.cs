@@ -15,8 +15,10 @@ public sealed class StackResponseSlotInfo : DataType
 
     public void Read(ref BinaryReader reader)
     {
-        Slot = reader.ReadUInt8();
-        HotbarSlot = reader.ReadUInt8();
+        byte requestedSlot = reader.ReadUInt8();
+        byte slot = reader.ReadUInt8();
+        Slot = (byte)(requestedSlot & slot);
+        HotbarSlot = Slot;
         Count = reader.ReadUInt8();
         StackNetworkId = reader.ReadZigZag();
         CustomName = reader.ReadVarString();
@@ -27,7 +29,7 @@ public sealed class StackResponseSlotInfo : DataType
     public void Write(ref BinaryWriter writer)
     {
         writer.WriteUInt8(Slot);
-        writer.WriteUInt8(HotbarSlot);
+        writer.WriteUInt8(Slot);
         writer.WriteUInt8(Count);
         writer.WriteZigZag(StackNetworkId);
         writer.WriteVarString(CustomName);
