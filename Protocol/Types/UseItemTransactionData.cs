@@ -22,11 +22,13 @@ public sealed class UseItemTransactionData : DataType
 
     public void Read(ref BinaryReader reader)
     {
+        int startOffset = reader.Offset;
         LegacyRequestId = reader.ReadZigZag();
+        LegacySetItemSlots = [];
         if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0)
         {
             int legacyCount = checked((int)reader.ReadVarUInt());
-            LegacySetItemSlots = new(legacyCount);
+            LegacySetItemSlots = new List<LegacySetItemSlot>(legacyCount);
             for (int i = 0; i < legacyCount; i++)
             {
                 LegacySetItemSlot slot = new();
@@ -36,7 +38,7 @@ public sealed class UseItemTransactionData : DataType
         }
 
         int actionCount = checked((int)reader.ReadVarUInt());
-        Actions = new(actionCount);
+        Actions = new List<InventoryAction>(actionCount);
         for (int i = 0; i < actionCount; i++)
         {
             InventoryAction action = new();
@@ -46,7 +48,9 @@ public sealed class UseItemTransactionData : DataType
 
         ActionType = reader.ReadVarUInt();
         TriggerType = reader.ReadVarUInt();
-        BlockPosition.Read(ref reader);
+        BlockPos blockPosition = BlockPosition;
+        blockPosition.Read(ref reader);
+        BlockPosition = blockPosition;
         BlockFace = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(ref reader);
@@ -55,6 +59,10 @@ public sealed class UseItemTransactionData : DataType
         BlockRuntimeId = reader.ReadVarUInt();
         ClientPrediction = reader.ReadVarUInt();
         ClientCooldownState = reader.ReadUInt8();
+
+        int endOffset = reader.Offset;
+        ReadOnlySpan<byte> payload = reader.Buffer.Slice(startOffset, endOffset - startOffset);
+        Console.WriteLine($"[UseItemTxDump] bytes={payload.Length} hex={Convert.ToHexString(payload)} legacy={LegacyRequestId} actions={Actions.Count} action={ActionType} trigger={TriggerType} pos={BlockPosition.X},{BlockPosition.Y},{BlockPosition.Z} face={BlockFace} hotbar={HotBarSlot} runtime={BlockRuntimeId} prediction={ClientPrediction} cooldown={ClientCooldownState}");
     }
 
     public void Write(ref BinaryWriter writer)
