@@ -7,18 +7,18 @@ namespace Basalt.Protocol.Packets;
 
 public sealed record InventorySlotPacket : DataPacket
 {
-    public uint WindowId { get; set; }
-    public uint Slot { get; set; }
+    public int WindowId { get; set; }
+    public int Slot { get; set; }
     public FullContainerName Container { get; set; } = new();
-    public ItemInstance StorageItem { get; set; } = new();
-    public ItemInstance NewItem { get; set; } = new();
+    public NetworkItemStackDescriptor StorageItem { get; set; } = new();
+    public NetworkItemStackDescriptor NewItem { get; set; } = new();
 
     public override PacketId PacketId => PacketId.InventorySlot;
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        WindowId = reader.ReadVarUInt();
-        Slot = reader.ReadVarUInt();
+        WindowId = reader.ReadVarInt();
+        Slot = reader.ReadVarInt();
         Container.Read(ref reader);
         StorageItem.Read(ref reader);
         NewItem.Read(ref reader);
@@ -26,8 +26,8 @@ public sealed record InventorySlotPacket : DataPacket
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteVarUInt(WindowId);
-        writer.WriteVarUInt(Slot);
+        writer.WriteVarInt(WindowId);
+        writer.WriteVarInt(Slot);
         Container.Write(ref writer);
         StorageItem.Write(ref writer);
         NewItem.Write(ref writer);
