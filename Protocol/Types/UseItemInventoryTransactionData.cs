@@ -24,7 +24,9 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
     {
         ActionType = reader.ReadVarUInt();
         TriggerType = reader.ReadVarUInt();
-        BlockPosition.Read(ref reader);
+        BlockPos blockPosition = BlockPosition;
+        blockPosition.Read(ref reader);
+        BlockPosition = blockPosition;
         BlockFace = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(ref reader);
