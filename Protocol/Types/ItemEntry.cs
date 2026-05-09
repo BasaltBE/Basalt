@@ -20,7 +20,7 @@ public sealed class ItemEntry : DataType
         Name = reader.ReadVarString();
         RuntimeId = reader.ReadInt16(true);
         ComponentBased = reader.ReadBool();
-        Version = reader.ReadVarInt();
+        Version = reader.ReadZigZag();
         Data = CompoundTag.Read(ref reader, NetworkNbtOptions, canHaveName: true);
     }
 
@@ -29,7 +29,7 @@ public sealed class ItemEntry : DataType
         writer.WriteVarString(Name);
         writer.WriteInt16(RuntimeId, true);
         writer.WriteBool(ComponentBased);
-        writer.WriteVarInt(Version);
+        writer.WriteZigZag(Version);
         NBT.WriteTag(ref writer, Data, NetworkNbtOptions, canHaveName: true);
     }
 }
