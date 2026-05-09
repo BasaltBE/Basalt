@@ -7,7 +7,7 @@ public sealed class NetworkItemStackDescriptor : DataType
 {
     public int NetworkId { get; set; }
     public ushort StackSize { get; set; }
-    public uint Metadata { get; set; }
+    public int Metadata { get; set; }
     public int? ItemStackId { get; set; }
     public int NetworkBlockId { get; set; }
     public ItemInstanceUserData? ExtraData { get; set; }
@@ -26,14 +26,18 @@ public sealed class NetworkItemStackDescriptor : DataType
         }
 
         StackSize = reader.ReadUInt16(true);
-        Metadata = reader.ReadVarUInt();
+        Metadata = reader.ReadVarInt();
 
         bool hasStackId = reader.ReadBool();
         ItemStackId = hasStackId ? reader.ReadZigZag() : null;
 
         NetworkBlockId = reader.ReadZigZag();
 
-        int extrasLength = checked((int)reader.ReadVarUInt());
+        int extrasLength = reader.ReadVarInt();
+        if (extrasLength < 0)
+        {
+            throw new FormatException("Negative extras length in network item stack descriptor.");
+        }
         if (extrasLength == 0)
         {
             ExtraData = null;
@@ -59,7 +63,7 @@ public sealed class NetworkItemStackDescriptor : DataType
         }
 
         writer.WriteUInt16(StackSize, true);
-        writer.WriteVarUInt(Metadata);
+        writer.WriteVarInt(Metadata);
 
         bool hasStackId = ItemStackId.HasValue && ItemStackId.Value != 0;
         writer.WriteBool(hasStackId);
@@ -71,7 +75,7 @@ public sealed class NetworkItemStackDescriptor : DataType
         writer.WriteZigZag(NetworkBlockId);
         if (ExtraData is null)
         {
-            writer.WriteVarUInt(0);
+            writer.WriteVarInt(0);
             return;
         }
 
@@ -79,7 +83,7 @@ public sealed class NetworkItemStackDescriptor : DataType
         BinaryWriter payloadWriter = new(payloadBuffer);
         ExtraData.Write(ref payloadWriter, NetworkId);
         ReadOnlySpan<byte> payload = payloadWriter.GetBuffer();
-        writer.WriteVarUInt((uint)payload.Length);
+        writer.WriteVarInt(payload.Length);
         writer.WriteBytes(payload);
     }
 }
