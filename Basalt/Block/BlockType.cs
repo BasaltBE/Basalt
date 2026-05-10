@@ -10,6 +10,7 @@ public sealed class BlockType
     private readonly HashSet<string> _booleanStates = new(StringComparer.Ordinal);
 
     public string Identifier { get; }
+    public float Hardness { get; internal set; }
     public List<string> States { get; } = [];
     public List<BlockPermutation> Permutations { get; } = [];
     public static IReadOnlyDictionary<string, BlockType> Types => Registry;
