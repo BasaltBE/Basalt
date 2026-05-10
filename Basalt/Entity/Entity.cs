@@ -8,6 +8,7 @@ using Basalt.Traits;
 using Basalt.Containers;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
+using Basalt.Protocol.Nbt;
 
 namespace Basalt.Entity;
 
@@ -19,6 +20,7 @@ public class Entity
     public EntityType Type { get; }
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; } = ++_runtimeCounter;
+    public long UniqueId => unchecked((long)RuntimeId);
     public Vec3f Position { get; set; }
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
@@ -192,6 +194,60 @@ public class Entity
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnRendered(options);
+        }
+    }
+
+    public CompoundTag WriteToNbt()
+    {
+        CompoundTag root = new();
+        root.Set("identifier", new StringTag { Value = Identifier });
+        root.Set("x", new FloatTag { Value = Position.X });
+        root.Set("y", new FloatTag { Value = Position.Y });
+        root.Set("z", new FloatTag { Value = Position.Z });
+        root.Set("sprinting", new ByteTag { Value = IsSprinting ? (sbyte)1 : (sbyte)0 });
+        root.Set("swimming", new ByteTag { Value = IsSwimming ? (sbyte)1 : (sbyte)0 });
+
+        CompoundTag traitsTag = new();
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            EntityTrait trait = _traits[i];
+            CompoundTag traitTag = new();
+            trait.OnWrite(root, traitTag);
+            traitsTag.Set(trait.Identifier, traitTag);
+        }
+
+        root.Set("traits", traitsTag);
+        return root;
+    }
+
+    public void ReadFromNbt(CompoundTag root)
+    {
+        Position = new Vec3f
+        {
+            X = root.Get<FloatTag>("x")?.Value ?? Position.X,
+            Y = root.Get<FloatTag>("y")?.Value ?? Position.Y,
+            Z = root.Get<FloatTag>("z")?.Value ?? Position.Z
+        };
+
+        IsSprinting = (root.Get<ByteTag>("sprinting")?.Value ?? 0) != 0;
+        IsSwimming = (root.Get<ByteTag>("swimming")?.Value ?? 0) != 0;
+
+        CompoundTag? traitsTag = root.Get<CompoundTag>("traits");
+        if (traitsTag is null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            EntityTrait trait = _traits[i];
+            CompoundTag? traitTag = traitsTag.Get<CompoundTag>(trait.Identifier);
+            if (traitTag is null)
+            {
+                continue;
+            }
+
+            trait.OnRead(root, traitTag);
         }
     }
 
