@@ -94,7 +94,7 @@ namespace Basalt.RakNet
         public void HandleNack(Nack nack)
         {
             uint[] sequences = AckRecord.ExpandRecords(nack.Records);
-            for (int i = 0; i < sequences.Length; i++)
+            for (int i = sequences.Length - 1; i >= 0; i--)
             {
                 if (!pendingDatagrams.Remove(sequences[i], out PendingDatagram pending))
                 {
@@ -145,7 +145,7 @@ namespace Basalt.RakNet
                     }
                 }
 
-                for (int i = 0; i < expired.Count; i++)
+                for (int i = expired.Count - 1; i >= 0; i--)
                 {
                     uint sequence = expired[i];
                     if (!pendingDatagrams.Remove(sequence, out PendingDatagram pending))
