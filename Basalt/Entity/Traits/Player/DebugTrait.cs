@@ -1,0 +1,119 @@
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
+using Basalt.Traits;
+using Basalt.Item;
+using Basalt.Item.Traits;
+
+namespace Basalt.Entity.Traits.PlayerTraits;
+
+public sealed class DebugTrait : PlayerTrait
+{
+    private const double TargetTps = 20.0;
+    private const ulong SendIntervalTicks = 20;
+
+    public new static string Identifier => "debug";
+    public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
+
+    private ulong _lastSentTick;
+    private long _lastSentTimestampMs;
+    private bool _gaveDebugItems;
+
+    public DebugTrait(Entity entity) : base(entity)
+    {
+    }
+
+    public override void OnSpawn(Basalt.Entity.Traits.Types.EntitySpawnOptions details)
+    {
+        _lastSentTick = Player.Dimension?.World?.CurrentTick ?? 0;
+        _lastSentTimestampMs = Environment.TickCount64;
+        if (!_gaveDebugItems)
+        {
+            EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
+            if (inventory is not null)
+            {
+                string[] debugItems =
+                [
+                    "minecraft:stick",
+                    "minecraft:stone",
+                    "minecraft:dirt",
+                    "minecraft:grass_block",
+                    "minecraft:diamond_pickaxe",
+                ];
+
+                int[] targetSlots = [0, 9, 10, 11, 12];
+                for (int i = 0; i < debugItems.Length; i++)
+                {
+                    string identifier = debugItems[i];
+                    ItemType? type = ItemType.Get(identifier);
+                    if (type is null)
+                    {
+                        continue;
+                    }
+
+                    ushort amount = identifier is "minecraft:diamond_pickaxe" or "minecraft:stick" ? (ushort)1 : (ushort)64;
+                    ItemStack itemStack = new(type, amount);
+                    if (identifier == "minecraft:stick")
+                    {
+                        itemStack.AddTrait(new ItemDebugTrait(itemStack));
+                    }
+
+                    inventory.Container.AddItem(itemStack);
+                }
+            }
+
+            _gaveDebugItems = true;
+        }
+    }
+
+    public override void OnTick(TraitOnTickDetails details)
+    {
+        if (!Player.IsAlive || details.CurrentTick - _lastSentTick < SendIntervalTicks)
+        {
+            return;
+        }
+
+        try
+        {
+            long nowMs = Environment.TickCount64;
+            ulong tickDelta = details.CurrentTick - _lastSentTick;
+            long msDelta = nowMs - _lastSentTimestampMs;
+            if (tickDelta == 0 || msDelta <= 0)
+            {
+                return;
+            }
+
+            double tps = tickDelta * 1000.0 / msDelta;
+            double mspt = msDelta / (double)tickDelta;
+            double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
+            int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;
+
+            TextPacket packet = new()
+            {
+                NeedsTranslation = false,
+                VariantType = TextVariantType.MessageOnly,
+                Variant = new TextVariant
+                {
+                    Type = TextType.Tip,
+                    Message = $"§aTPS: §f{tps:0.0}§8/§f{TargetTps:0.0} §8| §aMSPT: §f{mspt:0.00} §8| §aRAM: §f{workingSetMb:0.0}MB §8| §aChunks: §f{chunksLoaded}"
+                },
+                Xuid = string.Empty,
+                PlatformChatId = string.Empty,
+                FilteredMessage = null
+            };
+
+            Player.Send(packet);
+            _lastSentTick = details.CurrentTick;
+            _lastSentTimestampMs = nowMs;
+        }
+        catch (Exception exception)
+        {
+            Logger.Warn($"[{Player.Username}] DebugTrait exception: {exception}");
+        }
+    }
+
+    public override EntityTrait Clone(Entity entity)
+    {
+        return new DebugTrait(entity);
+    }
+}
