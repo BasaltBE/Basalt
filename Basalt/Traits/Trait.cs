@@ -1,3 +1,5 @@
+using Basalt.Protocol.Nbt;
+
 namespace Basalt.Traits;
 
 public abstract class Trait
@@ -20,6 +22,14 @@ public abstract class Trait
     }
 
     public virtual void OnRandomTick()
+    {
+    }
+
+    public virtual void OnRead(CompoundTag tag)
+    {
+    }
+
+    public virtual void OnWrite(CompoundTag tag)
     {
     }
 
