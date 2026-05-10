@@ -2,6 +2,7 @@ using Basalt.Core;
 using Basalt.Entity.Traits.Attribute;
 using Basalt.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Nbt;
 using Basalt.Traits;
 
 namespace Basalt.Entity.Traits.PlayerTraits;
@@ -122,5 +123,19 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
     public override EntityTrait Clone(Entity entity)
     {
         return new PlayerHungerTrait(entity);
+    }
+
+    public override void OnRead(CompoundTag tag)
+    {
+        CurrentValue = tag.Get<FloatTag>("current")?.Value ?? CurrentValue;
+        Saturation = tag.Get<FloatTag>("saturation")?.Value ?? Saturation;
+        Exhaustion = tag.Get<FloatTag>("exhaustion")?.Value ?? Exhaustion;
+    }
+
+    public override void OnWrite(CompoundTag tag)
+    {
+        tag.Set("current", new FloatTag { Value = CurrentValue });
+        tag.Set("saturation", new FloatTag { Value = Saturation });
+        tag.Set("exhaustion", new FloatTag { Value = Exhaustion });
     }
 }
