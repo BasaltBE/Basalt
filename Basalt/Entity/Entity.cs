@@ -16,6 +16,7 @@ public class Entity
 {
     private static ulong _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
+    private readonly HashSet<string> _manualTraits = new(StringComparer.Ordinal);
 
     public EntityType Type { get; }
     public string Identifier => Type.Identifier;
@@ -50,16 +51,20 @@ public class Entity
         {
             if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
             {
-                AddTrait(trait);
+                AddTraitInternal(trait, false);
             }
         }
     }
 
     public T AddTrait<T>(T trait) where T : EntityTrait
     {
+        return AddTrait(trait, true);
+    }
+
+    public T AddTrait<T>(T trait, bool manual) where T : EntityTrait
+    {
         ArgumentNullException.ThrowIfNull(trait);
-        _traits.Add(trait);
-        trait.OnAdd();
+        AddTraitInternal(trait, manual);
         return trait;
     }
 
@@ -248,6 +253,16 @@ public class Entity
         }
 
         root.Set("traits", traitsTag);
+        if (_manualTraits.Count > 0)
+        {
+            ListTag manualTraitsTag = new() { Name = "manual_traits" };
+            foreach (string identifier in _manualTraits.OrderBy(static x => x, StringComparer.Ordinal))
+            {
+                manualTraitsTag.Values.Add(new StringTag { Value = identifier });
+            }
+
+            root.Set("manual_traits", manualTraitsTag);
+        }
         return root;
     }
 
@@ -262,6 +277,34 @@ public class Entity
 
         IsSprinting = (root.Get<ByteTag>("sprinting")?.Value ?? 0) != 0;
         IsSwimming = (root.Get<ByteTag>("swimming")?.Value ?? 0) != 0;
+
+        ListTag? manualTraitsTag = root.Get<ListTag>("manual_traits");
+        if (manualTraitsTag is not null)
+        {
+            for (int i = 0; i < manualTraitsTag.Values.Count; i++)
+            {
+                if (manualTraitsTag.Values[i] is not StringTag traitIdentifierTag || string.IsNullOrWhiteSpace(traitIdentifierTag.Value))
+                {
+                    continue;
+                }
+
+                if (HasTraitIdentifier(traitIdentifierTag.Value))
+                {
+                    _manualTraits.Add(traitIdentifierTag.Value);
+                    continue;
+                }
+
+                if (!EntityTraitRegistry.RegisteredTraits.TryGetValue(traitIdentifierTag.Value, out Type? traitType))
+                {
+                    continue;
+                }
+
+                if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
+                {
+                    AddTraitInternal(trait, true);
+                }
+            }
+        }
 
         CompoundTag? traitsTag = root.Get<CompoundTag>("traits");
         if (traitsTag is null)
@@ -280,6 +323,40 @@ public class Entity
 
             trait.OnRead(root, traitTag);
         }
+    }
+
+    private void AddTraitInternal(EntityTrait trait, bool manual)
+    {
+        string identifier = trait.Identifier;
+        if (HasTraitIdentifier(identifier))
+        {
+            if (manual)
+            {
+                _manualTraits.Add(identifier);
+            }
+
+            return;
+        }
+
+        _traits.Add(trait);
+        if (manual)
+        {
+            _manualTraits.Add(identifier);
+        }
+        trait.OnAdd();
+    }
+
+    private bool HasTraitIdentifier(string identifier)
+    {
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            if (string.Equals(_traits[i].Identifier, identifier, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public bool IsPlayer()
