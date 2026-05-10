@@ -1,7 +1,9 @@
 using Basalt.Core;
 using Basalt.Entity.Traits;
+using Basalt.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
 namespace Basalt.Network.Handlers;
@@ -26,26 +28,35 @@ public static class Interact
                 return;
             }
 
-            if (player.Dimension is null)
+            playerInventory.Container.Show(player);
+            return;
+        }
+
+        if (packet.ActionType == InteractActionType.MouseOverEntity)
+        {
+            EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+            if (inventory is null)
             {
-                playerInventory.Container.Show(player);
                 return;
             }
 
-            Entity.Entity? target = player.Dimension.Entities
-                .FirstOrDefault(entity => entity.RuntimeId == packet.TargetEntityRuntimeId);
-
-            if (target is not null)
+            var heldItem = inventory.GetHeldItem();
+            if (heldItem is null || player.Dimension is null)
             {
-                EntityInventoryTrait? targetInventory = target.GetTrait<EntityInventoryTrait>();
-                if (targetInventory is not null)
-                {
-                    targetInventory.Container.Show(player);
-                    return;
-                }
+                return;
             }
 
-            playerInventory.Container.Show(player);
+            foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
+            {
+                if (entity.RuntimeId != packet.TargetEntityRuntimeId)
+                {
+                    continue;
+                }
+
+                Vec3f clicked = packet.Position.HasValue && packet.Position.Value is Vec3f value ? value : new Vec3f();
+                heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(player, entity, 0, player.Position, clicked));
+                break;
+            }
         }
     }
 }
