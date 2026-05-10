@@ -22,6 +22,7 @@ public sealed class Dimension : IDisposable
     public global::Basalt.World.World? World { get; internal set; }
     public global::Basalt.World.DimensionGameRules Gamerules { get; } = new();
     internal Action<DataPacket>? PacketBroadcaster { get; set; }
+    internal Action<DataPacket, global::Basalt.Entity.Entity>? PacketBroadcasterExcept { get; set; }
 
     public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null)
     {
@@ -271,6 +272,11 @@ public sealed class Dimension : IDisposable
     public void Broadcast(DataPacket packet)
     {
         PacketBroadcaster?.Invoke(packet);
+    }
+
+    public void BroadcastExcept(DataPacket packet, global::Basalt.Entity.Entity exclude)
+    {
+        PacketBroadcasterExcept?.Invoke(packet, exclude);
     }
 
     internal void AddEntity(global::Basalt.Entity.Entity entity)
