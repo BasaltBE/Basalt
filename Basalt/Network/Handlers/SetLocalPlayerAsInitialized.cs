@@ -1,5 +1,6 @@
 using Basalt.Core;
 using Basalt.Entity.Traits.Attribute;
+using Basalt.Entity.Traits;
 using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
@@ -73,6 +74,14 @@ public static class SetLocalPlayerAsInitialized
         {
             debugTrait = player.AddTrait(new DebugTrait(player));
             debugTrait.OnSpawn(new EntitySpawnOptions(InitialSpawn: false));
+        }
+
+        player.SetSpawned(true);
+
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        if (inventory is not null)
+        {
+            inventory.Container.Update();
         }
 
        
