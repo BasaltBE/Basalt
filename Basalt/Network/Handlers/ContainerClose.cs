@@ -1,6 +1,7 @@
-using Basalt.Core;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using Basalt.Core;
+using Basalt.Entity.Traits;
 
 namespace Basalt.Network.Handlers;
 
@@ -11,16 +12,21 @@ public static class ContainerClose
         ContainerClosePacket packet = new();
         packet.Deserialize(packetBuffer);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (server.Players.TryGetValue(connection, out Player? player))
         {
-            return;
+            EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+            if (inventory is not null && packet.WindowId == (byte)(inventory.Container.Identifier ?? 0))
+            {
+                inventory.Container.RemoveOccupant(player);
+            }
         }
 
-        if (player.OpenedContainer is null)
+        ContainerClosePacket response = new()
         {
-            return;
-        }
-
-        player.OpenedContainer.Close(player, sendPacket: false, serverSide: false);
+            WindowId = packet.WindowId,
+            ContainerType = packet.ContainerType,
+            ServerSide = false
+        };
+        server.Network.SendPacket(connection, response);
     }
 }
