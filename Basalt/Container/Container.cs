@@ -497,7 +497,7 @@ public class Container
 
     private static bool CanSendContainerPackets(Player player)
     {
-        return player.HasSpawned;
+        return player.Spawned;
     }
 
     public static IDisposable SuppressPackets()
