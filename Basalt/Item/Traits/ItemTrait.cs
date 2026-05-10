@@ -1,4 +1,6 @@
 using System.Reflection;
+using Basalt.Protocol.Nbt;
+using Basalt.Item.Traits.Types;
 
 namespace Basalt.Item.Traits;
 
@@ -36,6 +38,38 @@ public abstract class ItemTrait
     }
 
     public virtual void OnRemove()
+    {
+    }
+
+    public virtual void OnRead(CompoundTag tag)
+    {
+    }
+
+    public virtual void OnWrite(CompoundTag tag)
+    {
+    }
+
+    public virtual void OnUseOnAir(ItemUseOnAirDetails details)
+    {
+    }
+
+    public virtual void OnUseOnBlock(ItemUseOnBlockDetails details)
+    {
+    }
+
+    public virtual void OnPlace(ItemPlaceDetails details)
+    {
+    }
+
+    public virtual void OnUseOnEntity(ItemUseOnEntityDetails details)
+    {
+    }
+
+    public virtual void OnUseAttack(ItemUseAttackDetails details)
+    {
+    }
+
+    public virtual void OnBreakBlock(ItemBreakBlockDetails details)
     {
     }
 }
