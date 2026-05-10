@@ -168,6 +168,32 @@ public sealed class LevelDbProvider : WorldProvider
         _database.Dispose();
     }
 
+    public override CompoundTag? LoadPlayerData(string xuid)
+    {
+        if (string.IsNullOrWhiteSpace(xuid))
+        {
+            return null;
+        }
+
+        byte[]? data = _database.Get(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid));
+        if (data is null || data.Length == 0)
+        {
+            return null;
+        }
+
+        return DecodeEntityStorage(data);
+    }
+
+    public override void SavePlayerData(string xuid, CompoundTag data)
+    {
+        if (string.IsNullOrWhiteSpace(xuid))
+        {
+            return;
+        }
+
+        _database.Put(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid), EncodeEntityStorage(data));
+    }
+
     private static byte[] EncodeBlockStorage(BlockLevelStorage storage)
     {
         return EncodeNbt(storage);

@@ -10,6 +10,7 @@ internal static class LevelDbKeyBuilder
     private const byte PrefixBlockStorage = 0x32;
     private const byte PrefixEntityList = 0x33;
     private const byte PrefixEntityStorage = 0x34;
+    private const byte PrefixPlayerStorage = 0x35;
 
     public static byte[] BuildChunkKey(int x, int z)
     {
@@ -79,5 +80,14 @@ internal static class LevelDbKeyBuilder
     {
         key[0] = PrefixEntityStorage;
         BinaryPrimitives.WriteInt64LittleEndian(key[1..9], uniqueId);
+    }
+
+    public static byte[] BuildPlayerStorageKey(string xuid)
+    {
+        byte[] idBytes = System.Text.Encoding.UTF8.GetBytes(xuid);
+        byte[] key = new byte[idBytes.Length + 1];
+        key[0] = PrefixPlayerStorage;
+        idBytes.CopyTo(key, 1);
+        return key;
     }
 }
