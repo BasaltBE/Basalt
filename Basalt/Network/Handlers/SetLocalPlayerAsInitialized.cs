@@ -45,19 +45,15 @@ public static class SetLocalPlayerAsInitialized
             Value = player.Flags.Upper64()
         });
 
-        EntityHealthTrait? health = player.GetTrait<EntityHealthTrait>();
-        if (health is not null)
+        UpdateAttributesPacket attributes = new()
         {
-            UpdateAttributesPacket attributes = new()
-            {
-                RuntimeId = player.RuntimeId,
-                Tick = player.Dimension?.World?.CurrentTick ?? 0,
-                Attributes =
-                [
-                    health.GetAttribute()
-                ]
-            };
+            RuntimeId = player.RuntimeId,
+            Tick = player.Dimension?.World?.CurrentTick ?? 0,
+            Attributes = player.Attributes.GetAll().ToList()
+        };
 
+        if (attributes.Attributes.Count > 0)
+        {
             server.Network.SendPacket(connection, attributes);
         }
 

@@ -7,6 +7,11 @@ public sealed class EntityAttributes
 {
     private readonly Dictionary<AttributeName, ProtoAttribute> _attributes = [];
 
+    public IReadOnlyList<ProtoAttribute> GetAll()
+    {
+        return _attributes.Values.ToList();
+    }
+
     public bool HasAttribute(AttributeName name)
     {
         return _attributes.ContainsKey(name);
