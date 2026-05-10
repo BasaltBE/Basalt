@@ -1,5 +1,4 @@
 using Basalt.Containers;
-
 namespace Basalt.Entity.Container;
 
 public sealed class EntityContainer : Containers.Container
@@ -21,26 +20,6 @@ public sealed class EntityContainer : Containers.Container
         base.SetItem(slot, item);
     }
 
-    public override void Update()
-    {
-        Entity.OnContainerUpdate(this);
-        base.Update();
-
-        if (Containers.Container.IsPacketSuppressed())
-        {
-            return;
-        }
-
-        if (Entity is Core.Player player && player.HasSpawned)
-        {
-            bool isOccupant = GetAllOccupants().Any(entry => ReferenceEquals(entry.Key, player));
-            if (!isOccupant)
-            {
-                SendContentTo(player, Identifier ?? 0);
-            }
-        }
-    }
-
     public override void UpdateSlot(int slot)
     {
         Entity.OnContainerUpdate(this);
@@ -51,19 +30,39 @@ public sealed class EntityContainer : Containers.Container
             return;
         }
 
-        if (Entity is Core.Player player && player.HasSpawned)
+        if (Entity is Core.Player player && player.Spawned)
         {
             bool isOccupant = GetAllOccupants().Any(entry => ReferenceEquals(entry.Key, player));
             if (!isOccupant)
             {
-                SendSlotTo(player, Identifier ?? 0, slot);
+                SendContentTo(player, Identifier ?? 0);
+            }
+        }
+    }
+
+    public override void Update()
+    {
+        Entity.OnContainerUpdate(this);
+        base.Update();
+
+        if (Containers.Container.IsPacketSuppressed())
+        {
+            return;
+        }
+
+        if (Entity is Core.Player player && player.Spawned)
+        {
+            bool isOccupant = GetAllOccupants().Any(entry => ReferenceEquals(entry.Key, player));
+            if (!isOccupant)
+            {
+                SendContentTo(player, Identifier ?? 0);
             }
         }
     }
 
     protected override long GetContainerEntityUniqueId()
     {
-        return (long)Entity.RuntimeId;
+        return Entity.UniqueId;
     }
 
     protected override Basalt.Protocol.Types.BlockPos GetContainerPosition()
