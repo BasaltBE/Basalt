@@ -31,8 +31,11 @@ public sealed class Player : Basalt.Entity.Entity
         Username = username;
         Xuid = xuid;
         Uuid = uuid;
+        SetSpeed();
         Flags.SetActorFlag(ActorFlag.HasGravity, true);
         Flags.SetActorFlag(ActorFlag.Breathing, true);
+        Flags.SetActorFlag(ActorFlag.CanShowName, true);
+        Flags.SetActorFlag(ActorFlag.AlwaysShowName, true);
     }
 
     public Gamemode GetGamemode()

@@ -21,6 +21,7 @@ public class Entity
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; } = ++_runtimeCounter;
     public long UniqueId => unchecked((long)RuntimeId);
+    public float Speed { get; private set; } = 1f;
     public Vec3f Position { get; set; }
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
@@ -31,6 +32,9 @@ public class Entity
     public bool IsSwimming { get; set; }
     public IReadOnlyList<EntityTrait> Traits => _traits;
     private readonly HashSet<EffectType> _effects = [];
+    protected virtual float BaseMovementSpeed => 0.1f;
+    protected virtual float BaseUnderwaterMovementSpeed => 0.02f;
+    protected virtual float BaseLavaMovementSpeed => 0.02f;
 
     public Entity(string identifier)
     {
@@ -195,6 +199,33 @@ public class Entity
         {
             _traits[i].OnRendered(options);
         }
+    }
+
+    public virtual void SetSpeed(float speed = 1f)
+    {
+        Speed = speed;
+        float movement = BaseMovementSpeed * Speed;
+        float underwater = BaseUnderwaterMovementSpeed * Speed;
+        float lava = BaseLavaMovementSpeed * Speed;
+
+        SetMovementAttribute(AttributeName.Movement, movement, BaseMovementSpeed);
+        SetMovementAttribute(AttributeName.UnderwaterMovement, underwater, BaseUnderwaterMovementSpeed);
+        SetMovementAttribute(AttributeName.LavaMovement, lava, BaseLavaMovementSpeed);
+    }
+
+    private void SetMovementAttribute(AttributeName name, float current, float @default)
+    {
+        const float min = 0f;
+        const float max = float.MaxValue;
+
+        Protocol.Types.Attribute attribute = Attributes.GetAttribute(name) ?? new Protocol.Types.Attribute(min, max, current, @default, name);
+        attribute.Min = min;
+        attribute.Max = max;
+        attribute.DefaultMin = min;
+        attribute.DefaultMax = max;
+        attribute.Default = @default;
+        attribute.Current = current;
+        Attributes.SetAttribute(attribute);
     }
 
     public CompoundTag WriteToNbt()
