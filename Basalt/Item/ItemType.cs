@@ -99,7 +99,7 @@ public sealed class ItemType
         {
             NetworkId = type.NetworkId,
             StackSize = stackSize,
-            Metadata = metadata,
+            Metadata = unchecked((int)metadata),
             ItemStackId = null,
             NetworkBlockId = networkBlockId,
             ExtraData = new ItemInstanceUserData
