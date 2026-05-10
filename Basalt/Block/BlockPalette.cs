@@ -103,9 +103,11 @@ public sealed class BlockPalette
             string root = ResolveDataDirectory(dataDirectory);
             string typesPath = Path.Combine(root, "block_types.json");
             string permutationsPath = Path.Combine(root, "block_permutations.json");
+            string metadataPath = Path.Combine(root, "block_metadata.json");
             List<BlockTypeData> types = ReadTypes(typesPath);
             List<BlockPermutationData> permutations = ReadPermutations(permutationsPath);
-            LoadRegistries(types, permutations);
+            List<BlockMetadataData> metadata = ReadMetadata(metadataPath);
+            LoadRegistries(types, permutations, metadata);
 
             _vanillaLoaded = true;
         }
@@ -125,7 +127,15 @@ public sealed class BlockPalette
         return result ?? [];
     }
 
-    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations)
+    private static List<BlockMetadataData> ReadMetadata(string metadataPath)
+    {
+        if (!File.Exists(metadataPath)) return [];
+        using FileStream stream = File.OpenRead(metadataPath);
+        List<BlockMetadataData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockMetadataData);
+        return result ?? [];
+    }
+
+    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockMetadataData> metadata)
     {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
@@ -142,6 +152,14 @@ public sealed class BlockPalette
         }
 
         _ = BlockType.Get(AirIdentifier) ?? new BlockType(AirIdentifier);
+
+        for (int i = 0; i < metadata.Count; i++)
+        {
+            if (BlockType.Types.TryGetValue(metadata[i].Identifier, out BlockType? type))
+            {
+                type.Hardness = metadata[i].Hardness;
+            }
+        }
 
         for (int i = 0; i < permutations.Count; i++)
         {
