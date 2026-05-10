@@ -5,6 +5,7 @@ using Basalt.Item.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Entity.Traits.PlayerTraits;
+using Basalt.Protocol.Nbt;
 
 namespace Basalt.Entity.Traits.Attribute;
 
@@ -105,5 +106,15 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
     public override EntityTrait Clone(Entity entity)
     {
         return new EntityHealthTrait(entity);
+    }
+
+    public override void OnRead(CompoundTag tag)
+    {
+        CurrentValue = tag.Get<FloatTag>("current")?.Value ?? CurrentValue;
+    }
+
+    public override void OnWrite(CompoundTag tag)
+    {
+        tag.Set("current", new FloatTag { Value = CurrentValue });
     }
 }
