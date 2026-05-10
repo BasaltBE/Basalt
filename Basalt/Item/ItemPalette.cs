@@ -54,7 +54,7 @@ public sealed class ItemPalette
                 Name = type.Identifier,
                 RuntimeId = checked((short)type.NetworkId),
                 ComponentBased = type.IsComponentBased,
-                Version = type.Version,
+                Version = Math.Max(2, type.Version),
                 Data = type.Properties
             })];
 
