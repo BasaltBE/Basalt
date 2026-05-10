@@ -37,13 +37,7 @@ public sealed class ItemInstanceUserData : DataType<int?>
                 throw new InvalidOperationException($"Unsupported item NBT formatting version: {version}");
             }
 
-            TagType type = (TagType)reader.ReadInt8();
-            if (type != TagType.Compound)
-            {
-                throw new InvalidOperationException($"Expected Compound tag for item NBT, got {type}.");
-            }
-
-            Nbt = CompoundTag.Read(ref reader);
+            Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
         else
         {
