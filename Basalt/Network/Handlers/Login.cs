@@ -60,6 +60,12 @@ public static class Login
 
 
         var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
+        var savedData = server.World.Provider.LoadPlayerData(identity.Xuid);
+        if (savedData is not null)
+        {
+            player.ReadFromNbt(savedData);
+        }
+
         player.Connection = connection;
         player.Network = server.Network;
         server.Players[connection] = player;
