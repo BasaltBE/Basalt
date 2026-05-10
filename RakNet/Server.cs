@@ -33,14 +33,29 @@ namespace Basalt.RakNet
         {
             byte[] buffer = new byte[2048];
             Listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            if (OperatingSystem.IsWindows())
+            {
+                const int SIO_UDP_CONNRESET = -1744830452;
+                try
+                {
+                    Listener.IOControl(SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+                }
+                catch { }
+            }
             Listener.Bind(new IPEndPoint(IPAddress.Any, 19132));
             _ = RunTickLoop();
             SocketAddress recieve = new(AddressFamily.InterNetwork);
             while (true)
             {
-                int received = await Listener.ReceiveFromAsync(buffer, SocketFlags.None, recieve);
-                if (received > 0)
-                    RecieveFrom(recieve, buffer.AsSpan(0, received));
+                try
+                {
+                    int received = await Listener.ReceiveFromAsync(buffer, SocketFlags.None, recieve);
+                    if (received > 0)
+                        RecieveFrom(recieve, buffer.AsSpan(0, received));
+                }
+                catch (Exception)
+                {
+                }
             }
         }
         public void RecieveFrom(SocketAddress endpoint, ReadOnlySpan<byte> message)
@@ -237,7 +252,13 @@ namespace Basalt.RakNet
                 long now = Environment.TickCount64;
                 foreach (NetworkServerConnection connection in Connections.Values)
                 {
-                    connection.Tick(now);
+                    try
+                    {
+                        connection.Tick(now);
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }
