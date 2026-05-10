@@ -124,6 +124,19 @@ public sealed class Server
                     _network.SendPacket(connection, packet);
                 }
             };
+
+            dimension.PacketBroadcasterExcept = (packet, exclude) =>
+            {
+                foreach ((NetworkConnection connection, Player player) in Players)
+                {
+                    if (player.Dimension != dimension || ReferenceEquals(player, exclude))
+                    {
+                        continue;
+                    }
+
+                    _network.SendPacket(connection, packet);
+                }
+            };
         }
     }
 
