@@ -246,7 +246,7 @@ public static class ItemStackRequest
 
     private static bool AreStackable(ItemStack a, ItemStack b)
     {
-        return a.Identifier == b.Identifier && a.Metadata == b.Metadata && Equals(a.ExtraData, b.ExtraData);
+        return a.CanStackWith(b);
     }
 
     private static void AddContainerSlotInfo(

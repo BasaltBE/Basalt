@@ -192,9 +192,10 @@ public sealed class EntityInventoryTrait : EntityTrait
             entry.Set("Name", new StringTag { Value = item.Identifier });
             entry.Set("Count", new IntTag { Value = item.StackSize });
             entry.Set("Damage", new IntTag { Value = unchecked((int)item.Metadata) });
-            if (item.ExtraData?.Nbt is not null)
+            CompoundTag? nbt = item.GetSerializedNbt();
+            if (nbt is not null)
             {
-                entry.Set("tag", item.ExtraData.Nbt);
+                entry.Set("tag", nbt);
             }
 
             inventoryList.Values.Add(entry);

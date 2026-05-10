@@ -95,7 +95,7 @@ public class Container
         for (int i = 0; i < Storage.Count; i++)
         {
             ItemStack? existing = Storage[i];
-            if (existing is null || !existing.Equals(item) || existing.StackSize >= existing.Type.MaxStackSize)
+            if (existing is null || !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
             {
                 continue;
             }
@@ -170,7 +170,7 @@ public class Container
 
         source.DecrementStack((ushort)taken);
         UpdateSlot(slot);
-        return new ItemStack(source.Type, (ushort)taken, source.Metadata, source.ExtraData);
+        return source.Clone((ushort)taken);
     }
 
     public void SwapItems(int slot, int otherSlot, Container? otherContainer = null)
@@ -440,10 +440,10 @@ public class Container
             NetworkBlockId = networkBlockId,
             ExtraData = new ItemInstanceUserData
             {
-                Nbt = null,
-                CanPlaceOn = [],
-                CanDestroy = [],
-                Ticking = null
+                Nbt = item.GetSerializedNbt(),
+                CanPlaceOn = item.ExtraData?.CanPlaceOn ?? [],
+                CanDestroy = item.ExtraData?.CanDestroy ?? [],
+                Ticking = item.ExtraData?.Ticking
             }
         };
     }
