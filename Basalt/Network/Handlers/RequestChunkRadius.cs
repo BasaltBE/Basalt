@@ -34,6 +34,5 @@ public static class RequestChunkRadius
         }
 
         chunkRendering.ApplyViewDistance(radius);
-        Logger.Info($"[{player.Username}] Requested chunk radius: {packet.ChunkRadius} (Max: {packet.MaxChunkRadius}), accepted: {radius}");
     }
 }
