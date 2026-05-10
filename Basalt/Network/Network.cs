@@ -21,16 +21,15 @@ public sealed class NetworkHandler
     {
         if (_server.Players.Remove(connection, out Player? player))
         {
+            _server.World.Provider.SavePlayerData(player.Xuid, player.WriteToNbt());
+
             if (player.IsAlive && player.Dimension is not null)
             {
                 player.Despawn(new Basalt.Entity.Traits.Types.EntityDespawnOptions(Disconnected: true));
             }
 
-            Console.WriteLine($"Player {player.Username} disconnected.");
             return;
         }
-
-        Console.WriteLine("Connection disconnected.");
     }
 
     public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
@@ -119,6 +118,12 @@ public sealed class NetworkHandler
                         case (int)PacketId.InventoryTransaction:
                             InventoryTransaction.Handle(_server, connection, buffer);
                             break;
+                        case (int)PacketId.PlayerAction:
+                            PlayerAction.Handle(_server, connection, buffer);
+                            break;
+                        case (int)PacketId.InventoryContent:
+                            InventoryContent.Handle(_server, connection, buffer);
+                            break;
                         case (int)PacketId.ItemStackRequest:
                             ItemStackRequest.Handle(_server, connection, buffer);
                             break;
@@ -126,7 +131,6 @@ public sealed class NetworkHandler
                             ClientCacheStatus.Handle(_server, connection, buffer);
                             break;
                         default:
-                            Console.WriteLine($"Unhandled raw=0x{rawHeader:X} id=0x{packetId:X} ({buffer.Length} bytes)");
                             break;
                     }
                 }
