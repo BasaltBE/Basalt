@@ -56,7 +56,7 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.Completed:
-                if (!server.Players.TryGetValue(connection, out Player? player))
+                if (!server.Players.TryGetValue(connection, out Basalt.Core.Player? player))
                 {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
                     return;
@@ -171,10 +171,9 @@ public static class ResourcePackClientResponse
                     Status = PlayStatus.PlayerSpawn
                 };
 
+                server.Network.SendPackets(connection, [startGame, actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
-                server.Network.SendPackets(connection, [actorIdentifiers, startGame, spawnStatus]);
-                Console.WriteLine($"Resource pack flow completed. Sent ItemRegistry + CreativeContent + AvailableActorIdentifiers + StartGame + PlayerSpawn to {player.Username}.");
                 return;
 
             default:
