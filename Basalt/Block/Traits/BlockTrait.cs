@@ -1,0 +1,79 @@
+using System.Reflection;
+using Basalt.Protocol.Nbt;
+using Basalt.Block.Traits.Types;
+
+namespace Basalt.Block.Traits;
+
+public abstract class BlockTrait
+{
+    public static readonly string[] Types = [];
+    public static readonly string[] Tags = [];
+    public static readonly Type? Component = null;
+    public static readonly Type[] Components = [];
+
+    protected Basalt.Block.Block Block { get; }
+    public virtual string Identifier
+    {
+        get
+        {
+            if (GetType().GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
+                property.PropertyType == typeof(string) &&
+                property.GetValue(null) is string identifier &&
+                !string.IsNullOrWhiteSpace(identifier))
+            {
+                return identifier;
+            }
+
+            return GetType().FullName ?? GetType().Name;
+        }
+    }
+
+    protected BlockTrait(Basalt.Block.Block block)
+    {
+        Block = block;
+    }
+
+    public virtual void OnAdd()
+    {
+    }
+
+    public virtual void OnRemove()
+    {
+    }
+
+    public virtual void OnRead(CompoundTag tag)
+    {
+    }
+
+    public virtual void OnWrite(CompoundTag tag)
+    {
+    }
+
+    public virtual void OnPlace(BlockPlaceDetails details)
+    {
+    }
+
+    public virtual void OnBreak(BlockBreakDetails details)
+    {
+    }
+
+    public virtual void OnInteract(BlockInteractDetails details)
+    {
+    }
+
+    public virtual void OnTick(BlockTickDetails details)
+    {
+    }
+
+    public virtual void OnRandomTick(BlockRandomTickDetails details)
+    {
+    }
+
+    public virtual void OnLandOn(BlockLandOnDetails details)
+    {
+    }
+
+    public virtual void OnRender(Core.Player player, int x, int y, int z)
+    {
+    }
+}
