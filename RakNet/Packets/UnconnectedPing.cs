@@ -6,6 +6,7 @@ namespace Basalt.RakNet.Packets;
 public struct UnconnectedPing(long time = 0, ulong guid = 0)
 {
     public const byte PacketId = 0x01;
+    public const byte OpenConnectionsPacketId = 0x02;
 
     public long Time = time;
     public ulong Guid = guid;
