@@ -9,15 +9,28 @@ public static class ContainerClose
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+
         ContainerClosePacket packet = new();
         packet.Deserialize(packetBuffer);
 
         if (server.Players.TryGetValue(connection, out Player? player))
         {
+            ArgumentNullException.ThrowIfNull(player);
+
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
             if (inventory is not null && packet.WindowId == (byte)(inventory.Container.Identifier ?? 0))
             {
-                inventory.Container.RemoveOccupant(player);
+                if (inventory.Container.occupants.Remove(player, out int id))
+                {
+                    player.openedContainers.Remove(id);
+                }
+            }
+            else if (player.TryGetOpenContainer(packet.WindowId, out Basalt.Containers.Container? openContainer) && openContainer is not null)
+            {
+                if (openContainer.occupants.Remove(player, out int id))
+                {
+                    player.openedContainers.Remove(id);
+                }
             }
         }
 
