@@ -39,6 +39,7 @@ public sealed class DebugTrait : PlayerTrait
                     "minecraft:dirt",
                     "minecraft:grass_block",
                     "minecraft:diamond_pickaxe",
+                    "minecraft:chest",
                 ];
 
                 int[] targetSlots = [0, 9, 10, 11, 12];
