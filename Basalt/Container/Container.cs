@@ -375,7 +375,7 @@ public class Container
         int id = Identifier ?? _nextContainerId++;
         occupants[player] = id;
         player.RegisterOpenContainer(id, this);
-        if (ShouldSendContainerOpen(player, id))
+        if (CanOpen(player, id))
         {
             ContainerOpenPacket openPacket = new()
             {
@@ -501,7 +501,7 @@ public class Container
         return -1;
     }
 
-    protected virtual bool ShouldSendContainerOpen(Player player, int windowId)
+    protected virtual bool CanOpen(Player player, int windowId)
     {
         return true;
     }
