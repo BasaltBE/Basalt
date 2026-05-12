@@ -5,11 +5,9 @@ using Basalt.Item.Traits.Types;
 
 namespace Basalt.Item;
 
-public sealed class ItemStack
-{
+public sealed class ItemStack {
     private static int _nextNetworkStackId;
     private readonly List<Traits.ItemTrait> _traits = [];
-    private readonly HashSet<string> _manualTraits = new(StringComparer.Ordinal);
 
     public ItemType Type { get; }
     public string Identifier => Type.Identifier;
@@ -29,11 +27,11 @@ public sealed class ItemStack
         {
             if (Activator.CreateInstance(traitType, this) is Traits.ItemTrait trait)
             {
-                AddTraitInternal(trait, false);
+                AddTrait(trait);
             }
         }
     }
-
+    
     public ItemStack(string identifier, ushort stackSize = 1, uint metadata = 0, ItemInstanceUserData? extraData = null)
         : this(ItemType.Get(identifier) ?? throw new InvalidOperationException($"Unknown item type '{identifier}'."), stackSize, metadata, extraData)
     {
@@ -76,7 +74,7 @@ public sealed class ItemStack
     {
         return Type.Identifier == other.Type.Identifier
                && Metadata == other.Metadata
-               && TraitsAlign(other);
+               && HasSameTraits(other);
     }
 
     public NetworkItemStackDescriptor ToNetworkStack()
@@ -155,26 +153,22 @@ public sealed class ItemStack
 
     public T AddTrait<T>(T trait) where T : Traits.ItemTrait
     {
-        return AddTrait(trait, true);
-    }
-
-    public T AddTrait<T>(T trait, bool manual) where T : Traits.ItemTrait
-    {
         ArgumentNullException.ThrowIfNull(trait);
-        AddTraitInternal(trait, manual);
+        if (GetTrait(trait.Identifier) is not null)
+        {
+            return trait;
+        }
+
+        _traits.Add(trait);
+        trait.OnAdd();
         return trait;
     }
 
     public CompoundTag? GetSerializedNbt()
     {
-        CompoundTag? nbt = ExtraData?.Nbt;
-        if (_traits.Count > 0 || _manualTraits.Count > 0)
-        {
-            nbt ??= new CompoundTag();
-            WriteTraits(nbt);
-        }
-
-        return nbt is not null && nbt.Values.Count > 0 ? nbt : null;
+        CompoundTag nbt = ExtraData?.Nbt ?? new CompoundTag();
+        WriteTraits(nbt);
+        return nbt.Values.Count > 0 ? nbt : null;
     }
 
     public ItemStack Clone(ushort? stackSize = null)
@@ -257,114 +251,71 @@ public sealed class ItemStack
 
     private void WriteTraits(CompoundTag nbt)
     {
-        if (_traits.Count == 0 && _manualTraits.Count == 0) return;
+        if (_traits.Count == 0) return;
 
-        CompoundTag traitsTag = new();
+        ListTag traitsTag = new() { Name = "traits" };
         foreach (var trait in _traits)
         {
+            CompoundTag traitEntry = new();
+            traitEntry.Set("id", new StringTag { Value = trait.Identifier });
+
             CompoundTag traitData = new();
             trait.OnWrite(traitData);
-            if (traitData.Values.Count > 0)
-            {
-                traitsTag.Set(trait.Identifier, traitData);
-            }
+            traitEntry.Set("data", traitData);
+
+            traitsTag.Values.Add(traitEntry);
         }
 
-        if (traitsTag.Values.Count > 0)
-        {
-            nbt.Set("traits", traitsTag);
-        }
-
-        if (_manualTraits.Count > 0)
-        {
-            ListTag manualTraitsTag = new() { Name = "manual_traits" };
-            foreach (string identifier in _manualTraits.OrderBy(static x => x, StringComparer.Ordinal))
-            {
-                manualTraitsTag.Values.Add(new StringTag { Value = identifier });
-            }
-
-            nbt.Set("manual_traits", manualTraitsTag);
-        }
+        nbt.Set("traits", traitsTag);
     }
 
     private void ReadTraits(CompoundTag nbt)
     {
-        ListTag? manualTraitsTag = nbt.Get<ListTag>("manual_traits");
-        if (manualTraitsTag is not null)
-        {
-            for (int i = 0; i < manualTraitsTag.Values.Count; i++)
-            {
-                if (manualTraitsTag.Values[i] is not StringTag traitIdentifierTag || string.IsNullOrWhiteSpace(traitIdentifierTag.Value))
-                {
-                    continue;
-                }
-
-                if (HasTraitIdentifier(traitIdentifierTag.Value))
-                {
-                    _manualTraits.Add(traitIdentifierTag.Value);
-                    continue;
-                }
-
-                if (!ItemTraitRegistry.RegisteredTraits.TryGetValue(traitIdentifierTag.Value, out Type? traitType))
-                {
-                    continue;
-                }
-
-                if (Activator.CreateInstance(traitType, this) is Traits.ItemTrait trait)
-                {
-                    AddTraitInternal(trait, true);
-                }
-            }
-        }
-
-        CompoundTag? traitsTag = nbt.Get<CompoundTag>("traits");
+        ListTag? traitsTag = nbt.Get<ListTag>("traits");
         if (traitsTag is null) return;
 
-        foreach (var trait in _traits)
+        foreach (BaseTag tag in traitsTag.Values)
         {
-            CompoundTag? traitData = traitsTag.Get<CompoundTag>(trait.Identifier);
-            if (traitData is not null)
+            if (tag is not CompoundTag traitEntry) continue;
+
+            string? identifier = traitEntry.Get<StringTag>("id")?.Value;
+            CompoundTag? traitData = traitEntry.Get<CompoundTag>("data");
+
+            if (identifier == null || traitData == null) continue;
+
+            Traits.ItemTrait? trait = GetTrait(identifier);
+            if (trait == null)
             {
-                trait.OnRead(traitData);
+                if (ItemTraitRegistry.RegisteredTraits.TryGetValue(identifier, out Type? traitType))
+                {
+                    if (Activator.CreateInstance(traitType, this) is Traits.ItemTrait newTrait)
+                    {
+                        AddTrait(newTrait);
+                        trait = newTrait;
+                    }
+                }
             }
+
+            trait?.OnRead(traitData);
         }
     }
 
-    private void AddTraitInternal(Traits.ItemTrait trait, bool manual)
-    {
-        string identifier = trait.Identifier;
-        if (HasTraitIdentifier(identifier))
-        {
-            if (manual)
-            {
-                _manualTraits.Add(identifier);
-            }
+    // AddTrait methods are now defined above
 
-            return;
-        }
-
-        _traits.Add(trait);
-        if (manual)
-        {
-            _manualTraits.Add(identifier);
-        }
-        trait.OnAdd();
-    }
-
-    private bool HasTraitIdentifier(string identifier)
+    public Traits.ItemTrait? GetTrait(string identifier)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
             if (string.Equals(_traits[i].Identifier, identifier, StringComparison.Ordinal))
             {
-                return true;
+                return _traits[i];
             }
         }
 
-        return false;
+        return null;
     }
 
-    private bool TraitsAlign(ItemStack other)
+    private bool HasSameTraits(ItemStack other)
     {
         if (_traits.Count != other._traits.Count)
         {
