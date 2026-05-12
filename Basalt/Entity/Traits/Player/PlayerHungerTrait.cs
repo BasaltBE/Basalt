@@ -14,8 +14,8 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
 
     public override AttributeName Attribute => AttributeName.PlayerHunger;
 
-    public float Saturation { get; set; } = 10f;
-    public float Exhaustion { get; set; }
+    public float Saturation  = 10f;
+    public float Exhaustion;
 
     public PlayerHungerTrait(Entity entity) : base(entity)
     {
