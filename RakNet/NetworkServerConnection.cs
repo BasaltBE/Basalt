@@ -4,102 +4,149 @@ using Basalt.Binary;
 using Basalt.RakNet.Packets;
 using Basalt.RakNet.Packets.Enums;
 
-namespace Basalt.RakNet
+namespace Basalt.RakNet;
+
+internal class NetworkServerConnection : NetworkConnection
 {
-    internal class NetworkServerConnection : NetworkConnection
+    private const byte ConnectedPingPacketId = 0x00;
+    private const byte ConnectedPongPacketId = 0x03;
+    private const byte EncapsulatedGamePacketId = 0xFE;
+
+    public long ClientId { get; }
+    public SocketAddress Endpoint { get; }
+    public ushort Mtu { get; }
+    public bool IsConnected { get; private set; }
+
+    public event Action<NetworkConnection>? Connected;
+    public event Action<NetworkConnection>? Disconnected;
+    public event Action<NetworkConnection, ReadOnlyMemory<byte>>? Message;
+
+    protected override int MaxMtu => Mtu;
+
+    private readonly Socket _socket;
+
+    public NetworkServerConnection(Socket socket, SocketAddress endpoint, long clientId, ushort mtu)
     {
-        private const byte ConnectedPingPacketId = 0x00;
-        private const byte ConnectedPongPacketId = 0x03;
-        private const byte EncapsulatedGamePacketId = 0xFE;
+        _socket = socket;
+        Endpoint = endpoint;
+        ClientId = clientId;
+        Mtu = mtu;
+    }
 
-        public long ClientId { get; }
-        public SocketAddress Endpoint { get; }
-        public ushort Mtu { get; }
-        public bool IsConnected { get; private set; }
-        public event Action<NetworkConnection>? Connected;
-        public event Action<NetworkConnection>? Disconnected;
-        public event Action<NetworkConnection, ReadOnlyMemory<byte>>? Message;
-
-        private readonly Socket Socket;
-        protected override int MaxMtu => Mtu;
-
-        public NetworkServerConnection(Socket socket, SocketAddress endpoint, long clientId, ushort mtu)
+    protected override void SendMessage(ReadOnlySpan<byte> raw)
+    {
+        try
         {
-            Socket = socket;
-            Endpoint = endpoint;
-            ClientId = clientId;
-            Mtu = mtu;
+            _socket.SendTo(raw, SocketFlags.None, Endpoint);
+        }
+        catch
+        {
+        }
+    }
+
+    protected override void HandleFrame(Packets.Types.Frame frame)
+    {
+        if (frame.Buffer.Length == 0)
+        {
+            return;
         }
 
-        protected override void SendMessage(ReadOnlySpan<byte> raw)
+        byte packetId = frame.Buffer[0];
+
+        try
         {
-            Socket.SendTo(raw, SocketFlags.None, Endpoint);
-        }
-
-        protected override void HandleFrame(Packets.Types.Frame frame)
-        {
-            if (frame.Buffer.Length == 0)
+            switch (packetId)
             {
-                return;
-            }
+                case ConnectionRequest.PacketId:
+                    HandleConnectionRequest(frame.Buffer);
+                    break;
 
-            byte PacketId = frame.Buffer[0];
+                case NewIncomingConnection.PacketId:
+                    HandleNewIncomingConnection(frame.Buffer);
+                    break;
 
-            if (PacketId == ConnectionRequest.PacketId)
-            {
-                ConnectionRequest request = ConnectionRequest.Deserialize(frame.Buffer);
+                case ConnectedPingPacketId:
+                    HandleConnectedPing(frame.Buffer);
+                    break;
 
-                SocketAddress[] serverNetAddresses = new SocketAddress[20];
-                for (int i = 0; i < serverNetAddresses.Length; i++)
-                {
-                    serverNetAddresses[i] = new SocketAddress(AddressFamily.InterNetwork);
-                }
+                case DisconnectNotification.PacketId:
+                    Disconnect();
+                    break;
 
-                ConnectionRequestAccepted accepted = new(
-                    clientAddress: Endpoint,
-                    clientIndex: 0,
-                    serverNetAddresses: serverNetAddresses,
-                    clientSendTime: request.ClientSendTime,
-                    serverSendTime: (ulong)Environment.TickCount64
-                );
-
-                Span<byte> payload = stackalloc byte[2048];
-                int length = ConnectionRequestAccepted.Serialize(accepted, payload);
-                SendPayload(payload[..length]);
-                return;
-            }
-
-            if (PacketId == NewIncomingConnection.PacketId)
-            {
-                _ = NewIncomingConnection.Deserialize(frame.Buffer);
-                IsConnected = true;
-                Connected?.Invoke(this);
-                return;
-            }
-
-            if (PacketId == ConnectedPingPacketId && frame.Buffer.Length >= 9)
-            {
-                ulong clientPingTime = frame.Buffer.ReadUInt64(1, false);
-                Span<byte> pong = stackalloc byte[17];
-                pong.WriteUInt8(ConnectedPongPacketId, 0);
-                pong.WriteUInt64(clientPingTime, 1, false);
-                pong.WriteUInt64((ulong)Environment.TickCount64, 9, false);
-                SendPayload(pong, Reliability.Unreliable);
-                return;
-            }
-
-            if (PacketId == DisconnectNotification.PacketId)
-            {
-                IsConnected = false;
-                Disconnected?.Invoke(this);
-                return;
-            }
-
-            if (PacketId == EncapsulatedGamePacketId)
-            {
-                Message?.Invoke(this, frame.Buffer);
-                return;
+                case EncapsulatedGamePacketId:
+                    Message?.Invoke(this, frame.Buffer);
+                    break;
             }
         }
+        catch
+        {
+        }
+    }
+
+    private void HandleConnectionRequest(ReadOnlySpan<byte> buffer)
+    {
+        ConnectionRequest request = ConnectionRequest.Deserialize(buffer);
+
+        SocketAddress[] serverAddresses = new SocketAddress[20];
+
+        for (int i = 0; i < serverAddresses.Length; i++)
+        {
+            serverAddresses[i] = new SocketAddress(AddressFamily.InterNetwork);
+        }
+
+        ConnectionRequestAccepted accepted = new(
+            clientAddress: Endpoint,
+            clientIndex: 0,
+            serverNetAddresses: serverAddresses,
+            clientSendTime: request.ClientSendTime,
+            serverSendTime: (ulong)Environment.TickCount64
+        );
+
+        Span<byte> payload = stackalloc byte[2048];
+        int length = ConnectionRequestAccepted.Serialize(accepted, payload);
+
+        SendPayload(payload[..length]);
+    }
+
+    private void HandleNewIncomingConnection(ReadOnlySpan<byte> buffer)
+    {
+        _ = NewIncomingConnection.Deserialize(buffer);
+
+        if (IsConnected)
+        {
+            return;
+        }
+
+        IsConnected = true;
+        Connected?.Invoke(this);
+    }
+
+    private void HandleConnectedPing(ReadOnlySpan<byte> buffer)
+    {
+        if (buffer.Length < 9)
+        {
+            return;
+        }
+
+        ulong clientPingTime = buffer.ReadUInt64(1, false);
+
+        Span<byte> pong = stackalloc byte[17];
+
+        pong.WriteUInt8(ConnectedPongPacketId, 0);
+        pong.WriteUInt64(clientPingTime, 1, false);
+        pong.WriteUInt64((ulong)Environment.TickCount64, 9, false);
+
+        SendPayload(pong, Reliability.Unreliable);
+    }
+
+    private void Disconnect()
+    {
+        if (!IsConnected)
+        {
+            return;
+        }
+
+        IsConnected = false;
+        Disconnected?.Invoke(this);
     }
 }
