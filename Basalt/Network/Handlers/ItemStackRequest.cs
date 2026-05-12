@@ -21,81 +21,61 @@ public static class ItemStackRequest
         }
 
         List<ItemStackResponse> responses = new(packet.Requests.Count);
-        using (Container.SuppressPackets())
+
+        foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
         {
-            foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
+            try
             {
-                try
+                responses.Add(ProcessRequest(player, request));
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"ItemStackRequest exception: request: {request.RequestId} {exception}");
+
+                responses.Add(new ItemStackResponse
                 {
-                    ItemStackResponse response = HandleRequest(player, request);
-                    responses.Add(response);
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine($"ItemStackRequest exception: request={request.RequestId} {exception}");
-                    responses.Add(new ItemStackResponse
-                    {
-                        Status = ItemStackResponseStatus.Error,
-                        RequestId = request.RequestId,
-                        ContainerInfo = []
-                    });
-                }
+                    Status = ItemStackResponseStatus.Error,
+                    RequestId = request.RequestId,
+                    ContainerInfo = []
+                });
             }
         }
 
-        server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
+        server.Network.SendPacket(connection, new ItemStackResponsePacket
+        {
+            Responses = responses
+        });
     }
 
-    private static ItemStackResponse HandleRequest(Player player, Protocol.Types.ItemStackRequest request)
+    private static ItemStackResponse ProcessRequest(Player player, Protocol.Types.ItemStackRequest request)
     {
-        Dictionary<string, StackResponseContainerInfo> containers = [];
-        ItemStackResponseStatus status = ItemStackResponseStatus.Ok;
-        if (request.Actions.Count > 0)
-        {
-            switch (request.Actions[0])
-            {
-                case TransferStackRequestAction transfer:
-                    Console.WriteLine($"ItemStackRequest {request.RequestId}: transfer src={transfer.Source.Container.ContainerId} dst={transfer.Destination.Container.ContainerId}");
-                    break;
-                case SwapStackRequestAction swap:
-                    Console.WriteLine($"ItemStackRequest {request.RequestId}: swap src={swap.Source.Container.ContainerId} dst={swap.Destination.Container.ContainerId}");
-                    break;
-                case DropStackRequestAction drop:
-                    Console.WriteLine($"ItemStackRequest {request.RequestId}: drop src={drop.Source.Container.ContainerId}");
-                    break;
-            }
-        }
+        Dictionary<string, StackResponseContainerInfo> changedContainers = [];
 
         foreach (IStackRequestAction action in request.Actions)
         {
-            status = action switch
+            ItemStackResponseStatus status = action switch
             {
-                TransferStackRequestAction transfer => HandleTransferAction(player, transfer, containers),
-                SwapStackRequestAction swap => HandleSwapAction(player, swap, containers),
-                DropStackRequestAction drop => HandleDropAction(player, drop, containers),
-                DestroyStackRequestAction destroy => HandleDestroyAction(player, destroy, containers),
+                TransferStackRequestAction transfer => TransferItem(player, transfer, changedContainers),
+                SwapStackRequestAction swap => SwapItems(player, swap, changedContainers),
+                DropStackRequestAction drop => RemoveDroppedItem(player, drop, changedContainers),
+                DestroyStackRequestAction destroy => RemoveDestroyedItem(player, destroy, changedContainers),
+
                 EmptyStackRequestAction => ItemStackResponseStatus.Ok,
                 CraftResultsDeprecatedStackRequestAction => ItemStackResponseStatus.Ok,
+
                 _ => ItemStackResponseStatus.InvalidRequestActionType
             };
 
-            if (status != ItemStackResponseStatus.Ok)
+            if (status == ItemStackResponseStatus.Ok)
             {
-                Console.WriteLine($"ItemStackRequest failed: request={request.RequestId} status={status}");
-                return new ItemStackResponse
-                {
-                    Status = status,
-                    RequestId = request.RequestId,
-                    ContainerInfo = []
-                };
+                continue;
             }
-        }
 
-        if (containers.Count == 0)
-        {
+            Console.WriteLine($"ItemStackRequest failed: request: {request.RequestId} status={status}");
+
             return new ItemStackResponse
             {
-                Status = ItemStackResponseStatus.Error,
+                Status = status,
                 RequestId = request.RequestId,
                 ContainerInfo = []
             };
@@ -103,167 +83,197 @@ public static class ItemStackRequest
 
         return new ItemStackResponse
         {
-            Status = ItemStackResponseStatus.Ok,
+            Status = changedContainers.Count > 0
+                ? ItemStackResponseStatus.Ok
+                : ItemStackResponseStatus.Error,
+
             RequestId = request.RequestId,
-            ContainerInfo = [.. containers.Values]
+            ContainerInfo = changedContainers.Count > 0
+                ? [.. changedContainers.Values]
+                : []
         };
     }
 
-    private static ItemStackResponseStatus HandleTransferAction(Player player, TransferStackRequestAction action, Dictionary<string, StackResponseContainerInfo> containers)
+    private static ItemStackResponseStatus TransferItem(
+        Player player,
+        TransferStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        if (!player.TryResolveContainerSlot(action.Source.Container, action.Source.Slot, out Container? source, out int sourceSlot) ||
-            !player.TryResolveContainerSlot(action.Destination.Container, action.Destination.Slot, out Container? destination, out int destinationSlot) ||
-            source is null || destination is null)
+        Container? sourceContainer = player.GetContainer(action.Source.Container);
+        Container? destinationContainer = player.GetContainer(action.Destination.Container);
+        int sourceSlot = action.Source.Slot;
+        int destinationSlot = action.Destination.Slot;
+
+        if (sourceContainer is null || destinationContainer is null)
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
 
-        if (!IsValidSlot(source, sourceSlot) || !IsValidSlot(destination, destinationSlot))
+        if (sourceSlot < 0 || sourceSlot >= sourceContainer.GetSize() ||
+            destinationSlot < 0 || destinationSlot >= destinationContainer.GetSize())
         {
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
-        ItemStack? sourceItem = source.GetItem(sourceSlot);
+        ItemStack? sourceItem = sourceContainer.GetItem(sourceSlot);
         if (sourceItem is null)
         {
             return ItemStackResponseStatus.FailedToMatchExpectedSlotConsumedItem;
         }
 
-        int amount = Math.Max(1, (int)action.Count);
-        amount = Math.Min(amount, sourceItem.StackSize);
+        int amount = Math.Min(Math.Max(1, (int)action.Count), sourceItem.StackSize);
+        ItemStack? destinationItem = destinationContainer.GetItem(destinationSlot);
 
-        ItemStack? destinationItem = destination.GetItem(destinationSlot);
-        if (destinationItem is not null)
+        if (destinationItem is null)
         {
-            if (!AreStackable(sourceItem, destinationItem))
-            {
-                return ItemStackResponseStatus.CannotPlaceItem;
-            }
+            ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
 
-            int available = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
-            if (available <= 0)
-            {
-                return ItemStackResponseStatus.CannotPlaceItem;
-            }
-
-            amount = Math.Min(amount, available);
-            destinationItem.IncrementStack((ushort)amount);
-            sourceItem.DecrementStack((ushort)amount);
-            if (sourceItem.StackSize == 0)
-            {
-                source.ClearSlot(sourceSlot);
-            }
-            else
-            {
-                source.UpdateSlot(sourceSlot);
-            }
-
-            destination.UpdateSlot(destinationSlot);
-        }
-        else
-        {
-            ItemStack moved = source.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
-            if (moved.Type == ItemType.Air || moved.StackSize == 0)
+            if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
             {
                 return ItemStackResponseStatus.CannotRemoveItem;
             }
 
-            destination.SetItem(destinationSlot, moved);
+            destinationContainer.SetItem(destinationSlot, movedItem);
+        }
+        else
+        {
+            if (!sourceItem.CanStackWith(destinationItem))
+            {
+                return ItemStackResponseStatus.CannotPlaceItem;
+            }
+
+            int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
+            if (availableSpace <= 0)
+            {
+                return ItemStackResponseStatus.CannotPlaceItem;
+            }
+
+            amount = Math.Min(amount, availableSpace);
+
+            destinationItem.IncrementStack((ushort)amount);
+            sourceItem.DecrementStack((ushort)amount);
+
+            if (sourceItem.StackSize == 0)
+            {
+                sourceContainer.ClearSlot(sourceSlot);
+            }
+            else
+            {
+                sourceContainer.UpdateSlot(sourceSlot);
+            }
+
+            destinationContainer.UpdateSlot(destinationSlot);
         }
 
-        AddContainerSlotInfo(containers, action.Source.Container, source, action.Source.Slot, sourceSlot);
-        AddContainerSlotInfo(containers, action.Destination.Container, destination, action.Destination.Slot, destinationSlot);
+        AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
+        AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
+
         return ItemStackResponseStatus.Ok;
     }
 
-    private static ItemStackResponseStatus HandleSwapAction(Player player, SwapStackRequestAction action, Dictionary<string, StackResponseContainerInfo> containers)
+    private static ItemStackResponseStatus SwapItems(
+        Player player,
+        SwapStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        if (!player.TryResolveContainerSlot(action.Source.Container, action.Source.Slot, out Container? source, out int sourceSlot) ||
-            !player.TryResolveContainerSlot(action.Destination.Container, action.Destination.Slot, out Container? destination, out int destinationSlot) ||
-            source is null || destination is null)
+        Container? sourceContainer = player.GetContainer(action.Source.Container);
+        Container? destinationContainer = player.GetContainer(action.Destination.Container);
+        int sourceSlot = action.Source.Slot;
+        int destinationSlot = action.Destination.Slot;
+
+        if (sourceContainer is null || destinationContainer is null)
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
-        if (!IsValidSlot(source, sourceSlot) || !IsValidSlot(destination, destinationSlot))
+
+        if (sourceSlot < 0 || sourceSlot >= sourceContainer.GetSize() ||
+            destinationSlot < 0 || destinationSlot >= destinationContainer.GetSize())
         {
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
-        source.SwapItems(sourceSlot, destinationSlot, destination);
-        AddContainerSlotInfo(containers, action.Source.Container, source, action.Source.Slot, sourceSlot);
-        AddContainerSlotInfo(containers, action.Destination.Container, destination, action.Destination.Slot, destinationSlot);
+        sourceContainer.SwapItems(sourceSlot, destinationSlot, destinationContainer);
+
+        AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
+        AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
+
         return ItemStackResponseStatus.Ok;
     }
 
-    private static ItemStackResponseStatus HandleDropAction(Player player, DropStackRequestAction action, Dictionary<string, StackResponseContainerInfo> containers)
+    private static ItemStackResponseStatus RemoveDroppedItem(
+        Player player,
+        DropStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        if (!player.TryResolveContainerSlot(action.Source.Container, action.Source.Slot, out Container? source, out int slot) || source is null)
+        Container? container = player.GetContainer(action.Source.Container);
+        int slot = action.Source.Slot;
+        if (container is null)
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
-        if (!IsValidSlot(source, slot))
+
+        if (slot < 0 || slot >= container.GetSize())
         {
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        ItemStack? removed = source.TakeItem(slot, amount);
-        if (removed is null)
+        ItemStack? removedItem = container.TakeItem(slot, amount);
+
+        if (removedItem is null)
         {
             return ItemStackResponseStatus.CannotDropItem;
         }
 
-        AddContainerSlotInfo(containers, action.Source.Container, source, action.Source.Slot, slot);
+        AddChangedSlot(changedContainers, action.Source.Container, container, action.Source.Slot, slot);
+
         return ItemStackResponseStatus.Ok;
     }
 
-    private static ItemStackResponseStatus HandleDestroyAction(Player player, DestroyStackRequestAction action, Dictionary<string, StackResponseContainerInfo> containers)
+    private static ItemStackResponseStatus RemoveDestroyedItem(
+        Player player,
+        DestroyStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        if (!player.TryResolveContainerSlot(action.Source.Container, action.Source.Slot, out Container? source, out int slot) || source is null)
+        Container? container = player.GetContainer(action.Source.Container);
+        int slot = action.Source.Slot;
+        if (container is null)
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
-        if (!IsValidSlot(source, slot))
+
+        if (slot < 0 || slot >= container.GetSize())
         {
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        ItemStack? removed = source.TakeItem(slot, amount);
-        if (removed is null)
+        ItemStack? removedItem = container.TakeItem(slot, amount);
+
+        if (removedItem is null)
         {
             return ItemStackResponseStatus.CannotDestroyItem;
         }
 
-        AddContainerSlotInfo(containers, action.Source.Container, source, action.Source.Slot, slot);
+        AddChangedSlot(changedContainers, action.Source.Container, container, action.Source.Slot, slot);
+
         return ItemStackResponseStatus.Ok;
     }
 
-    private static bool IsValidSlot(Container container, int slot)
-    {
-        return slot >= 0 && slot < container.GetSize();
-    }
-
-    private static bool AreStackable(ItemStack a, ItemStack b)
-    {
-        return a.CanStackWith(b);
-    }
-
-    private static void AddContainerSlotInfo(
-        Dictionary<string, StackResponseContainerInfo> containers,
+    private static void AddChangedSlot(
+        Dictionary<string, StackResponseContainerInfo> changedContainers,
         FullContainerName containerName,
         Container container,
         int responseSlot,
-        int storageSlot
-    )
+        int storageSlot)
     {
-        string key = containerName.DynamicContainerId.HasValue
+        string containerKey = containerName.DynamicContainerId.HasValue
             ? $"{containerName.ContainerId}:{containerName.DynamicContainerId.Value}"
             : containerName.ContainerId.ToString();
 
-        if (!containers.TryGetValue(key, out StackResponseContainerInfo? info))
+        if (!changedContainers.TryGetValue(containerKey, out StackResponseContainerInfo? containerInfo))
         {
-            info = new StackResponseContainerInfo
+            containerInfo = new StackResponseContainerInfo
             {
                 Container = new FullContainerName
                 {
@@ -276,12 +286,14 @@ public static class ItemStackRequest
                 },
                 SlotInfo = []
             };
-            containers[key] = info;
+
+            changedContainers[containerKey] = containerInfo;
         }
 
         ItemStack? item = container.GetItem(storageSlot);
-        info.SlotInfo.RemoveAll(entry => entry.Slot == responseSlot);
-        info.SlotInfo.Add(new StackResponseSlotInfo
+
+        containerInfo.SlotInfo.RemoveAll(slot => slot.Slot == responseSlot);
+        containerInfo.SlotInfo.Add(new StackResponseSlotInfo
         {
             Slot = (byte)responseSlot,
             HotbarSlot = (byte)responseSlot,
