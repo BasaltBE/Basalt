@@ -16,22 +16,20 @@ public class Entity
 {
     private static ulong _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
-    private readonly HashSet<string> _manualTraits = new(StringComparer.Ordinal);
 
     public EntityType Type { get; }
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; } = ++_runtimeCounter;
     public long UniqueId => unchecked((long)RuntimeId);
     public float Speed { get; private set; } = 1f;
-    public Vec3f Position { get; set; }
+    public Vec3f Position;
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
     public Dimension? Dimension { get; private set; }
     public bool IsAlive { get; private set; }
-    public bool IsSprinting { get; set; }
-    public bool IsSwimming { get; set; }
-    public IReadOnlyList<EntityTrait> Traits => _traits;
+    public bool IsSprinting;
+    public bool IsSwimming;
     private readonly HashSet<EffectType> _effects = [];
     protected virtual float BaseMovementSpeed => 0.1f;
     protected virtual float BaseUnderwaterMovementSpeed => 0.02f;
@@ -51,20 +49,21 @@ public class Entity
         {
             if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
             {
-                AddTraitInternal(trait, false);
+                AddTrait(trait);
             }
         }
     }
 
     public T AddTrait<T>(T trait) where T : EntityTrait
     {
-        return AddTrait(trait, true);
-    }
-
-    public T AddTrait<T>(T trait, bool manual) where T : EntityTrait
-    {
         ArgumentNullException.ThrowIfNull(trait);
-        AddTraitInternal(trait, manual);
+        if (GetTrait(trait.Identifier) is not null)
+        {
+            return trait;
+        }
+
+        _traits.Add(trait);
+        trait.OnAdd();
         return trait;
     }
 
@@ -99,7 +98,7 @@ public class Entity
         return GetTrait<T>() is not null;
     }
 
-    public void TickTraits(ulong currentTick, uint deltaTick)
+    public void Tick(ulong currentTick, uint deltaTick)
     {
         TraitOnTickDetails details = new(currentTick, deltaTick);
         for (int i = 0; i < _traits.Count; i++)
@@ -119,6 +118,7 @@ public class Entity
             }
         }
     }
+
 
     public void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
@@ -243,30 +243,25 @@ public class Entity
         root.Set("sprinting", new ByteTag { Value = IsSprinting ? (sbyte)1 : (sbyte)0 });
         root.Set("swimming", new ByteTag { Value = IsSwimming ? (sbyte)1 : (sbyte)0 });
 
-        CompoundTag traitsTag = new();
+        ListTag traitsTag = new() { Name = "traits" };
         for (int i = 0; i < _traits.Count; i++)
         {
             EntityTrait trait = _traits[i];
-            CompoundTag traitTag = new();
-            trait.OnWrite(root, traitTag);
-            traitsTag.Set(trait.Identifier, traitTag);
+            CompoundTag traitEntry = new();
+            traitEntry.Set("id", new StringTag { Value = trait.Identifier });
+
+            CompoundTag traitData = new();
+            trait.OnWrite(root, traitData);
+            traitEntry.Set("data", traitData);
+
+            traitsTag.Values.Add(traitEntry);
         }
 
         root.Set("traits", traitsTag);
-        if (_manualTraits.Count > 0)
-        {
-            ListTag manualTraitsTag = new() { Name = "manual_traits" };
-            foreach (string identifier in _manualTraits.OrderBy(static x => x, StringComparer.Ordinal))
-            {
-                manualTraitsTag.Values.Add(new StringTag { Value = identifier });
-            }
-
-            root.Set("manual_traits", manualTraitsTag);
-        }
         return root;
     }
 
-    public void ReadFromNbt(CompoundTag root)
+    public void FromNBT(CompoundTag root)
     {
         Position = new Vec3f
         {
@@ -278,85 +273,57 @@ public class Entity
         IsSprinting = (root.Get<ByteTag>("sprinting")?.Value ?? 0) != 0;
         IsSwimming = (root.Get<ByteTag>("swimming")?.Value ?? 0) != 0;
 
-        ListTag? manualTraitsTag = root.Get<ListTag>("manual_traits");
-        if (manualTraitsTag is not null)
-        {
-            for (int i = 0; i < manualTraitsTag.Values.Count; i++)
-            {
-                if (manualTraitsTag.Values[i] is not StringTag traitIdentifierTag || string.IsNullOrWhiteSpace(traitIdentifierTag.Value))
-                {
-                    continue;
-                }
-
-                if (HasTraitIdentifier(traitIdentifierTag.Value))
-                {
-                    _manualTraits.Add(traitIdentifierTag.Value);
-                    continue;
-                }
-
-                if (!EntityTraitRegistry.RegisteredTraits.TryGetValue(traitIdentifierTag.Value, out Type? traitType))
-                {
-                    continue;
-                }
-
-                if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
-                {
-                    AddTraitInternal(trait, true);
-                }
-            }
-        }
-
-        CompoundTag? traitsTag = root.Get<CompoundTag>("traits");
+        ListTag? traitsTag = root.Get<ListTag>("traits");
         if (traitsTag is null)
         {
             return;
         }
 
-        for (int i = 0; i < _traits.Count; i++)
+        foreach (BaseTag tag in traitsTag.Values)
         {
-            EntityTrait trait = _traits[i];
-            CompoundTag? traitTag = traitsTag.Get<CompoundTag>(trait.Identifier);
-            if (traitTag is null)
+            if (tag is not CompoundTag traitEntry)
             {
                 continue;
             }
 
-            trait.OnRead(root, traitTag);
-        }
-    }
+            string? identifier = traitEntry.Get<StringTag>("id")?.Value;
+            CompoundTag? traitData = traitEntry.Get<CompoundTag>("data");
 
-    private void AddTraitInternal(EntityTrait trait, bool manual)
-    {
-        string identifier = trait.Identifier;
-        if (HasTraitIdentifier(identifier))
-        {
-            if (manual)
+            if (identifier == null || traitData == null)
             {
-                _manualTraits.Add(identifier);
+                continue;
             }
 
-            return;
-        }
+            EntityTrait? trait = GetTrait(identifier);
+            if (trait == null)
+            {
+                if (EntityTraitRegistry.RegisteredTraits.TryGetValue(identifier, out Type? traitType))
+                {
+                    if (Activator.CreateInstance(traitType, this) is EntityTrait newTrait)
+                    {
+                        AddTrait(newTrait);
+                        trait = newTrait;
+                    }
+                }
+            }
 
-        _traits.Add(trait);
-        if (manual)
-        {
-            _manualTraits.Add(identifier);
+            trait?.OnRead(root, traitData);
         }
-        trait.OnAdd();
     }
 
-    private bool HasTraitIdentifier(string identifier)
+    // AddTrait methods are now defined above
+
+    public EntityTrait? GetTrait(string identifier)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
             if (string.Equals(_traits[i].Identifier, identifier, StringComparison.Ordinal))
             {
-                return true;
+                return _traits[i];
             }
         }
 
-        return false;
+        return null;
     }
 
     public bool IsPlayer()
