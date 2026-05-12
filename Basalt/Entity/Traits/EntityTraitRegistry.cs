@@ -16,39 +16,9 @@ public static class EntityTraitRegistry
 
     public static void Register(params Type[] traitTypes)
     {
-        for (int i = 0; i < traitTypes.Length; i++)
+        foreach (Type traitType in traitTypes)
         {
-            Register(traitTypes[i]);
-        }
-    }
-
-    public static void Register(Type traitType)
-    {
-        if (!typeof(EntityTrait).IsAssignableFrom(traitType))
-        {
-            throw new ArgumentException($"{traitType.FullName} is not an EntityTrait.", nameof(traitType));
-        }
-
-        if (traitType.IsAbstract)
-        {
-            return;
-        }
-
-        string identifier = GetIdentifier(traitType);
-        if (!Traits.TryAdd(identifier, traitType))
-        {
-            return;
-        }
-
-        string[] types = GetStringTargets(traitType, "Types");
-        string[] components = GetStringTargets(traitType, "Components");
-
-        foreach (EntityType entityType in EntityType.GetAll())
-        {
-            if (Matches(entityType, types, components))
-            {
-                entityType.RegisterTrait(traitType, identifier);
-            }
+            Register(traitType);
         }
     }
 
@@ -56,12 +26,30 @@ public static class EntityTraitRegistry
     {
         foreach (Type type in assembly.GetTypes())
         {
-            if (type.IsAbstract || !typeof(EntityTrait).IsAssignableFrom(type))
-            {
-                continue;
-            }
-
             Register(type);
+        }
+    }
+
+    public static void Register(Type traitType)
+    {
+        if (traitType.IsAbstract || !typeof(EntityTrait).IsAssignableFrom(traitType))
+        {
+            return;
+        }
+
+        string identifier = GetIdentifier(traitType);
+
+        if (!Traits.TryAdd(identifier, traitType))
+        {
+            return;
+        }
+
+        foreach (EntityType entityType in EntityType.GetAll())
+        {
+            if (TraitAppliesTo(entityType, traitType))
+            {
+                entityType.RegisterTrait(traitType, identifier);
+            }
         }
     }
 
@@ -69,33 +57,28 @@ public static class EntityTraitRegistry
     {
         foreach ((string identifier, Type traitType) in Traits)
         {
-            string[] types = GetStringTargets(traitType, "Types");
-            string[] components = GetStringTargets(traitType, "Components");
-            if (Matches(entityType, types, components))
+            if (TraitAppliesTo(entityType, traitType))
             {
                 entityType.RegisterTrait(traitType, identifier);
             }
         }
     }
 
-    private static bool Matches(EntityType entityType, string[] types, string[] components)
+    private static bool TraitAppliesTo(EntityType entityType, Type traitType)
     {
-        for (int i = 0; i < types.Length; i++)
+        foreach (string targetType in ReadTraitTargets(traitType, "Types"))
         {
-            if (string.Equals(types[i], entityType.Identifier, StringComparison.Ordinal))
+            if (targetType == entityType.Identifier)
             {
                 return true;
             }
         }
 
-        for (int i = 0; i < components.Length; i++)
+        foreach (string component in ReadTraitTargets(traitType, "Components"))
         {
-            for (int j = 0; j < entityType.Components.Count; j++)
+            if (entityType.Components.Contains(component))
             {
-                if (string.Equals(components[i], entityType.Components[j], StringComparison.Ordinal))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -104,7 +87,11 @@ public static class EntityTraitRegistry
 
     private static string GetIdentifier(Type traitType)
     {
-        if (traitType.GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
+        PropertyInfo? property = traitType.GetProperty(
+            "Identifier",
+            BindingFlags.Public | BindingFlags.Static);
+
+        if (property is not null &&
             property.PropertyType == typeof(string) &&
             property.GetValue(null) is string identifier &&
             !string.IsNullOrWhiteSpace(identifier))
@@ -115,34 +102,37 @@ public static class EntityTraitRegistry
         return traitType.FullName ?? traitType.Name;
     }
 
-    private static string[] GetStringTargets(Type traitType, string memberName)
+    private static string[] ReadTraitTargets(Type traitType, string name)
     {
-        if (traitType.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field)
-        {
-            if (field.GetValue(null) is IEnumerable<string> asStrings)
-            {
-                return [.. asStrings];
-            }
+        object? value = null;
 
-            if (field.GetValue(null) is IEnumerable<EntityIdentifier> asEnums)
-            {
-                string[] values = [.. asEnums.Select(value => value.ToIdentifierString())];
-                return values;
-            }
+        FieldInfo? field = traitType.GetField(name, BindingFlags.Public | BindingFlags.Static);
+        if (field is not null)
+        {
+            value = field.GetValue(null);
         }
 
-        if (traitType.GetProperty(memberName, BindingFlags.Public | BindingFlags.Static) is PropertyInfo property)
+        PropertyInfo? property = traitType.GetProperty(name, BindingFlags.Public | BindingFlags.Static);
+        if (value is null && property is not null)
         {
-            if (property.GetValue(null) is IEnumerable<string> asStrings)
+            value = property.GetValue(null);
+        }
+
+        if (value is IEnumerable<string> strings)
+        {
+            return [.. strings];
+        }
+
+        if (value is IEnumerable<EntityIdentifier> identifiers)
+        {
+            List<string> values = [];
+
+            foreach (EntityIdentifier identifier in identifiers)
             {
-                return [.. asStrings];
+                values.Add(identifier.ToIdentifierString());
             }
 
-            if (property.GetValue(null) is IEnumerable<EntityIdentifier> asEnums)
-            {
-                string[] values = [.. asEnums.Select(value => value.ToIdentifierString())];
-                return values;
-            }
+            return [.. values];
         }
 
         return [];
