@@ -1,4 +1,6 @@
 using Basalt.Block.Types;
+using Basalt.Block.Traits;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -14,6 +16,7 @@ public sealed class BlockPalette
     public static void Initialize()
     {
         LoadVanilla();
+        BlockTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
     }
 
     public IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
