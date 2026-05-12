@@ -63,7 +63,7 @@ public static class Login
         var savedData = server.World.Provider.LoadPlayerData(identity.Xuid);
         if (savedData is not null)
         {
-            player.ReadFromNbt(savedData);
+            player.FromNBT(savedData);
         }
 
         player.Connection = connection;
