@@ -4,8 +4,8 @@ using Basalt.Entity.Traits.Enums;
 using Basalt.Entity.Traits.Types;
 using Basalt.Item;
 using Basalt.Protocol.Enums;
-using Basalt.Traits;
 using Basalt.Protocol.Nbt;
+using Basalt.Traits;
 
 namespace Basalt.Entity.Traits;
 
@@ -21,9 +21,12 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public EntityInventoryTrait(Entity entity) : base(entity)
     {
-        ContainerType containerType = entity.IsPlayer() ? ContainerType.Inventory : ContainerType.Container;
-        int size = entity.IsPlayer() ? 36 : 27;
-        Container = new EntityContainer(entity, containerType, size)
+        bool playerInventory = entity.IsPlayer();
+
+        Container = new EntityContainer(
+            entity,
+            playerInventory ? ContainerType.Inventory : ContainerType.Container,
+            playerInventory ? 36 : 27)
         {
             Identifier = 0
         };
@@ -36,35 +39,22 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public void SetHeldItem(int slot)
     {
-        if (slot < 0 || slot >= Container.GetSize())
+        if (slot >= 0 && slot < Container.GetSize())
         {
-            return;
+            SelectedSlot = slot;
         }
-
-        SelectedSlot = slot;
-    }
-
-    public void OnOpen()
-    {
-    }
-
-    public void OnClose()
-    {
     }
 
     public override void OnTick(TraitOnTickDetails details)
     {
-        bool hasOccupants = Container.GetAllOccupants().Count > 0;
-        if (!Opened && hasOccupants)
+        bool hasViewers = Container.GetAllOccupants().Count > 0;
+
+        if (hasViewers == Opened)
         {
-            Opened = true;
-            OnOpen();
+            return;
         }
-        else if (Opened && !hasOccupants)
-        {
-            Opened = false;
-            OnClose();
-        }
+
+        Opened = hasViewers;
     }
 
     public override void OnAdd()
@@ -75,40 +65,39 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public override void OnSpawn(EntitySpawnOptions details)
     {
-        if (Entity is not Core.Player)
+        if (Entity is Core.Player)
         {
-            return;
+            Container.Update();
         }
-
-        Container.Update();
     }
 
     public override void OnRemove()
     {
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)Basalt.Containers.ContainerType.None);
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)ContainerType.None);
         Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
     }
 
     public override void OnInteract(Core.Player player, EntityInteractMethod method)
     {
-        if (method != EntityInteractMethod.Interact || Entity.IsPlayer())
+        if (method == EntityInteractMethod.Interact && !Entity.IsPlayer())
         {
-            return;
+            Container.Show(player);
         }
-
-        Container.Show(player);
     }
 
     public override void OnRead(CompoundTag tag)
     {
-        SelectedSlot = Math.Clamp(tag.Get<IntTag>("selected_slot")?.Value ?? SelectedSlot, 0, Container.GetSize() - 1);
+        SelectedSlot = Math.Clamp(
+            tag.Get<IntTag>("selected_slot")?.Value ?? SelectedSlot,
+            0,
+            Container.GetSize() - 1);
+
         CompoundTag? containerTag = tag.Get<CompoundTag>("container");
         if (containerTag is null)
         {
             return;
         }
 
-        using IDisposable _ = Containers.Container.SuppressPackets();
         Container.Deserialize(containerTag);
     }
 
@@ -121,99 +110,113 @@ public sealed class EntityInventoryTrait : EntityTrait
     public override void OnRead(CompoundTag entityTag, CompoundTag traitTag)
     {
         OnRead(traitTag);
-        SelectedSlot = Math.Clamp(entityTag.Get<IntTag>("SelectedInventorySlot")?.Value ?? SelectedSlot, 0, Container.GetSize() - 1);
 
-        ListTag? inventoryList = entityTag.Get<ListTag>("Inventory");
-        if (inventoryList is null)
+        SelectedSlot = Math.Clamp(
+            entityTag.Get<IntTag>("SelectedInventorySlot")?.Value ?? SelectedSlot,
+            0,
+            Container.GetSize() - 1);
+
+        ListTag? oldInventory = entityTag.Get<ListTag>("Inventory");
+        if (oldInventory is null)
         {
             return;
         }
 
-        CompoundTag compatContainerTag = new();
-        compatContainerTag.Set("size", new IntTag { Value = Container.GetSize() });
+        CompoundTag containerTag = new();
+        containerTag.Set("size", new IntTag { Value = Container.GetSize() });
+
         ListTag items = new() { Name = "items" };
 
-        for (int i = 0; i < inventoryList.Values.Count; i++)
+        foreach (BaseTag tag in oldInventory.Values)
         {
-            if (inventoryList.Values[i] is not CompoundTag itemTag)
+            if (tag is not CompoundTag itemTag)
             {
                 continue;
             }
 
             int slot = itemTag.Get<IntTag>("Slot")?.Value ?? -1;
+
             if (slot < 0 || slot >= Container.GetSize())
             {
                 continue;
             }
 
-            CompoundTag entry = new();
-            StringTag? idTag = itemTag.Get<StringTag>("Name");
-            IntTag? countTag = itemTag.Get<IntTag>("Count");
-            IntTag? metaTag = itemTag.Get<IntTag>("Damage");
-            CompoundTag? nbtTag = itemTag.Get<CompoundTag>("tag");
-
-            if (idTag is null)
+            StringTag? id = itemTag.Get<StringTag>("Name");
+            if (id is null)
             {
                 continue;
             }
 
-            entry.Set("slot", new IntTag { Value = slot });
-            entry.Set("id", new StringTag { Value = idTag.Value });
-            entry.Set("count", new IntTag { Value = countTag?.Value ?? 1 });
-            entry.Set("meta", new IntTag { Value = metaTag?.Value ?? 0 });
-            if (nbtTag is not null)
+            CompoundTag item = new();
+
+            item.Set("slot", new IntTag { Value = slot });
+            item.Set("id", new StringTag { Value = id.Value });
+            item.Set("count", new IntTag { Value = itemTag.Get<IntTag>("Count")?.Value ?? 1 });
+            item.Set("meta", new IntTag { Value = itemTag.Get<IntTag>("Damage")?.Value ?? 0 });
+
+            CompoundTag? nbt = itemTag.Get<CompoundTag>("tag");
+            if (nbt is not null)
             {
-                entry.Set("nbt", nbtTag);
+                item.Set("nbt", nbt);
             }
 
-            items.Values.Add(entry);
+            items.Values.Add(item);
         }
 
-        compatContainerTag.Set("items", items);
-        using IDisposable _ = Containers.Container.SuppressPackets();
-        Container.Deserialize(compatContainerTag);
+        containerTag.Set("items", items);
+
+        Container.Deserialize(containerTag);
     }
 
     public override void OnWrite(CompoundTag entityTag, CompoundTag traitTag)
     {
         OnWrite(traitTag);
 
-        ListTag inventoryList = new() { Name = "Inventory" };
+        ListTag inventory = new() { Name = "Inventory" };
+
         for (int slot = 0; slot < Container.GetSize(); slot++)
         {
             ItemStack? item = Container.GetItem(slot);
+
             if (item is null || item.StackSize == 0)
             {
                 continue;
             }
 
             CompoundTag entry = new();
+
             entry.Set("Slot", new IntTag { Value = slot });
             entry.Set("Name", new StringTag { Value = item.Identifier });
             entry.Set("Count", new IntTag { Value = item.StackSize });
             entry.Set("Damage", new IntTag { Value = unchecked((int)item.Metadata) });
+
             CompoundTag? nbt = item.GetSerializedNbt();
             if (nbt is not null)
             {
                 entry.Set("tag", nbt);
             }
 
-            inventoryList.Values.Add(entry);
+            inventory.Values.Add(entry);
         }
 
-        entityTag.Set("Inventory", inventoryList);
+        entityTag.Set("Inventory", inventory);
         entityTag.Set("SelectedInventorySlot", new IntTag { Value = SelectedSlot });
     }
 
     public override EntityTrait Clone(Entity entity)
     {
-        EntityInventoryTrait clone = new(entity);
-        clone.SelectedSlot = SelectedSlot;
-        for (int i = 0; i < Container.GetSize(); i++)
+        EntityInventoryTrait clone = new(entity)
         {
-            if (Container.GetItem(i) is { } item)
+            SelectedSlot = SelectedSlot
+        };
+
+        for (int slot = 0; slot < Container.GetSize(); slot++)
+        {
+            ItemStack? item = Container.GetItem(slot);
+
+            if (item is not null)
             {
-                clone.Container.SetItem(i, item);
+                clone.Container.SetItem(slot, item);
             }
         }
 
