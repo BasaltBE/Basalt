@@ -48,7 +48,6 @@ public sealed class PlayerCursorTrait : PlayerTrait
             return;
         }
 
-        using IDisposable _ = Containers.Container.SuppressPackets();
         Container.Deserialize(containerTag);
     }
 
