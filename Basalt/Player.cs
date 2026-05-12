@@ -23,7 +23,7 @@ public sealed class Player : Basalt.Entity.Entity
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
-    private readonly Dictionary<int, Container> _openContainers = [];
+    public Dictionary<int, Container> openedContainers = [];
 
     public Player( string username, string xuid, string uuid) : 
         base(EntityIdentifier.Player.ToIdentifierString())
@@ -65,17 +65,12 @@ public sealed class Player : Basalt.Entity.Entity
 
     public void RegisterOpenContainer(int windowId, Container container)
     {
-        _openContainers[windowId] = container;
-    }
-
-    public void UnregisterOpenContainer(int windowId)
-    {
-        _openContainers.Remove(windowId);
+        openedContainers[windowId] = container;
     }
 
     public bool TryGetOpenContainer(int windowId, out Container? container)
     {
-        return _openContainers.TryGetValue(windowId, out container);
+        return openedContainers.TryGetValue(windowId, out container);
     }
 
     public Container? GetContainer(FullContainerName name)
@@ -104,7 +99,7 @@ public sealed class Player : Basalt.Entity.Entity
 
         if (name.ContainerId == 7)
         {
-            foreach ((int _, Container candidate) in _openContainers)
+            foreach ((int _, Container candidate) in openedContainers)
             {
                 if (!ReferenceEquals(candidate, inventory.Container))
                 {
@@ -116,29 +111,4 @@ public sealed class Player : Basalt.Entity.Entity
         return null;
     }
 
-    public bool TryResolveContainerSlot(FullContainerName name, int slot, out Container? container, out int resolvedSlot)
-    {
-        container = GetContainer(name);
-        resolvedSlot = slot;
-        if (container is null)
-        {
-            return false;
-        }
-
-        switch (name.ContainerId)
-        {
-            case 28:
-            case 12:
-            case 27:
-            case 29:
-            case 6:
-            case 33:
-            case 58:
-            case 59:
-                resolvedSlot = slot;
-                break;
-        }
-
-        return true;
-    }
 }
