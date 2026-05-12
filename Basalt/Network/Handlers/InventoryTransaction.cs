@@ -12,6 +12,12 @@ namespace Basalt.Network.Handlers;
 
 public static class InventoryTransaction
 {
+    private const uint UseItemActionClickBlock = 0;
+    private const uint UseItemActionClickAir = 1;
+    private const uint UseItemTriggerInitial = 1;
+    private const uint UseItemTriggerRepeat = 2;
+    private const uint UseItemClientPredictionPlace = 1;
+
     private static readonly HashSet<string> ReplaceableBlocks =
     [
         "minecraft:air",
@@ -56,7 +62,7 @@ public static class InventoryTransaction
                 break;
 
             case UseItemInventoryTransactionData useItem:
-                HandleUseItem(player, inventory, useItem);
+                HandleUseItem(player, inventory, useItem, packet.Actions);
                 break;
 
             case UseItemOnEntityInventoryTransactionData useItemOnEntity:
@@ -117,7 +123,7 @@ public static class InventoryTransaction
             }
         }
 
-        HandleUseItem(player, inventory, transaction);
+        HandleUseItem(player, inventory, transaction, []);
     }
 
     private static void HandleInventoryActions(EntityInventoryTrait inventory, List<InventoryAction> actions)
@@ -134,9 +140,41 @@ public static class InventoryTransaction
         }
     }
 
-    private static void HandleUseItem(Player player, EntityInventoryTrait inventory, UseItemInventoryTransactionData transaction)
+    private static void HandleUseItem(
+        Player player,
+        EntityInventoryTrait inventory,
+        UseItemInventoryTransactionData transaction,
+        List<InventoryAction> actions)
     {
-        if (transaction.ActionType is 0 or 2 && player.Dimension is not null)
+        if (transaction.ActionType == UseItemActionClickAir)
+        {
+            ItemStack? airHeldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+            if (airHeldItem is null)
+            {
+                return;
+            }
+
+            airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
+            return;
+        }
+
+        if (transaction.ActionType != UseItemActionClickBlock)
+        {
+            return;
+        }
+
+        if (transaction.TriggerType == UseItemTriggerRepeat)
+        {
+            return;
+        }
+
+        if (transaction.TriggerType == UseItemTriggerInitial &&
+            transaction.ClientPrediction != UseItemClientPredictionPlace)
+        {
+            return;
+        }
+
+        if (player.Dimension is not null)
         {
             BlockPos blockPosition = transaction.BlockPosition;
 
@@ -164,9 +202,10 @@ public static class InventoryTransaction
             return;
         }
 
-        if (transaction.ActionType == 1)
+        if (player.Gamemode == Gamemode.Survival &&
+            transaction.TriggerType == UseItemTriggerInitial &&
+            actions.Count == 0)
         {
-            heldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
             return;
         }
 
@@ -236,9 +275,7 @@ public static class InventoryTransaction
             return;
         }
 
-        if (PlayerOccupiesBlock(player, placePosition) ||
-            EntityOccupiesBlock(player, placePosition) ||
-            existingBlock.Type.Identifier == blockType.Identifier ||
+        if (existingBlock.Type.Identifier == blockType.Identifier ||
             !ReplaceableBlocks.Contains(existingBlock.Type.Identifier))
         {
             SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
@@ -402,70 +439,6 @@ public static class InventoryTransaction
     private static bool IsEmptyPosition(BlockPos position)
     {
         return position.X == 0 && position.Y == 0 && position.Z == 0;
-    }
-
-    private static bool PlayerOccupiesBlock(Player player, BlockPos position)
-    {
-        const float halfWidth = 0.3f;
-
-        int minBlockX = (int)MathF.Floor(player.Position.X - halfWidth);
-        int maxBlockX = (int)MathF.Floor(player.Position.X + halfWidth);
-        int minBlockZ = (int)MathF.Floor(player.Position.Z - halfWidth);
-        int maxBlockZ = (int)MathF.Floor(player.Position.Z + halfWidth);
-
-        if (position.X < minBlockX || position.X > maxBlockX ||
-            position.Z < minBlockZ || position.Z > maxBlockZ)
-        {
-            return false;
-        }
-
-        int playerBlockY = (int)MathF.Floor(player.Position.Y);
-        return position.Y == playerBlockY || position.Y == playerBlockY - 1;
-    }
-
-    private static bool EntityOccupiesBlock(Player player, BlockPos position)
-    {
-        if (player.Dimension is null)
-        {
-            return false;
-        }
-
-        float blockMinX = position.X;
-        float blockMaxX = position.X + 1f;
-        float blockMinY = position.Y;
-        float blockMaxY = position.Y + 1f;
-        float blockMinZ = position.Z;
-        float blockMaxZ = position.Z + 1f;
-
-        foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
-        {
-            if (!entity.IsAlive || ReferenceEquals(entity, player))
-            {
-                continue;
-            }
-
-            const float entityHalfWidth = 0.3f;
-            const float entityHeight = 1.8f;
-
-            bool overlapsX =
-                entity.Position.X + entityHalfWidth > blockMinX &&
-                entity.Position.X - entityHalfWidth < blockMaxX;
-
-            bool overlapsY =
-                entity.Position.Y + entityHeight > blockMinY &&
-                entity.Position.Y < blockMaxY;
-
-            bool overlapsZ =
-                entity.Position.Z + entityHalfWidth > blockMinZ &&
-                entity.Position.Z - entityHalfWidth < blockMaxZ;
-
-            if (overlapsX && overlapsY && overlapsZ)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool FindBlockFromView(Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
