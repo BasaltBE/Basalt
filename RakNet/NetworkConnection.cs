@@ -2,522 +2,504 @@ using Basalt.RakNet.Packets;
 using Basalt.RakNet.Packets.Enums;
 using Basalt.RakNet.Packets.Types;
 
-namespace Basalt.RakNet
+namespace Basalt.RakNet;
+
+public abstract class NetworkConnection
 {
-    public abstract class NetworkConnection
+    private const int DatagramWindowSize = 2048;
+    private const int MaxOrderChannels = 32;
+    private const int DatagramHeaderSize = 4;
+    private const int AckResendMs = 300;
+    private const int ControlPacketBufferSize = 2048;
+
+    private uint _datagramWindowStart;
+    private uint _datagramWindowEnd = DatagramWindowSize;
+
+    private uint _reliableWindowStart;
+    private uint _reliableWindowEnd = DatagramWindowSize;
+
+    private readonly HashSet<uint> _receivedDatagrams = [];
+    private readonly HashSet<uint> _receivedReliableIndexes = [];
+
+    private readonly HashSet<uint> _ackQueue = [];
+    private readonly HashSet<uint> _nackQueue = [];
+
+    private readonly uint[] _nextOrderedIndex = new uint[MaxOrderChannels];
+    private readonly uint[] _highestSequencedIndex = new uint[MaxOrderChannels];
+
+    private readonly Dictionary<int, Dictionary<uint, Frame>> _orderedFrameQueue = [];
+    private readonly Dictionary<ushort, SplitReassembly> _splitFrames = [];
+
+    private uint _sendSequence;
+    private uint _sendReliableIndex;
+    private ushort _splitId;
+
+    private readonly uint[] _sendOrderingIndex = new uint[MaxOrderChannels];
+    private readonly uint[] _sendSequencedIndex = new uint[MaxOrderChannels];
+
+    private readonly LinkedList<Frame> _outgoingFrames = [];
+    private readonly Dictionary<uint, PendingDatagram> _pendingDatagrams = [];
+
+    protected virtual int MaxMtu => 1492;
+
+    public virtual void HandleFrameSet(FrameSet frameSet)
     {
-        private const int DatagramWindowSize = 2048;
-        private const int MaxOrderChannels = 32;
-        private const int DatagramHeaderSize = 4;
-        private const int AckResendMs = 300;
+        uint sequence = frameSet.Sequence;
 
-        private uint datagramWindowStart;
-        private uint datagramWindowEnd = DatagramWindowSize;
-        private uint highestDatagramSequence;
-        private bool hasSeenDatagram;
-
-        private uint reliableWindowStart;
-        private uint reliableWindowEnd = DatagramWindowSize;
-        private readonly HashSet<uint> reliableWindow = [];
-
-        private readonly HashSet<uint> ackQueue = [];
-        private readonly HashSet<uint> nackQueue = [];
-
-        private readonly uint[] receiveOrderedIndex = new uint[MaxOrderChannels];
-        private readonly uint[] receiveSequencedHighestIndex = new uint[MaxOrderChannels];
-        private readonly Dictionary<int, Dictionary<uint, Frame>> receiveOrderedFrames = [];
-        private readonly Dictionary<ushort, SplitReassembly> splitFrames = [];
-
-        private uint sendSequence;
-        private uint sendReliableIndex;
-        private ushort splitId;
-        private readonly uint[] sendOrderingIndex = new uint[MaxOrderChannels];
-        private readonly uint[] sendSequencedIndex = new uint[MaxOrderChannels];
-        private readonly LinkedList<QueuedFrame> outgoingFrames = [];
-        private readonly Dictionary<uint, PendingDatagram> pendingDatagrams = [];
-
-        protected virtual int MaxMtu => 1492;
-
-        public virtual void HandleFrameSet(FrameSet frameSet)
+        if (sequence < _datagramWindowStart || sequence > _datagramWindowEnd || _receivedDatagrams.Contains(sequence))
         {
-            uint sequence = frameSet.Sequence;
-            if (IsOutOfDatagramWindow(sequence) || ackQueue.Contains(sequence))
-            {
-                return;
-            }
-
-            nackQueue.Remove(sequence);
-            ackQueue.Add(sequence);
-
-            if (!hasSeenDatagram || sequence > highestDatagramSequence)
-            {
-                highestDatagramSequence = sequence;
-                hasSeenDatagram = true;
-            }
-
-            if (sequence == datagramWindowStart)
-            {
-                // Slide the receive window through contiguous received datagrams.
-                while (ackQueue.Contains(datagramWindowStart))
-                {
-                    datagramWindowStart++;
-                    datagramWindowEnd++;
-                }
-            }
-            else if (sequence > datagramWindowStart)
-            {
-                // Gap detected: enqueue missing sequence numbers for NACK.
-                for (uint i = datagramWindowStart; i < sequence; i++)
-                {
-                    if (!ackQueue.Contains(i))
-                    {
-                        nackQueue.Add(i);
-                    }
-                }
-            }
-
-            for (int i = 0; i < frameSet.Frames.Length; i++)
-            {
-                HandleIncomingFrame(frameSet.Frames[i]);
-            }
+            return;
         }
 
-        public void HandleAck(Ack ack)
+        _receivedDatagrams.Add(sequence);
+        _ackQueue.Add(sequence);
+        _nackQueue.Remove(sequence);
+
+        if (sequence == _datagramWindowStart)
         {
-            uint[] sequences = AckRecord.ExpandRecords(ack.Records);
-            for (int i = 0; i < sequences.Length; i++)
+            while (_receivedDatagrams.Remove(_datagramWindowStart))
             {
-                pendingDatagrams.Remove(sequences[i]);
+                _datagramWindowStart++;
+                _datagramWindowEnd++;
             }
         }
-
-        public void HandleNack(Nack nack)
+        else
         {
-            uint[] sequences = AckRecord.ExpandRecords(nack.Records);
-            for (int i = sequences.Length - 1; i >= 0; i--)
+            for (uint missing = _datagramWindowStart; missing < sequence; missing++)
             {
-                if (!pendingDatagrams.Remove(sequences[i], out PendingDatagram pending))
+                if (!_receivedDatagrams.Contains(missing))
                 {
-                    continue;
-                }
-
-                // Requeue original frames so they are repacked/sent on next tick.
-                for (int j = pending.Frames.Length - 1; j >= 0; j--)
-                {
-                    outgoingFrames.AddFirst(new QueuedFrame(pending.Frames[j]));
+                    _nackQueue.Add(missing);
                 }
             }
         }
 
-        public void Tick(long nowMs)
+        foreach (Frame frame in frameSet.Frames)
         {
-            if (hasSeenDatagram)
-            {
-                uint diff = highestDatagramSequence - datagramWindowStart + 1;
-                if (diff > 0)
-                {
-                    datagramWindowStart += diff;
-                    datagramWindowEnd += diff;
-                }
-            }
-
-            if (ackQueue.Count > 0)
-            {
-                SendControlPacket(Ack.FromSequences([.. ackQueue]));
-                ackQueue.Clear();
-            }
-
-            if (nackQueue.Count > 0)
-            {
-                SendControlPacket(Nack.FromSequences([.. nackQueue]));
-                nackQueue.Clear();
-            }
-
-            if (pendingDatagrams.Count > 0)
-            {
-                List<uint> expired = [];
-                foreach ((uint sequence, PendingDatagram pending) in pendingDatagrams)
-                {
-                    // Fallback resend when ACK/NACK did not arrive in time.
-                    if (nowMs - pending.SentAtMs >= AckResendMs)
-                    {
-                        expired.Add(sequence);
-                    }
-                }
-
-                for (int i = expired.Count - 1; i >= 0; i--)
-                {
-                    uint sequence = expired[i];
-                    if (!pendingDatagrams.Remove(sequence, out PendingDatagram pending))
-                    {
-                        continue;
-                    }
-
-                    for (int j = pending.Frames.Length - 1; j >= 0; j--)
-                    {
-                        outgoingFrames.AddFirst(new QueuedFrame(pending.Frames[j]));
-                    }
-                }
-            }
-
-            FlushOutgoing(nowMs);
+            HandleIncomingFrame(frame);
         }
+    }
 
-        protected virtual void HandleFrame(Frame frame)
+    public void HandleAck(Ack ack)
+    {
+        foreach (uint sequence in AckRecord.ExpandRecords(ack.Records))
         {
-            // Should be overridden
+            _pendingDatagrams.Remove(sequence);
         }
+    }
 
-        protected abstract void SendMessage(ReadOnlySpan<byte> raw);
-
-        public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered) => SendPayload(payload, reliability);
-
-        protected void SendPayload(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered, byte orderingChannel = 0)
+    public void HandleNack(Nack nack)
+    {
+        foreach (uint sequence in AckRecord.ExpandRecords(nack.Records))
         {
-            if (NeedsOrdering(reliability) && orderingChannel >= MaxOrderChannels)
+            if (_pendingDatagrams.Remove(sequence, out PendingDatagram pending))
             {
-                return;
-            }
-
-            int maxFramePayload = Math.Max(64, MaxMtu - 84);
-            if (payload.Length <= maxFramePayload)
-            {
-                outgoingFrames.AddLast(new QueuedFrame(CreateOutgoingFrame(payload, reliability, orderingChannel, false, 0, 0)));
-                return;
-            }
-
-            // Fragment payload into split frames when one frame would exceed MTU budget.
-            int splitCount = (payload.Length + maxFramePayload - 1) / maxFramePayload;
-            ushort currentSplitId = splitId++;
-            uint orderingIndex = NeedsOrdering(reliability) ? sendOrderingIndex[orderingChannel]++ : 0;
-            uint sequencedIndex = NeedsSequencedIndex(reliability) ? sendSequencedIndex[orderingChannel]++ : 0;
-
-            int offset = 0;
-            for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
-            {
-                int chunkLength = Math.Min(maxFramePayload, payload.Length - offset);
-                ReadOnlySpan<byte> chunk = payload.Slice(offset, chunkLength);
-                offset += chunkLength;
-
-                uint reliableIndex = NeedsReliableIndex(reliability) ? sendReliableIndex++ : 0;
-                Frame frame = new(
-                    reliability: reliability,
-                    isSplit: true,
-                    bufferBitLength: (ushort)(chunk.Length * 8),
-                    reliableIndex: reliableIndex,
-                    sequencedIndex: sequencedIndex,
-                    orderingIndex: orderingIndex,
-                    orderingChannel: orderingChannel,
-                    splitSize: (uint)splitCount,
-                    splitId: currentSplitId,
-                    splitIndex: (uint)splitIndex,
-                    buffer: chunk.ToArray()
-                );
-
-                outgoingFrames.AddLast(new QueuedFrame(frame));
+                RequeueFrames(pending.Frames);
             }
         }
+    }
 
-        private Frame CreateOutgoingFrame(ReadOnlySpan<byte> payload, Reliability reliability, byte orderingChannel, bool isSplit, uint splitSize, uint splitIndex)
+    public void Tick(long nowMs)
+    {
+        if (_ackQueue.Count > 0)
         {
-            return new(
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _ackQueue.Clear();
+        }
+
+        if (_nackQueue.Count > 0)
+        {
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _nackQueue.Clear();
+        }
+
+        foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
+        {
+            if (!_pendingDatagrams.TryGetValue(sequence, out PendingDatagram pending))
+            {
+                continue;
+            }
+
+            if (nowMs - pending.SentAtMs < AckResendMs)
+            {
+                continue;
+            }
+
+            _pendingDatagrams.Remove(sequence);
+            RequeueFrames(pending.Frames);
+        }
+
+        FlushOutgoing(nowMs);
+    }
+
+    public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered)
+    {
+        SendPayload(payload, reliability);
+    }
+
+    protected void SendPayload(
+        ReadOnlySpan<byte> payload,
+        Reliability reliability = Reliability.ReliableOrdered,
+        byte orderingChannel = 0)
+    {
+        if (NeedsOrdering(reliability) && orderingChannel >= MaxOrderChannels)
+        {
+            return;
+        }
+
+        int maxPayloadSize = Math.Max(64, MaxMtu - 84);
+
+        if (payload.Length <= maxPayloadSize)
+        {
+            _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
+            return;
+        }
+
+        int splitCount = (payload.Length + maxPayloadSize - 1) / maxPayloadSize;
+        ushort currentSplitId = _splitId++;
+
+        uint orderingIndex = NeedsOrdering(reliability) ? _sendOrderingIndex[orderingChannel]++ : 0;
+        uint sequencedIndex = NeedsSequencedIndex(reliability) ? _sendSequencedIndex[orderingChannel]++ : 0;
+
+        int offset = 0;
+
+        for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
+        {
+            int chunkLength = Math.Min(maxPayloadSize, payload.Length - offset);
+            ReadOnlySpan<byte> chunk = payload.Slice(offset, chunkLength);
+            offset += chunkLength;
+
+            _outgoingFrames.AddLast(new Frame(
                 reliability: reliability,
-                isSplit: isSplit,
-                bufferBitLength: (ushort)(payload.Length * 8),
-                reliableIndex: NeedsReliableIndex(reliability) ? sendReliableIndex++ : 0,
-                sequencedIndex: NeedsSequencedIndex(reliability) ? sendSequencedIndex[orderingChannel]++ : 0,
-                orderingIndex: NeedsOrdering(reliability) ? sendOrderingIndex[orderingChannel]++ : 0,
+                isSplit: true,
+                bufferBitLength: (ushort)(chunk.Length * 8),
+                reliableIndex: NeedsReliableIndex(reliability) ? _sendReliableIndex++ : 0,
+                sequencedIndex: sequencedIndex,
+                orderingIndex: orderingIndex,
                 orderingChannel: orderingChannel,
-                splitSize: splitSize,
-                splitId: splitId,
-                splitIndex: splitIndex,
-                buffer: payload.ToArray()
-            );
+                splitSize: (uint)splitCount,
+                splitId: currentSplitId,
+                splitIndex: (uint)splitIndex,
+                buffer: chunk.ToArray()
+            ));
+        }
+    }
+
+    protected virtual void HandleFrame(Frame frame)
+    {
+    }
+
+    protected abstract void SendMessage(ReadOnlySpan<byte> raw);
+
+    private void FlushOutgoing(long nowMs)
+    {
+        if (_outgoingFrames.Count == 0)
+        {
+            return;
         }
 
-        private void FlushOutgoing(long nowMs)
+        int maxDatagramSize = Math.Max(256, MaxMtu - 36);
+        byte[] datagramBuffer = new byte[Math.Max(ControlPacketBufferSize, MaxMtu * 2)];
+
+        while (_outgoingFrames.Count > 0)
         {
-            if (outgoingFrames.Count == 0)
+            List<Frame> packedFrames = [];
+            int currentSize = DatagramHeaderSize;
+
+            while (_outgoingFrames.Count > 0)
             {
-                return;
-            }
+                Frame frame = _outgoingFrames.First!.Value;
+                int frameSize = Frame.Write(frame, datagramBuffer, 0);
 
-            int maxDatagram = Math.Max(256, MaxMtu - 36);
-            byte[] datagramBuffer = new byte[Math.Max(2048, MaxMtu * 2)];
-
-            while (outgoingFrames.Count > 0)
-            {
-                List<Frame> packedFrames = [];
-                int currentSize = DatagramHeaderSize;
-
-                while (outgoingFrames.Count > 0)
-                {
-                    Frame frame = outgoingFrames.First!.Value.Frame;
-                    int frameSize = Frame.Write(frame, datagramBuffer, 0);
-                    // Keep datagram under MTU envelope; spill remaining frames to next datagram.
-                    if (packedFrames.Count > 0 && currentSize + frameSize > maxDatagram)
-                    {
-                        break;
-                    }
-
-                    if (currentSize + frameSize > datagramBuffer.Length)
-                    {
-                        break;
-                    }
-
-                    outgoingFrames.RemoveFirst();
-                    packedFrames.Add(frame);
-                    currentSize += frameSize;
-                }
-
-                if (packedFrames.Count == 0)
+                if (packedFrames.Count > 0 && currentSize + frameSize > maxDatagramSize)
                 {
                     break;
                 }
 
-                uint sequence = sendSequence++;
-                FrameSet frameSet = new(sequence, [.. packedFrames]);
-                int length = FrameSet.Serialize(frameSet, datagramBuffer);
-                SendMessage(datagramBuffer.AsSpan(0, length));
-
-                bool hasReliable = false;
-                for (int i = 0; i < packedFrames.Count; i++)
+                if (currentSize + frameSize > datagramBuffer.Length)
                 {
-                    if (NeedsReliableIndex(packedFrames[i].Reliability))
-                    {
-                        hasReliable = true;
-                        break;
-                    }
+                    break;
                 }
 
-                if (hasReliable)
+                _outgoingFrames.RemoveFirst();
+                packedFrames.Add(frame);
+                currentSize += frameSize;
+            }
+
+            if (packedFrames.Count == 0)
+            {
+                break;
+            }
+
+            uint sequence = _sendSequence++;
+            FrameSet frameSet = new(sequence, [.. packedFrames]);
+
+            int length = FrameSet.Serialize(frameSet, datagramBuffer);
+            SendMessage(datagramBuffer.AsSpan(0, length));
+
+            if (packedFrames.Any(frame => NeedsReliableIndex(frame.Reliability)))
+            {
+                _pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
+            }
+        }
+    }
+
+    private void HandleIncomingFrame(Frame frame)
+    {
+        if (NeedsReliableIndex(frame.Reliability))
+        {
+            if (frame.ReliableIndex < _reliableWindowStart ||
+                frame.ReliableIndex > _reliableWindowEnd ||
+                _receivedReliableIndexes.Contains(frame.ReliableIndex))
+            {
+                return;
+            }
+
+            _receivedReliableIndexes.Add(frame.ReliableIndex);
+
+            if (frame.ReliableIndex == _reliableWindowStart)
+            {
+                while (_receivedReliableIndexes.Remove(_reliableWindowStart))
                 {
-                    // Track reliable datagrams until ACK, NACK, or timeout-based resend.
-                    pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
+                    _reliableWindowStart++;
+                    _reliableWindowEnd++;
                 }
             }
         }
 
-        private void HandleIncomingFrame(Frame frame)
+        Frame? completeFrame = ReassembleSplitFrame(frame);
+        if (!completeFrame.HasValue)
         {
-            if (NeedsReliableIndex(frame.Reliability))
-            {
-                if (frame.ReliableIndex < reliableWindowStart || frame.ReliableIndex > reliableWindowEnd || reliableWindow.Contains(frame.ReliableIndex))
-                {
-                    return;
-                }
+            return;
+        }
 
-                reliableWindow.Add(frame.ReliableIndex);
-                if (frame.ReliableIndex == reliableWindowStart)
-                {
-                    while (reliableWindow.Remove(reliableWindowStart))
-                    {
-                        reliableWindowStart++;
-                        reliableWindowEnd++;
-                    }
-                }
-            }
+        Frame incoming = completeFrame.Value;
 
-            Frame? completeFrame = HandleSplit(frame);
-            if (!completeFrame.HasValue)
+        if (NeedsOrdering(incoming.Reliability) && incoming.OrderingChannel >= MaxOrderChannels)
+        {
+            return;
+        }
+
+        if (NeedsSequencedIndex(incoming.Reliability))
+        {
+            int channel = incoming.OrderingChannel;
+
+            if (incoming.SequencedIndex < _highestSequencedIndex[channel] ||
+                incoming.OrderingIndex < _nextOrderedIndex[channel])
             {
                 return;
             }
 
-            Frame incoming = completeFrame.Value;
-            if (NeedsOrdering(incoming.Reliability))
-            {
-                int channel = incoming.OrderingChannel;
-                if (channel < 0 || channel >= MaxOrderChannels)
-                {
-                    return;
-                }
-            }
-
-            if (NeedsSequencedIndex(incoming.Reliability))
-            {
-                int channel = incoming.OrderingChannel;
-                if (incoming.SequencedIndex < receiveSequencedHighestIndex[channel] || incoming.OrderingIndex < receiveOrderedIndex[channel])
-                {
-                    return;
-                }
-
-                receiveSequencedHighestIndex[channel] = incoming.SequencedIndex + 1;
-                HandleFrame(incoming);
-                return;
-            }
-
-            if (incoming.Reliability is Reliability.ReliableOrdered or Reliability.ReliableOrderedWithAckReceipt)
-            {
-                int channel = incoming.OrderingChannel;
-                uint expected = receiveOrderedIndex[channel];
-                if (incoming.OrderingIndex == expected)
-                {
-                    receiveSequencedHighestIndex[channel] = 0;
-                    receiveOrderedIndex[channel] = incoming.OrderingIndex + 1;
-                    HandleFrame(incoming);
-
-                    if (receiveOrderedFrames.TryGetValue(channel, out Dictionary<uint, Frame>? channelQueue))
-                    {
-                        while (channelQueue.Remove(receiveOrderedIndex[channel], out Frame queued))
-                        {
-                            HandleFrame(queued);
-                            receiveOrderedIndex[channel]++;
-                        }
-
-                        if (channelQueue.Count == 0)
-                        {
-                            receiveOrderedFrames.Remove(channel);
-                        }
-                    }
-                }
-                else if (incoming.OrderingIndex > expected)
-                {
-                    if (!receiveOrderedFrames.TryGetValue(channel, out Dictionary<uint, Frame>? channelQueue))
-                    {
-                        channelQueue = [];
-                        receiveOrderedFrames[channel] = channelQueue;
-                    }
-
-                    if (channelQueue.Count < DatagramWindowSize)
-                    {
-                        channelQueue[incoming.OrderingIndex] = incoming;
-                    }
-                }
-
-                return;
-            }
-
+            _highestSequencedIndex[channel] = incoming.SequencedIndex + 1;
             HandleFrame(incoming);
+            return;
         }
 
-        private Frame? HandleSplit(Frame frame)
+        if (incoming.Reliability is Reliability.ReliableOrdered or Reliability.ReliableOrderedWithAckReceipt)
         {
-            if (!frame.IsSplit)
-            {
-                return frame;
-            }
-
-            uint totalParts = frame.SplitSize;
-            if (totalParts == 0 || frame.SplitIndex >= totalParts)
-            {
-                return null;
-            }
-
-            if (!splitFrames.TryGetValue(frame.SplitId, out SplitReassembly? split))
-            {
-                split = new SplitReassembly(totalParts);
-                splitFrames[frame.SplitId] = split;
-            }
-            else if (split.TotalParts != totalParts)
-            {
-                splitFrames.Remove(frame.SplitId);
-                return null;
-            }
-
-            split.Add(frame.SplitIndex, frame);
-            if (!split.IsComplete)
-            {
-                return null;
-            }
-
-            // All parts arrived: rebuild original payload and continue normal routing.
-            int totalLength = split.GetTotalPayloadLength();
-            byte[] payload = new byte[totalLength];
-            int offset = 0;
-            for (uint i = 0; i < split.TotalParts; i++)
-            {
-                Frame part = split.Parts[i]!.Value;
-                part.Buffer.AsSpan().CopyTo(payload.AsSpan(offset));
-                offset += part.Buffer.Length;
-            }
-
-            splitFrames.Remove(frame.SplitId);
-            return new Frame(
-                reliability: frame.Reliability,
-                isSplit: false,
-                bufferBitLength: (ushort)(payload.Length * 8),
-                reliableIndex: frame.ReliableIndex,
-                sequencedIndex: frame.SequencedIndex,
-                orderingIndex: frame.OrderingIndex,
-                orderingChannel: frame.OrderingChannel,
-                buffer: payload
-            );
+            HandleOrderedFrame(incoming);
+            return;
         }
 
-        private void SendControlPacket(Ack packet)
+        HandleFrame(incoming);
+    }
+
+    private void HandleOrderedFrame(Frame frame)
+    {
+        int channel = frame.OrderingChannel;
+        uint expectedIndex = _nextOrderedIndex[channel];
+
+        if (frame.OrderingIndex == expectedIndex)
         {
-            byte[] buffer = new byte[2048];
-            int length = Ack.Serialize(packet, buffer);
-            SendMessage(buffer.AsSpan(0, length));
-        }
+            _highestSequencedIndex[channel] = 0;
+            _nextOrderedIndex[channel] = frame.OrderingIndex + 1;
 
-        private void SendControlPacket(Nack packet)
-        {
-            byte[] buffer = new byte[2048];
-            int length = Nack.Serialize(packet, buffer);
-            SendMessage(buffer.AsSpan(0, length));
-        }
+            HandleFrame(frame);
 
-        private bool IsOutOfDatagramWindow(uint sequence)
-        {
-            return sequence < datagramWindowStart || sequence > datagramWindowEnd;
-        }
-
-        private static bool NeedsReliableIndex(Reliability reliability)
-        {
-            return reliability is Reliability.Reliable
-                or Reliability.ReliableOrdered
-                or Reliability.ReliableSequenced
-                or Reliability.ReliableWithAckReceipt
-                or Reliability.ReliableOrderedWithAckReceipt;
-        }
-
-        private static bool NeedsSequencedIndex(Reliability reliability)
-        {
-            return reliability is Reliability.UnreliableSequenced or Reliability.ReliableSequenced;
-        }
-
-        private static bool NeedsOrdering(Reliability reliability)
-        {
-            return reliability is Reliability.UnreliableSequenced
-                or Reliability.ReliableOrdered
-                or Reliability.ReliableSequenced
-                or Reliability.ReliableOrderedWithAckReceipt;
-        }
-
-        private readonly record struct QueuedFrame(Frame Frame);
-        private readonly record struct PendingDatagram(Frame[] Frames, long SentAtMs);
-
-        private sealed class SplitReassembly(uint totalParts)
-        {
-            public uint TotalParts { get; } = totalParts;
-            public Frame?[] Parts { get; } = new Frame?[totalParts];
-            private int receivedParts;
-
-            public bool IsComplete => receivedParts == Parts.Length;
-
-            public void Add(uint index, Frame frame)
+            if (!_orderedFrameQueue.TryGetValue(channel, out Dictionary<uint, Frame>? queuedFrames))
             {
-                if (Parts[index].HasValue)
-                {
-                    return;
-                }
-
-                Parts[index] = frame;
-                receivedParts++;
+                return;
             }
 
-            public int GetTotalPayloadLength()
+            while (queuedFrames.Remove(_nextOrderedIndex[channel], out Frame queuedFrame))
             {
-                int total = 0;
-                for (int i = 0; i < Parts.Length; i++)
-                {
-                    total += Parts[i]!.Value.Buffer.Length;
-                }
-
-                return total;
+                HandleFrame(queuedFrame);
+                _nextOrderedIndex[channel]++;
             }
+
+            if (queuedFrames.Count == 0)
+            {
+                _orderedFrameQueue.Remove(channel);
+            }
+
+            return;
+        }
+
+        if (frame.OrderingIndex <= expectedIndex)
+        {
+            return;
+        }
+
+        if (!_orderedFrameQueue.TryGetValue(channel, out Dictionary<uint, Frame>? channelQueue))
+        {
+            channelQueue = [];
+            _orderedFrameQueue[channel] = channelQueue;
+        }
+
+        if (channelQueue.Count < DatagramWindowSize)
+        {
+            channelQueue[frame.OrderingIndex] = frame;
+        }
+    }
+
+    private Frame? ReassembleSplitFrame(Frame frame)
+    {
+        if (!frame.IsSplit)
+        {
+            return frame;
+        }
+
+        if (frame.SplitSize == 0 ||
+            frame.SplitSize > DatagramWindowSize ||
+            frame.SplitIndex >= frame.SplitSize)
+        {
+            return null;
+        }
+
+        if (!_splitFrames.TryGetValue(frame.SplitId, out SplitReassembly? split))
+        {
+            split = new SplitReassembly(frame.SplitSize);
+            _splitFrames[frame.SplitId] = split;
+        }
+        else if (split.TotalParts != frame.SplitSize)
+        {
+            _splitFrames.Remove(frame.SplitId);
+            return null;
+        }
+
+        split.Add(frame.SplitIndex, frame);
+
+        if (!split.IsComplete)
+        {
+            return null;
+        }
+
+        int totalLength = split.GetTotalPayloadLength();
+        byte[] payload = new byte[totalLength];
+
+        int offset = 0;
+
+        for (uint i = 0; i < split.TotalParts; i++)
+        {
+            Frame part = split.Parts[i]!.Value;
+            part.Buffer.AsSpan().CopyTo(payload.AsSpan(offset));
+            offset += part.Buffer.Length;
+        }
+
+        _splitFrames.Remove(frame.SplitId);
+
+        return new Frame(
+            reliability: frame.Reliability,
+            isSplit: false,
+            bufferBitLength: (ushort)(payload.Length * 8),
+            reliableIndex: frame.ReliableIndex,
+            sequencedIndex: frame.SequencedIndex,
+            orderingIndex: frame.OrderingIndex,
+            orderingChannel: frame.OrderingChannel,
+            buffer: payload
+        );
+    }
+
+    private Frame CreateFrame(ReadOnlySpan<byte> payload, Reliability reliability, byte orderingChannel)
+    {
+        return new Frame(
+            reliability: reliability,
+            isSplit: false,
+            bufferBitLength: (ushort)(payload.Length * 8),
+            reliableIndex: NeedsReliableIndex(reliability) ? _sendReliableIndex++ : 0,
+            sequencedIndex: NeedsSequencedIndex(reliability) ? _sendSequencedIndex[orderingChannel]++ : 0,
+            orderingIndex: NeedsOrdering(reliability) ? _sendOrderingIndex[orderingChannel]++ : 0,
+            orderingChannel: orderingChannel,
+            buffer: payload.ToArray()
+        );
+    }
+
+    private void RequeueFrames(Frame[] frames)
+    {
+        for (int i = frames.Length - 1; i >= 0; i--)
+        {
+            _outgoingFrames.AddFirst(frames[i]);
+        }
+    }
+
+    private static bool NeedsReliableIndex(Reliability reliability)
+    {
+        return reliability is
+            Reliability.Reliable or
+            Reliability.ReliableOrdered or
+            Reliability.ReliableSequenced or
+            Reliability.ReliableWithAckReceipt or
+            Reliability.ReliableOrderedWithAckReceipt;
+    }
+
+    private static bool NeedsSequencedIndex(Reliability reliability)
+    {
+        return reliability is
+            Reliability.UnreliableSequenced or
+            Reliability.ReliableSequenced;
+    }
+
+    private static bool NeedsOrdering(Reliability reliability)
+    {
+        return reliability is
+            Reliability.UnreliableSequenced or
+            Reliability.ReliableOrdered or
+            Reliability.ReliableSequenced or
+            Reliability.ReliableOrderedWithAckReceipt;
+    }
+
+    private readonly record struct PendingDatagram(Frame[] Frames, long SentAtMs);
+
+    private sealed class SplitReassembly
+    {
+        public uint TotalParts { get; }
+        public Frame?[] Parts { get; }
+
+        private int _receivedParts;
+
+        public bool IsComplete => _receivedParts == Parts.Length;
+
+        public SplitReassembly(uint totalParts)
+        {
+            TotalParts = totalParts;
+            Parts = new Frame?[totalParts];
+        }
+
+        public void Add(uint index, Frame frame)
+        {
+            if (index >= Parts.Length || Parts[index].HasValue)
+            {
+                return;
+            }
+
+            Parts[index] = frame;
+            _receivedParts++;
+        }
+
+        public int GetTotalPayloadLength()
+        {
+            int total = 0;
+
+            for (int i = 0; i < Parts.Length; i++)
+            {
+                total += Parts[i]!.Value.Buffer.Length;
+            }
+
+            return total;
         }
     }
 }
