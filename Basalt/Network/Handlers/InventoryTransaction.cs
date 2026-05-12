@@ -1,4 +1,5 @@
 using Basalt.Core;
+using Basalt.Block.Traits.Types;
 using Basalt.Entity.Traits;
 using Basalt.Item;
 using Basalt.Item.Traits.Types;
@@ -11,6 +12,27 @@ namespace Basalt.Network.Handlers;
 
 public static class InventoryTransaction
 {
+    private static readonly HashSet<string> ReplaceableBlocks =
+    [
+        "minecraft:air",
+        "minecraft:cave_air",
+        "minecraft:void_air",
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:lava",
+        "minecraft:flowing_lava",
+        "minecraft:short_grass",
+        "minecraft:tall_grass",
+        "minecraft:fern",
+        "minecraft:large_fern",
+        "minecraft:dead_bush",
+        "minecraft:vine",
+        "minecraft:seagrass",
+        "minecraft:tall_seagrass",
+        "minecraft:snow_layer",
+        "minecraft:fire"
+    ];
+
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         InventoryTransactionPacket packet = new();
@@ -29,22 +51,25 @@ public static class InventoryTransaction
 
         switch (packet.TransactionData)
         {
-            case NormalInventoryTransactionData normal:
-                HandleNormalTransaction(player, inventory, packet.Actions, normal);
+            case NormalInventoryTransactionData:
+                HandleInventoryActions(inventory, packet.Actions);
                 break;
+
             case UseItemInventoryTransactionData useItem:
-                HandleUseItemTransaction(player, inventory, useItem);
+                HandleUseItem(player, inventory, useItem);
                 break;
-            case UseItemOnEntityInventoryTransactionData useOnEntity:
-                HandleUseItemOnEntityTransaction(player, inventory, useOnEntity);
+
+            case UseItemOnEntityInventoryTransactionData useItemOnEntity:
+                HandleUseItemOnEntity(player, inventory, useItemOnEntity);
                 break;
+
             case ReleaseItemInventoryTransactionData:
             case MismatchInventoryTransactionData:
                 break;
         }
     }
 
-    public static void HandleUseItemFromAuthInput(Player player, UseItemTransactionData data, float interactPitch, float interactYaw)
+    public static void HandleUseItemFromAuthInput(Player player, UseItemTransactionData data, float pitch, float yaw)
     {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null)
@@ -52,7 +77,7 @@ public static class InventoryTransaction
             return;
         }
 
-        UseItemInventoryTransactionData mapped = new()
+        UseItemInventoryTransactionData transaction = new()
         {
             ActionType = data.ActionType,
             TriggerType = data.TriggerType,
@@ -67,142 +92,208 @@ public static class InventoryTransaction
             ClientCooldownState = data.ClientCooldownState
         };
 
-        if (mapped.BlockPosition.X == 0 && mapped.BlockPosition.Y == 0 && mapped.BlockPosition.Z == 0
-            && TryResolveFromView(player, interactPitch, interactYaw, out BlockPos lookedBlock, out int lookedFace))
+        bool missingBlockPosition =
+            transaction.BlockPosition.X == 0 &&
+            transaction.BlockPosition.Y == 0 &&
+            transaction.BlockPosition.Z == 0;
+
+        if (missingBlockPosition && FindBlockFromView(player, pitch, yaw, out BlockPos viewedBlock, out int viewedFace))
         {
-            mapped.BlockPosition = lookedBlock;
-            mapped.BlockFace = lookedFace;
+            transaction.BlockPosition = viewedBlock;
+            transaction.BlockFace = viewedFace;
         }
-        else if (mapped.BlockPosition.X == 0 && mapped.BlockPosition.Y == 0 && mapped.BlockPosition.Z == 0)
+        else if (missingBlockPosition)
         {
-            BlockPos aroundPlayer = new()
+            transaction.BlockPosition = new BlockPos
             {
                 X = (int)MathF.Floor(player.Position.X),
                 Y = (int)MathF.Floor(player.Position.Y - 1f),
                 Z = (int)MathF.Floor(player.Position.Z)
             };
-            mapped.BlockPosition = aroundPlayer;
-            if (mapped.BlockFace is < 0 or > 5)
+
+            if (transaction.BlockFace is < 0 or > 5)
             {
-                mapped.BlockFace = 1;
+                transaction.BlockFace = 1;
             }
         }
 
-        HandleUseItemTransaction(player, inventory, mapped);
+        HandleUseItem(player, inventory, transaction);
     }
 
-    private static void HandleNormalTransaction(Player player, EntityInventoryTrait inventory, List<InventoryAction> actions, NormalInventoryTransactionData _)
+    private static void HandleInventoryActions(EntityInventoryTrait inventory, List<InventoryAction> actions)
     {
-        for (int i = 0; i < actions.Count; i++)
+        foreach (InventoryAction action in actions)
         {
-            InventoryAction action = actions[i];
-            if (action.SourceType == (uint)InventoryActionSourceType.World)
+            if (action.SourceType != (uint)InventoryActionSourceType.World)
             {
-                inventory.Container.Update();
+                continue;
+            }
+
+            inventory.Container.Update();
+            return;
+        }
+    }
+
+    private static void HandleUseItem(Player player, EntityInventoryTrait inventory, UseItemInventoryTransactionData transaction)
+    {
+        if (transaction.ActionType is 0 or 2 && player.Dimension is not null)
+        {
+            BlockPos blockPosition = transaction.BlockPosition;
+
+            if (IsEmptyPosition(blockPosition) && player.LastActionBlockPosition.HasValue)
+            {
+                blockPosition = player.LastActionBlockPosition.Value;
+            }
+
+            Basalt.Block.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
+            if (block is not null)
+            {
+                block.OnInteract(new BlockInteractDetails(
+                    player,
+                    blockPosition,
+                    transaction.BlockFace,
+                    transaction.ClickedPosition));
+
                 return;
             }
         }
-    }
 
-
-    private static void HandleUseItemTransaction(Player player, EntityInventoryTrait inventory, UseItemInventoryTransactionData transaction)
-    {
-
-        if (!TryGetHeldItem(inventory, transaction.HotBarSlot, out ItemStack heldItem))
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        if (heldItem is null)
         {
             return;
         }
 
-
-        switch (transaction.ActionType)
+        if (transaction.ActionType == 1)
         {
-            case 0:
-                HandleUseItemPlaceOrInteract(player, inventory, heldItem, transaction);
-                break;
-            case 1:
-                heldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
-                break;
-            case 2:
-                HandleUseItemPlaceOrInteract(player, inventory, heldItem, transaction);
-                break;
-            default:
-                HandleUseItemPlaceOrInteract(player, inventory, heldItem, transaction);
-                break;
+            heldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
+            return;
         }
+
+        UseItemOnBlock(player, inventory, heldItem, transaction);
     }
 
-    private static void HandleUseItemPlaceOrInteract(Player player, EntityInventoryTrait inventory, ItemStack heldItem, UseItemInventoryTransactionData transaction)
+    private static void UseItemOnBlock(
+        Player player,
+        EntityInventoryTrait inventory,
+        ItemStack heldItem,
+        UseItemInventoryTransactionData transaction)
     {
         if (player.Dimension is null)
         {
             return;
         }
 
-        BlockPos interactedPos = transaction.BlockPosition;
-        int blockFace = transaction.BlockFace;
-        if (interactedPos.X == 0 && interactedPos.Y == 0 && interactedPos.Z == 0 && player.LastActionBlockPosition.HasValue)
+        BlockPos clickedPosition = transaction.BlockPosition;
+        int clickedFace = transaction.BlockFace;
+
+        if (IsEmptyPosition(clickedPosition) && player.LastActionBlockPosition.HasValue)
         {
-            interactedPos = player.LastActionBlockPosition.Value;
-            if (player.LastActionFace >= 0 && player.LastActionFace <= 5)
+            clickedPosition = player.LastActionBlockPosition.Value;
+
+            if (player.LastActionFace is >= 0 and <= 5)
             {
-                blockFace = player.LastActionFace;
+                clickedFace = player.LastActionFace;
             }
         }
 
-        Basalt.Block.BlockPermutation interacted = player.Dimension.GetPermutation(interactedPos.X, interactedPos.Y, interactedPos.Z);
-        BlockPos placedPos = GetResultantPosition(interactedPos, blockFace);
-        Basalt.Block.BlockPermutation currentPlaced = player.Dimension.GetPermutation(placedPos.X, placedPos.Y, placedPos.Z);
+        Basalt.Block.BlockPermutation clickedBlock =
+            player.Dimension.GetPermutation(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
-        Basalt.Block.BlockType? blockType = ResolvePlaceBlockType(heldItem);
-        if (blockType is null)
+        BlockPos placePosition = GetPlacedBlockPosition(clickedPosition, clickedFace);
+
+        Basalt.Block.BlockPermutation existingBlock =
+            player.Dimension.GetPermutation(placePosition.X, placePosition.Y, placePosition.Z);
+
+        Basalt.Block.Block? blockEntity =
+            player.Dimension.GetBlock(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
+
+        if (blockEntity is not null)
         {
-            heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(player, transaction.HotBarSlot, interactedPos, blockFace, transaction.Position, transaction.ClickedPosition));
-            SyncBlockToPlayer(player, placedPos, currentPlaced.NetworkId);
+            blockEntity.OnInteract(new BlockInteractDetails(
+                player,
+                clickedPosition,
+                clickedFace,
+                transaction.ClickedPosition));
+
+            SendBlockUpdate(player, clickedPosition, clickedBlock.NetworkId);
             return;
         }
 
+        Basalt.Block.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Block.BlockType.Get(heldItem.Identifier);
 
-        if (IsSelfFeetBlock(player, placedPos))
+        if (blockType is null || blockType.Identifier == "minecraft:air")
         {
-            SyncBlockToPlayer(player, placedPos, currentPlaced.NetworkId);
+            heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                player,
+                transaction.HotBarSlot,
+                clickedPosition,
+                clickedFace,
+                transaction.Position,
+                transaction.ClickedPosition));
+
+            SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
             return;
         }
 
-        if (IsBlockOccupiedByEntity(player, placedPos))
+        if (PlayerOccupiesBlock(player, placePosition) ||
+            EntityOccupiesBlock(player, placePosition) ||
+            existingBlock.Type.Identifier == blockType.Identifier ||
+            !ReplaceableBlocks.Contains(existingBlock.Type.Identifier))
         {
-            SyncBlockToPlayer(player, placedPos, currentPlaced.NetworkId);
+            SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
             return;
         }
 
-        if (string.Equals(currentPlaced.Type.Identifier, blockType.Identifier, StringComparison.Ordinal))
-        {
-            SyncBlockToPlayer(player, placedPos, currentPlaced.NetworkId);
-            return;
-        }
-
-        if (!CanReplace(currentPlaced.Type.Identifier))
-        {
-            SyncBlockToPlayer(player, placedPos, currentPlaced.NetworkId);
-            return;
-        }
-
-        Basalt.Block.BlockPermutation permutation = blockType.Permutations.Count > 0
+        Basalt.Block.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
             ? blockType.Permutations[0]
             : blockType.GetPermutation();
 
-        player.Dimension.SetPermutation(placedPos.X, placedPos.Y, placedPos.Z, permutation);
+        player.Dimension.SetPermutation(placePosition.X, placePosition.Y, placePosition.Z, placedPermutation);
 
-        UpdateBlockPacket updateBlock = new()
+        Basalt.Block.Block? placedBlock =
+            player.Dimension.GetBlock(placePosition.X, placePosition.Y, placePosition.Z);
+
+        placedBlock?.OnPlace(new BlockPlaceDetails(
+            player,
+            placePosition,
+            clickedFace,
+            transaction.ClickedPosition));
+
+        SendBlockUpdate(player, placePosition, placedPermutation.NetworkId);
+
+        player.Dimension.Broadcast(new UpdateBlockPacket
         {
-            Position = placedPos,
-            NetworkBlockId = (uint)permutation.NetworkId,
+            Position = placePosition,
+            NetworkBlockId = (uint)placedPermutation.NetworkId,
             Flags = UpdateBlockFlagsType.Network,
             Layer = UpdateBlockLayerType.Normal
-        };
-        player.Dimension.Broadcast(updateBlock);
-        BroadcastPlaceSound(player, placedPos, permutation.NetworkId);
+        });
 
-        heldItem.OnPlace(new ItemPlaceDetails(player, transaction.HotBarSlot, interactedPos, blockFace, transaction.Position, transaction.ClickedPosition));
+        player.Dimension.Broadcast(new LevelSoundEventPacket
+        {
+            Event = LevelSoundEvent.Place,
+            Position = new Vec3f
+            {
+                X = placePosition.X + 0.5f,
+                Y = placePosition.Y + 0.5f,
+                Z = placePosition.Z + 0.5f
+            },
+            Data = placedPermutation.NetworkId,
+            ActorIdentifier = string.Empty,
+            IsBabyMob = false,
+            IsGlobal = false,
+            UniqueActorId = 0,
+            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
+        });
+
+        heldItem.OnPlace(new ItemPlaceDetails(
+            player,
+            transaction.HotBarSlot,
+            clickedPosition,
+            clickedFace,
+            transaction.Position,
+            transaction.ClickedPosition));
 
         if (player.Gamemode != Gamemode.Survival)
         {
@@ -210,23 +301,39 @@ public static class InventoryTransaction
         }
 
         heldItem.DecrementStack();
+
         if (heldItem.StackSize == 0)
         {
             inventory.Container.ClearSlot(inventory.SelectedSlot);
-            return;
         }
-
-        inventory.Container.UpdateSlot(inventory.SelectedSlot);
+        else
+        {
+            inventory.Container.UpdateSlot(inventory.SelectedSlot);
+        }
     }
 
-    private static void HandleUseItemOnEntityTransaction(Player player, EntityInventoryTrait inventory, UseItemOnEntityInventoryTransactionData transaction)
+    private static void HandleUseItemOnEntity(
+        Player player,
+        EntityInventoryTrait inventory,
+        UseItemOnEntityInventoryTransactionData transaction)
     {
-        if (!TryGetHeldItem(inventory, transaction.HotBarSlot, out ItemStack heldItem))
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        if (heldItem is null || player.Dimension is null)
         {
             return;
         }
 
-        Basalt.Entity.Entity? target = ResolveTargetEntity(player, transaction.TargetEntityRuntimeId);
+        Basalt.Entity.Entity? target = null;
+
+        foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
+        {
+            if (entity.RuntimeId == transaction.TargetEntityRuntimeId)
+            {
+                target = entity;
+                break;
+            }
+        }
+
         if (target is null)
         {
             return;
@@ -235,104 +342,100 @@ public static class InventoryTransaction
         switch (transaction.ActionType)
         {
             case 0:
-                heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(player, target, transaction.HotBarSlot, transaction.Position, transaction.ClickedPosition));
+                heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(
+                    player,
+                    target,
+                    transaction.HotBarSlot,
+                    transaction.Position,
+                    transaction.ClickedPosition));
                 break;
+
             case 1:
-                heldItem.OnUseAttack(new ItemUseAttackDetails(player, target, transaction.HotBarSlot, transaction.Position, transaction.ClickedPosition));
+                heldItem.OnUseAttack(new ItemUseAttackDetails(
+                    player,
+                    target,
+                    transaction.HotBarSlot,
+                    transaction.Position,
+                    transaction.ClickedPosition));
                 break;
         }
     }
 
-    private static Basalt.Block.BlockType? ResolvePlaceBlockType(ItemStack heldItem)
+    private static ItemStack? GetHeldItem(EntityInventoryTrait inventory, int hotBarSlot)
     {
-        Basalt.Block.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Block.BlockType.Get(heldItem.Identifier);
-        if (blockType is null || blockType.Identifier == "minecraft:air")
-        {
-            return null;
-        }
-
-        return blockType;
-    }
-
-    private static void SyncBlockToPlayer(Player player, BlockPos pos, int networkId)
-    {
-        UpdateBlockPacket update = new()
-        {
-            Position = pos,
-            NetworkBlockId = (uint)networkId,
-            Flags = UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
-        };
-        player.Send(update);
-    }
-
-    private static void BroadcastPlaceSound(Player player, BlockPos pos, int networkId)
-    {
-        if (player.Dimension is null)
-        {
-            return;
-        }
-
-        LevelSoundEventPacket placeSound = new()
-        {
-            Event = LevelSoundEvent.Place,
-            Position = new Vec3f { X = pos.X + 0.5f, Y = pos.Y + 0.5f, Z = pos.Z + 0.5f },
-            Data = networkId,
-            ActorIdentifier = string.Empty,
-            IsBabyMob = false,
-            IsGlobal = false,
-            UniqueActorId = 0,
-            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-        };
-        player.Dimension.Broadcast(placeSound);
-    }
-
-    private static BlockPos GetResultantPosition(BlockPos pos, int face)
-    {
-        return face switch
-        {
-            0 => new BlockPos { X = pos.X, Y = pos.Y - 1, Z = pos.Z },
-            1 => new BlockPos { X = pos.X, Y = pos.Y + 1, Z = pos.Z },
-            2 => new BlockPos { X = pos.X, Y = pos.Y, Z = pos.Z - 1 },
-            3 => new BlockPos { X = pos.X, Y = pos.Y, Z = pos.Z + 1 },
-            4 => new BlockPos { X = pos.X - 1, Y = pos.Y, Z = pos.Z },
-            5 => new BlockPos { X = pos.X + 1, Y = pos.Y, Z = pos.Z },
-            _ => pos
-        };
-    }
-
-    private static bool TryGetHeldItem(EntityInventoryTrait inventory, int hotBarSlot, out ItemStack heldItem)
-    {
-        heldItem = null!;
-        if (hotBarSlot < 0 || hotBarSlot >= 9)
+        if (hotBarSlot is < 0 or >= 9)
         {
             hotBarSlot = 0;
         }
 
         inventory.SetHeldItem(hotBarSlot);
-        ItemStack? item = inventory.GetHeldItem();
-        if (item is null || item.StackSize == 0)
+
+        ItemStack? heldItem = inventory.GetHeldItem();
+        return heldItem is null || heldItem.StackSize == 0 ? null : heldItem;
+    }
+
+    private static void SendBlockUpdate(Player player, BlockPos position, int networkId)
+    {
+        player.Send(new UpdateBlockPacket
+        {
+            Position = position,
+            NetworkBlockId = (uint)networkId,
+            Flags = UpdateBlockFlagsType.Network,
+            Layer = UpdateBlockLayerType.Normal
+        });
+    }
+
+    private static BlockPos GetPlacedBlockPosition(BlockPos position, int face)
+    {
+        return face switch
+        {
+            0 => new BlockPos { X = position.X, Y = position.Y - 1, Z = position.Z },
+            1 => new BlockPos { X = position.X, Y = position.Y + 1, Z = position.Z },
+            2 => new BlockPos { X = position.X, Y = position.Y, Z = position.Z - 1 },
+            3 => new BlockPos { X = position.X, Y = position.Y, Z = position.Z + 1 },
+            4 => new BlockPos { X = position.X - 1, Y = position.Y, Z = position.Z },
+            5 => new BlockPos { X = position.X + 1, Y = position.Y, Z = position.Z },
+            _ => position
+        };
+    }
+
+    private static bool IsEmptyPosition(BlockPos position)
+    {
+        return position.X == 0 && position.Y == 0 && position.Z == 0;
+    }
+
+    private static bool PlayerOccupiesBlock(Player player, BlockPos position)
+    {
+        const float halfWidth = 0.3f;
+
+        int minBlockX = (int)MathF.Floor(player.Position.X - halfWidth);
+        int maxBlockX = (int)MathF.Floor(player.Position.X + halfWidth);
+        int minBlockZ = (int)MathF.Floor(player.Position.Z - halfWidth);
+        int maxBlockZ = (int)MathF.Floor(player.Position.Z + halfWidth);
+
+        if (position.X < minBlockX || position.X > maxBlockX ||
+            position.Z < minBlockZ || position.Z > maxBlockZ)
         {
             return false;
         }
 
-        heldItem = item;
-        return true;
+        int playerBlockY = (int)MathF.Floor(player.Position.Y);
+        return position.Y == playerBlockY || position.Y == playerBlockY - 1;
     }
 
-    private static bool IsBlockOccupiedByEntity(Player player, BlockPos pos)
+    private static bool EntityOccupiesBlock(Player player, BlockPos position)
     {
         if (player.Dimension is null)
         {
             return false;
         }
 
-        float blockMinX = pos.X;
-        float blockMaxX = pos.X + 1f;
-        float blockMinY = pos.Y;
-        float blockMaxY = pos.Y + 1f;
-        float blockMinZ = pos.Z;
-        float blockMaxZ = pos.Z + 1f;
+        float blockMinX = position.X;
+        float blockMaxX = position.X + 1f;
+        float blockMinY = position.Y;
+        float blockMaxY = position.Y + 1f;
+        float blockMinZ = position.Z;
+        float blockMaxZ = position.Z + 1f;
 
         foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
         {
@@ -341,20 +444,22 @@ public static class InventoryTransaction
                 continue;
             }
 
-            float halfWidth = 0.3f;
-            float height = 1.8f;
+            const float entityHalfWidth = 0.3f;
+            const float entityHeight = 1.8f;
 
-            float entityMinX = entity.Position.X - halfWidth;
-            float entityMaxX = entity.Position.X + halfWidth;
-            float entityMinY = entity.Position.Y;
-            float entityMaxY = entity.Position.Y + height;
-            float entityMinZ = entity.Position.Z - halfWidth;
-            float entityMaxZ = entity.Position.Z + halfWidth;
+            bool overlapsX =
+                entity.Position.X + entityHalfWidth > blockMinX &&
+                entity.Position.X - entityHalfWidth < blockMaxX;
 
-            bool overlapX = entityMaxX > blockMinX && entityMinX < blockMaxX;
-            bool overlapY = entityMaxY > blockMinY && entityMinY < blockMaxY;
-            bool overlapZ = entityMaxZ > blockMinZ && entityMinZ < blockMaxZ;
-            if (overlapX && overlapY && overlapZ)
+            bool overlapsY =
+                entity.Position.Y + entityHeight > blockMinY &&
+                entity.Position.Y < blockMaxY;
+
+            bool overlapsZ =
+                entity.Position.Z + entityHalfWidth > blockMinZ &&
+                entity.Position.Z - entityHalfWidth < blockMaxZ;
+
+            if (overlapsX && overlapsY && overlapsZ)
             {
                 return true;
             }
@@ -363,73 +468,9 @@ public static class InventoryTransaction
         return false;
     }
 
-    private static bool IsSelfFeetBlock(Player player, BlockPos pos)
+    private static bool FindBlockFromView(Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
     {
-        const float halfWidth = 0.3f;
-        float minX = player.Position.X - halfWidth;
-        float maxX = player.Position.X + halfWidth;
-        float minZ = player.Position.Z - halfWidth;
-        float maxZ = player.Position.Z + halfWidth;
-
-        int minBlockX = (int)MathF.Floor(minX);
-        int maxBlockX = (int)MathF.Floor(maxX);
-        int minBlockZ = (int)MathF.Floor(minZ);
-        int maxBlockZ = (int)MathF.Floor(maxZ);
-
-        if (pos.X < minBlockX || pos.X > maxBlockX || pos.Z < minBlockZ || pos.Z > maxBlockZ)
-        {
-            return false;
-        }
-
-        int bodyY = (int)MathF.Floor(player.Position.Y);
-        int supportY = bodyY - 1;
-        return pos.Y == bodyY || pos.Y == supportY;
-    }
-
-    private static bool CanReplace(string identifier)
-    {
-        return identifier is
-            "minecraft:air" or
-            "minecraft:cave_air" or
-            "minecraft:void_air" or
-            "minecraft:water" or
-            "minecraft:flowing_water" or
-            "minecraft:lava" or
-            "minecraft:flowing_lava" or
-            "minecraft:short_grass" or
-            "minecraft:tall_grass" or
-            "minecraft:fern" or
-            "minecraft:large_fern" or
-            "minecraft:dead_bush" or
-            "minecraft:vine" or
-            "minecraft:seagrass" or
-            "minecraft:tall_seagrass" or
-            "minecraft:snow_layer" or
-            "minecraft:fire";
-    }
-
-
-    private static Basalt.Entity.Entity? ResolveTargetEntity(Player player, ulong runtimeId)
-    {
-        if (player.Dimension is null)
-        {
-            return null;
-        }
-
-        foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
-        {
-            if (entity.RuntimeId == runtimeId)
-            {
-                return entity;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool TryResolveFromView(Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPos, out int face)
-    {
-        blockPos = default;
+        blockPosition = default;
         face = 1;
 
         if (player.Dimension is null)
@@ -440,41 +481,48 @@ public static class InventoryTransaction
         float yaw = MathF.PI / 180f * yawDegrees;
         float pitch = MathF.PI / 180f * pitchDegrees;
 
-        float dirX = -MathF.Sin(yaw) * MathF.Cos(pitch);
-        float dirY = -MathF.Sin(pitch);
-        float dirZ = MathF.Cos(yaw) * MathF.Cos(pitch);
+        float directionX = -MathF.Sin(yaw) * MathF.Cos(pitch);
+        float directionY = -MathF.Sin(pitch);
+        float directionZ = MathF.Cos(yaw) * MathF.Cos(pitch);
 
         float startX = player.Position.X;
         float startY = player.Position.Y + 1.62f;
         float startZ = player.Position.Z;
 
-        int prevX = (int)MathF.Floor(startX);
-        int prevY = (int)MathF.Floor(startY);
-        int prevZ = (int)MathF.Floor(startZ);
+        int previousX = (int)MathF.Floor(startX);
+        int previousY = (int)MathF.Floor(startY);
+        int previousZ = (int)MathF.Floor(startZ);
 
-        const float maxDistance = 6.0f;
+        const float maxDistance = 6f;
         const float step = 0.1f;
 
-        for (float t = step; t <= maxDistance; t += step)
+        for (float distance = step; distance <= maxDistance; distance += step)
         {
-            float px = startX + dirX * t;
-            float py = startY + dirY * t;
-            float pz = startZ + dirZ * t;
+            float rayX = startX + directionX * distance;
+            float rayY = startY + directionY * distance;
+            float rayZ = startZ + directionZ * distance;
 
-            int bx = (int)MathF.Floor(px);
-            int by = (int)MathF.Floor(py);
-            int bz = (int)MathF.Floor(pz);
+            int blockX = (int)MathF.Floor(rayX);
+            int blockY = (int)MathF.Floor(rayY);
+            int blockZ = (int)MathF.Floor(rayZ);
 
-            Basalt.Block.BlockPermutation perm = player.Dimension.GetPermutation(bx, by, bz);
-            if (perm.Type.Identifier != "minecraft:air")
+            Basalt.Block.BlockPermutation block =
+                player.Dimension.GetPermutation(blockX, blockY, blockZ);
+
+            if (block.Type.Identifier != "minecraft:air")
             {
-                blockPos = new BlockPos { X = bx, Y = by, Z = bz };
+                blockPosition = new BlockPos
+                {
+                    X = blockX,
+                    Y = blockY,
+                    Z = blockZ
+                };
 
-                int dx = prevX - bx;
-                int dy = prevY - by;
-                int dz = prevZ - bz;
+                int deltaX = previousX - blockX;
+                int deltaY = previousY - blockY;
+                int deltaZ = previousZ - blockZ;
 
-                face = (dx, dy, dz) switch
+                face = (deltaX, deltaY, deltaZ) switch
                 {
                     (1, 0, 0) => 5,
                     (-1, 0, 0) => 4,
@@ -488,9 +536,9 @@ public static class InventoryTransaction
                 return true;
             }
 
-            prevX = bx;
-            prevY = by;
-            prevZ = bz;
+            previousX = blockX;
+            previousY = blockY;
+            previousZ = blockZ;
         }
 
         return false;
