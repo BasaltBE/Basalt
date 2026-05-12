@@ -11,6 +11,7 @@ namespace Basalt.Protocol.Enums
         Text = 0x09,
         StartGame = 0x0b,
         UpdateBlock = 0x15,
+        BlockActorData = 0x38,
         LevelEvent = 0x19,
         MovePlayer = 0x13,
         ActorEvent = 0x1b,
