@@ -14,6 +14,7 @@ public struct UnconnectedPong(long time = 0, ulong guid = 0, string advertisemen
 
     public static int Serialize(UnconnectedPong packet, Span<byte> dest)
     {
+        string advertisement = packet.Advertisement ?? string.Empty;
         int offset = 0;
         dest.WriteUInt8(PacketId, offset);
         offset += 1;
@@ -27,11 +28,11 @@ public struct UnconnectedPong(long time = 0, ulong guid = 0, string advertisemen
         Magic.Write(dest, offset);
         offset += Magic.MAGIC_LENGTH;
 
-        int AdvertisementByteLength = Encoding.UTF8.GetByteCount(packet.Advertisement);
+        int AdvertisementByteLength = Encoding.UTF8.GetByteCount(advertisement);
         dest.WriteUInt16((ushort)AdvertisementByteLength, offset, false);
         offset += 2;
 
-        dest.WriteString(packet.Advertisement, AdvertisementByteLength, offset);
+        dest.WriteString(advertisement, AdvertisementByteLength, offset);
         offset += AdvertisementByteLength;
 
         return offset;
