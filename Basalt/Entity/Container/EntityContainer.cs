@@ -24,40 +24,12 @@ public sealed class EntityContainer : Containers.Container
     {
         Entity.OnContainerUpdate(this);
         base.UpdateSlot(slot);
-
-        if (Containers.Container.IsPacketSuppressed())
-        {
-            return;
-        }
-
-        if (Entity is Core.Player player && player.Spawned)
-        {
-            bool isOccupant = GetAllOccupants().Any(entry => ReferenceEquals(entry.Key, player));
-            if (!isOccupant)
-            {
-                SendContentTo(player, Identifier ?? 0);
-            }
-        }
     }
 
     public override void Update()
     {
         Entity.OnContainerUpdate(this);
         base.Update();
-
-        if (Containers.Container.IsPacketSuppressed())
-        {
-            return;
-        }
-
-        if (Entity is Core.Player player && player.Spawned)
-        {
-            bool isOccupant = GetAllOccupants().Any(entry => ReferenceEquals(entry.Key, player));
-            if (!isOccupant)
-            {
-                SendContentTo(player, Identifier ?? 0);
-            }
-        }
     }
 
     protected override long GetContainerEntityUniqueId()
@@ -85,7 +57,9 @@ public sealed class EntityContainer : Containers.Container
         };
     }
 
-    protected override bool ShouldSendContainerOpen(Core.Player player, int windowId)
+    // TODO: Add proper checks, e.g container already opened
+    // Or if something is preventing it from opening
+    protected override bool CanOpen(Core.Player player, int windowId)
     {
         return true;
     }
