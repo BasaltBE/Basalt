@@ -2,17 +2,27 @@ using Basalt.Entity.Traits.Attribute;
 using Basalt.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Traits;
+using Basalt.Protocol.Types;
 
 namespace Basalt.Entity.Traits;
 
 public sealed class EntityAirSupplyTrait : EntityTrait
 {
+    private const int MaxAirTicks = 300;
+
     public new static string Identifier => "air_supply";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
-    private int _airSupplyTicks = 300;
+
+    private int _airTicks = MaxAirTicks;
 
     public EntityAirSupplyTrait(Entity entity) : base(entity)
     {
+    }
+
+    public override void OnSpawn(EntitySpawnOptions details)
+    {
+        Entity.Flags.SetActorFlag(ActorFlag.Breathing, true);
+        _airTicks = MaxAirTicks;
     }
 
     public override void OnTick(TraitOnTickDetails details)
@@ -22,97 +32,86 @@ public sealed class EntityAirSupplyTrait : EntityTrait
             return;
         }
 
-        if (Entity is Core.Player player)
-        {
-            Gamemode gamemode = player.GetGamemode();
-            if (gamemode is not (Gamemode.Survival or Gamemode.Adventure))
-            {
-                return;
-            }
-        }
-
-        int currentAirTicks = GetAirSupplyTicks();
-        bool canBreathe = CanBreathe();
-
-        if (!canBreathe)
-        {
-            SetAirSupplyTicks(currentAirTicks - 1);
-            if (currentAirTicks > -20)
-            {
-                return;
-            }
-
-            SetAirSupplyTicks(0);
-
-            EntityHealthTrait? health = Entity.GetTrait<EntityHealthTrait>();
-            if (health is null)
-            {
-                return;
-            }
-
-            bool drowningDamage = Entity.Dimension?.Gamerules.DrowningDamage ?? true;
-            if (!drowningDamage)
-            {
-                return;
-            }
-
-            health.ApplyDamage(
-                0.5f,
-                null,
-                Entity.IsSwimming ? ActorDamageCause.Drowning : ActorDamageCause.Suffocation
-            );
-
-            return;
-        }
-
-        if (currentAirTicks >= 300)
+        if (Entity is Core.Player player &&
+            player.GetGamemode() is not (Gamemode.Survival or Gamemode.Adventure))
         {
             return;
         }
 
-        SetAirSupplyTicks(currentAirTicks + 5);
-    }
-
-    private bool CanBreathe()
-    {
-        if (Entity.Dimension is null)
+        if (CanBreathe())
         {
-            return true;
+            if (_airTicks < MaxAirTicks)
+            {
+                _airTicks += 5;
+
+                if (_airTicks > MaxAirTicks)
+                {
+                    _airTicks = MaxAirTicks;
+                }
+            }
+
+            return;
         }
 
-        var head = Entity.GetHeadLocation();
-        int x = (int)MathF.Floor(head.X);
-        int y = (int)MathF.Floor(head.Y);
-        int z = (int)MathF.Floor(head.Z);
-        string identifier = Entity.Dimension.GetPermutation(x, y, z).Type.Identifier;
-        bool isLiquid = identifier.Contains("water", StringComparison.Ordinal) ||
-                        identifier.Contains("lava", StringComparison.Ordinal);
-        bool isSolid = !isLiquid && !string.Equals(identifier, "minecraft:air", StringComparison.Ordinal);
+        _airTicks--;
 
-        return (!isLiquid && !isSolid) || Entity.HasEffect(EffectType.WaterBreathing);
-    }
-
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
-        if (!Entity.Flags.GetActorFlag(ActorFlag.Breathing))
+        if (_airTicks > -20)
         {
-            Entity.Flags.SetActorFlag(ActorFlag.Breathing, true);
+            return;
         }
-        _airSupplyTicks = 300;
+
+        _airTicks = 0;
+
+        if (Entity.Dimension?.Gamerules.DrowningDamage == false)
+        {
+            return;
+        }
+
+        Entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
+            0.5f,
+            null,
+            Entity.IsSwimming ? ActorDamageCause.Drowning : ActorDamageCause.Suffocation
+        );
     }
 
     public int GetAirSupplyTicks()
     {
-        return _airSupplyTicks;
+        return _airTicks;
     }
 
     public void SetAirSupplyTicks(int ticks)
     {
-        _airSupplyTicks = ticks;
+        _airTicks = ticks;
     }
 
     public override EntityTrait Clone(Entity entity)
     {
         return new EntityAirSupplyTrait(entity);
+    }
+
+    private bool CanBreathe()
+    {
+        if (Entity.Dimension is null || Entity.HasEffect(EffectType.WaterBreathing))
+        {
+            return true;
+        }
+
+        Vec3f head = Entity.GetHeadLocation();
+
+        string block = Entity.Dimension
+            .GetPermutation(
+                (int)MathF.Floor(head.X),
+                (int)MathF.Floor(head.Y),
+                (int)MathF.Floor(head.Z))
+            .Type
+            .Identifier;
+
+        if (block.Contains("water", StringComparison.Ordinal) ||
+            block.Contains("lava", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return block == "minecraft:air";
     }
 }
