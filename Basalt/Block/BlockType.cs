@@ -1,4 +1,5 @@
 using Basalt.Block.Types;
+using Basalt.Block.Traits;
 
 namespace Basalt.Block;
 
@@ -13,12 +14,15 @@ public sealed class BlockType
     public float Hardness { get; internal set; }
     public List<string> States { get; } = [];
     public List<BlockPermutation> Permutations { get; } = [];
+    public IReadOnlyDictionary<string, Type> Traits => _traits;
+    private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
     public static IReadOnlyDictionary<string, BlockType> Types => Registry;
 
     public BlockType(string identifier)
     {
         Identifier = identifier;
         Registry[identifier] = this;
+        BlockTraitRegistry.BindTraitsToType(this);
     }
 
     public static BlockType? Get(string identifier)
@@ -48,6 +52,16 @@ public sealed class BlockType
         }
 
         _permutationStateIndex[GetPermutationStateKey(permutation.State)] = permutation;
+    }
+
+    public void RegisterTrait(Type traitType, string identifier)
+    {
+        if (!typeof(BlockTrait).IsAssignableFrom(traitType) || traitType.IsAbstract)
+        {
+            return;
+        }
+
+        _traits.TryAdd(identifier, traitType);
     }
 
     public void EnsureState(string key)
