@@ -1,5 +1,6 @@
 using Basalt.Block;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using System.Buffers;
@@ -13,6 +14,7 @@ public sealed class Chunk
     public const int MaxSubChunks = 24;
 
     private readonly Dictionary<(int X, int Y, int Z), BlockLevelStorage> _blocks = [];
+    private readonly Dictionary<(int X, int Y, int Z), Block.Block> _blockActors = [];
     private readonly Dictionary<long, CompoundTag> _entities = [];
 
     public DimensionType Type { get; }
@@ -210,7 +212,35 @@ public sealed class Chunk
         if (dirty)
         {
             Dirty = true;
+            Cache = null; // Invalidate cache when block storage changes
         }
+    }
+
+    public bool HasBlockActor(BlockPos position)
+    {
+        return _blockActors.ContainsKey((position.X, position.Y, position.Z));
+    }
+
+    public Block.Block? GetBlockActor(BlockPos position)
+    {
+        return _blockActors.GetValueOrDefault((position.X, position.Y, position.Z));
+    }
+
+    public void SetBlockActor(BlockPos position, Block.Block? actor)
+    {
+        var key = (position.X, position.Y, position.Z);
+        if (actor is null)
+        {
+            _blockActors.Remove(key);
+            return;
+        }
+
+        _blockActors[key] = actor;
+    }
+
+    public List<KeyValuePair<(int X, int Y, int Z), Block.Block>> GetAllBlockActors()
+    {
+        return [.. _blockActors];
     }
 
     public List<KeyValuePair<long, CompoundTag>> GetAllEntityStorages()
@@ -265,6 +295,7 @@ public sealed class Chunk
     {
         Cache = null;
         _blocks.Clear();
+        _blockActors.Clear();
         _entities.Clear();
         Array.Clear(SubChunks, 0, SubChunks.Length);
         Dirty = false;
@@ -291,6 +322,11 @@ public sealed class Chunk
         foreach ((var key, BlockLevelStorage value) in source._blocks)
         {
             _blocks[key] = value;
+        }
+
+        foreach ((var key, Block.Block value) in source._blockActors)
+        {
+            _blockActors[key] = value;
         }
 
         foreach ((long key, CompoundTag value) in source._entities)
@@ -366,6 +402,35 @@ public sealed class Chunk
         }
 
         writer.WriteUInt8(0);
+
+        foreach (KeyValuePair<(int X, int Y, int Z), Block.Block> actorEntry in chunk._blockActors)
+        {
+            (int x, int y, int z) = actorEntry.Key;
+            BlockPos position = new() { X = x, Y = y, Z = z };
+
+            BlockLevelStorage? storage = chunk.GetBlockStorage(position);
+            if (storage is null)
+            {
+                storage = new BlockLevelStorage(chunk);
+                storage.SetPosition(position);
+                storage.Set("id", new StringTag { Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
+                storage.Set("isMovable", new ByteTag { Value = 1 });
+                chunk.SetBlockStorage(position, storage, dirty: false);
+            }
+            else if (storage.Get<StringTag>("id") is not { } idTag || string.IsNullOrWhiteSpace(idTag.Value))
+            {
+                storage.Set("id", new StringTag { Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
+            }
+
+            actorEntry.Value.WriteTraits(storage);
+        }
+
+        List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
+        for (int i = 0; i < blockEntities.Count; i++)
+        {
+            NBT.WriteTag(ref writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        }
+
         return writer.Offset;
     }
 
@@ -411,6 +476,22 @@ public sealed class Chunk
             Cache = buffer.ToArray()
         };
 
+        while (reader.Remaining > 0)
+        {
+            if ((TagType)reader.Buffer[reader.Offset] != TagType.Compound)
+            {
+                break;
+            }
+
+            CompoundTag tag = NBT.ReadRootCompoundTag(
+                ref reader,
+                new ReadWriteOptions(Name: true, Type: true, VarInt: true),
+                canHaveName: true);
+
+            BlockLevelStorage storage = new(chunk, tag);
+            chunk.SetBlockStorage(storage.GetPosition(), storage, dirty: false);
+        }
+
         return chunk;
     }
 
@@ -425,5 +506,15 @@ public sealed class Chunk
         }
 
         return SubChunks[resolved];
+    }
+
+    private static string GetBlockActorId(string blockIdentifier)
+    {
+        return blockIdentifier switch
+        {
+            "minecraft:chest" => "Chest",
+            "minecraft:trapped_chest" => "Chest",
+            _ => blockIdentifier
+        };
     }
 }
