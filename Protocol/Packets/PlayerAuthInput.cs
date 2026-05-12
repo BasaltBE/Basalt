@@ -1,6 +1,5 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
-using System.Numerics;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -13,9 +12,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
     public Vec3f Position { get; set; }
     public Vec2f MoveVector { get; set; }
     public float HeadYaw { get; set; }
-    // TODO refractor Input flags like serenityjs one
-    public ulong InputFlagsLow { get; set; }
-    public bool SneakPressedRaw { get; set; }
+    public PlayerAuthInputData InputData { get; set; }
     public InputMode InputMode { get; set; }
     public PlayMode PlayMode { get; set; }
     public InteractionModel InteractionModel { get; set; }
@@ -36,13 +33,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
 
     public bool HasFlag(PlayerAuthInputFlag flag)
     {
-        int index = BitOperations.TrailingZeroCount((ulong)flag);
-        if (index == 64)
-        {
-            return SneakPressedRaw;
-        }
-
-        return (InputFlagsLow & (1UL << index)) != 0;
+        return InputData.HasFlag(flag);
     }
 
     public override void Deserialize(ref BinaryReader reader)
@@ -57,7 +48,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
         MoveVector = moveVector;
         HeadYaw = reader.ReadF32(true);
 
-        ReadInputFlags(ref reader);
+        InputData.Read(ref reader);
 
         InputMode = (InputMode)reader.ReadVarUInt();
         PlayMode = (PlayMode)reader.ReadVarUInt();
@@ -118,7 +109,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
         MoveVector.Write(ref writer);
         writer.WriteF32(HeadYaw, true);
 
-        WriteInputFlags(ref writer);
+        InputData.Write(ref writer);
 
         writer.WriteVarUInt((uint)InputMode);
         writer.WriteVarUInt((uint)PlayMode);
@@ -158,77 +149,4 @@ public sealed record PlayerAuthInputPacket : DataPacket
         RawMoveVector.Write(ref writer);
     }
 
-    private void ReadInputFlags(ref BinaryReader reader)
-    {
-        InputFlagsLow = 0;
-        SneakPressedRaw = false;
-        int shift = 0;
-
-        while (true)
-        {
-            byte current = reader.ReadUInt8();
-            ulong bits = (ulong)(current & 0x7F);
-
-            if (shift < 64)
-            {
-                InputFlagsLow |= bits << shift;
-            }
-            else if (shift == 64)
-            {
-                SneakPressedRaw = (bits & 0x01UL) != 0;
-            }
-
-            if ((current & 0x80) == 0)
-            {
-                return;
-            }
-
-            shift += 7;
-            if (shift > 64)
-            {
-                throw new FormatException("PlayerAuthInput bitset overflows.");
-            }
-        }
-    }
-
-    private void WriteInputFlags(ref BinaryWriter writer)
-    {
-        ulong value = InputFlagsLow;
-
-        if (!SneakPressedRaw)
-        {
-            while (value >= 0x80)
-            {
-                writer.WriteUInt8((byte)(value | 0x80));
-                value >>= 7;
-            }
-
-            writer.WriteUInt8((byte)value);
-            return;
-        }
-
-        byte[] bytes = new byte[10];
-        int count = 0;
-        ulong currentValue = value;
-        while (currentValue >= 0x80)
-        {
-            bytes[count++] = (byte)(currentValue | 0x80);
-            currentValue >>= 7;
-        }
-
-        bytes[count++] = (byte)currentValue;
-
-        while (count <= 9)
-        {
-            bytes[count - 1] |= 0x80;
-            bytes[count++] = 0;
-        }
-
-        bytes[9] = 0x01;
-
-        for (int i = 0; i < count; i++)
-        {
-            writer.WriteUInt8(bytes[i]);
-        }
-    }
 }
