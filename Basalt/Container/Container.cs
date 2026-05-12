@@ -8,19 +8,9 @@ namespace Basalt.Containers;
 
 public class Container
 {
-    private sealed class PacketSuppressionScope : IDisposable
-    {
-        public void Dispose()
-        {
-            if (_packetSuppressionDepth > 0)
-            {
-                _packetSuppressionDepth--;
-            }
-        }
-    }
 
-    private static int _packetSuppressionDepth;
-    private readonly Dictionary<Player, int> _occupants = [];
+    // A list of all the players that are vewing the container
+    public Dictionary<Player, int> occupants = [];
     private static int _nextContainerId = 1;
 
     public ContainerType Type { get; }
@@ -41,11 +31,20 @@ public class Container
         Storage = Enumerable.Repeat<ItemStack?>(null, size).ToList();
     }
 
+
+    // Returns the size of the container
     public int GetSize()
     {
         return Storage.Count;
     }
 
+    /// <summary>
+    /// Sets the size of the container
+    /// Please do not use this unless you know what you're doing
+    /// This should inseat be used in constructor!
+    /// </summary>
+    /// <param name="size"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public void SetSize(int size)
     {
         if (size < 0)
@@ -69,16 +68,37 @@ public class Container
         Update();
     }
 
+
+    /// <summary>
+    /// Returns the item in the slot 
+    /// But cann also return null
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <returns></returns>
     public ItemStack? GetItem(int slot)
     {
-        slot = NormalizeSlot(slot);
+        if (slot < 0 || slot >= Storage.Count)
+        {
+            return null;
+        }
         return Storage[slot];
     }
 
+    /// <summary>
+    /// Set an item to a slot.
+    /// Will remove the item if the stack size is 0 
+    /// but just use the RemoveItem instead if you want to remove the item
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <param name="item"></param>
     public virtual void SetItem(int slot, ItemStack item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        slot = NormalizeSlot(slot);
+        if (slot < 0 || slot >= Storage.Count)
+        {
+            return;
+        }
+
         Storage[slot] = item;
         if (item.StackSize == 0)
         {
@@ -88,6 +108,13 @@ public class Container
         UpdateSlot(slot);
     }
 
+    /// <summary>
+    /// Add an item to the container, this checks for slots and counts
+    /// so when there is a spot it can put it in it will add, but if there
+    /// are no empty slots or stackable slots it will return false
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
     public bool AddItem(ItemStack item)
     {
         ArgumentNullException.ThrowIfNull(item);
@@ -121,9 +148,21 @@ public class Container
         return true;
     }
 
+
+    /// <summary>
+    ///  Removes an item from the container
+    /// Returns the removed item or null 
+    /// Depending on how many you remove
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <param name="amount"></param>
+    /// <returns></returns>
     public ItemStack? RemoveItem(int slot, int amount)
     {
-        slot = NormalizeSlot(slot);
+        if (slot < 0 || slot >= Storage.Count)
+        {
+            return null;
+        }
         if (amount <= 0)
         {
             return null;
@@ -146,9 +185,18 @@ public class Container
         return item;
     }
 
+    /// <summary>
+    /// Takes an item from the container
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <param name="amount"></param>
+    /// <returns></returns>
     public ItemStack? TakeItem(int slot, int amount)
     {
-        slot = NormalizeSlot(slot);
+        if (slot < 0 || slot >= Storage.Count)
+        {
+            return null;
+        }
         if (amount <= 0)
         {
             return null;
@@ -173,11 +221,23 @@ public class Container
         return source.Clone((ushort)taken);
     }
 
+    /// <summary>
+    /// Swaps items in the container
+    /// pretty self explanatory
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <param name="otherSlot"></param>
+    /// <param name="otherContainer"></param>
     public void SwapItems(int slot, int otherSlot, Container? otherContainer = null)
     {
+        if (slot < 0 || slot >= Storage.Count
+            || otherSlot < 0 || otherSlot >= Storage.Count
+        )
+        {
+            return;
+        }
+
         Container target = otherContainer ?? this;
-        slot = NormalizeSlot(slot);
-        otherSlot = target.NormalizeSlot(otherSlot);
 
         ItemStack? a = GetItem(slot);
         ItemStack? b = target.GetItem(otherSlot);
@@ -189,13 +249,24 @@ public class Container
         target.UpdateSlot(otherSlot);
     }
 
+    /// <summary>
+    /// Clears an item from the container without ifs or buts
+    /// </summary>
+    /// <param name="slot"></param>
     public virtual void ClearSlot(int slot)
     {
-        slot = NormalizeSlot(slot);
+        if (slot < 0 || slot >= Storage.Count)
+        {
+            return;
+        }
+
         Storage[slot] = null;
         UpdateSlot(slot);
     }
 
+    /// <summary>
+    /// Clears the whole container of any items
+    /// </summary>
     public virtual void Clear()
     {
         for (int i = 0; i < Storage.Count; i++)
@@ -206,58 +277,103 @@ public class Container
         Update();
     }
 
+    /// <summary>
+    /// Updates a single slot of the container and sends it off to player
+    /// if they are in the container 
+    /// </summary>
+    /// <param name="slot"></param>
     public virtual void UpdateSlot(int slot)
     {
-        if (_packetSuppressionDepth > 0)
-        {
-            return;
-        }
-
         if (Storage.Count == 0)
         {
             return;
         }
 
-        slot = NormalizeSlot(slot);
-        foreach ((Player player, int windowId) in _occupants)
-        {
-            if (!CanSendContainerPackets(player))
-            {
-                continue;
-            }
-
-            SendSlotTo(player, windowId, slot);
-        }
-    }
-
-    public virtual void Update()
-    {
-        if (_packetSuppressionDepth > 0)
+        if (slot < 0 || slot >= Storage.Count)
         {
             return;
         }
 
-        foreach ((Player player, int windowId) in _occupants)
+        foreach ((Player player, int windowId) in occupants)
         {
-            if (!CanSendContainerPackets(player))
+            if (!player.Spawned)
             {
                 continue;
             }
 
-            SendContentTo(player, windowId);
+            InventorySlotPacket packet = new()
+            {
+                WindowId = windowId,
+                Slot = slot,
+                Container = new FullContainerName
+                {
+                    ContainerId = GetFullContainerNameId(),
+                    DynamicContainerId = new OptionalValue<uint>
+                    {
+                        HasValue = false
+                    }
+                },
+                StorageItem = new NetworkItemStackDescriptor(),
+                NewItem = ToNetworkItem(Storage[slot])
+            };
+
+            player.Send(packet);
         }
     }
 
+    /// <summary>
+    /// Updates the whole container and sends it to occupants
+    /// </summary>
+    public virtual void Update()
+    {
+
+        foreach ((Player player, int windowId) in occupants)
+        {
+            if (!player.Spawned)
+            {
+                continue;
+            }
+
+            InventoryContentPacket packet = new()
+            {
+                WindowId = windowId,
+                Content = new List<NetworkItemStackDescriptor>(Storage.Count),
+                Container = new FullContainerName
+                {
+                    ContainerId = GetFullContainerNameId(),
+                    DynamicContainerId = new OptionalValue<uint>
+                    {
+                        HasValue = false
+                    }
+                },
+                StorageItem = new NetworkItemStackDescriptor()
+            };
+
+            for (int i = 0; i < Storage.Count; i++)
+            {
+                packet.Content.Add(ToNetworkItem(Storage[i]));
+            }
+
+            player.Send(packet);
+        }
+    }
+
+    /// <summary>
+    /// Shows the container to the player
+    /// and returns the window id
+    /// </summary>
+    /// <param name="player"></param>
+    /// <returns></returns>
     public virtual int Show(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        if (_occupants.TryGetValue(player, out int existing))
+        if (occupants.TryGetValue(player, out int existing))
         {
             return existing;
         }
 
         int id = Identifier ?? _nextContainerId++;
-        _occupants[player] = id;
+        occupants[player] = id;
         player.RegisterOpenContainer(id, this);
         if (ShouldSendContainerOpen(player, id))
         {
@@ -268,7 +384,7 @@ public class Container
                 ContainerPosition = GetContainerPosition(),
                 ContainerEntityUniqueId = GetContainerEntityUniqueId()
             };
-            if (CanSendContainerPackets(player))
+            if (player.Spawned)
             {
                 player.Send(openPacket);
             }
@@ -278,14 +394,19 @@ public class Container
         return id;
     }
 
+    /// <summary>
+    /// Closes the container,
+    /// Done as Server to Client.
+    /// </summary>
+    /// <param name="player"></param>
     public virtual void Close(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        if (!_occupants.Remove(player, out int id))
+        if (!occupants.Remove(player, out int id))
         {
             return;
         }
-        player.UnregisterOpenContainer(id);
+        player.openedContainers.Remove(id);
 
         ContainerClosePacket packet = new()
         {
@@ -293,29 +414,22 @@ public class Container
             ContainerType = unchecked((byte)(int)Type),
             ServerSide = true
         };
-        if (CanSendContainerPackets(player))
+        if (player.Spawned)
         {
             player.Send(packet);
         }
     }
 
-    public bool RemoveOccupant(Player player)
-    {
-        ArgumentNullException.ThrowIfNull(player);
-        if (!_occupants.Remove(player, out int id))
-        {
-            return false;
-        }
-
-        player.UnregisterOpenContainer(id);
-        return true;
-    }
-
     public IReadOnlyCollection<KeyValuePair<Player, int>> GetAllOccupants()
     {
-        return _occupants;
+        return occupants;
     }
 
+    /// <summary>
+    /// Serializes the container into nbt CompoundTag,
+    /// public only so u can override it to store somewhere else
+    /// </summary>
+    /// <returns></returns>
     public CompoundTag Serialize()
     {
         CompoundTag root = new();
@@ -339,6 +453,11 @@ public class Container
         return root;
     }
 
+    /// <summary>
+    /// Vise versa of Serialize
+    /// Deserializes the container data
+    /// </summary>
+    /// <param name="root"></param>
     public void Deserialize(CompoundTag root)
     {
         int size = root.Get<IntTag>("size")?.Value ?? GetSize();
@@ -377,20 +496,14 @@ public class Container
         }
     }
 
-    private int NormalizeSlot(int slot)
+    protected virtual long GetContainerEntityUniqueId()
     {
-        if (Storage.Count == 0)
-        {
-            throw new InvalidOperationException("Container has no slots.");
-        }
+        return -1;
+    }
 
-        int normalized = slot % Storage.Count;
-        if (normalized < 0)
-        {
-            normalized += Storage.Count;
-        }
-
-        return normalized;
+    protected virtual bool ShouldSendContainerOpen(Player player, int windowId)
+    {
+        return true;
     }
 
     protected virtual BlockPos GetContainerPosition()
@@ -403,19 +516,14 @@ public class Container
         };
     }
 
-    protected virtual long GetContainerEntityUniqueId()
-    {
-        return -1;
-    }
-
-    protected virtual bool ShouldSendContainerOpen(Player player, int windowId)
-    {
-        return true;
-    }
-
     protected virtual byte GetFullContainerNameId()
     {
         return Type == ContainerType.Inventory ? (byte)0x1B : (byte)7;
+    }
+
+    protected byte GetFullContainerNhameId()
+    {
+        return GetFullContainerNameId();
     }
 
     protected static NetworkItemStackDescriptor ToNetworkItem(ItemStack? item)
@@ -446,68 +554,5 @@ public class Container
                 Ticking = item.ExtraData?.Ticking
             }
         };
-    }
-
-    protected void SendContentTo(Player player, int windowId)
-    {
-        InventoryContentPacket packet = new()
-        {
-            WindowId = windowId,
-            Content = new List<NetworkItemStackDescriptor>(Storage.Count),
-            Container = new FullContainerName
-            {
-                ContainerId = GetFullContainerNameId(),
-                DynamicContainerId = new OptionalValue<uint>
-                {
-                    HasValue = false
-                }
-            },
-            StorageItem = new NetworkItemStackDescriptor()
-        };
-
-        for (int i = 0; i < Storage.Count; i++)
-        {
-            packet.Content.Add(ToNetworkItem(Storage[i]));
-        }
-
-        player.Send(packet);
-    }
-
-    protected void SendSlotTo(Player player, int windowId, int slot)
-    {
-        slot = NormalizeSlot(slot);
-        InventorySlotPacket packet = new()
-        {
-            WindowId = windowId,
-            Slot = slot,
-            Container = new FullContainerName
-            {
-                ContainerId = GetFullContainerNameId(),
-                DynamicContainerId = new OptionalValue<uint>
-                {
-                    HasValue = false
-                }
-            },
-            StorageItem = new NetworkItemStackDescriptor(),
-            NewItem = ToNetworkItem(Storage[slot])
-        };
-
-        player.Send(packet);
-    }
-
-    private static bool CanSendContainerPackets(Player player)
-    {
-        return player.Spawned;
-    }
-
-    public static IDisposable SuppressPackets()
-    {
-        _packetSuppressionDepth++;
-        return new PacketSuppressionScope();
-    }
-
-    public static bool IsPacketSuppressed()
-    {
-        return _packetSuppressionDepth > 0;
     }
 }
