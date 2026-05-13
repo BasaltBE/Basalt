@@ -369,6 +369,20 @@ public class Container
         ArgumentNullException.ThrowIfNull(player);
         if (occupants.TryGetValue(player, out int existing))
         {
+            if (player.Spawned && CanOpen(player, existing))
+            {
+                ContainerOpenPacket openPacket = new()
+                {
+                    WindowId = (byte)existing,
+                    ContainerType = unchecked((byte)(int)Type),
+                    ContainerPosition = GetContainerPosition(),
+                    ContainerEntityUniqueId = GetContainerEntityUniqueId()
+                };
+
+                player.Send(openPacket);
+                Update();
+            }
+
             return existing;
         }
 
