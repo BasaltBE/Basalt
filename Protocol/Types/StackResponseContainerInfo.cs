@@ -12,7 +12,7 @@ public sealed class StackResponseContainerInfo : DataType
     {
         Container.Read(ref reader);
 
-        int count = checked((int)reader.ReadVarUInt());
+        int count = reader.ReadVarInt();
         SlotInfo = new(count);
         for (int i = 0; i < count; i++)
         {
@@ -26,7 +26,7 @@ public sealed class StackResponseContainerInfo : DataType
     {
         Container.Write(ref writer);
 
-        writer.WriteVarUInt((uint)SlotInfo.Count);
+        writer.WriteVarInt(SlotInfo.Count);
         for (int i = 0; i < SlotInfo.Count; i++)
         {
             SlotInfo[i].Write(ref writer);
