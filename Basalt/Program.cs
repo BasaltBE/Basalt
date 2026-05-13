@@ -6,9 +6,17 @@ namespace Basalt.Core
         {
             Logger.Init();
             Server server = new();
+            using ManualResetEventSlim shutdown = new(false);
 
-            Logger.Info("Basalt listening on 0.0.0.0:19132");
+            Console.CancelKeyPress += (_, eventArgs) =>
+            {
+                eventArgs.Cancel = true;
+                shutdown.Set();
+            };
+
             server.Start();
+            shutdown.Wait();
+            server.Stop();
         }
     }
 }
