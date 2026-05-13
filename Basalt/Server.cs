@@ -1,6 +1,8 @@
 using Basalt.Network;
+using Basalt.Protocol.Types;
 using Basalt.Protocol.Enums;
 using Basalt.RakNet;
+using Basalt.World.Dimension;
 using Basalt.World.Dimension.Provider;
 using Basalt.World.Dimension.Generation;
 using WorldInstance = Basalt.World.World;
@@ -11,6 +13,8 @@ public sealed class Server
 {
     private readonly NetworkServer _raknet;
     private readonly NetworkHandler _network;
+    private CancellationTokenSource? _runCancellation;
+    private Task? _networkLoopTask;
     private CancellationTokenSource? _tickCancellation;
     private Task? _tickLoopTask;
 
@@ -34,27 +38,45 @@ public sealed class Server
 
     public void Start()
     {
-        _raknet.Start().AsTask().Wait();
+        _runCancellation = new CancellationTokenSource();
+        _networkLoopTask = Task.Run(async () =>
+        {
+            try
+            {
+                await _raknet.Start();
+            }
+            catch
+            {
+            }
+        }, _runCancellation.Token);
+
         _tickCancellation = new CancellationTokenSource();
         _tickLoopTask = RunTickLoopAsync(_tickCancellation.Token);
     }
 
     public void Stop()
     {
+        CancellationTokenSource? runCancellation = _runCancellation;
+        Task? networkLoopTask = _networkLoopTask;
+        _runCancellation = null;
+        _networkLoopTask = null;
+
         CancellationTokenSource? cancellation = _tickCancellation;
         Task? tickLoopTask = _tickLoopTask;
         _tickCancellation = null;
         _tickLoopTask = null;
 
-        if (cancellation is null)
+        if (runCancellation is null && cancellation is null)
         {
             return;
         }
 
-        cancellation.Cancel();
+        runCancellation?.Cancel();
+        cancellation?.Cancel();
 
         try
         {
+            networkLoopTask?.Wait(250);
             tickLoopTask?.Wait();
         }
         catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException))
@@ -62,7 +84,8 @@ public sealed class Server
         }
         finally
         {
-            cancellation.Dispose();
+            runCancellation?.Dispose();
+            cancellation?.Dispose();
         }
     }
 
@@ -112,8 +135,10 @@ public sealed class Server
     {
         foreach (var dimension in world.Dimensions)
         {
-            dimension.PacketBroadcaster = packet =>
+            dimension.PacketBroadcaster = (packet, options) =>
             {
+                float radiusSquared = options.Radius * options.Radius;
+
                 foreach ((NetworkConnection connection, Player player) in Players)
                 {
                     if (player.Dimension != dimension)
@@ -121,17 +146,23 @@ public sealed class Server
                         continue;
                     }
 
-                    _network.SendPacket(connection, packet);
-                }
-            };
-
-            dimension.PacketBroadcasterExcept = (packet, exclude) =>
-            {
-                foreach ((NetworkConnection connection, Player player) in Players)
-                {
-                    if (player.Dimension != dimension || ReferenceEquals(player, exclude))
+                    if (options.Except is not null && options.Except.Contains(player))
                     {
                         continue;
+                    }
+
+                    if (options.Center.HasValue)
+                    {
+                        Vec3f playerPosition = player.Position;
+                        Vec3f centerPosition = options.Center.Value;
+                        float dx = playerPosition.X - centerPosition.X;
+                        float dy = playerPosition.Y - centerPosition.Y;
+                        float dz = playerPosition.Z - centerPosition.Z;
+                        float distanceSquared = (dx * dx) + (dy * dy) + (dz * dz);
+                        if (distanceSquared > radiusSquared)
+                        {
+                            continue;
+                        }
                     }
 
                     _network.SendPacket(connection, packet);
@@ -151,12 +182,15 @@ public sealed class Server
 
     private void Tick()
     {
+        _raknet.Tick();
         World.Tick();
         ulong tick = World.CurrentTick;
 
+
+        //Players and entities tick seperatly
         foreach (KeyValuePair<NetworkConnection, Player> entry in Players)
         {
-            entry.Value.TickTraits(tick, 1);
+            entry.Value.Tick(tick, 1);
         }
     }
 }
