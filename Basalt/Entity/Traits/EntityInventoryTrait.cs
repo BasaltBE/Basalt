@@ -65,8 +65,9 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public override void OnSpawn(EntitySpawnOptions details)
     {
-        if (Entity is Core.Player)
+        if (Entity is Core.Player player)
         {
+            Container.Show(player);
             Container.Update();
         }
     }
