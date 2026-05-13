@@ -39,8 +39,13 @@ public abstract class NetworkConnection
 
     private readonly LinkedList<Frame> _outgoingFrames = [];
     private readonly Dictionary<uint, PendingDatagram> _pendingDatagrams = [];
+    private readonly object _sendLock = new();
 
     protected virtual int MaxMtu => 1492;
+
+    public virtual void Disconnect()
+    {
+    }
 
     public virtual void HandleFrameSet(FrameSet frameSet)
     {
@@ -52,8 +57,11 @@ public abstract class NetworkConnection
         }
 
         _receivedDatagrams.Add(sequence);
-        _ackQueue.Add(sequence);
-        _nackQueue.Remove(sequence);
+        lock (_sendLock)
+        {
+            _ackQueue.Add(sequence);
+            _nackQueue.Remove(sequence);
+        }
 
         if (sequence == _datagramWindowStart)
         {
@@ -65,11 +73,23 @@ public abstract class NetworkConnection
         }
         else
         {
+            List<uint> missingDatagrams = [];
             for (uint missing = _datagramWindowStart; missing < sequence; missing++)
             {
                 if (!_receivedDatagrams.Contains(missing))
                 {
-                    _nackQueue.Add(missing);
+                    missingDatagrams.Add(missing);
+                }
+            }
+
+            if (missingDatagrams.Count > 0)
+            {
+                lock (_sendLock)
+                {
+                    for (int i = 0; i < missingDatagrams.Count; i++)
+                    {
+                        _nackQueue.Add(missingDatagrams[i]);
+                    }
                 }
             }
         }
@@ -82,58 +102,67 @@ public abstract class NetworkConnection
 
     public void HandleAck(Ack ack)
     {
-        foreach (uint sequence in AckRecord.ExpandRecords(ack.Records))
+        lock (_sendLock)
         {
-            _pendingDatagrams.Remove(sequence);
+            foreach (uint sequence in AckRecord.ExpandRecords(ack.Records))
+            {
+                _pendingDatagrams.Remove(sequence);
+            }
         }
     }
 
     public void HandleNack(Nack nack)
     {
-        foreach (uint sequence in AckRecord.ExpandRecords(nack.Records))
+        lock (_sendLock)
         {
-            if (_pendingDatagrams.Remove(sequence, out PendingDatagram pending))
+            foreach (uint sequence in AckRecord.ExpandRecords(nack.Records))
             {
-                RequeueFrames(pending.Frames);
+                if (_pendingDatagrams.Remove(sequence, out PendingDatagram pending))
+                {
+                    RequeueFrames(pending.Frames);
+                }
             }
         }
     }
 
     public void Tick(long nowMs)
     {
-        if (_ackQueue.Count > 0)
+        lock (_sendLock)
         {
-            byte[] buffer = new byte[ControlPacketBufferSize];
-            int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
-            SendMessage(buffer.AsSpan(0, length));
-            _ackQueue.Clear();
-        }
-
-        if (_nackQueue.Count > 0)
-        {
-            byte[] buffer = new byte[ControlPacketBufferSize];
-            int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
-            SendMessage(buffer.AsSpan(0, length));
-            _nackQueue.Clear();
-        }
-
-        foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
-        {
-            if (!_pendingDatagrams.TryGetValue(sequence, out PendingDatagram pending))
+            if (_ackQueue.Count > 0)
             {
-                continue;
+                byte[] buffer = new byte[ControlPacketBufferSize];
+                int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
+                SendMessage(buffer.AsSpan(0, length));
+                _ackQueue.Clear();
             }
 
-            if (nowMs - pending.SentAtMs < AckResendMs)
+            if (_nackQueue.Count > 0)
             {
-                continue;
+                byte[] buffer = new byte[ControlPacketBufferSize];
+                int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
+                SendMessage(buffer.AsSpan(0, length));
+                _nackQueue.Clear();
             }
 
-            _pendingDatagrams.Remove(sequence);
-            RequeueFrames(pending.Frames);
-        }
+            foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
+            {
+                if (!_pendingDatagrams.TryGetValue(sequence, out PendingDatagram pending))
+                {
+                    continue;
+                }
 
-        FlushOutgoing(nowMs);
+                if (nowMs - pending.SentAtMs < AckResendMs)
+                {
+                    continue;
+                }
+
+                _pendingDatagrams.Remove(sequence);
+                RequeueFrames(pending.Frames);
+            }
+
+            FlushOutgoing(nowMs);
+        }
     }
 
     public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered)
@@ -153,39 +182,42 @@ public abstract class NetworkConnection
 
         int maxPayloadSize = Math.Max(64, MaxMtu - 84);
 
-        if (payload.Length <= maxPayloadSize)
+        lock (_sendLock)
         {
-            _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
-            return;
-        }
+            if (payload.Length <= maxPayloadSize)
+            {
+                _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
+                return;
+            }
 
-        int splitCount = (payload.Length + maxPayloadSize - 1) / maxPayloadSize;
-        ushort currentSplitId = _splitId++;
+            int splitCount = (payload.Length + maxPayloadSize - 1) / maxPayloadSize;
+            ushort currentSplitId = _splitId++;
 
-        uint orderingIndex = NeedsOrdering(reliability) ? _sendOrderingIndex[orderingChannel]++ : 0;
-        uint sequencedIndex = NeedsSequencedIndex(reliability) ? _sendSequencedIndex[orderingChannel]++ : 0;
+            uint orderingIndex = NeedsOrdering(reliability) ? _sendOrderingIndex[orderingChannel]++ : 0;
+            uint sequencedIndex = NeedsSequencedIndex(reliability) ? _sendSequencedIndex[orderingChannel]++ : 0;
 
-        int offset = 0;
+            int offset = 0;
 
-        for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
-        {
-            int chunkLength = Math.Min(maxPayloadSize, payload.Length - offset);
-            ReadOnlySpan<byte> chunk = payload.Slice(offset, chunkLength);
-            offset += chunkLength;
+            for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
+            {
+                int chunkLength = Math.Min(maxPayloadSize, payload.Length - offset);
+                ReadOnlySpan<byte> chunk = payload.Slice(offset, chunkLength);
+                offset += chunkLength;
 
-            _outgoingFrames.AddLast(new Frame(
-                reliability: reliability,
-                isSplit: true,
-                bufferBitLength: (ushort)(chunk.Length * 8),
-                reliableIndex: NeedsReliableIndex(reliability) ? _sendReliableIndex++ : 0,
-                sequencedIndex: sequencedIndex,
-                orderingIndex: orderingIndex,
-                orderingChannel: orderingChannel,
-                splitSize: (uint)splitCount,
-                splitId: currentSplitId,
-                splitIndex: (uint)splitIndex,
-                buffer: chunk.ToArray()
-            ));
+                _outgoingFrames.AddLast(new Frame(
+                    reliability: reliability,
+                    isSplit: true,
+                    bufferBitLength: (ushort)(chunk.Length * 8),
+                    reliableIndex: NeedsReliableIndex(reliability) ? _sendReliableIndex++ : 0,
+                    sequencedIndex: sequencedIndex,
+                    orderingIndex: orderingIndex,
+                    orderingChannel: orderingChannel,
+                    splitSize: (uint)splitCount,
+                    splitId: currentSplitId,
+                    splitIndex: (uint)splitIndex,
+                    buffer: chunk.ToArray()
+                ));
+            }
         }
     }
 
