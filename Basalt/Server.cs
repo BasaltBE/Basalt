@@ -52,6 +52,8 @@ public sealed class Server
 
         _tickCancellation = new CancellationTokenSource();
         _tickLoopTask = RunTickLoopAsync(_tickCancellation.Token);
+
+        Logger.Info("Basalt listening on 0.0.0.0:19132");
     }
 
     public void Stop()
@@ -87,6 +89,7 @@ public sealed class Server
             runCancellation?.Dispose();
             cancellation?.Dispose();
         }
+        Logger.Info("Basalt successfully stopped.");
     }
 
     public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs)
