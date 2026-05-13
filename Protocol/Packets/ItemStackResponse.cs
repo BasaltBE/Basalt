@@ -13,7 +13,7 @@ public sealed record ItemStackResponsePacket : DataPacket
 
     public override void Deserialize(ref BinaryReader reader)
     {
-        int count = checked((int)reader.ReadVarUInt());
+        int count = reader.ReadVarInt();
         Responses = new(count);
         for (int i = 0; i < count; i++)
         {
@@ -25,7 +25,7 @@ public sealed record ItemStackResponsePacket : DataPacket
 
     public override void Serialize(ref BinaryWriter writer)
     {
-        writer.WriteVarUInt((uint)Responses.Count);
+        writer.WriteVarInt(Responses.Count);
         for (int i = 0; i < Responses.Count; i++)
         {
             Responses[i].Write(ref writer);
