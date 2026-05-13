@@ -84,16 +84,11 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
         return records.ToArray();
     }
 
-    public static uint[] ExpandRecords(AckRecord[] records, int maxTotal = 4096, uint maxRangeLength = 512)
+    public static uint[] ExpandRecords(AckRecord[] records)
     {
         List<uint> sequences = [];
         for (int i = 0; i < records.Length; i++)
         {
-            if (sequences.Count >= maxTotal)
-            {
-                break;
-            }
-
             AckRecord record = records[i];
             if (record.IsSingle)
             {
@@ -102,16 +97,15 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
             }
 
             uint end = record.End;
-            if (end > record.Start && end - record.Start > maxRangeLength)
+            if (end < record.Start)
             {
-                // Clamp huge ranges to avoid pathological payload expansion.
-                end = record.Start + maxRangeLength;
+                continue;
             }
 
             for (uint value = record.Start; value <= end; value++)
             {
                 sequences.Add(value);
-                if (sequences.Count >= maxTotal)
+                if (value == uint.MaxValue)
                 {
                     break;
                 }
