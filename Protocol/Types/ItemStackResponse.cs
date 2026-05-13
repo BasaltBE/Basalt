@@ -21,7 +21,7 @@ public sealed class ItemStackResponse : DataType
             return;
         }
 
-        int count = checked((int)reader.ReadVarUInt());
+        int count = reader.ReadVarInt();
         ContainerInfo = new(count);
         for (int i = 0; i < count; i++)
         {
@@ -41,7 +41,7 @@ public sealed class ItemStackResponse : DataType
             return;
         }
 
-        writer.WriteVarUInt((uint)ContainerInfo.Count);
+        writer.WriteVarInt(ContainerInfo.Count);
         for (int i = 0; i < ContainerInfo.Count; i++)
         {
             ContainerInfo[i].Write(ref writer);
