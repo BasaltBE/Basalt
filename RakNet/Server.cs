@@ -12,6 +12,7 @@ public class NetworkServer
     private const int FrameBufferSize = 2048;
     private const int RakNetHeaderSize = 28;
     private const int MinMtu = 576;
+    private const int DisconnectTimeoutMs = 15000;
 
     public RaknetServerOptions Options { get; }
 
@@ -120,6 +121,10 @@ public class NetworkServer
                 case Nack.PacketId:
                     HandleNack(endpoint, message);
                     break;
+
+                case DisconnectNotification.PacketId:
+                    HandleDisconnectNotification(endpoint, message);
+                    break;
             }
         }
         catch
@@ -172,6 +177,20 @@ public class NetworkServer
         if (_connections.TryGetValue(key, out NetworkServerConnection? connection))
         {
             connection.HandleNack(Nack.Deserialize(message));
+        }
+    }
+
+    private void HandleDisconnectNotification(SocketAddress endpoint, ReadOnlySpan<byte> message)
+    {
+        if (message.Length < 1)
+        {
+            return;
+        }
+
+        EndpointKey key = new(endpoint);
+        if (_connections.TryGetValue(key, out NetworkServerConnection? connection))
+        {
+            connection.Disconnect(false);
         }
     }
 
@@ -288,6 +307,12 @@ public class NetworkServer
         {
             try
             {
+                if (connection.IsConnected && now - connection.LastSeenMs >= DisconnectTimeoutMs)
+                {
+                    connection.Disconnect();
+                    continue;
+                }
+
                 connection.Tick(now);
             }
             catch
