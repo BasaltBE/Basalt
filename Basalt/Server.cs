@@ -30,7 +30,17 @@ public sealed class Server
         _raknet = new NetworkServer();
         _network = new NetworkHandler(this);
         _raknet.OnMessage += _network.HandlePacket;
-        _raknet.OnDisconnected += _network.HandleDisconnected;
+        _raknet.OnDisconnected += connection =>
+        {
+            try
+            {
+                _network.HandleDisconnected(connection);
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Unhandled disconnect error: {exception}");
+            }
+        };
 
         World = CreateDefaultWorld();
         AttachWorldBroadcasts(World);
