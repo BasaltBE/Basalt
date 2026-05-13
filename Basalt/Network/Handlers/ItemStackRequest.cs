@@ -83,10 +83,7 @@ public static class ItemStackRequest
 
         return new ItemStackResponse
         {
-            Status = changedContainers.Count > 0
-                ? ItemStackResponseStatus.Ok
-                : ItemStackResponseStatus.Error,
-
+            Status = ItemStackResponseStatus.Ok,
             RequestId = request.RequestId,
             ContainerInfo = changedContainers.Count > 0
                 ? [.. changedContainers.Values]
@@ -123,46 +120,65 @@ public static class ItemStackRequest
 
         int amount = Math.Min(Math.Max(1, (int)action.Count), sourceItem.StackSize);
         ItemStack? destinationItem = destinationContainer.GetItem(destinationSlot);
-
-        if (destinationItem is null)
+        if (destinationItem is not null &&
+            action.Destination.Container.ContainerId is 58 or 59 &&
+            action.Destination.StackNetworkId == 0)
         {
-            ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
-
-            if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
-            {
-                return ItemStackResponseStatus.CannotRemoveItem;
-            }
-
-            destinationContainer.SetItem(destinationSlot, movedItem);
+            destinationContainer.ClearSlot(destinationSlot);
+            destinationItem = null;
         }
-        else
+
+        bool sourceSuppress = sourceContainer.SuppressUpdates;
+        bool destinationSuppress = destinationContainer.SuppressUpdates;
+        sourceContainer.SuppressUpdates = true;
+        destinationContainer.SuppressUpdates = true;
+        try
         {
-            if (!sourceItem.CanStackWith(destinationItem))
+            if (destinationItem is null)
             {
-                return ItemStackResponseStatus.CannotPlaceItem;
-            }
+                ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
 
-            int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
-            if (availableSpace <= 0)
-            {
-                return ItemStackResponseStatus.CannotPlaceItem;
-            }
+                if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
+                {
+                    return ItemStackResponseStatus.CannotRemoveItem;
+                }
 
-            amount = Math.Min(amount, availableSpace);
-
-            destinationItem.IncrementStack((ushort)amount);
-            sourceItem.DecrementStack((ushort)amount);
-
-            if (sourceItem.StackSize == 0)
-            {
-                sourceContainer.ClearSlot(sourceSlot);
+                destinationContainer.SetItem(destinationSlot, movedItem);
             }
             else
             {
-                sourceContainer.UpdateSlot(sourceSlot);
-            }
+                if (!sourceItem.CanStackWith(destinationItem))
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
 
-            destinationContainer.UpdateSlot(destinationSlot);
+                int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
+                if (availableSpace <= 0)
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
+
+                amount = Math.Min(amount, availableSpace);
+
+                destinationItem.IncrementStack((ushort)amount);
+                sourceItem.DecrementStack((ushort)amount);
+
+                if (sourceItem.StackSize == 0)
+                {
+                    sourceContainer.ClearSlot(sourceSlot);
+                }
+                else
+                {
+                    sourceContainer.UpdateSlot(sourceSlot);
+                }
+
+                destinationContainer.UpdateSlot(destinationSlot);
+            }
+        }
+        finally
+        {
+            sourceContainer.SuppressUpdates = sourceSuppress;
+            destinationContainer.SuppressUpdates = destinationSuppress;
         }
 
         AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
@@ -192,7 +208,19 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
-        sourceContainer.SwapItems(sourceSlot, destinationSlot, destinationContainer);
+        bool sourceSuppress = sourceContainer.SuppressUpdates;
+        bool destinationSuppress = destinationContainer.SuppressUpdates;
+        sourceContainer.SuppressUpdates = true;
+        destinationContainer.SuppressUpdates = true;
+        try
+        {
+            sourceContainer.SwapItems(sourceSlot, destinationSlot, destinationContainer);
+        }
+        finally
+        {
+            sourceContainer.SuppressUpdates = sourceSuppress;
+            destinationContainer.SuppressUpdates = destinationSuppress;
+        }
 
         AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
         AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
@@ -218,7 +246,17 @@ public static class ItemStackRequest
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        ItemStack? removedItem = container.TakeItem(slot, amount);
+        bool suppress = container.SuppressUpdates;
+        container.SuppressUpdates = true;
+        ItemStack? removedItem;
+        try
+        {
+            removedItem = container.TakeItem(slot, amount);
+        }
+        finally
+        {
+            container.SuppressUpdates = suppress;
+        }
 
         if (removedItem is null)
         {
@@ -248,7 +286,17 @@ public static class ItemStackRequest
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        ItemStack? removedItem = container.TakeItem(slot, amount);
+        bool suppress = container.SuppressUpdates;
+        container.SuppressUpdates = true;
+        ItemStack? removedItem;
+        try
+        {
+            removedItem = container.TakeItem(slot, amount);
+        }
+        finally
+        {
+            container.SuppressUpdates = suppress;
+        }
 
         if (removedItem is null)
         {
