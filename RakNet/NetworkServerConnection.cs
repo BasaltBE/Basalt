@@ -16,6 +16,7 @@ internal class NetworkServerConnection : NetworkConnection
     public SocketAddress Endpoint { get; }
     public ushort Mtu { get; }
     public bool IsConnected { get; private set; }
+    public long LastSeenMs { get; private set; } = Environment.TickCount64;
 
     public event Action<NetworkConnection>? Connected;
     public event Action<NetworkConnection>? Disconnected;
@@ -24,6 +25,7 @@ internal class NetworkServerConnection : NetworkConnection
     protected override int MaxMtu => Mtu;
 
     private readonly Socket _socket;
+    private bool _closed;
 
     public NetworkServerConnection(Socket socket, SocketAddress endpoint, long clientId, ushort mtu)
     {
@@ -51,6 +53,7 @@ internal class NetworkServerConnection : NetworkConnection
             return;
         }
 
+        LastSeenMs = Environment.TickCount64;
         byte packetId = frame.Buffer[0];
 
         try
@@ -70,10 +73,16 @@ internal class NetworkServerConnection : NetworkConnection
                     break;
 
                 case DisconnectNotification.PacketId:
-                    Disconnect();
+                    Disconnect(false);
                     break;
 
                 case EncapsulatedGamePacketId:
+                    if (!IsConnected)
+                    {
+                        IsConnected = true;
+                        Connected?.Invoke(this);
+                    }
+
                     Message?.Invoke(this, frame.Buffer);
                     break;
             }
@@ -139,11 +148,25 @@ internal class NetworkServerConnection : NetworkConnection
         SendPayload(pong, Reliability.Unreliable);
     }
 
-    private void Disconnect()
+    public override void Disconnect()
     {
-        if (!IsConnected)
+        Disconnect(true);
+    }
+
+    public void Disconnect(bool sendNotification = true)
+    {
+        if (_closed)
         {
             return;
+        }
+
+        _closed = true;
+
+        if (sendNotification)
+        {
+            Span<byte> buffer = stackalloc byte[1];
+            int length = DisconnectNotification.Serialize(new DisconnectNotification(), buffer);
+            SendPayload(buffer[..length], Reliability.Unreliable);
         }
 
         IsConnected = false;
