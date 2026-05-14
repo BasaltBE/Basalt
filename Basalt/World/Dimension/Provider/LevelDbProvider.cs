@@ -4,6 +4,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using LevelDB;
+using System.Buffers;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -292,24 +293,30 @@ public sealed class LevelDbProvider : WorldProvider
     private static byte[] EncodeNbt(BaseTag tag)
     {
         int size = 1024;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
 
         while (true)
         {
-            byte[] buffer = new byte[size];
             BinaryWriter writer = new(buffer);
 
             try
             {
                 NBT.WriteTag(ref writer, tag, NbtOptions, canHaveName: true);
-                return writer.GetBuffer().ToArray();
+                byte[] encoded = writer.GetBuffer().ToArray();
+                ArrayPool<byte>.Shared.Return(buffer);
+                return encoded;
             }
-            catch (ArgumentOutOfRangeException)
+            catch (Exception exception) when (
+                exception is ArgumentOutOfRangeException or IndexOutOfRangeException)
             {
+                ArrayPool<byte>.Shared.Return(buffer);
                 size <<= 1;
                 if (size > 16 * 1024 * 1024)
                 {
                     throw;
                 }
+
+                buffer = ArrayPool<byte>.Shared.Rent(size);
             }
         }
     }

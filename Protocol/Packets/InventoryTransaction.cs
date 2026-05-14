@@ -17,30 +17,38 @@ public sealed record InventoryTransactionPacket : DataPacket
     public override void Deserialize(ref BinaryReader reader)
     {
         LegacyRequestId = reader.ReadZigZag();
-        int bodyStart = reader.Offset;
-        int[] legacyModes =
-        [
-            LegacyRequestId != 0 ? 1 : 0,
-            LegacyRequestId < -1 && (unchecked((uint)LegacyRequestId) & 1) == 0 ? 1 : 0,
-            0
-        ];
-
-        Exception? lastError = null;
-        for (int i = 0; i < legacyModes.Length; i++)
+        LegacySetItemSlots = [];
+        if (LegacyRequestId != 0)
         {
-            reader.Seek(bodyStart);
-            try
+            int legacySetItemSlotCount = checked((int)reader.ReadVarUInt());
+            LegacySetItemSlots = new(legacySetItemSlotCount);
+            for (int i = 0; i < legacySetItemSlotCount; i++)
             {
-                DeserializeBody(ref reader, parseLegacySlots: legacyModes[i] == 1);
-                return;
-            }
-            catch (Exception ex)
-            {
-                lastError = ex;
+                LegacySetItemSlot legacySetItemSlot = new();
+                legacySetItemSlot.Read(ref reader);
+                LegacySetItemSlots.Add(legacySetItemSlot);
             }
         }
 
-        throw lastError ?? new InvalidOperationException("Failed to parse InventoryTransaction.");
+        InventoryTransactionType type = (InventoryTransactionType)reader.ReadVarUInt();
+        IInventoryTransactionData transactionData = InventoryTransactionDataFactory.Create(type);
+
+        int actionCount = checked((int)reader.ReadVarUInt());
+        if (actionCount < 0 || actionCount > 4096)
+        {
+            throw new InvalidOperationException("Invalid action count.");
+        }
+
+        Actions = new(actionCount);
+        for (int i = 0; i < actionCount; i++)
+        {
+            InventoryAction action = new();
+            action.Read(ref reader);
+            Actions.Add(action);
+        }
+
+        transactionData.Read(ref reader);
+        TransactionData = transactionData;
     }
 
     public override void Serialize(ref BinaryWriter writer)
@@ -64,50 +72,5 @@ public sealed record InventoryTransactionPacket : DataPacket
         }
 
         TransactionData.Write(ref writer);
-    }
-
-    private void DeserializeBody(ref BinaryReader reader, bool parseLegacySlots)
-    {
-        int bodyStart = reader.Offset;
-        if (parseLegacySlots)
-        {
-            int legacyCount = checked((int)reader.ReadVarUInt());
-            if (legacyCount < 0 || legacyCount > 512)
-            {
-                throw new InvalidOperationException("Invalid legacy slot count.");
-            }
-
-            LegacySetItemSlots = new(legacyCount);
-            for (int i = 0; i < legacyCount; i++)
-            {
-                LegacySetItemSlot slot = new();
-                slot.Read(ref reader);
-                LegacySetItemSlots.Add(slot);
-            }
-        }
-        else
-        {
-            LegacySetItemSlots = [];
-        }
-
-        InventoryTransactionType type = (InventoryTransactionType)reader.ReadVarUInt();
-        IInventoryTransactionData transactionData = InventoryTransactionDataFactory.Create(type);
-
-        int actionCount = checked((int)reader.ReadVarUInt());
-        if (actionCount < 0 || actionCount > 4096)
-        {
-            throw new InvalidOperationException("Invalid action count.");
-        }
-
-        Actions = new(actionCount);
-        for (int i = 0; i < actionCount; i++)
-        {
-            InventoryAction action = new();
-            action.Read(ref reader);
-            Actions.Add(action);
-        }
-
-        transactionData.Read(ref reader);
-        TransactionData = transactionData;
     }
 }

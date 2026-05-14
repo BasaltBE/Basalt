@@ -10,6 +10,7 @@ namespace Basalt.Network.Handlers;
 
 public static class ItemStackRequest
 {
+    // TODO:  The damn ahh InventorySlotPacket is giving an errror
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         ItemStackRequestPacket packet = new();
@@ -128,57 +129,45 @@ public static class ItemStackRequest
             destinationItem = null;
         }
 
-        bool sourceSuppress = sourceContainer.SuppressUpdates;
-        bool destinationSuppress = destinationContainer.SuppressUpdates;
-        sourceContainer.SuppressUpdates = true;
-        destinationContainer.SuppressUpdates = true;
-        try
+        if (destinationItem is null)
         {
-            if (destinationItem is null)
+            ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
+
+            if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
             {
-                ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
+                return ItemStackResponseStatus.CannotRemoveItem;
+            }
 
-                if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
-                {
-                    return ItemStackResponseStatus.CannotRemoveItem;
-                }
+            destinationContainer.SetItem(destinationSlot, movedItem);
+        }
+        else
+        {
+            if (!sourceItem.CanStackWith(destinationItem))
+            {
+                return ItemStackResponseStatus.CannotPlaceItem;
+            }
 
-                destinationContainer.SetItem(destinationSlot, movedItem);
+            int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
+            if (availableSpace <= 0)
+            {
+                return ItemStackResponseStatus.CannotPlaceItem;
+            }
+
+            amount = Math.Min(amount, availableSpace);
+
+            destinationItem.IncrementStack((ushort)amount);
+            sourceItem.DecrementStack((ushort)amount);
+
+            if (sourceItem.StackSize == 0)
+            {
+                sourceContainer.ClearSlot(sourceSlot);
             }
             else
             {
-                if (!sourceItem.CanStackWith(destinationItem))
-                {
-                    return ItemStackResponseStatus.CannotPlaceItem;
-                }
-
-                int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
-                if (availableSpace <= 0)
-                {
-                    return ItemStackResponseStatus.CannotPlaceItem;
-                }
-
-                amount = Math.Min(amount, availableSpace);
-
-                destinationItem.IncrementStack((ushort)amount);
-                sourceItem.DecrementStack((ushort)amount);
-
-                if (sourceItem.StackSize == 0)
-                {
-                    sourceContainer.ClearSlot(sourceSlot);
-                }
-                else
-                {
-                    sourceContainer.UpdateSlot(sourceSlot);
-                }
-
-                destinationContainer.UpdateSlot(destinationSlot);
+                sourceContainer.UpdateSlot(sourceSlot);
             }
-        }
-        finally
-        {
-            sourceContainer.SuppressUpdates = sourceSuppress;
-            destinationContainer.SuppressUpdates = destinationSuppress;
+
+            destinationContainer.UpdateSlot(destinationSlot);
         }
 
         AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
@@ -208,19 +197,7 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.FailedToValidateSrcSlot;
         }
 
-        bool sourceSuppress = sourceContainer.SuppressUpdates;
-        bool destinationSuppress = destinationContainer.SuppressUpdates;
-        sourceContainer.SuppressUpdates = true;
-        destinationContainer.SuppressUpdates = true;
-        try
-        {
-            sourceContainer.SwapItems(sourceSlot, destinationSlot, destinationContainer);
-        }
-        finally
-        {
-            sourceContainer.SuppressUpdates = sourceSuppress;
-            destinationContainer.SuppressUpdates = destinationSuppress;
-        }
+        sourceContainer.SwapItems(sourceSlot, destinationSlot, destinationContainer);
 
         AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
         AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
@@ -246,17 +223,7 @@ public static class ItemStackRequest
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        bool suppress = container.SuppressUpdates;
-        container.SuppressUpdates = true;
-        ItemStack? removedItem;
-        try
-        {
-            removedItem = container.TakeItem(slot, amount);
-        }
-        finally
-        {
-            container.SuppressUpdates = suppress;
-        }
+        ItemStack? removedItem = container.TakeItem(slot, amount);
 
         if (removedItem is null)
         {
@@ -286,17 +253,7 @@ public static class ItemStackRequest
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        bool suppress = container.SuppressUpdates;
-        container.SuppressUpdates = true;
-        ItemStack? removedItem;
-        try
-        {
-            removedItem = container.TakeItem(slot, amount);
-        }
-        finally
-        {
-            container.SuppressUpdates = suppress;
-        }
+        ItemStack? removedItem = container.TakeItem(slot, amount);
 
         if (removedItem is null)
         {
@@ -326,11 +283,7 @@ public static class ItemStackRequest
                 Container = new FullContainerName
                 {
                     ContainerId = containerName.ContainerId,
-                    DynamicContainerId = new OptionalValue<uint>
-                    {
-                        HasValue = containerName.DynamicContainerId.HasValue,
-                        Value = containerName.DynamicContainerId.Value
-                    }
+                    DynamicContainerId = containerName.DynamicContainerId
                 },
                 SlotInfo = []
             };

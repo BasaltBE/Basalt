@@ -27,10 +27,10 @@ public sealed class ItemInstance : DataType
         StackNetworkId = hasNetId ? reader.ReadZigZag() : 0;
         Stack.NetworkBlockId = reader.ReadZigZag();
 
-        int extrasLength = reader.ReadVarInt();
-        if (extrasLength < 0)
+        int extrasLength = checked((int)reader.ReadVarUInt());
+        if (extrasLength > reader.Remaining)
         {
-            throw new FormatException("Negative extras length in item instance.");
+            throw new FormatException("Invalid extras length in item instance.");
         }
         if (extrasLength == 0)
         {
@@ -68,7 +68,7 @@ public sealed class ItemInstance : DataType
         writer.WriteZigZag(Stack.NetworkBlockId);
         if (Stack.ExtraData is null)
         {
-            writer.WriteVarInt(0);
+            writer.WriteVarUInt(0);
             return;
         }
 
@@ -76,7 +76,7 @@ public sealed class ItemInstance : DataType
         BinaryWriter payloadWriter = new(payloadBuffer);
         Stack.ExtraData.Write(ref payloadWriter, Stack.NetworkId);
         ReadOnlySpan<byte> payload = payloadWriter.GetBuffer();
-        writer.WriteVarInt(payload.Length);
+        writer.WriteVarUInt((uint)payload.Length);
         writer.WriteBytes(payload);
     }
 }

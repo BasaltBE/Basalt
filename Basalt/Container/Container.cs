@@ -305,16 +305,15 @@ public class Container
             {
                 WindowId = windowId,
                 Slot = slot,
-                Container = new FullContainerName
+                Container = new Optional<FullContainerName>
                 {
-                    ContainerId = GetFullContainerNameId(),
-                    DynamicContainerId = new OptionalValue<uint>
+                    HasValue = true,
+                    Value = new FullContainerName
                     {
-                        HasValue = false
+                        ContainerId = 0
                     }
                 },
-                StorageItem = new NetworkItemStackDescriptor(),
-                NewItem = ToNetworkItem(Storage[slot])
+                NewItem = ToItemInstanceNew(Storage[slot])
             };
 
             player.Send(packet);
@@ -326,7 +325,6 @@ public class Container
     /// </summary>
     public virtual void Update()
     {
-
         foreach ((Player player, int windowId) in occupants)
         {
             if (!player.Spawned)
@@ -340,11 +338,8 @@ public class Container
                 Content = new List<NetworkItemStackDescriptor>(Storage.Count),
                 Container = new FullContainerName
                 {
-                    ContainerId = GetFullContainerNameId(),
-                    DynamicContainerId = new OptionalValue<uint>
-                    {
-                        HasValue = false
-                    }
+                    ContainerId = 0,
+                    DynamicContainerId = 0
                 },
                 StorageItem = new NetworkItemStackDescriptor()
             };
@@ -567,6 +562,33 @@ public class Container
                 CanDestroy = item.ExtraData?.CanDestroy ?? [],
                 Ticking = item.ExtraData?.Ticking
             }
+        };
+    }
+
+    protected static ItemInstanceNew ToItemInstanceNew(ItemStack? item)
+    {
+        if (item is null || item.Type.NetworkId == 0 || item.StackSize == 0)
+        {
+            return new ItemInstanceNew();
+        }
+
+        int runtimeId = 0;
+        if (item.Type.BlockType is not null && item.Type.BlockType.Permutations.Count > 0)
+        {
+            runtimeId = item.Type.BlockType.Permutations[0].NetworkId;
+        }
+
+        return new ItemInstanceNew
+        {
+            NetworkId = item.Type.NetworkId,
+            Count = item.StackSize,
+            Metadata = item.Metadata,
+            StackNetworkId = item.NetworkStackId,
+            BlockRuntimeId = runtimeId,
+            Nbt = item.GetSerializedNbt(),
+            CanPlaceOn = item.ExtraData?.CanPlaceOn ?? [],
+            CanDestroy = item.ExtraData?.CanDestroy ?? [],
+            BlockingTick = item.ExtraData?.Ticking ?? 0
         };
     }
 }

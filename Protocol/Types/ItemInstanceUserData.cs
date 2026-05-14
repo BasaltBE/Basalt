@@ -7,7 +7,7 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemInstanceUserData : DataType<int?>
 {
-    private const ushort NbtMarker = 0xFFFF;
+    private const short NbtMarker = -1;
     // i dont why it is like that but it is
     private const byte NbtVersion = 0x01;
 
@@ -28,7 +28,7 @@ public sealed class ItemInstanceUserData : DataType<int?>
 
     public void Read(ref BinaryReader reader, int? networkId)
     {
-        ushort marker = reader.ReadUInt16(true);
+        short marker = reader.ReadInt16(true);
         if (marker == NbtMarker)
         {
             byte version = reader.ReadUInt8();
@@ -39,23 +39,27 @@ public sealed class ItemInstanceUserData : DataType<int?>
 
             Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
+        else if (marker > 0)
+        {
+            Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+        }
         else
         {
             Nbt = null;
         }
 
-        int canPlaceOnCount = reader.ReadInt32(true);
-        CanPlaceOn = new(Math.Max(canPlaceOnCount, 0));
+        int canPlaceOnCount = checked((int)reader.ReadUInt32(true));
+        CanPlaceOn = new(canPlaceOnCount);
         for (int i = 0; i < canPlaceOnCount; i++)
         {
-            CanPlaceOn.Add(reader.ReadString32(true));
+            CanPlaceOn.Add(reader.ReadString16(true));
         }
 
-        int canDestroyCount = reader.ReadInt32(true);
-        CanDestroy = new(Math.Max(canDestroyCount, 0));
+        int canDestroyCount = checked((int)reader.ReadUInt32(true));
+        CanDestroy = new(canDestroyCount);
         for (int i = 0; i < canDestroyCount; i++)
         {
-            CanDestroy.Add(reader.ReadString32(true));
+            CanDestroy.Add(reader.ReadString16(true));
         }
 
         if (networkId == ProtocolInfo.ShieldNetworkId)
@@ -79,25 +83,25 @@ public sealed class ItemInstanceUserData : DataType<int?>
     {
         if (Nbt is null)
         {
-            writer.WriteUInt16(0, true);
+            writer.WriteInt16(0, true);
         }
         else
         {
-            writer.WriteUInt16(NbtMarker, true);
+            writer.WriteInt16(NbtMarker, true);
             writer.WriteUInt8(NbtVersion);
             NBT.WriteTag(ref writer, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
 
-        writer.WriteInt32(CanPlaceOn.Count, true);
+        writer.WriteUInt32(checked((uint)CanPlaceOn.Count), true);
         for (int i = 0; i < CanPlaceOn.Count; i++)
         {
-            writer.WriteString32(CanPlaceOn[i], true);
+            writer.WriteString16(CanPlaceOn[i], true);
         }
 
-        writer.WriteInt32(CanDestroy.Count, true);
+        writer.WriteUInt32(checked((uint)CanDestroy.Count), true);
         for (int i = 0; i < CanDestroy.Count; i++)
         {
-            writer.WriteString32(CanDestroy[i], true);
+            writer.WriteString16(CanDestroy[i], true);
         }
 
         if (networkId == ProtocolInfo.ShieldNetworkId)

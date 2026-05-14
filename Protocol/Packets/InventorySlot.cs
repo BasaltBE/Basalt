@@ -9,9 +9,9 @@ public sealed record InventorySlotPacket : DataPacket
 {
     public int WindowId { get; set; }
     public int Slot { get; set; }
-    public FullContainerName Container { get; set; } = new();
-    public NetworkItemStackDescriptor StorageItem { get; set; } = new();
-    public NetworkItemStackDescriptor NewItem { get; set; } = new();
+    public Optional<FullContainerName> Container { get; set; } = new();
+    public Optional<ItemInstanceNew> StorageItem { get; set; } = new();
+    public ItemInstanceNew NewItem { get; set; } = new();
 
     public override PacketId PacketId => PacketId.InventorySlot;
 

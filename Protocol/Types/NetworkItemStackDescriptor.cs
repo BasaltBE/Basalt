@@ -5,11 +5,11 @@ namespace Basalt.Protocol.Types;
 
 public sealed class NetworkItemStackDescriptor : DataType
 {
-    public int NetworkId { get; set; }
-    public ushort StackSize { get; set; }
-    public int Metadata { get; set; }
+    public int NetworkId { get; set; } = 0;
+    public ushort StackSize { get; set; } = 0;
+    public int Metadata { get; set; } = 0;
     public int? ItemStackId { get; set; }
-    public int NetworkBlockId { get; set; }
+    public int NetworkBlockId { get; set; } = 0;
     public ItemInstanceUserData? ExtraData { get; set; }
 
     public void Read(ref BinaryReader reader)

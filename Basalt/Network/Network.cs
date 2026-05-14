@@ -27,15 +27,32 @@ public sealed class NetworkHandler
     {
         if (!_server.Players.Remove(connection, out Player? player))
         {
+            Logger.Warn("Disconnect received for unknown connection.");
             return;
         }
 
-        _server.World.Provider.SavePlayerData(player.Xuid, player.WriteToNbt());
-
-        if (player.IsAlive && player.Dimension is not null)
+        try
         {
-            player.Despawn(new Basalt.Entity.Traits.Types.EntityDespawnOptions(Disconnected: true));
+            _server.World.Provider.SavePlayerData(player.Xuid, player.WriteToNbt());
         }
+        catch (Exception exception)
+        {
+            Logger.Warn($"Failed saving player data for {player.Username}: {exception.Message}");
+        }
+
+        try
+        {
+            if (player.IsAlive && player.Dimension is not null)
+            {
+                player.Despawn(new Basalt.Entity.Traits.Types.EntityDespawnOptions(Disconnected: true));
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.Warn($"Failed despawning {player.Username} during disconnect: {exception.Message}");
+        }
+
+        Logger.Info($"Player {player.Username} disconnected.");
     }
 
     public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
