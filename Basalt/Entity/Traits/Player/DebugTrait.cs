@@ -18,6 +18,7 @@ public sealed class DebugTrait : PlayerTrait
 
     private ulong _lastSentTick;
     private long _lastSentTimestamp;
+    // its so goody cause it flickers between 19.7 and 20.3
     private double _smoothedTps;
     private bool _gaveDebugItems;
 
