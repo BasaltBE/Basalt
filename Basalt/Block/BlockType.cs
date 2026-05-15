@@ -7,12 +7,16 @@ public sealed class BlockType
 {
     private static readonly Dictionary<string, BlockType> Registry = new(StringComparer.Ordinal);
     private readonly HashSet<string> _stateSet = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _componentSet = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _tagSet = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BlockPermutation> _permutationStateIndex = new(StringComparer.Ordinal);
     private readonly HashSet<string> _booleanStates = new(StringComparer.Ordinal);
 
     public string Identifier { get; }
     public float Hardness { get; internal set; }
     public List<string> States { get; } = [];
+    public List<string> Components { get; } = [];
+    public List<string> Tags { get; } = [];
     public List<BlockPermutation> Permutations { get; } = [];
     public IReadOnlyDictionary<string, Type> Traits => _traits;
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
@@ -69,6 +73,22 @@ public sealed class BlockType
         if (_stateSet.Add(key))
         {
             States.Add(key);
+        }
+    }
+
+    public void EnsureComponent(string key)
+    {
+        if (_componentSet.Add(key))
+        {
+            Components.Add(key);
+        }
+    }
+
+    public void EnsureTag(string key)
+    {
+        if (_tagSet.Add(key))
+        {
+            Tags.Add(key);
         }
     }
 

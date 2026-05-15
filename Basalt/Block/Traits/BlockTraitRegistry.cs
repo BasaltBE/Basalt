@@ -70,7 +70,27 @@ public static class BlockTraitRegistry
             }
         }
 
-        // Add Tags or Components matching later if BlockType gets them.
+        if (GetStringMember(traitType, "State") is string state &&
+            ContainsOrdinal(blockType.States, state))
+        {
+            return true;
+        }
+
+        if (GetTypeMember(traitType, "Component") is Type componentType &&
+            GetStringMember(componentType, "Identifier") is string componentIdentifier &&
+            ContainsOrdinal(blockType.Components, componentIdentifier))
+        {
+            return true;
+        }
+
+        string[] tags = GetStringTargets(traitType, "Tags");
+        for (int i = 0; i < tags.Length; i++)
+        {
+            if (ContainsOrdinal(blockType.Tags, tags[i]))
+            {
+                return true;
+            }
+        }
 
         return false;
     }
@@ -103,5 +123,54 @@ public static class BlockTraitRegistry
         }
 
         return [];
+    }
+
+    private static string? GetStringMember(Type type, string memberName)
+    {
+        if (type.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
+            field.GetValue(null) is string fieldValue &&
+            !string.IsNullOrWhiteSpace(fieldValue))
+        {
+            return fieldValue;
+        }
+
+        if (type.GetProperty(memberName, BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
+            property.GetValue(null) is string propertyValue &&
+            !string.IsNullOrWhiteSpace(propertyValue))
+        {
+            return propertyValue;
+        }
+
+        return null;
+    }
+
+    private static Type? GetTypeMember(Type type, string memberName)
+    {
+        if (type.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
+            field.GetValue(null) is Type fieldType)
+        {
+            return fieldType;
+        }
+
+        if (type.GetProperty(memberName, BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
+            property.GetValue(null) is Type propertyType)
+        {
+            return propertyType;
+        }
+
+        return null;
+    }
+
+    private static bool ContainsOrdinal(IReadOnlyList<string> values, string value)
+    {
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (string.Equals(values[i], value, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

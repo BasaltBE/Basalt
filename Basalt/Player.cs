@@ -19,6 +19,9 @@ public sealed class Player : Basalt.Entity.Entity
     public PlayerAbilities Abilities { get; } = new();
     public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
     public bool Spawned { get; private set; }
+    public float Pitch { get; set; }
+    public float Yaw { get; set; }
+    public float HeadYaw { get; set; }
     public BlockPos? BreakingBlock { get; set; }
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }

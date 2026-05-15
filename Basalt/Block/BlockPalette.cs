@@ -151,7 +151,22 @@ public sealed class BlockPalette
                 continue;
             }
 
-            _ = BlockType.Get(identifier) ?? new BlockType(identifier);
+            BlockType type = BlockType.Get(identifier) ?? new BlockType(identifier);
+
+            for (int j = 0; j < types[i].Components.Count; j++)
+            {
+                type.EnsureComponent(types[i].Components[j]);
+            }
+
+            for (int j = 0; j < types[i].Tags.Count; j++)
+            {
+                type.EnsureTag(types[i].Tags[j]);
+            }
+
+            for (int j = 0; j < types[i].States.Count; j++)
+            {
+                type.EnsureState(types[i].States[j]);
+            }
         }
 
         _ = BlockType.Get(AirIdentifier) ?? new BlockType(AirIdentifier);

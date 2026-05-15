@@ -5,6 +5,7 @@ using Basalt.RakNet;
 using Basalt.World.Dimension;
 using Basalt.World.Dimension.Provider;
 using Basalt.World.Dimension.Generation;
+using System.Diagnostics;
 using WorldInstance = Basalt.World.World;
 
 namespace Basalt.Core;
@@ -195,6 +196,7 @@ public sealed class Server
 
     private void Tick()
     {
+        long startTimestamp = Stopwatch.GetTimestamp();
         _raknet.Tick();
         World.Tick();
         ulong tick = World.CurrentTick;
@@ -205,5 +207,8 @@ public sealed class Server
         {
             entry.Value.Tick(tick, 1);
         }
+
+        long endTimestamp = Stopwatch.GetTimestamp();
+        World.LastTickWorkMs = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
     }
 }
