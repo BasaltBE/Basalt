@@ -86,6 +86,9 @@ public static class PlayerAuthInput
     private static void MovePlayer(Player player, PlayerAuthInputPacket packet)
     {
         Vec3f previousPosition = player.Position;
+        player.Pitch = packet.Pitch;
+        player.Yaw = packet.Yaw;
+        player.HeadYaw = packet.Yaw;
 
         bool missingPosition =
             packet.Position.X == 0f &&

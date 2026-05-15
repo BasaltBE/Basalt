@@ -16,7 +16,14 @@ public sealed class IntTag : BaseTag
             WriteName(ref writer, Name, options.VarInt);
         }
 
-        writer.WriteInt32(Value, true);
+        if (options.VarInt)
+        {
+            writer.WriteZigZag(Value);
+        }
+        else
+        {
+            writer.WriteInt32(Value, true);
+        }
     }
 
     public static IntTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
@@ -26,7 +33,7 @@ public sealed class IntTag : BaseTag
         return new IntTag
         {
             Name = name,
-            Value = reader.ReadInt32(true)
+            Value = effective.VarInt ? reader.ReadZigZag() : reader.ReadInt32(true)
         };
     }
 }

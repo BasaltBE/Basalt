@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 using Basalt.Traits;
 using Basalt.Item;
 using Basalt.Item.Traits;
+using System.Diagnostics;
 
 namespace Basalt.Entity.Traits.PlayerTraits;
 
@@ -16,7 +17,8 @@ public sealed class DebugTrait : PlayerTrait
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
 
     private ulong _lastSentTick;
-    private long _lastSentTimestampMs;
+    private long _lastSentTimestamp;
+    private double _smoothedTps;
     private bool _gaveDebugItems;
 
     public DebugTrait(Entity entity) : base(entity)
@@ -26,7 +28,8 @@ public sealed class DebugTrait : PlayerTrait
     public override void OnSpawn(Basalt.Entity.Traits.Types.EntitySpawnOptions details)
     {
         _lastSentTick = Player.Dimension?.World?.CurrentTick ?? 0;
-        _lastSentTimestampMs = Environment.TickCount64;
+        _lastSentTimestamp = Stopwatch.GetTimestamp();
+        _smoothedTps = 0;
         if (!_gaveDebugItems)
         {
             EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
@@ -76,16 +79,19 @@ public sealed class DebugTrait : PlayerTrait
 
         try
         {
-            long nowMs = Environment.TickCount64;
+            long nowTimestamp = Stopwatch.GetTimestamp();
             ulong tickDelta = details.CurrentTick - _lastSentTick;
-            long msDelta = nowMs - _lastSentTimestampMs;
-            if (tickDelta == 0 || msDelta <= 0)
+            long timestampDelta = nowTimestamp - _lastSentTimestamp;
+            if (tickDelta == 0 || timestampDelta <= 0)
             {
                 return;
             }
 
-            double tps = tickDelta * 1000.0 / msDelta;
-            double mspt = msDelta / (double)tickDelta;
+            double elapsedMs = timestampDelta * 1000.0 / Stopwatch.Frequency;
+            double rawTps = tickDelta * 1000.0 / elapsedMs;
+            _smoothedTps = _smoothedTps == 0 ? rawTps : _smoothedTps + ((rawTps - _smoothedTps) * 0.2);
+            double tps = _smoothedTps;
+            double mspt = Player.Dimension?.World?.LastTickWorkMs ?? 0;
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
             int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;
 
@@ -105,7 +111,7 @@ public sealed class DebugTrait : PlayerTrait
 
             Player.Send(packet);
             _lastSentTick = details.CurrentTick;
-            _lastSentTimestampMs = nowMs;
+            _lastSentTimestamp = nowTimestamp;
         }
         catch (Exception exception)
         {

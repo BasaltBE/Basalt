@@ -19,7 +19,7 @@ public sealed record BlockActorDataPacket : DataPacket
         BlockPos position = Position;
         position.Read(ref reader);
         Position = position;
-        Data = CompoundTag.Read(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        Data = NBT.ReadRootCompoundTag(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
     }
 
     public override void Serialize(ref BinaryWriter writer)

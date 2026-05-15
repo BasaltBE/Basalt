@@ -21,7 +21,14 @@ public sealed class LongListTag : BaseTag
         ReadOnlySpan<long> span = CollectionsMarshal.AsSpan(Values);
         for (int i = 0; i < span.Length; i++)
         {
-            writer.WriteInt64(span[i], true);
+            if (options.VarInt)
+            {
+                writer.WriteZigZong(span[i]);
+            }
+            else
+            {
+                writer.WriteInt64(span[i], true);
+            }
         }
     }
 
@@ -37,7 +44,7 @@ public sealed class LongListTag : BaseTag
         tag.Values.Capacity = Math.Max(tag.Values.Capacity, length);
         for (int i = 0; i < length; i++)
         {
-            tag.Values.Add(reader.ReadInt64(true));
+            tag.Values.Add(effective.VarInt ? reader.ReadZigZong() : reader.ReadInt64(true));
         }
 
         return tag;

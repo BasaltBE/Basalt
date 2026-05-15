@@ -21,7 +21,14 @@ public sealed class IntListTag : BaseTag
         ReadOnlySpan<int> span = CollectionsMarshal.AsSpan(Values);
         for (int i = 0; i < span.Length; i++)
         {
-            writer.WriteInt32(span[i], true);
+            if (options.VarInt)
+            {
+                writer.WriteZigZag(span[i]);
+            }
+            else
+            {
+                writer.WriteInt32(span[i], true);
+            }
         }
     }
 
@@ -37,7 +44,7 @@ public sealed class IntListTag : BaseTag
         tag.Values.Capacity = Math.Max(tag.Values.Capacity, length);
         for (int i = 0; i < length; i++)
         {
-            tag.Values.Add(reader.ReadInt32(true));
+            tag.Values.Add(effective.VarInt ? reader.ReadZigZag() : reader.ReadInt32(true));
         }
 
         return tag;

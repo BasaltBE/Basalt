@@ -316,6 +316,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             for (int i = index; i < end; i++)
             {
                 ChunkColumn chunk = _sendQueue[i];
+                PrepareChunkBlockActors(chunk);
 
                 byte[] payload;
 
@@ -386,7 +387,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 UnhashChunk(hash, out int x, out int z);
 
                 Player.Dimension.AddChunkViewer(x, z);
-                SendChunkChestActors(x, z);
+                SendChunkChestVisualUpdates(x, z);
             }
 
             index += Math.Max(1, sentChunks.Count);
@@ -698,7 +699,41 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         z = (int)hash;
     }
 
-    private void SendChunkChestActors(int chunkX, int chunkZ)
+    private void PrepareChunkBlockActors(ChunkColumn chunk)
+    {
+        if (Player.Dimension is null)
+        {
+            return;
+        }
+
+        int chestActors = 0;
+        int pairedAfterCheck = 0;
+
+        foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages())
+        {
+            BlockPos position = storage.GetPosition();
+            var block = Player.Dimension.GetBlock(position.X, position.Y, position.Z);
+            var chestTrait = block?.GetTrait<Basalt.Block.Traits.ChestTrait>();
+            if (chestTrait is null)
+            {
+                continue;
+            }
+
+            chestActors++;
+            chestTrait.CheckPairing(Player.Dimension, position.X, position.Y, position.Z);
+            if (chestTrait.IsPaired)
+            {
+                pairedAfterCheck++;
+            }
+        }
+
+        if (chestActors > 0)
+        {
+            Logger.Info($"Chunk chest prep {chunk.X},{chunk.Z} for {Player.Username}: chestActors={chestActors}, pairedAfterCheck={pairedAfterCheck}");
+        }
+    }
+
+    private void SendChunkChestVisualUpdates(int chunkX, int chunkZ)
     {
         if (Player.Dimension is null)
         {
@@ -711,48 +746,56 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
-        foreach (var storage in chunk.GetAllBlockStorages())
+        int updated = 0;
+
+        foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages())
         {
             BlockPos position = storage.GetPosition();
-            int worldX = (chunkX << 4) | (position.X & 15);
-            int worldY = position.Y;
-            int worldZ = (chunkZ << 4) | (position.Z & 15);
-
-            var block = Player.Dimension.GetBlock(worldX, worldY, worldZ);
+            var block = Player.Dimension.GetBlock(position.X, position.Y, position.Z);
             var chestTrait = block?.GetTrait<Basalt.Block.Traits.ChestTrait>();
-            if (chestTrait is null)
+            if (chestTrait is null || !chestTrait.IsPaired)
             {
                 continue;
             }
 
-            chestTrait.CheckPairing(Player.Dimension, worldX, worldY, worldZ);
-
-            if (!chestTrait.IsPaired)
-            {
-                continue;
-            }
-
-            CompoundTag nbt = new();
-            nbt.Set("id", new StringTag { Value = "Chest" });
-            nbt.Set("x", new IntTag { Value = worldX });
-            nbt.Set("y", new IntTag { Value = worldY });
-            nbt.Set("z", new IntTag { Value = worldZ });
-            chestTrait.OnWrite(nbt);
-
-            BlockPermutation permutation = Player.Dimension.GetPermutation(worldX, worldY, worldZ);
+            BlockPermutation permutation = Player.Dimension.GetPermutation(position.X, position.Y, position.Z);
             Player.Send(new UpdateBlockPacket
             {
-                Position = new BlockPos { X = worldX, Y = worldY, Z = worldZ },
+                Position = position,
                 NetworkBlockId = (uint)permutation.NetworkId,
                 Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
                 Layer = UpdateBlockLayerType.Normal
             });
 
-            Player.Send(new BlockActorDataPacket
+            IntTag? pairXTag = storage.Get<IntTag>("pairx");
+            IntTag? pairZTag = storage.Get<IntTag>("pairz");
+            if (pairXTag is not null && pairZTag is not null)
             {
-                Position = new BlockPos { X = worldX, Y = worldY, Z = worldZ },
-                Data = nbt
-            });
+                // TODO i dunno how to do it properly
+                // but i wanna make sum like sending whole nbt
+                // but excluding some keys
+                CompoundTag packetData = new();
+                packetData.Set("id", new StringTag { Value = "Chest" });
+                packetData.Set("x", new IntTag { Value = position.X });
+                packetData.Set("y", new IntTag { Value = position.Y });
+                packetData.Set("z", new IntTag { Value = position.Z });
+                packetData.Set("pairx", new IntTag { Value = pairXTag.Value });
+                packetData.Set("pairz", new IntTag { Value = pairZTag.Value });
+
+                Player.Send(new BlockActorDataPacket
+                {
+                    Position = position,
+                    Data = packetData
+                });
+            }
+
+            updated++;
+        }
+
+        if (updated > 0)
+        {
+            Logger.Info($"Chunk chest visual update {chunkX},{chunkZ} for {Player.Username}: updated={updated}");
         }
     }
+
 }

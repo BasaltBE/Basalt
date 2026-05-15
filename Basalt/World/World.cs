@@ -13,6 +13,7 @@ public sealed class World : IDisposable
     public string Name { get; }
     public WorldProvider Provider { get; }
     public ulong CurrentTick { get; private set; }
+    public double LastTickWorkMs { get; set; }
 
     public World(string name, WorldProvider? provider = null)
     {

@@ -428,7 +428,7 @@ public sealed class Chunk
         List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
         for (int i = 0; i < blockEntities.Count; i++)
         {
-            NBT.WriteTag(ref writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+            NBT.WriteTag(ref writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
 
         return writer.Offset;
@@ -485,7 +485,7 @@ public sealed class Chunk
 
             CompoundTag tag = NBT.ReadRootCompoundTag(
                 ref reader,
-                new ReadWriteOptions(Name: true, Type: true, VarInt: true),
+                new ReadWriteOptions(Name: true, Type: true, VarInt: false),
                 canHaveName: true);
 
             BlockLevelStorage storage = new(chunk, tag);

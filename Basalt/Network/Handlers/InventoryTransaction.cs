@@ -84,6 +84,10 @@ public static class InventoryTransaction
             return;
         }
 
+        player.Pitch = pitch;
+        player.Yaw = yaw;
+        player.HeadYaw = yaw;
+
         UseItemInventoryTransactionData transaction = new()
         {
             ActionType = data.ActionType,
@@ -153,6 +157,37 @@ public static class InventoryTransaction
             if (airHeldItem is null)
             {
                 return;
+            }
+
+            if (player.Dimension is not null)
+            {
+                BlockPos blockPosition = transaction.BlockPosition;
+                int blockFace = transaction.BlockFace;
+
+                if (IsEmptyPosition(blockPosition) && player.LastActionBlockPosition.HasValue)
+                {
+                    blockPosition = player.LastActionBlockPosition.Value;
+
+                    if (player.LastActionFace is >= 0 and <= 5)
+                    {
+                        blockFace = player.LastActionFace;
+                    }
+                }
+
+                Basalt.Block.BlockPermutation clickedBlock =
+                    player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+
+                if (clickedBlock.Type.Identifier is not "minecraft:air" and not "minecraft:cave_air" and not "minecraft:void_air")
+                {
+                    airHeldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                        player,
+                        transaction.HotBarSlot,
+                        blockPosition,
+                        blockFace,
+                        transaction.Position,
+                        transaction.ClickedPosition));
+                    return;
+                }
             }
 
             airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
@@ -297,6 +332,12 @@ public static class InventoryTransaction
             placePosition,
             clickedFace,
             transaction.ClickedPosition));
+
+        if (placedBlock is not null && placedBlock.Permutation.NetworkId != placedPermutation.NetworkId)
+        {
+            placedPermutation = placedBlock.Permutation;
+            player.Dimension.SetPermutation(placePosition.X, placePosition.Y, placePosition.Z, placedPermutation);
+        }
 
         SendBlockUpdate(player, placePosition, placedPermutation.NetworkId);
 

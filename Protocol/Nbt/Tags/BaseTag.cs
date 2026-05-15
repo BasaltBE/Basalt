@@ -16,7 +16,31 @@ public abstract class BaseTag
     {
         if (varInt)
         {
-            int length = reader.ReadVarInt();
+            int startOffset = reader.Offset;
+            int length;
+
+            try
+            {
+                uint unsignedLength = reader.ReadVarUInt();
+                if (unsignedLength > short.MaxValue || unsignedLength > reader.Remaining)
+                {
+                    throw new FormatException("Invalid varuint NBT string length.");
+                }
+
+                length = checked((int)unsignedLength);
+            }
+            catch
+            {
+                reader.Seek(startOffset);
+                int signedLength = reader.ReadVarInt();
+                if (signedLength < 0 || signedLength > short.MaxValue || signedLength > reader.Remaining)
+                {
+                    throw new FormatException("Invalid varint NBT string length.");
+                }
+
+                length = signedLength;
+            }
+
             return Encoding.UTF8.GetString(reader.ReadBytes(length));
         }
 
@@ -34,7 +58,7 @@ public abstract class BaseTag
         byte[] bytes = Encoding.UTF8.GetBytes(value);
         if (varInt)
         {
-            writer.WriteVarInt(bytes.Length);
+            writer.WriteVarUInt((uint)bytes.Length);
         }
         else
         {

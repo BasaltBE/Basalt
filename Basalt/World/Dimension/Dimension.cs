@@ -308,6 +308,9 @@ public sealed class Dimension : IDisposable
             if (storage is not null)
             {
                 block.ReadTraits(storage);
+
+                ChestTrait? loadedChestTrait = block.GetTrait<ChestTrait>();
+                loadedChestTrait?.OnRead(storage);
             }
 
             ChestTrait? chestTrait = block.GetTrait<ChestTrait>();

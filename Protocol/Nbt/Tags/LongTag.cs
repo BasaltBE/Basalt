@@ -16,7 +16,14 @@ public sealed class LongTag : BaseTag
             WriteName(ref writer, Name, options.VarInt);
         }
 
-        writer.WriteInt64(Value, true);
+        if (options.VarInt)
+        {
+            writer.WriteZigZong(Value);
+        }
+        else
+        {
+            writer.WriteInt64(Value, true);
+        }
     }
 
     public static LongTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
@@ -26,7 +33,7 @@ public sealed class LongTag : BaseTag
         return new LongTag
         {
             Name = name,
-            Value = reader.ReadInt64(true)
+            Value = effective.VarInt ? reader.ReadZigZong() : reader.ReadInt64(true)
         };
     }
 }
