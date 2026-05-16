@@ -7,7 +7,7 @@ public sealed class InMemoryProvider : WorldProvider
 {
     private readonly Dictionary<long, ChunkColumn> _chunks = [];
     public override string Identifier => "memory";
-    public override bool HasChunk(int x, int z) => _chunks.ContainsKey(HashChunk(x, z));
+    public override bool HasChunk(DimensionType dimensionType, int x, int z) => _chunks.ContainsKey(HashChunk(x, z));
 
     public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z)
     {
@@ -20,7 +20,7 @@ public sealed class InMemoryProvider : WorldProvider
         _chunks[HashChunk(chunk.X, chunk.Z)] = chunk;
     }
 
-    public override void DeleteChunk(int x, int z)
+    public override void DeleteChunk(DimensionType dimensionType, int x, int z)
     {
         _chunks.Remove(HashChunk(x, z));
     }
