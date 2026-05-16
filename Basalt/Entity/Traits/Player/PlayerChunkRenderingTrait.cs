@@ -1,7 +1,6 @@
 using Basalt.Entity.Traits.Types;
 using Basalt.Block;
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Traits;
@@ -316,7 +315,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             for (int i = index; i < end; i++)
             {
                 ChunkColumn chunk = _sendQueue[i];
-                PrepareChunkBlockActors(chunk);
 
                 byte[] payload;
 
@@ -699,40 +697,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         z = (int)hash;
     }
 
-    private void PrepareChunkBlockActors(ChunkColumn chunk)
-    {
-        if (Player.Dimension is null)
-        {
-            return;
-        }
-
-        int chestActors = 0;
-        int pairedAfterCheck = 0;
-
-        foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages())
-        {
-            BlockPos position = storage.GetPosition();
-            var block = Player.Dimension.GetBlock(position.X, position.Y, position.Z);
-            var chestTrait = block?.GetTrait<Basalt.Block.Traits.ChestTrait>();
-            if (chestTrait is null)
-            {
-                continue;
-            }
-
-            chestActors++;
-            chestTrait.CheckPairing(Player.Dimension, position.X, position.Y, position.Z);
-            if (chestTrait.IsPaired)
-            {
-                pairedAfterCheck++;
-            }
-        }
-
-        if (chestActors > 0)
-        {
-            Logger.Info($"Chunk chest prep {chunk.X},{chunk.Z} for {Player.Username}: chestActors={chestActors}, pairedAfterCheck={pairedAfterCheck}");
-        }
-    }
-
     private void SendChunkChestVisualUpdates(int chunkX, int chunkZ)
     {
         if (Player.Dimension is null)
@@ -746,55 +710,11 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
-        int updated = 0;
-
         foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages())
         {
             BlockPos position = storage.GetPosition();
             var block = Player.Dimension.GetBlock(position.X, position.Y, position.Z);
-            var chestTrait = block?.GetTrait<Basalt.Block.Traits.ChestTrait>();
-            if (chestTrait is null || !chestTrait.IsPaired)
-            {
-                continue;
-            }
-
-            BlockPermutation permutation = Player.Dimension.GetPermutation(position.X, position.Y, position.Z);
-            Player.Send(new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = (uint)permutation.NetworkId,
-                Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
-                Layer = UpdateBlockLayerType.Normal
-            });
-
-            IntTag? pairXTag = storage.Get<IntTag>("pairx");
-            IntTag? pairZTag = storage.Get<IntTag>("pairz");
-            if (pairXTag is not null && pairZTag is not null)
-            {
-                // TODO i dunno how to do it properly
-                // but i wanna make sum like sending whole nbt
-                // but excluding some keys
-                CompoundTag packetData = new();
-                packetData.Set("id", new StringTag { Value = "Chest" });
-                packetData.Set("x", new IntTag { Value = position.X });
-                packetData.Set("y", new IntTag { Value = position.Y });
-                packetData.Set("z", new IntTag { Value = position.Z });
-                packetData.Set("pairx", new IntTag { Value = pairXTag.Value });
-                packetData.Set("pairz", new IntTag { Value = pairZTag.Value });
-
-                Player.Send(new BlockActorDataPacket
-                {
-                    Position = position,
-                    Data = packetData
-                });
-            }
-
-            updated++;
-        }
-
-        if (updated > 0)
-        {
-            Logger.Info($"Chunk chest visual update {chunkX},{chunkZ} for {Player.Username}: updated={updated}");
+            block?.OnRender(Player, position.X, position.Y, position.Z);
         }
     }
 

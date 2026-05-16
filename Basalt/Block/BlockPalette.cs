@@ -57,7 +57,7 @@ public sealed class BlockPalette
     {
         if (BlockPermutation.Permutations.TryGetValue(networkId, out BlockPermutation? permutation))
         {
-            return permutation.Type.GetPermutation(state);
+            return state is null ? permutation : permutation.Type.GetPermutation(state);
         }
 
         return ResolvePermutation(AirIdentifier, state);

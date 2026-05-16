@@ -85,6 +85,7 @@ public class ChestTrait : BlockTrait
                 _container.SetItem(slot, item);
             }
         }
+
     }
 
     public override void OnWrite(CompoundTag tag)
@@ -98,6 +99,8 @@ public class ChestTrait : BlockTrait
         {
             tag.Set("pairz", new IntTag { Value = _pairZ.Value });
         }
+
+        tag.Set("pairlead", new IntTag { Value = _isPairLead ? 1 : 0 });
 
         if (_sharedContainer is not null && _container is not null && IsPaired)
         {
@@ -130,6 +133,7 @@ public class ChestTrait : BlockTrait
         {
             tag.Set("Items", items);
         }
+
     }
 
     public override void OnPlace(BlockPlaceDetails details)
@@ -197,9 +201,6 @@ public class ChestTrait : BlockTrait
         WriteStorage(dimension, details.BlockPosition.X, details.BlockPosition.Y, details.BlockPosition.Z);
         pairChest.WriteStorage(dimension, pairX, details.BlockPosition.Y, pairZ);
 
-        Logger.Info(
-            $"Chest place pair {details.BlockPosition.X},{details.BlockPosition.Y},{details.BlockPosition.Z} <-> {pairX},{details.BlockPosition.Y},{pairZ} " +
-            $"state={GetFacingDebug()} lead={_isPairLead} pair=({_pairX},{_pairZ})");
     }
 
     public override void OnInteract(BlockInteractDetails details)
@@ -240,7 +241,49 @@ public class ChestTrait : BlockTrait
 
     public override void OnRender(Core.Player player, int x, int y, int z)
     {
-        return;
+        var dimension = player.Dimension;
+        if (dimension is null)
+        {
+            return;
+        }
+
+        BlockPos position = new() { X = x, Y = y, Z = z };
+
+        EnsureContainer(dimension, x, y, z);
+        CheckPairing(dimension, x, y, z);
+        WriteStorage(dimension, x, y, z);
+
+        BlockLevelStorage? storage = dimension
+            .GetChunk(x >> 4, z >> 4)
+            ?.GetBlockStorage(position);
+
+        if (storage is null)
+        {
+            return;
+        }
+
+        uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
+
+        player.Send(
+            new BlockActorDataPacket
+            {
+                Position = position,
+                Data = storage
+            },
+            new UpdateBlockPacket
+            {
+                Position = position,
+                NetworkBlockId = 0,
+                Flags = UpdateBlockFlagsType.None,
+                Layer = UpdateBlockLayerType.Normal
+            },
+            new UpdateBlockPacket
+            {
+                Position = position,
+                NetworkBlockId = networkId,
+                Flags = UpdateBlockFlagsType.None,
+                Layer = UpdateBlockLayerType.Normal
+            });
     }
 
     public void CheckPairing(World.Dimension.Dimension? dimension, int x, int y, int z)
@@ -262,8 +305,6 @@ public class ChestTrait : BlockTrait
             }
 
             PairWith(discoveredPair, x, z, discoveredX, discoveredZ);
-            WriteStorage(dimension, x, y, z);
-            discoveredPair.WriteStorage(dimension, discoveredX, y, discoveredZ);
             CheckPairing(dimension, x, y, z);
             discoveredPair.CheckPairing(dimension, discoveredX, y, discoveredZ);
             return;
@@ -330,6 +371,10 @@ public class ChestTrait : BlockTrait
             pair._pairZ = z;
         }
 
+        bool thisIsLead = ShouldBePairLead(x, z, _pairX.Value, _pairZ.Value);
+        _isPairLead = thisIsLead;
+        pair._isPairLead = !thisIsLead;
+
         if (_sharedContainer is not null)
         {
             return;
@@ -357,6 +402,7 @@ public class ChestTrait : BlockTrait
         _sharedContainer = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 54);
         _sharedContainer.OnViewerAddedEvent = OnViewerAdded;
         _sharedContainer.OnViewerRemovedEvent = OnViewerRemoved;
+        _sharedContainer.OnContainerUpdated = OnContainerUpdated;
 
         for (int slot = 0; slot < 27 && slot < left.GetSize(); slot++)
         {
@@ -378,10 +424,7 @@ public class ChestTrait : BlockTrait
 
         pair._sharedContainer = _sharedContainer;
 
-        if (!wasPaired || _sharedContainer is not null)
-        {
-            Logger.Info($"Chest pair check {x},{y},{z}: paired={IsPaired}, pair=({_pairX},{_pairZ}), shared={_sharedContainer is not null}, lead={_isPairLead}");
-        }
+        _ = wasPaired;
     }
 
     private void PairWith(ChestTrait other, int thisX, int thisZ, int otherX, int otherZ)
@@ -534,6 +577,72 @@ public class ChestTrait : BlockTrait
         _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 27);
         _container.OnViewerAddedEvent = OnViewerAdded;
         _container.OnViewerRemovedEvent = OnViewerRemoved;
+        _container.OnContainerUpdated = OnContainerUpdated;
+    }
+
+    private void OnContainerUpdated(BlockContainer container)
+    {
+        if (container.Dimension is null)
+        {
+            return;
+        }
+
+        var chunk = container.Dimension.GetChunk(container.Position.X >> 4, container.Position.Z >> 4);
+        if (chunk is not null)
+        {
+            chunk.Dirty = true;
+        }
+    }
+
+    private static int GetItemCount(BlockContainer? container)
+    {
+        if (container is null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < container.GetSize(); i++)
+        {
+            ItemStack? item = container.GetItem(i);
+            if (item is not null && item.StackSize > 0)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    public int DebugSingleContainerItemCount()
+    {
+        return GetItemCount(_container);
+    }
+
+    public int DebugSharedContainerItemCount()
+    {
+        return GetItemCount(_sharedContainer);
+    }
+
+    public bool GetPairCoordinates(out int pairX, out int pairZ)
+    {
+        if (!IsPaired || !_pairX.HasValue || !_pairZ.HasValue)
+        {
+            pairX = 0;
+            pairZ = 0;
+            return false;
+        }
+
+        pairX = _pairX.Value;
+        pairZ = _pairZ.Value;
+        return true;
+    }
+
+    public bool GetPairData(out int pairX, out int pairZ, out bool pairLead)
+    {
+        bool paired = GetPairCoordinates(out pairX, out pairZ);
+        pairLead = paired && _isPairLead;
+        return paired;
     }
 
     private void OnViewerAdded(BlockContainer container, Basalt.Core.Player _)
@@ -834,21 +943,6 @@ public class ChestTrait : BlockTrait
         pairX = candidates[0].X;
         pairZ = candidates[0].Z;
         return candidates[0].Chest;
-    }
-
-    private string GetFacingDebug()
-    {
-        if (GetValue(Block.Permutation.State, "minecraft:cardinal_direction", out BlockStateValue cardinal) && cardinal.Kind == 1)
-        {
-            return $"cardinal:{cardinal.AsString()}";
-        }
-
-        if (GetValue(Block.Permutation.State, "facing_direction", out BlockStateValue facing) && facing.Kind == 0)
-        {
-            return $"facing:{facing.AsNumber()}";
-        }
-
-        return "none";
     }
 
     private static bool GetValue(BlockState state, string key, out BlockStateValue value)

@@ -339,7 +339,7 @@ public sealed class Chunk
 
     public static byte[] Serialize(Chunk chunk, bool nbt = false)
     {
-        if (chunk.Cache is not null)
+        if (!nbt && chunk.Cache is not null)
         {
             return chunk.Cache;
         }
@@ -348,14 +348,20 @@ public sealed class Chunk
         try
         {
             int written = Serialize(chunk, rented, nbt);
-            chunk.Cache = rented.AsSpan(0, written).ToArray();
+            byte[] serialized = rented.AsSpan(0, written).ToArray();
+            if (nbt)
+            {
+                return serialized;
+            }
+
+            chunk.Cache = serialized;
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(rented);
         }
 
-        return chunk.Cache;
+        return chunk.Cache!;
     }
 
     public static bool TrySerialize(Chunk chunk, Span<byte> destination, out int written, bool nbt = false)
@@ -398,7 +404,7 @@ public sealed class Chunk
                 continue;
             }
 
-            BiomeStorage.Serialize(subChunk.Biomes, ref writer);
+            BiomeStorage.Serialize(subChunk.Biomes, ref writer, nbt);
         }
 
         writer.WriteUInt8(0);
@@ -434,7 +440,7 @@ public sealed class Chunk
         return writer.Offset;
     }
 
-    public static Chunk Deserialize(DimensionType type, int x, int z, ReadOnlySpan<byte> buffer, bool nbt = false)
+    public static Chunk Deserialize(DimensionType type, int x, int z, ReadOnlySpan<byte> buffer, bool nbt = false, bool? biomeNbt = null)
     {
         BinaryReader reader = new(buffer);
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
@@ -463,7 +469,7 @@ public sealed class Chunk
                 continue;
             }
 
-            subChunk.Biomes = BiomeStorage.Deserialize(ref reader);
+            subChunk.Biomes = BiomeStorage.Deserialize(ref reader, biomeNbt ?? nbt);
         }
 
         if (reader.Remaining > 0)
@@ -473,7 +479,7 @@ public sealed class Chunk
 
         Chunk chunk = new(x, z, type, subChunks)
         {
-            Cache = buffer.ToArray()
+            Cache = nbt ? null : buffer.ToArray()
         };
 
         while (reader.Remaining > 0)

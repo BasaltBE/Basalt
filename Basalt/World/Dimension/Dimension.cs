@@ -44,7 +44,7 @@ public sealed class Dimension : IDisposable
     public bool HasChunk(int x, int z)
     {
         long hash = HashChunk(x, z);
-        return _chunks.ContainsKey(hash) || _provider.HasChunk(x, z);
+        return _chunks.ContainsKey(hash) || _provider.HasChunk(Type, x, z);
     }
 
     public ChunkColumn? GetChunk(int x, int z)
@@ -95,7 +95,7 @@ public sealed class Dimension : IDisposable
 
     public bool RemoveChunk(int x, int z)
     {
-        _provider.DeleteChunk(x, z);
+        _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
         if (!_chunks.TryGetValue(hash, out ChunkColumn? chunk))
         {
@@ -110,27 +110,7 @@ public sealed class Dimension : IDisposable
     {
         foreach (ChunkColumn loadedChunk in _chunks.Values)
         {
-            foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Block.Block> actorEntry in loadedChunk.GetAllBlockActors())
-            {
-                BlockPos position = new()
-                {
-                    X = actorEntry.Key.X,
-                    Y = actorEntry.Key.Y,
-                    Z = actorEntry.Key.Z
-                };
-
-                BlockLevelStorage? storage = loadedChunk.GetBlockStorage(position);
-                if (storage is null)
-                {
-                    storage = new BlockLevelStorage(loadedChunk);
-                    storage.SetPosition(position);
-                    storage.Set("id", new StringTag { Name = "id", Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
-                    storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
-                }
-
-                actorEntry.Value.WriteTraits(storage);
-                loadedChunk.SetBlockStorage(position, storage, dirty: true);
-            }
+            SyncBlockActorsToStorages(loadedChunk);
         }
 
         foreach (ChunkColumn chunk in _chunks.Values)
@@ -152,6 +132,7 @@ public sealed class Dimension : IDisposable
             return false;
         }
 
+        SyncBlockActorsToStorages(chunk);
         _provider.SaveChunk(chunk);
         chunk.Dirty = false;
         return true;
@@ -167,6 +148,7 @@ public sealed class Dimension : IDisposable
 
         if (save && chunk.Dirty)
         {
+            SyncBlockActorsToStorages(chunk);
             _provider.SaveChunk(chunk);
             chunk.Dirty = false;
         }
@@ -309,8 +291,13 @@ public sealed class Dimension : IDisposable
             {
                 block.ReadTraits(storage);
 
-                ChestTrait? loadedChestTrait = block.GetTrait<ChestTrait>();
-                loadedChestTrait?.OnRead(storage);
+                ChestTrait? fallbackChestTrait = block.GetTrait<ChestTrait>();
+                if (fallbackChestTrait is not null &&
+                    (storage.Get<ListTag>("traits") is null ||
+                     fallbackChestTrait.DebugSingleContainerItemCount() == 0))
+                {
+                    fallbackChestTrait.OnRead(storage);
+                }
             }
 
             ChestTrait? chestTrait = block.GetTrait<ChestTrait>();
@@ -405,6 +392,31 @@ public sealed class Dimension : IDisposable
     private static long HashChunk(int x, int z)
     {
         return ((long)x << 32) | (uint)z;
+    }
+
+    private static void SyncBlockActorsToStorages(ChunkColumn chunk)
+    {
+        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Block.Block> actorEntry in chunk.GetAllBlockActors())
+        {
+            BlockPos position = new()
+            {
+                X = actorEntry.Key.X,
+                Y = actorEntry.Key.Y,
+                Z = actorEntry.Key.Z
+            };
+
+            BlockLevelStorage? storage = chunk.GetBlockStorage(position);
+            if (storage is null)
+            {
+                storage = new BlockLevelStorage(chunk);
+                storage.SetPosition(position);
+                storage.Set("id", new StringTag { Name = "id", Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
+                storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
+            }
+
+            actorEntry.Value.WriteTraits(storage);
+            chunk.SetBlockStorage(position, storage, dirty: true);
+        }
     }
 
     private static string GetBlockActorId(string blockIdentifier)
