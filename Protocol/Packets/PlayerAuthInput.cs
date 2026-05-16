@@ -48,7 +48,9 @@ public sealed record PlayerAuthInputPacket : DataPacket
         MoveVector = moveVector;
         HeadYaw = reader.ReadF32(true);
 
-        InputData.Read(ref reader);
+        PlayerAuthInputData inputData = InputData;
+        inputData.Read(ref reader);
+        InputData = inputData;
 
         InputMode = (InputMode)reader.ReadVarUInt();
         PlayMode = (PlayMode)reader.ReadVarUInt();

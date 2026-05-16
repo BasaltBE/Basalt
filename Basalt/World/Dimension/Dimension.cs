@@ -419,10 +419,12 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    private static string GetBlockActorId(string blockIdentifier)
+    // TODO: Temp and dumb, will need to be refractoted cause it is just a simple mapping
+    internal static string GetBlockActorId(string blockIdentifier)
     {
         return blockIdentifier switch
         {
+            "minecraft:barrel" => "Barrel",
             "minecraft:chest" => "Chest",
             "minecraft:trapped_chest" => "Chest",
             _ => blockIdentifier

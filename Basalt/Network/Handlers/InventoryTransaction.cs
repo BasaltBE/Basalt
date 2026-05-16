@@ -106,7 +106,8 @@ public static class InventoryTransaction
         bool missingBlockPosition =
             transaction.BlockPosition.X == 0 &&
             transaction.BlockPosition.Y == 0 &&
-            transaction.BlockPosition.Z == 0;
+            transaction.BlockPosition.Z == 0 &&
+            transaction.BlockRuntimeId == 0;
 
         if (missingBlockPosition && FindBlockFromView(player, pitch, yaw, out BlockPos viewedBlock, out int viewedFace))
         {
@@ -164,7 +165,7 @@ public static class InventoryTransaction
                 BlockPos blockPosition = transaction.BlockPosition;
                 int blockFace = transaction.BlockFace;
 
-                if (IsEmptyPosition(blockPosition) && player.LastActionBlockPosition.HasValue)
+                if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
                 {
                     blockPosition = player.LastActionBlockPosition.Value;
 
@@ -214,7 +215,7 @@ public static class InventoryTransaction
         {
             BlockPos blockPosition = transaction.BlockPosition;
 
-            if (IsEmptyPosition(blockPosition) && player.LastActionBlockPosition.HasValue)
+            if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
             {
                 blockPosition = player.LastActionBlockPosition.Value;
             }
@@ -262,7 +263,7 @@ public static class InventoryTransaction
         BlockPos clickedPosition = transaction.BlockPosition;
         int clickedFace = transaction.BlockFace;
 
-        if (IsEmptyPosition(clickedPosition) && player.LastActionBlockPosition.HasValue)
+        if (IsEmptyPosition(clickedPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
         {
             clickedPosition = player.LastActionBlockPosition.Value;
 

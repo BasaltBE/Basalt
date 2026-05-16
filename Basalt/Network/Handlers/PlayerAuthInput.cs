@@ -20,52 +20,166 @@ public static class PlayerAuthInput
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         PlayerAuthInputPacket packet = new();
-        packet.Deserialize(packetBuffer);
-
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        try
         {
+            packet.Deserialize(packetBuffer);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warn("PlayerAuthInput deserialize failed: {0}", exception);
             return;
         }
 
-        if (MovedTooFar(player, packet, out ulong tickDelta))
+        try
         {
-            Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta={tickDelta}");
-
-            server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket
+            if (!server.Players.TryGetValue(connection, out Player? player))
             {
-                PredictionType = PredictionType.Player,
-                Position = player.Position,
-                PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
-                Rotation = new Vec2f { X = packet.Pitch, Y = packet.Yaw },
-                VehicleAngularVelocity = new OptionalValue<float> { HasValue = false },
-                OnGround = packet.HasFlag(PlayerAuthInputFlag.VerticalCollision),
-                InputTick = packet.Tick
-            });
+                return;
+            }
+
+            if (MovedTooFar(player, packet, out ulong tickDelta))
+            {
+                Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta={tickDelta}");
+
+                server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket
+                {
+                    PredictionType = PredictionType.Player,
+                    Position = player.Position,
+                    PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
+                    Rotation = new Vec2f { X = packet.Pitch, Y = packet.Yaw },
+                    VehicleAngularVelocity = new OptionalValue<float> { HasValue = false },
+                    OnGround = packet.HasFlag(PlayerAuthInputFlag.VerticalCollision),
+                    InputTick = packet.Tick
+                });
+
+                LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
+                return;
+            }
+
+            MovePlayer(player, packet);
+
+            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+            {
+                InventoryTransaction.HandleUseItemFromAuthInput(
+                    player,
+                    packet.ItemInteractionData,
+                    packet.InteractPitch,
+                    packet.InteractYaw);
+            }
+
+            MineBlockStackRequestAction? mineBlockRequest = null;
+            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
+            {
+                mineBlockRequest = GetMineBlockRequest(packet.ItemStackRequest);
+                Logger.Warn(
+                    "PlayerAuthInput item stack request player={0} request={1} actions={2} mineBlock={3}",
+                    player.Username,
+                    packet.ItemStackRequest.RequestId,
+                    packet.ItemStackRequest.Actions.Count,
+                    mineBlockRequest is not null);
+
+                server.Network.SendPacket(connection, new ItemStackResponsePacket
+                {
+                    Responses = [ProcessItemStackRequest(player, packet.ItemStackRequest)]
+                });
+            }
+
+            if (packet.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+            {
+                Logger.Warn(
+                    "PlayerAuthInput block actions player={0} count={1} tick={2}",
+                    player.Username,
+                    packet.BlockActions.Count,
+                    packet.Tick);
+
+                foreach (PlayerBlockAction action in packet.BlockActions)
+                {
+                    HandleBlockAction(player, action);
+                }
+            }
+            else if (mineBlockRequest is not null && player.LastActionBlockPosition.HasValue)
+            {
+                BlockPos position = player.LastActionBlockPosition.Value;
+                Logger.Warn(
+                    "PlayerAuthInput mine fallback player={0} pos={1},{2},{3} face={4}",
+                    player.Username,
+                    position.X,
+                    position.Y,
+                    position.Z,
+                    player.LastActionFace);
+
+                DestroyBlock(player, new PlayerBlockAction
+                {
+                    Action = PlayerActionType.PredictDestroyBlock,
+                    BlockPos = position,
+                    Face = player.LastActionFace
+                });
+            }
+            else if (mineBlockRequest is not null)
+            {
+                Logger.Warn("PlayerAuthInput mine request had no block actions and no last PlayerAction target player={0}", player.Username);
+            }
 
             LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
-            return;
         }
-
-        MovePlayer(player, packet);
-
-        if (packet.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+        catch (Exception exception)
         {
-            InventoryTransaction.HandleUseItemFromAuthInput(
-                player,
-                packet.ItemInteractionData,
-                packet.InteractPitch,
-                packet.InteractYaw);
+            Logger.Warn("PlayerAuthInput handler failed: {0}", exception);
         }
+    }
 
-        if (packet.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+    private static ItemStackResponse ProcessItemStackRequest(Player player, Protocol.Types.ItemStackRequest request)
+    {
+        List<StackResponseContainerInfo> containers = [];
+
+        for (int i = 0; i < request.Actions.Count; i++)
         {
-            foreach (PlayerBlockAction action in packet.BlockActions)
+            if (request.Actions[i] is not MineBlockStackRequestAction mineBlock)
             {
-                HandleBlockAction(player, action);
+                continue;
+            }
+
+            EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+            ItemStack? item = inventory?.Container.GetItem(mineBlock.HotbarSlot);
+
+            containers.Add(new StackResponseContainerInfo
+            {
+                Container = new FullContainerName { ContainerId = 29 },
+                SlotInfo =
+                [
+                    new StackResponseSlotInfo
+                    {
+                        Slot = (byte)mineBlock.HotbarSlot,
+                        HotbarSlot = (byte)mineBlock.HotbarSlot,
+                        Count = (byte)(item?.StackSize ?? 0),
+                        StackNetworkId = item?.NetworkStackId ?? 0,
+                        CustomName = string.Empty,
+                        FilteredCustomName = string.Empty,
+                        DurabilityCorrection = 0
+                    }
+                ]
+            });
+        }
+
+        return new ItemStackResponse
+        {
+            Status = ItemStackResponseStatus.Ok,
+            RequestId = request.RequestId,
+            ContainerInfo = containers
+        };
+    }
+
+    private static MineBlockStackRequestAction? GetMineBlockRequest(Protocol.Types.ItemStackRequest request)
+    {
+        for (int i = 0; i < request.Actions.Count; i++)
+        {
+            if (request.Actions[i] is MineBlockStackRequestAction mineBlock)
+            {
+                return mineBlock;
             }
         }
 
-        LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
+        return null;
     }
 
     private static bool MovedTooFar(Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
@@ -114,9 +228,21 @@ public static class PlayerAuthInput
 
     private static void HandleBlockAction(Player player, PlayerBlockAction action)
     {
+        Logger.Warn(
+            "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
+            player.Username,
+            action.Action,
+            action.BlockPos.X,
+            action.BlockPos.Y,
+            action.BlockPos.Z,
+            action.Face);
+
         switch (action.Action)
         {
             case PlayerActionType.StartDestroyBlock:
+                CrackBlock(player, action.BlockPos);
+                break;
+
             case PlayerActionType.CrackBlock:
             case PlayerActionType.ContinueDestroyBlock:
                 CrackBlock(player, action.BlockPos);
@@ -127,7 +253,9 @@ public static class PlayerAuthInput
                 player.BreakingBlock = null;
                 break;
 
+            case PlayerActionType.StopDestroyBlock:
             case PlayerActionType.PredictDestroyBlock:
+            case PlayerActionType.CreativeDestroyBlock:
                 DestroyBlock(player, action);
                 break;
         }
@@ -141,35 +269,63 @@ public static class PlayerAuthInput
         }
 
         player.BreakingBlock = blockPosition;
-
-        int breakTimeTicks = GetBreakTimeTicks(player, blockPosition);
+        int breakTimeTicks = GetBreakTimeTicksForAnimation(player, blockPosition);
+        int crackSpeed = Math.Max(1, 65535 / breakTimeTicks);
 
         player.Dimension?.Broadcast(new LevelEventPacket
         {
             Event = LevelEvent.StartBlockCracking,
             Position = CenterOf(blockPosition),
-            Data = 65535 / breakTimeTicks
+            Data = crackSpeed
         });
     }
 
     private static void DestroyBlock(Player player, PlayerBlockAction action)
     {
-        BlockPos blockPosition = IsZero(action.BlockPos) && player.BreakingBlock.HasValue
-            ? player.BreakingBlock.Value
+        if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
+        {
+            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
+            return;
+        }
+
+        BlockPos blockPosition = IsZero(action.BlockPos)
+            ? player.BreakingBlock!.Value
             : action.BlockPos;
 
         StopCrackBlock(player, blockPosition);
         player.BreakingBlock = null;
 
-        Basalt.Block.BlockPermutation? block =
-            player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
-
-        if (block is null)
+        if (player.Dimension is null)
         {
+            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
             return;
         }
 
-        player.Dimension?.Broadcast(new LevelEventPacket
+        Basalt.Block.BlockPermutation? block =
+            player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+
+        if (block is null)
+        {
+            Logger.Warn(
+                "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
+                player.Username,
+                blockPosition.X,
+                blockPosition.Y,
+                blockPosition.Z);
+            return;
+        }
+
+        Logger.Warn(
+            "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
+            player.Username,
+            blockPosition.X,
+            blockPosition.Y,
+            blockPosition.Z,
+            block.Type.Identifier,
+            block.NetworkId,
+            action.Action);
+
+        player.Dimension.Broadcast(new LevelEventPacket
         {
             Event = LevelEvent.ParticlesDestroyBlock,
             Position = CenterOf(blockPosition),
@@ -180,9 +336,21 @@ public static class PlayerAuthInput
             .GetOrAir("minecraft:air")
             .GetPermutation();
 
-        player.Dimension?.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
+        player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
-        player.Dimension?.Broadcast(new UpdateBlockPacket
+        Basalt.Block.BlockPermutation after =
+            player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+
+        Logger.Warn(
+            "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
+            player.Username,
+            blockPosition.X,
+            blockPosition.Y,
+            blockPosition.Z,
+            after.Type.Identifier,
+            after.NetworkId);
+
+        player.Dimension.Broadcast(new UpdateBlockPacket
         {
             Position = blockPosition,
             NetworkBlockId = (uint)air.NetworkId,
@@ -198,7 +366,7 @@ public static class PlayerAuthInput
             heldItem.OnBreakBlock(new ItemBreakBlockDetails(
                 player,
                 inventory.SelectedSlot,
-                action.BlockPos,
+                blockPosition,
                 action.Face));
         }
     }
@@ -213,7 +381,7 @@ public static class PlayerAuthInput
         });
     }
 
-    private static int GetBreakTimeTicks(Player player, BlockPos blockPosition)
+    private static int GetBreakTimeTicksForAnimation(Player player, BlockPos blockPosition)
     {
         Basalt.Block.BlockPermutation? block =
             player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
@@ -224,18 +392,17 @@ public static class PlayerAuthInput
         }
 
         float hardness = block.Type.Hardness;
-
-        if (hardness < 0)
+        if (hardness < 0f)
         {
-            return 65535;
+            return 9999;
         }
 
-        if (hardness == 0)
+        if (hardness == 0f)
         {
             return 1;
         }
 
-        return Math.Max(1, (int)(hardness * 1.5f * 20));
+        return Math.Max(1, (int)(hardness * 1.5f * 20f));
     }
 
     private static Vec3f CenterOf(BlockPos position)
@@ -257,4 +424,6 @@ public static class PlayerAuthInput
     {
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
+
+  
 }

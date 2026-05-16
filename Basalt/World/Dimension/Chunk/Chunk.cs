@@ -419,13 +419,13 @@ public sealed class Chunk
             {
                 storage = new BlockLevelStorage(chunk);
                 storage.SetPosition(position);
-                storage.Set("id", new StringTag { Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
+                storage.Set("id", new StringTag { Value = Dimension.GetBlockActorId(actorEntry.Value.Type.Identifier) });
                 storage.Set("isMovable", new ByteTag { Value = 1 });
                 chunk.SetBlockStorage(position, storage, dirty: false);
             }
             else if (storage.Get<StringTag>("id") is not { } idTag || string.IsNullOrWhiteSpace(idTag.Value))
             {
-                storage.Set("id", new StringTag { Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
+                storage.Set("id", new StringTag { Value = Dimension.GetBlockActorId(actorEntry.Value.Type.Identifier) });
             }
 
             actorEntry.Value.WriteTraits(storage);
@@ -514,13 +514,5 @@ public sealed class Chunk
         return SubChunks[resolved];
     }
 
-    private static string GetBlockActorId(string blockIdentifier)
-    {
-        return blockIdentifier switch
-        {
-            "minecraft:chest" => "Chest",
-            "minecraft:trapped_chest" => "Chest",
-            _ => blockIdentifier
-        };
-    }
+  
 }
