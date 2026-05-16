@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 using Basalt.Traits;
 using Basalt.Item;
 using Basalt.Item.Traits;
+
 using System.Diagnostics;
 
 namespace Basalt.Entity.Traits.PlayerTraits;
@@ -38,12 +39,13 @@ public sealed class DebugTrait : PlayerTrait
             {
                 string[] debugItems =
                 [
-                    "minecraft:stick",
-                    "minecraft:stone",
-                    "minecraft:dirt",
-                    "minecraft:grass_block",
-                    "minecraft:diamond_pickaxe",
-                    "minecraft:chest",
+                    ItemIdentifier.Barrel.ToIdentifier(),
+                    ItemIdentifier.Chest.ToIdentifier(),
+                    ItemIdentifier.Stick.ToIdentifier(),
+                    ItemIdentifier.DiamondPickaxe.ToIdentifier(),
+                    ItemIdentifier.GrassBlock.ToIdentifier(),
+                    ItemIdentifier.Stone.ToIdentifier(),
+                    ItemIdentifier.Dirt.ToIdentifier(),
                 ];
 
                 int[] targetSlots = [0, 9, 10, 11, 12];
