@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
 namespace Basalt.World.Dimension.Provider;
@@ -19,10 +20,24 @@ internal static class LevelDbKeyBuilder
         return key;
     }
 
+    public static byte[] BuildChunkKey(DimensionType dimensionType, int x, int z)
+    {
+        byte[] key = new byte[10];
+        WriteChunkKey(key, dimensionType, x, z);
+        return key;
+    }
+
     public static byte[] BuildBlockStorageListKey(int x, int z)
     {
         byte[] key = new byte[9];
         WriteBlockStorageListKey(key, x, z);
+        return key;
+    }
+
+    public static byte[] BuildBlockStorageListKey(DimensionType dimensionType, int x, int z)
+    {
+        byte[] key = new byte[10];
+        WriteBlockStorageListKey(key, dimensionType, x, z);
         return key;
     }
 
@@ -38,6 +53,21 @@ internal static class LevelDbKeyBuilder
         byte[] key = new byte[9];
         WriteEntityListKey(key, x, z);
         return key;
+    }
+
+    public static byte[] BuildEntityListKey(DimensionType dimensionType, int x, int z)
+    {
+        byte[] key = new byte[10];
+        WriteEntityListKey(key, dimensionType, x, z);
+        return key;
+    }
+
+    public static void WriteChunkKey(Span<byte> key, DimensionType dimensionType, int x, int z)
+    {
+        key[0] = PrefixChunk;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
+        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
     }
 
     public static byte[] BuildEntityStorageKey(long uniqueId)
@@ -61,6 +91,14 @@ internal static class LevelDbKeyBuilder
         BinaryPrimitives.WriteInt32LittleEndian(key[5..9], z);
     }
 
+    public static void WriteBlockStorageListKey(Span<byte> key, DimensionType dimensionType, int x, int z)
+    {
+        key[0] = PrefixBlockList;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
+        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
+    }
+
     public static void WriteBlockStorageKey(Span<byte> key, BlockPos pos)
     {
         key[0] = PrefixBlockStorage;
@@ -74,6 +112,14 @@ internal static class LevelDbKeyBuilder
         key[0] = PrefixEntityList;
         BinaryPrimitives.WriteInt32LittleEndian(key[1..5], x);
         BinaryPrimitives.WriteInt32LittleEndian(key[5..9], z);
+    }
+
+    public static void WriteEntityListKey(Span<byte> key, DimensionType dimensionType, int x, int z)
+    {
+        key[0] = PrefixEntityList;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
+        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
     }
 
     public static void WriteEntityStorageKey(Span<byte> key, long uniqueId)
