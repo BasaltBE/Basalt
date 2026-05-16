@@ -384,6 +384,7 @@ public class Container
         int id = Identifier ?? _nextContainerId++;
         occupants[player] = id;
         player.RegisterOpenContainer(id, this);
+        OnViewerAdded(player, id);
         if (CanOpen(player, id))
         {
             ContainerOpenPacket openPacket = new()
@@ -411,22 +412,7 @@ public class Container
     public virtual void Close(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        if (!occupants.Remove(player, out int id))
-        {
-            return;
-        }
-        player.openedContainers.Remove(id);
-
-        ContainerClosePacket packet = new()
-        {
-            WindowId = (byte)id,
-            ContainerType = unchecked((byte)(int)Type),
-            ServerSide = true
-        };
-        if (player.Spawned)
-        {
-            player.Send(packet);
-        }
+        _ = RemoveViewer(player, true);
     }
 
     public IReadOnlyCollection<KeyValuePair<Player, int>> GetAllOccupants()
@@ -515,6 +501,36 @@ public class Container
         return true;
     }
 
+    public bool RemoveViewer(Player player, bool sendClosePacket)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (!occupants.Remove(player, out int id))
+        {
+            return false;
+        }
+
+        player.openedContainers.Remove(id);
+        OnViewerRemoved(player, id);
+
+        if (!sendClosePacket)
+        {
+            return true;
+        }
+
+        ContainerClosePacket packet = new()
+        {
+            WindowId = (byte)id,
+            ContainerType = unchecked((byte)(int)Type),
+            ServerSide = true
+        };
+        if (player.Spawned)
+        {
+            player.Send(packet);
+        }
+
+        return true;
+    }
+
     protected virtual BlockPos GetContainerPosition()
     {
         return new BlockPos
@@ -528,6 +544,14 @@ public class Container
     protected virtual byte GetFullContainerNameId()
     {
         return Type == ContainerType.Inventory ? (byte)0x1B : (byte)7;
+    }
+
+    protected virtual void OnViewerAdded(Player player, int windowId)
+    {
+    }
+
+    protected virtual void OnViewerRemoved(Player player, int windowId)
+    {
     }
 
     protected byte GetFullContainerNhameId()

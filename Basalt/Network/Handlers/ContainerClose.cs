@@ -20,17 +20,11 @@ public static class ContainerClose
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
             if (inventory is not null && packet.WindowId == (byte)(inventory.Container.Identifier ?? 0))
             {
-                if (inventory.Container.occupants.Remove(player, out int id))
-                {
-                    player.openedContainers.Remove(id);
-                }
+                inventory.Container.RemoveViewer(player, false);
             }
             else if (player.TryGetOpenContainer(packet.WindowId, out Basalt.Containers.Container? openContainer) && openContainer is not null)
             {
-                if (openContainer.occupants.Remove(player, out int id))
-                {
-                    player.openedContainers.Remove(id);
-                }
+                openContainer.RemoveViewer(player, false);
             }
         }
 

@@ -4,6 +4,7 @@ using Basalt.Block.Types;
 using Basalt.Containers;
 using Basalt.Item;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
@@ -354,6 +355,8 @@ public class ChestTrait : BlockTrait
         BlockContainer right = thisIsLeft ? pair._container : _container;
 
         _sharedContainer = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 54);
+        _sharedContainer.OnViewerAddedEvent = OnViewerAdded;
+        _sharedContainer.OnViewerRemovedEvent = OnViewerRemoved;
 
         for (int slot = 0; slot < 27 && slot < left.GetSize(); slot++)
         {
@@ -529,6 +532,99 @@ public class ChestTrait : BlockTrait
         }
 
         _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 27);
+        _container.OnViewerAddedEvent = OnViewerAdded;
+        _container.OnViewerRemovedEvent = OnViewerRemoved;
+    }
+
+    private void OnViewerAdded(BlockContainer container, Basalt.Core.Player _)
+    {
+        if (container.occupants.Count != 1)
+        {
+            return;
+        }
+
+        BroadcastState(1, LevelSoundEvent.ChestOpen, container.Position);
+
+        if (GetPairPosition(container.Position.Y, out BlockPos pairPosition))
+        {
+            BroadcastState(1, LevelSoundEvent.ChestOpen, pairPosition);
+        }
+    }
+
+    private void OnViewerRemoved(BlockContainer container, Basalt.Core.Player _)
+    {
+        if (container.occupants.Count != 0)
+        {
+            return;
+        }
+
+        BroadcastState(0, LevelSoundEvent.ChestClosed, container.Position);
+
+        if (GetPairPosition(container.Position.Y, out BlockPos pairPosition))
+        {
+            BroadcastState(0, LevelSoundEvent.ChestClosed, pairPosition);
+        }
+    }
+
+    private bool GetPairPosition(int y, out BlockPos position)
+    {
+        position = default;
+
+        if (!IsPaired || Container?.Dimension is null)
+        {
+            return false;
+        }
+
+        ChestTrait? pair = GetPair(Container.Dimension, y);
+        if (pair is null || !pair.IsPaired)
+        {
+            return false;
+        }
+
+        int pairX = pair._container?.Position.X ?? pair._pairX ?? 0;
+        int pairZ = pair._container?.Position.Z ?? pair._pairZ ?? 0;
+
+        position = new BlockPos
+        {
+            X = pairX,
+            Y = y,
+            Z = pairZ
+        };
+
+        return true;
+    }
+
+    private void BroadcastState(int state, LevelSoundEvent soundEvent, BlockPos position)
+    {
+        if (Container?.Dimension is null)
+        {
+            return;
+        }
+
+        Container.Dimension.Broadcast(new BlockEventPacket
+        {
+            Position = position,
+            Type = BlockEventType.ChangeState,
+            Data = state
+        });
+
+        int runtimeId = Container.Dimension.GetPermutation(position.X, position.Y, position.Z).NetworkId;
+
+        Container.Dimension.Broadcast(new LevelSoundEventPacket
+        {
+            Event = soundEvent,
+            Position = new Vec3f
+            {
+                X = position.X,
+                Y = position.Y,
+                Z = position.Z
+            },
+            Data = runtimeId,
+            ActorIdentifier = string.Empty,
+            IsBabyMob = false,
+            IsGlobal = false,
+            UniqueActorId = -1
+        });
     }
 
     private static int GetChestOrder(int x, int z)

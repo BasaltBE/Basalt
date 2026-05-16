@@ -440,6 +440,14 @@ public sealed class Dimension : IDisposable
             case LevelEventPacket levelEvent:
                 return levelEvent.Position;
 
+            case BlockEventPacket blockEvent:
+                return new Vec3f
+                {
+                    X = blockEvent.Position.X,
+                    Y = blockEvent.Position.Y,
+                    Z = blockEvent.Position.Z
+                };
+
             case LevelSoundEventPacket levelSoundEvent:
                 return levelSoundEvent.Position;
 

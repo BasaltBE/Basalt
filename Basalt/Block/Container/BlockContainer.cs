@@ -6,6 +6,8 @@ namespace Basalt.Block.Container;
 
 public sealed class BlockContainer : Containers.Container
 {
+    public Action<BlockContainer, Basalt.Core.Player>? OnViewerAddedEvent { get; set; }
+    public Action<BlockContainer, Basalt.Core.Player>? OnViewerRemovedEvent { get; set; }
     public Dimension? Dimension { get; set; }
     public BlockPos Position { get; set; }
     public Action<BlockContainer>? OnContainerUpdated { get; set; }
@@ -31,5 +33,15 @@ public sealed class BlockContainer : Containers.Container
     protected override BlockPos GetContainerPosition()
     {
         return Position;
+    }
+
+    protected override void OnViewerAdded(Basalt.Core.Player player, int windowId)
+    {
+        OnViewerAddedEvent?.Invoke(this, player);
+    }
+
+    protected override void OnViewerRemoved(Basalt.Core.Player player, int windowId)
+    {
+        OnViewerRemovedEvent?.Invoke(this, player);
     }
 }
