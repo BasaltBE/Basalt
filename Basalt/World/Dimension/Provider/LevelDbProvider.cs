@@ -149,7 +149,10 @@ public sealed class LevelDbProvider : WorldProvider
             for (int i = 0; i < uniqueIds.Count; i++)
             {
                 LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueIds[i]);
-                _database.Delete(entityStorageKey);
+
+                // TODO: We have to figure out how to improve GC pressure, we should use memory pools for this kind of things indeed
+                // We can use ArrayPool.Shared bc why not
+                _database.Delete(entityStorageKey.ToArray());
             }
         }
 
@@ -217,7 +220,7 @@ public sealed class LevelDbProvider : WorldProvider
         return CompoundTag.Read(ref reader, NbtOptions, canHaveName: true);
     }
 
-    private static byte[] EncodeEntityList(BinaryWriter writer, List<KeyValuePair<long, CompoundTag>> entities)
+    private static void EncodeEntityList(BinaryWriter writer, List<KeyValuePair<long, CompoundTag>> entities)
     {
         writer.WriteUInt32(FormatVersion, littleEndian: true);
         writer.WriteInt32(entities.Count, littleEndian: true);
@@ -226,8 +229,6 @@ public sealed class LevelDbProvider : WorldProvider
         {
             writer.WriteInt64(entities[i].Key, littleEndian: true);
         }
-
-        return writer.GetBuffer().ToArray();
     }
 
     private static List<long> DecodeEntityList(BinaryReader reader)

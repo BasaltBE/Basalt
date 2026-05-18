@@ -8,10 +8,7 @@ namespace Basalt.Binary
         public ref int Offset = ref offset;
         public readonly int Length => Buffer.Length;
         public readonly int Remaining => Length - Offset;
-
-
         public void Reset() => Offset = 0;
-
         public void Seek(int offset)
         {
             if ((uint)offset > (uint)Length)
