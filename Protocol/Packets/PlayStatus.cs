@@ -17,12 +17,12 @@ public sealed record PlayStatusPacket : DataPacket
 
     public override PacketId PacketId => PacketId.PlayStatus;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Status = (PlayStatus)reader.ReadInt32(false);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteInt32((int)Status, false);
     }

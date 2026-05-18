@@ -11,24 +11,24 @@ public sealed record ItemStackResponsePacket : DataPacket
 
     public override PacketId PacketId => PacketId.ItemStackResponse;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         int count = reader.ReadVarInt();
         Responses = new(count);
         for (int i = 0; i < count; i++)
         {
             ItemStackResponse response = new();
-            response.Read(ref reader);
+            response.Read(reader);
             Responses.Add(response);
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt(Responses.Count);
         for (int i = 0; i < Responses.Count; i++)
         {
-            Responses[i].Write(ref writer);
+            Responses[i].Write(writer);
         }
     }
 }

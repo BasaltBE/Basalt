@@ -12,16 +12,16 @@ public sealed class BlockEntry : DataType
     public string Name { get; set; } = string.Empty;
     public CompoundTag Properties { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Name = reader.ReadVarString();
-        Properties = CompoundTag.Read(ref reader, NetworkOptions, canHaveName: true);
+        Properties = CompoundTag.Read(reader, NetworkOptions, canHaveName: true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Name);
-        NBT.WriteTag(ref writer, Properties, NetworkOptions, canHaveName: true);
+        NBT.WriteTag(writer, Properties, NetworkOptions, canHaveName: true);
     }
 }
 

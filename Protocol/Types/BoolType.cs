@@ -8,8 +8,8 @@ public struct BoolType : DataType
 {
     public bool Value { get; set; }
 
-    public void Read(ref BinaryReader reader) => Value = reader.ReadBool();
-    public void Write(ref BinaryWriter writer) => writer.WriteBool(Value);
+    public void Read(BinaryReader reader) => Value = reader.ReadBool();
+    public void Write(BinaryWriter writer) => writer.WriteBool(Value);
 
     public static implicit operator bool(BoolType value) => value.Value;
     public static implicit operator BoolType(bool value) => new() { Value = value };

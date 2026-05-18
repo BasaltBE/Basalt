@@ -8,15 +8,15 @@ public abstract record DataPacket
 {
     public abstract PacketId PacketId { get; }
 
-    public abstract void Deserialize(ref BinaryReader reader);
-    public abstract void Serialize(ref BinaryWriter writer);
+    public abstract void Deserialize(BinaryReader reader);
+    public abstract void Serialize(BinaryWriter writer);
 
     public DataPacket Deserialize(ReadOnlySpan<byte> src)
     {
         int offset = 0;
         BinaryReader reader = new(src, ref offset);
         reader.ReadVarInt();
-        Deserialize(ref reader);
+        Deserialize(reader);
         return this;
     }
 
@@ -25,7 +25,7 @@ public abstract record DataPacket
         int offset = 0;
         BinaryWriter writer = new(dst, ref offset);
         writer.WriteVarInt((byte)PacketId);
-        Serialize(ref writer);
+        Serialize(writer);
         return dst[writer.GetProcessedRange()];
     }
 }

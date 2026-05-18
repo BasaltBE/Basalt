@@ -20,19 +20,19 @@ public sealed class NetworkBlockTypeDefinition : DataType
         Nbt = nbt;
     }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Identifier = reader.ReadVarString();
-        Nbt = CompoundTag.Read(ref reader, NetworkOptions, canHaveName: true);
+        Nbt = CompoundTag.Read(reader, NetworkOptions, canHaveName: true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Identifier);
-        NBT.WriteTag(ref writer, Nbt, NetworkOptions, canHaveName: true);
+        NBT.WriteTag(writer, Nbt, NetworkOptions, canHaveName: true);
     }
 
-    public static List<NetworkBlockTypeDefinition> ReadList(ref BinaryReader reader)
+    public static List<NetworkBlockTypeDefinition> ReadList(BinaryReader reader)
     {
         int amount = reader.ReadVarInt();
         List<NetworkBlockTypeDefinition> properties = new(amount);
@@ -40,20 +40,20 @@ public sealed class NetworkBlockTypeDefinition : DataType
         for (int i = 0; i < amount; i++)
         {
             NetworkBlockTypeDefinition definition = new();
-            definition.Read(ref reader);
+            definition.Read(reader);
             properties.Add(definition);
         }
 
         return properties;
     }
 
-    public static void WriteList(ref BinaryWriter writer, IReadOnlyList<NetworkBlockTypeDefinition> value)
+    public static void WriteList(BinaryWriter writer, IReadOnlyList<NetworkBlockTypeDefinition> value)
     {
         writer.WriteVarInt(value.Count);
 
         for (int i = 0; i < value.Count; i++)
         {
-            value[i].Write(ref writer);
+            value[i].Write(writer);
         }
     }
 }

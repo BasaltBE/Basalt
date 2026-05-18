@@ -8,11 +8,11 @@ public sealed class NormalInventoryTransactionData : IInventoryTransactionData
 {
     public InventoryTransactionType Type => InventoryTransactionType.Normal;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
     }
 }

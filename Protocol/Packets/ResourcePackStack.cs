@@ -16,7 +16,7 @@ public sealed record ResourcePackStackPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ResourcePackStack;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         MustAccept = reader.ReadBool();
         int packsLength = checked((int)reader.ReadVarUInt());
@@ -24,7 +24,7 @@ public sealed record ResourcePackStackPacket : DataPacket
         for (int i = 0; i < packsLength; i++)
         {
             ResourcePackStackEntry pack = new();
-            pack.Read(ref reader);
+            pack.Read(reader);
             Packs.Add(pack);
         }
         BaseGameVersion = reader.ReadVarString();
@@ -33,26 +33,26 @@ public sealed record ResourcePackStackPacket : DataPacket
         for (int i = 0; i < experimentsLength; i++)
         {
             ExperimentData experiment = new();
-            experiment.Read(ref reader);
+            experiment.Read(reader);
             Experiments.Add(experiment);
         }
         ExperimentsPreviouslyToggled = reader.ReadBool();
         IncludeEditorPacks = reader.ReadBool();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteBool(MustAccept);
         writer.WriteVarUInt((uint)Packs.Count);
         for (int i = 0; i < Packs.Count; i++)
         {
-            Packs[i].Write(ref writer);
+            Packs[i].Write(writer);
         }
         writer.WriteVarString(BaseGameVersion);
         writer.WriteUInt32((uint)Experiments.Count, true);
         for (int i = 0; i < Experiments.Count; i++)
         {
-            Experiments[i].Write(ref writer);
+            Experiments[i].Write(writer);
         }
         writer.WriteBool(ExperimentsPreviouslyToggled);
         writer.WriteBool(IncludeEditorPacks);

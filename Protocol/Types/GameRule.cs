@@ -10,10 +10,10 @@ public sealed class GameRule : DataType
     public bool CanBeModifiedByPlayer { get; set; }
     public object Value { get; set; } = false;
 
-    public void Read(ref BinaryReader reader) => ReadLegacy(ref reader);
-    public void Write(ref BinaryWriter writer) => WriteLegacy(ref writer);
+    public void Read(BinaryReader reader) => ReadLegacy(reader);
+    public void Write(BinaryWriter writer) => WriteLegacy(writer);
 
-    public void ReadLegacy(ref BinaryReader reader)
+    public void ReadLegacy(BinaryReader reader)
     {
         Name = reader.ReadVarString();
         CanBeModifiedByPlayer = reader.ReadBool();
@@ -28,7 +28,7 @@ public sealed class GameRule : DataType
         };
     }
 
-    public void WriteLegacy(ref BinaryWriter writer)
+    public void WriteLegacy(BinaryWriter writer)
     {
         writer.WriteVarString(Name);
         writer.WriteBool(CanBeModifiedByPlayer);

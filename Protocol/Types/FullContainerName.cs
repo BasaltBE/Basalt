@@ -9,7 +9,7 @@ public sealed class FullContainerName : DataType
 
     public uint? DynamicContainerId { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ContainerId = reader.ReadUInt8();
 
@@ -21,10 +21,10 @@ public sealed class FullContainerName : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(ContainerId);
-        // DynamicContainerId.Write(ref writer, static (ref BinaryWriter w, uint value) => w.WriteUInt32(value, true));
+        // DynamicContainerId.Write(writer, static (BinaryWriter w, uint value) => w.WriteUInt32(value, true));
 
         if (DynamicContainerId.HasValue)
         {

@@ -205,6 +205,7 @@ public sealed class ItemPalette
                 }
                 else
                 {
+                    // TODO we could conver base64 in place somehow
                     byte[] data = Convert.FromBase64String(entry.Properties);
                     if (data.Length == 0)
                     {
@@ -212,14 +213,14 @@ public sealed class ItemPalette
                     }
                     else
                     {
-                        BinaryReader reader = new(data);
-                        TagType rootType = (TagType)reader.ReadInt8();
+                        BinaryStream reader = new(data);
+                        TagType rootType = (TagType)reader.GetReader().ReadInt8();
                         if (rootType != TagType.Compound)
                         {
                             throw new InvalidOperationException($"Unexpected item properties root tag type '{rootType}'.");
                         }
 
-                        properties = CompoundTag.Read(ref reader);
+                        properties = CompoundTag.Read(reader);
                     }
                 }
 
@@ -250,10 +251,10 @@ public sealed class ItemPalette
                 writer.WriteVarUInt((uint)items.Count);
                 for (int i = 0; i < items.Count; i++)
                 {
-                    items[i].Write(ref writer);
+                    items[i].Write(writer);
                 }
 
-                return writer.GetBuffer().ToArray();
+                return writer.GetProcessedBytes().ToArray();
             }
             catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException)
             {
@@ -270,9 +271,10 @@ public sealed class ItemPalette
             byte[] buffer = new byte[size];
             try
             {
-                BinaryWriter writer = new(buffer);
-                packet.Serialize(ref writer);
-                return writer.GetBuffer().ToArray();
+                int offset = 0;
+                BinaryWriter writer = new(buffer, ref offset);
+                packet.Serialize(writer);
+                return writer.GetProcessedBytes().ToArray();
             }
             catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException)
             {

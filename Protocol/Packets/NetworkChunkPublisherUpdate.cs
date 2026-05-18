@@ -14,7 +14,7 @@ public sealed record NetworkChunkPublisherUpdatePacket : DataPacket
 
     public override PacketId PacketId => PacketId.NetworkChunkPublisherUpdate;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         CoordinateX = reader.ReadZigZag();
         CoordinateY = unchecked((int)reader.ReadVarUInt());
@@ -36,7 +36,7 @@ public sealed record NetworkChunkPublisherUpdatePacket : DataPacket
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteZigZag(CoordinateX);
         writer.WriteVarUInt(unchecked((uint)CoordinateY));

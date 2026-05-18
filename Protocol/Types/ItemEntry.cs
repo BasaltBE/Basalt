@@ -15,21 +15,21 @@ public sealed class ItemEntry : DataType
     public int Version { get; set; }
     public CompoundTag Data { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Name = reader.ReadVarString();
         RuntimeId = reader.ReadInt16(true);
         ComponentBased = reader.ReadBool();
         Version = reader.ReadZigZag();
-        Data = CompoundTag.Read(ref reader, NetworkNbtOptions, canHaveName: true);
+        Data = CompoundTag.Read(reader, NetworkNbtOptions, canHaveName: true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Name);
         writer.WriteInt16(RuntimeId, true);
         writer.WriteBool(ComponentBased);
         writer.WriteZigZag(Version);
-        NBT.WriteTag(ref writer, Data, NetworkNbtOptions, canHaveName: true);
+        NBT.WriteTag(writer, Data, NetworkNbtOptions, canHaveName: true);
     }
 }

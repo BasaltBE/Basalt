@@ -11,7 +11,7 @@ public sealed record ItemRegistryPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ItemRegistry;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         int count = checked((int)reader.ReadVarUInt());
         Items = new List<ItemEntry>(count);
@@ -19,17 +19,17 @@ public sealed record ItemRegistryPacket : DataPacket
         for (int i = 0; i < count; i++)
         {
             ItemEntry entry = new();
-            entry.Read(ref reader);
+            entry.Read(reader);
             Items.Add(entry);
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Items.Count);
         for (int i = 0; i < Items.Count; i++)
         {
-            Items[i].Write(ref writer);
+            Items[i].Write(writer);
         }
     }
 }

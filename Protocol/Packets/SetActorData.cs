@@ -13,7 +13,7 @@ public sealed record SetActorDataPacket : DataPacket
 
     public override PacketId PacketId => PacketId.SetActorData;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         RuntimeId = unchecked((ulong)reader.ReadVarLong());
 
@@ -22,7 +22,7 @@ public sealed record SetActorDataPacket : DataPacket
         for (int i = 0; i < metadataCount; i++)
         {
             ActorMetadataItem item = new();
-            item.Read(ref reader);
+            item.Read(reader);
             Metadata.Add(item);
         }
 
@@ -43,13 +43,13 @@ public sealed record SetActorDataPacket : DataPacket
         Tick = unchecked((ulong)reader.ReadVarLong());
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarLong(unchecked((long)RuntimeId));
         writer.WriteVarInt(Metadata.Count);
         for (int i = 0; i < Metadata.Count; i++)
         {
-            Metadata[i].Write(ref writer);
+            Metadata[i].Write(writer);
         }
 
         writer.WriteVarInt(0);

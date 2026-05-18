@@ -10,17 +10,17 @@ public sealed class TransferStackRequestAction(byte type) : IStackRequestAction,
     public StackRequestSlotInfo Source { get; set; } = new();
     public StackRequestSlotInfo Destination { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Count = reader.ReadUInt8();
-        Source.Read(ref reader);
-        Destination.Read(ref reader);
+        Source.Read(reader);
+        Destination.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(Count);
-        Source.Write(ref writer);
-        Destination.Write(ref writer);
+        Source.Write(writer);
+        Destination.Write(writer);
     }
 }

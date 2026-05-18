@@ -8,7 +8,7 @@ public sealed class ItemInstance : DataType
     public NetworkItemStackDescriptor Stack { get; set; } = new();
     public int StackNetworkId { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Stack.NetworkId = reader.ReadZigZag();
         if (Stack.NetworkId == 0)
@@ -40,7 +40,7 @@ public sealed class ItemInstance : DataType
 
         int extrasEndOffset = reader.Offset + extrasLength;
         ItemInstanceUserData extraData = new();
-        extraData.Read(ref reader, Stack.NetworkId);
+        extraData.Read(reader, Stack.NetworkId);
         Stack.ExtraData = extraData;
         if (reader.Offset < extrasEndOffset)
         {
@@ -48,7 +48,7 @@ public sealed class ItemInstance : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(Stack.NetworkId);
         if (Stack.NetworkId == 0)
@@ -74,8 +74,8 @@ public sealed class ItemInstance : DataType
 
         byte[] payloadBuffer = new byte[8192];
         BinaryWriter payloadWriter = new(payloadBuffer);
-        Stack.ExtraData.Write(ref payloadWriter, Stack.NetworkId);
-        ReadOnlySpan<byte> payload = payloadWriter.GetBuffer();
+        Stack.ExtraData.Write(payloadWriter, Stack.NetworkId);
+        ReadOnlySpan<byte> payload = payloadWriter.GetProcessedBytes();
         writer.WriteVarUInt((uint)payload.Length);
         writer.WriteBytes(payload);
     }

@@ -55,7 +55,7 @@ public sealed class BlockStorage
         Blocks[GetIndex(bx, by, bz)] = paletteIndex;
     }
 
-    public static void Serialize(BlockStorage storage, ref BinaryWriter writer, bool nbt = false)
+    public static void Serialize(BlockStorage storage, BinaryWriter writer, bool nbt = false)
     {
         int bitsPerBlock = ResolveBitsPerValue(storage.Palette.Count, false);
 
@@ -97,7 +97,7 @@ public sealed class BlockStorage
             {
                 BlockPermutation permutation = BlockPermutation.Resolve(state);
                 CompoundTag tag = BlockPermutation.ToCompound(permutation);
-                NBT.WriteTag(ref writer, tag, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+                NBT.WriteTag(writer, tag, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
             }
             else
             {
@@ -137,7 +137,7 @@ public sealed class BlockStorage
                     throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
                 }
 
-                CompoundTag tag = CompoundTag.Read(ref reader);
+                CompoundTag tag = CompoundTag.Read(reader);
                 palette.Add(BlockPermutation.FromCompound(tag).NetworkId);
             }
             else

@@ -9,14 +9,14 @@ public struct BlockPos : DataType
     public int Y { get; set; }
     public int Z { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         X = reader.ReadZigZag();
         Y = reader.ReadZigZag();
         Z = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(X);
         writer.WriteZigZag(Y);

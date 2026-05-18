@@ -13,7 +13,7 @@ public sealed class StackResponseSlotInfo : DataType
     public string FilteredCustomName { get; set; } = string.Empty;
     public int DurabilityCorrection { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         byte requestedSlot = reader.ReadUInt8();
         byte slot = reader.ReadUInt8();
@@ -26,7 +26,7 @@ public sealed class StackResponseSlotInfo : DataType
         DurabilityCorrection = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(Slot);
         writer.WriteUInt8(Slot);

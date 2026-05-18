@@ -13,7 +13,7 @@ public sealed record InteractPacket : DataPacket
 
     public override PacketId PacketId => PacketId.Interact;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         ActionType = (InteractActionType)reader.ReadUInt8();
         if (reader.Remaining > 0)
@@ -28,7 +28,7 @@ public sealed record InteractPacket : DataPacket
         if (ActionType == InteractActionType.MouseOverEntity && reader.Remaining >= 12)
         {
             Vec3f value = new();
-            value.Read(ref reader);
+            value.Read(reader);
             Position = new OptionalValue<Vec3f> { HasValue = true, Value = value };
         }
         else
@@ -37,7 +37,7 @@ public sealed record InteractPacket : DataPacket
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteUInt8((byte)ActionType);
 
@@ -45,7 +45,7 @@ public sealed record InteractPacket : DataPacket
 
         if (ActionType == InteractActionType.MouseOverEntity && Position.HasValue && Position.Value is { } value)
         {
-            value.Write(ref writer);
+            value.Write(writer);
         }
     }
 }

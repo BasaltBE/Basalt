@@ -31,30 +31,30 @@ public class CompoundTag : BaseTag
         return json;
     }
 
-    public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
+    public override void Write(BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
         {
-            WriteName(ref writer, Name, options.VarInt);
+            WriteName(writer, Name, options.VarInt);
         }
 
         ReadWriteOptions payloadOptions = options with { Name = false, Type = false };
         foreach (KeyValuePair<string, BaseTag> entry in Values)
         {
             writer.WriteInt8((sbyte)entry.Value.Type);
-            WriteName(ref writer, entry.Key, options.VarInt);
-            NBT.WriteTag(ref writer, entry.Value, payloadOptions, false);
+            WriteName(writer, entry.Key, options.VarInt);
+            NBT.WriteTag(writer, entry.Value, payloadOptions, false);
         }
 
         writer.WriteInt8((sbyte)TagType.End);
     }
 
-    public static CompoundTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    public static CompoundTag Read(BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
     {
         ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
-        CompoundTag tag = new CompoundTag
+        CompoundTag tag = new()
         {
-            Name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null
+            Name = canHaveName && effective.Name ? ReadName(reader, effective.VarInt) : null
         };
 
         ReadWriteOptions payloadOptions = effective with { Name = false, Type = false };
@@ -66,8 +66,8 @@ public class CompoundTag : BaseTag
                 break;
             }
 
-            string key = ReadName(ref reader, effective.VarInt);
-            BaseTag child = NBT.ReadTag(ref reader, type, payloadOptions, false);
+            string key = ReadName(reader, effective.VarInt);
+            BaseTag child = NBT.ReadTag(reader, type, payloadOptions, false);
             child.Name = key;
             tag.Values[key] = child;
         }

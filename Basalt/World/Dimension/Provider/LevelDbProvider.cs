@@ -6,6 +6,7 @@ using System.Buffers;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Binary;
 
 namespace Basalt.World.Dimension.Provider;
 
@@ -55,22 +56,28 @@ public sealed class LevelDbProvider : WorldProvider
             }
         }
 
+        BinaryStream stream = new(terrain);
+
         ChunkColumn chunk;
         try
         {
-            chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true);
+            chunk = ChunkColumn.Deserialize(dimensionType, x, z, stream, nbt: true);
         }
         catch
         {
+            stream.Offset = 0;
             try
             {
-                chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true, biomeNbt: false);
+                stream.Offset = 0;
+                chunk = ChunkColumn.Deserialize(dimensionType, x, z, stream, nbt: true, biomeNbt: false);
             }
             catch (Exception exception)
             {
+                stream.Offset = 0;
                 try
                 {
-                    chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain);
+                    stream.Offset = 0;
+                    chunk = ChunkColumn.Deserialize(dimensionType, x, z, stream);
                 }
                 catch
                 {
@@ -91,7 +98,9 @@ public sealed class LevelDbProvider : WorldProvider
         if (entityList is not null && entityList.Length > 0)
         {
             byte[] entityStorageKey = new byte[9];
-            List<long> uniqueIds = DecodeEntityList(entityList);
+
+            using BinaryStream entityListStream = new(entityList);
+            List<long> uniqueIds = DecodeEntityList(entityListStream);
             for (int i = 0; i < uniqueIds.Count; i++)
             {
                 long uniqueId = uniqueIds[i];
@@ -102,7 +111,8 @@ public sealed class LevelDbProvider : WorldProvider
                     continue;
                 }
 
-                chunk.SetEntityStorage(uniqueId, DecodeEntityStorage(entityData), dirty: false);
+                using BinaryStream entityDataStream = new(entityData);
+                chunk.SetEntityStorage(uniqueId, DecodeEntityStorage(entityDataStream), dirty: false);
             }
         }
 
@@ -119,7 +129,13 @@ public sealed class LevelDbProvider : WorldProvider
         _database.Put(chunkKey, ChunkColumn.Serialize(chunk, nbt: true));
 
         List<KeyValuePair<long, Basalt.Protocol.Nbt.CompoundTag>> entities = chunk.GetAllEntityStorages();
-        _database.Put(entityListKey, EncodeEntityList(entities));
+
+        // How big it supposed to be? 16kb should be enought?
+        using BinaryStream temporary = BinaryStream.Rent(16384);
+        EncodeEntityList(temporary, entities);
+
+        // I hate it but we have to use ToArray()
+        _database.Put(entityListKey, temporary.GetProcessedBytes().ToArray());
 
         byte[] entityStorageKey = new byte[9];
         for (int i = 0; i < entities.Count; i++)
@@ -217,7 +233,7 @@ public sealed class LevelDbProvider : WorldProvider
             throw new InvalidOperationException($"Expected Compound tag, got {type}.");
         }
 
-        return CompoundTag.Read(ref reader, NbtOptions, canHaveName: true);
+        return CompoundTag.Read(reader, NbtOptions, canHaveName: true);
     }
 
     private static void EncodeEntityList(BinaryWriter writer, List<KeyValuePair<long, CompoundTag>> entities)
@@ -257,8 +273,8 @@ public sealed class LevelDbProvider : WorldProvider
 
             try
             {
-                NBT.WriteTag(ref writer, tag, NbtOptions, canHaveName: true);
-                byte[] encoded = writer.GetBuffer().ToArray();
+                NBT.WriteTag(writer, tag, NbtOptions, canHaveName: true);
+                byte[] encoded = writer.GetProcessedBytes().ToArray();
                 ArrayPool<byte>.Shared.Return(buffer);
                 return encoded;
             }

@@ -9,17 +9,17 @@ public sealed class CreativeItem : DataType
     public CreativeItemInstanceDescriptor ItemInstance { get; set; } = new();
     public int GroupIndex { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ItemIndex = reader.ReadVarInt();
-        ItemInstance.Read(ref reader);
+        ItemInstance.Read(reader);
         GroupIndex = reader.ReadVarInt();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarInt(ItemIndex);
-        ItemInstance.Write(ref writer);
+        ItemInstance.Write(writer);
         writer.WriteVarInt(GroupIndex);
     }
 }

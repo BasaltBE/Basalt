@@ -5,13 +5,13 @@ namespace Basalt.Protocol.Types;
 
 public interface DataType
 {
-    void Read(ref BinaryReader reader);
-    void Write(ref BinaryWriter writer);
+    void Read(BinaryReader reader);
+    void Write(BinaryWriter writer);
 }
 
 public interface DataType<TParameter> : DataType
 {
-    void Read(ref BinaryReader reader, TParameter parameter);
-    void Write(ref BinaryWriter writer, TParameter parameter);
+    void Read(BinaryReader reader, TParameter parameter);
+    void Write(BinaryWriter writer, TParameter parameter);
 }
 

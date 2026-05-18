@@ -14,19 +14,19 @@ public sealed record UpdateBlockPacket : DataPacket
 
     public override PacketId PacketId => PacketId.UpdateBlock;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         BlockPos position = Position;
-        position.Read(ref reader);
+        position.Read(reader);
         Position = position;
         NetworkBlockId = reader.ReadVarUInt();
         Flags = (UpdateBlockFlagsType)reader.ReadVarUInt();
         Layer = (UpdateBlockLayerType)reader.ReadVarUInt();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
-        Position.Write(ref writer);
+        Position.Write(writer);
         writer.WriteVarUInt(NetworkBlockId);
         writer.WriteVarUInt((uint)Flags);
         writer.WriteVarUInt((uint)Layer);

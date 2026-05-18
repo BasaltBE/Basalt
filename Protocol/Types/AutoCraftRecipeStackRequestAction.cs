@@ -11,7 +11,7 @@ public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction, Dat
     public byte TimesCrafted { get; set; }
     public List<ItemDescriptorCount> Ingredients { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
@@ -21,12 +21,12 @@ public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction, Dat
         for (int i = 0; i < ingredientCount; i++)
         {
             ItemDescriptorCount ingredient = new();
-            ingredient.Read(ref reader);
+            ingredient.Read(reader);
             Ingredients.Add(ingredient);
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteUInt8(NumberOfCrafts);
@@ -34,7 +34,7 @@ public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction, Dat
         writer.WriteVarUInt((uint)Ingredients.Count);
         for (int i = 0; i < Ingredients.Count; i++)
         {
-            Ingredients[i].Write(ref writer);
+            Ingredients[i].Write(writer);
         }
     }
 }

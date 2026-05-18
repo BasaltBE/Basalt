@@ -10,9 +10,9 @@ public abstract class BaseTag
     public string? Name { get; set; }
 
     public abstract object? ToJsonValue();
-    public abstract void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true);
+    public abstract void Write(BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true);
 
-    protected static string ReadString(ref BinaryReader reader, bool varInt)
+    protected static string ReadString(BinaryReader reader, bool varInt)
     {
         if (varInt)
         {
@@ -53,7 +53,7 @@ public abstract class BaseTag
         return Encoding.UTF8.GetString(reader.ReadBytes(length16));
     }
 
-    protected static void WriteString(ref BinaryWriter writer, string value, bool varInt)
+    protected static void WriteString(BinaryWriter writer, string value, bool varInt)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(value);
         if (varInt)
@@ -73,11 +73,11 @@ public abstract class BaseTag
         writer.WriteBytes(bytes);
     }
 
-    protected static string ReadName(ref BinaryReader reader, bool varInt) => ReadString(ref reader, varInt);
+    protected static string ReadName(BinaryReader reader, bool varInt) => ReadString(reader, varInt);
 
-    protected static void WriteName(ref BinaryWriter writer, string? name, bool varInt) => WriteString(ref writer, name ?? string.Empty, varInt);
+    protected static void WriteName(BinaryWriter writer, string? name, bool varInt) => WriteString(writer, name ?? string.Empty, varInt);
 
-    protected static int ReadLength(ref BinaryReader reader, bool varInt)
+    protected static int ReadLength(BinaryReader reader, bool varInt)
     {
         int length = varInt ? reader.ReadZigZag() : reader.ReadInt32(true);
         if (length < 0)
@@ -88,12 +88,9 @@ public abstract class BaseTag
         return length;
     }
 
-    protected static void WriteLength(ref BinaryWriter writer, int length, bool varInt)
+    protected static void WriteLength(BinaryWriter writer, int length, bool varInt)
     {
-        if (length < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (varInt)
         {

@@ -7,7 +7,7 @@ namespace Basalt.Protocol.Packets;
 
 public sealed record LoginPacket : DataPacket
 {
-    public LoginPacket() {}
+    public LoginPacket() { }
 
     public LoginPacket(int protocol, string identity, string client)
     {
@@ -22,7 +22,7 @@ public sealed record LoginPacket : DataPacket
 
     public override PacketId PacketId => PacketId.Login;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Protocol = reader.ReadInt32(false);
 
@@ -42,7 +42,7 @@ public sealed record LoginPacket : DataPacket
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteInt32(Protocol, false);
 

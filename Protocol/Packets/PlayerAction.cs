@@ -15,25 +15,25 @@ public sealed record PlayerActionPacket : DataPacket
 
     public override PacketId PacketId => PacketId.PlayerAction;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         EntityRuntimeId = reader.ReadVarULong();
         ActionType = reader.ReadVarInt();
         BlockPos blockPosition = BlockPosition;
-        blockPosition.Read(ref reader);
+        blockPosition.Read(reader);
         BlockPosition = blockPosition;
         BlockPos resultPosition = ResultPosition;
-        resultPosition.Read(ref reader);
+        resultPosition.Read(reader);
         ResultPosition = resultPosition;
         BlockFace = reader.ReadVarInt();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteVarInt(ActionType);
-        BlockPosition.Write(ref writer);
-        ResultPosition.Write(ref writer);
+        BlockPosition.Write(writer);
+        ResultPosition.Write(writer);
         writer.WriteVarInt(BlockFace);
     }
 }

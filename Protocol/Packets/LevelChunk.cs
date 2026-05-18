@@ -20,7 +20,7 @@ public sealed record LevelChunkPacket : DataPacket
 
     public override PacketId PacketId => PacketId.LevelChunk;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         ChunkX = reader.ReadZigZag();
         ChunkZ = reader.ReadZigZag();
@@ -51,7 +51,7 @@ public sealed record LevelChunkPacket : DataPacket
         RawPayload = reader.ReadBytes(payloadLength).ToArray();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteZigZag(ChunkX);
         writer.WriteZigZag(ChunkZ);

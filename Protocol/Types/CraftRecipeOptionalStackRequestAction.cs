@@ -9,13 +9,13 @@ public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction,
     public uint RecipeNetworkId { get; set; }
     public int FilterStringIndex { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();
         FilterStringIndex = reader.ReadInt32(true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteInt32(FilterStringIndex, true);

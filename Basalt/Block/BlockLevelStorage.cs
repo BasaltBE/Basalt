@@ -268,7 +268,7 @@ public sealed class BlockLevelStorage : CompoundTag
     {
         BinaryWriter writer = new(destination);
         NBT.WriteTag(ref writer, storage, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
-        return writer.GetBuffer();
+        return writer.GetProcessedBytes();
     }
 
     private ListTag EnsureDynamicPropertiesList()

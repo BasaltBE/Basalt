@@ -30,7 +30,7 @@ public sealed record NetworkSettingsPacket : DataPacket
 
     public override PacketId PacketId => PacketId.NetworkSettings;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         CompressionThreshold = reader.ReadUInt16(true);
         CompressionMethod = (CompressionMethod)reader.ReadUInt16(true);
@@ -39,7 +39,7 @@ public sealed record NetworkSettingsPacket : DataPacket
         ClientThrottleScalar = reader.ReadF32(true);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteUInt16(CompressionThreshold, true);
         writer.WriteUInt16((ushort)CompressionMethod, true);

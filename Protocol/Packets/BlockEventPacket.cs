@@ -13,18 +13,18 @@ public sealed record BlockEventPacket : DataPacket
 
     public override PacketId PacketId => PacketId.BlockEvent;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         BlockPos position = Position;
-        position.Read(ref reader);
+        position.Read(reader);
         Position = position;
         Type = (BlockEventType)reader.ReadVarInt();
         Data = reader.ReadVarInt();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
-        Position.Write(ref writer);
+        Position.Write(writer);
         writer.WriteZigZag((int)Type);
         writer.WriteZigZag(Data);
     }

@@ -14,7 +14,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override PacketId PacketId => PacketId.InventoryContent;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         WindowId = reader.ReadVarInt();
 
@@ -23,24 +23,24 @@ public sealed record InventoryContentPacket : DataPacket
         for (int i = 0; i < count; i++)
         {
             NetworkItemStackDescriptor item = new();
-            item.Read(ref reader);
+            item.Read(reader);
             Content.Add(item);
         }
 
-        Container.Read(ref reader);
-        StorageItem.Read(ref reader);
+        Container.Read(reader);
+        StorageItem.Read(reader);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt(WindowId);
         writer.WriteVarUInt((uint)Content.Count);
         for (int i = 0; i < Content.Count; i++)
         {
-            Content[i].Write(ref writer);
+            Content[i].Write(writer);
         }
 
-        Container.Write(ref writer);
-        StorageItem.Write(ref writer);
+        Container.Write(writer);
+        StorageItem.Write(writer);
     }
 }

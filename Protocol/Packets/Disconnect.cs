@@ -13,7 +13,7 @@ public sealed record DisconnectPacket : DataPacket
 
     public override PacketId PacketId => PacketId.Disconnect;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Reason = (DisconnectReason)reader.ReadVarInt();
         HideDisconnectionScreen = reader.ReadBool();
@@ -30,7 +30,7 @@ public sealed record DisconnectPacket : DataPacket
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt((int)Reason);
         writer.WriteBool(HideDisconnectionScreen);

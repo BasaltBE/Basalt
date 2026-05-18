@@ -12,14 +12,14 @@ public sealed record CreativeContentPacket : DataPacket
 
     public override PacketId PacketId => PacketId.CreativeContent;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         int groupCount = checked((int)reader.ReadVarUInt());
         Groups = new List<CreativeGroup>(groupCount);
         for (int i = 0; i < groupCount; i++)
         {
             CreativeGroup group = new();
-            group.Read(ref reader);
+            group.Read(reader);
             Groups.Add(group);
         }
 
@@ -28,23 +28,23 @@ public sealed record CreativeContentPacket : DataPacket
         for (int i = 0; i < itemCount; i++)
         {
             CreativeItem item = new();
-            item.Read(ref reader);
+            item.Read(reader);
             Items.Add(item);
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Groups.Count);
         for (int i = 0; i < Groups.Count; i++)
         {
-            Groups[i].Write(ref writer);
+            Groups[i].Write(writer);
         }
 
         writer.WriteVarUInt((uint)Items.Count);
         for (int i = 0; i < Items.Count; i++)
         {
-            Items[i].Write(ref writer);
+            Items[i].Write(writer);
         }
     }
 }

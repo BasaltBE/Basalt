@@ -20,7 +20,8 @@ namespace Basalt.Binary
         }
 
         public void Advance(int count) => Seek(Offset + count);
-        public ReadOnlySpan<byte> GetBuffer() => Buffer[..Offset];
+        public readonly Span<byte> GetProcessedBytes() => Buffer[..Offset];
+        public readonly Span<byte> GetRemainingBytes() => Buffer[Offset..];
         public readonly Range GetProcessedRange() => new(0, Offset);
 
         public void WriteBytes(ReadOnlySpan<byte> value)

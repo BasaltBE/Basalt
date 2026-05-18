@@ -12,7 +12,7 @@ public sealed class InventoryAction : DataType
     public ItemInstance OldItem { get; set; } = new();
     public ItemInstance NewItem { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         SourceType = reader.ReadVarUInt();
         if (SourceType == 0 || SourceType == 99999)
@@ -25,11 +25,11 @@ public sealed class InventoryAction : DataType
         }
 
         InventorySlot = reader.ReadVarUInt();
-        OldItem.Read(ref reader);
-        NewItem.Read(ref reader);
+        OldItem.Read(reader);
+        NewItem.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(SourceType);
         if (SourceType == 0 || SourceType == 99999)
@@ -42,7 +42,7 @@ public sealed class InventoryAction : DataType
         }
 
         writer.WriteVarUInt(InventorySlot);
-        OldItem.Write(ref writer);
-        NewItem.Write(ref writer);
+        OldItem.Write(writer);
+        NewItem.Write(writer);
     }
 }

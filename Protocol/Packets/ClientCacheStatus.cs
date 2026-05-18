@@ -10,12 +10,12 @@ public sealed record ClientCacheStatusPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ClientCacheStatus;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Enabled = reader.ReadBool();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteBool(Enabled);
     }

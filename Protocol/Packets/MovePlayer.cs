@@ -21,10 +21,10 @@ public sealed record MovePlayerPacket : DataPacket
 
     public override PacketId PacketId => PacketId.MovePlayer;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         RuntimeId = reader.ReadVarULong();
-        Position.Read(ref reader);
+        Position.Read(reader);
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
         HeadYaw = reader.ReadF32(true);
@@ -40,10 +40,10 @@ public sealed record MovePlayerPacket : DataPacket
         Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarULong(RuntimeId);
-        Position.Write(ref writer);
+        Position.Write(writer);
         writer.WriteF32(Pitch, true);
         writer.WriteF32(Yaw, true);
         writer.WriteF32(HeadYaw, true);

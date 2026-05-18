@@ -93,12 +93,12 @@ public sealed record StartGamePacket : DataPacket
 
     public override PacketId PacketId => PacketId.StartGame;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         EntityUniqueId = reader.ReadZigZong();
         EntityRuntimeId = reader.ReadVarULong();
         PlayerGameMode = reader.ReadZigZag();
-        PlayerPosition.Read(ref reader);
+        PlayerPosition.Read(reader);
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
         WorldSeed = reader.ReadInt64(true);
@@ -109,7 +109,7 @@ public sealed record StartGamePacket : DataPacket
         WorldGameMode = reader.ReadZigZag();
         Hardcore = reader.ReadBool();
         Difficulty = reader.ReadZigZag();
-        WorldSpawn.Read(ref reader);
+        WorldSpawn.Read(reader);
         AchievementsDisabled = reader.ReadBool();
         EditorWorldType = (EditorWorldType)reader.ReadZigZag();
         CreatedInEditor = reader.ReadBool();
@@ -133,7 +133,7 @@ public sealed record StartGamePacket : DataPacket
         for (int i = 0; i < gameRuleCount; i++)
         {
             GameRule gameRule = new();
-            gameRule.ReadLegacy(ref reader);
+            gameRule.ReadLegacy(reader);
             GameRules.Add(gameRule);
         }
 
@@ -142,7 +142,7 @@ public sealed record StartGamePacket : DataPacket
         for (int i = 0; i < experimentCount; i++)
         {
             ExperimentData experiment = new();
-            experiment.Read(ref reader);
+            experiment.Read(reader);
             Experiments.Add(experiment);
         }
 
@@ -165,15 +165,15 @@ public sealed record StartGamePacket : DataPacket
         LimitedWorldWidth = reader.ReadInt32(true);
         LimitedWorldDepth = reader.ReadInt32(true);
         NewNether = reader.ReadBool();
-        EducationSharedResourceUri.Read(ref reader);
-        ForceExperimentalGameplay.Read(ref reader);
+        EducationSharedResourceUri.Read(reader);
+        ForceExperimentalGameplay.Read(reader);
         ChatRestrictionLevel = (ChatRestrictionLevel)reader.ReadUInt8();
         DisablePlayerInteractions = reader.ReadBool();
         LevelId = reader.ReadVarString();
         WorldName = reader.ReadVarString();
         TemplateContentIdentity = reader.ReadVarString();
         Trial = reader.ReadBool();
-        PlayerMovementSettings.Read(ref reader);
+        PlayerMovementSettings.Read(reader);
         Time = reader.ReadInt64(true);
         EnchantmentSeed = reader.ReadZigZag();
 
@@ -182,20 +182,20 @@ public sealed record StartGamePacket : DataPacket
         for (int i = 0; i < blocksCount; i++)
         {
             BlockEntry block = new();
-            block.Read(ref reader);
+            block.Read(reader);
             Blocks.Add(block);
         }
 
         MultiPlayerCorrelationId = reader.ReadVarString();
         ServerAuthoritativeInventory = reader.ReadBool();
         GameVersion = reader.ReadVarString();
-        PropertyData = CompoundTag.Read(ref reader, NetworkNbtOptions, canHaveName: true);
+        PropertyData = CompoundTag.Read(reader, NetworkNbtOptions, canHaveName: true);
         ServerBlockStateChecksum = reader.ReadUInt64(true);
-        WorldTemplateId = UUID.Read(ref reader);
+        WorldTemplateId = UUID.Read(reader);
         ClientSideGeneration = reader.ReadBool();
         UseBlockNetworkIdHashes = reader.ReadBool();
         ServerAuthoritativeSound = reader.ReadBool();
-        ServerJoinInformation.Read(ref reader, static (ref BinaryReader r) =>
+        ServerJoinInformation.Read(reader, static (BinaryReader r) =>
         {
             ServerJoinInformation value = new();
             value.Read(ref r);
@@ -207,12 +207,12 @@ public sealed record StartGamePacket : DataPacket
         OwnerId = reader.ReadVarString();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteZigZong(EntityUniqueId);
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteZigZag(PlayerGameMode);
-        PlayerPosition.Write(ref writer);
+        PlayerPosition.Write(writer);
         writer.WriteF32(Pitch, true);
         writer.WriteF32(Yaw, true);
         writer.WriteInt64(WorldSeed, true);
@@ -223,7 +223,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteZigZag(WorldGameMode);
         writer.WriteBool(Hardcore);
         writer.WriteZigZag(Difficulty);
-        WorldSpawn.Write(ref writer);
+        WorldSpawn.Write(writer);
         writer.WriteBool(AchievementsDisabled);
         writer.WriteZigZag((int)EditorWorldType);
         writer.WriteBool(CreatedInEditor);
@@ -245,13 +245,13 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteVarUInt((uint)GameRules.Count);
         for (int i = 0; i < GameRules.Count; i++)
         {
-            GameRules[i].WriteLegacy(ref writer);
+            GameRules[i].WriteLegacy(writer);
         }
 
         writer.WriteUInt32((uint)Experiments.Count, true);
         for (int i = 0; i < Experiments.Count; i++)
         {
-            Experiments[i].Write(ref writer);
+            Experiments[i].Write(writer);
         }
 
         writer.WriteBool(ExperimentsPreviouslyToggled);
@@ -273,34 +273,34 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteInt32(LimitedWorldWidth, true);
         writer.WriteInt32(LimitedWorldDepth, true);
         writer.WriteBool(NewNether);
-        EducationSharedResourceUri.Write(ref writer);
-        ForceExperimentalGameplay.Write(ref writer);
+        EducationSharedResourceUri.Write(writer);
+        ForceExperimentalGameplay.Write(writer);
         writer.WriteUInt8((byte)ChatRestrictionLevel);
         writer.WriteBool(DisablePlayerInteractions);
         writer.WriteVarString(LevelId);
         writer.WriteVarString(WorldName);
         writer.WriteVarString(TemplateContentIdentity);
         writer.WriteBool(Trial);
-        PlayerMovementSettings.Write(ref writer);
+        PlayerMovementSettings.Write(writer);
         writer.WriteInt64(Time, true);
         writer.WriteZigZag(EnchantmentSeed);
 
         writer.WriteVarUInt((uint)Blocks.Count);
         for (int i = 0; i < Blocks.Count; i++)
         {
-            Blocks[i].Write(ref writer);
+            Blocks[i].Write(writer);
         }
 
         writer.WriteVarString(MultiPlayerCorrelationId);
         writer.WriteBool(ServerAuthoritativeInventory);
         writer.WriteVarString(GameVersion);
-        NBT.WriteTag(ref writer, PropertyData, NetworkNbtOptions, canHaveName: true);
+        NBT.WriteTag(writer, PropertyData, NetworkNbtOptions, canHaveName: true);
         writer.WriteUInt64(ServerBlockStateChecksum, true);
-        UUID.Write(ref writer, WorldTemplateId);
+        UUID.Write(writer, WorldTemplateId);
         writer.WriteBool(ClientSideGeneration);
         writer.WriteBool(UseBlockNetworkIdHashes);
         writer.WriteBool(ServerAuthoritativeSound);
-        ServerJoinInformation.Write(ref writer, static (ref BinaryWriter w, ServerJoinInformation value) => value.Write(ref w));
+        ServerJoinInformation.Write(writer, static (BinaryWriter w, ServerJoinInformation value) => value.Write(ref w));
         writer.WriteVarString(ServerId);
         writer.WriteVarString(ScenarioId);
         writer.WriteVarString(WorldId);

@@ -14,13 +14,13 @@ public sealed record RequestChunkRadiusPacket : DataPacket
 
     public override PacketId PacketId => PacketId.RequestChunkRadius;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         ChunkRadius = reader.ReadVarInt();
         MaxChunkRadius = reader.ReadUInt8();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt(ChunkRadius);
         writer.WriteUInt8(MaxChunkRadius);

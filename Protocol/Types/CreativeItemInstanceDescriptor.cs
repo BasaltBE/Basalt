@@ -12,7 +12,7 @@ public sealed class CreativeItemInstanceDescriptor : DataType
     public int NetworkBlockId { get; set; }
     public ItemInstanceUserData? ExtraData { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         NetworkId = reader.ReadZigZag();
         if (NetworkId == 0)
@@ -37,7 +37,7 @@ public sealed class CreativeItemInstanceDescriptor : DataType
 
         int extrasEndOffset = reader.Offset + extrasLength;
         ItemInstanceUserData extraData = new();
-        extraData.Read(ref reader, NetworkId);
+        extraData.Read(reader, NetworkId);
         ExtraData = extraData;
         if (reader.Offset < extrasEndOffset)
         {
@@ -45,7 +45,7 @@ public sealed class CreativeItemInstanceDescriptor : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         if (RawData is not null)
         {
@@ -72,7 +72,7 @@ public sealed class CreativeItemInstanceDescriptor : DataType
         byte[] payloadBuffer = new byte[8192];
         BinaryWriter payloadWriter = new(payloadBuffer);
         ExtraData.Write(ref payloadWriter, NetworkId);
-        ReadOnlySpan<byte> payload = payloadWriter.GetBuffer();
+        ReadOnlySpan<byte> payload = payloadWriter.GetProcessedBytes();
         writer.WriteVarInt(payload.Length);
         writer.WriteBytes(payload);
     }

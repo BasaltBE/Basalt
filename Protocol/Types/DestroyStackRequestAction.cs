@@ -9,15 +9,15 @@ public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, 
     public byte Count { get; set; }
     public StackRequestSlotInfo Source { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Count = reader.ReadUInt8();
-        Source.Read(ref reader);
+        Source.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(Count);
-        Source.Write(ref writer);
+        Source.Write(writer);
     }
 }

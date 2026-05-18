@@ -8,13 +8,13 @@ public sealed class LegacySetItemSlot : DataType
     public byte ContainerId { get; set; }
     public byte[] Slots { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ContainerId = reader.ReadUInt8();
         Slots = reader.ReadBytes(checked((int)reader.ReadVarUInt())).ToArray();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(ContainerId);
         writer.WriteVarUInt((uint)Slots.Length);

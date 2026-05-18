@@ -14,19 +14,19 @@ public sealed record ContainerOpenPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ContainerOpen;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         WindowId = reader.ReadUInt8();
         ContainerType = reader.ReadUInt8();
-        ContainerPosition.Read(ref reader);
+        ContainerPosition.Read(reader);
         ContainerEntityUniqueId = reader.ReadZigZong();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteUInt8(WindowId);
         writer.WriteUInt8(ContainerType);
-        ContainerPosition.Write(ref writer);
+        ContainerPosition.Write(writer);
         writer.WriteZigZong(ContainerEntityUniqueId);
     }
 }

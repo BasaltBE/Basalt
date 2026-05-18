@@ -9,13 +9,13 @@ public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataT
     public uint CreativeItemNetworkId { get; set; }
     public byte NumberOfCrafts { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         CreativeItemNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(CreativeItemNetworkId);
         writer.WriteUInt8(NumberOfCrafts);

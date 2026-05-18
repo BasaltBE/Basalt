@@ -15,21 +15,21 @@ public sealed record InventorySlotPacket : DataPacket
 
     public override PacketId PacketId => PacketId.InventorySlot;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         WindowId = reader.ReadVarInt();
         Slot = reader.ReadVarInt();
-        Container.Read(ref reader);
-        StorageItem.Read(ref reader);
-        NewItem.Read(ref reader);
+        Container.Read(reader);
+        StorageItem.Read(reader);
+        NewItem.Read(reader);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt(WindowId);
         writer.WriteVarInt(Slot);
-        Container.Write(ref writer);
-        StorageItem.Write(ref writer);
-        NewItem.Write(ref writer);
+        Container.Write(writer);
+        StorageItem.Write(writer);
+        NewItem.Write(writer);
     }
 }

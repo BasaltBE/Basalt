@@ -12,7 +12,7 @@ public sealed class ItemDescriptorCount : DataType
     public byte Version { get; set; }
     public int Count { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         DescriptorType = reader.ReadUInt8();
         switch (DescriptorType)
@@ -41,7 +41,7 @@ public sealed class ItemDescriptorCount : DataType
         Count = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(DescriptorType);
         switch (DescriptorType)

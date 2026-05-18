@@ -19,12 +19,12 @@ public sealed record RequestNetworkSettingsPacket : DataPacket
     public int ProtocolVersion { get; set; }
     public override PacketId PacketId => PacketId.RequestNetworkSettings;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         ProtocolVersion = reader.ReadInt32(false);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteInt32(ProtocolVersion, false);
     }

@@ -14,17 +14,17 @@ public sealed record UpdateAttributesPacket : DataPacket
 
     public override PacketId PacketId => PacketId.UpdateAttributes;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         RuntimeId = unchecked((ulong)reader.ReadVarLong());
-        Attributes = ProtoAttribute.ReadList(ref reader);
+        Attributes = ProtoAttribute.ReadList(reader);
         Tick = unchecked((ulong)reader.ReadVarLong());
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarLong(unchecked((long)RuntimeId));
-        ProtoAttribute.WriteList(ref writer, Attributes);
+        ProtoAttribute.WriteList(writer, Attributes);
         writer.WriteVarLong(unchecked((long)Tick));
     }
 }

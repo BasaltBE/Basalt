@@ -14,17 +14,17 @@ public sealed record BlockActorDataPacket : DataPacket
 
     public override PacketId PacketId => PacketId.BlockActorData;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         BlockPos position = Position;
-        position.Read(ref reader);
+        position.Read(reader);
         Position = position;
-        Data = NBT.ReadRootCompoundTag(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        Data = NBT.ReadRootCompoundTag(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
-        Position.Write(ref writer);
-        NBT.WriteTag(ref writer, Data, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        Position.Write(writer);
+        NBT.WriteTag(writer, Data, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
     }
 }

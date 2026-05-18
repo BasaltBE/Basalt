@@ -16,17 +16,17 @@ public sealed class ItemInstanceUserData : DataType<int?>
     public List<string> CanDestroy { get; set; } = [];
     public long? Ticking { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Read(ref reader, null);
+        Read(reader, null);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        Write(ref writer, null);
+        Write(writer, null);
     }
 
-    public void Read(ref BinaryReader reader, int? networkId)
+    public void Read(BinaryReader reader, int? networkId)
     {
         short marker = reader.ReadInt16(true);
         if (marker == NbtMarker)
@@ -37,11 +37,11 @@ public sealed class ItemInstanceUserData : DataType<int?>
                 throw new InvalidOperationException($"Unsupported item NBT formatting version: {version}");
             }
 
-            Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Nbt = NBT.Read<CompoundTag>(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
         else if (marker > 0)
         {
-            Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Nbt = NBT.Read<CompoundTag>(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
         else
         {
@@ -79,7 +79,7 @@ public sealed class ItemInstanceUserData : DataType<int?>
         }
     }
 
-    public void Write(ref BinaryWriter writer, int? networkId)
+    public void Write(BinaryWriter writer, int? networkId)
     {
         if (Nbt is null)
         {
@@ -89,7 +89,7 @@ public sealed class ItemInstanceUserData : DataType<int?>
         {
             writer.WriteInt16(NbtMarker, true);
             writer.WriteUInt8(NbtVersion);
-            NBT.WriteTag(ref writer, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            NBT.WriteTag(writer, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
 
         writer.WriteUInt32(checked((uint)CanPlaceOn.Count), true);

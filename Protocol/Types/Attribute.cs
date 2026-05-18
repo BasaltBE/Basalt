@@ -29,7 +29,7 @@ public sealed class Attribute : DataType
     {
     }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Min = reader.ReadF32(true);
         Max = reader.ReadF32(true);
@@ -50,7 +50,7 @@ public sealed class Attribute : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteF32(Min, true);
         writer.WriteF32(Max, true);
@@ -62,26 +62,26 @@ public sealed class Attribute : DataType
         writer.WriteVarInt(0);
     }
 
-    public static List<Attribute> ReadList(ref BinaryReader reader)
+    public static List<Attribute> ReadList(BinaryReader reader)
     {
         int count = reader.ReadVarInt();
         List<Attribute> attributes = new(count);
         for (int i = 0; i < count; i++)
         {
             Attribute attribute = new();
-            attribute.Read(ref reader);
+            attribute.Read(reader);
             attributes.Add(attribute);
         }
 
         return attributes;
     }
 
-    public static void WriteList(ref BinaryWriter writer, IReadOnlyList<Attribute> attributes)
+    public static void WriteList(BinaryWriter writer, IReadOnlyList<Attribute> attributes)
     {
         writer.WriteVarInt(attributes.Count);
         for (int i = 0; i < attributes.Count; i++)
         {
-            attributes[i].Write(ref writer);
+            attributes[i].Write(writer);
         }
     }
 }

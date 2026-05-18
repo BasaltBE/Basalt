@@ -13,19 +13,19 @@ public sealed record LevelEventPacket : DataPacket
 
     public override PacketId PacketId => PacketId.LevelEvent;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Event = (LevelEvent)reader.ReadZigZag();
         Vec3f position = Position;
-        position.Read(ref reader);
+        position.Read(reader);
         Position = position;
         Data = reader.ReadZigZag();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteZigZag((int)Event);
-        Position.Write(ref writer);
+        Position.Write(writer);
         writer.WriteZigZag(Data);
     }
 }

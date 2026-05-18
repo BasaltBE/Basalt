@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
+using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Network.Handlers;
 using Basalt.Protocol.Enums;
@@ -98,7 +99,8 @@ public sealed class NetworkHandler
                 frame = packetData;
             }
 
-            BinaryReader frameReader = new(frame);
+            int offset = 0;
+            BinaryReader frameReader = new(frame, ref offset);
 
             while (frameReader.Remaining > 0)
             {
@@ -126,7 +128,8 @@ public sealed class NetworkHandler
 
                 try
                 {
-                    BinaryReader packetReader = new(packetBuffer);
+                    int offset2 = 0;
+                    BinaryReader packetReader = new(packetBuffer, ref offset2);
                     uint header = packetReader.ReadVarUInt();
                     PacketId packetId = (PacketId)(header & 0x3FF);
 
@@ -220,54 +223,40 @@ public sealed class NetworkHandler
         ReadOnlySpan<byte> packetPayload,
         CompressionMethod? compression = null)
     {
-        byte[] packetBuffer = ArrayPool<byte>.Shared.Rent(packetPayload.Length + 16);
-        byte[] frameBuffer = ArrayPool<byte>.Shared.Rent(packetPayload.Length + 32);
+        using BinaryStream packetBufferStream = BinaryStream.Rent(packetPayload.Length + 16);
+        using BinaryStream frameBufferStream = BinaryStream.Rent(packetPayload.Length + 32);
 
-        try
-        {
-            BinaryWriter packetWriter = new(packetBuffer);
-            packetWriter.WriteVarInt((int)packetId);
-            packetWriter.WriteBytes(packetPayload);
+        BinaryWriter packetWriter = packetBufferStream;
+        packetWriter.WriteVarInt((int)packetId);
+        packetWriter.WriteBytes(packetPayload);
 
-            ReadOnlySpan<byte> packetData = packetWriter.GetBuffer();
+        ReadOnlySpan<byte> packetData = packetWriter.GetProcessedBytes();
 
-            BinaryWriter frameWriter = new(frameBuffer);
-            frameWriter.WriteVarInt(packetData.Length);
-            frameWriter.WriteBytes(packetData);
+        BinaryWriter frameWriter = frameBufferStream;
+        frameWriter.WriteVarInt(packetData.Length);
+        frameWriter.WriteBytes(packetData);
 
-            SendFrame(connection, frameWriter.GetBuffer(), compression);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(packetBuffer);
-            ArrayPool<byte>.Shared.Return(frameBuffer);
-        }
+        SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
     }
 
     public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null)
     {
-        byte[] frameBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketBatchSize);
-        byte[] packetBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
+        using BinaryStream packetBufferStream = BinaryStream.Rent(MaxPacketSize);
+        using BinaryStream frameBufferStream = BinaryStream.Rent(MaxPacketBatchSize);
+        BinaryWriter frameWriter = frameBufferStream;
 
-        try
+        foreach (DataPacket packet in packets)
         {
-            BinaryWriter frameWriter = new(frameBuffer);
+            packetBufferStream.Offset = 0;
+            packet.Serialize(packetBufferStream);
 
-            foreach (DataPacket packet in packets)
-            {
-                ReadOnlySpan<byte> packetData = packet.Serialize(packetBuffer);
+            ReadOnlySpan<byte> packetData = packetBufferStream.GetProcessedBytes().Span;
 
-                frameWriter.WriteVarInt(packetData.Length);
-                frameWriter.WriteBytes(packetData);
-            }
-
-            SendFrame(connection, frameWriter.GetBuffer(), compression);
+            frameWriter.WriteVarInt(packetData.Length);
+            frameWriter.WriteBytes(packetData);
         }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(frameBuffer);
-            ArrayPool<byte>.Shared.Return(packetBuffer);
-        }
+
+        SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
     }
 
     private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression)

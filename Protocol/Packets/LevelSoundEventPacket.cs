@@ -18,29 +18,29 @@ public sealed record LevelSoundEventPacket : DataPacket
 
     public override PacketId PacketId => PacketId.LevelSoundEvent;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Event = (LevelSoundEvent)reader.ReadVarUInt();
         Vec3f position = Position;
-        position.Read(ref reader);
+        position.Read(reader);
         Position = position;
         Data = reader.ReadVarInt(); // ZigZag
         ActorIdentifier = reader.ReadVarString();
         IsBabyMob = reader.ReadBool();
         IsGlobal = reader.ReadBool();
         UniqueActorId = reader.ReadInt64(true);
-        FireAtPosition.Read(ref reader);
+        FireAtPosition.Read(reader);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Event);
-        Position.Write(ref writer);
+        Position.Write(writer);
         writer.WriteZigZag(Data);
         writer.WriteVarString(ActorIdentifier);
         writer.WriteBool(IsBabyMob);
         writer.WriteBool(IsGlobal);
         writer.WriteInt64(UniqueActorId, true);
-        FireAtPosition.Write(ref writer);
+        FireAtPosition.Write(writer);
     }
 }

@@ -8,20 +8,20 @@ public sealed class EndTag : BaseTag
     public override TagType Type => TagType.End;
     public override object? ToJsonValue() => null;
 
-    public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
+    public override void Write(BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
         {
-            WriteName(ref writer, Name, options.VarInt);
+            WriteName(writer, Name, options.VarInt);
         }
     }
 
-    public static EndTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    public static EndTag Read(BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
     {
         ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
         return new EndTag
         {
-            Name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null
+            Name = canHaveName && effective.Name ? ReadName(reader, effective.VarInt) : null
         };
     }
 }

@@ -62,7 +62,7 @@ public sealed class SubChunk
         Biomes.SetBiome(bx, by, bz, biome);
     }
 
-    public static void Serialize(SubChunk subChunk, ref BinaryWriter writer, bool nbt = false)
+    public static void Serialize(SubChunk subChunk, BinaryWriter writer, bool nbt = false)
     {
         writer.WriteUInt8(subChunk.Version);
         writer.WriteUInt8(checked((byte)subChunk.Layers.Count));
@@ -79,11 +79,11 @@ public sealed class SubChunk
 
         for (int i = 0; i < subChunk.Layers.Count; i++)
         {
-            BlockStorage.Serialize(subChunk.Layers[i], ref writer, nbt);
+            BlockStorage.Serialize(subChunk.Layers[i], writer, nbt);
         }
     }
 
-    public static SubChunk Deserialize(ref BinaryReader reader, bool nbt = false)
+    public static SubChunk Deserialize(BinaryReader reader, bool nbt = false)
     {
         byte version = reader.ReadUInt8();
         byte count = reader.ReadUInt8();
@@ -110,7 +110,8 @@ public sealed class SubChunk
 
     public static SubChunk FromBuffer(ReadOnlySpan<byte> buffer, bool nbt = false)
     {
-        BinaryReader reader = new(buffer);
-        return Deserialize(ref reader, nbt);
+        int offset = 0;
+        BinaryReader reader = new(buffer, ref offset);
+        return Deserialize(reader, nbt);
     }
 }

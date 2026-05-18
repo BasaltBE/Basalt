@@ -9,17 +9,17 @@ public sealed class CreativeGroup : DataType
     public string Name { get; set; } = string.Empty;
     public CreativeItemInstanceDescriptor Icon { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Category = reader.ReadInt32(true);
         Name = reader.ReadVarString();
-        Icon.Read(ref reader);
+        Icon.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteInt32(Category, true);
         writer.WriteVarString(Name);
-        Icon.Write(ref writer);
+        Icon.Write(writer);
     }
 }
