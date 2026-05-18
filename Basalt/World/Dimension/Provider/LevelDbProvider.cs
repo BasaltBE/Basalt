@@ -26,90 +26,66 @@ public sealed class LevelDbProvider : WorldProvider
 
     public override bool HasChunk(DimensionType dimensionType, int x, int z)
     {
-        byte[] chunkKey = new byte[10];
-        LevelDbKeyBuilder.WriteChunkKey(chunkKey, dimensionType, x, z);
-        byte[]? terrain = _database.Get(chunkKey);
-        if (terrain is null || terrain.Length == 0)
-        {
-            byte[] legacyChunkKey = new byte[9];
-            LevelDbKeyBuilder.WriteChunkKey(legacyChunkKey, x, z);
-            terrain = _database.Get(legacyChunkKey);
-        }
-        return terrain is not null && terrain.Length > 0;
+        return ReadChunkBytes(dimensionType, x, z) is not null;
     }
 
     public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z)
     {
-        byte[] chunkKey = new byte[10];
-        byte[] entityListKey = new byte[10];
-        LevelDbKeyBuilder.WriteChunkKey(chunkKey, dimensionType, x, z);
-        LevelDbKeyBuilder.WriteEntityListKey(entityListKey, dimensionType, x, z);
-
-        byte[]? terrain = _database.Get(chunkKey);
-        if (terrain is null || terrain.Length == 0)
+        byte[]? terrain = ReadChunkBytes(dimensionType, x, z);
+        if (terrain is null)
         {
-            byte[] legacyChunkKey = new byte[9];
-            LevelDbKeyBuilder.WriteChunkKey(legacyChunkKey, x, z);
-            terrain = _database.Get(legacyChunkKey);
-            if (terrain is null || terrain.Length == 0)
-            {
-                return null;
-            }
+            return null;
         }
 
-        ChunkColumn chunk;
+        ChunkColumn? chunk = ReadChunk(dimensionType, x, z, terrain);
+        if (chunk is null)
+        {
+            DeleteChunk(dimensionType, x, z);
+            return null;
+        }
+
+        LoadEntityStorages(chunk);
+        chunk.Dirty = false;
+        return chunk;
+    }
+
+    private byte[]? ReadChunkBytes(DimensionType dimensionType, int x, int z)
+    {
+        byte[]? terrain = _database.Get(LevelDbKeyBuilder.BuildChunkKey(dimensionType, x, z));
+        if (terrain is not null && terrain.Length > 0)
+        {
+            return terrain;
+        }
+
+        terrain = _database.Get(LevelDbKeyBuilder.BuildChunkKey(x, z));
+        return terrain is { Length: > 0 } ? terrain : null;
+    }
+
+    private static ChunkColumn? ReadChunk(DimensionType dimensionType, int x, int z, byte[] terrain)
+    {
         try
         {
-            chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true);
+            return ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true);
         }
-        catch
+        catch (Exception namedBiomeException)
         {
             try
             {
-                chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true, biomeNbt: false);
+                return ChunkColumn.Deserialize(dimensionType, x, z, terrain, nbt: true, biomeNbt: false);
             }
-            catch (Exception exception)
+            catch
             {
                 try
                 {
-                    chunk = ChunkColumn.Deserialize(dimensionType, x, z, terrain);
+                    return ChunkColumn.Deserialize(dimensionType, x, z, terrain);
                 }
                 catch
                 {
-                    Logger.Warn($"Failed loading chunk {x},{z} in {dimensionType}: {exception.Message}");
-                    DeleteChunk(dimensionType, x, z);
+                    Logger.Warn($"Failed loading chunk {x},{z} in {dimensionType}: {namedBiomeException.Message}");
                     return null;
                 }
             }
         }
-
-        byte[]? entityList = _database.Get(entityListKey);
-        if (entityList is null || entityList.Length == 0)
-        {
-            byte[] legacyEntityListKey = new byte[9];
-            LevelDbKeyBuilder.WriteEntityListKey(legacyEntityListKey, x, z);
-            entityList = _database.Get(legacyEntityListKey);
-        }
-        if (entityList is not null && entityList.Length > 0)
-        {
-            byte[] entityStorageKey = new byte[9];
-            List<long> uniqueIds = DecodeEntityList(entityList);
-            for (int i = 0; i < uniqueIds.Count; i++)
-            {
-                long uniqueId = uniqueIds[i];
-                LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueId);
-                byte[]? entityData = _database.Get(entityStorageKey);
-                if (entityData is null || entityData.Length == 0)
-                {
-                    continue;
-                }
-
-                chunk.SetEntityStorage(uniqueId, DecodeEntityStorage(entityData), dirty: false);
-            }
-        }
-
-        chunk.Dirty = false;
-        return chunk;
     }
 
     public override void SaveChunk(ChunkColumn chunk)
@@ -120,15 +96,61 @@ public sealed class LevelDbProvider : WorldProvider
         LevelDbKeyBuilder.WriteEntityListKey(entityListKey, chunk.Type, chunk.X, chunk.Z);
         _database.Put(chunkKey, ChunkColumn.Serialize(chunk, nbt: true));
 
-        List<KeyValuePair<long, Basalt.Protocol.Nbt.CompoundTag>> entities = chunk.GetAllEntityStorages();
-        _database.Put(entityListKey, EncodeEntityList(entities));
+        List<KeyValuePair<long, CompoundTag>> entities = chunk.GetAllEntityStorages();
+        _database.Put(entityListKey, WriteEntityList(entities));
 
         byte[] entityStorageKey = new byte[9];
         for (int i = 0; i < entities.Count; i++)
         {
-            KeyValuePair<long, Basalt.Protocol.Nbt.CompoundTag> entity = entities[i];
+            KeyValuePair<long, CompoundTag> entity = entities[i];
             LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, entity.Key);
-            _database.Put(entityStorageKey, EncodeEntityStorage(entity.Value));
+            _database.Put(entityStorageKey, WriteEntityStorage(entity.Value));
+        }
+    }
+
+    private void LoadEntityStorages(ChunkColumn chunk)
+    {
+        byte[]? entityList = _database.Get(LevelDbKeyBuilder.BuildEntityListKey(chunk.Type, chunk.X, chunk.Z));
+        if (entityList is null || entityList.Length == 0)
+        {
+            entityList = _database.Get(LevelDbKeyBuilder.BuildEntityListKey(chunk.X, chunk.Z));
+        }
+
+        if (entityList is null || entityList.Length == 0)
+        {
+            return;
+        }
+
+        List<long> uniqueIds;
+        try
+        {
+            uniqueIds = ReadEntityList(entityList);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warn($"Failed loading entity list for chunk {chunk.X},{chunk.Z} in {chunk.Type}: {exception.Message}");
+            return;
+        }
+
+        byte[] entityStorageKey = new byte[9];
+        for (int i = 0; i < uniqueIds.Count; i++)
+        {
+            long uniqueId = uniqueIds[i];
+            LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueId);
+            byte[]? entityData = _database.Get(entityStorageKey);
+            if (entityData is null || entityData.Length == 0)
+            {
+                continue;
+            }
+
+            try
+            {
+                chunk.SetEntityStorage(uniqueId, ReadEntityStorage(entityData), dirty: false);
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Failed loading entity {uniqueId} for chunk {chunk.X},{chunk.Z} in {chunk.Type}: {exception.Message}");
+            }
         }
     }
 
@@ -145,11 +167,18 @@ public sealed class LevelDbProvider : WorldProvider
         if (entityList is not null && entityList.Length > 0)
         {
             byte[] entityStorageKey = new byte[9];
-            List<long> uniqueIds = DecodeEntityList(entityList);
-            for (int i = 0; i < uniqueIds.Count; i++)
+            try
             {
-                LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueIds[i]);
-                _database.Delete(entityStorageKey);
+                List<long> uniqueIds = ReadEntityList(entityList);
+                for (int i = 0; i < uniqueIds.Count; i++)
+                {
+                    LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueIds[i]);
+                    _database.Delete(entityStorageKey);
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Failed deleting entity storages for chunk {x},{z} in {dimensionType}: {exception.Message}");
             }
         }
 
@@ -187,7 +216,7 @@ public sealed class LevelDbProvider : WorldProvider
             return null;
         }
 
-        return DecodeEntityStorage(data);
+        return ReadEntityStorage(data);
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data)
@@ -197,15 +226,15 @@ public sealed class LevelDbProvider : WorldProvider
             return;
         }
 
-        _database.Put(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid), EncodeEntityStorage(data));
+        _database.Put(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid), WriteEntityStorage(data));
     }
 
-    private static byte[] EncodeEntityStorage(CompoundTag tag)
+    private static byte[] WriteEntityStorage(CompoundTag tag)
     {
-        return EncodeNbt(tag);
+        return WriteNbt(tag);
     }
 
-    private static CompoundTag DecodeEntityStorage(byte[] data)
+    private static CompoundTag ReadEntityStorage(byte[] data)
     {
         BinaryReader reader = new(data);
         TagType type = (TagType)reader.ReadInt8();
@@ -217,7 +246,7 @@ public sealed class LevelDbProvider : WorldProvider
         return CompoundTag.Read(ref reader, NbtOptions, canHaveName: true);
     }
 
-    private static byte[] EncodeEntityList(List<KeyValuePair<long, CompoundTag>> entities)
+    private static byte[] WriteEntityList(List<KeyValuePair<long, CompoundTag>> entities)
     {
         byte[] buffer = new byte[Math.Max(128, entities.Count * 8 + 16)];
         BinaryWriter writer = new(buffer);
@@ -232,11 +261,15 @@ public sealed class LevelDbProvider : WorldProvider
         return writer.GetBuffer().ToArray();
     }
 
-    private static List<long> DecodeEntityList(byte[] data)
+    private static List<long> ReadEntityList(byte[] data)
     {
         BinaryReader reader = new(data);
         _ = reader.ReadUInt32(littleEndian: true);
         int count = reader.ReadInt32(littleEndian: true);
+        if (count < 0 || count > reader.Remaining / sizeof(long))
+        {
+            throw new InvalidDataException($"Invalid entity count {count}.");
+        }
 
         List<long> ids = new(count);
         for (int i = 0; i < count; i++)
@@ -247,7 +280,7 @@ public sealed class LevelDbProvider : WorldProvider
         return ids;
     }
 
-    private static byte[] EncodeNbt(BaseTag tag)
+    private static byte[] WriteNbt(BaseTag tag)
     {
         int size = 1024;
         byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
