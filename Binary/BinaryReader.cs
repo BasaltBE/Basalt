@@ -30,7 +30,7 @@ namespace Basalt.Binary
                 throw new ArgumentOutOfRangeException(nameof(length));
             }
 
-            ReadOnlySpan<byte> result = Buffer[Offset..length];
+            ReadOnlySpan<byte> result = Buffer.Slice(Offset, length);
             Offset += length;
             return result;
         }

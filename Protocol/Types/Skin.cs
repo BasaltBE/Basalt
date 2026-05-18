@@ -56,7 +56,7 @@ public sealed class Skin : DataType
         Animations = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             SkinAnimation value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
         CapeImageWidth = reader.ReadUInt32(true);
@@ -72,13 +72,13 @@ public sealed class Skin : DataType
         PersonaPieces = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             PersonaPiece value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
         PieceTintColours = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             PersonaPieceTintColour value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
 
@@ -99,7 +99,7 @@ public sealed class Skin : DataType
         writer.WriteUInt32(SkinImageWidth, true);
         writer.WriteUInt32(SkinImageHeight, true);
         ProtocolTypeIO.WriteByteArray(writer, SkinData);
-        ProtocolTypeIO.WriteList(writer, Animations, static (BinaryWriter w, SkinAnimation value) => value.Write(ref w));
+        ProtocolTypeIO.WriteList(writer, Animations, static (BinaryWriter w, SkinAnimation value) => value.Write(w));
         writer.WriteUInt32(CapeImageWidth, true);
         writer.WriteUInt32(CapeImageHeight, true);
         ProtocolTypeIO.WriteByteArray(writer, CapeData);
@@ -110,8 +110,8 @@ public sealed class Skin : DataType
         writer.WriteVarString(FullID);
         writer.WriteVarString(ArmSize);
         writer.WriteVarString(SkinColour);
-        ProtocolTypeIO.WriteList(writer, PersonaPieces, static (BinaryWriter w, PersonaPiece value) => value.Write(ref w));
-        ProtocolTypeIO.WriteList(writer, PieceTintColours, static (BinaryWriter w, PersonaPieceTintColour value) => value.Write(ref w));
+        ProtocolTypeIO.WriteList(writer, PersonaPieces, static (BinaryWriter w, PersonaPiece value) => value.Write(w));
+        ProtocolTypeIO.WriteList(writer, PieceTintColours, static (BinaryWriter w, PersonaPieceTintColour value) => value.Write(w));
 
         Validate();
 

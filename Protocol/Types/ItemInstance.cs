@@ -73,10 +73,11 @@ public sealed class ItemInstance : DataType
         }
 
         byte[] payloadBuffer = new byte[8192];
-        BinaryWriter payloadWriter = new(payloadBuffer);
+        int offset = 0;
+        BinaryWriter payloadWriter = new(payloadBuffer, ref offset);
         Stack.ExtraData.Write(payloadWriter, Stack.NetworkId);
         ReadOnlySpan<byte> payload = payloadWriter.GetProcessedBytes();
         writer.WriteVarUInt((uint)payload.Length);
-        writer.WriteBytes(payload);
+        writer.WriteBytes(payloadBuffer[payloadWriter.GetProcessedRange()]);
     }
 }

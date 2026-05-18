@@ -247,7 +247,8 @@ public sealed class ItemPalette
             byte[] buffer = new byte[size];
             try
             {
-                BinaryWriter writer = new(buffer);
+                int offset = 0;
+                BinaryWriter writer = new(buffer, ref offset);
                 writer.WriteVarUInt((uint)items.Count);
                 for (int i = 0; i < items.Count; i++)
                 {

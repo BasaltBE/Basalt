@@ -198,7 +198,7 @@ public sealed record StartGamePacket : DataPacket
         ServerJoinInformation.Read(reader, static (BinaryReader r) =>
         {
             ServerJoinInformation value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
         ServerId = reader.ReadVarString();
@@ -300,7 +300,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteBool(ClientSideGeneration);
         writer.WriteBool(UseBlockNetworkIdHashes);
         writer.WriteBool(ServerAuthoritativeSound);
-        ServerJoinInformation.Write(writer, static (BinaryWriter w, ServerJoinInformation value) => value.Write(ref w));
+        ServerJoinInformation.Write(writer, static (BinaryWriter w, ServerJoinInformation value) => value.Write(w));
         writer.WriteVarString(ServerId);
         writer.WriteVarString(ScenarioId);
         writer.WriteVarString(WorldId);

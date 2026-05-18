@@ -70,10 +70,11 @@ public sealed class CreativeItemInstanceDescriptor : DataType
         }
 
         byte[] payloadBuffer = new byte[8192];
-        BinaryWriter payloadWriter = new(payloadBuffer);
-        ExtraData.Write(ref payloadWriter, NetworkId);
+        int offset = 0;
+        BinaryWriter payloadWriter = new(payloadBuffer, ref offset);
+        ExtraData.Write(payloadWriter, NetworkId);
         ReadOnlySpan<byte> payload = payloadWriter.GetProcessedBytes();
         writer.WriteVarInt(payload.Length);
-        writer.WriteBytes(payload);
+        writer.WriteBytes(payloadBuffer[payloadWriter.GetProcessedRange()]);
     }
 }

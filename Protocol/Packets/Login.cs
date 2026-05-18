@@ -32,7 +32,8 @@ public sealed record LoginPacket : DataPacket
             throw new InvalidOperationException("Invalid login connection request length.");
         }
 
-        BinaryReader requestReader = new(reader.ReadBytes(connectionRequestLength));
+        int offset = 0;
+        BinaryReader requestReader = new(reader.ReadBytes(connectionRequestLength), ref offset);
         Identity = requestReader.ReadString32(true);
         Client = requestReader.ReadString32(true);
 
