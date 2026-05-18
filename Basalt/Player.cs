@@ -84,12 +84,17 @@ public sealed class Player : Basalt.Entity.Entity
             return null;
         }
 
-        if (name.ContainerId is 6 or 12 or 27 or 28 or 29 or 33)
+        if (name.ContainerId is (byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
         {
             return inventory.Container;
         }
 
-        if (name.ContainerId is 58 or 59)
+        if (name.ContainerId == (byte)ContainerId.InventoryUi)
+        {
+            return inventory.Container;
+        }
+
+        if (name.ContainerId == (byte)ContainerId.Cursor)
         {
             PlayerCursorTrait? cursor = GetTrait<PlayerCursorTrait>();
             return cursor?.Container;
@@ -100,7 +105,7 @@ public sealed class Player : Basalt.Entity.Entity
             return container;
         }
 
-        if (name.ContainerId == 7)
+        if (name.ContainerId == (byte)ContainerId.DynamicContainer)
         {
             foreach ((int _, Container candidate) in openedContainers)
             {

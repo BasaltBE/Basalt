@@ -308,10 +308,7 @@ public class Container
                 Container = new Optional<FullContainerName>
                 {
                     HasValue = true,
-                    Value = new FullContainerName
-                    {
-                        ContainerId = 0
-                    }
+                    Value = GetFullContainerName(windowId)
                 },
                 NewItem = ToItemInstanceNew(Storage[slot])
             };
@@ -336,11 +333,7 @@ public class Container
             {
                 WindowId = windowId,
                 Content = new List<NetworkItemStackDescriptor>(Storage.Count),
-                Container = new FullContainerName
-                {
-                    ContainerId = 0,
-                    DynamicContainerId = 0
-                },
+                Container = GetFullContainerName(windowId),
                 StorageItem = new NetworkItemStackDescriptor()
             };
 
@@ -544,6 +537,21 @@ public class Container
     protected virtual byte GetFullContainerNameId()
     {
         return Type == ContainerType.Inventory ? (byte)0x1B : (byte)7;
+    }
+
+    protected FullContainerName GetFullContainerName(int windowId)
+    {
+        FullContainerName name = new()
+        {
+            ContainerId = GetFullContainerNameId()
+        };
+
+        if (Type != ContainerType.Inventory)
+        {
+            name.DynamicContainerId = (uint)windowId;
+        }
+
+        return name;
     }
 
     protected virtual void OnViewerAdded(Player player, int windowId)
