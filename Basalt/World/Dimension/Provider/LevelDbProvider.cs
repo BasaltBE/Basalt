@@ -1,8 +1,6 @@
-using Basalt.Block;
 using Basalt.Protocol.IO;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using LevelDB;
 using System.Buffers;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
@@ -137,6 +135,7 @@ public sealed class LevelDbProvider : WorldProvider
         byte[] chunkKey = new byte[10];
         byte[] blockListKey = new byte[10];
         byte[] entityListKey = new byte[10];
+        //byte[] buffer = new byte[Math.Max(128, entities.Count * 8 + 16)];
         LevelDbKeyBuilder.WriteChunkKey(chunkKey, dimensionType, x, z);
         LevelDbKeyBuilder.WriteBlockStorageListKey(blockListKey, dimensionType, x, z);
         LevelDbKeyBuilder.WriteEntityListKey(entityListKey, dimensionType, x, z);
@@ -144,8 +143,9 @@ public sealed class LevelDbProvider : WorldProvider
         byte[]? entityList = _database.Get(entityListKey);
         if (entityList is not null && entityList.Length > 0)
         {
-            byte[] entityStorageKey = new byte[9];
-            List<long> uniqueIds = DecodeEntityList(entityList);
+            Span<byte> entityStorageKey = stackalloc byte[9];
+            int offset = 0;
+            List<long> uniqueIds = DecodeEntityList(new(entityList, ref offset));
             for (int i = 0; i < uniqueIds.Count; i++)
             {
                 LevelDbKeyBuilder.WriteEntityStorageKey(entityStorageKey, uniqueIds[i]);
@@ -187,7 +187,8 @@ public sealed class LevelDbProvider : WorldProvider
             return null;
         }
 
-        return DecodeEntityStorage(data);
+        int offset = 0;
+        return DecodeEntityStorage(new(data, ref offset));
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data)
@@ -205,9 +206,8 @@ public sealed class LevelDbProvider : WorldProvider
         return EncodeNbt(tag);
     }
 
-    private static CompoundTag DecodeEntityStorage(byte[] data)
+    private static CompoundTag DecodeEntityStorage(BinaryReader reader)
     {
-        BinaryReader reader = new(data);
         TagType type = (TagType)reader.ReadInt8();
         if (type != TagType.Compound)
         {
@@ -217,10 +217,8 @@ public sealed class LevelDbProvider : WorldProvider
         return CompoundTag.Read(ref reader, NbtOptions, canHaveName: true);
     }
 
-    private static byte[] EncodeEntityList(List<KeyValuePair<long, CompoundTag>> entities)
+    private static byte[] EncodeEntityList(BinaryWriter writer, List<KeyValuePair<long, CompoundTag>> entities)
     {
-        byte[] buffer = new byte[Math.Max(128, entities.Count * 8 + 16)];
-        BinaryWriter writer = new(buffer);
         writer.WriteUInt32(FormatVersion, littleEndian: true);
         writer.WriteInt32(entities.Count, littleEndian: true);
 
@@ -232,9 +230,8 @@ public sealed class LevelDbProvider : WorldProvider
         return writer.GetBuffer().ToArray();
     }
 
-    private static List<long> DecodeEntityList(byte[] data)
+    private static List<long> DecodeEntityList(BinaryReader reader)
     {
-        BinaryReader reader = new(data);
         _ = reader.ReadUInt32(littleEndian: true);
         int count = reader.ReadInt32(littleEndian: true);
 
@@ -254,7 +251,8 @@ public sealed class LevelDbProvider : WorldProvider
 
         while (true)
         {
-            BinaryWriter writer = new(buffer);
+            int offset = 0;
+            BinaryWriter writer = new(buffer, ref offset);
 
             try
             {

@@ -13,7 +13,8 @@ public abstract record DataPacket
 
     public DataPacket Deserialize(ReadOnlySpan<byte> src)
     {
-        BinaryReader reader = new(src);
+        int offset = 0;
+        BinaryReader reader = new(src, ref offset);
         reader.ReadVarInt();
         Deserialize(ref reader);
         return this;
@@ -21,9 +22,10 @@ public abstract record DataPacket
 
     public ReadOnlySpan<byte> Serialize(Span<byte> dst)
     {
-        BinaryWriter writer = new(dst);
+        int offset = 0;
+        BinaryWriter writer = new(dst, ref offset);
         writer.WriteVarInt((byte)PacketId);
         Serialize(ref writer);
-        return writer.GetBuffer();
+        return dst[writer.GetProcessedRange()];
     }
 }
