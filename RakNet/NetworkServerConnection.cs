@@ -48,20 +48,20 @@ internal class NetworkServerConnection : NetworkConnection
         }
 
         LastSeenMs = Environment.TickCount64;
-        byte packetId = frame.Buffer[0];
+        byte packetId = frame.Buffer.Span[0];
 
         switch (packetId)
         {
             case ConnectionRequest.PacketId:
-                HandleConnectionRequest(frame.Buffer);
+                HandleConnectionRequest(frame.Buffer.Span);
                 break;
 
             case NewIncomingConnection.PacketId:
-                HandleNewIncomingConnection(frame.Buffer);
+                HandleNewIncomingConnection(frame.Buffer.Span);
                 break;
 
             case ConnectedPingPacketId:
-                HandleConnectedPing(frame.Buffer);
+                HandleConnectedPing(frame.Buffer.Span);
                 break;
 
             case DisconnectNotification.PacketId:

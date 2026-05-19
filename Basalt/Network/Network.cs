@@ -127,7 +127,7 @@ public sealed class NetworkHandler
                     uint header = packetReader.ReadVarUInt();
                     PacketId packetId = (PacketId)(header & 0x3FF);
 
-                    HandleGamePacket(connection, packetId, packetBuffer);
+                    HandleGamePacket(connection, packetId, packetReader.GetRemainingBytes());
                 }
                 catch (Exception exception)
                 {
@@ -242,16 +242,17 @@ public sealed class NetworkHandler
         foreach (DataPacket packet in packets)
         {
             packetBufferStream.Offset = 0;
-            packet.Serialize(packetBufferStream);
+            BinaryWriter packetWriter = packetBufferStream;
+            packetWriter.WriteVarInt((int)packet.PacketId);
+            packet.Serialize(packetWriter);
 
             var packetData = packetBufferStream.GetProcessedBytes();
-
 
             frameWriter.WriteVarInt(packetData.Length);
             frameWriter.WriteBytes(packetData.Span);
         }
 
-        Console.WriteLine(Convert.ToHexString(frameWriter.GetProcessedBytes()));
+        // Console.WriteLine(Convert.ToHexString(frameWriter.GetProcessedBytes()));
         SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
     }
 
@@ -313,7 +314,7 @@ public sealed class NetworkHandler
     {
         using MemoryStream stream = new(output);
 
-        using (DeflateStream deflate = new(stream, CompressionLevel.Optimal, true))
+        using (DeflateStream deflate = new(stream, CompressionLevel.Fastest, true))
         {
             deflate.Write(input);
         }

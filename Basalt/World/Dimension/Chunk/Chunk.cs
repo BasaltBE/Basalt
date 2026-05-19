@@ -338,7 +338,6 @@ public sealed class Chunk
         return this;
     }
 
-    // This will have to be refactored a bit, we shouldn't use byte[] but memory or something
     public static byte[] Serialize(Chunk chunk, bool nbt = false)
     {
         if (!nbt && chunk.Cache is not null)
@@ -354,20 +353,6 @@ public sealed class Chunk
         chunk.Cache = serialized;
 
         return chunk.Cache!;
-    }
-
-    public static bool TrySerialize(Chunk chunk, BinaryWriter writer, out int written, bool nbt = false)
-    {
-        try
-        {
-            written = Serialize(chunk, writer, nbt);
-            return true;
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            written = 0;
-            return false;
-        }
     }
 
     public static int Serialize(Chunk chunk, BinaryWriter writer, bool nbt = false)
@@ -485,7 +470,6 @@ public sealed class Chunk
         }
 
 
-        // We create cache
         chunk.Cache = nbt ? null : reader.GetProcessedBytes().ToArray();
 
         return chunk;

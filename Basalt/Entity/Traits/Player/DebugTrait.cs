@@ -21,6 +21,7 @@ public sealed class DebugTrait : PlayerTrait
     private long _lastSentTimestamp;
     // its so goody cause it flickers between 19.7 and 20.3
     private double _smoothedTps;
+    private double _averageMspt;
     private bool _gaveDebugItems;
 
     public DebugTrait(Entity entity) : base(entity)
@@ -32,6 +33,7 @@ public sealed class DebugTrait : PlayerTrait
         _lastSentTick = Player.Dimension?.World?.CurrentTick ?? 0;
         _lastSentTimestamp = Stopwatch.GetTimestamp();
         _smoothedTps = 0;
+        _averageMspt = 0;
         if (!_gaveDebugItems)
         {
             EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
@@ -95,6 +97,7 @@ public sealed class DebugTrait : PlayerTrait
             _smoothedTps = _smoothedTps == 0 ? rawTps : _smoothedTps + ((rawTps - _smoothedTps) * 0.2);
             double tps = _smoothedTps;
             double mspt = Player.Dimension?.World?.LastTickWorkMs ?? 0;
+            _averageMspt = _averageMspt == 0 ? mspt : _averageMspt + ((mspt - _averageMspt) * 0.2);
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
             int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;
 
@@ -105,7 +108,7 @@ public sealed class DebugTrait : PlayerTrait
                 Variant = new TextVariant
                 {
                     Type = TextType.Tip,
-                    Message = $"§aTPS: §f{tps:0.0}§8/§f{TargetTps:0.0} §8| §aMSPT: §f{mspt:0.00} §8| §aRAM: §f{workingSetMb:0.0}MB §8| §aChunks: §f{chunksLoaded}"
+                    Message = $"§aTPS: §f{tps:0.0}§8/§f{TargetTps:0.0} §8| §aMSPT: §f{mspt:0.00} §8| §aA/MSPT: §f{_averageMspt:0.00} §8| §aRAM: §f{workingSetMb:0.0}MB §8| §aChunks: §f{chunksLoaded}"
                 },
                 Xuid = string.Empty,
                 PlatformChatId = string.Empty,

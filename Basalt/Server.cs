@@ -88,7 +88,7 @@ public sealed class Server
         }
         catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException))
         {
-            Console.WriteLine("dANB");
+            // Console.WriteLine("dANB");
         }
         finally
         {

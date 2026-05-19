@@ -116,7 +116,7 @@ public class NetworkServer
         }
         catch
         {
-            Console.WriteLine("Bruh");
+            // Console.WriteLine("Bruh");
             // Malformed UDP packets are normal on public ports.
         }
     }

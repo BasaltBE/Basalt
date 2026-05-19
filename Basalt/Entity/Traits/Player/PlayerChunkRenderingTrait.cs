@@ -1,3 +1,4 @@
+using Basalt.Binary;
 using Basalt.Entity.Traits.Types;
 using Basalt.Block;
 using Basalt.Protocol.Enums;
@@ -5,6 +6,7 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Traits;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Entity.Traits.PlayerTraits;
 
@@ -22,7 +24,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     private readonly HashSet<long> _pendingChunks = [];
     private readonly Dictionary<int, int[]> _offsetCache = [];
 
-    private readonly List<ChunkColumn> _sendQueue = [];
+    private readonly List<long> _sendQueue = [];
 
     private byte[]? _emptyChunkPayload;
 
@@ -30,6 +32,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     private int _tickCounter;
     private int _chunkQueueIndex;
 
+    private bool _chunksStarted;
     private bool _isTicking;
 
     private int _lastPublisherChunkX = int.MinValue;
@@ -68,6 +71,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 return;
             }
 
+            if (!_chunksStarted)
+            {
+                return;
+            }
+
+            PrunePendingOutOfRange();
+            UnloadOutOfRangeChunks();
             Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
             QueueChunks();
             SendQueuedChunks();
@@ -78,8 +88,10 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         lock (_lock)
         {
+            _chunksStarted = true;
             Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
             _chunkQueueIndex = 0;
+            PrunePendingOutOfRange();
             QueueChunks();
             SendQueuedChunks();
         }
@@ -112,7 +124,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     public override void OnMove(EntityMoveOptions details)
     {
-        if (!Player.IsAlive || Player.Dimension is null)
+        if (!_chunksStarted || !Player.IsAlive || Player.Dimension is null)
         {
             return;
         }
@@ -128,6 +140,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             }
 
             UnloadOutOfRangeChunks();
+            PrunePendingOutOfRange();
             QueueChunks();
             SendQueuedChunks();
 
@@ -137,7 +150,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     public override void OnTick(TraitOnTickDetails details)
     {
-        if (_isTicking || !Player.IsAlive || Player.Dimension is null)
+        if (!_chunksStarted || _isTicking || !Player.IsAlive || Player.Dimension is null)
         {
             return;
         }
@@ -165,6 +178,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 if ((_tickCounter & 3) == 0)
                 {
                     UnloadOutOfRangeChunks();
+                    PrunePendingOutOfRange();
                 }
 
                 if (moved)
@@ -251,12 +265,33 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 return;
             }
 
-            ChunkColumn chunk = _sendQueue[i];
+            long hash = _sendQueue[i];
+            UnhashChunk(hash, out int chunkX, out int chunkZ);
+
+            if (!ChunkInRange(chunkX, chunkZ))
+            {
+                _pendingChunks.Remove(hash);
+                processed++;
+                continue;
+            }
+
+            ChunkColumn chunk = Player.Dimension.GetOrCreateChunk(chunkX, chunkZ);
             byte[] payload;
 
             try
             {
-                payload = ChunkColumn.Serialize(chunk);
+                if (chunk.Cache is not null)
+                {
+                    payload = chunk.Cache;
+                }
+                else
+                {
+                    using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+                    BinaryWriter writer = stream;
+                    ChunkColumn.Serialize(chunk, writer);
+                    payload = stream.GetProcessedBytes().ToArray();
+                    chunk.Cache = payload;
+                }
             }
             catch (Exception exception)
             {
@@ -311,9 +346,9 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
-        for (int i = 0; i < processed; i++)
+        if (processed > 0)
         {
-            _sendQueue.RemoveAt(0);
+            _sendQueue.RemoveRange(0, processed);
         }
 
         foreach (long hash in sentChunks)
@@ -344,7 +379,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         int chunkX = WorldToChunk(Player.Position.X);
         int chunkZ = WorldToChunk(Player.Position.Z);
 
-        while (_chunkQueueIndex < offsets.Length)
+        while (_chunkQueueIndex < offsets.Length && _sendQueue.Count < ChunkBatchSize)
         {
             int x = chunkX + offsets[_chunkQueueIndex++];
             int z = chunkZ + offsets[_chunkQueueIndex++];
@@ -357,7 +392,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             }
 
             _pendingChunks.Add(hash);
-            _sendQueue.Add(Player.Dimension.GetOrCreateChunk(x, z));
+            _sendQueue.Add(hash);
         }
     }
 
@@ -391,8 +426,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
-        _emptyChunkPayload ??= ChunkColumn.Serialize(
-            new ChunkColumn(0, 0, Player.Dimension.Type));
+        if (_emptyChunkPayload is null)
+        {
+            using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+            BinaryWriter writer = stream;
+            ChunkColumn.Serialize(new ChunkColumn(0, 0, Player.Dimension.Type), writer);
+            _emptyChunkPayload = stream.GetProcessedBytes().ToArray();
+        }
 
         int unloadCount = Math.Min(
             Math.Max(24, ChunkBatchSize * 3),
@@ -450,6 +490,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         _currentChunkZ = chunkZ;
         _chunkQueueIndex = 0;
 
+        PrunePendingOutOfRange();
+
         return true;
     }
 
@@ -477,10 +519,39 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         for (int i = startIndex; i < _sendQueue.Count; i++)
         {
-            _pendingChunks.Remove(_sendQueue[i].Hash);
+            _pendingChunks.Remove(_sendQueue[i]);
         }
 
         _sendQueue.Clear();
+    }
+
+    private void PrunePendingOutOfRange()
+    {
+        if (_sendQueue.Count == 0)
+        {
+            return;
+        }
+
+        int writeIndex = 0;
+
+        for (int i = 0; i < _sendQueue.Count; i++)
+        {
+            long hash = _sendQueue[i];
+            UnhashChunk(hash, out int x, out int z);
+
+            if (!ChunkInRange(x, z))
+            {
+                _pendingChunks.Remove(hash);
+                continue;
+            }
+
+            _sendQueue[writeIndex++] = hash;
+        }
+
+        if (writeIndex < _sendQueue.Count)
+        {
+            _sendQueue.RemoveRange(writeIndex, _sendQueue.Count - writeIndex);
+        }
     }
 
     private void Clear()
@@ -496,6 +567,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             _currentChunkX = int.MinValue;
             _currentChunkZ = int.MinValue;
             _chunkQueueIndex = 0;
+            _chunksStarted = false;
         }
     }
 
@@ -613,6 +685,16 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         x = (int)(hash >> 32);
         z = (int)hash;
+    }
+
+    private bool ChunkInRange(int x, int z)
+    {
+        int centerX = WorldToChunk(Player.Position.X);
+        int centerZ = WorldToChunk(Player.Position.Z);
+        int dx = x - centerX;
+        int dz = z - centerZ;
+
+        return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= ViewDistance;
     }
 
     private void SendChunkChestVisualUpdates(int chunkX, int chunkZ)

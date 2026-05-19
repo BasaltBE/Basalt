@@ -16,6 +16,8 @@ public sealed class Dimension : IDisposable
     private readonly Dictionary<long, ChunkColumn> _chunks;
     private readonly Dictionary<long, int> _chunkViewers;
     private readonly HashSet<global::Basalt.Entity.Entity> _entities;
+    private readonly List<long> _chunkSweepBuffer = [];
+    private readonly List<global::Basalt.Entity.Entity> _entityTickBuffer = [];
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
 
@@ -200,10 +202,17 @@ public sealed class Dimension : IDisposable
         }
 
         int unloaded = 0;
-        List<long> hashes = [.. _chunks.Keys];
-        for (int i = 0; i < hashes.Count && unloaded < limit; i++)
+        _chunkSweepBuffer.Clear();
+        _chunkSweepBuffer.EnsureCapacity(_chunks.Count);
+
+        foreach (long hash in _chunks.Keys)
         {
-            long hash = hashes[i];
+            _chunkSweepBuffer.Add(hash);
+        }
+
+        for (int i = 0; i < _chunkSweepBuffer.Count && unloaded < limit; i++)
+        {
+            long hash = _chunkSweepBuffer[i];
             if (_chunkViewers.ContainsKey(hash))
             {
                 continue;
@@ -361,8 +370,17 @@ public sealed class Dimension : IDisposable
             return;
         }
 
-        foreach (global::Basalt.Entity.Entity entity in _entities.ToArray())
+        _entityTickBuffer.Clear();
+        _entityTickBuffer.EnsureCapacity(_entities.Count);
+
+        foreach (global::Basalt.Entity.Entity entity in _entities)
         {
+            _entityTickBuffer.Add(entity);
+        }
+
+        for (int i = 0; i < _entityTickBuffer.Count; i++)
+        {
+            global::Basalt.Entity.Entity entity = _entityTickBuffer[i];
             if (!entity.IsAlive || entity.Dimension != this)
             {
                 continue;
