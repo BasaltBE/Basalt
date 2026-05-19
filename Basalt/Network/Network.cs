@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
+using System.Numerics;
 using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Network.Handlers;
@@ -106,14 +107,7 @@ public sealed class NetworkHandler
             {
                 int packetLength;
 
-                try
-                {
-                    packetLength = checked((int)frameReader.ReadVarUInt());
-                }
-                catch
-                {
-                    break;
-                }
+                packetLength = checked((int)frameReader.ReadVarUInt());
 
                 if (packetLength <= 0 || packetLength > frameReader.Remaining)
                 {
@@ -250,12 +244,14 @@ public sealed class NetworkHandler
             packetBufferStream.Offset = 0;
             packet.Serialize(packetBufferStream);
 
-            ReadOnlySpan<byte> packetData = packetBufferStream.GetProcessedBytes().Span;
+            var packetData = packetBufferStream.GetProcessedBytes();
+
 
             frameWriter.WriteVarInt(packetData.Length);
-            frameWriter.WriteBytes(packetData);
+            frameWriter.WriteBytes(packetData.Span);
         }
 
+        Console.WriteLine(Convert.ToHexString(frameWriter.GetProcessedBytes()));
         SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
     }
 

@@ -55,14 +55,7 @@ public class NetworkServer
         if (OperatingSystem.IsWindows())
         {
             const int sioUdpConnReset = -1744830452;
-
-            try
-            {
-                _socket.IOControl(sioUdpConnReset, [0, 0, 0, 0], null);
-            }
-            catch
-            {
-            }
+            _socket.IOControl(sioUdpConnReset, [0, 0, 0, 0], null);
         }
 
         _socket.Bind(new IPEndPoint(IPAddress.Any, 19132));
@@ -71,17 +64,11 @@ public class NetworkServer
         {
             SocketAddress endpoint = new(AddressFamily.InterNetwork);
 
-            try
-            {
-                int received = await _socket.ReceiveFromAsync(buffer, SocketFlags.None, endpoint);
+            int received = await _socket.ReceiveFromAsync(buffer, SocketFlags.None, endpoint);
 
-                if (received > 0)
-                {
-                    ReceiveFrom(CloneEndpoint(endpoint), buffer.AsSpan(0, received));
-                }
-            }
-            catch
+            if (received > 0)
             {
+                ReceiveFrom(CloneEndpoint(endpoint), buffer.AsSpan(0, received));
             }
         }
     }
@@ -129,6 +116,7 @@ public class NetworkServer
         }
         catch
         {
+            Console.WriteLine("Bruh");
             // Malformed UDP packets are normal on public ports.
         }
     }
@@ -291,9 +279,6 @@ public class NetworkServer
 
             _socket.SendTo(buffer.AsSpan(0, length), SocketFlags.None, endpoint);
         }
-        catch
-        {
-        }
         finally
         {
             FramesPool.Return(buffer);
@@ -305,19 +290,13 @@ public class NetworkServer
         long now = Environment.TickCount64;
         foreach (NetworkServerConnection connection in _connections.Values.ToArray())
         {
-            try
+            if (connection.IsConnected && now - connection.LastSeenMs >= DisconnectTimeoutMs)
             {
-                if (connection.IsConnected && now - connection.LastSeenMs >= DisconnectTimeoutMs)
-                {
-                    connection.Disconnect();
-                    continue;
-                }
+                connection.Disconnect();
+                continue;
+            }
 
-                connection.Tick(now);
-            }
-            catch
-            {
-            }
+            connection.Tick(now);
         }
     }
 

@@ -9,6 +9,8 @@ public static class ClientCacheStatus
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         ClientCacheStatusPacket packet = new();
-        packet.Deserialize(packetBuffer);
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
     }
 }

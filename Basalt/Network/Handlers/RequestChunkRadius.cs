@@ -10,7 +10,9 @@ public static class RequestChunkRadius
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         RequestChunkRadiusPacket packet = new();
-        packet.Deserialize(packetBuffer);
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
 
         int requestedRadius = packet.MaxChunkRadius > 0
             ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
