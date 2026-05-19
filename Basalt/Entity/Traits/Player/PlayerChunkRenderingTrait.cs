@@ -11,6 +11,7 @@ namespace Basalt.Entity.Traits.PlayerTraits;
 public sealed class PlayerChunkRenderingTrait : PlayerTrait
 {
     private const int MaxChunkPayloadBytesPerBatch = 350_000;
+    private const int ChunkBatchSize = 12; // TODO: Move this into server options
 
     public new static string Identifier => "chunk_rendering";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
@@ -27,6 +28,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     private int _sendGeneration;
     private int _tickCounter;
+    private int _chunkQueueIndex;
 
     private bool _isTicking;
 
@@ -59,6 +61,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             }
 
             SetViewDistance(distance);
+            _chunkQueueIndex = 0;
 
             if (Player.Dimension is null)
             {
@@ -66,23 +69,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             }
 
             Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
-
-            int batchSize = 12;
-
-            if (ViewDistance >= 24)
-            {
-                batchSize = 48;
-            }
-            else if (ViewDistance >= 16)
-            {
-                batchSize = 32;
-            }
-            else if (ViewDistance >= 8)
-            {
-                batchSize = 20;
-            }
-
-            QueueChunks(batchSize * 8);
+            QueueChunks();
             SendQueuedChunks();
         }
     }
@@ -92,23 +79,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         lock (_lock)
         {
             Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
-
-            int batchSize = 12;
-
-            if (ViewDistance >= 24)
-            {
-                batchSize = 48;
-            }
-            else if (ViewDistance >= 16)
-            {
-                batchSize = 32;
-            }
-            else if (ViewDistance >= 8)
-            {
-                batchSize = 20;
-            }
-
-            QueueChunks(batchSize * 8);
+            _chunkQueueIndex = 0;
+            QueueChunks();
             SendQueuedChunks();
         }
     }
@@ -134,6 +106,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             _emptyChunkPayload = null;
 
             UpdateTrackedChunkPosition();
+            _chunkQueueIndex = 0;
         }
     }
 
@@ -154,22 +127,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 return;
             }
 
-            int batchSize = 12;
-
-            if (ViewDistance >= 24)
-            {
-                batchSize = 48;
-            }
-            else if (ViewDistance >= 16)
-            {
-                batchSize = 32;
-            }
-            else if (ViewDistance >= 8)
-            {
-                batchSize = 20;
-            }
-
-            QueueChunks(batchSize * 12);
+            UnloadOutOfRangeChunks();
+            QueueChunks();
             SendQueuedChunks();
 
             Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
@@ -203,33 +162,24 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
                 bool moved = UpdateChunkPosition(chunkX, chunkZ);
 
-                if (_sendQueue.Count > 0)
-                {
-                    SendQueuedChunks();
-                }
-
                 if ((_tickCounter & 3) == 0)
                 {
                     UnloadOutOfRangeChunks();
                 }
 
-                int batchSize = 12;
-
-                if (ViewDistance >= 24)
+                if (moved)
                 {
-                    batchSize = 48;
+                    QueueChunks();
                 }
-                else if (ViewDistance >= 16)
+                else if (HasChunksLeftToQueue())
                 {
-                    batchSize = 32;
-                }
-                else if (ViewDistance >= 8)
-                {
-                    batchSize = 20;
+                    QueueChunks();
                 }
 
-                QueueChunks(moved ? batchSize * 12 : batchSize * 6);
-                SendQueuedChunks();
+                if (_sendQueue.Count > 0)
+                {
+                    SendQueuedChunks();
+                }
 
                 bool updatePublisher =
                     Math.Abs(chunkX - _lastPublisherChunkX) > 2 ||
@@ -278,123 +228,111 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
+        if (!Player.IsAlive)
+        {
+            CancelQueuedChunks(0);
+            return;
+        }
+
         int generation = _sendGeneration;
+        int end = Math.Min(ChunkBatchSize, _sendQueue.Count);
 
-        int batchSize = 12;
+        List<DataPacket> packets = [];
+        List<long> sentChunks = [];
 
-        if (ViewDistance >= 24)
-        {
-            batchSize = 48;
-        }
-        else if (ViewDistance >= 16)
-        {
-            batchSize = 32;
-        }
-        else if (ViewDistance >= 8)
-        {
-            batchSize = 20;
-        }
+        int payloadSize = 0;
+        int processed = 0;
 
-        int index = 0;
-
-        while (index < _sendQueue.Count)
+        for (int i = 0; i < end; i++)
         {
-            if (generation != _sendGeneration || !Player.IsAlive || Player.Dimension is null)
+            if (generation != _sendGeneration || Player.Dimension is null)
             {
-                CancelQueuedChunks(index);
+                CancelQueuedChunks(i);
                 return;
             }
 
-            int end = Math.Min(index + batchSize, _sendQueue.Count);
-
-            List<DataPacket> packets = [];
-            List<long> sentChunks = [];
-
-            int payloadSize = 0;
-
-            for (int i = index; i < end; i++)
-            {
-                ChunkColumn chunk = _sendQueue[i];
-
-                byte[] payload;
-
-                try
-                {
-                    payload = ChunkColumn.Serialize(chunk);
-                }
-                catch (Exception exception)
-                {
-                    Logger.Err($"Failed to serialize chunk {chunk.X}, {chunk.Z}: {exception.Message}");
-
-                    _pendingChunks.Remove(chunk.Hash);
-
-                    continue;
-                }
-
-                int packetSize = payload.Length + 64;
-
-                if (packets.Count > 0 &&
-                    payloadSize + packetSize > MaxChunkPayloadBytesPerBatch)
-                {
-                    break;
-                }
-
-                payloadSize += packetSize;
-
-                packets.Add(new LevelChunkPacket
-                {
-                    ChunkX = chunk.X,
-                    ChunkZ = chunk.Z,
-                    Dimension = (int)chunk.Type,
-                    SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
-                    CacheEnabled = false,
-                    RawPayload = payload
-                });
-
-                sentChunks.Add(chunk.Hash);
-            }
+            ChunkColumn chunk = _sendQueue[i];
+            byte[] payload;
 
             try
             {
-                if (packets.Count > 0)
-                {
-                    Player.Send([.. packets]);
-                }
+                payload = ChunkColumn.Serialize(chunk);
             }
             catch (Exception exception)
             {
-                Logger.Warn($"Chunk send failed for {Player.Username}: {exception.Message}");
+                Logger.Err($"Failed to serialize chunk {chunk.X}, {chunk.Z}: {exception.Message}");
 
-                foreach (long hash in sentChunks)
-                {
-                    _pendingChunks.Remove(hash);
-                }
+                _pendingChunks.Remove(chunk.Hash);
+                processed++;
 
-                return;
+                continue;
             }
+
+            int packetSize = payload.Length + 64;
+
+            if (packets.Count > 0 &&
+                payloadSize + packetSize > MaxChunkPayloadBytesPerBatch)
+            {
+                break;
+            }
+
+            payloadSize += packetSize;
+            processed++;
+
+            packets.Add(new LevelChunkPacket
+            {
+                ChunkX = chunk.X,
+                ChunkZ = chunk.Z,
+                Dimension = (int)chunk.Type,
+                SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
+                CacheEnabled = false,
+                RawPayload = payload
+            });
+
+            sentChunks.Add(chunk.Hash);
+        }
+
+        try
+        {
+            if (packets.Count > 0)
+            {
+                Player.Send([.. packets]);
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.Warn($"Chunk send failed for {Player.Username}: {exception.Message}");
 
             foreach (long hash in sentChunks)
             {
                 _pendingChunks.Remove(hash);
-
-                if (!_loadedChunks.Add(hash))
-                {
-                    continue;
-                }
-
-                UnhashChunk(hash, out int x, out int z);
-
-                Player.Dimension.AddChunkViewer(x, z);
-                SendChunkChestVisualUpdates(x, z);
             }
 
-            index += Math.Max(1, sentChunks.Count);
+            return;
         }
 
-        _sendQueue.Clear();
+        for (int i = 0; i < processed; i++)
+        {
+            _sendQueue.RemoveAt(0);
+        }
+
+        foreach (long hash in sentChunks)
+        {
+            _pendingChunks.Remove(hash);
+
+            if (!_loadedChunks.Add(hash))
+            {
+                continue;
+            }
+
+            UnhashChunk(hash, out int x, out int z);
+
+            Player.Dimension.AddChunkViewer(x, z);
+            SendChunkChestVisualUpdates(x, z);
+        }
     }
 
-    private void QueueChunks(int limit)
+    private void QueueChunks()
     {
         if (Player.Dimension is null)
         {
@@ -406,10 +344,10 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         int chunkX = WorldToChunk(Player.Position.X);
         int chunkZ = WorldToChunk(Player.Position.Z);
 
-        for (int i = 0; i < offsets.Length && _sendQueue.Count < limit; i += 2)
+        while (_chunkQueueIndex < offsets.Length)
         {
-            int x = chunkX + offsets[i];
-            int z = chunkZ + offsets[i + 1];
+            int x = chunkX + offsets[_chunkQueueIndex++];
+            int z = chunkZ + offsets[_chunkQueueIndex++];
 
             long hash = HashChunk(x, z);
 
@@ -433,9 +371,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         int centerX = WorldToChunk(Player.Position.X);
         int centerZ = WorldToChunk(Player.Position.Z);
 
-        float maxDistance = ViewDistance + 0.5f;
-        float maxDistanceSquared = maxDistance * maxDistance;
-
         List<(int X, int Z)> unloadList = [];
 
         foreach (long hash in _loadedChunks)
@@ -445,7 +380,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             int dx = x - centerX;
             int dz = z - centerZ;
 
-            if ((dx * dx) + (dz * dz) > maxDistanceSquared)
+            if (Math.Max(Math.Abs(dx), Math.Abs(dz)) > ViewDistance)
             {
                 unloadList.Add((x, z));
             }
@@ -459,23 +394,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         _emptyChunkPayload ??= ChunkColumn.Serialize(
             new ChunkColumn(0, 0, Player.Dimension.Type));
 
-        int batchSize = 12;
-
-        if (ViewDistance >= 24)
-        {
-            batchSize = 48;
-        }
-        else if (ViewDistance >= 16)
-        {
-            batchSize = 32;
-        }
-        else if (ViewDistance >= 8)
-        {
-            batchSize = 20;
-        }
-
         int unloadCount = Math.Min(
-            Math.Max(24, batchSize * 3),
+            Math.Max(24, ChunkBatchSize * 3),
             unloadList.Count);
 
         for (int i = 0; i < unloadCount; i++)
@@ -528,6 +448,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
         _currentChunkX = chunkX;
         _currentChunkZ = chunkZ;
+        _chunkQueueIndex = 0;
 
         return true;
     }
@@ -574,6 +495,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
             _currentChunkX = int.MinValue;
             _currentChunkZ = int.MinValue;
+            _chunkQueueIndex = 0;
         }
     }
 
@@ -587,6 +509,11 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
         _lastPublisherChunkX = chunkX;
         _lastPublisherChunkZ = chunkZ;
+    }
+
+    private bool HasChunksLeftToQueue()
+    {
+        return _chunkQueueIndex < GetChunkOffsets(ViewDistance).Length;
     }
 
     private NetworkChunkPublisherUpdatePacket CreateChunkPublisherPacket(bool includeSavedChunks)
@@ -608,9 +535,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         int centerX = WorldToChunk(Player.Position.X);
         int centerZ = WorldToChunk(Player.Position.Z);
 
-        float maxDistance = ViewDistance + 0.5f;
-        float maxDistanceSquared = maxDistance * maxDistance;
-
         foreach (long hash in _loadedChunks)
         {
             UnhashChunk(hash, out int x, out int z);
@@ -618,7 +542,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             int dx = x - centerX;
             int dz = z - centerZ;
 
-            if ((dx * dx) + (dz * dz) <= maxDistanceSquared)
+            if (Math.Max(Math.Abs(dx), Math.Abs(dz)) <= ViewDistance)
             {
                 packet.SavedChunks.Add((x, z));
             }
@@ -634,8 +558,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return cached;
         }
 
-        float radiusSquared = (distance + 0.5f) * (distance + 0.5f);
-
         List<(int Distance, int X, int Z)> offsets = [];
 
         for (int dx = -distance; dx <= distance; dx++)
@@ -643,11 +565,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             for (int dz = -distance; dz <= distance; dz++)
             {
                 int dist = dx * dx + dz * dz;
-
-                if (dist <= radiusSquared)
-                {
-                    offsets.Add((dist, dx, dz));
-                }
+                offsets.Add((dist, dx, dz));
             }
         }
 

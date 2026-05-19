@@ -194,14 +194,6 @@ public sealed class Server
         long startTimestamp = Stopwatch.GetTimestamp();
         _raknet.Tick();
         World.Tick();
-        ulong tick = World.CurrentTick;
-
-
-        //Players and entities tick seperatly
-        foreach (KeyValuePair<NetworkConnection, Player> entry in Players)
-        {
-            entry.Value.Tick(tick, 1);
-        }
 
         long endTimestamp = Stopwatch.GetTimestamp();
         World.LastTickWorkMs = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
