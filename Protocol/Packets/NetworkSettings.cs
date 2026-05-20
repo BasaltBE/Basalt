@@ -1,50 +1,57 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.NetworkSettings)]
 public sealed record NetworkSettingsPacket : DataPacket
 {
-    public NetworkSettingsPacket() {}
+    /// <summary>
+    /// Compression threshold. 
+    /// The size of the packet after which it should be compressed.
+    /// </summary>
+    public ushort CompressionThreshold;
 
-    public NetworkSettingsPacket(
-        ushort compressionThreshold,
-        CompressionMethod compressionMethod,
-        bool clientThrottle,
-        byte clientThrottleThreshold,
-        float clientThrottleScalar)
-    {
-        CompressionThreshold = compressionThreshold;
-        CompressionMethod = compressionMethod;
-        ClientThrottle = clientThrottle;
-        ClientThrottleThreshold = clientThrottleThreshold;
-        ClientThrottleScalar = clientThrottleScalar;
-    }
+    /// <summary>
+    /// Compression method.
+    /// The method used to compress packets that exceed the compression threshold.
+    /// </summary>
+    public CompressionMethod CompressionMethod;
 
-    public ushort CompressionThreshold { get; set; }
-    public CompressionMethod CompressionMethod { get; set; }
-    public bool ClientThrottle { get; set; }
-    public byte ClientThrottleThreshold { get; set; }
-    public float ClientThrottleScalar { get; set; }
+    /// <summary>
+    /// Client throttle.
+    /// Whether the server should throttle the client if it sends too many packets in a short period of time.
+    /// </summary>
+    public bool ClientThrottle;
 
-    public override PacketId PacketId => PacketId.NetworkSettings;
+    /// <summary>
+    /// Client throttle threshold.
+    /// The number of packets that can be sent in a short period of time before the client is throttled.
+    /// </summary>
+    public byte ClientThrottleThreshold;
 
-    public override void Deserialize(BinaryReader reader)
-    {
-        CompressionThreshold = reader.ReadUInt16(true);
-        CompressionMethod = (CompressionMethod)reader.ReadUInt16(true);
-        ClientThrottle = reader.ReadBool();
-        ClientThrottleThreshold = reader.ReadUInt8();
-        ClientThrottleScalar = reader.ReadF32(true);
-    }
+    /// <summary>
+    /// Client throttle scalar.
+    /// The factor by which the client's packet sending rate is reduced when throttled.
+    /// </summary>
+    public float ClientThrottleScalar;
 
-    public override void Serialize(BinaryWriter writer)
+
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteUInt16(CompressionThreshold, true);
         writer.WriteUInt16((ushort)CompressionMethod, true);
         writer.WriteBool(ClientThrottle);
         writer.WriteUInt8(ClientThrottleThreshold);
         writer.WriteF32(ClientThrottleScalar, true);
+    }
+
+    public override void Deserialize(Binary.BinaryReader reader)
+    {
+        CompressionThreshold = reader.ReadUInt16(true);
+        CompressionMethod = (CompressionMethod)reader.ReadUInt16(true);
+        ClientThrottle = reader.ReadBool();
+        ClientThrottleThreshold = reader.ReadUInt8();
+        ClientThrottleScalar = reader.ReadF32(true);
     }
 }
