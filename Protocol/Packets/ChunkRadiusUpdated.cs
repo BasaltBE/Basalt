@@ -10,12 +10,12 @@ public sealed record ChunkRadiusUpdatedPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ChunkRadiusUpdated;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         ChunkRadius = reader.ReadVarInt();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarInt(ChunkRadius);
     }

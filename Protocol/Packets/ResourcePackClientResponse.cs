@@ -11,7 +11,7 @@ public sealed record ResourcePackClientResponsePacket : DataPacket
 
     public override PacketId PacketId => PacketId.ResourcePackClientResponse;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Response = (ResourcePackResponse)reader.ReadUInt8();
         int length = reader.ReadUInt16(true);
@@ -23,7 +23,7 @@ public sealed record ResourcePackClientResponsePacket : DataPacket
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteUInt8((byte)Response);
         writer.WriteUInt16((ushort)PacksToDownload.Count, true);

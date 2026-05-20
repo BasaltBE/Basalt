@@ -5,7 +5,7 @@ namespace Basalt.Protocol.Types;
 
 public static class UUID
 {
-    public static Guid Read(ref BinaryReader reader)
+    public static Guid Read(BinaryReader reader)
     {
         Span<byte> uuidBytes = stackalloc byte[16];
         reader.ReadBytes(16).CopyTo(uuidBytes);
@@ -14,7 +14,7 @@ public static class UUID
         return new Guid(uuidBytes);
     }
 
-    public static void Write(ref BinaryWriter writer, Guid value)
+    public static void Write(BinaryWriter writer, Guid value)
     {
         byte[] uuidBytes = value.ToByteArray();
         uuidBytes[..8].Reverse();

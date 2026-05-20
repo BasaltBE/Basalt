@@ -10,7 +10,7 @@ public sealed class ItemStackRequest : DataType
     public List<string> FilterStrings { get; set; } = [];
     public int FilterCause { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RequestId = reader.ReadZigZag();
 
@@ -20,7 +20,7 @@ public sealed class ItemStackRequest : DataType
         {
             byte type = reader.ReadUInt8();
             IStackRequestAction action = StackRequestActions.Create(type);
-            action.Read(ref reader);
+            action.Read(reader);
             Actions.Add(action);
         }
 
@@ -34,14 +34,14 @@ public sealed class ItemStackRequest : DataType
         FilterCause = reader.ReadInt32(true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(RequestId);
         writer.WriteVarUInt((uint)Actions.Count);
         for (int i = 0; i < Actions.Count; i++)
         {
             writer.WriteUInt8(Actions[i].ActionType);
-            Actions[i].Write(ref writer);
+            Actions[i].Write(writer);
         }
 
         writer.WriteVarUInt((uint)FilterStrings.Count);

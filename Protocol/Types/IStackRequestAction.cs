@@ -6,6 +6,6 @@ namespace Basalt.Protocol.Types;
 public interface IStackRequestAction
 {
     byte ActionType { get; }
-    void Read(ref BinaryReader reader);
-    void Write(ref BinaryWriter writer);
+    void Read(BinaryReader reader);
+    void Write(BinaryWriter writer);
 }

@@ -1,3 +1,4 @@
+using Basalt.Binary;
 using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -21,7 +22,7 @@ public sealed class ItemInstanceNew : DataType
     public List<string> CanDestroy { get; set; } = [];
     public long BlockingTick { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         NetworkId = reader.ReadInt16(true);
         Count = reader.ReadUInt16(true);
@@ -55,7 +56,7 @@ public sealed class ItemInstanceNew : DataType
                 throw new InvalidOperationException($"Unsupported item instance new NBT version: {version}");
             }
 
-            Nbt = NBT.Read<CompoundTag>(ref reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Nbt = NBT.Read<CompoundTag>(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
         else
         {
@@ -87,7 +88,7 @@ public sealed class ItemInstanceNew : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteInt16(unchecked((short)NetworkId), true);
         writer.WriteUInt16(Count, true);
@@ -109,8 +110,9 @@ public sealed class ItemInstanceNew : DataType
             return;
         }
 
-        byte[] extraBuffer = new byte[8192];
-        BinaryWriter extraWriter = new(extraBuffer);
+        // It will dispose automaticly at the end of the scope
+        using BinaryStream extrBuffer = BinaryStream.Rent(16384);
+        BinaryWriter extraWriter = extrBuffer.GetWriter();
 
         if (Nbt is null)
         {
@@ -120,7 +122,7 @@ public sealed class ItemInstanceNew : DataType
         {
             extraWriter.WriteInt16(-1, true);
             extraWriter.WriteUInt8(1);
-            NBT.WriteTag(ref extraWriter, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            NBT.WriteTag(extraWriter, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
 
         extraWriter.WriteUInt32(checked((uint)CanPlaceOn.Count), true);
@@ -140,7 +142,7 @@ public sealed class ItemInstanceNew : DataType
             extraWriter.WriteInt64(BlockingTick, true);
         }
 
-        ReadOnlySpan<byte> payload = extraWriter.GetBuffer();
+        ReadOnlySpan<byte> payload = extraWriter.GetProcessedBytes();
         writer.WriteVarUInt(checked((uint)payload.Length));
         writer.WriteBytes(payload);
     }

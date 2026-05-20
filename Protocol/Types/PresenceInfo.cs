@@ -8,13 +8,13 @@ public sealed class PresenceInfo : DataType
     public string ExperienceName { get; set; } = string.Empty;
     public string WorldName { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ExperienceName = reader.ReadVarString();
         WorldName = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(ExperienceName);
         writer.WriteVarString(WorldName);

@@ -14,7 +14,7 @@ public sealed record InventoryTransactionPacket : DataPacket
 
     public override PacketId PacketId => PacketId.InventoryTransaction;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
@@ -25,7 +25,7 @@ public sealed record InventoryTransactionPacket : DataPacket
             for (int i = 0; i < legacySetItemSlotCount; i++)
             {
                 LegacySetItemSlot legacySetItemSlot = new();
-                legacySetItemSlot.Read(ref reader);
+                legacySetItemSlot.Read(reader);
                 LegacySetItemSlots.Add(legacySetItemSlot);
             }
         }
@@ -43,15 +43,15 @@ public sealed record InventoryTransactionPacket : DataPacket
         for (int i = 0; i < actionCount; i++)
         {
             InventoryAction action = new();
-            action.Read(ref reader);
+            action.Read(reader);
             Actions.Add(action);
         }
 
-        transactionData.Read(ref reader);
+        transactionData.Read(reader);
         TransactionData = transactionData;
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteZigZag(LegacyRequestId);
         if (LegacyRequestId != 0)
@@ -59,7 +59,7 @@ public sealed record InventoryTransactionPacket : DataPacket
             writer.WriteVarUInt((uint)LegacySetItemSlots.Count);
             for (int i = 0; i < LegacySetItemSlots.Count; i++)
             {
-                LegacySetItemSlots[i].Write(ref writer);
+                LegacySetItemSlots[i].Write(writer);
             }
         }
 
@@ -68,9 +68,9 @@ public sealed record InventoryTransactionPacket : DataPacket
         writer.WriteVarUInt((uint)Actions.Count);
         for (int i = 0; i < Actions.Count; i++)
         {
-            Actions[i].Write(ref writer);
+            Actions[i].Write(writer);
         }
 
-        TransactionData.Write(ref writer);
+        TransactionData.Write(writer);
     }
 }

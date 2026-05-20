@@ -9,13 +9,13 @@ public sealed class CraftLoomRecipeStackRequestAction : IStackRequestAction, Dat
     public string Pattern { get; set; } = string.Empty;
     public byte TimesCrafted { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Pattern = reader.ReadVarString();
         TimesCrafted = reader.ReadUInt8();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Pattern);
         writer.WriteUInt8(TimesCrafted);

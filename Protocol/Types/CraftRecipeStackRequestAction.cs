@@ -9,13 +9,13 @@ public sealed class CraftRecipeStackRequestAction : IStackRequestAction, DataTyp
     public uint RecipeNetworkId { get; set; }
     public byte NumberOfCrafts { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteUInt8(NumberOfCrafts);

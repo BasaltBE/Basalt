@@ -20,7 +20,7 @@ public sealed class UseItemTransactionData : DataType
     public uint ClientPrediction { get; set; }
     public byte ClientCooldownState { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         int startOffset = reader.Offset;
         LegacyRequestId = reader.ReadZigZag();
@@ -32,7 +32,7 @@ public sealed class UseItemTransactionData : DataType
             for (int i = 0; i < legacyCount; i++)
             {
                 LegacySetItemSlot slot = new();
-                slot.Read(ref reader);
+                slot.Read(reader);
                 LegacySetItemSlots.Add(slot);
             }
         }
@@ -42,20 +42,20 @@ public sealed class UseItemTransactionData : DataType
         for (int i = 0; i < actionCount; i++)
         {
             InventoryAction action = new();
-            action.Read(ref reader);
+            action.Read(reader);
             Actions.Add(action);
         }
 
         ActionType = reader.ReadVarUInt();
         TriggerType = reader.ReadVarUInt();
         BlockPos blockPosition = BlockPosition;
-        blockPosition.Read(ref reader);
+        blockPosition.Read(reader);
         BlockPosition = blockPosition;
         BlockFace = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
-        HeldItem.Read(ref reader);
-        Position.Read(ref reader);
-        ClickedPosition.Read(ref reader);
+        HeldItem.Read(reader);
+        Position.Read(reader);
+        ClickedPosition.Read(reader);
         BlockRuntimeId = reader.ReadVarUInt();
         ClientPrediction = reader.ReadVarUInt();
         ClientCooldownState = reader.ReadUInt8();
@@ -65,7 +65,7 @@ public sealed class UseItemTransactionData : DataType
         Console.WriteLine($"[UseItemTxDump] bytes={payload.Length} hex={Convert.ToHexString(payload)} legacy={LegacyRequestId} actions={Actions.Count} action={ActionType} trigger={TriggerType} pos={BlockPosition.X},{BlockPosition.Y},{BlockPosition.Z} face={BlockFace} hotbar={HotBarSlot} runtime={BlockRuntimeId} prediction={ClientPrediction} cooldown={ClientCooldownState}");
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(LegacyRequestId);
         if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0)
@@ -73,24 +73,24 @@ public sealed class UseItemTransactionData : DataType
             writer.WriteVarUInt((uint)LegacySetItemSlots.Count);
             for (int i = 0; i < LegacySetItemSlots.Count; i++)
             {
-                LegacySetItemSlots[i].Write(ref writer);
+                LegacySetItemSlots[i].Write(writer);
             }
         }
 
         writer.WriteVarUInt((uint)Actions.Count);
         for (int i = 0; i < Actions.Count; i++)
         {
-            Actions[i].Write(ref writer);
+            Actions[i].Write(writer);
         }
 
         writer.WriteVarUInt(ActionType);
         writer.WriteVarUInt(TriggerType);
-        BlockPosition.Write(ref writer);
+        BlockPosition.Write(writer);
         writer.WriteZigZag(BlockFace);
         writer.WriteZigZag(HotBarSlot);
-        HeldItem.Write(ref writer);
-        Position.Write(ref writer);
-        ClickedPosition.Write(ref writer);
+        HeldItem.Write(writer);
+        Position.Write(writer);
+        ClickedPosition.Write(writer);
         writer.WriteVarUInt(BlockRuntimeId);
         writer.WriteVarUInt(ClientPrediction);
         writer.WriteUInt8(ClientCooldownState);

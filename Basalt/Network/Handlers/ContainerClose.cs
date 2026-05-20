@@ -11,7 +11,9 @@ public static class ContainerClose
     {
 
         ContainerClosePacket packet = new();
-        packet.Deserialize(packetBuffer);
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
 
         if (server.Players.TryGetValue(connection, out Player? player))
         {

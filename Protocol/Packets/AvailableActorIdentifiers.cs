@@ -12,13 +12,13 @@ public sealed record AvailableActorIdentifiersPacket : DataPacket
 
     public override PacketId PacketId => PacketId.AvailableActorIdentifiers;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
-        Data = Basalt.Protocol.IO.NBT.Read<CompoundTag>(ref reader, NetworkNbtOptions, canHaveName: true);
+        Data = Basalt.Protocol.IO.NBT.Read<CompoundTag>(reader, NetworkNbtOptions, canHaveName: true);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
-        Basalt.Protocol.IO.NBT.WriteTag(ref writer, Data, NetworkNbtOptions, canHaveName: true);
+        Basalt.Protocol.IO.NBT.WriteTag(writer, Data, NetworkNbtOptions, canHaveName: true);
     }
 }

@@ -11,8 +11,10 @@ public static class RequestNetworkSettings
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         RequestNetworkSettingsPacket packet = new();
-        packet.Deserialize(packetBuffer);
-        
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
+
         if (packet.ProtocolVersion != ProtocolInfo.ProtocolVersion)
         {
             DisconnectReason reason = packet.ProtocolVersion < ProtocolInfo.ProtocolVersion

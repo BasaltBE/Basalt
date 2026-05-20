@@ -11,13 +11,13 @@ public sealed record NetworkStackLatencyPacket : DataPacket
 
     public override PacketId PacketId => PacketId.NetworkStackLatency;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         Timestamp = reader.ReadInt64(true);
         NeedsResponse = reader.ReadBool();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteInt64(Timestamp, true);
         writer.WriteBool(NeedsResponse);

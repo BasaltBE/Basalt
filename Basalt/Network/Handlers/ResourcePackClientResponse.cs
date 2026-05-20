@@ -15,7 +15,9 @@ public static class ResourcePackClientResponse
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         ResourcePackClientResponsePacket packet = new();
-        packet.Deserialize(packetBuffer);
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
 
         switch (packet.Response)
         {

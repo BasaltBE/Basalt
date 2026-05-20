@@ -10,14 +10,14 @@ public sealed class MineBlockStackRequestAction : IStackRequestAction, DataType
     public int PredictedDurability { get; set; }
     public int StackNetworkId { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         HotbarSlot = reader.ReadZigZag();
         PredictedDurability = reader.ReadZigZag();
         StackNetworkId = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(HotbarSlot);
         writer.WriteZigZag(PredictedDurability);

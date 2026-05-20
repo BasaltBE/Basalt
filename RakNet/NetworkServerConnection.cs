@@ -37,13 +37,7 @@ internal class NetworkServerConnection : NetworkConnection
 
     protected override void SendMessage(ReadOnlySpan<byte> raw)
     {
-        try
-        {
-            _socket.SendTo(raw, SocketFlags.None, Endpoint);
-        }
-        catch
-        {
-        }
+        _socket.SendTo(raw, SocketFlags.None, Endpoint);
     }
 
     protected override void HandleFrame(Packets.Types.Frame frame)
@@ -54,41 +48,35 @@ internal class NetworkServerConnection : NetworkConnection
         }
 
         LastSeenMs = Environment.TickCount64;
-        byte packetId = frame.Buffer[0];
+        byte packetId = frame.Buffer.Span[0];
 
-        try
+        switch (packetId)
         {
-            switch (packetId)
-            {
-                case ConnectionRequest.PacketId:
-                    HandleConnectionRequest(frame.Buffer);
-                    break;
+            case ConnectionRequest.PacketId:
+                HandleConnectionRequest(frame.Buffer.Span);
+                break;
 
-                case NewIncomingConnection.PacketId:
-                    HandleNewIncomingConnection(frame.Buffer);
-                    break;
+            case NewIncomingConnection.PacketId:
+                HandleNewIncomingConnection(frame.Buffer.Span);
+                break;
 
-                case ConnectedPingPacketId:
-                    HandleConnectedPing(frame.Buffer);
-                    break;
+            case ConnectedPingPacketId:
+                HandleConnectedPing(frame.Buffer.Span);
+                break;
 
-                case DisconnectNotification.PacketId:
-                    Disconnect(false);
-                    break;
+            case DisconnectNotification.PacketId:
+                Disconnect(false);
+                break;
 
-                case EncapsulatedGamePacketId:
-                    if (!IsConnected)
-                    {
-                        IsConnected = true;
-                        Connected?.Invoke(this);
-                    }
+            case EncapsulatedGamePacketId:
+                if (!IsConnected)
+                {
+                    IsConnected = true;
+                    Connected?.Invoke(this);
+                }
 
-                    Message?.Invoke(this, frame.Buffer);
-                    break;
-            }
-        }
-        catch
-        {
+                Message?.Invoke(this, frame.Buffer);
+                break;
         }
     }
 

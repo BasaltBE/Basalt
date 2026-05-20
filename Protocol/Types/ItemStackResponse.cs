@@ -10,7 +10,7 @@ public sealed class ItemStackResponse : DataType
     public int RequestId { get; set; }
     public List<StackResponseContainerInfo> ContainerInfo { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Status = (ItemStackResponseStatus)reader.ReadUInt8();
         RequestId = reader.ReadZigZag();
@@ -26,12 +26,12 @@ public sealed class ItemStackResponse : DataType
         for (int i = 0; i < count; i++)
         {
             StackResponseContainerInfo info = new();
-            info.Read(ref reader);
+            info.Read(reader);
             ContainerInfo.Add(info);
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8((byte)Status);
         writer.WriteZigZag(RequestId);
@@ -44,7 +44,7 @@ public sealed class ItemStackResponse : DataType
         writer.WriteVarInt(ContainerInfo.Count);
         for (int i = 0; i < ContainerInfo.Count; i++)
         {
-            ContainerInfo[i].Write(ref writer);
+            ContainerInfo[i].Write(writer);
         }
     }
 }

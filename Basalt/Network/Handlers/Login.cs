@@ -1,3 +1,4 @@
+using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
@@ -12,7 +13,9 @@ public static class Login
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
         LoginPacket packet = new();
-        packet.Deserialize(packetBuffer);
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        packet.Deserialize(reader);
 
         if (packet.Protocol != ProtocolInfo.ProtocolVersion)
         {

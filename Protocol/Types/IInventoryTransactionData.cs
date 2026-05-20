@@ -7,6 +7,6 @@ namespace Basalt.Protocol.Types;
 public interface IInventoryTransactionData
 {
     InventoryTransactionType Type { get; }
-    void Read(ref BinaryReader reader);
-    void Write(ref BinaryWriter writer);
+    void Read(BinaryReader reader);
+    void Write(BinaryWriter writer);
 }

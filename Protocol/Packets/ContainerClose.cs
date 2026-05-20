@@ -12,14 +12,14 @@ public sealed record ContainerClosePacket : DataPacket
 
     public override PacketId PacketId => PacketId.ContainerClose;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         WindowId = reader.ReadUInt8();
         ContainerType = reader.ReadUInt8();
         ServerSide = reader.ReadBool();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteUInt8(WindowId);
         writer.WriteUInt8(ContainerType);

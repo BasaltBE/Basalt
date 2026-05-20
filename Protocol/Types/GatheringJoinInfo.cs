@@ -14,26 +14,26 @@ public sealed class GatheringJoinInfo : DataType
     public string ScenarioId { get; set; } = string.Empty;
     public string ServerId { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        ExperienceId = UUID.Read(ref reader);
+        ExperienceId = UUID.Read(reader);
         ExperienceName = reader.ReadVarString();
-        ExperienceWorldId = UUID.Read(ref reader);
+        ExperienceWorldId = UUID.Read(reader);
         ExperienceWorldName = reader.ReadVarString();
         CreatorId = reader.ReadVarString();
-        TargetId = UUID.Read(ref reader);
+        TargetId = UUID.Read(reader);
         ScenarioId = reader.ReadVarString();
         ServerId = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        UUID.Write(ref writer, ExperienceId);
+        UUID.Write(writer, ExperienceId);
         writer.WriteVarString(ExperienceName);
-        UUID.Write(ref writer, ExperienceWorldId);
+        UUID.Write(writer, ExperienceWorldId);
         writer.WriteVarString(ExperienceWorldName);
         writer.WriteVarString(CreatorId);
-        UUID.Write(ref writer, TargetId);
+        UUID.Write(writer, TargetId);
         writer.WriteVarString(ScenarioId);
         writer.WriteVarString(ServerId);
     }

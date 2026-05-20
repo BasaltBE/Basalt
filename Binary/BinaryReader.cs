@@ -2,21 +2,13 @@ using System;
 
 namespace Basalt.Binary
 {
-    public ref struct BinaryReader
+    public ref struct BinaryReader(ReadOnlySpan<byte> buffer, ref int offset)
     {
-        public ReadOnlySpan<byte> Buffer { get; }
-        public int Offset { get; private set; }
-        public int Length => Buffer.Length;
-        public int Remaining => Length - Offset;
-
-        public BinaryReader(ReadOnlySpan<byte> buffer)
-        {
-            Buffer = buffer;
-            Offset = 0;
-        }
-
+        public readonly ReadOnlySpan<byte> Buffer = buffer;
+        public ref int Offset = ref offset;
+        public readonly int Length => Buffer.Length;
+        public readonly int Remaining => Length - Offset;
         public void Reset() => Offset = 0;
-
         public void Seek(int offset)
         {
             if ((uint)offset > (uint)Length)
@@ -28,7 +20,8 @@ namespace Basalt.Binary
         }
 
         public void Advance(int count) => Seek(Offset + count);
-        public ReadOnlySpan<byte> GetBuffer() => Buffer[..Offset];
+        public readonly ReadOnlySpan<byte> GetProcessedBytes() => Buffer[..Offset];
+        public readonly ReadOnlySpan<byte> GetRemainingBytes() => Buffer[Offset..];
 
         public ReadOnlySpan<byte> ReadBytes(int length)
         {

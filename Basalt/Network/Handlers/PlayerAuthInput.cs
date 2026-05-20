@@ -22,7 +22,9 @@ public static class PlayerAuthInput
         PlayerAuthInputPacket packet = new();
         try
         {
-            packet.Deserialize(packetBuffer);
+            int offset = 0;
+            Binary.BinaryReader reader = new(packetBuffer, ref offset);
+            packet.Deserialize(reader);
         }
         catch (Exception exception)
         {

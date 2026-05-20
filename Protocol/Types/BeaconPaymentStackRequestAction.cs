@@ -9,13 +9,13 @@ public sealed class BeaconPaymentStackRequestAction : IStackRequestAction, DataT
     public int PrimaryEffect { get; set; }
     public int SecondaryEffect { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         PrimaryEffect = reader.ReadZigZag();
         SecondaryEffect = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(PrimaryEffect);
         writer.WriteZigZag(SecondaryEffect);

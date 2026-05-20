@@ -9,16 +9,16 @@ public sealed class StackRequestSlotInfo : DataType
     public byte Slot { get; set; }
     public int StackNetworkId { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Container.Read(ref reader);
+        Container.Read(reader);
         Slot = reader.ReadUInt8();
         StackNetworkId = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        Container.Write(ref writer);
+        Container.Write(writer);
         writer.WriteUInt8(Slot);
         writer.WriteZigZag(StackNetworkId);
     }

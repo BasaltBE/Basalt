@@ -10,14 +10,14 @@ public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestActio
     public byte NumberOfCrafts { get; set; }
     public int Cost { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
         Cost = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteUInt8(NumberOfCrafts);

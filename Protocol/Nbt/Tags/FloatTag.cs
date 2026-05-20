@@ -9,20 +9,20 @@ public sealed class FloatTag : BaseTag
     public float Value { get; set; }
     public override object ToJsonValue() => Value;
 
-    public override void Write(ref BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
+    public override void Write(BinaryWriter writer, ReadWriteOptions options, bool canHaveName = true)
     {
         if (canHaveName && options.Name)
         {
-            WriteName(ref writer, Name, options.VarInt);
+            WriteName(writer, Name, options.VarInt);
         }
 
         writer.WriteF32(Value, true);
     }
 
-    public static FloatTag Read(ref BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
+    public static FloatTag Read(BinaryReader reader, ReadWriteOptions options = default, bool canHaveName = true)
     {
         ReadWriteOptions effective = options == default ? new ReadWriteOptions() : options;
-        string? name = canHaveName && effective.Name ? ReadName(ref reader, effective.VarInt) : null;
+        string? name = canHaveName && effective.Name ? ReadName(reader, effective.VarInt) : null;
         return new FloatTag
         {
             Name = name,

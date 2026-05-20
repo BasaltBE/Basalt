@@ -52,13 +52,7 @@ public sealed class Server
         _runCancellation = new CancellationTokenSource();
         _networkLoopTask = Task.Run(async () =>
         {
-            try
-            {
-                await _raknet.Start();
-            }
-            catch
-            {
-            }
+            await _raknet.Start();
         }, _runCancellation.Token);
 
         _tickCancellation = new CancellationTokenSource();
@@ -94,6 +88,7 @@ public sealed class Server
         }
         catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException))
         {
+            // Console.WriteLine("dANB");
         }
         finally
         {

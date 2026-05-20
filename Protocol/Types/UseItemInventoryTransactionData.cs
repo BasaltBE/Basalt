@@ -20,33 +20,33 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
     public uint ClientPrediction { get; set; }
     public byte ClientCooldownState { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ActionType = reader.ReadVarUInt();
         TriggerType = reader.ReadVarUInt();
         BlockPos blockPosition = BlockPosition;
-        blockPosition.Read(ref reader);
+        blockPosition.Read(reader);
         BlockPosition = blockPosition;
         BlockFace = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
-        HeldItem.Read(ref reader);
-        Position.Read(ref reader);
-        ClickedPosition.Read(ref reader);
+        HeldItem.Read(reader);
+        Position.Read(reader);
+        ClickedPosition.Read(reader);
         BlockRuntimeId = reader.ReadVarUInt();
         ClientPrediction = reader.ReadVarUInt();
         ClientCooldownState = reader.ReadUInt8();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(ActionType);
         writer.WriteVarUInt(TriggerType);
-        BlockPosition.Write(ref writer);
+        BlockPosition.Write(writer);
         writer.WriteZigZag(BlockFace);
         writer.WriteZigZag(HotBarSlot);
-        HeldItem.Write(ref writer);
-        Position.Write(ref writer);
-        ClickedPosition.Write(ref writer);
+        HeldItem.Write(writer);
+        Position.Write(writer);
+        ClickedPosition.Write(writer);
         writer.WriteVarUInt(BlockRuntimeId);
         writer.WriteVarUInt(ClientPrediction);
         writer.WriteUInt8(ClientCooldownState);

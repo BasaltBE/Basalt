@@ -13,19 +13,19 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
     public ItemInstance HeldItem { get; set; } = new();
     public Vec3f HeadPosition { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ActionType = reader.ReadVarUInt();
         HotBarSlot = reader.ReadZigZag();
-        HeldItem.Read(ref reader);
-        HeadPosition.Read(ref reader);
+        HeldItem.Read(reader);
+        HeadPosition.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(ActionType);
         writer.WriteZigZag(HotBarSlot);
-        HeldItem.Write(ref writer);
-        HeadPosition.Write(ref writer);
+        HeldItem.Write(writer);
+        HeadPosition.Write(writer);
     }
 }

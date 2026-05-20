@@ -8,6 +8,6 @@ public sealed class RawStackRequestAction : IStackRequestAction, DataType
     public byte Type { get; set; }
     public byte[] Data { get; set; } = [];
     public byte ActionType => Type;
-    public void Read(ref BinaryReader reader) { }
-    public void Write(ref BinaryWriter writer) => writer.WriteBytes(Data);
+    public void Read(BinaryReader reader) { }
+    public void Write(BinaryWriter writer) => writer.WriteBytes(Data);
 }

@@ -1,22 +1,14 @@
-using System;
-
 namespace Basalt.Binary
 {
-    public ref struct BinaryWriter
+    public ref struct BinaryWriter(Span<byte> buffer, ref int offset)
     {
-        public Span<byte> Buffer { get; }
-        public int Offset { get; private set; }
-        public int Length => Buffer.Length;
-        public int Remaining => Length - Offset;
+        public readonly Span<byte> Buffer = buffer;
+        public ref int Offset = ref offset;
+        public readonly int Length => Buffer.Length;
+        public readonly int Remaining => Length - Offset;
 
-        public BinaryWriter(Span<byte> buffer)
-        {
-            Buffer = buffer;
-            Offset = 0;
-        }
-
+        public static implicit operator BinaryReader(BinaryWriter writer) => new(writer.Buffer, ref writer.Offset);
         public void Reset() => Offset = 0;
-
         public void Seek(int offset)
         {
             if ((uint)offset > (uint)Length)
@@ -28,7 +20,9 @@ namespace Basalt.Binary
         }
 
         public void Advance(int count) => Seek(Offset + count);
-        public ReadOnlySpan<byte> GetBuffer() => Buffer[..Offset];
+        public readonly Span<byte> GetProcessedBytes() => Buffer[..Offset];
+        public readonly Span<byte> GetRemainingBytes() => Buffer[Offset..];
+        public readonly Range GetProcessedRange() => new(0, Offset);
 
         public void WriteBytes(ReadOnlySpan<byte> value)
         {

@@ -9,14 +9,14 @@ public struct Vec3f : DataType
     public float Y { get; set; }
     public float Z { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         X = reader.ReadF32(true);
         Y = reader.ReadF32(true);
         Z = reader.ReadF32(true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteF32(X, true);
         writer.WriteF32(Y, true);

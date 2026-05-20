@@ -8,28 +8,28 @@ public sealed class StackResponseContainerInfo : DataType
     public FullContainerName Container { get; set; } = new();
     public List<StackResponseSlotInfo> SlotInfo { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Container.Read(ref reader);
+        Container.Read(reader);
 
         int count = reader.ReadVarInt();
         SlotInfo = new(count);
         for (int i = 0; i < count; i++)
         {
             StackResponseSlotInfo info = new();
-            info.Read(ref reader);
+            info.Read(reader);
             SlotInfo.Add(info);
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        Container.Write(ref writer);
+        Container.Write(writer);
 
         writer.WriteVarInt(SlotInfo.Count);
         for (int i = 0; i < SlotInfo.Count; i++)
         {
-            SlotInfo[i].Write(ref writer);
+            SlotInfo[i].Write(writer);
         }
     }
 }

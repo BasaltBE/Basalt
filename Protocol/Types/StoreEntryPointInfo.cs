@@ -8,13 +8,13 @@ public sealed class StoreEntryPointInfo : DataType
     public string StoreId { get; set; } = string.Empty;
     public string StoreName { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         StoreId = reader.ReadVarString();
         StoreName = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(StoreId);
         writer.WriteVarString(StoreName);

@@ -8,13 +8,13 @@ public sealed class PlayerMovementSettings : DataType
     public int RewindHistorySize { get; set; }
     public bool ServerAuthoritativeBlockBreaking { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         RewindHistorySize = reader.ReadZigZag();
         ServerAuthoritativeBlockBreaking = reader.ReadBool();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(RewindHistorySize);
         writer.WriteBool(ServerAuthoritativeBlockBreaking);

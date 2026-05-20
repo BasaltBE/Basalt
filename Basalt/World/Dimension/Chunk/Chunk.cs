@@ -1,3 +1,4 @@
+using Basalt.Binary;
 using Basalt.Block;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.IO;
@@ -344,44 +345,18 @@ public sealed class Chunk
             return chunk.Cache;
         }
 
-        byte[] rented = ArrayPool<byte>.Shared.Rent(2 * 1024 * 1024);
-        try
-        {
-            int written = Serialize(chunk, rented, nbt);
-            byte[] serialized = rented.AsSpan(0, written).ToArray();
-            if (nbt)
-            {
-                return serialized;
-            }
+        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+        int written = Serialize(chunk, stream, nbt);
+        byte[] serialized = stream.GetProcessedBytes().ToArray();
+        if (nbt) return serialized;
 
-            chunk.Cache = serialized;
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(rented);
-        }
+        chunk.Cache = serialized;
 
         return chunk.Cache!;
     }
 
-    public static bool TrySerialize(Chunk chunk, Span<byte> destination, out int written, bool nbt = false)
+    public static int Serialize(Chunk chunk, BinaryWriter writer, bool nbt = false)
     {
-        try
-        {
-            written = Serialize(chunk, destination, nbt);
-            return true;
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            written = 0;
-            return false;
-        }
-    }
-
-    public static int Serialize(Chunk chunk, Span<byte> destination, bool nbt = false)
-    {
-        BinaryWriter writer = new(destination);
-
         int subChunkCount = chunk.GetSubChunkSendCount();
         for (int index = 0; index < subChunkCount; index++)
         {
@@ -393,7 +368,7 @@ public sealed class Chunk
                 subChunk = new SubChunk { Index = (sbyte)(index - offset) };
             }
 
-            SubChunk.Serialize(subChunk, ref writer, nbt);
+            SubChunk.Serialize(subChunk, writer, nbt);
         }
 
         for (int index = 0; index < subChunkCount; index++)
@@ -434,15 +409,14 @@ public sealed class Chunk
         List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
         for (int i = 0; i < blockEntities.Count; i++)
         {
-            NBT.WriteTag(ref writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            NBT.WriteTag(writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
         }
 
         return writer.Offset;
     }
 
-    public static Chunk Deserialize(DimensionType type, int x, int z, ReadOnlySpan<byte> buffer, bool nbt = false, bool? biomeNbt = null)
+    public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null)
     {
-        BinaryReader reader = new(buffer);
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
         for (int index = 0; index < MaxSubChunks; index++)
@@ -458,7 +432,7 @@ public sealed class Chunk
                 break;
             }
 
-            subChunks[index] = SubChunk.Deserialize(ref reader, nbt);
+            subChunks[index] = SubChunk.Deserialize(reader, nbt);
         }
 
         for (int i = 0; i < subChunks.Length; i++)
@@ -477,10 +451,7 @@ public sealed class Chunk
             _ = reader.ReadUInt8();
         }
 
-        Chunk chunk = new(x, z, type, subChunks)
-        {
-            Cache = nbt ? null : buffer.ToArray()
-        };
+        Chunk chunk = new(x, z, type, subChunks);
 
         while (reader.Remaining > 0)
         {
@@ -490,13 +461,16 @@ public sealed class Chunk
             }
 
             CompoundTag tag = NBT.ReadRootCompoundTag(
-                ref reader,
+                reader,
                 new ReadWriteOptions(Name: true, Type: true, VarInt: false),
                 canHaveName: true);
 
             BlockLevelStorage storage = new(chunk, tag);
             chunk.SetBlockStorage(storage.GetPosition(), storage, dirty: false);
         }
+
+
+        chunk.Cache = nbt ? null : reader.GetProcessedBytes().ToArray();
 
         return chunk;
     }

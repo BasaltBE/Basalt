@@ -47,7 +47,7 @@ public struct PlayerAuthInputData : DataType
         return flags;
     }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Flags = UInt128.Zero;
         int shift = 0;
@@ -71,7 +71,7 @@ public struct PlayerAuthInputData : DataType
         }
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         UInt128 value = Flags;
         while (value >= 0x80)

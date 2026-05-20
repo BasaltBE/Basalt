@@ -6,6 +6,6 @@ namespace Basalt.Protocol.Types;
 public sealed class EmptyStackRequestAction(byte type) : IStackRequestAction, DataType
 {
     public byte ActionType => type;
-    public void Read(ref BinaryReader reader) { }
-    public void Write(ref BinaryWriter writer) { }
+    public void Read(BinaryReader reader) { }
+    public void Write(BinaryWriter writer) { }
 }

@@ -9,18 +9,18 @@ public sealed class ServerJoinInformation : DataType
     public Optional<StoreEntryPointInfo> StoreEntryPointInfo { get; set; } = new();
     public Optional<PresenceInfo> PresenceInfo { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        GatheringJoinInfo.Read(ref reader);
-        StoreEntryPointInfo.Read(ref reader);
-        PresenceInfo.Read(ref reader);
+        GatheringJoinInfo.Read(reader);
+        StoreEntryPointInfo.Read(reader);
+        PresenceInfo.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        GatheringJoinInfo.Write(ref writer);
-        StoreEntryPointInfo.Write(ref writer);
-        PresenceInfo.Write(ref writer);
+        GatheringJoinInfo.Write(writer);
+        StoreEntryPointInfo.Write(writer);
+        PresenceInfo.Write(writer);
     }
 }
 

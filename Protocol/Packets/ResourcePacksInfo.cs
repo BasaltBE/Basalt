@@ -17,36 +17,36 @@ public sealed record ResourcePacksInfoPacket : DataPacket
 
     public override PacketId PacketId => PacketId.ResourcePacksInfo;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         MustAccept = reader.ReadBool();
         HasAddons = reader.ReadBool();
         HasScripts = reader.ReadBool();
         ForceDisableVibrantVisuals = reader.ReadBool();
-        WorldTemplateUuid = UUID.Read(ref reader);
+        WorldTemplateUuid = UUID.Read(reader);
         WorldTemplateVersion = reader.ReadVarString();
         int packsLength = reader.ReadUInt16(true);
         Packs = new List<ResourcePackInfo>(packsLength);
         for (int i = 0; i < packsLength; i++)
         {
             ResourcePackInfo pack = new();
-            pack.Read(ref reader);
+            pack.Read(reader);
             Packs.Add(pack);
         }
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteBool(MustAccept);
         writer.WriteBool(HasAddons);
         writer.WriteBool(HasScripts);
         writer.WriteBool(ForceDisableVibrantVisuals);
-        UUID.Write(ref writer, WorldTemplateUuid);
+        UUID.Write(writer, WorldTemplateUuid);
         writer.WriteVarString(WorldTemplateVersion);
         writer.WriteUInt16((ushort)Packs.Count, true);
         for (int i = 0; i < Packs.Count; i++)
         {
-            Packs[i].Write(ref writer);
+            Packs[i].Write(writer);
         }
     }
 }

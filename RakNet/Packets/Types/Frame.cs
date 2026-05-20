@@ -14,7 +14,7 @@ public struct Frame(
     uint splitSize = 0,
     ushort splitId = 0,
     uint splitIndex = 0,
-    byte[]? buffer = null
+    ReadOnlyMemory<byte> buffer = default
 )
 {
     public Reliability Reliability = reliability;
@@ -27,7 +27,7 @@ public struct Frame(
     public uint SplitSize = splitSize;
     public ushort SplitId = splitId;
     public uint SplitIndex = splitIndex;
-    public byte[] Buffer = buffer ?? [];
+    public ReadOnlyMemory<byte> Buffer = buffer;
 
     public static Frame Read(ReadOnlySpan<byte> src, out int bytesRead, int offset = 0)
     {
@@ -80,7 +80,7 @@ public struct Frame(
         }
 
         int bufferByteLength = (bufferBitLength + 7) / 8;
-        byte[] buffer = src.Slice(offset, bufferByteLength).ToArray();
+        ReadOnlyMemory<byte> buffer = src.Slice(offset, bufferByteLength).ToArray();
         offset += bufferByteLength;
 
         bytesRead = offset - startOffset;
@@ -146,10 +146,37 @@ public struct Frame(
             offset += 4;
         }
 
-        frame.Buffer.AsSpan().CopyTo(dest[offset..]);
+        frame.Buffer.Span.CopyTo(dest[offset..]);
         offset += frame.Buffer.Length;
 
         return offset - startOffset;
+    }
+
+    public static int GetSize(Frame frame)
+    {
+        int size = 3 + frame.Buffer.Length;
+
+        if (NeedsReliableIndex(frame.Reliability))
+        {
+            size += 3;
+        }
+
+        if (NeedsSequencedIndex(frame.Reliability))
+        {
+            size += 3;
+        }
+
+        if (NeedsOrdering(frame.Reliability))
+        {
+            size += 4;
+        }
+
+        if (frame.IsSplit)
+        {
+            size += 10;
+        }
+
+        return size;
     }
 
     private static bool NeedsReliableIndex(Reliability reliability)

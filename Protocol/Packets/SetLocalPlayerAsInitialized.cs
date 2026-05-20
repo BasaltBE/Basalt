@@ -10,12 +10,12 @@ public sealed record SetLocalPlayerAsInitializedPacket : DataPacket
 
     public override PacketId PacketId => PacketId.SetLocalPlayerAsInitialized;
 
-    public override void Deserialize(ref BinaryReader reader)
+    public override void Deserialize(BinaryReader reader)
     {
         EntityRuntimeId = reader.ReadVarULong();
     }
 
-    public override void Serialize(ref BinaryWriter writer)
+    public override void Serialize(BinaryWriter writer)
     {
         writer.WriteVarULong(EntityRuntimeId);
     }

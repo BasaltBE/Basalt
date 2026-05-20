@@ -10,17 +10,17 @@ public sealed class DropStackRequestAction : IStackRequestAction, DataType
     public StackRequestSlotInfo Source { get; set; } = new();
     public bool Randomly { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Count = reader.ReadUInt8();
-        Source.Read(ref reader);
+        Source.Read(reader);
         Randomly = reader.ReadBool();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(Count);
-        Source.Write(ref writer);
+        Source.Write(writer);
         writer.WriteBool(Randomly);
     }
 }

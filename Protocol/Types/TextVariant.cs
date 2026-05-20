@@ -11,17 +11,17 @@ public sealed class TextVariant : DataType<TextVariantType>
     public string Source { get; set; } = string.Empty;
     public List<string> Parameters { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Read(ref reader, TextVariantType.MessageOnly);
+        Read(reader, TextVariantType.MessageOnly);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        Write(ref writer, TextVariantType.MessageOnly);
+        Write(writer, TextVariantType.MessageOnly);
     }
 
-    public void Read(ref BinaryReader reader, TextVariantType parameter)
+    public void Read(BinaryReader reader, TextVariantType parameter)
     {
         Type = (TextType)reader.ReadUInt8();
 
@@ -53,7 +53,7 @@ public sealed class TextVariant : DataType<TextVariantType>
         }
     }
 
-    public void Write(ref BinaryWriter writer, TextVariantType parameter)
+    public void Write(BinaryWriter writer, TextVariantType parameter)
     {
         writer.WriteUInt8((byte)Type);
 

@@ -45,16 +45,21 @@ public struct FrameSet(uint sequence = 0, Frame[]? frames = null)
 
     public static int Serialize(FrameSet frameSet, Span<byte> dest)
     {
+        return Serialize(frameSet.Sequence, frameSet.Frames, dest);
+    }
+
+    public static int Serialize(uint sequence, IReadOnlyList<Frame> frames, Span<byte> dest)
+    {
         int offset = 0;
         dest.WriteUInt8(FrameSet.PacketId, offset);
         offset += 1;
 
-        dest.WriteUInt24(frameSet.Sequence, offset, true);
+        dest.WriteUInt24(sequence, offset, true);
         offset += 3;
 
-        for (int i = 0; i < frameSet.Frames.Length; i++)
+        for (int i = 0; i < frames.Count; i++)
         {
-            offset += Frame.Write(frameSet.Frames[i], dest, offset);
+            offset += Frame.Write(frames[i], dest, offset);
         }
 
         return offset;

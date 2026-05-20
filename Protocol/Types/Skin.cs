@@ -45,40 +45,40 @@ public sealed class Skin : DataType
     public bool Trusted { get; set; }
     public bool OverrideAppearance { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         SkinID = reader.ReadVarString();
         PlayFabID = reader.ReadVarString();
-        SkinResourcePatch = ProtocolTypeIO.ReadByteArray(ref reader);
+        SkinResourcePatch = ProtocolTypeIO.ReadByteArray(reader);
         SkinImageWidth = reader.ReadUInt32(true);
         SkinImageHeight = reader.ReadUInt32(true);
-        SkinData = ProtocolTypeIO.ReadByteArray(ref reader);
-        Animations = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
+        SkinData = ProtocolTypeIO.ReadByteArray(reader);
+        Animations = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             SkinAnimation value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
         CapeImageWidth = reader.ReadUInt32(true);
         CapeImageHeight = reader.ReadUInt32(true);
-        CapeData = ProtocolTypeIO.ReadByteArray(ref reader);
-        SkinGeometry = ProtocolTypeIO.ReadByteArray(ref reader);
-        GeometryDataEngineVersion = ProtocolTypeIO.ReadByteArray(ref reader);
-        AnimationData = ProtocolTypeIO.ReadByteArray(ref reader);
+        CapeData = ProtocolTypeIO.ReadByteArray(reader);
+        SkinGeometry = ProtocolTypeIO.ReadByteArray(reader);
+        GeometryDataEngineVersion = ProtocolTypeIO.ReadByteArray(reader);
+        AnimationData = ProtocolTypeIO.ReadByteArray(reader);
         CapeID = reader.ReadVarString();
         FullID = reader.ReadVarString();
         ArmSize = reader.ReadVarString();
         SkinColour = reader.ReadVarString();
-        PersonaPieces = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
+        PersonaPieces = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             PersonaPiece value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
-        PieceTintColours = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) =>
+        PieceTintColours = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
         {
             PersonaPieceTintColour value = new();
-            value.Read(ref r);
+            value.Read(r);
             return value;
         });
 
@@ -91,27 +91,27 @@ public sealed class Skin : DataType
         OverrideAppearance = reader.ReadBool();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(SkinID);
         writer.WriteVarString(PlayFabID);
-        ProtocolTypeIO.WriteByteArray(ref writer, SkinResourcePatch);
+        ProtocolTypeIO.WriteByteArray(writer, SkinResourcePatch);
         writer.WriteUInt32(SkinImageWidth, true);
         writer.WriteUInt32(SkinImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(ref writer, SkinData);
-        ProtocolTypeIO.WriteList(ref writer, Animations, static (ref BinaryWriter w, SkinAnimation value) => value.Write(ref w));
+        ProtocolTypeIO.WriteByteArray(writer, SkinData);
+        ProtocolTypeIO.WriteList(writer, Animations, static (BinaryWriter w, SkinAnimation value) => value.Write(w));
         writer.WriteUInt32(CapeImageWidth, true);
         writer.WriteUInt32(CapeImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(ref writer, CapeData);
-        ProtocolTypeIO.WriteByteArray(ref writer, SkinGeometry);
-        ProtocolTypeIO.WriteByteArray(ref writer, GeometryDataEngineVersion);
-        ProtocolTypeIO.WriteByteArray(ref writer, AnimationData);
+        ProtocolTypeIO.WriteByteArray(writer, CapeData);
+        ProtocolTypeIO.WriteByteArray(writer, SkinGeometry);
+        ProtocolTypeIO.WriteByteArray(writer, GeometryDataEngineVersion);
+        ProtocolTypeIO.WriteByteArray(writer, AnimationData);
         writer.WriteVarString(CapeID);
         writer.WriteVarString(FullID);
         writer.WriteVarString(ArmSize);
         writer.WriteVarString(SkinColour);
-        ProtocolTypeIO.WriteList(ref writer, PersonaPieces, static (ref BinaryWriter w, PersonaPiece value) => value.Write(ref w));
-        ProtocolTypeIO.WriteList(ref writer, PieceTintColours, static (ref BinaryWriter w, PersonaPieceTintColour value) => value.Write(ref w));
+        ProtocolTypeIO.WriteList(writer, PersonaPieces, static (BinaryWriter w, PersonaPiece value) => value.Write(w));
+        ProtocolTypeIO.WriteList(writer, PieceTintColours, static (BinaryWriter w, PersonaPieceTintColour value) => value.Write(w));
 
         Validate();
 
@@ -154,21 +154,21 @@ public sealed class SkinAnimation : DataType
     public float FrameCount { get; set; }
     public uint ExpressionType { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         ImageWidth = reader.ReadUInt32(true);
         ImageHeight = reader.ReadUInt32(true);
-        ImageData = ProtocolTypeIO.ReadByteArray(ref reader);
+        ImageData = ProtocolTypeIO.ReadByteArray(reader);
         AnimationType = reader.ReadUInt32(true);
         FrameCount = reader.ReadF32(true);
         ExpressionType = reader.ReadUInt32(true);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteUInt32(ImageWidth, true);
         writer.WriteUInt32(ImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(ref writer, ImageData);
+        ProtocolTypeIO.WriteByteArray(writer, ImageData);
         writer.WriteUInt32(AnimationType, true);
         writer.WriteF32(FrameCount, true);
         writer.WriteUInt32(ExpressionType, true);
@@ -183,7 +183,7 @@ public sealed class PersonaPiece : DataType
     public bool Default { get; set; }
     public string ProductID { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         PieceID = reader.ReadVarString();
         PieceType = reader.ReadVarString();
@@ -192,7 +192,7 @@ public sealed class PersonaPiece : DataType
         ProductID = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(PieceID);
         writer.WriteVarString(PieceType);
@@ -207,55 +207,55 @@ public sealed class PersonaPieceTintColour : DataType
     public string PieceType { get; set; } = string.Empty;
     public List<string> Colours { get; set; } = [];
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         PieceType = reader.ReadVarString();
-        Colours = ProtocolTypeIO.ReadList(ref reader, static (ref BinaryReader r) => r.ReadVarString());
+        Colours = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) => r.ReadVarString());
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(PieceType);
-        ProtocolTypeIO.WriteList(ref writer, Colours, static (ref BinaryWriter w, string value) => w.WriteVarString(value));
+        ProtocolTypeIO.WriteList(writer, Colours, static (BinaryWriter w, string value) => w.WriteVarString(value));
     }
 }
 
 file static class ProtocolTypeIO
 {
-    public static byte[] ReadByteArray(ref BinaryReader reader)
+    public static byte[] ReadByteArray(BinaryReader reader)
     {
         int length = checked((int)reader.ReadVarUInt());
         return reader.ReadBytes(length).ToArray();
     }
 
-    public static void WriteByteArray(ref BinaryWriter writer, ReadOnlySpan<byte> value)
+    public static void WriteByteArray(BinaryWriter writer, ReadOnlySpan<byte> value)
     {
         writer.WriteVarUInt((uint)value.Length);
         writer.WriteBytes(value);
     }
 
-    public static List<T> ReadList<T>(ref BinaryReader reader, ReadItem<T> read)
+    public static List<T> ReadList<T>(BinaryReader reader, ReadItem<T> read)
     {
         int length = checked((int)reader.ReadUInt32(true));
         List<T> list = new(length);
         for (int i = 0; i < length; i++)
         {
-            list.Add(read(ref reader));
+            list.Add(read(reader));
         }
 
         return list;
     }
 
-    public static void WriteList<T>(ref BinaryWriter writer, IReadOnlyList<T> values, WriteItem<T> write)
+    public static void WriteList<T>(BinaryWriter writer, IReadOnlyList<T> values, WriteItem<T> write)
     {
         writer.WriteUInt32((uint)values.Count, true);
         for (int i = 0; i < values.Count; i++)
         {
-            write(ref writer, values[i]);
+            write(writer, values[i]);
         }
     }
 
-    public delegate T ReadItem<out T>(ref BinaryReader reader);
-    public delegate void WriteItem<T>(ref BinaryWriter writer, T value);
+    public delegate T ReadItem<out T>(BinaryReader reader);
+    public delegate void WriteItem<T>(BinaryWriter writer, T value);
 }
 

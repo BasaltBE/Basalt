@@ -196,12 +196,13 @@ public abstract class NetworkConnection
             uint orderingIndex = NeedsOrdering(reliability) ? _sendOrderingIndex[orderingChannel]++ : 0;
             uint sequencedIndex = NeedsSequencedIndex(reliability) ? _sendSequencedIndex[orderingChannel]++ : 0;
 
+            byte[] splitBuffer = payload.ToArray();
             int offset = 0;
 
             for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
             {
                 int chunkLength = Math.Min(maxPayloadSize, payload.Length - offset);
-                ReadOnlySpan<byte> chunk = payload.Slice(offset, chunkLength);
+                ReadOnlyMemory<byte> chunk = splitBuffer.AsMemory(offset, chunkLength);
                 offset += chunkLength;
 
                 _outgoingFrames.AddLast(new Frame(
@@ -215,7 +216,7 @@ public abstract class NetworkConnection
                     splitSize: (uint)splitCount,
                     splitId: currentSplitId,
                     splitIndex: (uint)splitIndex,
-                    buffer: chunk.ToArray()
+                    buffer: chunk
                 ));
             }
         }
@@ -245,7 +246,7 @@ public abstract class NetworkConnection
             while (_outgoingFrames.Count > 0)
             {
                 Frame frame = _outgoingFrames.First!.Value;
-                int frameSize = Frame.Write(frame, datagramBuffer, 0);
+                int frameSize = Frame.GetSize(frame);
 
                 if (packedFrames.Count > 0 && currentSize + frameSize > maxDatagramSize)
                 {
@@ -268,12 +269,20 @@ public abstract class NetworkConnection
             }
 
             uint sequence = _sendSequence++;
-            FrameSet frameSet = new(sequence, [.. packedFrames]);
-
-            int length = FrameSet.Serialize(frameSet, datagramBuffer);
+            int length = FrameSet.Serialize(sequence, packedFrames, datagramBuffer);
             SendMessage(datagramBuffer.AsSpan(0, length));
 
-            if (packedFrames.Any(frame => NeedsReliableIndex(frame.Reliability)))
+            bool reliable = false;
+            for (int i = 0; i < packedFrames.Count; i++)
+            {
+                if (NeedsReliableIndex(packedFrames[i].Reliability))
+                {
+                    reliable = true;
+                    break;
+                }
+            }
+
+            if (reliable)
             {
                 _pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
             }
@@ -428,7 +437,7 @@ public abstract class NetworkConnection
         for (uint i = 0; i < split.TotalParts; i++)
         {
             Frame part = split.Parts[i]!.Value;
-            part.Buffer.AsSpan().CopyTo(payload.AsSpan(offset));
+            part.Buffer.Span.CopyTo(payload.AsSpan(offset));
             offset += part.Buffer.Length;
         }
 

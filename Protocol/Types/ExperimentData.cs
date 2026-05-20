@@ -8,13 +8,13 @@ public sealed class ExperimentData : DataType
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Name = reader.ReadVarString();
         Enabled = reader.ReadBool();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Name);
         writer.WriteBool(Enabled);

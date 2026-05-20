@@ -10,19 +10,19 @@ public sealed class PlayerBlockAction : DataType
     public BlockPos BlockPos { get; set; }
     public int Face { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Action = (PlayerActionType)reader.ReadZigZag();
         BlockPos pos = BlockPos;
-        pos.Read(ref reader);
+        pos.Read(reader);
         BlockPos = pos;
         Face = reader.ReadZigZag();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag((int)Action);
-        BlockPos.Write(ref writer);
+        BlockPos.Write(writer);
         writer.WriteZigZag(Face);
     }
 }

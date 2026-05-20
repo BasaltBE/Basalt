@@ -16,9 +16,9 @@ public sealed class ResourcePackInfo : DataType
     public bool RtxEnabled { get; set; }
     public string DownloadUrl { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Uuid = UUID.Read(ref reader);
+        Uuid = UUID.Read(reader);
         Version = reader.ReadVarString();
         Size = reader.ReadUInt64(true);
         ContentKey = reader.ReadVarString();
@@ -30,9 +30,9 @@ public sealed class ResourcePackInfo : DataType
         DownloadUrl = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        UUID.Write(ref writer, Uuid);
+        UUID.Write(writer, Uuid);
         writer.WriteVarString(Version);
         writer.WriteUInt64(Size, true);
         writer.WriteVarString(ContentKey);

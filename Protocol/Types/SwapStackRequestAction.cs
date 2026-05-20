@@ -9,15 +9,15 @@ public sealed class SwapStackRequestAction : IStackRequestAction, DataType
     public StackRequestSlotInfo Source { get; set; } = new();
     public StackRequestSlotInfo Destination { get; set; } = new();
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-        Source.Read(ref reader);
-        Destination.Read(ref reader);
+        Source.Read(reader);
+        Destination.Read(reader);
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
-        Source.Write(ref writer);
-        Destination.Write(ref writer);
+        Source.Write(writer);
+        Destination.Write(writer);
     }
 }

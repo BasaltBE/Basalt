@@ -251,24 +251,22 @@ public sealed class BlockLevelStorage : CompoundTag
         AddDynamicProperty(key, value);
     }
 
-    public static BlockLevelStorage FromBuffer(ChunkColumn? chunk, ReadOnlySpan<byte> buffer)
+    public static BlockLevelStorage FromStream(ChunkColumn? chunk, BinaryReader reader)
     {
-        BinaryReader reader = new(buffer);
         TagType type = (TagType)reader.ReadInt8();
         if (type != TagType.Compound)
         {
             throw new InvalidOperationException($"Expected Compound tag, got {type}.");
         }
 
-        CompoundTag tag = CompoundTag.Read(ref reader);
+        CompoundTag tag = Read(reader);
         return new BlockLevelStorage(chunk, tag);
     }
 
-    public static ReadOnlySpan<byte> ToBuffer(BlockLevelStorage storage, Span<byte> destination)
+    public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer)
     {
-        BinaryWriter writer = new(destination);
-        NBT.WriteTag(ref writer, storage, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
-        return writer.GetBuffer();
+        NBT.WriteTag(writer, storage, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+        return writer.GetProcessedBytes();
     }
 
     private ListTag EnsureDynamicPropertiesList()

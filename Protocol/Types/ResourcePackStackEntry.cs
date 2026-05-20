@@ -9,7 +9,7 @@ public sealed class ResourcePackStackEntry : DataType
     public string Version { get; set; } = "1.0.0";
     public string SubPackName { get; set; } = string.Empty;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         if (!Guid.TryParse(reader.ReadVarString(), out Guid uuid))
         {
@@ -21,7 +21,7 @@ public sealed class ResourcePackStackEntry : DataType
         SubPackName = reader.ReadVarString();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Uuid.ToString());
         writer.WriteVarString(Version);

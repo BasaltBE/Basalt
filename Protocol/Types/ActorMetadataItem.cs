@@ -10,7 +10,7 @@ public sealed class ActorMetadataItem : DataType
     public ActorDataType Type { get; set; }
     public object Value { get; set; } = 0;
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         Id = (ActorDataId)reader.ReadVarInt();
         Type = (ActorDataType)reader.ReadVarInt();
@@ -33,7 +33,7 @@ public sealed class ActorMetadataItem : DataType
         };
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarInt((int)Id);
         writer.WriteVarInt((int)Type);

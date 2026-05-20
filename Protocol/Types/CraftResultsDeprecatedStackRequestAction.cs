@@ -9,26 +9,26 @@ public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestActi
     public List<NetworkItemStackDescriptor> ResultItems { get; set; } = [];
     public byte TimesCrafted { get; set; }
 
-    public void Read(ref BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
         int count = checked((int)reader.ReadVarUInt());
         ResultItems = new(count);
         for (int i = 0; i < count; i++)
         {
             NetworkItemStackDescriptor item = new();
-            item.Read(ref reader);
+            item.Read(reader);
             ResultItems.Add(item);
         }
 
         TimesCrafted = reader.ReadUInt8();
     }
 
-    public void Write(ref BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)ResultItems.Count);
         for (int i = 0; i < ResultItems.Count; i++)
         {
-            ResultItems[i].Write(ref writer);
+            ResultItems[i].Write(writer);
         }
 
         writer.WriteUInt8(TimesCrafted);
