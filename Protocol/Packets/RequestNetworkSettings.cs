@@ -13,7 +13,7 @@ public sealed record RequestNetworkSettingsPacket : DataPacket
     /// </summary>
     public int Protocol;
 
-    public RequestNetworkSettingsPacket() : this(1001)
+    public RequestNetworkSettingsPacket() : this(Io.Constants.ProtocolVersion)
     {
     }
 
