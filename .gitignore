@@ -5,7 +5,11 @@
 *.lscache
 
 worlds
-# These are not actual tests but rather temp runtimes
-Tests
 artifacts
 .*
+
+# Not proper tests so not pushing them
+Tests/
+
+# The old protocol
+_Protocol
