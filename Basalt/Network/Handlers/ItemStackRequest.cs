@@ -17,7 +17,7 @@ public static class ItemStackRequest
         ItemStackRequestPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player? player) || packet.Requests.Count == 0)
         {
@@ -386,3 +386,4 @@ public static class ItemStackRequest
         return $"container={slot.Container.ContainerId} dynamic={dynamicId} slot={slot.Slot} stack={slot.StackNetworkId}";
     }
 }
+

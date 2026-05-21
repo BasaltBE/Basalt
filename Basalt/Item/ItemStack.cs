@@ -77,15 +77,15 @@ public sealed class ItemStack {
                && HasSameTraits(other);
     }
 
-    public NetworkItemStackDescriptor ToNetworkStack()
+    public LegacyItem ToNetworkStack()
     {
-        NetworkItemStackDescriptor descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
+        LegacyItem descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
         descriptor.ItemStackId = NetworkStackId;
         descriptor.ExtraData = ExtraData;
         return descriptor;
     }
 
-    public static ItemStack FromNetworkStack(NetworkItemStackDescriptor descriptor)
+    public static ItemStack FromNetworkStack(LegacyItem descriptor)
     {
         ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
                         ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");

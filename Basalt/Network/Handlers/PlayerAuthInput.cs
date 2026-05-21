@@ -24,7 +24,7 @@ public static class PlayerAuthInput
         {
             int offset = 0;
             Binary.BinaryReader reader = new(packetBuffer, ref offset);
-            packet.Deserialize(reader);
+            packet = (PlayerAuthInputPacket)Protocol.Io.Packet.Deserialize(reader);
         }
         catch (Exception exception)
         {
@@ -50,7 +50,7 @@ public static class PlayerAuthInput
                     PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
                     Rotation = new Vec2f { X = packet.Pitch, Y = packet.Yaw },
                     VehicleAngularVelocity = new OptionalValue<float> { HasValue = false },
-                    OnGround = packet.HasFlag(PlayerAuthInputFlag.VerticalCollision),
+                    OnGround = packet.InputData.HasFlag(PlayerAuthInputFlag.VerticalCollision),
                     InputTick = packet.Tick
                 });
 
@@ -60,7 +60,7 @@ public static class PlayerAuthInput
 
             MovePlayer(player, packet);
 
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
             {
                 InventoryTransaction.HandleUseItemFromAuthInput(
                     player,
@@ -70,7 +70,7 @@ public static class PlayerAuthInput
             }
 
             MineBlockStackRequestAction? mineBlockRequest = null;
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
             {
                 mineBlockRequest = GetMineBlockRequest(packet.ItemStackRequest);
                 Logger.Warn(
@@ -86,7 +86,7 @@ public static class PlayerAuthInput
                 });
             }
 
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
             {
                 Logger.Warn(
                     "PlayerAuthInput block actions player={0} count={1} tick={2}",
@@ -429,3 +429,4 @@ public static class PlayerAuthInput
 
   
 }
+

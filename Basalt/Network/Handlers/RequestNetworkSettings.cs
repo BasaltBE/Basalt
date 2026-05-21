@@ -1,6 +1,7 @@
 using Basalt.Core;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Io;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
@@ -13,11 +14,11 @@ public static class RequestNetworkSettings
         RequestNetworkSettingsPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (RequestNetworkSettingsPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (packet.ProtocolVersion != ProtocolInfo.ProtocolVersion)
+        if (packet.Protocol != Constants.ProtocolVersion)
         {
-            DisconnectReason reason = packet.ProtocolVersion < ProtocolInfo.ProtocolVersion
+            DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
                 ? DisconnectReason.OutdatedClient
                 : DisconnectReason.OutdatedServer;
 
@@ -33,14 +34,16 @@ public static class RequestNetworkSettings
             return;
         }
 
-        NetworkSettingsPacket response = new(
-            compressionThreshold: server.Options.CompressionThreshold,
-            compressionMethod: server.Options.CompressionMethod,
-            clientThrottle: false,
-            clientThrottleThreshold: 0,
-            clientThrottleScalar: 0f
-        );
+        NetworkSettingsPacket response = new()
+        {
+            CompressionThreshold = server.Options.CompressionThreshold,
+            CompressionMethod = server.Options.CompressionMethod,
+            ClientThrottle = false,
+            ClientThrottleThreshold = 0,
+            ClientThrottleScalar = 0f
+        };
 
         server.Network.SendPacket(connection, response, CompressionMethod.NotPresent);
     }
 }
+

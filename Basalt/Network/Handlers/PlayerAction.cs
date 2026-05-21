@@ -11,7 +11,7 @@ public static class PlayerAction
         PlayerActionPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (PlayerActionPacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player? player))
         {
@@ -23,3 +23,4 @@ public static class PlayerAction
         player.LastActionResultPosition = packet.ResultPosition;
     }
 }
+

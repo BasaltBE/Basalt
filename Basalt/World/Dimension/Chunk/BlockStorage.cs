@@ -1,6 +1,7 @@
+using Basalt.Protocol;
 using Basalt.Block;
-using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
+
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -97,7 +98,7 @@ public sealed class BlockStorage
             {
                 BlockPermutation permutation = BlockPermutation.Resolve(state);
                 CompoundTag tag = BlockPermutation.ToCompound(permutation);
-                NBT.WriteTag(writer, tag, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+                Protocol.Io.NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
             }
             else
             {

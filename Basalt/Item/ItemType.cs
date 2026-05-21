@@ -87,7 +87,7 @@ public sealed class ItemType
         NetworkRegistry.EnsureCapacity(capacity);
     }
 
-    public static NetworkItemStackDescriptor ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0)
+    public static LegacyItem ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0)
     {
         int networkBlockId = 0;
         if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
@@ -95,7 +95,7 @@ public sealed class ItemType
             networkBlockId = type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new NetworkItemStackDescriptor
+        return new LegacyItem
         {
             NetworkId = type.NetworkId,
             StackSize = stackSize,

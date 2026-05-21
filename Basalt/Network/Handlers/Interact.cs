@@ -15,7 +15,7 @@ public static class Interact
         InteractPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (InteractPacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player? player))
         {
@@ -62,3 +62,4 @@ public static class Interact
         }
     }
 }
+

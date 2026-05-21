@@ -2,6 +2,7 @@ using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Io;
 using Basalt.Protocol.Login;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -15,11 +16,11 @@ public static class Login
         LoginPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (LoginPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (packet.Protocol != ProtocolInfo.ProtocolVersion)
+        if (packet.Protocol != Constants.ProtocolVersion)
         {
-            DisconnectReason reason = packet.Protocol < ProtocolInfo.ProtocolVersion
+            DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
                 ? DisconnectReason.OutdatedClient
                 : DisconnectReason.OutdatedServer;
 
@@ -32,20 +33,17 @@ public static class Login
             };
 
             server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
-            Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={ProtocolInfo.ProtocolVersion}");
+            Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={Constants.ProtocolVersion}");
             return;
         }
 
 
-        var identity = LoginIdentityVerifier.Verify(packet.Identity);
+        var identity = LoginIdentity.Verify(packet.Identity);
         _ = LoginPayload.Parse(packet.Client);
 
 
 
-        PlayStatusPacket status = new()
-        {
-            Status = PlayStatus.LoginSuccess,
-        };
+        PlayStatusPacket status = new(PlayStatus.LoginSuccess);
 
         ResourcePacksInfoPacket resources = new()
         {
@@ -76,3 +74,4 @@ public static class Login
         Logger.Info($"Player {identity.Username} has logged in!");
     }
 }
+

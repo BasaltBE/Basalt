@@ -12,7 +12,7 @@ public static class InventoryContent
         InventoryContentPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (InventoryContentPacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player? player))
         {
@@ -34,3 +34,4 @@ public static class InventoryContent
         container!.Update();
     }
 }
+

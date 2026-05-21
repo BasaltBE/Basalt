@@ -1,7 +1,7 @@
 using Basalt.Binary;
 using Basalt.Block;
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.IO;
+using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using System.Buffers;
@@ -409,7 +409,7 @@ public sealed class Chunk
         List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
         for (int i = 0; i < blockEntities.Count; i++)
         {
-            NBT.WriteTag(writer, blockEntities[i], new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            NBT.WriteTag(writer, blockEntities[i], new TagOptions(Name: true, Type: true, VarInt: false));
         }
 
         return writer.Offset;
@@ -460,10 +460,10 @@ public sealed class Chunk
                 break;
             }
 
-            CompoundTag tag = NBT.ReadRootCompoundTag(
+            CompoundTag tag = NBT.ReadTag<CompoundTag>(
                 reader,
-                new ReadWriteOptions(Name: true, Type: true, VarInt: false),
-                canHaveName: true);
+                new TagOptions(Name: true, Type: true, VarInt: false)
+                );
 
             BlockLevelStorage storage = new(chunk, tag);
             chunk.SetBlockStorage(storage.GetPosition(), storage, dirty: false);
@@ -488,5 +488,5 @@ public sealed class Chunk
         return SubChunks[resolved];
     }
 
-  
+
 }

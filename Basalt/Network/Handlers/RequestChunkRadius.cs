@@ -12,7 +12,7 @@ public static class RequestChunkRadius
         RequestChunkRadiusPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (RequestChunkRadiusPacket)Protocol.Io.Packet.Deserialize(reader);
 
         int requestedRadius = packet.MaxChunkRadius > 0
             ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
@@ -38,3 +38,4 @@ public static class RequestChunkRadius
         chunkRendering.ApplyViewDistance(radius);
     }
 }
+

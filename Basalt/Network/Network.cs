@@ -127,7 +127,7 @@ public sealed class NetworkHandler
                     uint header = packetReader.ReadVarUInt();
                     PacketId packetId = (PacketId)(header & 0x3FF);
 
-                    HandleGamePacket(connection, packetId, packetReader.GetRemainingBytes());
+                    HandleGamePacket(connection, packetId, packetBuffer);
                 }
                 catch (Exception exception)
                 {
@@ -243,8 +243,7 @@ public sealed class NetworkHandler
         {
             packetBufferStream.Offset = 0;
             BinaryWriter packetWriter = packetBufferStream;
-            packetWriter.WriteVarInt((int)packet.PacketId);
-            packet.Serialize(packetWriter);
+            Protocol.Io.Packet.Serialize(packet, packetWriter);
 
             var packetData = packetBufferStream.GetProcessedBytes();
 

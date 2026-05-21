@@ -18,7 +18,7 @@ public static class SetLocalPlayerAsInitialized
         SetLocalPlayerAsInitializedPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (SetLocalPlayerAsInitializedPacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player? player))
         {
@@ -87,3 +87,4 @@ public static class SetLocalPlayerAsInitialized
         Logger.Info($"Player {player.Username} has spawned.");
     }
 }
+

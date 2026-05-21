@@ -13,7 +13,7 @@ public static class ContainerClose
         ContainerClosePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ContainerClosePacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (server.Players.TryGetValue(connection, out Player? player))
         {
@@ -39,3 +39,4 @@ public static class ContainerClose
         server.Network.SendPacket(connection, response);
     }
 }
+

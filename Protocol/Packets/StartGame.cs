@@ -6,6 +6,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.StartGame)]
 public sealed record StartGamePacket : DataPacket
 {
     private static readonly TagOptions TagOptions = new(Name: true, Type: true, VarInt: true);

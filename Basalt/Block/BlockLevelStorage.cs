@@ -1,4 +1,3 @@
-using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
@@ -265,7 +264,7 @@ public sealed class BlockLevelStorage : CompoundTag
 
     public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer)
     {
-        NBT.WriteTag(writer, storage, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+        Protocol.Io.NBT.WriteTag(writer, storage, new TagOptions(Name: true, Type: true, VarInt: false));
         return writer.GetProcessedBytes();
     }
 

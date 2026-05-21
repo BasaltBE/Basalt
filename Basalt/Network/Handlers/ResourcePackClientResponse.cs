@@ -7,6 +7,7 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using Basalt.Entity.Traits.Types;
+using Basalt.Protocol.Io;
 
 namespace Basalt.Network.Handlers;
 
@@ -17,7 +18,7 @@ public static class ResourcePackClientResponse
         ResourcePackClientResponsePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ResourcePackClientResponsePacket)Protocol.Io.Packet.Deserialize(reader);
 
         switch (packet.Response)
         {
@@ -49,7 +50,7 @@ public static class ResourcePackClientResponse
                             SubPackName = string.Empty
                         }
                     ],
-                    BaseGameVersion = ProtocolInfo.MinecraftVersion,
+                    BaseGameVersion = Constants.MinecraftVersion,
                     Experiments = [],
                     ExperimentsPreviouslyToggled = false,
                     IncludeEditorPacks = true
@@ -115,7 +116,7 @@ public static class ResourcePackClientResponse
                     PersonaDisabled = false,
                     CustomSkinsDisabled = false,
                     EmoteChatMuted = false,
-                    BaseGameVersion = ProtocolInfo.MinecraftVersion,
+                    BaseGameVersion = Constants.MinecraftVersion,
                     LimitedWorldWidth = 0,
                     LimitedWorldDepth = 0,
                     NewNether = true,
@@ -141,7 +142,7 @@ public static class ResourcePackClientResponse
                     Blocks = [],
                     MultiPlayerCorrelationId = Guid.NewGuid().ToString(),
                     ServerAuthoritativeInventory = true,
-                    GameVersion = ProtocolInfo.MinecraftVersion,
+                    GameVersion = Constants.MinecraftVersion,
                     PropertyData = new Basalt.Protocol.Nbt.CompoundTag(),
                     ServerBlockStateChecksum = 0,
                     WorldTemplateId = Guid.Empty,
@@ -168,10 +169,7 @@ public static class ResourcePackClientResponse
                     Data = EntityPalette.BuildAvailableActorIdentifiersTag()
                 };
 
-                PlayStatusPacket spawnStatus = new()
-                {
-                    Status = PlayStatus.PlayerSpawn
-                };
+                PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
                 server.Network.SendPackets(connection, [startGame, actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
@@ -185,3 +183,4 @@ public static class ResourcePackClientResponse
     }
 
 }
+

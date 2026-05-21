@@ -1,4 +1,3 @@
-using Basalt.Protocol.IO;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using LevelDB;
@@ -12,7 +11,7 @@ namespace Basalt.World.Dimension.Provider;
 public sealed class LevelDbProvider : WorldProvider
 {
     private const uint FormatVersion = 1;
-    private static readonly ReadWriteOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
+    private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
     private readonly DB _database;
     public override string Identifier => "leveldb";
 
@@ -239,7 +238,7 @@ public sealed class LevelDbProvider : WorldProvider
             throw new InvalidOperationException($"Expected Compound tag, got {type}.");
         }
 
-        return CompoundTag.Read(reader, NbtOptions, canHaveName: true);
+        return CompoundTag.Read(reader, NbtOptions);
     }
 
     private static void WriteEntityList(BinaryWriter writer, List<KeyValuePair<long, CompoundTag>> entities)
@@ -341,6 +340,6 @@ public sealed class LevelDbProvider : WorldProvider
 
     private static void WriteEntityStorage(BinaryWriter writer, CompoundTag tag)
     {
-        NBT.WriteTag(writer, tag, NbtOptions, canHaveName: true);
+        Protocol.Io.NBT.WriteTag(writer, tag, NbtOptions);
     }
 }
