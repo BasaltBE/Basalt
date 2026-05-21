@@ -5,8 +5,7 @@ namespace Basalt.Protocol.Types;
 
 public struct BoolType : DataType
 {
-    public bool Value { get; set; }
-
+    public bool Value;
     public void Read(BinaryReader reader) => Value = reader.ReadBool();
     public void Write(BinaryWriter writer) => writer.WriteBool(Value);
 
