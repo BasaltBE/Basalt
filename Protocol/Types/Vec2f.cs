@@ -8,13 +8,11 @@ public struct Vec2f : DataType
     /// <summary>
     /// X coordinate of the vector.
     /// </summary>
-    public float X { get; set; }
-
+    public float X;
     /// <summary>
     /// Y coordinate of the vector.
     /// </summary>
-    public float Y { get; set; }
-
+    public float Y;
     public void Read(BinaryReader reader)
     {
         X = reader.ReadF32(true);
