@@ -11,84 +11,399 @@ public sealed record StartGamePacket : DataPacket
 {
     private static readonly TagOptions TagOptions = new(Name: true, Type: true, VarInt: true);
 
+    /// <summary>
+    /// Unique actor id of the player.
+    /// </summary>
     public long EntityUniqueId;
+
+    /// <summary>
+    /// Runtime actor id of the player.
+    /// </summary>
     public ulong EntityRuntimeId;
+
+    /// <summary>
+    /// Initial player game mode.
+    /// </summary>
     public int PlayerGameMode;
+
+    /// <summary>
+    /// Initial player position.
+    /// </summary>
     public Vec3f PlayerPosition;
+
+    /// <summary>
+    /// Initial camera pitch.
+    /// </summary>
     public float Pitch;
+
+    /// <summary>
+    /// Initial camera yaw.
+    /// </summary>
     public float Yaw;
+
+    /// <summary>
+    /// World seed value.
+    /// </summary>
     public long WorldSeed;
+
+    /// <summary>
+    /// Spawn biome type selector.
+    /// </summary>
     public SpawnBiomeType SpawnBiomeType;
+
+    /// <summary>
+    /// Custom biome name when user-defined.
+    /// </summary>
     public string UserDefinedBiomeName = string.Empty;
+
+    /// <summary>
+    /// Dimension id.
+    /// </summary>
     public int Dimension;
+
+    /// <summary>
+    /// World generator id.
+    /// </summary>
     public int Generator;
+
+    /// <summary>
+    /// World default game mode.
+    /// </summary>
     public int WorldGameMode;
+
+    /// <summary>
+    /// Whether hardcore mode is enabled.
+    /// </summary>
     public bool Hardcore;
+
+    /// <summary>
+    /// World difficulty.
+    /// </summary>
     public int Difficulty;
+
+    /// <summary>
+    /// World spawn position.
+    /// </summary>
     public BlockPos WorldSpawn;
+
+    /// <summary>
+    /// Whether achievements are disabled.
+    /// </summary>
     public bool AchievementsDisabled;
+
+    /// <summary>
+    /// Editor world type.
+    /// </summary>
     public EditorWorldType EditorWorldType;
+
+    /// <summary>
+    /// Whether the world was created in editor.
+    /// </summary>
     public bool CreatedInEditor;
+
+    /// <summary>
+    /// Whether the world was exported from editor.
+    /// </summary>
     public bool ExportedFromEditor;
+
+    /// <summary>
+    /// Day cycle lock time.
+    /// </summary>
     public int DayCycleLockTime;
+
+    /// <summary>
+    /// Education edition offer type.
+    /// </summary>
     public int EducationEditionOffer;
+
+    /// <summary>
+    /// Whether education features are enabled.
+    /// </summary>
     public bool EducationFeaturesEnabled;
+
+    /// <summary>
+    /// Education product id.
+    /// </summary>
     public string EducationProductId = string.Empty;
+
+    /// <summary>
+    /// Current rain level.
+    /// </summary>
     public float RainLevel;
+
+    /// <summary>
+    /// Current lightning level.
+    /// </summary>
     public float LightningLevel;
+
+    /// <summary>
+    /// Whether platform-locked content is confirmed.
+    /// </summary>
     public bool ConfirmedPlatformLockedContent;
+
+    /// <summary>
+    /// Whether multiplayer is enabled.
+    /// </summary>
     public bool MultiPlayerGame;
+
+    /// <summary>
+    /// Whether LAN broadcast is enabled.
+    /// </summary>
     public bool LanBroadcastEnabled;
+
+    /// <summary>
+    /// Xbox Live broadcast mode.
+    /// </summary>
     public XblBroadcastMode XblBroadcastMode;
+
+    /// <summary>
+    /// Platform broadcast mode.
+    /// </summary>
     public int PlatformBroadcastMode;
+
+    /// <summary>
+    /// Whether commands are enabled.
+    /// </summary>
     public bool CommandsEnabled;
+
+    /// <summary>
+    /// Whether texture packs are required.
+    /// </summary>
     public bool TexturePackRequired;
+
+    /// <summary>
+    /// World gamerules.
+    /// </summary>
     public List<GameRule> GameRules = [];
+
+    /// <summary>
+    /// Experiment toggles.
+    /// </summary>
     public List<ExperimentData> Experiments = [];
+
+    /// <summary>
+    /// Whether experiments were previously toggled.
+    /// </summary>
     public bool ExperimentsPreviouslyToggled;
+
+    /// <summary>
+    /// Whether bonus chest is enabled.
+    /// </summary>
     public bool BonusChestEnabled;
+
+    /// <summary>
+    /// Whether starting map is enabled.
+    /// </summary>
     public bool StartWithMapEnabled;
+
+    /// <summary>
+    /// Player permission level.
+    /// </summary>
     public int PlayerPermissions;
+
+    /// <summary>
+    /// Server chunk tick radius.
+    /// </summary>
     public int ServerChunkTickRadius;
+
+    /// <summary>
+    /// Whether behavior pack is locked.
+    /// </summary>
     public bool HasLockedBehaviourPack;
+
+    /// <summary>
+    /// Whether texture pack is locked.
+    /// </summary>
     public bool HasLockedTexturePack;
+
+    /// <summary>
+    /// Whether world is from a locked template.
+    /// </summary>
     public bool FromLockedWorldTemplate;
+
+    /// <summary>
+    /// Whether only MSA gamer tags are allowed.
+    /// </summary>
     public bool MsaGamerTagsOnly;
+
+    /// <summary>
+    /// Whether world is from a template.
+    /// </summary>
     public bool FromWorldTemplate;
+
+    /// <summary>
+    /// Whether world template settings are locked.
+    /// </summary>
     public bool WorldTemplateSettingsLocked;
+
+    /// <summary>
+    /// Whether only v1 villagers can spawn.
+    /// </summary>
     public bool OnlySpawnV1Villagers;
+
+    /// <summary>
+    /// Whether persona is disabled.
+    /// </summary>
     public bool PersonaDisabled;
+
+    /// <summary>
+    /// Whether custom skins are disabled.
+    /// </summary>
     public bool CustomSkinsDisabled;
+
+    /// <summary>
+    /// Whether emote chat is muted.
+    /// </summary>
     public bool EmoteChatMuted;
+
+    /// <summary>
+    /// Base game version string.
+    /// </summary>
     public string BaseGameVersion = string.Empty;
+
+    /// <summary>
+    /// Limited world width.
+    /// </summary>
     public int LimitedWorldWidth;
+
+    /// <summary>
+    /// Limited world depth.
+    /// </summary>
     public int LimitedWorldDepth;
+
+    /// <summary>
+    /// Whether new nether generation is enabled.
+    /// </summary>
     public bool NewNether;
+
+    /// <summary>
+    /// Education shared resource URI.
+    /// </summary>
     public EducationSharedResourceUri EducationSharedResourceUri = new();
+
+    /// <summary>
+    /// Optional force experimental gameplay flag.
+    /// </summary>
     public Optional<BoolType> ForceExperimentalGameplay = new();
+
+    /// <summary>
+    /// Chat restriction level.
+    /// </summary>
     public ChatRestrictionLevel ChatRestrictionLevel;
+
+    /// <summary>
+    /// Whether player interactions are disabled.
+    /// </summary>
     public bool DisablePlayerInteractions;
+
+    /// <summary>
+    /// Level id.
+    /// </summary>
     public string LevelId = string.Empty;
+
+    /// <summary>
+    /// World display name.
+    /// </summary>
     public string WorldName = string.Empty;
+
+    /// <summary>
+    /// Template content identity.
+    /// </summary>
     public string TemplateContentIdentity = string.Empty;
+
+    /// <summary>
+    /// Whether the world is a trial.
+    /// </summary>
     public bool Trial;
+
+    /// <summary>
+    /// Player movement settings.
+    /// </summary>
     public PlayerMovementSettings PlayerMovementSettings = new();
+
+    /// <summary>
+    /// World time.
+    /// </summary>
     public long Time;
+
+    /// <summary>
+    /// Enchantment seed.
+    /// </summary>
     public int EnchantmentSeed;
+
+    /// <summary>
+    /// Block palette entries.
+    /// </summary>
     public List<BlockEntry> Blocks = [];
+
+    /// <summary>
+    /// Multiplayer correlation id.
+    /// </summary>
     public string MultiPlayerCorrelationId = string.Empty;
+
+    /// <summary>
+    /// Whether inventory is server authoritative.
+    /// </summary>
     public bool ServerAuthoritativeInventory;
+
+    /// <summary>
+    /// Server game version string.
+    /// </summary>
     public string GameVersion = string.Empty;
+
+    /// <summary>
+    /// Level property data as NBT.
+    /// </summary>
     public CompoundTag PropertyData = new();
+
+    /// <summary>
+    /// Block state checksum from server.
+    /// </summary>
     public ulong ServerBlockStateChecksum;
+
+    /// <summary>
+    /// World template UUID.
+    /// </summary>
     public Guid WorldTemplateId = Guid.Empty;
+
+    /// <summary>
+    /// Whether client-side generation is enabled.
+    /// </summary>
     public bool ClientSideGeneration;
+
+    /// <summary>
+    /// Whether block network id hashes are used.
+    /// </summary>
     public bool UseBlockNetworkIdHashes;
+
+    /// <summary>
+    /// Whether sound is server authoritative.
+    /// </summary>
     public bool ServerAuthoritativeSound;
+
+    /// <summary>
+    /// Optional server join information.
+    /// </summary>
     public OptionalValue<ServerJoinInformation> ServerJoinInformation = new();
+
+    /// <summary>
+    /// Server id.
+    /// </summary>
     public string ServerId = string.Empty;
+
+    /// <summary>
+    /// Scenario id.
+    /// </summary>
     public string ScenarioId = string.Empty;
+
+    /// <summary>
+    /// World id.
+    /// </summary>
     public string WorldId = string.Empty;
+
+    /// <summary>
+    /// Owner id.
+    /// </summary>
     public string OwnerId = string.Empty;
 
 
