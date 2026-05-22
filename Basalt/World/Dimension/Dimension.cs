@@ -1,25 +1,51 @@
 using Basalt.Block;
-using Basalt.Block.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using Basalt.World.Dimension.Generation;
 using Basalt.World.Dimension.Provider;
-// Damn name spacing
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
 
 namespace Basalt.World.Dimension;
 
 public sealed class Dimension : IDisposable
 {
+    /// <summary>
+    /// A mapping of block actors with containers
+    /// </summary>
+    private static readonly Dictionary<string, string> BlockActorIds = new()
+    {
+        ["minecraft:barrel"] = "Barrel",
+        ["minecraft:chest"] = "Chest",
+        ["minecraft:trapped_chest"] = "Chest"
+    };
+
+    /// <summary>
+    /// A list of chunks in the dimension
+    /// </summary>
     private readonly Dictionary<long, ChunkColumn> _chunks;
+
+    /// <summary>
+    /// A list of chunk viewers
+    /// </summary>
     private readonly Dictionary<long, int> _chunkViewers;
+
+    /// <summary>
+    /// A list of entities
+    /// </summary>
     private readonly HashSet<global::Basalt.Entity.Entity> _entities;
+
+    /// <summary>
+    ///  A list of chunks to sweep
+    /// </summary>
     private readonly List<long> _chunkSweepBuffer = [];
-    private readonly List<global::Basalt.Entity.Entity> _entityTickBuffer = [];
+    
+    private readonly HashSet<global::Basalt.Entity.Entity> _pendingEntityAdds = [];
+    private readonly HashSet<global::Basalt.Entity.Entity> _pendingEntityRemoves = [];
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
+    private bool _tickingEntities;
 
     public string Identifier { get; }
     public DimensionType Type { get; }
@@ -50,37 +76,18 @@ public sealed class Dimension : IDisposable
 
     public ChunkColumn? GetChunk(int x, int z)
     {
-        long hash = HashChunk(x, z);
-        if (_chunks.TryGetValue(hash, out ChunkColumn? value))
-        {
-            return value;
-        }
-
-        ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
-        if (loaded is not null)
-        {
-            _chunks[hash] = loaded;
-            return loaded;
-        }
-
-        return null;
+        return GetOrLoadChunk(x, z);
     }
 
     public ChunkColumn GetOrCreateChunk(int x, int z)
     {
-        long hash = HashChunk(x, z);
-        if (_chunks.TryGetValue(hash, out ChunkColumn? chunk))
+        ChunkColumn? chunk = GetOrLoadChunk(x, z);
+        if (chunk is not null)
         {
             return chunk;
         }
 
-        ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
-        if (loaded is not null)
-        {
-            _chunks[hash] = loaded;
-            return loaded;
-        }
-
+        long hash = HashChunk(x, z);
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
         chunk.Dirty = true;
@@ -161,13 +168,7 @@ public sealed class Dimension : IDisposable
     public void AddChunkViewer(int x, int z)
     {
         long hash = HashChunk(x, z);
-        if (_chunkViewers.TryGetValue(hash, out int count))
-        {
-            _chunkViewers[hash] = count + 1;
-            return;
-        }
-
-        _chunkViewers[hash] = 1;
+        _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
     }
 
     public bool RemoveChunkViewer(int x, int z)
@@ -236,13 +237,13 @@ public sealed class Dimension : IDisposable
     public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
-        return chunk.GetPermutation(x & 0xF, y, z & 0xF, layer);
+        return chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
     }
 
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
-        chunk.SetPermutation(x & 0xF, y, z & 0xF, permutation, layer, dirty);
+        chunk.SetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), permutation, layer, dirty);
 
         BlockPos position = new() { X = x, Y = y, Z = z };
         if (permutation.Type.Traits.Count > 0)
@@ -258,14 +259,7 @@ public sealed class Dimension : IDisposable
                 block.SetPermutation(permutation);
             }
 
-            BlockLevelStorage? storage = chunk.GetBlockStorage(position);
-            if (storage is null)
-            {
-                storage = new BlockLevelStorage(chunk);
-                storage.SetPosition(position);
-                storage.Set("id", new StringTag { Name = "id", Value = GetBlockActorId(permutation.Type.Identifier) });
-                storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
-            }
+            BlockLevelStorage storage = GetOrCreateBlockStorage(chunk, position, permutation.Type.Identifier);
             chunk.SetBlockStorage(position, storage, dirty);
         }
         else
@@ -290,7 +284,7 @@ public sealed class Dimension : IDisposable
             return block;
         }
 
-        BlockPermutation perm = chunk.GetPermutation(x & 0xF, y, z & 0xF);
+        BlockPermutation perm = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z));
         if (perm.Type.Traits.Count > 0)
         {
             block = new global::Basalt.Block.Block(perm);
@@ -298,21 +292,6 @@ public sealed class Dimension : IDisposable
             if (storage is not null)
             {
                 block.ReadTraits(storage);
-
-                ChestTrait? fallbackChestTrait = block.GetTrait<ChestTrait>();
-                if (fallbackChestTrait is not null &&
-                    (storage.Get<ListTag>("traits") is null ||
-                     fallbackChestTrait.DebugSingleContainerItemCount() == 0))
-                {
-                    fallbackChestTrait.OnRead(storage);
-                }
-            }
-
-            ChestTrait? chestTrait = block.GetTrait<ChestTrait>();
-            if (chestTrait?.Container is not null)
-            {
-                chestTrait.Container.Dimension = this;
-                chestTrait.Container.Position = new BlockPos { X = x, Y = y, Z = z };
             }
 
             chunk.SetBlockActor(position, block);
@@ -342,13 +321,13 @@ public sealed class Dimension : IDisposable
     public int GetBiome(int x, int y, int z)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
-        return chunk.GetBiome(x & 0xF, y, z & 0xF);
+        return chunk.GetBiome(GetChunkLocal(x), y, GetChunkLocal(z));
     }
 
     public void SetBiome(int x, int y, int z, int biomeId, bool dirty = true)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
-        chunk.SetBiome(x & 0xF, y, z & 0xF, biomeId, dirty);
+        chunk.SetBiome(GetChunkLocal(x), y, GetChunkLocal(z), biomeId, dirty);
     }
 
     public void Dispose()
@@ -369,46 +348,152 @@ public sealed class Dimension : IDisposable
             return;
         }
 
-        _entityTickBuffer.Clear();
-        _entityTickBuffer.EnsureCapacity(_entities.Count);
-
+        _tickingEntities = true;
         foreach (global::Basalt.Entity.Entity entity in _entities)
         {
-            _entityTickBuffer.Add(entity);
-        }
-
-        for (int i = 0; i < _entityTickBuffer.Count; i++)
-        {
-            global::Basalt.Entity.Entity entity = _entityTickBuffer[i];
-            if (!entity.IsAlive || entity.Dimension != this)
+            if (entity.PendingDespawn || entity.Dimension != this)
             {
+                _pendingEntityRemoves.Add(entity);
                 continue;
             }
 
             entity.Tick(currentTick, deltaTick);
         }
+
+        _tickingEntities = false;
+        FlushPendingEntityChanges();
     }
 
     public void Broadcast(DataPacket packet, BroadcastOptions? options = null)
     {
+        if (World?.Server is not Core.Server server)
+        {
+            return;
+        }
+
         BroadcastOptions resolved = options ?? new BroadcastOptions();
         resolved.Center ??= GetPacketPosition(packet);
-        World?.Server?.Broadcast(this, packet, resolved);
+        float radiusSquared = resolved.Radius * resolved.Radius;
+
+        foreach ((var connection, var player) in server.Players)
+        {
+            if (player.Dimension != this)
+            {
+                continue;
+            }
+
+            if (resolved.Except is not null && resolved.Except.Contains(player))
+            {
+                continue;
+            }
+
+            if (resolved.Center.HasValue)
+            {
+                Vec3f playerPosition = player.Position;
+                Vec3f centerPosition = resolved.Center.Value;
+                float dx = playerPosition.X - centerPosition.X;
+                float dy = playerPosition.Y - centerPosition.Y;
+                float dz = playerPosition.Z - centerPosition.Z;
+                float distanceSquared = (dx * dx) + (dy * dy) + (dz * dz);
+                if (distanceSquared > radiusSquared)
+                {
+                    continue;
+                }
+            }
+
+            server.Network.SendPacket(connection, packet);
+        }
     }
 
     internal void AddEntity(global::Basalt.Entity.Entity entity)
     {
+        if (_tickingEntities)
+        {
+            _pendingEntityRemoves.Remove(entity);
+            _pendingEntityAdds.Add(entity);
+            return;
+        }
+
         _entities.Add(entity);
     }
 
     internal void RemoveEntity(global::Basalt.Entity.Entity entity)
     {
+        if (_tickingEntities)
+        {
+            _pendingEntityAdds.Remove(entity);
+            _pendingEntityRemoves.Add(entity);
+            return;
+        }
+
+        entity.CompleteDespawn();
         _entities.Remove(entity);
     }
 
     private static long HashChunk(int x, int z)
     {
         return ((long)x << 32) | (uint)z;
+    }
+
+    private ChunkColumn? GetOrLoadChunk(int x, int z)
+    {
+        long hash = HashChunk(x, z);
+        if (_chunks.TryGetValue(hash, out ChunkColumn? chunk))
+        {
+            return chunk;
+        }
+
+        chunk = _provider.LoadChunk(Type, x, z);
+        if (chunk is not null)
+        {
+            _chunks[hash] = chunk;
+        }
+
+        return chunk;
+    }
+
+    private static int GetChunkLocal(int value)
+    {
+        return value & 0xF;
+    }
+
+    private void FlushPendingEntityChanges()
+    {
+        if (_pendingEntityRemoves.Count > 0)
+        {
+            foreach (global::Basalt.Entity.Entity entity in _pendingEntityRemoves)
+            {
+                entity.CompleteDespawn();
+                _entities.Remove(entity);
+            }
+
+            _pendingEntityRemoves.Clear();
+        }
+
+        if (_pendingEntityAdds.Count > 0)
+        {
+            foreach (global::Basalt.Entity.Entity entity in _pendingEntityAdds)
+            {
+                _entities.Add(entity);
+            }
+
+            _pendingEntityAdds.Clear();
+        }
+    }
+
+    private static BlockLevelStorage GetOrCreateBlockStorage(ChunkColumn chunk, BlockPos position, string blockIdentifier)
+    {
+        BlockLevelStorage? storage = chunk.GetBlockStorage(position);
+        if (storage is not null)
+        {
+            return storage;
+        }
+
+        storage = new BlockLevelStorage(chunk);
+        storage.SetPosition(position);
+        storage.Set("id", new StringTag { Name = "id", Value = GetBlockActorId(blockIdentifier) });
+        storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
+        return storage;
     }
 
     private static void SyncBlockActorsToStorages(ChunkColumn chunk)
@@ -422,30 +507,15 @@ public sealed class Dimension : IDisposable
                 Z = actorEntry.Key.Z
             };
 
-            BlockLevelStorage? storage = chunk.GetBlockStorage(position);
-            if (storage is null)
-            {
-                storage = new BlockLevelStorage(chunk);
-                storage.SetPosition(position);
-                storage.Set("id", new StringTag { Name = "id", Value = GetBlockActorId(actorEntry.Value.Type.Identifier) });
-                storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
-            }
-
+            BlockLevelStorage storage = GetOrCreateBlockStorage(chunk, position, actorEntry.Value.Type.Identifier);
             actorEntry.Value.WriteTraits(storage);
             chunk.SetBlockStorage(position, storage, dirty: true);
         }
     }
 
-    // TODO: Temp and dumb, will need to be refractoted cause it is just a simple mapping
     internal static string GetBlockActorId(string blockIdentifier)
     {
-        return blockIdentifier switch
-        {
-            "minecraft:barrel" => "Barrel",
-            "minecraft:chest" => "Chest",
-            "minecraft:trapped_chest" => "Chest",
-            _ => blockIdentifier
-        };
+        return BlockActorIds.TryGetValue(blockIdentifier, out string? value) ? value : blockIdentifier;
     }
 
     private static Vec3f? GetPacketPosition(DataPacket packet)
@@ -453,31 +523,16 @@ public sealed class Dimension : IDisposable
         switch (packet)
         {
             case UpdateBlockPacket updateBlock:
-                return new Vec3f
-                {
-                    X = updateBlock.Position.X,
-                    Y = updateBlock.Position.Y,
-                    Z = updateBlock.Position.Z
-                };
+                return ToVec3f(updateBlock.Position.X, updateBlock.Position.Y, updateBlock.Position.Z);
 
             case BlockActorDataPacket blockActor:
-                return new Vec3f
-                {
-                    X = blockActor.Position.X,
-                    Y = blockActor.Position.Y,
-                    Z = blockActor.Position.Z
-                };
+                return ToVec3f(blockActor.Position.X, blockActor.Position.Y, blockActor.Position.Z);
 
             case LevelEventPacket levelEvent:
                 return levelEvent.Position;
 
             case BlockEventPacket blockEvent:
-                return new Vec3f
-                {
-                    X = blockEvent.Position.X,
-                    Y = blockEvent.Position.Y,
-                    Z = blockEvent.Position.Z
-                };
+                return ToVec3f(blockEvent.Position.X, blockEvent.Position.Y, blockEvent.Position.Z);
 
             case LevelSoundEventPacket levelSoundEvent:
                 return levelSoundEvent.Position;
@@ -488,5 +543,10 @@ public sealed class Dimension : IDisposable
             default:
                 return null;
         }
+    }
+
+    private static Vec3f ToVec3f(float x, float y, float z)
+    {
+        return new Vec3f { X = x, Y = y, Z = z };
     }
 }

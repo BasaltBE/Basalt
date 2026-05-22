@@ -1,5 +1,4 @@
 using Basalt.Network;
-using Basalt.Protocol.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -191,41 +190,6 @@ public sealed class Server
         }
 
         _generatorRegistry[identifier] = typeof(TGenerator);
-    }
-
-    public void Broadcast(Dimension dimension, DataPacket packet, BroadcastOptions? options = null)
-    {
-        BroadcastOptions resolved = options ?? new BroadcastOptions();
-        float radiusSquared = resolved.Radius * resolved.Radius;
-
-        foreach ((NetworkConnection connection, Player player) in Players)
-        {
-            if (player.Dimension != dimension)
-            {
-                continue;
-            }
-
-            if (resolved.Except is not null && resolved.Except.Contains(player))
-            {
-                continue;
-            }
-
-            if (resolved.Center.HasValue)
-            {
-                Vec3f playerPosition = player.Position;
-                Vec3f centerPosition = resolved.Center.Value;
-                float dx = playerPosition.X - centerPosition.X;
-                float dy = playerPosition.Y - centerPosition.Y;
-                float dz = playerPosition.Z - centerPosition.Z;
-                float distanceSquared = (dx * dx) + (dy * dy) + (dz * dz);
-                if (distanceSquared > radiusSquared)
-                {
-                    continue;
-                }
-            }
-
-            Network.SendPacket(connection, packet);
-        }
     }
 
     private void Tick()

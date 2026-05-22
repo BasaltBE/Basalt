@@ -29,6 +29,7 @@ public class Entity
     public EntityActorMetadata Metadata { get; }
     public Dimension? Dimension { get; private set; }
     public bool IsAlive { get; private set; }
+    public bool PendingDespawn { get; private set; }
     public bool IsSprinting;
     public bool IsSwimming;
     private readonly HashSet<EffectType> _effects = [];
@@ -126,6 +127,7 @@ public class Entity
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
+        PendingDespawn = false;
         dimension.AddEntity(this);
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -135,14 +137,17 @@ public class Entity
 
     public void Despawn(EntityDespawnOptions options)
     {
-        Dimension?.RemoveEntity(this);
+        if (PendingDespawn)
+        {
+            return;
+        }
+
+        PendingDespawn = true;
         IsAlive = false;
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnDespawn(options);
         }
-
-        Dimension = null;
     }
 
     public void OnDeath(EntityDeathOptions options)
@@ -157,6 +162,13 @@ public class Entity
     public void Kill(EntityDeathOptions options)
     {
         OnDeath(options);
+        PendingDespawn = true;
+    }
+
+    internal void CompleteDespawn()
+    {
+        PendingDespawn = false;
+        Dimension = null;
     }
 
     public void OnTeleport(EntityTeleportOptions options)
