@@ -6,6 +6,10 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+/// <summary>
+/// @Direction Clientbound
+/// StartGamePacket is sent by the server to client when the client finishes its login sequence and is done loading resource packs
+/// </summary>
 [Packet(PacketId.StartGame)]
 public sealed record StartGamePacket : DataPacket
 {

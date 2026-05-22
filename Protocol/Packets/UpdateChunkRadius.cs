@@ -3,6 +3,11 @@ using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+/// <summary>
+/// @Direction Clientbound
+/// Sent by the server when the client sends max distance above servers max distance,
+/// pretty much a correction packet.
+/// </summary>
 [Packet(PacketId.ChunkRadiusUpdated)]
 public sealed record UpdateChunkRadiusPacket : DataPacket
 {

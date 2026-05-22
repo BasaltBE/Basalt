@@ -4,6 +4,10 @@ using Basalt.Protocol.Types;
 
 namespace Basalt.Protocol.Packets;
 
+/// <summary>
+/// @Direction Clientbound
+/// Sent by the server to update a block client side.
+/// </summary>s
 [Packet(PacketId.UpdateBlock)]
 public sealed record UpdateBlockPacket : DataPacket
 {
