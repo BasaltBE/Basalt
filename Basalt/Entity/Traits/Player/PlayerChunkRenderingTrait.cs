@@ -497,7 +497,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     private void ReleaseLoadedChunks(bool unloadChunks)
     {
-        if (Player.Dimension is null)
+        var dimension = Player.Dimension;
+        if (dimension is null)
         {
             return;
         }
@@ -506,11 +507,11 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         {
             UnhashChunk(hash, out int x, out int z);
 
-            Player.Dimension.RemoveChunkViewer(x, z);
+            dimension.RemoveChunkViewer(x, z);
 
-            if (unloadChunks && !Player.Dimension.HasChunkViewers(x, z))
+            if (unloadChunks && !dimension.HasChunkViewers(x, z))
             {
-                Player.Dimension.UnloadChunk(x, z);
+                dimension.UnloadChunk(x, z);
             }
         }
     }

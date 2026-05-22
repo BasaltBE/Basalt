@@ -8,6 +8,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Block;
 
+[Tag(TagType.Compound)]
 public sealed class BlockLevelStorage : CompoundTag
 {
     private readonly ChunkColumn? _chunk;

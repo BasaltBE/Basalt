@@ -138,7 +138,7 @@ public sealed class BlockStorage
                     throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
                 }
 
-                CompoundTag tag = CompoundTag.Read(reader);
+                CompoundTag tag = CompoundTag.Read(reader, new TagOptions(Name: true, Type: false, VarInt: false));
                 palette.Add(BlockPermutation.FromCompound(tag).NetworkId);
             }
             else
