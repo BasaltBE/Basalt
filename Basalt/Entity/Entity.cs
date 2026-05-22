@@ -9,6 +9,7 @@ using Basalt.Containers;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
+using Basalt.World;
 
 namespace Basalt.Entity;
 
@@ -366,7 +367,7 @@ public class Entity
         SetActorDataPacket packet = new()
         {
             RuntimeId = RuntimeId,
-            Tick = Dimension.World?.CurrentTick ?? 0,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
             Metadata =
             [
                 new ActorMetadataItem
@@ -397,7 +398,7 @@ public class Entity
         SetActorDataPacket packet = new()
         {
             RuntimeId = RuntimeId,
-            Tick = Dimension.World?.CurrentTick ?? 0,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
             Metadata =
             [
                 new ActorMetadataItem

@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 using Basalt.Traits;
 using Basalt.Item;
 using Basalt.Item.Traits;
+using Basalt.World;
 
 using System.Diagnostics;
 
@@ -30,7 +31,7 @@ public sealed class DebugTrait : PlayerTrait
 
     public override void OnSpawn(Basalt.Entity.Traits.Types.EntitySpawnOptions details)
     {
-        _lastSentTick = Player.Dimension?.World?.CurrentTick ?? 0;
+        _lastSentTick = Player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
         _lastSentTimestamp = Stopwatch.GetTimestamp();
         _smoothedTps = 0;
         _averageMspt = 0;
@@ -96,7 +97,7 @@ public sealed class DebugTrait : PlayerTrait
             double rawTps = tickDelta * 1000.0 / elapsedMs;
             _smoothedTps = _smoothedTps == 0 ? rawTps : _smoothedTps + ((rawTps - _smoothedTps) * 0.2);
             double tps = _smoothedTps;
-            double mspt = Player.Dimension?.World?.LastTickWorkMs ?? 0;
+            double mspt = Player.Dimension?.World is Tickable tickable ? tickable.TickWork : 0;
             _averageMspt = _averageMspt == 0 ? mspt : _averageMspt + ((mspt - _averageMspt) * 0.2);
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
             int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;

@@ -26,7 +26,6 @@ public sealed class Dimension : IDisposable
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
     public global::Basalt.World.World? World { get; internal set; }
     public global::Basalt.World.DimensionGameRules Gamerules { get; } = new();
-    internal Action<DataPacket, BroadcastOptions>? PacketBroadcaster { get; set; }
 
     public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null)
     {
@@ -394,7 +393,7 @@ public sealed class Dimension : IDisposable
     {
         BroadcastOptions resolved = options ?? new BroadcastOptions();
         resolved.Center ??= GetPacketPosition(packet);
-        PacketBroadcaster?.Invoke(packet, resolved);
+        World?.Server?.Broadcast(this, packet, resolved);
     }
 
     internal void AddEntity(global::Basalt.Entity.Entity entity)

@@ -1,19 +1,21 @@
 using Basalt.Protocol.Enums;
+using Basalt.Core;
 using Basalt.World.Dimension.Generation;
 using Basalt.World.Dimension.Provider;
 using DimensionInstance = Basalt.World.Dimension.Dimension;
 
 namespace Basalt.World;
 
-public sealed class World : IDisposable
+public sealed class World : IDisposable, Tickable
 {
     private readonly Dictionary<string, DimensionInstance> _dimensions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Type> _generatorRegistry = new(StringComparer.OrdinalIgnoreCase);
 
     public string Name { get; }
     public WorldProvider Provider { get; }
-    public ulong CurrentTick { get; private set; }
-    public double LastTickWorkMs { get; set; }
+    public Server? Server { get; internal set; }
+    
+    public ulong TickValue { get; set; }
+    public double TickWork { get; set; }
 
     public World(string name, WorldProvider? provider = null)
     {
@@ -24,44 +26,6 @@ public sealed class World : IDisposable
     public int DimensionCount => _dimensions.Count;
 
     public IEnumerable<DimensionInstance> Dimensions => _dimensions.Values;
-
-    public void RegisterGenerator<TGenerator>(string identifier) where TGenerator : Generator
-    {
-        RegisterGenerator(identifier, typeof(TGenerator));
-    }
-
-    public void RegisterGenerator(string identifier, Type generatorType)
-    {
-        if (string.IsNullOrWhiteSpace(identifier))
-        {
-            throw new ArgumentException("Generator identifier cannot be empty.", nameof(identifier));
-        }
-
-        if (!typeof(Generator).IsAssignableFrom(generatorType))
-        {
-            throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
-        }
-
-        _generatorRegistry[identifier] = generatorType;
-    }
-
-    public DimensionInstance CreateDimension(string identifier, DimensionType type, string generatorIdentifier = "void", params object[] generatorArgs)
-    {
-        if (!_generatorRegistry.TryGetValue(generatorIdentifier, out Type? generatorType))
-        {
-            throw new KeyNotFoundException($"No generator registered with identifier '{generatorIdentifier}'.");
-        }
-
-        object? instance = Activator.CreateInstance(generatorType, generatorArgs);
-        if (instance is not Generator generator)
-        {
-            throw new InvalidOperationException($"Could not construct generator '{generatorType.FullName}'.");
-        }
-
-        DimensionInstance dimension = new(identifier, type, Provider, generator);
-        AddDimension(dimension);
-        return dimension;
-    }
 
     public DimensionInstance CreateDimension(string identifier, DimensionType type, Type generatorType, params object[] generatorArgs)
     {
@@ -130,10 +94,10 @@ public sealed class World : IDisposable
 
     public void Tick()
     {
-        CurrentTick++;
+        TickValue++;
         foreach (DimensionInstance dimension in _dimensions.Values)
         {
-            dimension.Tick(CurrentTick, 1);
+            dimension.Tick(TickValue, 1);
         }
     }
 }

@@ -8,6 +8,7 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using Basalt.Traits;
 using Basalt.Entity.Traits.Types;
+using Basalt.World;
 
 namespace Basalt.Network.Handlers;
 
@@ -25,11 +26,12 @@ public static class SetLocalPlayerAsInitialized
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
         }
+        ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
         SetActorDataPacket actorData = new()
         {
             RuntimeId = player.RuntimeId,
-            Tick = player.Dimension?.World?.CurrentTick ?? 0,
+            Tick = tick,
             Metadata = []
         };
 
@@ -50,7 +52,7 @@ public static class SetLocalPlayerAsInitialized
         UpdateAttributesPacket attributes = new()
         {
             RuntimeId = player.RuntimeId,
-            Tick = player.Dimension?.World?.CurrentTick ?? 0,
+            Tick = tick,
             Attributes = player.Attributes.GetAll().ToList()
         };
 
