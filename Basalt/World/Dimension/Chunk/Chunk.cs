@@ -24,8 +24,8 @@ public sealed class Chunk
     public long Hash { get; }
     public SubChunk?[] SubChunks { get; }
 
-    public byte[]? Cache { get; set; }
-    public bool Dirty { get; set; }
+    public byte[]? Cache;
+    public bool Dirty;
 
     public Chunk(int x, int z, DimensionType type, SubChunk?[]? subChunks = null)
     {
