@@ -457,4 +457,15 @@ public class Entity
 
         Dimension.Broadcast(packet);
     }
+
+    public string FormatIdentifier()
+    {
+        if (string.IsNullOrWhiteSpace(Identifier))
+            return string.Empty;
+
+        var name = Identifier.Contains(':') ? Identifier.Split(':')[1] : Identifier;
+
+        return string.Join(" ", name.Split('_')
+            .Select(word => char.ToUpper(word[0]) + word[1..]));
+    }
 }
