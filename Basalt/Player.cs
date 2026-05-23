@@ -158,7 +158,7 @@ public sealed class Player : Basalt.Entity.Entity
         var packet = new TextPacket()
         {
             VariantType = TextVariantType.MessageOnly,
-            FilteredMessage = "",
+            FilteredMessage = null,
             NeedsTranslation = false,
             Xuid = "",
             PlatformChatId = "",
@@ -167,7 +167,7 @@ public sealed class Player : Basalt.Entity.Entity
                 Message = message,
                 Parameters = new List<string>(),
                 Source = "",
-                Type = TextType.Chat,
+                Type = TextType.Raw,
             }
         };
         
