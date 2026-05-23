@@ -5,6 +5,8 @@ using Basalt.Entity.Traits.Types;
 using Basalt.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 using Basalt.Traits;
 
 namespace Basalt.Entity.Traits;
@@ -43,6 +45,26 @@ public sealed class EntityInventoryTrait : EntityTrait
         {
             SelectedSlot = slot;
         }
+    }
+
+    public void Clear()
+    {
+        Container.Clear();
+
+        if (Entity is not Core.Player player || !player.Spawned)
+        {
+            return;
+        }
+
+        InventoryContentPacket packet = new()
+        {
+            WindowId = Container.Identifier ?? 0,
+            Content = Enumerable.Repeat(new LegacyItem(), Container.GetSize()).ToList(),
+            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            StorageItem = new LegacyItem()
+        };
+
+        player.Send(packet);
     }
 
     public override void OnTick(TraitOnTickDetails details)
