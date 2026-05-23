@@ -30,6 +30,9 @@ namespace Basalt.Protocol.Enums
         LevelChunk = 0x3a,
         RequestChunkRadius = 0x45,
         ChunkRadiusUpdated = 0x46,
+        AvailableCommands = 0x4c,
+        CommandRequest = 0x4d,
+        CommandResponse = 0x4f,
         SetLocalPlayerAsInitialized = 0x71,
         NetworkStackLatency = 0x73,
         AvailableActorIdentifiers = 0x77,
@@ -41,6 +44,7 @@ namespace Basalt.Protocol.Enums
         CreativeContent = 0x91,
         ItemStackRequest = 0x93,
         ItemStackResponse = 0x94,
+        UpdatePlayerGameType = 0x97,
         CorrectPlayerMovePrediction = 0xa1,
         ItemRegistry = 0xa2,
         RequestNetworkSettings = 0xc1
