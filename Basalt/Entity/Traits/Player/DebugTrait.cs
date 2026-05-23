@@ -6,8 +6,6 @@ using Basalt.Item;
 using Basalt.Item.Traits;
 using Basalt.World;
 
-using System.Diagnostics;
-
 namespace Basalt.Entity.Traits.PlayerTraits;
 
 public sealed class DebugTrait : PlayerTrait
@@ -19,9 +17,6 @@ public sealed class DebugTrait : PlayerTrait
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
 
     private ulong _lastSentTick;
-    private long _lastSentTimestamp;
-    // its so goody cause it flickers between 19.7 and 20.3
-    private double _smoothedTps;
     private double _averageMspt;
     private bool _gaveDebugItems;
 
@@ -32,8 +27,6 @@ public sealed class DebugTrait : PlayerTrait
     public override void OnSpawn(Basalt.Entity.Traits.Types.EntitySpawnOptions details)
     {
         _lastSentTick = Player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
-        _lastSentTimestamp = Stopwatch.GetTimestamp();
-        _smoothedTps = 0;
         _averageMspt = 0;
         if (!_gaveDebugItems)
         {
@@ -85,18 +78,7 @@ public sealed class DebugTrait : PlayerTrait
 
         try
         {
-            long nowTimestamp = Stopwatch.GetTimestamp();
-            ulong tickDelta = details.CurrentTick - _lastSentTick;
-            long timestampDelta = nowTimestamp - _lastSentTimestamp;
-            if (tickDelta == 0 || timestampDelta <= 0)
-            {
-                return;
-            }
-
-            double elapsedMs = timestampDelta * 1000.0 / Stopwatch.Frequency;
-            double rawTps = tickDelta * 1000.0 / elapsedMs;
-            _smoothedTps = _smoothedTps == 0 ? rawTps : _smoothedTps + ((rawTps - _smoothedTps) * 0.2);
-            double tps = _smoothedTps;
+            double tps = Player.Dimension?.World?.Server?.Tps ?? TargetTps;
             double mspt = Player.Dimension?.World is Tickable tickable ? tickable.TickWork : 0;
             _averageMspt = _averageMspt == 0 ? mspt : _averageMspt + ((mspt - _averageMspt) * 0.2);
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
@@ -118,7 +100,6 @@ public sealed class DebugTrait : PlayerTrait
 
             Player.Send(packet);
             _lastSentTick = details.CurrentTick;
-            _lastSentTimestamp = nowTimestamp;
         }
         catch (Exception exception)
         {
