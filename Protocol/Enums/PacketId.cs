@@ -28,6 +28,7 @@ namespace Basalt.Protocol.Enums
         InventoryContent = 0x31,
         InventorySlot = 0x32,
         LevelChunk = 0x3a,
+        SetPlayerGameType = 0x3e,
         RequestChunkRadius = 0x45,
         ChunkRadiusUpdated = 0x46,
         AvailableCommands = 0x4c,
@@ -47,6 +48,7 @@ namespace Basalt.Protocol.Enums
         UpdatePlayerGameType = 0x97,
         CorrectPlayerMovePrediction = 0xa1,
         ItemRegistry = 0xa2,
+        UpdateAbilities = 0xbb,
         RequestNetworkSettings = 0xc1
     }
 }

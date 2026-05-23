@@ -18,6 +18,7 @@ public sealed class ItemPalette
     private static readonly object LoadLock = new();
     private static byte[]? _itemRegistryPayload;
     private static byte[]? _creativeContentPayload;
+    private static Dictionary<uint, ItemStack>? _creativeItems;
 
     [ModuleInitializer]
     public static void Initialize()
@@ -99,6 +100,7 @@ public sealed class ItemPalette
                 Groups = new List<CreativeGroup>(groups.Count),
                 Items = new List<CreativeItem>(content.Count)
             };
+            Dictionary<uint, ItemStack> creativeItems = [];
 
             for (int i = 0; i < groups.Count; i++)
             {
@@ -120,17 +122,37 @@ public sealed class ItemPalette
                 }
 
                 CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry.Instance);
+                uint itemIndex = checked((uint)packet.Items.Count);
                 packet.Items.Add(new CreativeItem
                 {
-                    ItemIndex = packet.Items.Count,
+                    ItemIndex = checked((int)itemIndex),
                     ItemInstance = descriptor,
                     GroupIndex = entry.GroupIndex
                 });
+
+                ItemStack? stack = CreateCreativeStack(entry.Instance);
+                if (stack is not null)
+                {
+                    creativeItems[itemIndex] = stack;
+                }
             }
 
             _creativeContentPayload = SerializePacketBody(packet);
+            _creativeItems = creativeItems;
             return _creativeContentPayload;
         }
+    }
+
+    public static ItemStack? GetCreativeItem(uint creativeItemNetworkId)
+    {
+        if (_creativeItems is null)
+        {
+            GetCreativeContentPayload();
+        }
+
+        return _creativeItems is not null && _creativeItems.TryGetValue(creativeItemNetworkId, out ItemStack? item)
+            ? item.Clone()
+            : null;
     }
 
     public ItemType ResolveType(string identifier)
@@ -342,5 +364,31 @@ public sealed class ItemPalette
         {
             RawData = Convert.FromBase64String(base64)
         };
+    }
+
+    private static ItemStack? CreateCreativeStack(string base64)
+    {
+        if (string.IsNullOrWhiteSpace(base64))
+        {
+            return null;
+        }
+
+        byte[] raw = Convert.FromBase64String(base64);
+        int offset = 0;
+        BinaryReader reader = new(raw, ref offset);
+        CreativeItemInstanceDescriptor descriptor = new();
+        descriptor.Read(reader);
+
+        ItemType? type = ItemType.GetByNetwork(descriptor.NetworkId);
+        if (type is null || type == ItemType.Air)
+        {
+            return null;
+        }
+
+        return new ItemStack(
+            type,
+            checked((ushort)type.MaxStackSize),
+            unchecked((uint)descriptor.Metadata),
+            descriptor.ExtraData);
     }
 }

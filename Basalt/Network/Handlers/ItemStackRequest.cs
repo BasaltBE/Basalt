@@ -63,6 +63,7 @@ public static class ItemStackRequest
                 SwapStackRequestAction swap => SwapItems(player, swap, changedContainers),
                 DropStackRequestAction drop => RemoveDroppedItem(player, drop, changedContainers),
                 DestroyStackRequestAction destroy => RemoveDestroyedItem(player, destroy, changedContainers),
+                CraftCreativeStackRequestAction craftCreative => CreateCreativeItem(player, craftCreative, changedContainers),
 
                 EmptyStackRequestAction => ItemStackResponseStatus.Ok,
                 CraftResultsDeprecatedStackRequestAction => ItemStackResponseStatus.Ok,
@@ -175,6 +176,39 @@ public static class ItemStackRequest
 
         AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
         AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
+
+        return ItemStackResponseStatus.Ok;
+    }
+
+    private static ItemStackResponseStatus CreateCreativeItem(
+        Player player,
+        CraftCreativeStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
+    {
+        if (player.Gamemode != Gamemode.Creative)
+        {
+            return ItemStackResponseStatus.PlayerNotInCreativeMode;
+        }
+
+        Container? cursor = player.GetContainer(new FullContainerName { ContainerId = (byte)ContainerId.Cursor });
+        if (cursor is null)
+        {
+            return ItemStackResponseStatus.MissingCreatedOutputContainer;
+        }
+
+        ItemStack? item = ItemPalette.GetCreativeItem(action.CreativeItemNetworkId);
+        if (item is null)
+        {
+            return ItemStackResponseStatus.FailedToCraftCreative;
+        }
+
+        cursor.SetItem(0, item);
+        AddChangedSlot(
+            changedContainers,
+            new FullContainerName { ContainerId = (byte)ContainerId.Cursor },
+            cursor,
+            0,
+            0);
 
         return ItemStackResponseStatus.Ok;
     }
@@ -372,6 +406,8 @@ public static class ItemStackRequest
                 $"drop count={drop.Count} src={DescribeSlot(drop.Source)}",
             DestroyStackRequestAction destroy =>
                 $"destroy count={destroy.Count} src={DescribeSlot(destroy.Source)}",
+            CraftCreativeStackRequestAction craftCreative =>
+                $"craft_creative creative={craftCreative.CreativeItemNetworkId} count={craftCreative.NumberOfCrafts}",
             _ => action.GetType().Name
         };
     }

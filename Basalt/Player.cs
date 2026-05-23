@@ -52,6 +52,35 @@ public sealed class Player : Basalt.Entity.Entity
     public void SetGamemode(Gamemode gamemode)
     {
         Gamemode = gamemode;
+
+        UpdatePlayerGameTypePacket gamemodePacket = new()
+        {
+            GameType = gamemode,
+            PlayerUniqueId = UniqueId,
+            Tick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0
+        };
+        Abilities.SetGamemode(gamemode);
+
+        UpdateAbilitiesPacket abilitiesPacket = new()
+        {
+            EntityUniqueId = UniqueId,
+            Layers = [Abilities.ToLayer()]
+        };
+
+        Dimension?.Broadcast(gamemodePacket, new BroadcastOptions { Except = [this] });
+
+        if (Dimension?.World?.Server is Server server)
+        {
+            foreach ((NetworkConnection connection, Player player) in server.Players)
+            {
+                if (ReferenceEquals(player, this))
+                {
+                    server.Network.SendPacket(connection, new SetPlayerGameTypePacket { GameType = gamemode });
+                    server.Network.SendPacket(connection, abilitiesPacket);
+                    break;
+                }
+            }
+        }
     }
 
     public void Send(params DataPacket[] packets)

@@ -7,9 +7,17 @@ public class GamemodeEnum : CustomEnum
     public static readonly string[] Values =
     [
         "survival",
+        "s",
+        "0",
         "creative",
+        "c",
+        "1",
         "adventure",
-        "spectator"
+        "a",
+        "2",
+        "spectator",
+        "sp",
+        "6"
     ];
 
     public GamemodeEnum() : base("gamemode") { }
@@ -35,15 +43,23 @@ public class GamemodeCommand : Command
         switch (gamemode?.Value)
         {
             case "survival":
+            case "s":
+            case "0":
                 gm = Gamemode.Survival;
                 break;
             case "creative":
+            case "c":
+            case "1":
                 gm = Gamemode.Creative;
                 break;
             case "adventure":
+            case "a":
+            case "2":
                 gm = Gamemode.Adventure;
                 break;
             case "spectator":
+            case "sp":
+            case "6":
                 gm = Gamemode.Spectator;
                 break;
         }
