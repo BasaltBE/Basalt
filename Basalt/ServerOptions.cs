@@ -14,6 +14,9 @@ public readonly record struct ServerOptions
         CompressionMethod = CompressionMethod.Zlib;
         CompressionThreshold = 1;
         MaxPlayers = 100;
+        WorldProvider = "leveldb";
+        WorldPath = "worlds/world";
+        DefaultWorldIdentifier = "world";
     }
 
     /// <summary>
@@ -31,4 +34,10 @@ public readonly record struct ServerOptions
     /// The maximum number of players that can be connected to the server simultaneously.
     /// </summary>
     public int MaxPlayers { get; init; }
+
+    public string WorldProvider { get; init; }
+
+    public string WorldPath { get; init; }
+
+    public string DefaultWorldIdentifier { get; init; }
 }

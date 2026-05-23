@@ -32,7 +32,7 @@ public sealed class NetworkHandler
             return;
         }
 
-        _server.World.Provider.SavePlayerData(player.Xuid, player.WriteToNbt());
+        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
 
         if (player.IsAlive && player.Dimension is not null)
         {
@@ -150,6 +150,14 @@ public sealed class NetworkHandler
 
             case PacketId.ClientCacheStatus:
                 ClientCacheStatus.Handle(_server, connection, packetBuffer);
+                break;
+
+            case PacketId.CommandRequest:
+                CommandRequest.Handle(_server, connection, packetBuffer);
+                break;
+
+            case PacketId.Text:
+                Text.Handle(_server, connection, packetBuffer);
                 break;
         }
     }

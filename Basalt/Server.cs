@@ -1,3 +1,4 @@
+using Basalt.Commands;
 using Basalt.Network;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -14,6 +15,14 @@ namespace Basalt.Core;
 public sealed class Server
 {
     /// <summary>
+    /// TODO! Adjust cause of faking windows
+    /// </summary>
+    private const ulong TpsUpdateIntervalTicks = 20;
+    private const double TickIntervalMs = 50.0;
+    private const double SpinOnlyThresholdMs = 5.0;
+    private const double SpinThresholdMs = 2.0;
+
+    /// <summary>
     /// Raknet server
     /// </summary>
     private readonly NetworkServer _raknet;
@@ -25,6 +34,7 @@ public sealed class Server
     /// Registry for world providers
     /// </summary>
     private readonly Dictionary<string, Type> _providerRegistry = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, WorldInstance> _worlds = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Cancellation source for the main network loop
     /// </summary>
@@ -41,10 +51,16 @@ public sealed class Server
     /// Task for the tick loop
     /// </summary>
     private Task? _tickLoopTask;
+    private long _lastTpsTimestamp;
+    private ulong _lastTpsTick;
     /// <summary>
     /// Registry for players
     /// </summary>
     public readonly Dictionary<NetworkConnection, Player> Players = new();
+    /// <summary>
+    /// Registry for commands
+    /// </summary>
+    public CommandRegistry Commands = new();
     /// <summary>
     /// Network handler for processing minecraft packets and packet handlers
     /// </summary>
@@ -53,10 +69,14 @@ public sealed class Server
     /// Server options
     /// </summary>
     public ServerOptions Options { get; }
+    public IEnumerable<WorldInstance> Worlds => _worlds.Values;
+
+    public string DefaultWorldIdentifier { get; }
+
     /// <summary>
-    /// World
+    /// Ticks per second on average
     /// </summary>
-    public WorldInstance World { get; }
+    public double Tps { get; private set; } = 20.0;
 
     public Server(ServerOptions options = default)
     {
@@ -69,32 +89,61 @@ public sealed class Server
         RegisterGenerator<VoidGenerator>("void");
         RegisterGenerator<SuperFlatGenerator>("superflat");
 
-
-        World = CreateWorld("world", "leveldb", "worlds/world");
+        DefaultWorldIdentifier = Options.DefaultWorldIdentifier;
+        WorldInstance defaultWorld = Options.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
+            ? CreateWorld(DefaultWorldIdentifier, Options.WorldProvider)
+            : CreateWorld(DefaultWorldIdentifier, Options.WorldProvider, Options.WorldPath);
 
         if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType))
         {
             throw new KeyNotFoundException("No generator registered with identifier 'superflat'.");
         }
 
-        World.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+        defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+
+        Commands.RegisterDefaultCommands();
     }
 
     public void Start()
     {
+        Commands.CacheAvailableCommands();
+        _lastTpsTimestamp = Stopwatch.GetTimestamp();
+        _lastTpsTick = GetWorld().TickValue;
+
         _runCancellation = new CancellationTokenSource();
         _networkLoopTask = Task.Run(async () =>
         {
             await _raknet.Start();
         }, _runCancellation.Token);
 
-        _tickCancellation = new CancellationTokenSource();
-        _tickLoopTask = Task.Run(async () =>
+        CancellationTokenSource tickCancellation = new();
+        _tickCancellation = tickCancellation;
+        _tickLoopTask = Task.Run(() =>
         {
-            using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(50));
-            while (await timer.WaitForNextTickAsync(_tickCancellation.Token))
+            CancellationToken token = tickCancellation.Token;
+            while (!token.IsCancellationRequested)
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 Tick();
+                stopwatch.Stop();
+
+                double remainingMs = TickIntervalMs - stopwatch.Elapsed.TotalMilliseconds;
+                if (remainingMs <= 0)
+                {
+                    continue;
+                }
+
+                if (remainingMs > SpinOnlyThresholdMs)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(remainingMs - SpinThresholdMs));
+                    remainingMs = SpinThresholdMs;
+                }
+
+                long spinUntil = Stopwatch.GetTimestamp() + (long)(remainingMs * Stopwatch.Frequency / 1000.0);
+                while (Stopwatch.GetTimestamp() < spinUntil)
+                {
+                    Thread.SpinWait(1);
+                }
             }
         }, _tickCancellation.Token);
 
@@ -169,7 +218,23 @@ public sealed class Server
 
         WorldInstance world = new(name, provider);
         world.Server = this;
+        _worlds[name] = world;
         return world;
+    }
+
+    public WorldInstance GetWorld()
+    {
+        return GetWorld(DefaultWorldIdentifier);
+    }
+
+    public WorldInstance GetWorld(string identifier)
+    {
+        if (_worlds.TryGetValue(identifier, out WorldInstance? world))
+        {
+            return world;
+        }
+
+        throw new KeyNotFoundException($"World '{identifier}' was not found.");
     }
 
     public void RegisterProvider<TProvider>(string identifier) where TProvider : WorldProvider
@@ -192,13 +257,47 @@ public sealed class Server
         _generatorRegistry[identifier] = typeof(TGenerator);
     }
 
-    private void Tick()
+    public void Tick()
     {
         long startTimestamp = Stopwatch.GetTimestamp();
         _raknet.Tick();
-        World.Tick();
+        foreach (WorldInstance world in _worlds.Values.ToArray())
+        {
+            long worldStartTimestamp = Stopwatch.GetTimestamp();
+            world.Tick();
+            long worldEndTimestamp = Stopwatch.GetTimestamp();
+            ((Tickable)world).TickWork = (worldEndTimestamp - worldStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+        }
 
         long endTimestamp = Stopwatch.GetTimestamp();
-        ((Tickable)World).TickWork = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+        UpdateTps(endTimestamp);
+    }
+
+    public void UpdateTps(long timestamp)
+    {
+        if (_lastTpsTimestamp == 0)
+        {
+            _lastTpsTimestamp = timestamp;
+            _lastTpsTick = GetWorld().TickValue;
+            return;
+        }
+
+        ulong tickDelta = GetWorld().TickValue - _lastTpsTick;
+        if (tickDelta < TpsUpdateIntervalTicks)
+        {
+            return;
+        }
+
+        long timestampDelta = timestamp - _lastTpsTimestamp;
+        if (tickDelta == 0 || timestampDelta <= 0)
+        {
+            return;
+        }
+
+        double elapsedSeconds = (double)timestampDelta / Stopwatch.Frequency;
+        double currentTps = Math.Min(20.0, tickDelta / elapsedSeconds);
+        Tps = Tps == 0 ? currentTps : Tps + ((currentTps - Tps) * 0.2);
+        _lastTpsTimestamp = timestamp;
+        _lastTpsTick = GetWorld().TickValue;
     }
 }
