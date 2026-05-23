@@ -1,4 +1,5 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
 
 namespace Basalt.Entity;
 
@@ -50,5 +51,21 @@ public sealed class EntityActorMetadata
         {
             _entity.SendActorMetadataUpdate(id, type, value);
         }
+    }
+
+    public List<ActorMetadataItem> GetAll()
+    {
+        List<ActorMetadataItem> metadata = new(_metadata.Count);
+        foreach ((ActorDataId id, (ActorDataType type, object value)) in _metadata)
+        {
+            metadata.Add(new ActorMetadataItem
+            {
+                Id = id,
+                Type = type,
+                Value = value
+            });
+        }
+
+        return metadata;
     }
 }

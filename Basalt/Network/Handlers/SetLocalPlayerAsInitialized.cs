@@ -1,10 +1,7 @@
 using Basalt.Core;
-using Basalt.Entity.Traits.Attribute;
 using Basalt.Entity.Traits;
 using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Protocol.Packets;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using Basalt.Traits;
 using Basalt.Entity.Traits.Types;
@@ -28,40 +25,8 @@ public static class SetLocalPlayerAsInitialized
         }
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
-        SetActorDataPacket actorData = new()
-        {
-            RuntimeId = player.RuntimeId,
-            Tick = tick,
-            Metadata = []
-        };
-
-        actorData.Metadata.Add(new ActorMetadataItem
-        {
-            Id = ActorDataId.Reserved0,
-            Type = ActorDataType.Long,
-            Value = player.Flags.Lower64()
-        });
-
-        actorData.Metadata.Add(new ActorMetadataItem
-        {
-            Id = ActorDataId.Reserved092,
-            Type = ActorDataType.Long,
-            Value = player.Flags.Upper64()
-        });
-
-        UpdateAttributesPacket attributes = new()
-        {
-            RuntimeId = player.RuntimeId,
-            Tick = tick,
-            Attributes = player.Attributes.GetAll().ToList()
-        };
-
-        if (attributes.Attributes.Count > 0)
-        {
-            server.Network.SendPacket(connection, attributes);
-        }
-
-        server.Network.SendPacket(connection, actorData);
+        server.Network.SendPacket(connection, player.CreateActorDataPacket(tick));
+        player.SendAttributes();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is not null)
@@ -83,8 +48,6 @@ public static class SetLocalPlayerAsInitialized
         {
             inventory.Container.Update();
         }
-
-       
 
         Logger.Info($"Player {player.Username} has spawned.");
     }

@@ -122,7 +122,7 @@ public class Entity
     }
 
 
-    public void Spawn(Dimension dimension, EntitySpawnOptions options)
+    public virtual void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
@@ -133,6 +133,15 @@ public class Entity
         {
             _traits[i].OnSpawn(options);
         }
+
+        SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
+        if (this is Player player)
+        {
+            Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });
+            return;
+        }
+
+        Dimension.Broadcast(actorData);
     }
 
     public void Despawn(EntityDespawnOptions options)
@@ -398,6 +407,30 @@ public class Entity
         };
 
         Dimension.Broadcast(packet);
+    }
+
+    public SetActorDataPacket CreateActorDataPacket(ulong tick)
+    {
+        List<ActorMetadataItem> metadata = Metadata.GetAll();
+        metadata.Add(new ActorMetadataItem
+        {
+            Id = ActorDataId.Reserved0,
+            Type = ActorDataType.Long,
+            Value = Flags.Lower64()
+        });
+        metadata.Add(new ActorMetadataItem
+        {
+            Id = ActorDataId.Reserved092,
+            Type = ActorDataType.Long,
+            Value = Flags.Upper64()
+        });
+
+        return new SetActorDataPacket
+        {
+            RuntimeId = RuntimeId,
+            Tick = tick,
+            Metadata = metadata
+        };
     }
 
     internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value)

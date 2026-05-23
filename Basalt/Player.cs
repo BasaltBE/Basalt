@@ -5,7 +5,10 @@ using Basalt.RakNet;
 using Basalt.Containers;
 using Basalt.Entity.Traits;
 using Basalt.Entity.Traits.PlayerTraits;
+using Basalt.Entity.Traits.Types;
 using Basalt.Protocol.Types;
+using Basalt.World;
+using Basalt.World.Dimension;
 
 namespace Basalt.Core;
 
@@ -14,13 +17,13 @@ public sealed class Player : Basalt.Entity.Entity
     public readonly string Username;
     public readonly string Xuid;
     public readonly string Uuid;
-    internal NetworkConnection? Connection { get; set; }
-    internal NetworkHandler? Network { get; set; }
+    internal NetworkConnection? Connection;
+    internal NetworkHandler? Network ;
     public PlayerAbilities Abilities { get; } = new();
     public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
     public bool Spawned { get; private set; }
-    public float Pitch { get; set; }
-    public float Yaw { get; set; }
+    public float Pitch;
+    public float Yaw;
     public float HeadYaw { get; set; }
     public BlockPos? BreakingBlock { get; set; }
     public BlockPos? LastActionBlockPosition { get; set; }
@@ -28,7 +31,7 @@ public sealed class Player : Basalt.Entity.Entity
     public int LastActionFace { get; set; }
     public Dictionary<int, Container> openedContainers = [];
 
-    public Player( string username, string xuid, string uuid) : 
+    public Player(string username, string xuid, string uuid) :
         base(EntityIdentifier.Player.ToIdentifierString())
     {
         Username = username;
@@ -64,6 +67,12 @@ public sealed class Player : Basalt.Entity.Entity
     public void SetSpawned(bool spawned)
     {
         Spawned = true;
+    }
+
+    public override void Spawn(Dimension dimension, EntitySpawnOptions options)
+    {
+        base.Spawn(dimension, options);
+        SendAttributes();
     }
 
     public void RegisterOpenContainer(int windowId, Container container)
@@ -119,4 +128,26 @@ public sealed class Player : Basalt.Entity.Entity
         return null;
     }
 
+
+    public void SendAttributes()
+    {
+        if (Network == null || Connection == null)
+        {
+            return;
+        }
+
+        ulong tick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
+
+        UpdateAttributesPacket attributes = new()
+        {
+            RuntimeId = RuntimeId,
+            Tick = tick,
+            Attributes = Attributes.GetAll().ToList()
+        };
+
+        if (attributes.Attributes.Count > 0)
+        {
+            Network.SendPacket(Connection, attributes);
+        }
+    }
 }
