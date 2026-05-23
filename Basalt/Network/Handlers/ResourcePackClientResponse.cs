@@ -156,7 +156,7 @@ public static class ResourcePackClientResponse
                     OwnerId = player.Xuid
                 };
                 player.Position = startGame.PlayerPosition;
-                var dimension = server.World.GetDimension(DimensionType.Overworld);
+                var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
                 if (dimension is not null)
                 {
                     player.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: true));
@@ -171,7 +171,7 @@ public static class ResourcePackClientResponse
 
                 PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
-                server.Network.SendPackets(connection, [startGame, actorIdentifiers, spawnStatus]);
+                server.Network.SendPackets(connection, [startGame, server.Commands.AvailableCommandsPacket, actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 return;
