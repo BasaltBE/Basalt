@@ -150,4 +150,27 @@ public sealed class Player : Basalt.Entity.Entity
             Network.SendPacket(Connection, attributes);
         }
     }
+
+    public void SendMessage(
+        string message
+    )
+    {
+        var packet = new TextPacket()
+        {
+            VariantType = TextVariantType.MessageOnly,
+            FilteredMessage = "",
+            NeedsTranslation = false,
+            Xuid = "",
+            PlatformChatId = "",
+            Variant = new TextVariant()
+            {
+                Message = message,
+                Parameters = new List<string>(),
+                Source = "",
+                Type = TextType.Chat,
+            }
+        };
+        
+        Send(packet);
+    }
 }
