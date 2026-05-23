@@ -14,11 +14,11 @@ public sealed record SetPlayerGameTypePacket : DataPacket
 
     public override void Deserialize(BinaryReader reader)
     {
-        GameType = (Gamemode)reader.ReadVarInt();
+        GameType = (Gamemode)reader.ReadZigZag();
     }
 
     public override void Serialize(BinaryWriter writer)
     {
-        writer.WriteVarInt((int)GameType);
+        writer.WriteZigZag((int)GameType);
     }
 }

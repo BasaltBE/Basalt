@@ -19,8 +19,7 @@ public sealed class Server
     /// </summary>
     private const ulong TpsUpdateIntervalTicks = 20;
     private const double TickIntervalMs = 50.0;
-    private const double SpinOnlyThresholdMs = 5.0;
-    private const double SpinThresholdMs = 2.0;
+    private const double SpinThresholdMs = 16.0;
 
     /// <summary>
     /// Raknet server
@@ -123,24 +122,27 @@ public sealed class Server
             CancellationToken token = tickCancellation.Token;
             while (!token.IsCancellationRequested)
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                long tickStartTimestamp = Stopwatch.GetTimestamp();
                 Tick();
-                stopwatch.Stop();
 
-                double remainingMs = TickIntervalMs - stopwatch.Elapsed.TotalMilliseconds;
+                long tickDeadlineTimestamp = tickStartTimestamp + (long)(TickIntervalMs * Stopwatch.Frequency / 1000.0);
+                double remainingMs = GRTM(tickDeadlineTimestamp, Stopwatch.GetTimestamp());
                 if (remainingMs <= 0)
                 {
                     continue;
                 }
 
-                if (remainingMs > SpinOnlyThresholdMs)
+                while (remainingMs > SpinThresholdMs)
                 {
-                    Thread.Sleep(TimeSpan.FromMilliseconds(remainingMs - SpinThresholdMs));
-                    remainingMs = SpinThresholdMs;
+                    Thread.Sleep(1);
+                    remainingMs = GRTM(tickDeadlineTimestamp, Stopwatch.GetTimestamp());
+                    if (remainingMs <= 0)
+                    {
+                        break;
+                    }
                 }
 
-                long spinUntil = Stopwatch.GetTimestamp() + (long)(remainingMs * Stopwatch.Frequency / 1000.0);
-                while (Stopwatch.GetTimestamp() < spinUntil)
+                while (Stopwatch.GetTimestamp() < tickDeadlineTimestamp)
                 {
                     Thread.SpinWait(1);
                 }
@@ -299,5 +301,10 @@ public sealed class Server
         Tps = Tps == 0 ? currentTps : Tps + ((currentTps - Tps) * 0.2);
         _lastTpsTimestamp = timestamp;
         _lastTpsTick = GetWorld().TickValue;
+    }
+
+    private static double GRTM(long deadlineTimestamp, long timestamp)
+    {
+        return (deadlineTimestamp - timestamp) * 1000.0 / Stopwatch.Frequency;
     }
 }

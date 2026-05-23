@@ -11,15 +11,15 @@ public sealed record UpdatePlayerGameTypePacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        GameType = (Gamemode)reader.ReadVarInt();
-        PlayerUniqueId = reader.ReadVarLong();
+        GameType = (Gamemode)reader.ReadZigZag();
+        PlayerUniqueId = reader.ReadZigZong();
         Tick = reader.ReadVarULong();
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt((int)GameType);
-        writer.WriteVarLong(PlayerUniqueId);
+        writer.WriteZigZag((int)GameType);
+        writer.WriteZigZong(PlayerUniqueId);
         writer.WriteVarULong(Tick);
     }
 }
