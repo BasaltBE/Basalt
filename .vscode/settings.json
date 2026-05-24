@@ -23,7 +23,10 @@
         "Basalt/artifacts": true,
         "RakNet/artifacts": true,
         "RakNet/bin": true,
-        "RakNet/obj": true
+        "RakNet/obj": true,
+        "Client/obj": true,
+        "Waterfall/obj": true,
+        "Waterfall/bin": true
     },
     "hide-files.files": [
         "Basalt/obj",
@@ -44,6 +47,9 @@
         "Basalt/artifacts",
         "RakNet/artifacts",
         "RakNet/bin",
-        "RakNet/obj"
+        "RakNet/obj",
+        "Client/obj",
+        "Waterfall/obj",
+        "Waterfall/bin"
     ]
 }

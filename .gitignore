@@ -13,3 +13,7 @@ Tests/
 T
 # The old protocol
 _Protocol
+
+# WIP client / debugger
+Waterfall/Program2.cs
+Waterfall

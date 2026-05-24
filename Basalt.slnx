@@ -4,4 +4,5 @@
   <Project Path="Logger/Logger.csproj" />
   <Project Path="RakNet/RakNet.csproj" Id="0f80e604-c0a6-45b4-9cb6-8737297b006d" />
   <Project Path="Protocol/Protocol.csproj" />
+  <!-- <Project Path="Waterfall/Waterfall.csproj" /> -->
 </Solution>
