@@ -15,6 +15,7 @@ public class NetworkServer
     private const int DisconnectTimeoutMs = 15000;
 
     public RaknetServerOptions Options { get; }
+    public IPEndPoint? LocalEndPoint => _socket?.LocalEndPoint as IPEndPoint;
 
     public readonly ArrayPool<byte> FramesPool = ArrayPool<byte>.Create(
         maxArrayLength: FrameBufferSize,
@@ -58,7 +59,7 @@ public class NetworkServer
             _socket.IOControl(sioUdpConnReset, [0, 0, 0, 0], null);
         }
 
-        _socket.Bind(new IPEndPoint(IPAddress.Any, 19132));
+        _socket.Bind(new IPEndPoint(IPAddress.Any, Options.Port));
 
         while (true)
         {
