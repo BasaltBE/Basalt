@@ -7,6 +7,7 @@ using Basalt.World.Dimension;
 using Basalt.World.Dimension.Provider;
 using Basalt.World.Dimension.Generation;
 using Basalt.World;
+using Basalt.Events;
 using System.Diagnostics;
 using WorldInstance = Basalt.World.World;
 
@@ -52,6 +53,7 @@ public sealed class Server
     private Task? _tickLoopTask;
     private long _lastTpsTimestamp;
     private ulong _lastTpsTick;
+    private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
     /// <summary>
     /// Registry for players
     /// </summary>
@@ -162,7 +164,46 @@ public sealed class Server
             }
         };
 
+        Emit(new ServerStartSignal());
         Logger.Info("Basalt listening on 0.0.0.0:19132");
+    }
+
+    public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers))
+        {
+            handlers = [];
+            _signalHandlers[@event] = handlers;
+        }
+
+        handlers.Add(handler);
+    }
+
+    public void Emit(ServerEvent @event, ISignal signal)
+    {
+        ArgumentNullException.ThrowIfNull(signal);
+        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers))
+        {
+            return;
+        }
+
+        for (int i = 0; i < handlers.Count; i++)
+        {
+            Delegate handler = handlers[i];
+            Type? signalType = handler.Method.GetParameters().FirstOrDefault()?.ParameterType;
+            if (signalType is null || !signalType.IsInstanceOfType(signal))
+            {
+                continue;
+            }
+
+            handler.DynamicInvoke(signal);
+        }
+    }
+
+    public void Emit(ISignal signal)
+    {
+        Emit(signal.Event, signal);
     }
 
     public void Stop()

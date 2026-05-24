@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Basalt.Core;
 using Basalt.Entity.Traits;
 using Basalt.Entity.Traits.Types;
+using Basalt.Events;
 using Basalt.Item;
 using Basalt.Item.Traits.Types;
 using Basalt.Protocol.Enums;
@@ -326,6 +327,37 @@ public static class PlayerAuthInput
             block.Type.Identifier,
             block.NetworkId,
             action.Action);
+
+        Server? server = player.Dimension.World?.Server;
+        if (server is not null)
+        {
+            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                player.Send(new UpdateBlockPacket
+                {
+                    Position = blockPosition,
+                    NetworkBlockId = (uint)block.NetworkId,
+                    Flags = UpdateBlockFlagsType.Network,
+                    Layer = UpdateBlockLayerType.Normal
+                });
+
+                EntityInventoryTrait? cancelInventory = player.GetTrait<EntityInventoryTrait>();
+                if (cancelInventory is not null)
+                {
+                    ItemStack? rollbackItem = cancelInventory.GetHeldItem();
+                    if (rollbackItem is not null)
+                    {
+                        cancelInventory.Container.SetItem(cancelInventory.SelectedSlot, rollbackItem.Clone());
+                    }
+                    cancelInventory.Container.UpdateSlot(cancelInventory.SelectedSlot);
+                    cancelInventory.Container.Update();
+                    cancelInventory.SyncToPlayer(player);
+                }
+                return;
+            }
+        }
 
         player.Dimension.Broadcast(new LevelEventPacket
         {

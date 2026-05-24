@@ -1,6 +1,7 @@
 using Basalt.Core;
 using Basalt.Block.Traits.Types;
 using Basalt.Entity.Traits;
+using Basalt.Events;
 using Basalt.Item;
 using Basalt.Item.Traits.Types;
 using Basalt.Protocol.Enums;
@@ -60,7 +61,7 @@ public static class InventoryTransaction
         switch (packet.TransactionData)
         {
             case NormalInventoryTransactionData:
-                HandleInventoryActions(inventory, packet.Actions);
+                HandleInventoryActions(player, inventory, packet.Actions);
                 break;
 
             case UseItemInventoryTransactionData useItem:
@@ -134,17 +135,57 @@ public static class InventoryTransaction
         HandleUseItem(player, inventory, transaction, []);
     }
 
-    private static void HandleInventoryActions(EntityInventoryTrait inventory, List<InventoryAction> actions)
+    private static void HandleInventoryActions(Player player, EntityInventoryTrait inventory, List<InventoryAction> actions)
     {
         foreach (InventoryAction action in actions)
         {
-            if (action.SourceType != (uint)InventoryActionSourceType.World)
+            if (action.SourceType == (uint)InventoryActionSourceType.World)
+            {
+                inventory.Container.Update();
+                continue;
+            }
+
+            if (action.SourceType != (uint)InventoryActionSourceType.Container)
             {
                 continue;
             }
 
-            inventory.Container.Update();
-            return;
+            Containers.Container? container = null;
+            if (action.WindowId == (inventory.Container.Identifier ?? 0))
+            {
+                container = inventory.Container;
+            }
+            else if (player.TryGetOpenContainer(action.WindowId, out Containers.Container? opened))
+            {
+                container = opened;
+            }
+
+            if (container is null)
+            {
+                continue;
+            }
+
+            int slot = (int)action.InventorySlot;
+            if (slot < 0 || slot >= container.GetSize())
+            {
+                continue;
+            }
+
+            LegacyItem stack = action.NewItem.Stack;
+            if (stack.NetworkId == 0 || stack.StackSize == 0)
+            {
+                container.ClearSlot(slot);
+                continue;
+            }
+
+            try
+            {
+                ItemStack item = ItemStack.FromNetworkStack(stack);
+                container.SetItem(slot, item);
+            }
+            catch
+            {
+            }
         }
     }
 
@@ -319,6 +360,26 @@ public static class InventoryTransaction
         {
             SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
             return;
+        }
+
+        Server? server = player.Dimension.World?.Server;
+        if (server is not null)
+        {
+            PlayerPlaceBlockSignal signal = new(player, placePosition, clickedFace);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
+                ItemStack? rollbackItem = inventory.Container.GetItem(transaction.HotBarSlot);
+                if (rollbackItem is not null)
+                {
+                    inventory.Container.SetItem(transaction.HotBarSlot, rollbackItem.Clone());
+                }
+                inventory.Container.UpdateSlot(transaction.HotBarSlot);
+                inventory.Container.Update();
+                inventory.SyncToPlayer(player);
+                return;
+            }
         }
 
         Basalt.Block.BlockPermutation placedPermutation = blockType.Permutations.Count > 0

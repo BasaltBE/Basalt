@@ -245,4 +245,27 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         return clone;
     }
+
+    public void SyncToPlayer(Core.Player player)
+    {
+        if (!player.Spawned)
+        {
+            return;
+        }
+
+        InventoryContentPacket packet = new()
+        {
+            WindowId = Container.Identifier ?? 0,
+            Content = new List<LegacyItem>(Container.GetSize()),
+            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            StorageItem = new LegacyItem()
+        };
+
+        for (int i = 0; i < Container.GetSize(); i++)
+        {
+            packet.Content.Add(Container.GetItem(i)?.ToNetworkStack() ?? new LegacyItem());
+        }
+
+        player.Send(packet);
+    }
 }

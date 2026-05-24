@@ -1,5 +1,5 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.PlayerTraits;
+﻿using Basalt.Core;
+using Basalt.Events;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
@@ -20,8 +20,18 @@ public static class Text
             return;
         }
 
+        string rawMessage = packet.Variant.Message;
+        string message = $"<{sender.Username}> {rawMessage}";
+        PlayerChatSignal signal = new(sender, rawMessage, message);
+        server.Emit(signal);
+        if (!signal.Emit())
+        {
+            return;
+        }
+
         foreach (Player player in server.Players.Values)
-            player.SendMessage($"§r<{sender.Username}> {packet.Variant.Message}");
+        {
+            player.SendMessage(signal.Message);
+        }
     }
 }
-

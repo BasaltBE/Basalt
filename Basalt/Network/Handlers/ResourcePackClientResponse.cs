@@ -1,5 +1,6 @@
 using Basalt.Core;
 using Basalt.Entity;
+using Basalt.Events;
 using Basalt.Item;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
@@ -62,6 +63,15 @@ public static class ResourcePackClientResponse
                 if (!server.Players.TryGetValue(connection, out Basalt.Core.Player? player))
                 {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
+                    DisconnectPacket missingSessionDisconnect = new()
+                    {
+                        Reason = DisconnectReason.Disconnected,
+                        HideDisconnectionScreen = false,
+                        Message = "Server force closed the connection.",
+                        FilteredMessage = "Server force closed the connection."
+                    };
+                    server.Network.SendPacket(connection, missingSessionDisconnect);
+                    connection.Disconnect();
                     return;
                 }
 
@@ -159,7 +169,24 @@ public static class ResourcePackClientResponse
                 var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
                 if (dimension is not null)
                 {
-                    player.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: true));
+                    EntitySpawnOptions options = new(InitialSpawn: true);
+                    PlayerSpawnSignal spawnSignal = new(player, options);
+                    server.Emit(spawnSignal);
+                    if (!spawnSignal.Emit())
+                    {
+                        DisconnectPacket forcedDisconnect = new()
+                        {
+                            Reason = DisconnectReason.Disconnected,
+                            HideDisconnectionScreen = false,
+                            Message = "Server force closed the connection.",
+                            FilteredMessage = "Server force closed the connection."
+                        };
+                        server.Network.SendPacket(connection, forcedDisconnect);
+                        connection.Disconnect();
+                        return;
+                    }
+
+                    player.Spawn(dimension, spawnSignal.Options);
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();

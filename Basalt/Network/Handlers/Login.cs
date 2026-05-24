@@ -1,5 +1,6 @@
 using Basalt.Binary;
 using Basalt.Core;
+using Basalt.Events;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -43,6 +44,33 @@ public static class Login
 
 
 
+        var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
+        var savedData = server.GetWorld().Provider.LoadPlayerData(identity.Xuid);
+        if (savedData is not null)
+        {
+            player.FromNBT(savedData);
+        }
+
+        PlayerJoinSignal joinSignal = new(player);
+        server.Emit(joinSignal);
+        if (!joinSignal.Emit())
+        {
+            DisconnectPacket disconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = "Server force closed the connection.",
+                FilteredMessage = "Server force closed the connection."
+            };
+            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            connection.Disconnect();
+            return;
+        }
+
+        player.Connection = connection;
+        player.Network = server.Network;
+        server.Players[connection] = player;
+
         PlayStatusPacket status = new(PlayStatus.LoginSuccess);
 
         ResourcePacksInfoPacket resources = new()
@@ -57,19 +85,6 @@ public static class Login
         };
 
         server.Network.SendPackets(connection, [status, resources]);
-
-
-
-        var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
-        var savedData = server.GetWorld().Provider.LoadPlayerData(identity.Xuid);
-        if (savedData is not null)
-        {
-            player.FromNBT(savedData);
-        }
-
-        player.Connection = connection;
-        player.Network = server.Network;
-        server.Players[connection] = player;
 
         Logger.Info($"Player {identity.Username} has logged in!");
     }
