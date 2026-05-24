@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Basalt.Core.Platform;
 
-internal static partial class WindowsTimerResolution
+public static partial class WindowsTimerResolution
 {
     private static bool _enabled;
 

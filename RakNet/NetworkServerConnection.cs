@@ -8,8 +8,6 @@ namespace Basalt.RakNet;
 
 internal class NetworkServerConnection : NetworkConnection
 {
-    private const byte ConnectedPingPacketId = 0x00;
-    private const byte ConnectedPongPacketId = 0x03;
     private const byte EncapsulatedGamePacketId = 0xFE;
 
     public long ClientId { get; }
@@ -60,7 +58,7 @@ internal class NetworkServerConnection : NetworkConnection
                 HandleNewIncomingConnection(frame.Buffer.Span);
                 break;
 
-            case ConnectedPingPacketId:
+            case ConnectedPing.PacketId:
                 HandleConnectedPing(frame.Buffer.Span);
                 break;
 
@@ -102,7 +100,7 @@ internal class NetworkServerConnection : NetworkConnection
         Span<byte> payload = stackalloc byte[2048];
         int length = ConnectionRequestAccepted.Serialize(accepted, payload);
 
-        SendPayload(payload[..length]);
+        SendPayload(payload[..length], immediate: true);
     }
 
     private void HandleNewIncomingConnection(ReadOnlySpan<byte> buffer)
@@ -120,18 +118,10 @@ internal class NetworkServerConnection : NetworkConnection
 
     private void HandleConnectedPing(ReadOnlySpan<byte> buffer)
     {
-        if (buffer.Length < 9)
-        {
-            return;
-        }
-
-        ulong clientPingTime = buffer.ReadUInt64(1, false);
+        ConnectedPing ping = ConnectedPing.Deserialize(buffer);
 
         Span<byte> pong = stackalloc byte[17];
-
-        pong.WriteUInt8(ConnectedPongPacketId, 0);
-        pong.WriteUInt64(clientPingTime, 1, false);
-        pong.WriteUInt64((ulong)Environment.TickCount64, 9, false);
+        ConnectedPong.Serialize(new ConnectedPong(ping.Time, Environment.TickCount64), pong);
 
         SendPayload(pong, Reliability.Unreliable);
     }

@@ -98,6 +98,12 @@ public abstract class NetworkConnection
         {
             HandleIncomingFrame(frame);
         }
+        
+        // Flush ACKs/NACKs immediately instead of waiting for tick
+        lock (_sendLock)
+        {
+            FlushAcks();
+        }
     }
 
     public void HandleAck(Ack ack)
@@ -129,21 +135,7 @@ public abstract class NetworkConnection
     {
         lock (_sendLock)
         {
-            if (_ackQueue.Count > 0)
-            {
-                byte[] buffer = new byte[ControlPacketBufferSize];
-                int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
-                SendMessage(buffer.AsSpan(0, length));
-                _ackQueue.Clear();
-            }
-
-            if (_nackQueue.Count > 0)
-            {
-                byte[] buffer = new byte[ControlPacketBufferSize];
-                int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
-                SendMessage(buffer.AsSpan(0, length));
-                _nackQueue.Clear();
-            }
+            FlushAcks();
 
             foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
             {
@@ -165,6 +157,25 @@ public abstract class NetworkConnection
         }
     }
 
+    private void FlushAcks()
+    {
+        if (_ackQueue.Count > 0)
+        {
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _ackQueue.Clear();
+        }
+
+        if (_nackQueue.Count > 0)
+        {
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _nackQueue.Clear();
+        }
+    }
+
     public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered)
     {
         SendPayload(payload, reliability);
@@ -173,7 +184,8 @@ public abstract class NetworkConnection
     protected void SendPayload(
         ReadOnlySpan<byte> payload,
         Reliability reliability = Reliability.ReliableOrdered,
-        byte orderingChannel = 0)
+        byte orderingChannel = 0,
+        bool immediate = false)
     {
         if (NeedsOrdering(reliability) && orderingChannel >= MaxOrderChannels)
         {
@@ -187,6 +199,12 @@ public abstract class NetworkConnection
             if (payload.Length <= maxPayloadSize)
             {
                 _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
+                
+                if (immediate)
+                {
+                    FlushOutgoing(Environment.TickCount64);
+                }
+                
                 return;
             }
 
@@ -218,6 +236,11 @@ public abstract class NetworkConnection
                     splitIndex: (uint)splitIndex,
                     buffer: chunk
                 ));
+            }
+            
+            if (immediate)
+            {
+                FlushOutgoing(Environment.TickCount64);
             }
         }
     }
@@ -270,7 +293,6 @@ public abstract class NetworkConnection
 
             uint sequence = _sendSequence++;
             int length = FrameSet.Serialize(sequence, packedFrames, datagramBuffer);
-            SendMessage(datagramBuffer.AsSpan(0, length));
 
             bool reliable = false;
             for (int i = 0; i < packedFrames.Count; i++)
@@ -286,6 +308,8 @@ public abstract class NetworkConnection
             {
                 _pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
             }
+
+            SendMessage(datagramBuffer.AsSpan(0, length));
         }
     }
 
