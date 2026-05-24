@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Basalt.Protocol.Login;
 
-internal static class JsonValue
+public static class JsonValue
 {
     public static string GetString(JsonElement element, string name) =>
         element.TryGetProperty(name, out JsonElement value)

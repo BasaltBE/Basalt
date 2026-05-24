@@ -508,20 +508,70 @@ public sealed record StartGamePacket : DataPacket
         ServerAuthoritativeInventory = reader.ReadBool();
         GameVersion = reader.ReadVarString();
         PropertyData = CompoundTag.Read(reader, TagOptions);
+        if (reader.Remaining < sizeof(ulong))
+        {
+            return;
+        }
+
         ServerBlockStateChecksum = reader.ReadUInt64(true);
+        if (reader.Remaining < 16)
+        {
+            return;
+        }
+
         WorldTemplateId = UUID.Read(reader);
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         ClientSideGeneration = reader.ReadBool();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         UseBlockNetworkIdHashes = reader.ReadBool();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         ServerAuthoritativeSound = reader.ReadBool();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         ServerJoinInformation.Read(reader, static (BinaryReader r) =>
         {
             ServerJoinInformation value = new();
             value.Read(r);
             return value;
         });
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         ServerId = reader.ReadVarString();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         ScenarioId = reader.ReadVarString();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         WorldId = reader.ReadVarString();
+        if (reader.Remaining < 1)
+        {
+            return;
+        }
+
         OwnerId = reader.ReadVarString();
     }
 
@@ -625,4 +675,3 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteVarString(OwnerId);
     }
 }
-

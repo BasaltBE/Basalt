@@ -13,6 +13,10 @@ public sealed record PlayStatusPacket : DataPacket
     /// </summary>
     public PlayStatus Status;
 
+    public PlayStatusPacket()
+    {
+    }
+
     public PlayStatusPacket(PlayStatus status)
     {
         Status = status;
