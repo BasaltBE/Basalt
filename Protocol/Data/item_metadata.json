@@ -5601,7 +5601,7 @@
   },
   {
     "identifier": "minecraft:coral_fan_dead",
-    "networkId": 808,
+    "networkId": 810,
     "isComponentBased": false,
     "itemVersion": 2,
     "properties": "CgAAAA=="
@@ -7176,7 +7176,7 @@
   },
   {
     "identifier": "minecraft:stone_block_slab4",
-    "networkId": 802,
+    "networkId": 804,
     "isComponentBased": false,
     "itemVersion": 2,
     "properties": "CgAAAA=="

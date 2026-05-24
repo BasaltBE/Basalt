@@ -37,7 +37,7 @@ public sealed class Command : DataType
     /// <summary>
     /// Offsets into the AvailableCommands chained subcommand table.
     /// </summary>
-    public List<uint> ChainedSubcommandOffsets = [];
+    public List<ushort> ChainedSubcommandOffsets = [];
 
     /// <summary>
     /// Available overloads for this command.
@@ -55,7 +55,7 @@ public sealed class Command : DataType
         ChainedSubcommandOffsets = new(chainedSubcommandCount);
         for (int i = 0; i < chainedSubcommandCount; i++)
         {
-            ChainedSubcommandOffsets.Add(reader.ReadUInt32(true));
+            ChainedSubcommandOffsets.Add(reader.ReadUInt16(true));
         }
 
         int overloadCount = checked((int)reader.ReadVarUInt());
@@ -78,7 +78,7 @@ public sealed class Command : DataType
         writer.WriteVarUInt((uint)ChainedSubcommandOffsets.Count);
         for (int i = 0; i < ChainedSubcommandOffsets.Count; i++)
         {
-            writer.WriteUInt32(ChainedSubcommandOffsets[i], true);
+            writer.WriteUInt16(ChainedSubcommandOffsets[i], true);
         }
 
         writer.WriteVarUInt((uint)Overloads.Count);

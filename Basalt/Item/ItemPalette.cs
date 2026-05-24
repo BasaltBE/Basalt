@@ -121,7 +121,7 @@ public sealed class ItemPalette
                     continue;
                 }
 
-                CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry.Instance);
+                CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry);
                 uint itemIndex = checked((uint)packet.Items.Count);
                 packet.Items.Add(new CreativeItem
                 {
@@ -130,7 +130,7 @@ public sealed class ItemPalette
                     GroupIndex = entry.GroupIndex
                 });
 
-                ItemStack? stack = CreateCreativeStack(entry.Instance);
+                ItemStack? stack = CreateCreativeStack(entry);
                 if (stack is not null)
                 {
                     creativeItems[itemIndex] = stack;
@@ -194,7 +194,7 @@ public sealed class ItemPalette
                 metadata = JsonSerializer.Deserialize(metadataStream, ItemPaletteJsonContext.Default.ListItemMetadataData) ?? [];
             }
 
-            ItemType.EnsureRegistryCapacity(types.Count + 1);
+            ItemType.EnsureRegistryCapacity(metadata.Count + 1);
             Dictionary<string, ItemTypeData> typeMap = new(StringComparer.Ordinal);
             for (int i = 0; i < types.Count; i++)
             {
@@ -215,10 +215,8 @@ public sealed class ItemPalette
                     continue;
                 }
 
-                if (!typeMap.TryGetValue(entry.Identifier, out ItemTypeData? typeData))
-                {
-                    continue;
-                }
+                typeMap.TryGetValue(entry.Identifier, out ItemTypeData? typeData);
+                typeData ??= new ItemTypeData { Identifier = entry.Identifier };
 
                 CompoundTag properties;
                 if (string.IsNullOrWhiteSpace(entry.Properties))
@@ -353,37 +351,47 @@ public sealed class ItemPalette
         };
     }
 
-    private static CreativeItemInstanceDescriptor ReadCreativeDescriptor(string base64)
+    private static CreativeItemInstanceDescriptor ReadCreativeDescriptor(CreativeContentData entry)
     {
-        if (string.IsNullOrWhiteSpace(base64))
+        ItemType type = ItemType.Get(entry.Type) ?? ItemType.Air;
+        CreativeItemInstanceDescriptor descriptor = new();
+        if (!string.IsNullOrWhiteSpace(entry.Instance))
         {
-            return BuildGroupIcon("minecraft:air");
+            byte[] raw = Convert.FromBase64String(entry.Instance);
+            int offset = 0;
+            BinaryReader reader = new(raw, ref offset);
+            descriptor.Read(reader);
+        }
+
+        int blockRuntimeId = 0;
+        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
+        {
+            blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
         }
 
         return new CreativeItemInstanceDescriptor
         {
-            RawData = Convert.FromBase64String(base64)
+            NetworkId = type.NetworkId,
+            StackSize = descriptor.StackSize == 0 ? (ushort)1 : descriptor.StackSize,
+            Metadata = descriptor.Metadata,
+            NetworkBlockId = blockRuntimeId,
+            ExtraData = descriptor.ExtraData
         };
     }
 
-    private static ItemStack? CreateCreativeStack(string base64)
+    private static ItemStack? CreateCreativeStack(CreativeContentData entry)
     {
-        if (string.IsNullOrWhiteSpace(base64))
+        ItemType? type = ItemType.Get(entry.Type);
+        if (type is null || type == ItemType.Air || string.IsNullOrWhiteSpace(entry.Instance))
         {
             return null;
         }
 
-        byte[] raw = Convert.FromBase64String(base64);
+        byte[] raw = Convert.FromBase64String(entry.Instance);
         int offset = 0;
         BinaryReader reader = new(raw, ref offset);
         CreativeItemInstanceDescriptor descriptor = new();
         descriptor.Read(reader);
-
-        ItemType? type = ItemType.GetByNetwork(descriptor.NetworkId);
-        if (type is null || type == ItemType.Air)
-        {
-            return null;
-        }
 
         return new ItemStack(
             type,

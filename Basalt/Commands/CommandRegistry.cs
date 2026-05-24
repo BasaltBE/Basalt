@@ -1,6 +1,7 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Core;
+using Basalt.Item;
 using EntityInstance = Basalt.Entity.Entity;
 using ProtocolCommand = Basalt.Protocol.Types.Command;
 using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
@@ -22,6 +23,7 @@ public class CommandRegistry
         Register(new StatusCommand());
         Register(new ClearCommand());
         Register(new GamemodeCommand());
+        Register(new GiveCommand());
     }
 
     public void Register(Command command)
@@ -134,9 +136,21 @@ public class CommandRegistry
             return new StringEnum(token);
         }
 
+        if (parameter.Enum == typeof(JsonEnum))
+        {
+            return new JsonEnum(token);
+        }
+
         if (parameter.Enum == typeof(TargetEnum))
         {
             return new TargetEnum(token, ResolveTargets(server, player, token));
+        }
+
+        if (parameter.Enum == typeof(ItemEnum))
+        {
+            string identifier = token.IndexOf(':') == -1 ? "minecraft:" + token : token;
+            ItemType type = ItemType.Get(identifier) ?? throw new InvalidOperationException($"Invalid item '{token}' for command parameter '{parameter.Name}'.");
+            return new ItemEnum(token, type);
         }
 
         if (typeof(CustomEnum).IsAssignableFrom(parameter.Enum))
@@ -307,6 +321,17 @@ public class CommandRegistry
         Dictionary<Type, uint> enumOffsets,
         CommandParameter parameter)
     {
+        if (parameter.Enum == typeof(ItemEnum))
+        {
+            uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, parameter.Enum);
+            return new ProtocolCommandParameter
+            {
+                Name = parameter.Name,
+                Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
+                Optional = !parameter.Required
+            };
+        }
+
         if (typeof(CustomEnum).IsAssignableFrom(parameter.Enum))
         {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, parameter.Enum);
@@ -341,6 +366,11 @@ public class CommandRegistry
         if (type == typeof(StringEnum))
         {
             return CommandParameterType.String;
+        }
+
+        if (type == typeof(JsonEnum))
+        {
+            return CommandParameterType.Json;
         }
 
         throw new InvalidOperationException($"Unsupported command parameter enum: {type.FullName}.");

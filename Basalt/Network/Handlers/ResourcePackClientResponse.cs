@@ -171,8 +171,9 @@ public static class ResourcePackClientResponse
 
                 PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
-                server.Network.SendPackets(connection, [startGame, server.Commands.AvailableCommandsPacket, actorIdentifiers, spawnStatus]);
+                server.Network.SendPackets(connection, [startGame]);
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
+                server.Network.SendPackets(connection, [server.Commands.AvailableCommandsPacket, actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 return;
 

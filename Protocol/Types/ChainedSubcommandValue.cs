@@ -11,22 +11,22 @@ public sealed class ChainedSubcommandValue : DataType
     /// <summary>
     /// Index into the AvailableCommands chained subcommand value table.
     /// </summary>
-    public uint Index;
+    public ushort Index;
 
     /// <summary>
     /// Argument type used for this chained subcommand value.
     /// </summary>
-    public uint Value;
+    public ushort Value;
 
     public void Read(BinaryReader reader)
     {
-        Index = reader.ReadVarUInt();
-        Value = reader.ReadVarUInt();
+        Index = reader.ReadUInt16(true);
+        Value = reader.ReadUInt16(true);
     }
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarUInt(Index);
-        writer.WriteVarUInt(Value);
+        writer.WriteUInt16(Index, true);
+        writer.WriteUInt16(Value, true);
     }
 }
