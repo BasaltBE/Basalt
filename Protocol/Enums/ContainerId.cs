@@ -8,6 +8,7 @@ public enum ContainerId : byte
     Hotbar = 28,
     FixedInventory = 29,
     Offhand = 33,
+    Barrel = 58,
     InventoryUi = 58,
     Cursor = 59
 }

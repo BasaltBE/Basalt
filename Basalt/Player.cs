@@ -127,8 +127,21 @@ public sealed class Player : Basalt.Entity.Entity
             return inventory.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerId.InventoryUi)
+        if (name.ContainerId == (byte)ContainerId.Barrel || name.ContainerId == (byte)ContainerId.InventoryUi)
         {
+            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? containerById))
+            {
+                return containerById;
+            }
+
+            foreach ((int _, Container candidate) in openedContainers)
+            {
+                if (candidate.Type != ContainerType.Inventory)
+                {
+                    return candidate;
+                }
+            }
+
             return inventory.Container;
         }
 
@@ -141,17 +154,6 @@ public sealed class Player : Basalt.Entity.Entity
         if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? container))
         {
             return container;
-        }
-
-        if (name.ContainerId == (byte)ContainerId.DynamicContainer)
-        {
-            foreach ((int _, Container candidate) in openedContainers)
-            {
-                if (!ReferenceEquals(candidate, inventory.Container))
-                {
-                    return candidate;
-                }
-            }
         }
 
         return null;
