@@ -1,3 +1,4 @@
+using Basalt.Protocol.Enums;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -31,9 +32,9 @@ public sealed class PlayerListEntry : DataType
     public string PlatformChatId = string.Empty;
 
     /// <summary>
-    /// Build platform value.
+    /// Device operating system value.
     /// </summary>
-    public int BuildPlatform;
+    public DeviceOS DeviceOS;
 
     /// <summary>
     /// Skin payload for this player.
@@ -67,7 +68,7 @@ public sealed class PlayerListEntry : DataType
         Username = reader.ReadVarString();
         Xuid = reader.ReadVarString();
         PlatformChatId = reader.ReadVarString();
-        BuildPlatform = reader.ReadInt32(true);
+        DeviceOS = (DeviceOS)reader.ReadInt32(true);
         Skin.Read(reader);
         Teacher = reader.ReadBool();
         Host = reader.ReadBool();
@@ -82,7 +83,7 @@ public sealed class PlayerListEntry : DataType
         writer.WriteVarString(Username);
         writer.WriteVarString(Xuid);
         writer.WriteVarString(PlatformChatId);
-        writer.WriteInt32(BuildPlatform, true);
+        writer.WriteInt32((int)DeviceOS, true);
         Skin.Write(writer);
         writer.WriteBool(Teacher);
         writer.WriteBool(Host);
