@@ -32,6 +32,19 @@ public sealed class NetworkHandler
             return;
         }
 
+        PlayerListPacket removePlayer = new()
+        {
+            ActionType = PlayerListActionType.Remove,
+            Entries =
+            [
+                new Basalt.Protocol.Types.PlayerListEntry
+                {
+                    Uuid = Guid.TryParse(player.Uuid, out Guid uuid) ? uuid : Guid.Empty
+                }
+            ]
+        };
+        _server.Broadcast(removePlayer);
+
         Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
