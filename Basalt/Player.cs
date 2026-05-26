@@ -17,6 +17,8 @@ public sealed class Player : Basalt.Entity.Entity
     public readonly string Username;
     public readonly string Xuid;
     public readonly string Uuid;
+    public DeviceOS DeviceOS;
+    public Skin Skin = new();
     internal NetworkConnection? Connection;
     internal NetworkHandler? Network ;
     public PlayerAbilities Abilities { get; } = new();
@@ -180,6 +182,61 @@ public sealed class Player : Basalt.Entity.Entity
         {
             Network.SendPacket(Connection, attributes);
         }
+    }
+
+    public PlayerListEntry CreatePlayerListEntry()
+    {
+        return new PlayerListEntry
+        {
+            Uuid = Guid.TryParse(Uuid, out Guid uuid) ? uuid : Guid.Empty,
+            EntityUniqueId = UniqueId,
+            Username = Username,
+            Xuid = Xuid,
+            PlatformChatId = string.Empty,
+            DeviceOS = DeviceOS,
+            Skin = Skin,
+            Teacher = false,
+            Host = false,
+            SubClient = false,
+            PlayerColor = 0
+        };
+    }
+
+    public override void SpawnTo(Player player, ulong tick)
+    {
+        ItemInstance heldItem = new();
+        EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
+        Item.ItemStack? held = inventory?.GetHeldItem();
+        if (held is not null)
+        {
+            heldItem.Stack = held.ToNetworkStack();
+            heldItem.StackNetworkId = held.NetworkStackId;
+        }
+
+        player.Send(new AddPlayerPacket
+        {
+            Uuid = Guid.TryParse(Uuid, out Guid uuid) ? uuid : Guid.Empty,
+            Username = Username,
+            EntityRuntimeId = RuntimeId,
+            PlatformChatId = string.Empty,
+            Position = Position,
+            Velocity = new Vec3f(),
+            Pitch = Pitch,
+            Yaw = Yaw,
+            HeadYaw = HeadYaw,
+            HeldItem = heldItem,
+            GameType = (int)Gamemode,
+            EntityMetadata = CreateActorDataPacket(tick).Metadata,
+            EntityProperties = new EntityProperties(),
+            AbilityData = new AbilityData
+            {
+                EntityUniqueId = UniqueId,
+                Layers = [Abilities.ToLayer()]
+            },
+            EntityLinks = [],
+            DeviceId = string.Empty,
+            DeviceOS = DeviceOS
+        });
     }
 
     public void SendMessage(
