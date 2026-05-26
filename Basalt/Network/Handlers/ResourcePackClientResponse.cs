@@ -75,6 +75,18 @@ public static class ResourcePackClientResponse
                     return;
                 }
 
+                PlayerListPacket playerList = new()
+                {
+                    ActionType = PlayerListActionType.Add,
+                    Entries = server.Players.Values.Select(static online => online.CreatePlayerListEntry()).ToList()
+                };
+                server.Network.SendPacket(connection, playerList);
+                server.Broadcast(new PlayerListPacket
+                {
+                    ActionType = PlayerListActionType.Add,
+                    Entries = [player.CreatePlayerListEntry()]
+                }, player);
+
                 StartGamePacket startGame = new()
                 {
                     EntityUniqueId = player.UniqueId,
