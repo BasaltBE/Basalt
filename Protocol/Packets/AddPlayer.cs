@@ -87,9 +87,9 @@ public sealed record AddPlayerPacket : DataPacket
     public string DeviceId = string.Empty;
 
     /// <summary>
-    /// Build platform of the player.
+    /// Device operating system of the player.
     /// </summary>
-    public int BuildPlatform;
+    public DeviceOS DeviceOS;
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
@@ -134,7 +134,7 @@ public sealed record AddPlayerPacket : DataPacket
         }
 
         DeviceId = reader.ReadVarString();
-        BuildPlatform = reader.ReadInt32(true);
+        DeviceOS = (DeviceOS)reader.ReadInt32(true);
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
@@ -167,6 +167,6 @@ public sealed record AddPlayerPacket : DataPacket
         }
 
         writer.WriteVarString(DeviceId);
-        writer.WriteInt32(BuildPlatform, true);
+        writer.WriteInt32((int)DeviceOS, true);
     }
 }
