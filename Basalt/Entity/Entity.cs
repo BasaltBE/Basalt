@@ -433,6 +433,26 @@ public class Entity
         };
     }
 
+    public virtual void SpawnTo(Player player, ulong tick)
+    {
+        player.Send(new AddActorPacket
+        {
+            EntityUniqueId = UniqueId,
+            EntityRuntimeId = RuntimeId,
+            EntityType = Identifier,
+            Position = Position,
+            Velocity = new Vec3f(),
+            Pitch = 0,
+            Yaw = 0,
+            HeadYaw = 0,
+            BodyYaw = 0,
+            Attributes = [.. Attributes.GetAll()],
+            EntityMetadata = CreateActorDataPacket(tick).Metadata,
+            EntityProperties = new EntityProperties(),
+            EntityLinks = []
+        });
+    }
+
     internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value)
     {
         if (Dimension is null)
