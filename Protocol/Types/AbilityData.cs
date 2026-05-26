@@ -7,6 +7,11 @@ namespace Basalt.Protocol.Types;
 public sealed class AbilityData : DataType
 {
     /// <summary>
+    /// Unique entity id bound to this ability payload.
+    /// </summary>
+    public long EntityUniqueId;
+
+    /// <summary>
     /// Player permission level.
     /// </summary>
     public PlayerPermissionLevel PlayerPermission = PlayerPermissionLevel.Member;
@@ -23,6 +28,7 @@ public sealed class AbilityData : DataType
 
     public void Read(BinaryReader reader)
     {
+        EntityUniqueId = reader.ReadInt64(true);
         PlayerPermission = (PlayerPermissionLevel)reader.ReadUInt8();
         CommandPermission = (CommandPermissionLevel)reader.ReadUInt8();
 
@@ -38,6 +44,7 @@ public sealed class AbilityData : DataType
 
     public void Write(BinaryWriter writer)
     {
+        writer.WriteInt64(EntityUniqueId, true);
         writer.WriteUInt8((byte)PlayerPermission);
         writer.WriteUInt8((byte)CommandPermission);
         writer.WriteUInt8((byte)Layers.Count);
