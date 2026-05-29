@@ -78,13 +78,25 @@ public sealed class PlayerListEntry : DataType
 
     public void Write(BinaryWriter writer)
     {
+        Write(writer, default);
+    }
+
+    public void Write(BinaryWriter writer, ReadOnlySpan<byte> serializedSkinData)
+    {
         UUID.Write(writer, Uuid);
         writer.WriteVarLong(EntityUniqueId);
         writer.WriteVarString(Username);
         writer.WriteVarString(Xuid);
         writer.WriteVarString(PlatformChatId);
         writer.WriteInt32((int)DeviceOS, true);
-        Skin.Write(writer);
+        if (!serializedSkinData.IsEmpty)
+        {
+            writer.WriteBytes(serializedSkinData);
+        }
+        else
+        {
+            Skin.Write(writer);
+        }
         writer.WriteBool(Teacher);
         writer.WriteBool(Host);
         writer.WriteBool(SubClient);
