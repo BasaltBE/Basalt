@@ -9,16 +9,16 @@ namespace Basalt.RakNet;
 
 public class NetworkServer
 {
-    private const int FrameBufferSize = 2048;
     private const int RakNetHeaderSize = 28;
     private const int MinMtu = 576;
+    private const int DefaultFrameBufferSize = 2048;
     private const int DisconnectTimeoutMs = 15000;
 
     public RaknetServerOptions Options { get; }
     public IPEndPoint? LocalEndPoint => _socket?.LocalEndPoint as IPEndPoint;
 
     public readonly ArrayPool<byte> FramesPool = ArrayPool<byte>.Create(
-        maxArrayLength: FrameBufferSize,
+        maxArrayLength: DefaultFrameBufferSize,
         maxArraysPerBucket: 4096
     );
 
@@ -30,6 +30,7 @@ public class NetworkServer
 
     private readonly byte[] _cookieSecret = RandomNumberGenerator.GetBytes(32);
     private readonly Dictionary<EndpointKey, NetworkServerConnection> _connections = [];
+    private readonly int _frameBufferSize;
 
     private Socket? _socket;
 
@@ -44,12 +45,19 @@ public class NetworkServer
             resolvedOptions = resolvedOptions with { Advertisement = RaknetServerOptions.DefaultAdvertisement };
         }
 
+        ushort normalizedMaxMtu = Math.Clamp(resolvedOptions.MaxMtu, (ushort)MinMtu, (ushort)ushort.MaxValue);
+        if (normalizedMaxMtu != resolvedOptions.MaxMtu)
+        {
+            resolvedOptions = resolvedOptions with { MaxMtu = normalizedMaxMtu };
+        }
+
         Options = resolvedOptions;
+        _frameBufferSize = Math.Max(DefaultFrameBufferSize, (int)Options.MaxMtu);
     }
 
     public async ValueTask Start()
     {
-        byte[] buffer = new byte[FrameBufferSize];
+        byte[] buffer = new byte[_frameBufferSize];
 
         _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
@@ -76,7 +84,7 @@ public class NetworkServer
 
     public void ReceiveFrom(SocketAddress endpoint, ReadOnlySpan<byte> message)
     {
-        if (_socket is null || message.Length == 0 || message.Length > FrameBufferSize)
+        if (_socket is null || message.Length == 0 || message.Length > _frameBufferSize)
         {
             return;
         }
@@ -267,7 +275,7 @@ public class NetworkServer
             return;
         }
 
-        byte[] buffer = FramesPool.Rent(FrameBufferSize);
+        byte[] buffer = FramesPool.Rent(DefaultFrameBufferSize);
 
         try
         {
