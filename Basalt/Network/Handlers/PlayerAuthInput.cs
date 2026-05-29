@@ -89,11 +89,11 @@ public static class PlayerAuthInput
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
             {
-                Logger.Warn(
-                    "PlayerAuthInput block actions player={0} count={1} tick={2}",
-                    player.Username,
-                    packet.BlockActions.Count,
-                    packet.Tick);
+                // Logger.Warn(
+                //     "PlayerAuthInput block actions player={0} count={1} tick={2}",
+                //     player.Username,
+                //     packet.BlockActions.Count,
+                //     packet.Tick);
 
                 foreach (PlayerBlockAction action in packet.BlockActions)
                 {
@@ -231,14 +231,14 @@ public static class PlayerAuthInput
 
     private static void HandleBlockAction(Player player, PlayerBlockAction action)
     {
-        Logger.Warn(
-            "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
-            player.Username,
-            action.Action,
-            action.BlockPos.X,
-            action.BlockPos.Y,
-            action.BlockPos.Z,
-            action.Face);
+        // Logger.Warn(
+        //     "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
+        //     player.Username,
+        //     action.Action,
+        //     action.BlockPos.X,
+        //     action.BlockPos.Y,
+        //     action.BlockPos.Z,
+        //     action.Face);
 
         switch (action.Action)
         {

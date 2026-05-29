@@ -7,6 +7,8 @@ using Basalt.Protocol.Io;
 using Basalt.Protocol.Login;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using Basalt.Protocol.Types;
+using Basalt.Protocol.Login.Data;
 
 namespace Basalt.Network.Handlers;
 
@@ -34,17 +36,49 @@ public static class Login
             };
 
             server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
-            Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={Constants.ProtocolVersion}");
+            // Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={Constants.ProtocolVersion}");
             return;
         }
 
 
         var identity = LoginIdentity.Verify(packet.Identity);
-        _ = LoginPayload.Parse(packet.Client);
+        ClientData clientData = LoginPayload.Parse(packet.Client);
+
+        // Logger.Info("UUID received: " + identity.Uuid);
+
+        KeyValuePair<NetworkConnection, Player>? existingPlayerSession = null;
+        foreach ((NetworkConnection existingConnection, Player existingPlayer) in server.Players)
+        {
+            bool sameXuid = !string.IsNullOrWhiteSpace(identity.Xuid) &&
+                string.Equals(existingPlayer.Xuid, identity.Xuid, StringComparison.Ordinal);
+            bool sameUsername = string.Equals(existingPlayer.Username, identity.Username, StringComparison.OrdinalIgnoreCase);
+
+            if (!sameXuid && !sameUsername)
+            {
+                continue;
+            }
+
+            existingPlayerSession = new KeyValuePair<NetworkConnection, Player>(existingConnection, existingPlayer);
+            break;
+        }
+
+        if (existingPlayerSession.HasValue)
+        {
+            DisconnectPacket duplicateDisconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = "Logged in from another location.",
+                FilteredMessage = "Logged in from another location."
+            };
+
+            server.Network.SendPacket(existingPlayerSession.Value.Key, duplicateDisconnect, CompressionMethod.NotPresent);
+            existingPlayerSession.Value.Key.Disconnect();
+        }
 
 
-
-        var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
+        Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId);
+        var player = new Player(identity.Username, identity.Xuid, playerUuid);
         var savedData = server.GetWorld().Provider.LoadPlayerData(identity.Xuid);
         if (savedData is not null)
         {
@@ -69,6 +103,8 @@ public static class Login
 
         player.Connection = connection;
         player.Network = server.Network;
+        player.DeviceOS = clientData.DeviceOs;
+        player.SetSkin(Skin.FromClientData(clientData));
         server.Players[connection] = player;
 
         PlayStatusPacket status = new(PlayStatus.LoginSuccess);
@@ -88,5 +124,19 @@ public static class Login
 
         Logger.Info($"Player {identity.Username} has logged in!");
     }
-}
 
+    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId)
+    {
+        if (Guid.TryParse(identityUuid, out Guid parsedIdentity))
+        {
+            return parsedIdentity;
+        }
+
+        if (Guid.TryParse(selfSignedId, out Guid parsedSelfSigned))
+        {
+            return parsedSelfSigned;
+        }
+
+        return Guid.NewGuid();
+    }
+}

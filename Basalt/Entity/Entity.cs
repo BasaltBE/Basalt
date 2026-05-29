@@ -153,6 +153,25 @@ public class Entity
 
         PendingDespawn = true;
         IsAlive = false;
+
+        if (Dimension is not null)
+        {
+            if (this is Player player)
+            {
+                Dimension.Broadcast(new RemoveActorPacket
+                {
+                    EntityUniqueId = UniqueId
+                }, new BroadcastOptions { Except = [player] });
+            }
+            else
+            {
+                Dimension.Broadcast(new RemoveActorPacket
+                {
+                    EntityUniqueId = UniqueId
+                });
+            }
+        }
+
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnDespawn(options);

@@ -9,6 +9,7 @@ using Basalt.Entity.Traits.Types;
 using Basalt.Protocol.Types;
 using Basalt.World;
 using Basalt.World.Dimension;
+using Basalt.Binary;
 
 namespace Basalt.Core;
 
@@ -16,9 +17,9 @@ public sealed class Player : Basalt.Entity.Entity
 {
     public readonly string Username;
     public readonly string Xuid;
-    public readonly string Uuid;
+    public readonly Guid Uuid;
     public DeviceOS DeviceOS;
-    public Skin Skin = new();
+    private byte[]? Skin;
     internal NetworkConnection? Connection;
     internal NetworkHandler? Network ;
     public PlayerAbilities Abilities { get; } = new();
@@ -33,7 +34,7 @@ public sealed class Player : Basalt.Entity.Entity
     public int LastActionFace { get; set; }
     public Dictionary<int, Container> openedContainers = [];
 
-    public Player(string username, string xuid, string uuid) :
+    public Player(string username, string xuid, Guid uuid) :
         base(EntityIdentifier.Player.ToIdentifierString())
     {
         Username = username;
@@ -186,20 +187,36 @@ public sealed class Player : Basalt.Entity.Entity
 
     public PlayerListEntry CreatePlayerListEntry()
     {
+        global::Basalt.Protocol.Types.Skin skin = new();
+        if (Skin is not null && Skin.Length > 0)
+        {
+            int offset = 0;
+            Binary.BinaryReader reader = new(Skin, ref offset);
+            skin.Read(reader);
+        }
+
         return new PlayerListEntry
         {
-            Uuid = Guid.TryParse(Uuid, out Guid uuid) ? uuid : Guid.Empty,
+            Uuid = Uuid,
             EntityUniqueId = UniqueId,
             Username = Username,
             Xuid = Xuid,
             PlatformChatId = string.Empty,
             DeviceOS = DeviceOS,
-            Skin = Skin,
+            Skin = skin,
             Teacher = false,
             Host = false,
             SubClient = false,
             PlayerColor = 0
         };
+    }
+
+    public void SetSkin(global::Basalt.Protocol.Types.Skin skin)
+    {
+        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+        Binary.BinaryWriter writer = stream;
+        skin.Write(writer);
+        Skin = writer.GetProcessedBytes().ToArray();
     }
 
     public override void SpawnTo(Player player, ulong tick)
@@ -215,7 +232,7 @@ public sealed class Player : Basalt.Entity.Entity
 
         player.Send(new AddPlayerPacket
         {
-            Uuid = Guid.TryParse(Uuid, out Guid uuid) ? uuid : Guid.Empty,
+            Uuid = Uuid,
             Username = Username,
             EntityRuntimeId = RuntimeId,
             PlatformChatId = string.Empty,
@@ -261,4 +278,5 @@ public sealed class Player : Basalt.Entity.Entity
         
         Send(packet);
     }
+
 }

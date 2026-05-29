@@ -5,6 +5,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Traits;
+using Basalt.World;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -23,6 +24,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     private readonly HashSet<long> _loadedChunks = [];
     private readonly HashSet<long> _pendingChunks = [];
     private readonly Dictionary<int, int[]> _offsetCache = [];
+    private readonly Dictionary<ulong, long> _visibleEntityUniqueIds = [];
 
     private readonly List<long> _sendQueue = [];
 
@@ -194,6 +196,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 {
                     SendQueuedChunks();
                 }
+
+                UpdateVisibleEntities();
 
                 bool updatePublisher =
                     Math.Abs(chunkX - _lastPublisherChunkX) > 2 ||
@@ -484,6 +488,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         {
             _pendingChunks.Clear();
             _sendQueue.Clear();
+            _visibleEntityUniqueIds.Clear();
         }
 
         _currentChunkX = chunkX;
@@ -559,11 +564,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         lock (_lock)
         {
+            HideAllVisibleEntities();
             ReleaseLoadedChunks(unloadChunks: true);
 
             _loadedChunks.Clear();
             _pendingChunks.Clear();
             _sendQueue.Clear();
+            _visibleEntityUniqueIds.Clear();
 
             _currentChunkX = int.MinValue;
             _currentChunkZ = int.MinValue;
@@ -696,6 +703,86 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         int dz = z - centerZ;
 
         return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= ViewDistance;
+    }
+
+    private void UpdateVisibleEntities()
+    {
+        if (Player.Dimension is null)
+        {
+            return;
+        }
+
+        ulong tick = Player.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        HashSet<ulong> currentVisible = [];
+
+        foreach (Entity entity in Player.Dimension.Entities)
+        {
+            if (ReferenceEquals(entity, Player))
+            {
+                continue;
+            }
+
+            if (!entity.IsAlive || entity.PendingDespawn || entity.Dimension != Player.Dimension)
+            {
+                continue;
+            }
+
+            int chunkX = WorldToChunk(entity.Position.X);
+            int chunkZ = WorldToChunk(entity.Position.Z);
+            long hash = HashChunk(chunkX, chunkZ);
+
+            if (!_loadedChunks.Contains(hash))
+            {
+                continue;
+            }
+
+            currentVisible.Add(entity.RuntimeId);
+
+            if (_visibleEntityUniqueIds.ContainsKey(entity.RuntimeId))
+            {
+                continue;
+            }
+
+            entity.SpawnTo(Player, tick);
+            _visibleEntityUniqueIds[entity.RuntimeId] = entity.UniqueId;
+        }
+
+        if (_visibleEntityUniqueIds.Count == 0)
+        {
+            return;
+        }
+
+        List<ulong> hidden = [];
+        foreach ((ulong runtimeId, long uniqueId) in _visibleEntityUniqueIds)
+        {
+            if (currentVisible.Contains(runtimeId))
+            {
+                continue;
+            }
+
+            Player.Send(new RemoveActorPacket
+            {
+                EntityUniqueId = uniqueId
+            });
+
+            hidden.Add(runtimeId);
+        }
+
+        for (int i = 0; i < hidden.Count; i++)
+        {
+            _visibleEntityUniqueIds.Remove(hidden[i]);
+        }
+    }
+
+    private void HideAllVisibleEntities()
+    {
+        foreach ((_, long uniqueId) in _visibleEntityUniqueIds)
+        {
+            Player.Send(new RemoveActorPacket
+            {
+                EntityUniqueId = uniqueId
+            });
+        }
     }
 
     private void SendChunkChestVisualUpdates(int chunkX, int chunkZ)

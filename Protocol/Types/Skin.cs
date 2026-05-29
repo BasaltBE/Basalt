@@ -1,3 +1,4 @@
+using Basalt.Protocol.Login.Data;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -5,6 +6,100 @@ namespace Basalt.Protocol.Types;
 
 public sealed class Skin : DataType
 {
+    public static Skin FromClientData(ClientData clientData)
+    {
+        static byte[] DecodeBase64(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return [];
+            }
+
+            string normalized = value.Replace('-', '+').Replace('_', '/');
+            int padding = normalized.Length % 4;
+            if (padding != 0)
+            {
+                normalized = normalized.PadRight(normalized.Length + (4 - padding), '=');
+            }
+
+            try
+            {
+                return Convert.FromBase64String(normalized);
+            }
+            catch (FormatException)
+            {
+                return [];
+            }
+        }
+
+        static (uint W, uint H, byte[] Data) ReadImage(string value, uint w, uint h)
+        {
+            byte[] data = DecodeBase64(value);
+            return (ulong)w * h * 4 == (ulong)data.Length ? (w, h, data) : (0, 0, []);
+        }
+
+        var (skinW, skinH, skinData) = ReadImage(clientData.SkinData, clientData.SkinImageWidth, clientData.SkinImageHeight);
+        var (capeW, capeH, capeData) = ReadImage(clientData.CapeData, clientData.CapeImageWidth, clientData.CapeImageHeight);
+
+        List<SkinAnimation> animations = clientData.AnimatedImageData.Select(a =>
+        {
+            var (w, h, data) = ReadImage(a.Image, a.ImageWidth, a.ImageHeight);
+            return new SkinAnimation
+            {
+                ImageWidth = w,
+                ImageHeight = h,
+                ImageData = data,
+                AnimationType = a.Type,
+                FrameCount = a.Frames,
+                ExpressionType = a.AnimationExpression
+            };
+        }).ToList();
+
+        List<PersonaPiece> pieces = clientData.PersonaPieces.Select(p => new PersonaPiece
+        {
+            PieceId = p.PieceId,
+            PieceType = p.PieceType,
+            PackId = p.PackId,
+            Default = p.IsDefault,
+            ProductId = p.ProductId
+        }).ToList();
+
+        List<PersonaPieceTintColor> tintColors = clientData.PieceTintColors.Select(t => new PersonaPieceTintColor
+        {
+            PieceType = t.PieceType,
+            Colors = [.. t.Colors]
+        }).ToList();
+
+        return new Skin
+        {
+            SkinId = clientData.SkinId,
+            PlayFabId = clientData.PlayFabId,
+            SkinResourcePatch = DecodeBase64(clientData.SkinResourcePatch),
+            SkinImageWidth = skinW,
+            SkinImageHeight = skinH,
+            SkinData = skinData,
+            Animations = animations,
+            CapeImageWidth = capeW,
+            CapeImageHeight = capeH,
+            CapeData = capeData,
+            SkinGeometry = DecodeBase64(clientData.SkinGeometryData),
+            GeometryDataEngineVersion = DecodeBase64(clientData.SkinGeometryDataEngineVersion),
+            AnimationData = DecodeBase64(clientData.SkinAnimationData),
+            CapeId = clientData.CapeId,
+            FullId = clientData.SkinId,
+            ArmSize = clientData.ArmSize,
+            SkinColor = clientData.SkinColor,
+            PersonaPieces = pieces,
+            PieceTintColors = tintColors,
+            PremiumSkin = clientData.PremiumSkin,
+            PersonaSkin = clientData.PersonaSkin,
+            PersonaCapeOnClassicSkin = clientData.CapeOnClassicSkin,
+            PrimaryUser = true,
+            OverrideAppearance = clientData.OverrideSkin,
+            Trusted = clientData.TrustedSkin
+        };
+    }
+
     /// <summary>
     /// Skin id value.
     /// </summary>
