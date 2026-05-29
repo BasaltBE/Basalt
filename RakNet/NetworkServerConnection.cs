@@ -48,6 +48,7 @@ internal class NetworkServerConnection : NetworkConnection
         LastSeenMs = Environment.TickCount64;
         byte packetId = frame.Buffer.Span[0];
 
+
         switch (packetId)
         {
             case ConnectionRequest.PacketId:
@@ -93,7 +94,7 @@ internal class NetworkServerConnection : NetworkConnection
             clientAddress: Endpoint,
             clientIndex: 0,
             serverNetAddresses: serverAddresses,
-            clientSendTime: request.ClientSendTime,
+            clientSendTime: unchecked((ulong)request.ClientSendTime),
             serverSendTime: (ulong)Environment.TickCount64
         );
 
