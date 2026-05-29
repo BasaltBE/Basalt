@@ -24,7 +24,7 @@ public sealed record SetActorDataPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        RuntimeId = unchecked((ulong)reader.ReadVarLong());
+        RuntimeId = reader.ReadVarULong();
 
         int metadataCount = reader.ReadVarInt();
         Metadata = new List<ActorMetadataItem>(metadataCount);
@@ -49,12 +49,12 @@ public sealed record SetActorDataPacket : DataPacket
             _ = reader.ReadF32(true);
         }
 
-        Tick = unchecked((ulong)reader.ReadVarLong());
+        Tick = reader.ReadVarULong();
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarLong(unchecked((long)RuntimeId));
+        writer.WriteVarULong(RuntimeId);
         writer.WriteVarInt(Metadata.Count);
         for (int i = 0; i < Metadata.Count; i++)
         {
@@ -63,6 +63,6 @@ public sealed record SetActorDataPacket : DataPacket
 
         writer.WriteVarInt(0);
         writer.WriteVarInt(0);
-        writer.WriteVarLong(unchecked((long)Tick));
+        writer.WriteVarULong(Tick);
     }
 }
