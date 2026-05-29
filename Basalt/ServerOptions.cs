@@ -17,6 +17,7 @@ public readonly record struct ServerOptions
         WorldProvider = "leveldb";
         WorldPath = "worlds/world";
         DefaultWorldIdentifier = "world";
+        Mtu = 1024;
     }
 
     /// <summary>
@@ -40,4 +41,9 @@ public readonly record struct ServerOptions
     public string WorldPath { get; init; }
 
     public string DefaultWorldIdentifier { get; init; }
+
+    /// <summary>
+    /// The maximum transmission unit (MTU) for outgoing packets.
+    /// </summary>
+    public ushort Mtu { get; init; }
 }

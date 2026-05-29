@@ -82,7 +82,7 @@ public sealed class Server
     public Server(ServerOptions options = default)
     {
         Options = options == default ? new ServerOptions() : options;
-        _raknet = new NetworkServer();
+        _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Options.Mtu));
         Network = new NetworkHandler(this);
 
         RegisterProvider<LevelDbProvider>("leveldb");
@@ -347,5 +347,31 @@ public sealed class Server
     private static double GRTM(long deadlineTimestamp, long timestamp)
     {
         return (deadlineTimestamp - timestamp) * 1000.0 / Stopwatch.Frequency;
+    }
+
+    public void Broadcast(DataPacket packet, params Player[]? exclude)
+    {
+        foreach ((NetworkConnection connection, Player player) in Players)
+        {
+            if (exclude is not null)
+            {
+                bool skipped = false;
+                for (int i = 0; i < exclude.Length; i++)
+                {
+                    if (ReferenceEquals(exclude[i], player))
+                    {
+                        skipped = true;
+                        break;
+                    }
+                }
+
+                if (skipped)
+                {
+                    continue;
+                }
+            }
+
+            Network.SendPacket(connection, packet);
+        }
     }
 }
