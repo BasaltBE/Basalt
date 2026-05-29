@@ -24,15 +24,15 @@ public sealed record UpdateAttributesPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        RuntimeId = unchecked((ulong)reader.ReadVarLong());
+        RuntimeId = reader.ReadVarULong();
         Attributes = ProtoAttribute.ReadList(reader);
-        Tick = unchecked((ulong)reader.ReadVarLong());
+        Tick = reader.ReadVarULong();
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarLong(unchecked((long)RuntimeId));
+        writer.WriteVarULong(RuntimeId);
         ProtoAttribute.WriteList(writer, Attributes);
-        writer.WriteVarLong(unchecked((long)Tick));
+        writer.WriteVarULong(Tick);
     }
 }
