@@ -51,6 +51,12 @@ public sealed class PlayerAbilities
         }
     }
 
+    public void SetOperator(bool isOperator)
+    {
+        SetAbility(AbilityIndex.OperatorCommands, isOperator);
+        SetAbility(AbilityIndex.Teleport, isOperator);
+    }
+
     public AbilityLayer ToLayer()
     {
         uint values = 0;

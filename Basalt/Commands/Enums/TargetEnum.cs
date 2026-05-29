@@ -6,11 +6,13 @@ public class TargetEnum : CommandEnum
 
     public TargetEnum() : base("target") { }
 
-    public TargetEnum(string raw, Basalt.Entity.Entity[] entities) : base("target")
+    public TargetEnum(string raw, Basalt.Entity.Entity[] entities, string[]? offlineUsernames = null) : base("target")
     {
         Raw = raw;
         Entities = entities;
+        OfflineUsernames = offlineUsernames ?? [];
     }
 
     public Basalt.Entity.Entity[] Entities = [];
+    public string[] OfflineUsernames = [];
 }

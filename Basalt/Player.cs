@@ -7,6 +7,7 @@ using Basalt.Entity.Traits;
 using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Entity.Traits.Types;
 using Basalt.Protocol.Types;
+using Basalt.Protocol.Nbt;
 using Basalt.World;
 using Basalt.World.Dimension;
 using Basalt.Binary;
@@ -24,6 +25,7 @@ public sealed class Player : Basalt.Entity.Entity
     internal NetworkHandler? Network ;
     public PlayerAbilities Abilities { get; } = new();
     public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
+    public bool IsOperator { get; private set; }
     public bool Spawned { get; private set; }
     public float Pitch;
     public float Yaw;
@@ -64,11 +66,7 @@ public sealed class Player : Basalt.Entity.Entity
         };
         Abilities.SetGamemode(gamemode);
 
-        UpdateAbilitiesPacket abilitiesPacket = new()
-        {
-            EntityUniqueId = UniqueId,
-            Layers = [Abilities.ToLayer()]
-        };
+        UpdateAbilitiesPacket abilitiesPacket = CreateAbilitiesPacket();
 
         Dimension?.Broadcast(gamemodePacket, new BroadcastOptions { Except = [this] });
 
@@ -84,6 +82,64 @@ public sealed class Player : Basalt.Entity.Entity
                 }
             }
         }
+    }
+
+    public void LoadGamemode(Gamemode gamemode)
+    {
+        Gamemode = gamemode;
+        Abilities.SetGamemode(gamemode);
+        if (IsOperator)
+        {
+            Abilities.SetOperator(true);
+        }
+    }
+
+    public void SetOperator(bool isOperator, bool syncClient = true)
+    {
+        IsOperator = isOperator;
+        Abilities.SetOperator(isOperator);
+
+        if (!syncClient || Connection is null || Network is null)
+        {
+            return;
+        }
+
+        Network.SendPacket(Connection, CreateAbilitiesPacket());
+    }
+
+    public new CompoundTag WriteToNbt()
+    {
+        CompoundTag root = base.WriteToNbt();
+        root.Set("username", new StringTag { Value = Username });
+        root.Set("xuid", new StringTag { Value = Xuid });
+        root.Set("uuid", new StringTag { Value = Uuid.ToString() });
+        root.Set("gamemode", new IntTag { Value = (int)Gamemode });
+        root.Set("isOp", new ByteTag { Value = IsOperator ? (sbyte)1 : (sbyte)0 });
+        return root;
+    }
+
+    public new void FromNBT(CompoundTag root)
+    {
+        base.FromNBT(root);
+
+        if (root.Get<IntTag>("gamemode") is { } gamemodeTag)
+        {
+            LoadGamemode((Gamemode)gamemodeTag.Value);
+        }
+
+        IsOperator = (root.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
+        Abilities.SetOperator(IsOperator);
+    }
+
+    UpdateAbilitiesPacket CreateAbilitiesPacket()
+    {
+        return new UpdateAbilitiesPacket
+        {
+            EntityUniqueId = UniqueId,
+            PlayerPermission = IsOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
+            CommandPermission = IsOperator ? CommandPermissionLevel.Admin : CommandPermissionLevel.Any,
+            Layers = [Abilities.ToLayer()]
+        };
     }
 
     public void Send(params DataPacket[] packets)

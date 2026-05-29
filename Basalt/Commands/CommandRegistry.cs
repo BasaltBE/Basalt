@@ -24,6 +24,8 @@ public class CommandRegistry
         Register(new ClearCommand());
         Register(new GamemodeCommand());
         Register(new GiveCommand());
+        Register(new Basalt.Commands.List.Operator.OpCommand());
+        Register(new Basalt.Commands.List.Operator.DeopCommand());
     }
 
     public void Register(Command command)
@@ -78,6 +80,14 @@ public class CommandRegistry
         Command target = command;
         CommandOverload overload = command.Overload;
         int argumentOffset = 1;
+
+        if (command.Permissions.Count > 0 && executor is PlayerExecutor playerExecutor)
+        {
+            if (!server.GetWorld().Operators.IsOperator(playerExecutor.Player.Xuid))
+            {
+                return CommandResult.Message("§cYou do not have permission to run this command.", false);
+            }
+        }
 
         if (tokens.Length > 1)
         {
@@ -143,7 +153,9 @@ public class CommandRegistry
 
         if (parameter.Enum == typeof(TargetEnum))
         {
-            return new TargetEnum(token, ResolveTargets(server, player, token));
+            EntityInstance[] entities = ResolveTargets(server, player, token);
+            string[] offlineUsernames = ResolveOfflineTargets(server, token, entities);
+            return new TargetEnum(token, entities, offlineUsernames);
         }
 
         if (parameter.Enum == typeof(ItemEnum))
@@ -228,6 +240,21 @@ public class CommandRegistry
             {
                 return [candidate];
             }
+        }
+
+        return [];
+    }
+
+    static string[] ResolveOfflineTargets(Server server, string token, EntityInstance[] onlineTargets)
+    {
+        if (onlineTargets.Length > 0 || token.StartsWith('@'))
+        {
+            return [];
+        }
+
+        if (server.GetWorld().PlayerProfiles.TryGetXuid(token, out _))
+        {
+            return [token];
         }
 
         return [];

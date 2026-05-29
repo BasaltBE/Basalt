@@ -37,6 +37,7 @@ public sealed class NetworkHandler
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
+        _server.GetWorld().PlayerProfiles.UpdateIndex(player.Username, player.Xuid);
 
         string leaveMessage = $"§e{player.Username} left the server.";
         foreach (Player target in _server.Players.Values)

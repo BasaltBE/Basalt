@@ -91,7 +91,7 @@ public static class ResourcePackClientResponse
                 {
                     EntityUniqueId = player.UniqueId,
                     EntityRuntimeId = player.RuntimeId,
-                    PlayerGameMode = 0,
+                    PlayerGameMode = (int)player.GetGamemode(),
                     PlayerPosition = new Vec3f { X = 0f, Y = -57f, Z = 0f },
                     Pitch = 0f,
                     Yaw = 0f,
@@ -126,7 +126,7 @@ public static class ResourcePackClientResponse
                     ExperimentsPreviouslyToggled = false,
                     BonusChestEnabled = false,
                     StartWithMapEnabled = false,
-                    PlayerPermissions = 1,
+                    PlayerPermissions = player.IsOperator ? 2 : 1,
                     ServerChunkTickRadius = 4,
                     HasLockedBehaviourPack = false,
                     HasLockedTexturePack = false,
@@ -199,6 +199,7 @@ public static class ResourcePackClientResponse
                     }
 
                     player.Spawn(dimension, spawnSignal.Options);
+                    player.SetOperator(player.IsOperator, syncClient: true);
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
