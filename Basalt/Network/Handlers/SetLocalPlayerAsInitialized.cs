@@ -49,6 +49,12 @@ public static class SetLocalPlayerAsInitialized
             inventory.Container.Update();
         }
 
+        string joinMessage = $"§e{player.Username} joined the server.";
+        foreach (Player target in server.Players.Values)
+        {
+            target.SendMessage(joinMessage);
+        }
+
         Logger.Info($"Player {player.Username} has spawned.");
     }
 }

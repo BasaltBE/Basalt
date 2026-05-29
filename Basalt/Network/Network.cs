@@ -8,6 +8,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.RakNet.Packets.Enums;
+using Basalt.World.Dimension;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -32,6 +33,22 @@ public sealed class NetworkHandler
             return;
         }
 
+        Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
+        _server.Emit(new PlayerLeaveSignal(player, options));
+
+        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
+
+        string leaveMessage = $"§e{player.Username} left the server.";
+        foreach (Player target in _server.Players.Values)
+        {
+            target.SendMessage(leaveMessage);
+        }
+
+        if (player.IsAlive && player.Dimension is not null)
+        {
+            player.Despawn(options);
+        }
+
         PlayerListPacket removePlayer = new()
         {
             ActionType = PlayerListActionType.Remove,
@@ -39,21 +56,11 @@ public sealed class NetworkHandler
             [
                 new Basalt.Protocol.Types.PlayerListEntry
                 {
-                    Uuid = Guid.TryParse(player.Uuid, out Guid uuid) ? uuid : Guid.Empty
+                    Uuid = player.Uuid
                 }
             ]
         };
         _server.Broadcast(removePlayer);
-
-        Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
-        _server.Emit(new PlayerLeaveSignal(player, options));
-
-        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
-
-        if (player.IsAlive && player.Dimension is not null)
-        {
-            player.Despawn(options);
-        }
 
         Logger.Info($"Player {player.Username} disconnected.");
     }
