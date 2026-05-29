@@ -137,7 +137,7 @@ namespace Basalt.Binary
             return bytesWritten;
         }
 
-        public int WriteVarLong(long value) => WriteVarULong(unchecked((ulong)value));
+        public int WriteVarLong(long value) => WriteVarULong(SpanEncodingExtensions.ZigZong(value));
         public int WriteZigZag(int value) => WriteVarUInt(SpanEncodingExtensions.ZigZag(value));
         public int WriteZigZong(long value) => WriteVarULong(SpanEncodingExtensions.ZigZong(value));
 

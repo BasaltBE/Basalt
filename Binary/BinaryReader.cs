@@ -153,7 +153,7 @@ namespace Basalt.Binary
             throw new FormatException("VarULong is too long.");
         }
 
-        public long ReadVarLong() => unchecked((long)ReadVarULong());
+        public long ReadVarLong() => SpanEncodingExtensions.ZigZong(ReadVarULong());
         public int ReadZigZag() => SpanEncodingExtensions.ZigZag(ReadVarUInt());
         public long ReadZigZong() => SpanEncodingExtensions.ZigZong(ReadVarULong());
 
