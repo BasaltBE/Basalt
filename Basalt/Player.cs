@@ -40,7 +40,7 @@ public sealed class Player : Basalt.Entity.Entity
         Username = username;
         Xuid = xuid;
         Uuid = uuid;
-        SetSpeed();
+
         Flags.SetActorFlag(ActorFlag.HasGravity, true);
         Flags.SetActorFlag(ActorFlag.Breathing, true);
         Flags.SetActorFlag(ActorFlag.CanShowName, true);
@@ -87,7 +87,7 @@ public sealed class Player : Basalt.Entity.Entity
     }
 
     public void Send(params DataPacket[] packets)
-    {
+    {   
         if (Connection is null || Network is null || packets.Length == 0)
         {
             return;
@@ -230,6 +230,7 @@ public sealed class Player : Basalt.Entity.Entity
             heldItem.StackNetworkId = held.NetworkStackId;
         }
 
+        // return;
         player.Send(new AddPlayerPacket
         {
             Uuid = Uuid,

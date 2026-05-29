@@ -264,26 +264,26 @@ public class ChestTrait : BlockTrait
 
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
-        player.Send(
-            new BlockActorDataPacket
-            {
-                Position = position,
-                Data = storage
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = 0,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = networkId,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            });
+        // player.Send(
+        // new BlockActorDataPacket
+        // {
+        //     Position = position,
+        //     Data = storage
+        // },
+        // new UpdateBlockPacket
+        // {
+        //     Position = position,
+        //     NetworkBlockId = 0,
+        //     Flags = UpdateBlockFlagsType.None,
+        //     Layer = UpdateBlockLayerType.Normal
+        // },
+        // new UpdateBlockPacket
+        // {
+        //     Position = position,
+        //     NetworkBlockId = networkId,
+        //     Flags = UpdateBlockFlagsType.None,
+        //     Layer = UpdateBlockLayerType.Normal
+        // });
     }
 
     public void CheckPairing(World.Dimension.Dimension? dimension, int x, int y, int z)

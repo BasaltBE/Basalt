@@ -163,10 +163,6 @@ public sealed class NetworkHandler
                 PlayerAction.Handle(_server, connection, packetBuffer);
                 break;
 
-            case PacketId.InventoryContent:
-                InventoryContent.Handle(_server, connection, packetBuffer);
-                break;
-
             case PacketId.ItemStackRequest:
                 ItemStackRequest.Handle(_server, connection, packetBuffer);
                 break;
@@ -220,6 +216,9 @@ public sealed class NetworkHandler
 
         foreach (DataPacket packet in packets)
         {
+            // if (packet.GetType().Name != "LevelChunkPacket")
+                // Logger.Info("Sending packet {0}", packet.GetType().Name);
+
             packetBufferStream.Offset = 0;
             BinaryWriter packetWriter = packetBufferStream;
             Protocol.Io.Packet.Serialize(packet, packetWriter);

@@ -133,26 +133,26 @@ public class BarrelTrait : BlockTrait
 
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
-        player.Send(
-            new BlockActorDataPacket
-            {
-                Position = position,
-                Data = storage
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = 0,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = networkId,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            });
+        // player.Send(
+        // new BlockActorDataPacket
+        // {
+        //     Position = position,
+        //     Data = storage
+        // },
+        // new UpdateBlockPacket
+        // {
+        //     Position = position,
+        //     NetworkBlockId = 0,
+        //     Flags = UpdateBlockFlagsType.None,
+        //     Layer = UpdateBlockLayerType.Normal
+        // },
+        // new UpdateBlockPacket
+        // {
+        //     Position = position,
+        //     NetworkBlockId = networkId,
+        //     Flags = UpdateBlockFlagsType.None,
+        //     Layer = UpdateBlockLayerType.Normal
+        // });
     }
 
     public void Open(bool silent = false)
@@ -228,13 +228,13 @@ public class BarrelTrait : BlockTrait
         BlockPermutation permutation = Block.Type.GetPermutation(state);
         Block.SetPermutation(permutation);
         _container.Dimension.SetPermutation(_container.Position.X, _container.Position.Y, _container.Position.Z, permutation);
-        _container.Dimension.Broadcast(new UpdateBlockPacket
-        {
-            Position = _container.Position,
-            NetworkBlockId = (uint)permutation.NetworkId,
-            Flags = UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
-        });
+        // _container.Dimension.Broadcast(new UpdateBlockPacket
+        // {
+        //     Position = _container.Position,
+        //     NetworkBlockId = (uint)permutation.NetworkId,
+        //     Flags = UpdateBlockFlagsType.Network,
+        //     Layer = UpdateBlockLayerType.Normal
+        // });
     }
 
     private void BroadcastSound(LevelSoundEvent soundEvent)

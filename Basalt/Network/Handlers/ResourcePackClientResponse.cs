@@ -212,6 +212,7 @@ public static class ResourcePackClientResponse
 
                 server.Network.SendPackets(connection, [startGame]);
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
+                // server.Network.SendPackets(connection, [spawnStatus]);
                 server.Network.SendPackets(connection, [server.Commands.AvailableCommandsPacket, actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 return;

@@ -23,6 +23,9 @@ public sealed record MoveActorAbsolutePacket : DataPacket
 
     /// <summary>
     /// Absolute actor rotation.
+    /// Pitch -> X
+    /// Yaw -> Y
+    /// HeadYaw -> Z
     /// </summary>
     public Vec3f Rotation;
 

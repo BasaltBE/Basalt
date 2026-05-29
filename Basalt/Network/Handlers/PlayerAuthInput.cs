@@ -203,6 +203,21 @@ public static class PlayerAuthInput
     private static void MovePlayer(Player player, PlayerAuthInputPacket packet)
     {
         Vec3f previousPosition = player.Position;
+
+        MovementRotation fromRotation = new MovementRotation()
+        {
+            HeadYaw = player.HeadYaw,
+            Pitch = player.Pitch,
+            Yaw = player.Yaw,
+        };
+
+        MovementRotation toRotation = new MovementRotation()
+        {
+            HeadYaw = packet.Yaw,
+            Pitch = packet.Pitch,
+            Yaw = packet.Yaw,
+        };
+
         player.Pitch = packet.Pitch;
         player.Yaw = packet.Yaw;
         player.HeadYaw = packet.Yaw;
@@ -226,7 +241,8 @@ public static class PlayerAuthInput
             }
             : packet.Position;
 
-        player.OnMove(new EntityMoveOptions(previousPosition, player.Position));
+        player.OnMove(new EntityMoveOptions(previousPosition, player.Position, fromRotation, toRotation));
+
     }
 
     private static void HandleBlockAction(Player player, PlayerBlockAction action)
@@ -459,6 +475,6 @@ public static class PlayerAuthInput
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 
-  
+
 }
 

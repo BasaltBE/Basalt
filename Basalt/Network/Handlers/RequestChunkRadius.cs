@@ -18,11 +18,14 @@ public static class RequestChunkRadius
             ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
             : packet.ChunkRadius;
         int radius = Math.Clamp(requestedRadius, 4, 22);
-        UpdateChunkRadiusPacket response = new()
-        {
-            ChunkRadius = radius
-        };
-        server.Network.SendPacket(connection, response);
+        // UpdateChunkRadiusPacket response = new()
+        // {
+        //     ChunkRadius = radius
+        // };  
+
+        // THIS STUPID PACKET CRASHES MOBILE DEVICES!!!
+        /// PLEASE KEEP IT COMMENTED OUT!
+        // server.Network.SendPacket(connection, response);
 
         if (!server.Players.TryGetValue(connection, out Player? player))
         {

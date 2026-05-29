@@ -98,7 +98,7 @@ public sealed class DebugTrait : PlayerTrait
                 FilteredMessage = null
             };
 
-            Player.Send(packet);
+            // Player.Send(packet);
             _lastSentTick = details.CurrentTick;
         }
         catch (Exception exception)

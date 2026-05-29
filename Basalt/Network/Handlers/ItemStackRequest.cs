@@ -174,7 +174,7 @@ public static class ItemStackRequest
             }
             if (!sourceExisting.CanStackWith(destinationExisting))
             {
-                if (action.Destination.StackNetworkId == 0)
+                if (action.Destination.StackNetworkId == 0 && sourceItem is not null)
                 {
                     int resolvedSlot = ResolveDestinationSlot(destinationContainer, sourceItem, destinationSlot);
                     if (resolvedSlot >= 0 && resolvedSlot != destinationSlot)

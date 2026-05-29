@@ -8,16 +8,18 @@ using Basalt.Traits;
 using Basalt.World;
 using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Core;
 
 namespace Basalt.Entity.Traits.PlayerTraits;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait
 {
-    private const int MaxChunkPayloadBytesPerBatch = 350_000;
-    private const int ChunkBatchSize = 12; // TODO: Move this into server options
+    private int MaxChunkPayloadBytesPerBatch = 350_000;
+    private int ChunkBatchSize = 12;
 
     public new static string Identifier => "chunk_rendering";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
+    // public new static readonly EntityIdentifier[] Types = [];
 
     private readonly Lock _lock = new();
 
@@ -49,6 +51,15 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     public PlayerChunkRenderingTrait(Entity entity) : base(entity)
     {
+        // If the entity is a player and it is a mobile device limit ChunkBatchSize to 6
+        // NOTE: Seems to not work in reality
+        // if (entity is Player player)
+        // {
+        //     if (player.DeviceOS == DeviceOS.Ios || player.DeviceOS == DeviceOS.Android) {
+        //         ChunkBatchSize = 6;
+        //         MaxChunkPayloadBytesPerBatch = 80_000;    
+        //     }
+        // }
     }
 
     public void SetViewDistance(int distance)
@@ -80,7 +91,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
             PrunePendingOutOfRange();
             UnloadOutOfRangeChunks();
-            Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
+            // Player.Send(CreateChunkPublisherPacket(includeSavedChunks: true));
             QueueChunks();
             SendQueuedChunks();
         }
