@@ -81,25 +81,19 @@ public static class LoginIdentity
         if (!config.Keys.TryGetValue(kid, out RSA? key))
             throw new InvalidOperationException("Unknown key id.");
 
-        VerifySignature(token, parts, key, JsonValue.DecodeBase64Url(token.Slice(parts.SignatureStart, parts.SignatureLength)));
-    }
+        JwtVerification.TokenParts jwtParts = new(
+            parts.HeaderStart,
+            parts.HeaderLength,
+            parts.PayloadStart,
+            parts.PayloadLength,
+            parts.SignatureStart,
+            parts.SignatureLength);
 
-    private static void VerifySignature(ReadOnlySpan<char> token, TokenParts parts, RSA key, byte[] signature)
-    {
-        byte[] signingInput = ArrayPool<byte>.Shared.Rent(parts.HeaderLength + 1 + parts.PayloadLength);
-        try
-        {
-            int written = Encoding.ASCII.GetBytes(token.Slice(parts.HeaderStart, parts.HeaderLength), signingInput);
-            signingInput[written++] = (byte)'.';
-            written += Encoding.ASCII.GetBytes(token.Slice(parts.PayloadStart, parts.PayloadLength), signingInput.AsSpan(written));
-
-            if (!key.VerifyData(signingInput.AsSpan(0, written), signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1))
-                throw new InvalidOperationException("Invalid token signature.");
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(signingInput, clearArray: true);
-        }
+        JwtVerification.VerifyRsa256Signature(
+            token,
+            jwtParts,
+            key,
+            JsonValue.DecodeBase64Url(token.Slice(parts.SignatureStart, parts.SignatureLength)));
     }
 
     private static AuthConfig GetAuthConfig()

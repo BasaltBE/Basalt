@@ -9,6 +9,7 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Login.Data;
+using Basalt.Protocol.Nbt;
 
 namespace Basalt.Network.Handlers;
 
@@ -36,15 +37,37 @@ public static class Login
             };
 
             server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
-            // Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={Constants.ProtocolVersion}");
             return;
         }
 
+        VerifiedIdentity identity;
+        try
+        {
+            identity = VerifyIdentity(server, packet);
+        }
+        catch (Exception exception)
+        {
+            Logger.Info($"Login rejected: {exception.Message}");
+            string message = exception.Message switch
+            {
+                "Offline authentication is disabled." =>
+                    "Offline mode is not supported. Please connect to Xbox services.",
+                _ => "Authentication failed."
+            };
 
-        var identity = LoginIdentity.Verify(packet.Identity);
+            DisconnectPacket disconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = message,
+                FilteredMessage = message
+            };
+
+            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            return;
+        }
+
         ClientData clientData = LoginPayload.Parse(packet.Client);
-
-        // Logger.Info("UUID received: " + identity.Uuid);
 
         KeyValuePair<NetworkConnection, Player>? existingPlayerSession = null;
         foreach ((NetworkConnection existingConnection, Player existingPlayer) in server.Players)
@@ -76,14 +99,24 @@ public static class Login
             existingPlayerSession.Value.Key.Disconnect();
         }
 
-
         Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId);
         var player = new Player(identity.Username, identity.Xuid, playerUuid);
-        var savedData = server.GetWorld().Provider.LoadPlayerData(identity.Xuid);
+        var world = server.GetWorld();
+        var savedData = world.Provider.LoadPlayerData(identity.Xuid);
         if (savedData is not null)
         {
             player.FromNBT(savedData);
         }
+
+        bool isOperator = world.Operators.IsOperator(identity.Xuid)
+            || (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
+        if (isOperator && !world.Operators.IsOperator(identity.Xuid))
+        {
+            world.Operators.AddOperator(identity.Xuid);
+        }
+        player.SetOperator(isOperator, syncClient: false);
+
+        world.PlayerProfiles.UpdateIndex(identity.Username, identity.Xuid);
 
         PlayerJoinSignal joinSignal = new(player);
         server.Emit(joinSignal);
@@ -123,6 +156,23 @@ public static class Login
         server.Network.SendPackets(connection, [status, resources]);
 
         Logger.Info($"Player {identity.Username} has logged in!");
+    }
+
+    private static VerifiedIdentity VerifyIdentity(Server server, LoginPacket packet)
+    {
+        LoginEnvelope envelope = LoginEnvelope.Parse(packet.Identity);
+
+        if (OfflineIdentity.IsOfflineLogin(envelope))
+        {
+            if (!server.Options.OfflineMode)
+            {
+                throw new InvalidOperationException("Offline authentication is disabled.");
+            }
+
+            return OfflineIdentity.VerifyOffline(envelope, packet.Client);
+        }
+
+        return LoginIdentity.Verify(packet.Identity);
     }
 
     private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId)
