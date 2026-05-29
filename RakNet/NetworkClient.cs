@@ -28,8 +28,11 @@ public class NetworkClient : NetworkConnection, IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
     private TaskCompletionSource<bool>? _connectTcs;
     private uint? _cookie;
+    private bool _serverSecurity;
     private long _lastHandshakeSendMs;
     private int _handshakeAttempts;
+    private long _lastConnectionRequestSendMs;
+    private int _connectionRequestAttempts;
     private long _lastPingSendMs;
     private bool _closed = true;
 
@@ -39,7 +42,7 @@ public class NetworkClient : NetworkConnection, IDisposable
 
     public bool IsConnected { get; private set; }
     public ClientState State { get; private set; } = ClientState.Disconnected;
-    public ulong ClientGuid { get; } = unchecked((ulong)Random.Shared.NextInt64());
+    public ulong ClientGuid { get; } = (ulong)Random.Shared.NextInt64(1, long.MaxValue);
     public long LastSeenMs { get; private set; } = Environment.TickCount64;
     public SocketAddress? ServerEndpoint => _serverSocketAddress;
 
@@ -87,7 +90,13 @@ public class NetworkClient : NetworkConnection, IDisposable
     protected override void SendMessage(ReadOnlySpan<byte> raw)
     {
         if (_socket is null || _serverSocketAddress is null) return;
-        try { _socket.SendTo(raw, SocketFlags.None, _serverSocketAddress); } catch { }
+        try
+        {
+            _socket.SendTo(raw, SocketFlags.None, _serverSocketAddress);
+        }
+        catch
+        {
+        }
     }
 
     protected override void HandleFrame(Frame frame)
@@ -176,10 +185,11 @@ public class NetworkClient : NetworkConnection, IDisposable
                 if (received > 0)
                     HandleIncomingPacket(buffer.AsSpan(0, received), endpoint);
             }
-            catch
+            catch (ObjectDisposedException)
             {
                 break;
             }
+            catch (Exception) { }
         }
     }
 
@@ -212,8 +222,10 @@ public class NetworkClient : NetworkConnection, IDisposable
             case ClientState.ConnectingTwo when packetId == OpenConnectionReplyTwo.PacketId:
                 try
                 {
-                    OpenConnectionReplyTwo.Deserialize(message);
+                    OpenConnectionReplyTwo reply = OpenConnectionReplyTwo.Deserialize(message);
+                    _serverSecurity = reply.ServerSecurity;
                     _handshakeAttempts = 0;
+                    _connectionRequestAttempts = 0;
                     State = ClientState.Handshaking;
                     SendConnectionRequest();
                 }
@@ -228,7 +240,11 @@ public class NetworkClient : NetworkConnection, IDisposable
                 switch (packetId)
                 {
                     case >= 0x80 and <= 0x8d:
-                        HandleFrameSet(FrameSet.Deserialize(message));
+                        try
+                        {
+                            HandleFrameSet(FrameSet.Deserialize(message));
+                        }
+                        catch (Exception) { }
                         break;
                     case Ack.PacketId:
                         HandleAck(Ack.Deserialize(message));
@@ -276,16 +292,19 @@ public class NetworkClient : NetworkConnection, IDisposable
 
     private void SendConnectionRequest()
     {
+        _lastConnectionRequestSendMs = Environment.TickCount64;
+        _connectionRequestAttempts++;
+
         var request = new ConnectionRequest(
             clientGuid: ClientGuid,
-            clientSendTime: (ulong)Environment.TickCount64,
-            doSecurity: false
+            clientSendTime: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            doSecurity: _serverSecurity
         );
 
         Span<byte> payload = stackalloc byte[2048];
         int length = ConnectionRequest.Serialize(request, payload);
 
-        SendPayload(payload[..length], immediate: true);
+        SendPayload(payload[..length], Reliability.ReliableOrdered, immediate: true);
     }
 
     private void SendConnectedPing()

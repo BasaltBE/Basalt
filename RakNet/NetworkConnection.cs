@@ -14,6 +14,8 @@ public abstract class NetworkConnection
 
     private uint _datagramWindowStart;
     private uint _datagramWindowEnd = DatagramWindowSize;
+    private bool _datagramWindowInitialized;
+    private uint _highestDatagramSequence;
 
     private uint _reliableWindowStart;
     private uint _reliableWindowEnd = DatagramWindowSize;
@@ -50,6 +52,34 @@ public abstract class NetworkConnection
     public virtual void HandleFrameSet(FrameSet frameSet)
     {
         uint sequence = frameSet.Sequence;
+    
+        if (!_datagramWindowInitialized)
+        {
+            _datagramWindowStart = sequence;
+            _datagramWindowEnd = sequence + DatagramWindowSize;
+            _datagramWindowInitialized = true;
+        }
+
+        if (sequence > _datagramWindowEnd)
+        {
+            uint oldStart = _datagramWindowStart;
+            uint newStart = sequence - DatagramWindowSize + 1;
+            _datagramWindowStart = newStart;
+            _datagramWindowEnd = newStart + DatagramWindowSize;
+
+            for (uint missing = oldStart; missing < newStart; missing++)
+            {
+                if (!_receivedDatagrams.Contains(missing))
+                {
+                    lock (_sendLock)
+                    {
+                        _nackQueue.Add(missing);
+                    }
+                }
+            }
+
+            _receivedDatagrams.RemoveWhere(s => s < _datagramWindowStart);
+        }
 
         if (sequence < _datagramWindowStart || sequence > _datagramWindowEnd || _receivedDatagrams.Contains(sequence))
         {
@@ -57,6 +87,10 @@ public abstract class NetworkConnection
         }
 
         _receivedDatagrams.Add(sequence);
+        if (sequence > _highestDatagramSequence)
+        {
+            _highestDatagramSequence = sequence;
+        }
         lock (_sendLock)
         {
             _ackQueue.Add(sequence);
@@ -135,6 +169,7 @@ public abstract class NetworkConnection
     {
         lock (_sendLock)
         {
+            QueueMissingDatagramNacks();
             FlushAcks();
 
             foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
@@ -154,6 +189,23 @@ public abstract class NetworkConnection
             }
 
             FlushOutgoing(nowMs);
+        }
+    }
+
+    private void QueueMissingDatagramNacks()
+    {
+        if (!_datagramWindowInitialized || _highestDatagramSequence <= _datagramWindowStart)
+        {
+            return;
+        }
+
+        uint upper = Math.Min(_highestDatagramSequence, _datagramWindowEnd);
+        for (uint sequence = _datagramWindowStart; sequence < upper; sequence++)
+        {
+            if (!_receivedDatagrams.Contains(sequence))
+            {
+                _nackQueue.Add(sequence);
+            }
         }
     }
 
