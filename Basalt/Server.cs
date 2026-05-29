@@ -101,6 +101,7 @@ public sealed class Server
         }
 
         defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+        defaultWorld.ConfigurePersistence(Options.WorldPath);
 
         Commands.RegisterDefaultCommands();
     }

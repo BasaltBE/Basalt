@@ -47,6 +47,16 @@ public sealed class World : IDisposable, Tickable
     public IEnumerable<DimensionInstance> Dimensions => _dimensions.Values;
 
     /// <summary>
+    /// Persisted operator list for this world.
+    /// </summary>
+    public WorldOperators Operators { get; private set; } = null!;
+
+    /// <summary>
+    /// Index and helpers for offline player profiles.
+    /// </summary>
+    public PlayerProfileStore PlayerProfiles { get; private set; } = null!;
+
+    /// <summary>
     /// Creates a new world.
     /// </summary>
     /// <param name="name"></param>
@@ -55,6 +65,14 @@ public sealed class World : IDisposable, Tickable
     {
         Name = name;
         Provider = provider ?? new InMemoryProvider();
+    }
+
+    public void ConfigurePersistence(string dataPath)
+    {
+        Operators = new WorldOperators(Path.Combine(dataPath, "ops.json"));
+        Operators.Load();
+        PlayerProfiles = new PlayerProfileStore(Provider);
+        PlayerProfiles.RebuildIndex();
     }
 
     /// <summary>

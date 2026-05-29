@@ -55,6 +55,11 @@ public sealed class LevelDbProvider : WorldProvider
         _players.Save(xuid, data);
     }
 
+    public override IReadOnlyList<string> ListPlayerXuids()
+    {
+        return _players.ListXuids();
+    }
+
     public override void Dispose()
     {
         _database.Dispose();

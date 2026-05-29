@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Text;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
 using LevelDB;
@@ -9,12 +10,35 @@ namespace Basalt.World.Dimension.Provider;
 
 internal sealed class PlayerStore
 {
+    private const byte PrefixPlayerStorage = 0x35;
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
     private readonly DB _database;
 
     public PlayerStore(DB database)
     {
         _database = database;
+    }
+
+    public IReadOnlyList<string> ListXuids()
+    {
+        List<string> xuids = [];
+        using Iterator iterator = _database.CreateIterator(new ReadOptions());
+        byte[] prefix = [PrefixPlayerStorage];
+        iterator.Seek(prefix);
+
+        while (iterator.IsValid())
+        {
+            ReadOnlySpan<byte> key = iterator.Key();
+            if (key.Length == 0 || key[0] != PrefixPlayerStorage)
+            {
+                break;
+            }
+
+            xuids.Add(Encoding.UTF8.GetString(key[1..]));
+            iterator.Next();
+        }
+
+        return xuids;
     }
 
     public CompoundTag? Load(string xuid)

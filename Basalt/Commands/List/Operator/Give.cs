@@ -30,6 +30,11 @@ public class GiveCommand : Command
 
         if (target.Entities.Length == 0)
         {
+            if (target.OfflineUsernames.Length > 0)
+            {
+                return CommandResult.Message("§cThat player must be online to receive items.", false);
+            }
+
             return CommandResult.Message("§cNo entities matched the target selector", false);
         }
 

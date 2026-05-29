@@ -31,6 +31,11 @@ public abstract class WorldProvider : IDisposable
     {
     }
 
+    public virtual IReadOnlyList<string> ListPlayerXuids()
+    {
+        return [];
+    }
+
     public abstract void Dispose();
 
     protected static long HashChunk(int x, int z)

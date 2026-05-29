@@ -18,6 +18,7 @@ public readonly record struct ServerOptions
         WorldPath = "worlds/world";
         DefaultWorldIdentifier = "world";
         Mtu = 1024;
+        OfflineMode = false;
     }
 
     /// <summary>
@@ -46,4 +47,10 @@ public readonly record struct ServerOptions
     /// The maximum transmission unit (MTU) for outgoing packets.
     /// </summary>
     public ushort Mtu { get; init; }
+
+    /// <summary>
+    /// When true, clients without Xbox Live may join using a self-signed offline certificate.
+    /// When false, offline certificates are rejected.
+    /// </summary>
+    public bool OfflineMode { get; init; }
 }
