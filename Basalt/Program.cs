@@ -8,7 +8,7 @@ namespace Basalt.Core
         static void Main(string[] args)
         {
             Logger.Init();
-            Server server = new(new ServerOptions { OfflineMode = true });
+            Server server = new(new ServerOptions());
             using ManualResetEventSlim shutdown = new(false);
             using CancellationTokenSource consoleCancellation = new();
 

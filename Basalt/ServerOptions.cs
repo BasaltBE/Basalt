@@ -18,6 +18,7 @@ public readonly record struct ServerOptions
         WorldPath = "worlds/world";
         DefaultWorldIdentifier = "world";
         Mtu = 1024;
+        OfflineMode = false;
     }
 
     /// <summary>
