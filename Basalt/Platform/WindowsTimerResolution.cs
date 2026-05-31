@@ -37,3 +37,9 @@ public static partial class WindowsTimerResolution
     [DllImport("winmm.dll", ExactSpelling = true)]
     private static extern uint timeEndPeriod(uint uPeriod);
 }
+
+
+
+
+
+

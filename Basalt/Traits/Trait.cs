@@ -1,6 +1,7 @@
 using Basalt.Protocol.Nbt;
+using Basalt.Server.Traits;
 
-namespace Basalt.Traits;
+namespace Basalt.Server.Traits;
 
 public abstract class Trait
 {
@@ -59,3 +60,9 @@ public abstract class Trait
         _randomTickDenominator = denominator;
     }
 }
+
+
+
+
+
+

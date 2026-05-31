@@ -1,14 +1,23 @@
-using Basalt.ServerConsole;
-using Basalt.Events;
+using Basalt.Server.Commands;
 
-namespace Basalt.Core
+namespace Basalt.Server
 {
     internal class Program
     {
+        
         static void Main(string[] args)
         {
             Logger.Init();
-            Server server = new(new ServerOptions());
+            const string serverPropertiesPath = "server.properties";
+            ServerProperties props = ServerProperties.LoadFromPath(serverPropertiesPath);
+            props.ApplyMetadata<Properties>();
+            props.KeepOnlyMetadata();
+
+            EnsurePropertyDefaults(props);
+            props.SaveToPath(serverPropertiesPath);
+
+            Properties properties = props.Parse<Properties>();
+            Server server = new(properties);
             using ManualResetEventSlim shutdown = new(false);
             using CancellationTokenSource consoleCancellation = new();
 
@@ -24,5 +33,25 @@ namespace Basalt.Core
             consoleCancellation.Cancel();
             server.Stop();
         }
+
+        private static void EnsurePropertyDefaults(ServerProperties props)
+        {
+            if (!props.HasProperty("max-players")) props.SetNumericalProperty("max-players", 10);
+            if (!props.HasProperty("online-mode")) props.SetBoolProperty("online-mode", true);
+            if (!props.HasProperty("server-port")) props.SetNumericalProperty("server-port", 19132);
+            if (!props.HasProperty("raknet-mtu")) props.SetNumericalProperty("raknet-mtu", 1024);
+            if (!props.HasProperty("default-world")) props.SetStringProperty("default-world", "world");
+            if (!props.HasProperty("world-provider")) props.SetStringProperty("world-provider", "leveldb");
+            if (!props.HasProperty("world-path")) props.SetStringProperty("world-path", Path.Combine("worlds", props.GetStringProperty("default-world", "world") ?? "world"));
+            if (!props.HasProperty("compression-threshold")) props.SetNumericalProperty("compression-threshold", 1);
+            if (!props.HasProperty("compression-algorithm")) props.SetStringProperty("compression-algorithm", "zlib");
+        }
+
     }
 }
+
+
+
+
+
+
