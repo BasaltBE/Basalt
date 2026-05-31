@@ -1,8 +1,9 @@
-using Basalt.Core;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class PlayerAction
 {
@@ -13,7 +14,7 @@ public static class PlayerAction
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (PlayerActionPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
@@ -23,4 +24,13 @@ public static class PlayerAction
         player.LastActionResultPosition = packet.ResultPosition;
     }
 }
+
+
+
+
+
+
+
+
+
 

@@ -1,15 +1,16 @@
-using Basalt.Core;
-using Basalt.Block.Traits.Types;
-using Basalt.Entity.Traits;
-using Basalt.Events;
-using Basalt.Item;
-using Basalt.Item.Traits.Types;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Events;
+using Basalt.Server.Item;
+using Basalt.Server.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class InventoryTransaction
 {
@@ -47,7 +48,7 @@ public static class InventoryTransaction
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (InventoryTransactionPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
@@ -79,7 +80,7 @@ public static class InventoryTransaction
 
     }
 
-    public static void HandleUseItemFromAuthInput(Player player, UseItemTransactionData data, float pitch, float yaw)
+    public static void HandleUseItemFromAuthInput(global::Basalt.Server.Player.Player player, UseItemTransactionData data, float pitch, float yaw)
     {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null)
@@ -135,7 +136,7 @@ public static class InventoryTransaction
         HandleUseItem(player, inventory, transaction, []);
     }
 
-    private static void HandleInventoryActions(Player player, EntityInventoryTrait inventory, List<InventoryAction> actions)
+    private static void HandleInventoryActions(global::Basalt.Server.Player.Player player, EntityInventoryTrait inventory, List<InventoryAction> actions)
     {
         foreach (InventoryAction action in actions)
         {
@@ -190,7 +191,7 @@ public static class InventoryTransaction
     }
 
     private static void HandleUseItem(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         EntityInventoryTrait inventory,
         UseItemInventoryTransactionData transaction,
         List<InventoryAction> actions)
@@ -218,7 +219,7 @@ public static class InventoryTransaction
                     }
                 }
 
-                Basalt.Block.BlockPermutation clickedBlock =
+                Basalt.Server.Block.BlockPermutation clickedBlock =
                     player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
                 if (clickedBlock.Type.Identifier is not "minecraft:air" and not "minecraft:cave_air" and not "minecraft:void_air")
@@ -263,7 +264,7 @@ public static class InventoryTransaction
                 blockPosition = player.LastActionBlockPosition.Value;
             }
 
-            Basalt.Block.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
+            Basalt.Server.Block.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
             if (block is not null)
             {
                 block.OnInteract(new BlockInteractDetails(
@@ -293,7 +294,7 @@ public static class InventoryTransaction
     }
 
     private static void UseItemOnBlock(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         EntityInventoryTrait inventory,
         ItemStack heldItem,
         UseItemInventoryTransactionData transaction)
@@ -316,15 +317,15 @@ public static class InventoryTransaction
             }
         }
 
-        Basalt.Block.BlockPermutation clickedBlock =
+        Basalt.Server.Block.BlockPermutation clickedBlock =
             player.Dimension.GetPermutation(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
         BlockPos placePosition = GetPlacedBlockPosition(clickedPosition, clickedFace);
 
-        Basalt.Block.BlockPermutation existingBlock =
+        Basalt.Server.Block.BlockPermutation existingBlock =
             player.Dimension.GetPermutation(placePosition.X, placePosition.Y, placePosition.Z);
 
-        Basalt.Block.Block? blockEntity =
+        Basalt.Server.Block.Block? blockEntity =
             player.Dimension.GetBlock(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
         if (blockEntity is not null)
@@ -339,7 +340,7 @@ public static class InventoryTransaction
             return;
         }
 
-        Basalt.Block.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Block.BlockType.Get(heldItem.Identifier);
+        Basalt.Server.Block.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Server.Block.BlockType.Get(heldItem.Identifier);
 
         if (blockType is null || blockType.Identifier == "minecraft:air")
         {
@@ -382,13 +383,13 @@ public static class InventoryTransaction
             }
         }
 
-        Basalt.Block.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
+        Basalt.Server.Block.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
             ? blockType.Permutations[0]
             : blockType.GetPermutation();
 
         player.Dimension.SetPermutation(placePosition.X, placePosition.Y, placePosition.Z, placedPermutation);
 
-        Basalt.Block.Block? placedBlock =
+        Basalt.Server.Block.Block? placedBlock =
             player.Dimension.GetBlock(placePosition.X, placePosition.Y, placePosition.Z);
 
         placedBlock?.OnPlace(new BlockPlaceDetails(
@@ -456,7 +457,7 @@ public static class InventoryTransaction
     }
 
     private static void HandleUseItemOnEntity(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         EntityInventoryTrait inventory,
         UseItemOnEntityInventoryTransactionData transaction)
     {
@@ -466,9 +467,9 @@ public static class InventoryTransaction
             return;
         }
 
-        Basalt.Entity.Entity? target = null;
+        Basalt.Server.Entity.Entity? target = null;
 
-        foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
+        foreach (Basalt.Server.Entity.Entity entity in player.Dimension.Entities)
         {
             if (entity.RuntimeId == transaction.TargetEntityRuntimeId)
             {
@@ -517,7 +518,7 @@ public static class InventoryTransaction
         return heldItem is null || heldItem.StackSize == 0 ? null : heldItem;
     }
 
-    private static void SendBlockUpdate(Player player, BlockPos position, int networkId)
+    private static void SendBlockUpdate(global::Basalt.Server.Player.Player player, BlockPos position, int networkId)
     {
         player.Send(new UpdateBlockPacket
         {
@@ -547,7 +548,7 @@ public static class InventoryTransaction
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 
-    private static bool FindBlockFromView(Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
+    private static bool FindBlockFromView(global::Basalt.Server.Player.Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
     {
         blockPosition = default;
         face = 1;
@@ -585,7 +586,7 @@ public static class InventoryTransaction
             int blockY = (int)MathF.Floor(rayY);
             int blockZ = (int)MathF.Floor(rayZ);
 
-            Basalt.Block.BlockPermutation block =
+            Basalt.Server.Block.BlockPermutation block =
                 player.Dimension.GetPermutation(blockX, blockY, blockZ);
 
             if (block.Type.Identifier != "minecraft:air")
@@ -623,4 +624,13 @@ public static class InventoryTransaction
         return false;
     }
 }
+
+
+
+
+
+
+
+
+
 

@@ -1,18 +1,17 @@
+namespace Basalt.Server.Network;
+
 using System.Buffers;
-using System.Numerics;
 using Basalt.Binary;
-using Basalt.Core;
-using Basalt.Events;
-using Basalt.Network.Handlers;
+using Basalt.Server.Events;
+using Basalt.Server.Network.Handlers;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.RakNet.Packets.Enums;
-using Basalt.World.Dimension;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Network;
+
 
 public sealed class NetworkHandler
 {
@@ -28,19 +27,19 @@ public sealed class NetworkHandler
 
     public void HandleDisconnected(NetworkConnection connection)
     {
-        if (!_server.Players.Remove(connection, out Player? player))
+        if (!_server.Players.Remove(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
 
-        Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
+        global::Basalt.Server.Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
-        _server.GetWorld().PlayerProfiles.UpdateIndex(player.Username, player.Xuid);
+        
 
         string leaveMessage = $"§e{player.Username} left the server.";
-        foreach (Player target in _server.Players.Values)
+        foreach (global::Basalt.Server.Player.Player target in _server.Players.Values)
         {
             target.SendMessage(leaveMessage);
         }
@@ -234,8 +233,8 @@ public sealed class NetworkHandler
 
     private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression)
     {
-        CompressionMethod method = compression ?? _server.Options.CompressionMethod;
-        if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && frame.Length < _server.Options.CompressionThreshold)
+        CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
+        if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && frame.Length < _server.Properties.CompressionThreshold)
         {
             method = CompressionMethod.None;
         }
@@ -279,4 +278,24 @@ public sealed class NetworkHandler
         }
     }
 
+    private static CompressionMethod GetCompressionMethod(string? value)
+    {
+        if (value is not null && value.Equals("snappy", StringComparison.OrdinalIgnoreCase))
+        {
+            return CompressionMethod.Snappy;
+        }
+
+        return CompressionMethod.Zlib;
+    }
+
 }
+
+
+
+
+
+
+
+
+
+

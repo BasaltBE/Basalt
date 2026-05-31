@@ -1,9 +1,10 @@
-﻿using Basalt.Core;
-using Basalt.Events;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Events;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class Text
 {
@@ -14,7 +15,7 @@ public static class Text
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (TextPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? sender))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? sender))
         {
             Logger.Warn("Text received for unknown player session.");
             return;
@@ -29,9 +30,18 @@ public static class Text
             return;
         }
 
-        foreach (Player player in server.Players.Values)
+        foreach (global::Basalt.Server.Player.Player player in server.Players.Values)
         {
             player.SendMessage(signal.Message);
         }
     }
 }
+
+
+
+
+
+
+
+
+

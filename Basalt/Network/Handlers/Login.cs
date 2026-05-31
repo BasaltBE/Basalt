@@ -1,6 +1,8 @@
+namespace Basalt.Server.Network.Handlers;
+
 using Basalt.Binary;
-using Basalt.Core;
-using Basalt.Events;
+using Basalt.Server;
+using Basalt.Server.Events;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -10,8 +12,9 @@ using Basalt.RakNet;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Login.Data;
 using Basalt.Protocol.Nbt;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace Basalt.Network.Handlers;
 
 public static class Login
 {
@@ -69,8 +72,8 @@ public static class Login
 
         ClientData clientData = LoginPayload.Parse(packet.Client);
 
-        KeyValuePair<NetworkConnection, Player>? existingPlayerSession = null;
-        foreach ((NetworkConnection existingConnection, Player existingPlayer) in server.Players)
+        KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>? existingPlayerSession = null;
+        foreach ((NetworkConnection existingConnection, global::Basalt.Server.Player.Player existingPlayer) in server.Players)
         {
             bool sameXuid = !string.IsNullOrWhiteSpace(identity.Xuid) &&
                 string.Equals(existingPlayer.Xuid, identity.Xuid, StringComparison.Ordinal);
@@ -81,7 +84,7 @@ public static class Login
                 continue;
             }
 
-            existingPlayerSession = new KeyValuePair<NetworkConnection, Player>(existingConnection, existingPlayer);
+            existingPlayerSession = new KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>(existingConnection, existingPlayer);
             break;
         }
 
@@ -99,24 +102,22 @@ public static class Login
             existingPlayerSession.Value.Key.Disconnect();
         }
 
-        Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId);
-        var player = new Player(identity.Username, identity.Xuid, playerUuid);
+        Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId, identity.Username, server.Properties.OnlineMode);
+        string playerXuid = ResolvePlayerXuid(identity.Xuid, playerUuid, server.Properties.OnlineMode);
+        var player = new global::Basalt.Server.Player.Player(identity.Username, playerXuid, playerUuid);
         var world = server.GetWorld();
-        var savedData = world.Provider.LoadPlayerData(identity.Xuid);
+        var savedData = LoadPlayerDataCompat(world, playerXuid, identity.Xuid, identity.Username, playerUuid);
         if (savedData is not null)
         {
             player.FromNBT(savedData);
+            if (!string.Equals(playerXuid, identity.Xuid, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(playerXuid))
+            {
+                world.Provider.SavePlayerData(playerXuid, savedData);
+            }
         }
 
-        bool isOperator = world.Operators.IsOperator(identity.Xuid)
-            || (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
-        if (isOperator && !world.Operators.IsOperator(identity.Xuid))
-        {
-            world.Operators.AddOperator(identity.Xuid);
-        }
+        bool isOperator = (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
         player.SetOperator(isOperator, syncClient: false);
-
-        world.PlayerProfiles.UpdateIndex(identity.Username, identity.Xuid);
 
         PlayerJoinSignal joinSignal = new(player);
         server.Emit(joinSignal);
@@ -164,7 +165,7 @@ public static class Login
 
         if (OfflineIdentity.IsOfflineLogin(envelope))
         {
-            if (!server.Options.OfflineMode)
+            if (server.Properties.OnlineMode)
             {
                 throw new InvalidOperationException("Offline authentication is disabled.");
             }
@@ -175,7 +176,7 @@ public static class Login
         return LoginIdentity.Verify(packet.Identity);
     }
 
-    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId)
+    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId, string username, bool onlineMode)
     {
         if (Guid.TryParse(identityUuid, out Guid parsedIdentity))
         {
@@ -187,6 +188,98 @@ public static class Login
             return parsedSelfSigned;
         }
 
+        if (!onlineMode)
+        {
+            return CreateOfflineGuid(username);
+        }
+
         return Guid.NewGuid();
     }
+
+    private static string ResolvePlayerXuid(string identityXuid, Guid uuid, bool onlineMode)
+    {
+        if (onlineMode && !string.IsNullOrWhiteSpace(identityXuid))
+        {
+            return identityXuid;
+        }
+
+        return uuid.ToString("N");
+    }
+
+    private static Guid CreateOfflineGuid(string username)
+    {
+        string normalized = username.Trim().ToLowerInvariant();
+        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes("basalt:offline:" + normalized));
+        Span<byte> guidBytes = stackalloc byte[16];
+        bytes.AsSpan(0, 16).CopyTo(guidBytes);
+        return new Guid(guidBytes);
+    }
+
+    private static CompoundTag? LoadPlayerDataCompat(
+        global::Basalt.Server.World.World world,
+        string primaryXuid,
+        string identityXuid,
+        string username,
+        Guid uuid)
+    {
+        if (!string.IsNullOrWhiteSpace(primaryXuid))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(primaryXuid);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(identityXuid) && !string.Equals(identityXuid, primaryXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(identityXuid);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        string uuidN = uuid.ToString("N");
+        if (!string.Equals(uuidN, primaryXuid, StringComparison.Ordinal) &&
+            !string.Equals(uuidN, identityXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(uuidN);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        string uuidD = uuid.ToString();
+        if (!string.Equals(uuidD, primaryXuid, StringComparison.Ordinal) &&
+            !string.Equals(uuidD, identityXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(uuidD);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(username);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        return null;
+    }
 }
+
+
+
+
+
+
+
+
+

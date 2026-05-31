@@ -1,11 +1,12 @@
-using Basalt.Core;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class RequestNetworkSettings
 {
@@ -36,8 +37,10 @@ public static class RequestNetworkSettings
 
         NetworkSettingsPacket response = new()
         {
-            CompressionThreshold = server.Options.CompressionThreshold,
-            CompressionMethod = server.Options.CompressionMethod,
+            CompressionThreshold = (ushort)Math.Clamp(server.Properties.CompressionThreshold, 0, ushort.MaxValue),
+            CompressionMethod = server.Properties.CompressionMethod.Equals("snappy", StringComparison.OrdinalIgnoreCase)
+                ? CompressionMethod.Snappy
+                : CompressionMethod.Zlib,
             ClientThrottle = false,
             ClientThrottleThreshold = 0,
             ClientThrottleScalar = 0f
@@ -46,4 +49,13 @@ public static class RequestNetworkSettings
         server.Network.SendPacket(connection, response, CompressionMethod.NotPresent);
     }
 }
+
+
+
+
+
+
+
+
+
 

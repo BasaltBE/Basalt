@@ -1,16 +1,17 @@
-using Basalt.Core;
-using Basalt.Entity;
-using Basalt.Events;
-using Basalt.Item;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Entity;
+using Basalt.Server.Events;
+using Basalt.Server.Item;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
-using Basalt.Entity.Traits.Types;
+using Basalt.Server.Entity.Traits.Types;
 using Basalt.Protocol.Io;
 
-namespace Basalt.Network.Handlers;
 
 public static class ResourcePackClientResponse
 {
@@ -60,7 +61,7 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.Completed:
-                if (!server.Players.TryGetValue(connection, out Basalt.Core.Player? player))
+                if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
                 {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
                     DisconnectPacket missingSessionDisconnect = new()
@@ -225,4 +226,13 @@ public static class ResourcePackClientResponse
     }
 
 }
+
+
+
+
+
+
+
+
+
 

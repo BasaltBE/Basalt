@@ -1,9 +1,10 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.PlayerTraits;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Player.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class RequestChunkRadius
 {
@@ -27,7 +28,7 @@ public static class RequestChunkRadius
         /// PLEASE KEEP IT COMMENTED OUT!
         // server.Network.SendPacket(connection, response);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
@@ -41,4 +42,13 @@ public static class RequestChunkRadius
         chunkRendering.ApplyViewDistance(radius);
     }
 }
+
+
+
+
+
+
+
+
+
 

@@ -1,13 +1,14 @@
-using Basalt.Core;
-using Basalt.Entity.Traits;
-using Basalt.Entity.Traits.PlayerTraits;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Player.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using Basalt.Traits;
-using Basalt.Entity.Traits.Types;
-using Basalt.World;
+using Basalt.Server.Traits;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.World;
 
-namespace Basalt.Network.Handlers;
 
 public static class SetLocalPlayerAsInitialized
 {
@@ -18,7 +19,7 @@ public static class SetLocalPlayerAsInitialized
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (SetLocalPlayerAsInitializedPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
@@ -50,7 +51,7 @@ public static class SetLocalPlayerAsInitialized
         }
 
         string joinMessage = $"§e{player.Username} joined the server.";
-        foreach (Player target in server.Players.Values)
+        foreach (global::Basalt.Server.Player.Player target in server.Players.Values)
         {
             // target.SendMessage(joinMessage);
         }
@@ -58,4 +59,13 @@ public static class SetLocalPlayerAsInitialized
         Logger.Info($"Player {player.Username} has spawned.");
     }
 }
+
+
+
+
+
+
+
+
+
 
