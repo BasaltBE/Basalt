@@ -389,6 +389,8 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.CannotDropItem;
         }
 
+        _ = player.DropItem(removedItem);
+
         AddChangedSlot(changedContainers, action.Source.Container, container, action.Source.Slot, slot);
 
         return ItemStackResponseStatus.Ok;
@@ -582,7 +584,6 @@ public static class ItemStackRequest
         container = singleOpened;
         return true;
     }
-
 
     // These are temp cause it's a mess
     private static string DescribeAction(IStackRequestAction action)

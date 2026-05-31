@@ -174,6 +174,116 @@ public sealed class Player : Entity.Entity
         Network.SendPackets(Connection, packets);
     }
 
+    public bool DropItem(Item.ItemStack item)
+    {
+        if (Dimension is null || item.StackSize == 0 || item.Type == Item.ItemType.Air)
+        {
+            return false;
+        }
+
+        Vec3f feet = GetPosition();
+        float yaw = MathF.PI / 180f * Yaw;
+        float pitch = MathF.PI / 180f * Pitch;
+
+        global::Basalt.Server.Entity.ItemEntity drop = new(item)
+        {
+            Position = new Vec3f
+            {
+                X = feet.X,
+                Y = feet.Y + 1.15f,
+                Z = feet.Z
+            },
+            Velocity = new Vec3f
+            {
+                X = (-MathF.Sin(yaw) * MathF.Cos(pitch)) / 3f,
+                Y = ((-MathF.Sin(pitch)) / 2f) + 0.2f,
+                Z = (MathF.Cos(yaw) * MathF.Cos(pitch)) / 3f
+            }
+        };
+
+        ulong currentTick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        drop.LockMergeUntil(currentTick + 50);
+        drop.LockPickupUntil(currentTick + 50);
+        drop.Spawn(Dimension, new EntitySpawnOptions(InitialSpawn: false));
+        return true;
+    }
+
+    public ushort CollectItem(Item.ItemStack item)
+    {
+        var inventory = GetTrait<EntityInventoryTrait>();
+        if (inventory is null || item.StackSize == 0)
+        {
+            return 0;
+        }
+
+        var container = inventory.Container;
+        ushort remaining = item.StackSize;
+        ushort moved = 0;
+
+        for (int i = 0; i < container.GetSize() && remaining > 0; i++)
+        {
+            Item.ItemStack? existing = container.GetItem(i);
+            if (existing is null || !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
+            {
+                continue;
+            }
+
+            int space = existing.Type.MaxStackSize - existing.StackSize;
+            int transfer = Math.Min(space, remaining);
+            if (transfer <= 0)
+            {
+                continue;
+            }
+
+            existing.IncrementStack((ushort)transfer);
+            container.UpdateSlot(i);
+            remaining = (ushort)(remaining - transfer);
+            moved = (ushort)(moved + transfer);
+        }
+
+        for (int i = 0; i < container.GetSize() && remaining > 0; i++)
+        {
+            if (container.GetItem(i) is not null)
+            {
+                continue;
+            }
+
+            ushort transfer = (ushort)Math.Min(remaining, item.Type.MaxStackSize);
+            Item.ItemStack stack = item.Clone(transfer);
+            container.SetItem(i, stack);
+            remaining = (ushort)(remaining - transfer);
+            moved = (ushort)(moved + transfer);
+        }
+
+        if (moved == 0)
+        {
+            return 0;
+        }
+
+        item.SetStackSize(remaining);
+        inventory.SyncToPlayer(this);
+        return moved;
+    }
+
+    public void Disconnect(string reason = "")
+    {
+        if (Connection is null || Network is null)
+        {
+            return;
+        }
+
+        DisconnectPacket disconnect = new()
+        {
+            Reason = string.IsNullOrEmpty(reason) ? DisconnectReason.Disconnected : DisconnectReason.NetherNetSignalingSigninFailed,
+            HideDisconnectionScreen = string.IsNullOrEmpty(reason),
+            Message = reason,
+            FilteredMessage = string.Empty
+        };
+
+        Network.SendPacket(Connection, disconnect, immediate: true);
+        Connection.Disconnect();
+    }
+
     public void SetSpawned(bool spawned)
     {
         Spawned = true;

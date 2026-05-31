@@ -23,6 +23,7 @@ public class Entity
     public ulong RuntimeId { get; } = ++_runtimeCounter;
     public long UniqueId => unchecked((long)RuntimeId);
     public Vec3f Position;
+    public Vec3f Velocity;
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
@@ -370,10 +371,25 @@ public class Entity
 
     public Vec3f GetHeadLocation()
     {
+        return GetEyePosition();
+    }
+
+    public Vec3f GetPosition()
+    {
         return new Vec3f
         {
             X = Position.X,
-            Y = Position.Y + 1.62f,
+            Y = Position.Y - 1.62f,
+            Z = Position.Z
+        };
+    }
+
+    public Vec3f GetEyePosition()
+    {
+        return new Vec3f
+        {
+            X = Position.X,
+            Y = Position.Y,
             Z = Position.Z
         };
     }
@@ -466,6 +482,10 @@ public class Entity
             EntityProperties = new EntityProperties(),
             EntityLinks = []
         });
+    }
+
+    public virtual void OnPhysicsTick(ulong currentTick, bool grounded)
+    {
     }
 
     internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value)

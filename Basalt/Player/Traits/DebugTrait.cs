@@ -10,7 +10,6 @@ using Basalt.Server.World;
 using Entity = Basalt.Server.Entity.Entity;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Entity.Traits;
-using Basalt.Item;
 using Basalt.Server.Traits;
 
 // using Player = Player.Player;

@@ -222,6 +222,18 @@ public sealed class Server
             return;
         }
 
+        foreach (PlayerInstance player in Players.Values.ToArray())
+        {
+            try
+            {
+                player.Disconnect("Server closed.");
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Unhandled disconnect error during shutdown: {exception}");
+            }
+        }
+
         runCancellation?.Cancel();
         cancellation?.Cancel();
 

@@ -185,16 +185,17 @@ public sealed class NetworkHandler
         }
     }
 
-    public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? compression = null)
+    public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? compression = null, bool immediate = false)
     {
-        SendPackets(connection, [packet], compression);
+        SendPackets(connection, [packet], compression, immediate);
     }
 
     public void SendSerializedPacket(
         NetworkConnection connection,
         PacketId packetId,
         ReadOnlySpan<byte> packetPayload,
-        CompressionMethod? compression = null)
+        CompressionMethod? compression = null,
+        bool immediate = false)
     {
         using BinaryStream packetBufferStream = BinaryStream.Rent(packetPayload.Length + 16);
         using BinaryStream frameBufferStream = BinaryStream.Rent(packetPayload.Length + 32);
@@ -209,10 +210,10 @@ public sealed class NetworkHandler
         frameWriter.WriteVarInt(packetData.Length);
         frameWriter.WriteBytes(packetData);
 
-        SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
+        SendFrame(connection, frameWriter.GetProcessedBytes(), compression, immediate);
     }
 
-    public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null)
+    public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null, bool immediate = false)
     {
         using BinaryStream packetBufferStream = BinaryStream.Rent(MaxPacketSize);
         using BinaryStream frameBufferStream = BinaryStream.Rent(MaxPacketBatchSize);
@@ -232,10 +233,10 @@ public sealed class NetworkHandler
             frameWriter.WriteBytes(packetData);
         }
 
-        SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
+        SendFrame(connection, frameWriter.GetProcessedBytes(), compression, immediate);
     }
 
-    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression)
+    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate = false)
     {
         CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
         if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && frame.Length < _server.Properties.CompressionThreshold)
@@ -274,7 +275,7 @@ public sealed class NetworkHandler
                 payloadLength = frame.Length;
             }
 
-            connection.SendPacket(compressedBuffer.AsSpan(0, payloadOffset + payloadLength), Reliability.ReliableOrdered);
+            connection.SendPacket(compressedBuffer.AsSpan(0, payloadOffset + payloadLength), Reliability.ReliableOrdered, immediate);
         }
         finally
         {

@@ -146,12 +146,13 @@ public static class InventoryTransaction
         {
             if (action.SourceType == (uint)InventoryActionSourceType.World)
             {
-                int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
+                // int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
+                SpawnWorldDrop(player, action);
 
-                Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
-                Logger.Info("NetworkId Old/New: " + action.OldItem.Stack.NetworkId + "/" + action.NewItem.Stack.NetworkId);
-                Logger.Info("StackSize Old/New: " + action.OldItem.Stack.StackSize + "/" + action.NewItem.Stack.StackSize);
-                
+                // Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
+                // Logger.Info("NetworkId Old/New: " + action.OldItem.Stack.NetworkId + "/" + action.NewItem.Stack.NetworkId);
+                // Logger.Info("StackSize Old/New: " + action.OldItem.Stack.StackSize + "/" + action.NewItem.Stack.StackSize);
+
                 inventory.Container.Update();
                 continue;
             }
@@ -255,6 +256,31 @@ public static class InventoryTransaction
         }
 
         return (int)action.InventorySlot;
+    }
+
+    private static void SpawnWorldDrop(global::Basalt.Server.Player.Player player, InventoryAction action)
+    {
+        if (player.Dimension is null)
+        {
+            return;
+        }
+
+        LegacyItem dropped = action.NewItem.Stack;
+        if (dropped.NetworkId == 0 || dropped.StackSize == 0)
+        {
+            return;
+        }
+
+        ItemStack item;
+        try
+        {
+            item = ItemStack.FromNetworkStack(dropped);
+        }
+        catch
+        {
+            return;
+        }
+        player.DropItem(item);
     }
 
     private static void HandleUseItem(

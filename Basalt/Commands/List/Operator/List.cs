@@ -11,8 +11,8 @@ public class ListCommand : Command
         var playerCount = state.Server.Players.Count();
 
 
-        var message = $"§r§7Online Players (§a{playerCount}§7)";
-        if(playerCount > 0) message += "\n";
+        var message = $"§r§7There are (§a{playerCount}§7) Players Online.";
+        if (playerCount > 0) message += "\n";
 
         foreach (Player.Player player in state.Server.Players.Values)
         {

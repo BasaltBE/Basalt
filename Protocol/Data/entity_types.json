@@ -16,6 +16,12 @@
     ]
   },
   {
+    "identifier": "minecraft:item",
+    "components": [
+      "minecraft:movement"
+    ]
+  },
+  {
     "identifier": "minecraft:balloon",
     "components": []
   },
