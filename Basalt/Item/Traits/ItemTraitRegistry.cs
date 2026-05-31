@@ -1,6 +1,7 @@
+namespace Basalt.Server.Item.Traits;
+
 using System.Reflection;
 
-namespace Basalt.Item.Traits;
 
 public static class ItemTraitRegistry
 {
@@ -179,3 +180,9 @@ public static class ItemTraitRegistry
         identifiers.Add(identifier);
     }
 }
+
+
+
+
+
+

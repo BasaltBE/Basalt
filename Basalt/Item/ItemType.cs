@@ -1,10 +1,11 @@
-using Basalt.Block;
-using Basalt.Item.Components;
-using Basalt.Item.Traits;
+namespace Basalt.Server.Item;
+
+using Basalt.Server.Block;
+using Basalt.Server.Item.Components;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Item;
 
 public sealed class ItemType
 {
@@ -44,7 +45,7 @@ public sealed class ItemType
         Tags = tags is null ? [] : [.. tags];
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
-        BlockType = Block.BlockType.Get(identifier);
+        BlockType = BlockType.Get(identifier);
 
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
@@ -112,3 +113,9 @@ public sealed class ItemType
         };
     }
 }
+
+
+
+
+
+

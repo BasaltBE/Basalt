@@ -1,6 +1,6 @@
-using Basalt.Entity;
+namespace Basalt.Server.Item.Traits;
 
-namespace Basalt.Item.Traits;
+
 
 public sealed class ItemStackDurabilityTrait : ItemTrait
 {
@@ -8,7 +8,14 @@ public sealed class ItemStackDurabilityTrait : ItemTrait
     {
     }
 
-    public void ProcessDamage(global::Basalt.Entity.Entity _entity)
+    public void ProcessDamage(Entity.Entity _entity)
     {
     }
 }
+
+
+
+
+
+
+

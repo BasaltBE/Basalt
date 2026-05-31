@@ -1,9 +1,9 @@
+namespace Basalt.Server.Item;
+
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
-using Basalt.Item.Traits;
-using Basalt.Item.Traits.Types;
-
-namespace Basalt.Item;
+using Basalt.Server.Item.Traits;
+using Basalt.Server.Item.Traits.Types;
 
 public sealed class ItemStack {
     private static int _nextNetworkStackId;
@@ -339,3 +339,9 @@ public sealed class ItemStack {
         return true;
     }
 }
+
+
+
+
+
+

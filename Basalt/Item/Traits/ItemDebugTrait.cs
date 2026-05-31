@@ -1,10 +1,11 @@
-using Basalt.Item.Traits.Types;
-using Basalt.Core;
+namespace Basalt.Server.Item.Traits;
+
+using Basalt.Server.Item.Traits.Types;
+using Player = Basalt.Server.Player.Player;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Item.Traits;
 
 public sealed class ItemDebugTrait : ItemTrait
 {
@@ -56,3 +57,10 @@ public sealed class ItemDebugTrait : ItemTrait
         });
     }
 }
+
+
+
+
+
+
+

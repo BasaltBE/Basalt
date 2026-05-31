@@ -1,5 +1,7 @@
+namespace Basalt.Server.Item;
+
 using Basalt.Binary;
-using Basalt.Item.Traits;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
@@ -9,7 +11,6 @@ using System.Text.Json;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Item;
 
 public sealed class ItemPalette
 {
@@ -400,3 +401,9 @@ public sealed class ItemPalette
             descriptor.ExtraData);
     }
 }
+
+
+
+
+
+

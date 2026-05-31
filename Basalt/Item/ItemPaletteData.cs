@@ -1,6 +1,7 @@
+namespace Basalt.Server.Item;
+
 using System.Text.Json.Serialization;
 
-namespace Basalt.Item;
 
 public sealed class ItemTypeData
 {
@@ -64,3 +65,9 @@ public sealed class CreativeContentData
 internal partial class ItemPaletteJsonContext : JsonSerializerContext
 {
 }
+
+
+
+
+
+

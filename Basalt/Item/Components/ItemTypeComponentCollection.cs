@@ -1,7 +1,8 @@
+namespace Basalt.Server.Item.Components;
+
 using Basalt.Protocol.Nbt;
 using System.Reflection;
 
-namespace Basalt.Item.Components;
 
 public sealed class ItemTypeComponentCollection
 {
@@ -61,3 +62,9 @@ public sealed class ItemTypeComponentCollection
         throw new InvalidOperationException($"Component type {type.FullName} must declare public static string Identifier.");
     }
 }
+
+
+
+
+
+
