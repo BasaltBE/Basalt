@@ -1,13 +1,13 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.Types;
-using Basalt.Events;
-using Basalt.Item.Traits;
+namespace Basalt.Server.Entity.Traits.Attribute;
+
+using Basalt.Server.Events;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Protocol.Nbt;
-
-namespace Basalt.Entity.Traits.Attribute;
+using Entity = Basalt.Server.Entity.Entity;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Player.Traits;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait
 {
@@ -118,3 +118,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         tag.Set("current", new FloatTag { Value = CurrentValue });
     }
 }
+
+
+
+
+
+

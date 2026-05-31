@@ -1,8 +1,9 @@
-using Basalt.Entity.Traits.Types;
+namespace Basalt.Server.Entity.Traits;
+
+using Basalt.Server.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 
-namespace Basalt.Entity.Traits;
 
 public abstract class EntityAttributeTrait : EntityTrait
 {
@@ -102,3 +103,9 @@ public abstract class EntityAttributeTrait : EntityTrait
         return MathF.Truncate(value * 10000f) / 10000f;
     }
 }
+
+
+
+
+
+

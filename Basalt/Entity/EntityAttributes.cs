@@ -1,7 +1,8 @@
+namespace Basalt.Server.Entity;
+
 using Basalt.Protocol.Enums;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 
-namespace Basalt.Entity;
 
 public sealed class EntityAttributes
 {
@@ -33,3 +34,9 @@ public sealed class EntityAttributes
         return _attributes.Remove(name);
     }
 }
+
+
+
+
+
+

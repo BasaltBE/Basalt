@@ -1,9 +1,9 @@
+namespace Basalt.Server.Entity;
+
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Basalt.Entity.Traits;
+using Basalt.Server.Entity.Traits;
 using Basalt.Protocol.Nbt;
-
-namespace Basalt.Entity;
 
 public sealed class EntityPalette
 {
@@ -136,3 +136,9 @@ public sealed class EntityPalette
         throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
     }
 }
+
+
+
+
+
+

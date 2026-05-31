@@ -1,8 +1,9 @@
-using Basalt.Entity.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Traits;
+namespace Basalt.Server.Entity.Traits;
 
-namespace Basalt.Entity.Traits;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Protocol.Enums;
+using Basalt.Server.Traits;
+
 
 public sealed class EntityGravityTrait : EntityTrait
 {
@@ -138,3 +139,9 @@ public sealed class EntityGravityTrait : EntityTrait
         return true;
     }
 }
+
+
+
+
+
+

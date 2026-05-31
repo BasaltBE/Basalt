@@ -1,17 +1,17 @@
+namespace Basalt.Server.Entity;
+
 using Basalt.Protocol.Types;
-using Basalt.Entity.Traits;
-using Basalt.Entity.Traits.Enums;
-using Basalt.Entity.Traits.Types;
-using Basalt.Core;
-using Basalt.World.Dimension;
-using Basalt.Traits;
-using Basalt.Containers;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Entity.Traits.Enums;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.World.Dimension;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
-using Basalt.World;
+using Basalt.Server.World;
 
-namespace Basalt.Entity;
+using Player = Player.Player;
+using Basalt.Server.Traits;
 
 public class Entity
 {
@@ -220,7 +220,7 @@ public class Entity
         }
     }
 
-    public void OnContainerUpdate(Basalt.Containers.Container container)
+    public void OnContainerUpdate(Basalt.Server.Containers.Container container)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -504,3 +504,9 @@ public class Entity
             .Select(word => char.ToUpper(word[0]) + word[1..]));
     }
 }
+
+
+
+
+
+

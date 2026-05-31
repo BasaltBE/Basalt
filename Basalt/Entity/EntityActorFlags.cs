@@ -1,6 +1,6 @@
-using Basalt.Protocol.Enums;
+namespace Basalt.Server.Entity;
 
-namespace Basalt.Entity;
+using Basalt.Protocol.Enums;
 
 public sealed class EntityActorFlags
 {
@@ -48,3 +48,9 @@ public sealed class EntityActorFlags
         return unchecked((long)(ulong)(_value >> 64));
     }
 }
+
+
+
+
+
+

@@ -1,6 +1,4 @@
-using Basalt.Entity.Traits;
-
-namespace Basalt.Entity;
+namespace Basalt.Server.Entity;
 
 public sealed class EntityType
 {
@@ -44,3 +42,9 @@ public sealed class EntityType
         _traits.TryAdd(identifier, traitType);
     }
 }
+
+
+
+
+
+

@@ -1,5 +1,6 @@
-using Basalt.Containers;
-namespace Basalt.Entity.Container;
+namespace Basalt.Server.Entity.Container;
+
+using Basalt.Server.Containers;
 
 public sealed class EntityContainer : Containers.Container
 {
@@ -10,12 +11,12 @@ public sealed class EntityContainer : Containers.Container
         Entity = entity;
     }
 
-    public bool IsOwnedBy(Core.Player player)
+    public bool IsOwnedBy(Player.Player player)
     {
         return ReferenceEquals(Entity, player);
     }
 
-    public override void SetItem(int slot, Basalt.Item.ItemStack item)
+    public override void SetItem(int slot, Basalt.Server.Item.ItemStack item)
     {
         base.SetItem(slot, item);
     }
@@ -39,7 +40,7 @@ public sealed class EntityContainer : Containers.Container
 
     protected override Basalt.Protocol.Types.BlockPos GetContainerPosition()
     {
-        if (Entity is Core.Player)
+        if (Entity is Player.Player)
         {
             return new Basalt.Protocol.Types.BlockPos
             {
@@ -59,7 +60,7 @@ public sealed class EntityContainer : Containers.Container
 
     // TODO: Add proper checks, e.g container already opened
     // Or if something is preventing it from opening
-    protected override bool CanOpen(Core.Player player, int windowId)
+    protected override bool CanOpen(Player.Player player, int windowId)
     {
         return true;
     }
@@ -74,3 +75,9 @@ public sealed class EntityContainer : Containers.Container
         return base.GetFullContainerNameId();
     }
 }
+
+
+
+
+
+

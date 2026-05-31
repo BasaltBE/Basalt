@@ -1,15 +1,17 @@
-using Basalt.Containers;
-using Basalt.Entity.Container;
-using Basalt.Entity.Traits.Enums;
-using Basalt.Entity.Traits.Types;
-using Basalt.Item;
+namespace Basalt.Server.Entity.Traits;
+
+using Basalt.Server.Containers;
+using Basalt.Server.Entity.Container;
+using Basalt.Server.Entity.Traits.Enums;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Traits;
+using Player = Player.Player;
+using Basalt.Server.Traits;
 
-namespace Basalt.Entity.Traits;
 
 public sealed class EntityInventoryTrait : EntityTrait
 {
@@ -51,7 +53,7 @@ public sealed class EntityInventoryTrait : EntityTrait
     {
         Container.Clear();
 
-        if (Entity is not Core.Player player || !player.Spawned)
+        if (Entity is not Player player || !player.Spawned)
         {
             return;
         }
@@ -87,7 +89,7 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public override void OnSpawn(EntitySpawnOptions details)
     {
-        if (Entity is Core.Player player)
+        if (Entity is Player player)
         {
             Container.Show(player);
             Container.Update();
@@ -100,7 +102,7 @@ public sealed class EntityInventoryTrait : EntityTrait
         Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
     }
 
-    public override void OnInteract(Core.Player player, EntityInteractMethod method)
+    public override void OnInteract(Player player, EntityInteractMethod method)
     {
         if (method == EntityInteractMethod.Interact && !Entity.IsPlayer())
         {
@@ -246,7 +248,7 @@ public sealed class EntityInventoryTrait : EntityTrait
         return clone;
     }
 
-    public void SyncToPlayer(Core.Player player)
+    public void SyncToPlayer(Player player)
     {
         if (!player.Spawned)
         {
@@ -269,3 +271,9 @@ public sealed class EntityInventoryTrait : EntityTrait
         player.Send(packet);
     }
 }
+
+
+
+
+
+

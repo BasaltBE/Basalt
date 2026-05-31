@@ -1,8 +1,8 @@
-using Basalt.Item;
+namespace Basalt.Server.Entity.Traits;
+
+using Basalt.Server.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-
-namespace Basalt.Entity.Traits;
 
 public sealed class EntityEquipmentTrait : EntityTrait
 {
@@ -63,3 +63,9 @@ public sealed class EntityEquipmentTrait : EntityTrait
         tag.Set("armor", armorTag);
     }
 }
+
+
+
+
+
+

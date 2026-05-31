@@ -1,7 +1,6 @@
+namespace Basalt.Server.Entity.Traits.Types;
+
 using Basalt.Protocol.Types;
-
-namespace Basalt.Entity.Traits.Types;
-
 
 public class MovementRotation {
     public float Yaw { get; set; }
@@ -13,3 +12,9 @@ public class MovementRotation {
 public readonly record struct EntityMoveOptions(
     Vec3f From, Vec3f To, MovementRotation FromRotation, MovementRotation ToRotation
 );
+
+
+
+
+
+

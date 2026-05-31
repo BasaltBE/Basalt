@@ -1,7 +1,9 @@
+namespace Basalt.Server.Entity;
+
+
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Entity;
 
 public sealed class EntityActorMetadata
 {
@@ -69,3 +71,9 @@ public sealed class EntityActorMetadata
         return metadata;
     }
 }
+
+
+
+
+
+

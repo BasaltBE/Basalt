@@ -1,9 +1,14 @@
+namespace Basalt.Server.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
-
-namespace Basalt.Entity.Traits.Types;
 
 public readonly record struct EntityDeathOptions(
     bool Cancel = false,
-    global::Basalt.Entity.Entity? KillerSource = null,
+    global::Basalt.Server.Entity.Entity? KillerSource = null,
     ActorDamageCause? DamageCause = null
 );
+
+
+
+
+
+

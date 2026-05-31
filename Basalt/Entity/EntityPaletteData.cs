@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
+namespace Basalt.Server.Entity;
 
-namespace Basalt.Entity;
+using System.Text.Json.Serialization;
 
 public sealed class EntityTypeData
 {
@@ -16,3 +16,9 @@ public sealed class EntityTypeData
 internal partial class EntityPaletteJsonContext : JsonSerializerContext
 {
 }
+
+
+
+
+
+

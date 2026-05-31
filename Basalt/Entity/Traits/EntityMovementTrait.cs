@@ -1,15 +1,9 @@
-using Basalt.Containers;
-using Basalt.Entity.Container;
-using Basalt.Entity.Traits.Enums;
-using Basalt.Entity.Traits.Types;
-using Basalt.Item;
+namespace Basalt.Server.Entity.Traits;
+
+using Basalt.Server.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Traits;
-
-namespace Basalt.Entity.Traits;
 
 public sealed class EntityMovementTrait : EntityTrait
 {
@@ -34,8 +28,6 @@ public sealed class EntityMovementTrait : EntityTrait
 
     public void SetSpeed(float speed = 1f)
     {
-        Logger.Info("Setting speed to {0}", speed);
-
         Speed = speed;
 
         float movement = BaseMovementSpeed * Speed;
@@ -107,3 +99,9 @@ public sealed class EntityMovementTrait : EntityTrait
         Entity.Attributes.SetAttribute(attribute);
     }
 }
+
+
+
+
+
+
