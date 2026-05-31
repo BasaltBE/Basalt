@@ -62,7 +62,7 @@ public static class InventoryTransaction
         switch (packet.TransactionData)
         {
             case NormalInventoryTransactionData:
-                HandleInventoryActions(player, inventory, packet.Actions);
+                HandleInventoryActions(player, inventory, packet.Actions, packet.LegacySetItemSlots);
                 break;
 
             case UseItemInventoryTransactionData useItem:
@@ -136,12 +136,22 @@ public static class InventoryTransaction
         HandleUseItem(player, inventory, transaction, []);
     }
 
-    private static void HandleInventoryActions(global::Basalt.Server.Player.Player player, EntityInventoryTrait inventory, List<InventoryAction> actions)
+    private static void HandleInventoryActions(
+        global::Basalt.Server.Player.Player player,
+        EntityInventoryTrait inventory,
+        List<InventoryAction> actions,
+        List<LegacySetItemSlot> legacySetItemSlots)
     {
         foreach (InventoryAction action in actions)
         {
             if (action.SourceType == (uint)InventoryActionSourceType.World)
             {
+                int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
+
+                Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
+                Logger.Info("NetworkId Old/New: " + action.OldItem.Stack.NetworkId + "/" + action.NewItem.Stack.NetworkId);
+                Logger.Info("StackSize Old/New: " + action.OldItem.Stack.StackSize + "/" + action.NewItem.Stack.StackSize);
+                
                 inventory.Container.Update();
                 continue;
             }
@@ -188,6 +198,63 @@ public static class InventoryTransaction
             {
             }
         }
+    }
+
+    private static int ResolveWorldActionSlot(
+        EntityInventoryTrait inventory,
+        InventoryAction action,
+        List<InventoryAction> actions,
+        List<LegacySetItemSlot> legacySetItemSlots)
+    {
+        for (int i = 0; i < legacySetItemSlots.Count; i++)
+        {
+            LegacySetItemSlot legacy = legacySetItemSlots[i];
+            if (legacy.Slots.Length == 0)
+            {
+                continue;
+            }
+
+            if (legacy.ContainerId is (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory)
+            {
+                return legacy.Slots[0];
+            }
+        }
+
+        for (int i = 0; i < actions.Count; i++)
+        {
+            InventoryAction candidate = actions[i];
+            if (candidate.SourceType != (uint)InventoryActionSourceType.Container || candidate.WindowId != 0)
+            {
+                continue;
+            }
+
+            LegacyItem candidateOld = candidate.OldItem.Stack;
+            LegacyItem candidateNew = candidate.NewItem.Stack;
+            LegacyItem dropped = action.NewItem.Stack;
+
+            if (candidateOld.NetworkId == 0 || dropped.NetworkId == 0)
+            {
+                continue;
+            }
+
+            if (candidateOld.NetworkId != dropped.NetworkId || candidateOld.StackSize <= candidateNew.StackSize)
+            {
+                continue;
+            }
+
+            int delta = candidateOld.StackSize - candidateNew.StackSize;
+            if (delta == dropped.StackSize)
+            {
+                return (int)candidate.InventorySlot;
+            }
+        }
+
+        if (action.InventorySlot == 0 && inventory.SelectedSlot is >= 0 and < 9)
+        {
+            return inventory.SelectedSlot;
+        }
+
+        return (int)action.InventorySlot;
     }
 
     private static void HandleUseItem(

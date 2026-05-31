@@ -74,8 +74,19 @@ public sealed class NetworkItemStackDescriptor : DataType
             StackNetworkId = 0;
         }
 
-        BlockRuntimeId = checked((int)reader.ReadVarUInt());
-        int extraLength = checked((int)reader.ReadVarUInt());
+        BlockRuntimeId = unchecked((int)reader.ReadVarUInt());
+        uint extraLengthRaw = reader.ReadVarUInt();
+        if (extraLengthRaw > int.MaxValue)
+        {
+            throw new FormatException("Invalid network item extra length.");
+        }
+
+        int extraLength = (int)extraLengthRaw;
+        if (extraLength > reader.Remaining)
+        {
+            throw new FormatException("Network item extra length exceeds remaining buffer.");
+        }
+
         if (extraLength == 0)
         {
             return;
@@ -98,14 +109,26 @@ public sealed class NetworkItemStackDescriptor : DataType
             Nbt = null;
         }
 
-        int canPlaceOnCount = checked((int)reader.ReadUInt32(true));
+        uint canPlaceOnCountRaw = reader.ReadUInt32(true);
+        if (canPlaceOnCountRaw > int.MaxValue)
+        {
+            throw new FormatException("Invalid can-place-on count.");
+        }
+
+        int canPlaceOnCount = (int)canPlaceOnCountRaw;
         CanPlaceOn = new List<string>(Math.Max(canPlaceOnCount, 0));
         for (int i = 0; i < canPlaceOnCount; i++)
         {
             CanPlaceOn.Add(reader.ReadString16(true));
         }
 
-        int canDestroyCount = checked((int)reader.ReadUInt32(true));
+        uint canDestroyCountRaw = reader.ReadUInt32(true);
+        if (canDestroyCountRaw > int.MaxValue)
+        {
+            throw new FormatException("Invalid can-destroy count.");
+        }
+
+        int canDestroyCount = (int)canDestroyCountRaw;
         CanDestroy = new List<string>(Math.Max(canDestroyCount, 0));
         for (int i = 0; i < canDestroyCount; i++)
         {

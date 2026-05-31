@@ -159,6 +159,10 @@ public sealed class NetworkHandler
                 InventoryTransaction.Handle(_server, connection, packetBuffer);
                 break;
 
+            case PacketId.MobEquipment:
+                MobEquipment.Handle(_server, connection, packetBuffer);
+                break;
+
             case PacketId.PlayerAction:
                 PlayerAction.Handle(_server, connection, packetBuffer);
                 break;

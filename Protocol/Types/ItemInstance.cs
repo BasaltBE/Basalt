@@ -53,6 +53,7 @@ public sealed class ItemInstance : DataType
         }
     }
 
+
     public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(Stack.NetworkId);
@@ -85,4 +86,5 @@ public sealed class ItemInstance : DataType
         writer.WriteVarUInt((uint)payload.Length);
         writer.WriteBytes(payloadBuffer[payloadWriter.GetProcessedRange()]);
     }
+
 }

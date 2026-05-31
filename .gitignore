@@ -5,6 +5,9 @@
 *.lscache
 
 worlds
+server.properties
+
+
 artifacts
 .*
 
