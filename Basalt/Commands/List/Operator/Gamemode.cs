@@ -1,6 +1,8 @@
-using Basalt.Commands;
-using Basalt.Core;
+namespace Basalt.Server.Commands.List.Operator;
+
+using Basalt.Server.Commands;
 using Basalt.Protocol.Enums;
+using Player = global::Basalt.Server.Player.Player;
 
 public class GamemodeEnum : CustomEnum
 {
@@ -36,10 +38,10 @@ public class GamemodeCommand : Command
 
     public override CommandResult Execute(CommandExecutionState state)
     {
-        var gamemode = state.Get<GamemodeEnum>("gamemode");
-        var target = state.Get<TargetEnum>("target");
+        GamemodeEnum? gamemode = state.Get<GamemodeEnum>("gamemode");
+        TargetEnum? target = state.Get<TargetEnum>("target");
 
-        var gm = Gamemode.Survival;
+        Gamemode gm = Gamemode.Survival;
         switch (gamemode?.Value)
         {
             case "survival":
@@ -64,20 +66,20 @@ public class GamemodeCommand : Command
                 break;
         }
 
-        if (target == null)
+        if (target is null)
         {
             if (state.Executor is PlayerExecutor executor)
             {
                 executor.Player.SetGamemode(gm);
-                return CommandResult.Message("§7Your game mode has been changed to §a" + gamemode?.Value, true);
+                return CommandResult.Message("Your game mode has been changed to " + gamemode?.Value, true);
             }
 
-            return CommandResult.Message("§cYou must specify a target, or be a player!", false);
+            return CommandResult.Message("You must specify a target, or be a player!", false);
         }
 
-        if (target.Entities.Length > 1 || target.OfflineUsernames.Length > 1)
+        if (target.Entities.Length > 1)
         {
-            return CommandResult.Message("§cMultiple entities matched the target selector, please be more specific", false);
+            return CommandResult.Message("Multiple entities matched the target selector, please be more specific", false);
         }
 
         if (target.Entities.Length == 1)
@@ -85,24 +87,13 @@ public class GamemodeCommand : Command
             if (target.Entities[0] is Player player)
             {
                 player.SetGamemode(gm);
-                player.SendMessage("§7Your game mode has been changed to §a" + gamemode?.Value);
-                return CommandResult.Message($"§7Set §a{player.Username}'s §7game mode to §a{gamemode?.Value}§7.", true);
+                player.SendMessage("Your game mode has been changed to " + gamemode?.Value);
+                return CommandResult.Message($"Set {player.Username}'s game mode to {gamemode?.Value}.", true);
             }
 
-            return CommandResult.Message("§cThe target selector must be a player!", false);
+            return CommandResult.Message("The target selector must be a player!", false);
         }
 
-        if (target.OfflineUsernames.Length == 1)
-        {
-            string username = target.OfflineUsernames[0];
-            if (!OfflinePlayerActions.TrySetGamemode(state.Server.GetWorld(), username, gm))
-            {
-                return CommandResult.Message("§cNo players matched the target selector", false);
-            }
-
-            return CommandResult.Message($"§7Set §a{username}'s §7game mode to §a{gamemode?.Value}§7.", true);
-        }
-
-        return CommandResult.Message("§cNo entities matched the target selector", false);
+        return CommandResult.Message("No online entities matched the target selector", false);
     }
 }

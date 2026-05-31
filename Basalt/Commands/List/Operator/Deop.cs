@@ -1,7 +1,6 @@
-using Basalt.Commands;
-using Basalt.Core;
+namespace Basalt.Server.Commands.List.Operator;
 
-namespace Basalt.Commands.List.Operator;
+using Basalt.Server.Commands;
 
 public class DeopCommand : Command
 {
@@ -21,21 +20,17 @@ public class DeopCommand : Command
             return CommandResult.Empty(false);
         }
 
-        if (target.Entities.Length > 1 || target.OfflineUsernames.Length > 1)
+        if (target.Entities.Length > 1)
         {
-            return CommandResult.Message("§cMultiple players matched the target selector, please be more specific", false);
+            return CommandResult.Message("Multiple players matched the target selector, please be more specific", false);
         }
 
-        if (target.Entities.Length == 1 && target.Entities[0] is Player player)
+        if (target.Entities.Length == 1 && target.Entities[0] is global::Basalt.Server.Player.Player player)
         {
-            return OperatorActions.RevokeOperator(state.Server, player.Username);
+            player.SetOperator(false);
+            return CommandResult.Message($"Removed {player.Username} from server operators.", true);
         }
 
-        if (target.OfflineUsernames.Length == 1)
-        {
-            return OperatorActions.RevokeOperator(state.Server, target.OfflineUsernames[0]);
-        }
-
-        return CommandResult.Message("§cNo players matched the target selector", false);
+        return CommandResult.Message("No online players matched the target selector", false);
     }
 }

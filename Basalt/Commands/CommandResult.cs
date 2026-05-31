@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public sealed class CommandResult
 {
@@ -20,3 +20,10 @@ public sealed class CommandResult
         };
     }
 }
+
+
+
+
+
+
+

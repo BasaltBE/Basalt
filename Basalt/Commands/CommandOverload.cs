@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class CommandOverload
 {
@@ -10,3 +10,10 @@ public class CommandOverload
         return this;
     }
 }
+
+
+
+
+
+
+

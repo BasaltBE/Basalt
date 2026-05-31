@@ -1,14 +1,18 @@
+namespace Basalt.Server.Commands;
+
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Core;
-using Basalt.Item;
-using EntityInstance = Basalt.Entity.Entity;
+using Basalt.Server;
+using Basalt.Server.Commands.List.Operator;
+using Basalt.Server.Item;
+using EntityInstance = Basalt.Server.Entity.Entity;
+using Player = global::Basalt.Server.Player.Player;
+using ServerInstance = global::Basalt.Server.Server;
 using ProtocolCommand = Basalt.Protocol.Types.Command;
 using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
 using ProtocolCommandOverload = Basalt.Protocol.Types.CommandOverload;
 using ProtocolCommandParameter = Basalt.Protocol.Types.CommandParameter;
 
-namespace Basalt.Commands;
 
 public class CommandRegistry
 {
@@ -24,8 +28,8 @@ public class CommandRegistry
         Register(new ClearCommand());
         Register(new GamemodeCommand());
         Register(new GiveCommand());
-        Register(new Basalt.Commands.List.Operator.OpCommand());
-        Register(new Basalt.Commands.List.Operator.DeopCommand());
+        Register(new Basalt.Server.Commands.List.Operator.OpCommand());
+        Register(new Basalt.Server.Commands.List.Operator.DeopCommand());
     }
 
     public void Register(Command command)
@@ -57,17 +61,17 @@ public class CommandRegistry
         throw new KeyNotFoundException($"Command '{name}' was not found.");
     }
 
-    public CommandResult Execute(Server server, Player player, string commandLine)
+    public CommandResult Execute(ServerInstance server, Player player, string commandLine)
     {
         return Execute(server, new PlayerExecutor { Player = player }, player, commandLine);
     }
 
-    public CommandResult Execute(Server server, string commandLine)
+    public CommandResult Execute(ServerInstance server, string commandLine)
     {
         return Execute(server, new ServerExecutor(), null, commandLine);
     }
 
-    CommandResult Execute(Server server, ICommandExecutor executor, Player? player, string commandLine)
+    CommandResult Execute(ServerInstance server, ICommandExecutor executor, Player? player, string commandLine)
     {
         string[] tokens = commandLine.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (tokens.Length == 0)
@@ -83,7 +87,19 @@ public class CommandRegistry
 
         if (command.Permissions.Count > 0 && executor is PlayerExecutor playerExecutor)
         {
-            if (!server.GetWorld().Operators.IsOperator(playerExecutor.Player.Xuid))
+            bool allowed = false;
+            for (int i = 0; i < command.Permissions.Count; i++)
+            {
+                if (!playerExecutor.Player.HasPermission(command.Permissions[i]))
+                {
+                    continue;
+                }
+
+                allowed = true;
+                break;
+            }
+
+            if (!allowed)
             {
                 return CommandResult.Message("§cYou do not have permission to run this command.", false);
             }
@@ -134,7 +150,7 @@ public class CommandRegistry
         return target.Execute(state);
     }
 
-    static CommandEnum ParseArgument(Server server, Player? player, CommandParameter parameter, string token)
+    static CommandEnum ParseArgument(ServerInstance server, Player? player, CommandParameter parameter, string token)
     {
         if (parameter.Enum == typeof(IntEnum))
         {
@@ -185,7 +201,7 @@ public class CommandRegistry
         throw new InvalidOperationException($"Unsupported command parameter enum: {parameter.Enum.FullName}.");
     }
 
-    static EntityInstance[] ResolveTargets(Server server, Player? player, string token)
+    static EntityInstance[] ResolveTargets(ServerInstance server, Player? player, string token)
     {
         if (token == "@s")
         {
@@ -245,17 +261,14 @@ public class CommandRegistry
         return [];
     }
 
-    static string[] ResolveOfflineTargets(Server server, string token, EntityInstance[] onlineTargets)
+    static string[] ResolveOfflineTargets(ServerInstance server, string token, EntityInstance[] onlineTargets)
     {
         if (onlineTargets.Length > 0 || token.StartsWith('@'))
         {
             return [];
         }
 
-        if (server.GetWorld().PlayerProfiles.TryGetXuid(token, out _))
-        {
-            return [token];
-        }
+        
 
         return [];
     }
@@ -474,3 +487,11 @@ public class CommandRegistry
         return offset;
     }
 }
+
+
+
+
+
+
+
+

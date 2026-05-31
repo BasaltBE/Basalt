@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public abstract class CommandEnum
 {
@@ -12,3 +12,10 @@ public abstract class CommandEnum
         Options = options;
     }
 }
+
+
+
+
+
+
+

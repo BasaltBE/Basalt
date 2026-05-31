@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class SubCommand : Command
 {
@@ -8,3 +8,10 @@ public class SubCommand : Command
         string description
     ) : base(name, description) { }
 }
+
+
+
+
+
+
+

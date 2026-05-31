@@ -1,6 +1,9 @@
-using Basalt.Core;
+namespace Basalt.Server.Commands;
 
-namespace Basalt.Commands;
+using Basalt.Server;
+using Player = global::Basalt.Server.Player.Player;
+using ServerInstance = global::Basalt.Server.Server;
+
 
 public interface ICommandExecutor { }
 
@@ -37,7 +40,7 @@ public sealed class CommandExecutionState
 
     public required ICommandExecutor Executor { get; init; }
 
-    public required Server Server { get; init; }
+    public required ServerInstance Server { get; init; }
 
     public CommandOverload? Overload;
 
@@ -78,3 +81,10 @@ public sealed class CommandExecutionState
         throw new KeyNotFoundException($"Command argument '{name}' was not registered.");
     }
 }
+
+
+
+
+
+
+

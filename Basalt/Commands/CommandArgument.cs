@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class CommandArgument
 {
@@ -12,3 +12,10 @@ public class CommandArgument
         Value = value;
     }
 }
+
+
+
+
+
+
+

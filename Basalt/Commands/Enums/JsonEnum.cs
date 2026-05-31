@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class JsonEnum : CommandEnum
 {
@@ -11,3 +11,10 @@ public class JsonEnum : CommandEnum
         Value = value;
     }
 }
+
+
+
+
+
+
+

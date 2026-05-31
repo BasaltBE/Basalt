@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class CommandParameter
 {
@@ -15,3 +15,10 @@ public class CommandParameter
         Required = required;
     }
 }
+
+
+
+
+
+
+

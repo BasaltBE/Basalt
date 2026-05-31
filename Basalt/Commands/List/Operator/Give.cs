@@ -1,7 +1,10 @@
-using Basalt.Commands;
-using Basalt.Core;
-using Basalt.Entity.Traits;
-using Basalt.Item;
+namespace Basalt.Server.Commands.List.Operator;
+
+using Basalt.Server.Commands;
+using Basalt.Server;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Item;
+using Player = global::Basalt.Server.Player.Player;
 
 public class GiveCommand : Command
 {
@@ -126,3 +129,10 @@ public class GiveCommand : Command
         return given;
     }
 }
+
+
+
+
+
+
+

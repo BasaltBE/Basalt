@@ -1,6 +1,7 @@
-using Basalt.Item;
+namespace Basalt.Server.Commands;
 
-namespace Basalt.Commands;
+using Basalt.Server.Item;
+
 
 public class ItemEnum : CommandEnum
 {
@@ -32,3 +33,10 @@ public class ItemEnum : CommandEnum
         return identifier[VanillaPrefix.Length..];
     }
 }
+
+
+
+
+
+
+

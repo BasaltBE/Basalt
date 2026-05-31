@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class Command
 {
@@ -89,3 +89,10 @@ public class Command
         return CommandResult.Empty(false);
     }
 }
+
+
+
+
+
+
+

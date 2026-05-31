@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public class StringEnum : CommandEnum
 {
@@ -11,3 +11,10 @@ public class StringEnum : CommandEnum
         Value = value;
     }
 }
+
+
+
+
+
+
+

@@ -1,7 +1,10 @@
-using Basalt.Commands;
-using Basalt.Core;
-using Basalt.Entity;
-using Basalt.Entity.Traits;
+namespace Basalt.Server.Commands.List.Operator;
+
+using Basalt.Server.Commands;
+using Basalt.Server;
+using Basalt.Server.Entity;
+using Basalt.Server.Entity.Traits;
+using Player = global::Basalt.Server.Player.Player;
 
 
 public class ClearCommand : Command
@@ -57,3 +60,9 @@ public class ClearCommand : Command
         return CommandResult.Message($"§7Cleared §a{size} §7items from §a{name}'s inventory", true);
     }
 }
+
+
+
+
+
+

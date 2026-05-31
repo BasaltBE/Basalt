@@ -1,4 +1,4 @@
-namespace Basalt.Commands;
+namespace Basalt.Server.Commands;
 
 public abstract class CustomEnum : CommandEnum
 {
@@ -30,3 +30,10 @@ public abstract class CustomEnum : CommandEnum
         throw new InvalidOperationException($"Command enum '{type.FullName}' must define static string[] Values.");
     }
 }
+
+
+
+
+
+
+

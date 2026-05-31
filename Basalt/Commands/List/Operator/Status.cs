@@ -1,4 +1,6 @@
-using Basalt.Commands;
+namespace Basalt.Server.Commands.List.Operator;
+
+using Basalt.Server.Commands;
 
 public class StatusCommand : Command
 {
@@ -38,3 +40,10 @@ public class StatusCommand : Command
         return CommandResult.Message(message, true);
     }
 }
+
+
+
+
+
+
+
