@@ -1,6 +1,6 @@
-using Basalt.Core;
+namespace Basalt.Server.Events;
 
-namespace Basalt.Events;
+using Basalt.Server.Player;
 
 public abstract class PlayerSignal : EntitySignal
 {
@@ -11,3 +11,9 @@ public abstract class PlayerSignal : EntitySignal
         Player = player;
     }
 }
+
+
+
+
+
+

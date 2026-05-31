@@ -1,6 +1,6 @@
-using Basalt.Core;
+namespace Basalt.Server.Events;
 
-namespace Basalt.Events;
+using Basalt.Server.Player;
 
 public sealed class PlayerJoinSignal : PlayerSignal
 {
@@ -21,3 +21,9 @@ public sealed class PlayerJoinSignal : PlayerSignal
         Cancelled = true;
     }
 }
+
+
+
+
+
+

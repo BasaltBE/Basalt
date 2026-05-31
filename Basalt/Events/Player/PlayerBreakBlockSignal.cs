@@ -1,7 +1,8 @@
-using Basalt.Core;
+namespace Basalt.Server.Events;
+
+using Basalt.Server.Player;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Events;
 
 public sealed class PlayerBreakBlockSignal : PlayerSignal
 {
@@ -26,3 +27,9 @@ public sealed class PlayerBreakBlockSignal : PlayerSignal
         Cancelled = true;
     }
 }
+
+
+
+
+
+

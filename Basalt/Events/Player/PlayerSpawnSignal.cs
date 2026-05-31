@@ -1,7 +1,7 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.Types;
+using Basalt.Server.Player;
+using Basalt.Server.Entity.Traits.Types;
 
-namespace Basalt.Events;
+namespace Basalt.Server.Events;
 
 public sealed class PlayerSpawnSignal : PlayerSignal
 {
@@ -9,7 +9,7 @@ public sealed class PlayerSpawnSignal : PlayerSignal
     public EntitySpawnOptions Options;
     public bool Cancelled;
 
-    public PlayerSpawnSignal(Player player, EntitySpawnOptions options) : base(player)
+    public PlayerSpawnSignal(Player.Player player, EntitySpawnOptions options) : base(player)
     {
         Options = options;
     }
@@ -24,3 +24,9 @@ public sealed class PlayerSpawnSignal : PlayerSignal
         Cancelled = true;
     }
 }
+
+
+
+
+
+

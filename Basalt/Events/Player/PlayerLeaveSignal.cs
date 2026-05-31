@@ -1,7 +1,7 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.Types;
+namespace Basalt.Server.Events;
 
-namespace Basalt.Events;
+using Basalt.Server.Player;
+using Basalt.Server.Entity.Traits.Types;
 
 public sealed class PlayerLeaveSignal : PlayerSignal
 {
@@ -13,3 +13,9 @@ public sealed class PlayerLeaveSignal : PlayerSignal
         Options = options;
     }
 }
+
+
+
+
+
+

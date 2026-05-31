@@ -1,15 +1,15 @@
-using Basalt.Entity;
-using Basalt.Entity.Traits.Types;
+namespace Basalt.Server.Events;
 
-namespace Basalt.Events;
+using Basalt.Server.Entity;
+using Basalt.Server.Entity.Traits.Types;
 
 public sealed class EntityDieSignal : EntitySignal
 {
     public override ServerEvent Event => ServerEvent.EntityDie;
-    public global::Basalt.Entity.Entity Entity { get; }
+    public Entity Entity { get; }
     public EntityDeathOptions Options;
 
-    public EntityDieSignal(global::Basalt.Entity.Entity entity, EntityDeathOptions options)
+    public EntityDieSignal(Entity entity, EntityDeathOptions options)
     {
         Entity = entity;
         Options = options;
@@ -25,3 +25,9 @@ public sealed class EntityDieSignal : EntitySignal
         Options = Options with { Cancel = true };
     }
 }
+
+
+
+
+
+

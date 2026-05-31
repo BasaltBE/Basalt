@@ -1,18 +1,18 @@
-using Basalt.Entity;
-using Basalt.Protocol.Enums;
+namespace Basalt.Server.Events;
 
-namespace Basalt.Events;
+using Basalt.Protocol.Enums;
+using Entity = Entity.Entity;
 
 public sealed class EntityHurtSignal : EntitySignal
 {
     public override ServerEvent Event => ServerEvent.EntityHurt;
-    public global::Basalt.Entity.Entity Entity { get; }
+    public global::Basalt.Server.Entity.Entity Entity { get; }
     public float Amount;
     public ActorDamageCause? Cause { get; }
-    public global::Basalt.Entity.Entity? Damager { get; }
+    public global::Basalt.Server.Entity.Entity? Damager { get; }
     public bool Cancelled;
 
-    public EntityHurtSignal(global::Basalt.Entity.Entity entity, float amount, ActorDamageCause? cause, global::Basalt.Entity.Entity? damager)
+    public EntityHurtSignal(Entity entity, float amount, ActorDamageCause? cause, Entity? damager)
     {
         Entity = entity;
         Amount = amount;
@@ -30,3 +30,9 @@ public sealed class EntityHurtSignal : EntitySignal
         Cancelled = true;
     }
 }
+
+
+
+
+
+
