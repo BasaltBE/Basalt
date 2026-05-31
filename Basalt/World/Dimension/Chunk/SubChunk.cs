@@ -1,7 +1,7 @@
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.World.Dimension.Chunk;
+namespace Basalt.Server.World.Dimension.Chunk;
 
 public sealed class SubChunk
 {
@@ -115,3 +115,10 @@ public sealed class SubChunk
         return Deserialize(reader, nbt);
     }
 }
+
+
+
+
+
+
+

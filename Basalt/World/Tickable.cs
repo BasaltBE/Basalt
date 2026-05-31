@@ -1,4 +1,4 @@
-namespace Basalt.World;
+namespace Basalt.Server.World;
 
 /// <summary>
 /// This will be used for measuring tick times and current ticks.
@@ -15,3 +15,10 @@ public interface Tickable
     /// </summary>
     double TickWork { get; set; }
 }
+
+
+
+
+
+
+

@@ -1,13 +1,15 @@
-using Basalt.Block;
+namespace Basalt.Server.World.Dimension;
+
+using Basalt.Server.Block;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using Basalt.World.Dimension.Generation;
-using Basalt.World.Dimension.Provider;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using Basalt.Server.World.Dimension.Generation;
+using Basalt.Server.World.Dimension.Provider;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.World.Dimension;
+using Entity = Basalt.Server.Entity.Entity;
 
 public sealed class Dimension : IDisposable
 {
@@ -34,15 +36,15 @@ public sealed class Dimension : IDisposable
     /// <summary>
     /// A list of entities
     /// </summary>
-    private readonly HashSet<global::Basalt.Entity.Entity> _entities;
+    private readonly HashSet<Entity> _entities;
 
     /// <summary>
     ///  A list of chunks to sweep
     /// </summary>
     private readonly List<long> _chunkSweepBuffer = [];
-    
-    private readonly HashSet<global::Basalt.Entity.Entity> _pendingEntityAdds = [];
-    private readonly HashSet<global::Basalt.Entity.Entity> _pendingEntityRemoves = [];
+
+    private readonly HashSet<Entity> _pendingEntityAdds = [];
+    private readonly HashSet<Entity> _pendingEntityRemoves = [];
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
     private bool _tickingEntities;
@@ -50,8 +52,8 @@ public sealed class Dimension : IDisposable
     public string Identifier { get; }
     public DimensionType Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
-    public global::Basalt.World.World? World { get; internal set; }
-    public global::Basalt.World.DimensionGameRules Gamerules { get; } = new();
+    public global::Basalt.Server.World.World? World { get; internal set; }
+    public global::Basalt.Server.World.DimensionGameRules Gamerules { get; } = new();
 
     public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null)
     {
@@ -66,7 +68,7 @@ public sealed class Dimension : IDisposable
 
     public int ChunkCount => _chunks.Count;
     public int ChunkViewerCount => _chunkViewers.Count;
-    public IReadOnlyCollection<global::Basalt.Entity.Entity> Entities => _entities;
+    public IReadOnlyCollection<Entity> Entities => _entities;
 
     public bool HasChunk(int x, int z)
     {
@@ -248,10 +250,10 @@ public sealed class Dimension : IDisposable
         BlockPos position = new() { X = x, Y = y, Z = z };
         if (permutation.Type.Traits.Count > 0)
         {
-            global::Basalt.Block.Block? block = chunk.GetBlockActor(position);
+            global::Basalt.Server.Block.Block? block = chunk.GetBlockActor(position);
             if (block is null)
             {
-                block = new global::Basalt.Block.Block(permutation);
+                block = new global::Basalt.Server.Block.Block(permutation);
                 chunk.SetBlockActor(position, block);
             }
             else
@@ -269,7 +271,7 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    public global::Basalt.Block.Block? GetBlock(int x, int y, int z)
+    public global::Basalt.Server.Block.Block? GetBlock(int x, int y, int z)
     {
         ChunkColumn? chunk = GetChunk(x >> 4, z >> 4);
         if (chunk is null)
@@ -278,7 +280,7 @@ public sealed class Dimension : IDisposable
         }
 
         BlockPos position = new() { X = x, Y = y, Z = z };
-        global::Basalt.Block.Block? block = chunk.GetBlockActor(position);
+        global::Basalt.Server.Block.Block? block = chunk.GetBlockActor(position);
         if (block is not null)
         {
             return block;
@@ -287,7 +289,7 @@ public sealed class Dimension : IDisposable
         BlockPermutation perm = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z));
         if (perm.Type.Traits.Count > 0)
         {
-            block = new global::Basalt.Block.Block(perm);
+            block = new global::Basalt.Server.Block.Block(perm);
             BlockLevelStorage? storage = chunk.GetBlockStorage(position);
             if (storage is not null)
             {
@@ -301,7 +303,7 @@ public sealed class Dimension : IDisposable
         return null;
     }
 
-    public void SetBlock(int x, int y, int z, global::Basalt.Block.Block block)
+    public void SetBlock(int x, int y, int z, global::Basalt.Server.Block.Block block)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
         chunk.SetBlockActor(new BlockPos { X = x, Y = y, Z = z }, block);
@@ -349,7 +351,7 @@ public sealed class Dimension : IDisposable
         }
 
         _tickingEntities = true;
-        foreach (global::Basalt.Entity.Entity entity in _entities)
+        foreach (Entity entity in _entities)
         {
             if (entity.PendingDespawn || entity.Dimension != this)
             {
@@ -366,7 +368,7 @@ public sealed class Dimension : IDisposable
 
     public void Broadcast(DataPacket packet, BroadcastOptions? options = null)
     {
-        if (World?.Server is not Core.Server server)
+        if (World?.Server is not global::Basalt.Server.Server server)
         {
             return;
         }
@@ -405,7 +407,7 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    internal void AddEntity(global::Basalt.Entity.Entity entity)
+    internal void AddEntity(Entity entity)
     {
         if (_tickingEntities)
         {
@@ -417,7 +419,7 @@ public sealed class Dimension : IDisposable
         _entities.Add(entity);
     }
 
-    internal void RemoveEntity(global::Basalt.Entity.Entity entity)
+    internal void RemoveEntity(Entity entity)
     {
         if (_tickingEntities)
         {
@@ -461,7 +463,7 @@ public sealed class Dimension : IDisposable
     {
         if (_pendingEntityRemoves.Count > 0)
         {
-            foreach (global::Basalt.Entity.Entity entity in _pendingEntityRemoves)
+            foreach (Entity entity in _pendingEntityRemoves)
             {
                 entity.CompleteDespawn();
                 _entities.Remove(entity);
@@ -472,7 +474,7 @@ public sealed class Dimension : IDisposable
 
         if (_pendingEntityAdds.Count > 0)
         {
-            foreach (global::Basalt.Entity.Entity entity in _pendingEntityAdds)
+            foreach (Entity entity in _pendingEntityAdds)
             {
                 _entities.Add(entity);
             }
@@ -498,7 +500,7 @@ public sealed class Dimension : IDisposable
 
     private static void SyncBlockActorsToStorages(ChunkColumn chunk)
     {
-        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Block.Block> actorEntry in chunk.GetAllBlockActors())
+        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Server.Block.Block> actorEntry in chunk.GetAllBlockActors())
         {
             BlockPos position = new()
             {
@@ -550,3 +552,10 @@ public sealed class Dimension : IDisposable
         return new Vec3f { X = x, Y = y, Z = z };
     }
 }
+
+
+
+
+
+
+

@@ -1,9 +1,9 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using LevelDB;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.World.Dimension.Provider;
+namespace Basalt.Server.World.Dimension.Provider;
 
 public sealed class LevelDbProvider : WorldProvider
 {
@@ -65,3 +65,10 @@ public sealed class LevelDbProvider : WorldProvider
         _database.Dispose();
     }
 }
+
+
+
+
+
+
+

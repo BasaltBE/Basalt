@@ -1,5 +1,5 @@
 using Basalt.Binary;
-using Basalt.Block;
+using Basalt.Server.Block;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
@@ -8,7 +8,7 @@ using System.Buffers;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.World.Dimension.Chunk;
+namespace Basalt.Server.World.Dimension.Chunk;
 
 public sealed class Chunk
 {
@@ -490,3 +490,10 @@ public sealed class Chunk
 
 
 }
+
+
+
+
+
+
+

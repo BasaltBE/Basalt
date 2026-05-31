@@ -1,11 +1,11 @@
 using Basalt.Protocol;
-using Basalt.Block;
+using Basalt.Server.Block;
 using Basalt.Protocol.Nbt;
 
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.World.Dimension.Chunk;
+namespace Basalt.Server.World.Dimension.Chunk;
 
 public sealed class BlockStorage
 {
@@ -191,3 +191,10 @@ public sealed class BlockStorage
         }
     }
 }
+
+
+
+
+
+
+

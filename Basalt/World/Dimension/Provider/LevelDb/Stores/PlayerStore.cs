@@ -6,7 +6,7 @@ using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.World.Dimension.Provider;
+namespace Basalt.Server.World.Dimension.Provider;
 
 internal sealed class PlayerStore
 {
@@ -117,3 +117,10 @@ internal sealed class PlayerStore
         }
     }
 }
+
+
+
+
+
+
+

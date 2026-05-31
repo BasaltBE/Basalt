@@ -1,8 +1,8 @@
-using Basalt.Block;
+using Basalt.Server.Block;
 using Basalt.Protocol.Enums;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.World.Dimension.Generation;
+namespace Basalt.Server.World.Dimension.Generation;
 
 public sealed class SuperFlatGenerator : Generator
 {
@@ -45,3 +45,10 @@ public sealed class SuperFlatGenerator : Generator
         return chunk;
     }
 }
+
+
+
+
+
+
+

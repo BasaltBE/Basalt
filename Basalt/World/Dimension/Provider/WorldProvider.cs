@@ -1,8 +1,8 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.World.Dimension.Provider;
+namespace Basalt.Server.World.Dimension.Provider;
 
 public abstract class WorldProvider : IDisposable
 {   
@@ -43,3 +43,10 @@ public abstract class WorldProvider : IDisposable
         return ((long)x << 32) | (uint)z;
     }
 }
+
+
+
+
+
+
+

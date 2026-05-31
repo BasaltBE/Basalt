@@ -3,7 +3,7 @@ using System.Text;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
-namespace Basalt.World.Dimension.Provider;
+namespace Basalt.Server.World.Dimension.Provider;
 
 internal static class LevelDbKeyBuilder
 {
@@ -138,3 +138,10 @@ internal static class LevelDbKeyBuilder
         BinaryPrimitives.WriteInt64LittleEndian(key[1..9], uniqueId);
     }
 }
+
+
+
+
+
+
+

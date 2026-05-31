@@ -1,10 +1,9 @@
-using Basalt.Core;
-using Basalt.Protocol.Enums;
-using Basalt.World.Dimension.Generation;
-using Basalt.World.Dimension.Provider;
-using DimensionInstance = Basalt.World.Dimension.Dimension;
+namespace Basalt.Server.World;
 
-namespace Basalt.World;
+using Basalt.Protocol.Enums;
+using Basalt.Server.World.Dimension.Generation;
+using Basalt.Server.World.Dimension.Provider;
+using DimensionInstance = Basalt.Server.World.Dimension.Dimension;
 
 public sealed class World : IDisposable, Tickable
 {
@@ -24,7 +23,7 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// The Server instance.
     /// </summary>
-    public Server? Server { get; internal set; }
+    public global::Basalt.Server.Server? Server { get; internal set; }
 
     /// <summary>
     /// The current tick value.
@@ -47,16 +46,6 @@ public sealed class World : IDisposable, Tickable
     public IEnumerable<DimensionInstance> Dimensions => _dimensions.Values;
 
     /// <summary>
-    /// Persisted operator list for this world.
-    /// </summary>
-    public WorldOperators Operators { get; private set; } = null!;
-
-    /// <summary>
-    /// Index and helpers for offline player profiles.
-    /// </summary>
-    public PlayerProfileStore PlayerProfiles { get; private set; } = null!;
-
-    /// <summary>
     /// Creates a new world.
     /// </summary>
     /// <param name="name"></param>
@@ -69,10 +58,6 @@ public sealed class World : IDisposable, Tickable
 
     public void ConfigurePersistence(string dataPath)
     {
-        Operators = new WorldOperators(Path.Combine(dataPath, "ops.json"));
-        Operators.Load();
-        PlayerProfiles = new PlayerProfileStore(Provider);
-        PlayerProfiles.RebuildIndex();
     }
 
     /// <summary>
@@ -162,3 +147,9 @@ public sealed class World : IDisposable, Tickable
         Provider.Dispose();
     }
 }
+
+
+
+
+
+
