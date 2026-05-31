@@ -26,7 +26,10 @@
         "RakNet/obj": true,
         "Client/obj": true,
         "Waterfall/obj": true,
-        "Waterfall/bin": true
+        "Waterfall/bin": true,
+        "Basalt/.tmp_build_verify": true,
+        "Basalt/.tmp": true,
+        "Basalt/Basalt.csproj.lscache": true
     },
     "hide-files.files": [
         "Basalt/obj",
@@ -50,6 +53,9 @@
         "RakNet/obj",
         "Client/obj",
         "Waterfall/obj",
-        "Waterfall/bin"
+        "Waterfall/bin",
+        "Basalt/.tmp_build_verify",
+        "Basalt/.tmp",
+        "Basalt/Basalt.csproj.lscache"
     ]
 }

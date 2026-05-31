@@ -1,17 +1,18 @@
-using Basalt.Commands;
-using Basalt.Network;
+namespace Basalt.Server;
+
+using System.Diagnostics;
+using Basalt.Server.Commands;
+using Basalt.Server.Network;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using Basalt.World.Dimension;
-using Basalt.World.Dimension.Provider;
-using Basalt.World.Dimension.Generation;
-using Basalt.World;
-using Basalt.Events;
-using System.Diagnostics;
-using WorldInstance = Basalt.World.World;
+using Basalt.Server.Events;
+using Basalt.Server.World;
+using Basalt.Server.World.Dimension.Generation;
+using Basalt.Server.World.Dimension.Provider;
 
-namespace Basalt.Core;
+using PlayerInstance = Basalt.Server.Player.Player;
+using WorldInstance = Basalt.Server.World.World;
 
 public sealed class Server
 {
@@ -57,7 +58,7 @@ public sealed class Server
     /// <summary>
     /// Registry for players
     /// </summary>
-    public readonly Dictionary<NetworkConnection, Player> Players = new();
+    public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
     /// <summary>
     /// Registry for commands
     /// </summary>
@@ -66,10 +67,7 @@ public sealed class Server
     /// Network handler for processing minecraft packets and packet handlers
     /// </summary>
     public NetworkHandler Network { get; }
-    /// <summary>
-    /// Server options
-    /// </summary>
-    public ServerOptions Options { get; }
+    public Properties Properties { get; }
     public IEnumerable<WorldInstance> Worlds => _worlds.Values;
 
     public string DefaultWorldIdentifier { get; }
@@ -79,10 +77,10 @@ public sealed class Server
     /// </summary>
     public double Tps { get; private set; } = 20.0;
 
-    public Server(ServerOptions options = default)
+    public Server(Properties? properties = null)
     {
-        Options = options == default ? new ServerOptions() : options;
-        _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Options.Mtu));
+        Properties = properties ?? new Properties();
+        _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
 
         RegisterProvider<LevelDbProvider>("leveldb");
@@ -90,10 +88,10 @@ public sealed class Server
         RegisterGenerator<VoidGenerator>("void");
         RegisterGenerator<SuperFlatGenerator>("superflat");
 
-        DefaultWorldIdentifier = Options.DefaultWorldIdentifier;
-        WorldInstance defaultWorld = Options.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
-            ? CreateWorld(DefaultWorldIdentifier, Options.WorldProvider)
-            : CreateWorld(DefaultWorldIdentifier, Options.WorldProvider, Options.WorldPath);
+        DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
+        WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
+            ? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
+            : CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath);
 
         if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType))
         {
@@ -101,7 +99,7 @@ public sealed class Server
         }
 
         defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
-        defaultWorld.ConfigurePersistence(Options.WorldPath);
+        defaultWorld.ConfigurePersistence(Properties.WorldPath);
 
         Commands.RegisterDefaultCommands();
     }
@@ -166,7 +164,7 @@ public sealed class Server
         };
 
         Emit(new ServerStartSignal());
-        Logger.Info("Basalt listening on 0.0.0.0:19132");
+        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port}");
     }
 
     public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal
@@ -350,9 +348,9 @@ public sealed class Server
         return (deadlineTimestamp - timestamp) * 1000.0 / Stopwatch.Frequency;
     }
 
-    public void Broadcast(DataPacket packet, params Player[]? exclude)
+    public void Broadcast(DataPacket packet, params PlayerInstance[]? exclude)
     {
-        foreach ((NetworkConnection connection, Player player) in Players)
+        foreach ((NetworkConnection connection, PlayerInstance player) in Players)
         {
             if (exclude is not null)
             {
@@ -376,3 +374,10 @@ public sealed class Server
         }
     }
 }
+
+
+
+
+
+
+
