@@ -59,7 +59,7 @@ public class CommandRegistry
             return command;
         }
 
-        throw new KeyNotFoundException($"Command '{name}' was not found.");
+        throw new KeyNotFoundException($"Could not find command '{name}'.");
     }
 
     public CommandResult Execute(ServerInstance server, Player player, string commandLine)
@@ -81,7 +81,11 @@ public class CommandRegistry
         }
 
         string commandName = tokens[0].TrimStart('/');
-        Command command = Get(commandName);
+        if (!_commands.TryGetValue(commandName, out Command? command))
+        {
+            return CommandResult.Message($"§cCommand '{commandName}' was not found.", false);
+        }
+
         Command target = command;
         CommandOverload overload = command.Overload;
         int argumentOffset = 1;
