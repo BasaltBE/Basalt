@@ -11,25 +11,32 @@ public static class ConsoleInterface
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? line = System.Console.ReadLine();
-                if (line is null)
+                try
                 {
-                    continue;
-                }
+                    string? line = System.Console.ReadLine();
+                    if (line is null)
+                    {
+                        continue;
+                    }
 
-                string[] tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (tokens.Length == 0)
+                    string[] tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (tokens.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    if (tokens[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
+                    {
+                        requestShutdown();
+                        return;
+                    }
+
+                    HandleResult(server.Commands.Execute(server, line));
+                }
+                catch (Exception ex)
                 {
-                    continue;
+                    Logger.Err(ex.ToString());
                 }
-
-                if (tokens[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
-                {
-                    requestShutdown();
-                    return;
-                }
-
-                HandleResult(server.Commands.Execute(server, line));
             }
         }, cancellationToken);
     }
@@ -38,7 +45,7 @@ public static class ConsoleInterface
     {
         for (int i = 0; i < result.Messages.Count; i++)
         {
-            Logger.Info(result.Messages[i]);
+            Logger.Chat(result.Messages[i]);
         }
     }
 }
