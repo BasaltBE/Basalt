@@ -1,10 +1,11 @@
-using Basalt.Core;
-using Basalt.Item;
+namespace Basalt.Server.Containers;
+
+using Basalt.Server.Item;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Containers;
+using Player = Player.Player;
 
 public class Container
 {
@@ -624,3 +625,9 @@ public class Container
         };
     }
 }
+
+
+
+
+
+

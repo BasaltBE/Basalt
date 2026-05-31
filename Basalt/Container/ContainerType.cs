@@ -1,8 +1,8 @@
-namespace Basalt.Containers;
+namespace Basalt.Server.Containers;
 
 public enum ContainerType
 {
-     None = -9,
+  None = -9,
   Inventory = -1,
   Container = 0,
   Workbench = 1,
@@ -42,3 +42,9 @@ public enum ContainerType
   DecoratedPot = 35,
   Crafter = 36
 }
+
+
+
+
+
+
