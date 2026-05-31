@@ -28,8 +28,9 @@ public class CommandRegistry
         Register(new ClearCommand());
         Register(new GamemodeCommand());
         Register(new GiveCommand());
-        Register(new Basalt.Server.Commands.List.Operator.OpCommand());
-        Register(new Basalt.Server.Commands.List.Operator.DeopCommand());
+        Register(new OpCommand());
+        Register(new DeopCommand());
+        Register(new ListCommand());
     }
 
     public void Register(Command command)
@@ -268,7 +269,7 @@ public class CommandRegistry
             return [];
         }
 
-        
+
 
         return [];
     }
