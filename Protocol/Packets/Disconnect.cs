@@ -28,13 +28,21 @@ public sealed record DisconnectPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        Reason = (DisconnectReason)reader.ReadVarInt();
+        Reason = (DisconnectReason)reader.ReadVarUInt();
         HideDisconnectionScreen = reader.ReadBool();
 
         if (!HideDisconnectionScreen)
         {
             Message = reader.ReadVarString();
-            FilteredMessage = reader.ReadVarString();
+            if (reader.Remaining > 0)
+            {
+                bool hasFilteredMessage = reader.ReadBool();
+                FilteredMessage = hasFilteredMessage ? reader.ReadVarString() : Message;
+            }
+            else
+            {
+                FilteredMessage = Message;
+            }
         }
         else
         {
@@ -45,13 +53,19 @@ public sealed record DisconnectPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt((int)Reason);
+        writer.WriteVarUInt((uint)Reason);
         writer.WriteBool(HideDisconnectionScreen);
 
         if (!HideDisconnectionScreen)
         {
             writer.WriteVarString(Message);
-            writer.WriteVarString(FilteredMessage);
+            bool hasFilteredMessage = !string.IsNullOrEmpty(FilteredMessage) &&
+                                      !string.Equals(FilteredMessage, Message, StringComparison.Ordinal);
+            writer.WriteBool(hasFilteredMessage);
+            if (hasFilteredMessage)
+            {
+                writer.WriteVarString(FilteredMessage);
+            }
         }
     }
 }

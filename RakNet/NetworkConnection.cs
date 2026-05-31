@@ -228,9 +228,9 @@ public abstract class NetworkConnection
         }
     }
 
-    public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered)
+    public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered, bool immediate = false)
     {
-        SendPayload(payload, reliability);
+        SendPayload(payload, reliability, immediate: immediate);
     }
 
     protected void SendPayload(
