@@ -1,4 +1,4 @@
-namespace Basalt.Block.Types;
+namespace Basalt.Server.Block.Types;
 
 public readonly struct BlockStateValue
 {
@@ -45,3 +45,10 @@ public readonly struct BlockStateValue
 }
 
 public sealed class BlockState : Dictionary<string, BlockStateValue>;
+
+
+
+
+
+
+

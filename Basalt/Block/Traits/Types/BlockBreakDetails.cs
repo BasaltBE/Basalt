@@ -1,6 +1,14 @@
+namespace Basalt.Server.Block.Traits.Types;
+
 using Basalt.Core;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Block.Traits.Types;
 
-public readonly record struct BlockBreakDetails(Player Player, BlockPos BlockPosition);
+public readonly record struct BlockBreakDetails(Player.Player Player, BlockPos BlockPosition);
+
+
+
+
+
+
+

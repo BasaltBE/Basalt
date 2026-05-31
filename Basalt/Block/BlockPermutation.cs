@@ -1,10 +1,11 @@
-using Basalt.Block.Types;
+namespace Basalt.Server.Block;
+
+using Basalt.Server.Block.Types;
 using Basalt.Protocol.Nbt;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Basalt.Block;
 
 public sealed class BlockPermutation
 {
@@ -260,3 +261,10 @@ public sealed class BlockPermutation
         hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
     }
 }
+
+
+
+
+
+
+

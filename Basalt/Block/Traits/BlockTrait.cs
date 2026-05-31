@@ -1,8 +1,9 @@
+namespace Basalt.Server.Block.Traits;
+
 using System.Reflection;
 using Basalt.Protocol.Nbt;
-using Basalt.Block.Traits.Types;
+using Basalt.Server.Block.Traits.Types;
 
-namespace Basalt.Block.Traits;
 
 public abstract class BlockTrait
 {
@@ -11,7 +12,7 @@ public abstract class BlockTrait
     public static readonly Type? Component = null;
     public static readonly Type[] Components = [];
 
-    protected Basalt.Block.Block Block { get; }
+    protected Basalt.Server.Block.Block Block { get; }
     public virtual string Identifier
     {
         get
@@ -28,7 +29,7 @@ public abstract class BlockTrait
         }
     }
 
-    protected BlockTrait(Basalt.Block.Block block)
+    protected BlockTrait(Basalt.Server.Block.Block block)
     {
         Block = block;
     }
@@ -73,7 +74,14 @@ public abstract class BlockTrait
     {
     }
 
-    public virtual void OnRender(Core.Player player, int x, int y, int z)
+    public virtual void OnRender(Player.Player player, int x, int y, int z)
     {
     }
 }
+
+
+
+
+
+
+

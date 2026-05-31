@@ -1,7 +1,8 @@
-using Basalt.Block.Types;
-using Basalt.Block.Traits;
+namespace Basalt.Server.Block;
 
-namespace Basalt.Block;
+using Basalt.Server.Block.Types;
+using Basalt.Server.Block.Traits;
+
 
 public sealed class BlockType
 {
@@ -164,3 +165,10 @@ public sealed class BlockType
         return builder.ToString();
     }
 }
+
+
+
+
+
+
+

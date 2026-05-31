@@ -1,12 +1,13 @@
+namespace Basalt.Server.Block;
+
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Block;
 
 [Tag(TagType.Compound)]
 public sealed class BlockLevelStorage : CompoundTag
@@ -290,3 +291,10 @@ public sealed class BlockLevelStorage : CompoundTag
         }
     }
 }
+
+
+
+
+
+
+

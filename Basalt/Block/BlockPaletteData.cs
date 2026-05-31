@@ -1,6 +1,7 @@
+namespace Basalt.Server.Block;
+
 using System.Text.Json.Serialization;
 
-namespace Basalt.Block;
 
 public sealed class BlockTypeData
 {
@@ -45,3 +46,10 @@ public sealed class BlockMetadataData
 internal partial class BlockPaletteJsonContext : JsonSerializerContext
 {
 }
+
+
+
+
+
+
+

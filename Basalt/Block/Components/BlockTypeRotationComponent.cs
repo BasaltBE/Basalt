@@ -1,6 +1,7 @@
-using Basalt.Block.Traits.Types;
+namespace Basalt.Server.Block.Components;
 
-namespace Basalt.Block.Components;
+using Basalt.Server.Block.Traits.Types;
+
 
 public sealed class BlockTypeRotationComponent : BlockTypeComponent
 {
@@ -39,3 +40,10 @@ public sealed class BlockTypeRotationComponent : BlockTypeComponent
         return normalized;
     }
 }
+
+
+
+
+
+
+

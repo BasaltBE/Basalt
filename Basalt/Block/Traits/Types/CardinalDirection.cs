@@ -1,4 +1,4 @@
-namespace Basalt.Block.Traits.Types;
+namespace Basalt.Server.Block.Traits.Types;
 
 public enum CardinalDirection
 {
@@ -7,3 +7,10 @@ public enum CardinalDirection
     South = 2,
     North = 3
 }
+
+
+
+
+
+
+

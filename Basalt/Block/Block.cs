@@ -1,8 +1,9 @@
-using Basalt.Protocol.Nbt;
-using Basalt.Block.Traits;
-using Basalt.Block.Traits.Types;
+namespace Basalt.Server.Block;
 
-namespace Basalt.Block;
+using Basalt.Protocol.Nbt;
+using Basalt.Server.Block.Traits;
+using Basalt.Server.Block.Traits.Types;
+
 
 public sealed class Block
 {
@@ -124,7 +125,7 @@ public sealed class Block
         }
     }
 
-    public void OnRender(Core.Player player, int x, int y, int z)
+    public void OnRender(Player.Player player, int x, int y, int z)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -168,7 +169,15 @@ public sealed class Block
     public void ReadTraits(CompoundTag nbt)
     {
         ListTag? traitsTag = nbt.Get<ListTag>("traits");
-        if (traitsTag is null) return;
+        if (traitsTag is null)
+        {
+            for (int i = 0; i < _traits.Count; i++)
+            {
+                _traits[i].OnRead(nbt);
+            }
+
+            return;
+        }
 
         foreach (BaseTag tag in traitsTag.Values)
         {
@@ -196,3 +205,10 @@ public sealed class Block
         }
     }
 }
+
+
+
+
+
+
+

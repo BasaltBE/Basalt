@@ -1,14 +1,14 @@
-using Basalt.Block.Container;
-using Basalt.Block.Traits.Types;
-using Basalt.Block.Types;
-using Basalt.Containers;
-using Basalt.Item;
+namespace Basalt.Server.Block.Traits;
+
+using Basalt.Server.Block.Container;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Block.Types;
+using Basalt.Server.Item;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-
-namespace Basalt.Block.Traits;
+using Basalt.Server.Containers;
 
 public class ChestTrait : BlockTrait
 {
@@ -31,8 +31,14 @@ public class ChestTrait : BlockTrait
 
     public override void OnRead(CompoundTag tag)
     {
-        if (tag.Get<IntTag>("pairx") is { } pairX &&
-            tag.Get<IntTag>("pairz") is { } pairZ)
+        IntTag? pairX =
+            tag.Get<IntTag>("pairx") ??
+            tag.Get<IntTag>("pairX");
+        IntTag? pairZ =
+            tag.Get<IntTag>("pairz") ??
+            tag.Get<IntTag>("pairZ");
+
+        if (pairX is not null && pairZ is not null)
         {
             _pairX = pairX.Value;
             _pairZ = pairZ.Value;
@@ -165,7 +171,7 @@ public class ChestTrait : BlockTrait
                 continue;
             }
 
-            Basalt.Block.Block? neighborBlock = dimension.GetBlock(x, y, z);
+            Basalt.Server.Block.Block? neighborBlock = dimension.GetBlock(x, y, z);
             ChestTrait? neighborChest = neighborBlock?.GetTrait<ChestTrait>();
             if (neighborChest is null || neighborChest.IsPaired || !CanPairWith(neighborChest))
             {
@@ -230,7 +236,7 @@ public class ChestTrait : BlockTrait
     {
         if (_container is not null)
         {
-            foreach ((Basalt.Core.Player player, _) in _container.GetAllOccupants().ToList())
+            foreach ((Basalt.Server.Player.Player player, _) in _container.GetAllOccupants().ToList())
             {
                 _container.Close(player);
             }
@@ -239,7 +245,7 @@ public class ChestTrait : BlockTrait
         Unpair(details.Player.Dimension, details.BlockPosition.X, details.BlockPosition.Y, details.BlockPosition.Z);
     }
 
-    public override void OnRender(Core.Player player, int x, int y, int z)
+    public override void OnRender(Player.Player player, int x, int y, int z)
     {
         var dimension = player.Dimension;
         if (dimension is null)
@@ -264,26 +270,26 @@ public class ChestTrait : BlockTrait
 
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
-        // player.Send(
-        // new BlockActorDataPacket
-        // {
-        //     Position = position,
-        //     Data = storage
-        // },
-        // new UpdateBlockPacket
-        // {
-        //     Position = position,
-        //     NetworkBlockId = 0,
-        //     Flags = UpdateBlockFlagsType.None,
-        //     Layer = UpdateBlockLayerType.Normal
-        // },
-        // new UpdateBlockPacket
-        // {
-        //     Position = position,
-        //     NetworkBlockId = networkId,
-        //     Flags = UpdateBlockFlagsType.None,
-        //     Layer = UpdateBlockLayerType.Normal
-        // });
+        player.Send(
+        new BlockActorDataPacket
+        {
+            Position = position,
+            Data = storage
+        },
+        new UpdateBlockPacket
+        {
+            Position = position,
+            NetworkBlockId = 0,
+            Flags = UpdateBlockFlagsType.None,
+            Layer = UpdateBlockLayerType.Normal
+        },
+        new UpdateBlockPacket
+        {
+            Position = position,
+            NetworkBlockId = networkId,
+            Flags = UpdateBlockFlagsType.None,
+            Layer = UpdateBlockLayerType.Normal
+        });
     }
 
     public void CheckPairing(World.Dimension.Dimension? dimension, int x, int y, int z)
@@ -335,13 +341,21 @@ public class ChestTrait : BlockTrait
 
         if (!CanPairWith(pair))
         {
-            _pairX = null;
-            _pairZ = null;
-            _sharedContainer = null;
-            pair._pairX = null;
-            pair._pairZ = null;
-            pair._sharedContainer = null;
-            return;
+            bool wasSavedPair =
+                pair.IsPaired &&
+                pair._pairX == x &&
+                pair._pairZ == z;
+
+            if (!wasSavedPair)
+            {
+                _pairX = null;
+                _pairZ = null;
+                _sharedContainer = null;
+                pair._pairX = null;
+                pair._pairZ = null;
+                pair._sharedContainer = null;
+                return;
+            }
         }
 
         bool validPairPosition = false;
@@ -447,7 +461,7 @@ public class ChestTrait : BlockTrait
             return null;
         }
 
-        Basalt.Block.Block? block = dimension.GetBlock(_pairX!.Value, y, _pairZ!.Value);
+        Basalt.Server.Block.Block? block = dimension.GetBlock(_pairX!.Value, y, _pairZ!.Value);
         return block?.GetTrait<ChestTrait>();
     }
 
@@ -645,7 +659,7 @@ public class ChestTrait : BlockTrait
         return paired;
     }
 
-    private void OnViewerAdded(BlockContainer container, Basalt.Core.Player _)
+    private void OnViewerAdded(BlockContainer container, Basalt.Server.Player.Player _)
     {
         if (container.occupants.Count != 1)
         {
@@ -660,7 +674,7 @@ public class ChestTrait : BlockTrait
         }
     }
 
-    private void OnViewerRemoved(BlockContainer container, Basalt.Core.Player _)
+    private void OnViewerRemoved(BlockContainer container, Basalt.Server.Player.Player _)
     {
         if (container.occupants.Count != 0)
         {
@@ -925,7 +939,7 @@ public class ChestTrait : BlockTrait
             int candidateX = x + offsets[i][0];
             int candidateZ = z + offsets[i][1];
 
-            Basalt.Block.Block? neighborBlock = dimension.GetBlock(candidateX, y, candidateZ);
+            Basalt.Server.Block.Block? neighborBlock = dimension.GetBlock(candidateX, y, candidateZ);
             ChestTrait? neighborChest = neighborBlock?.GetTrait<ChestTrait>();
             if (neighborChest is null || neighborChest.IsPaired || !CanPairWith(neighborChest))
             {
@@ -958,4 +972,11 @@ public class ChestTrait : BlockTrait
     }
 
 }
+
+
+
+
+
+
+
 

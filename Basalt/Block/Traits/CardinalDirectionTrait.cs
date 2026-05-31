@@ -1,8 +1,9 @@
-using Basalt.Block.Components;
-using Basalt.Block.Traits.Types;
-using Basalt.Block.Types;
+namespace Basalt.Server.Block.Traits;
 
-namespace Basalt.Block.Traits;
+using Basalt.Server.Block.Components;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Block.Types;
+
 
 public sealed class CardinalDirectionTrait : DirectionTrait
 {
@@ -73,3 +74,10 @@ public sealed class CardinalDirectionTrait : DirectionTrait
         Block.SetPermutation(Block.Type.GetPermutation(state));
     }
 }
+
+
+
+
+
+
+

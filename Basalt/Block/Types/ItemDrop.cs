@@ -1,4 +1,4 @@
-namespace Basalt.Block.Types;
+namespace Basalt.Server.Block.Types;
 
 public sealed class ItemDrop
 {
@@ -35,3 +35,10 @@ public sealed class ItemDrop
         return Random.Shared.Next(Min, Max + 1);
     }
 }
+
+
+
+
+
+
+

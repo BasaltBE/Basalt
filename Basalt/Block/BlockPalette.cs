@@ -1,10 +1,11 @@
-using Basalt.Block.Types;
-using Basalt.Block.Traits;
+namespace Basalt.Server.Block;
+
+using Basalt.Server.Block.Types;
+using Basalt.Server.Block.Traits;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
-namespace Basalt.Block;
 
 public sealed class BlockPalette
 {
@@ -264,3 +265,10 @@ public sealed class BlockPalette
     }
 
 }
+
+
+
+
+
+
+
