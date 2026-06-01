@@ -3,6 +3,7 @@ namespace Basalt.Server.Network.Handlers;
 using Basalt.Server;
 using Basalt.Server.Block.Traits.Types;
 using Basalt.Server.Entity.Traits;
+using Basalt.Server.Entity.Traits.Attribute;
 using Basalt.Server.Events;
 using Basalt.Server.Item;
 using Basalt.Server.Item.Traits.Types;
@@ -554,11 +555,12 @@ public static class InventoryTransaction
         EntityInventoryTrait inventory,
         UseItemOnEntityInventoryTransactionData transaction)
     {
-        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
-        if (heldItem is null || player.Dimension is null)
+        if (player.Dimension is null)
         {
             return;
         }
+
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
 
         Basalt.Server.Entity.Entity? target = null;
 
@@ -579,6 +581,11 @@ public static class InventoryTransaction
         switch (transaction.ActionType)
         {
             case 0:
+                if (heldItem is null)
+                {
+                    return;
+                }
+
                 heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(
                     player,
                     target,
@@ -588,12 +595,24 @@ public static class InventoryTransaction
                 break;
 
             case 1:
-                heldItem.OnUseAttack(new ItemUseAttackDetails(
-                    player,
-                    target,
-                    transaction.HotBarSlot,
-                    transaction.Position,
-                    transaction.ClickedPosition));
+                if (heldItem is not null)
+                {
+                    heldItem.OnUseAttack(new ItemUseAttackDetails(
+                        player,
+                        target,
+                        transaction.HotBarSlot,
+                        transaction.Position,
+                        transaction.ClickedPosition));
+                }
+
+                if (!ReferenceEquals(target, player))
+                {
+                    EntityHealthTrait? health = target.GetTrait<EntityHealthTrait>();
+                    if (health is not null && target.IsAlive)
+                    {
+                        health.ApplyDamage(1f, player, ActorDamageCause.EntityAttack);
+                    }
+                }
                 break;
         }
     }

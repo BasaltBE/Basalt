@@ -478,7 +478,7 @@ public class Entity
             Yaw = 0,
             HeadYaw = 0,
             BodyYaw = 0,
-            Attributes = [.. Attributes.GetAll()],
+            Attributes = [],
             EntityMetadata = CreateActorDataPacket(tick).Metadata,
             EntityProperties = new EntityProperties(),
             EntityLinks = []

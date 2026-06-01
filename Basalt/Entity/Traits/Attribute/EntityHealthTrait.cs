@@ -5,15 +5,22 @@ using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Types;
 using Entity = Basalt.Server.Entity.Entity;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Player.Traits;
+using Basalt.Server.World;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait
 {
     public new static string Identifier => "health";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
     public new static readonly string[] Components = ["minecraft:health"];
+    private const float KnockbackHorizontalForce = 0.28f;
+    private const float KnockbackVerticalForce = 0.38f;
+    private const float KnockbackVerticalLimit = 0.4f;
+    private const ulong KnockbackCooldownTicks = 10;
+    private ulong _lastKnockbackTick;
 
     public override AttributeName Attribute => AttributeName.Health;
 
@@ -30,14 +37,50 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         }
 
         CurrentValue -= signal.Amount;
+        if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension)
+        {
+            ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+            if (currentTick >= _lastKnockbackTick && currentTick - _lastKnockbackTick >= KnockbackCooldownTicks)
+            {
+                float x = Entity.Position.X - damager.Position.X;
+                float z = Entity.Position.Z - damager.Position.Z;
+                float length = MathF.Sqrt((x * x) + (z * z));
+                if (length > 0.0001f)
+                {
+                    float invLength = 1f / length;
+                    float velocityX = Entity.Velocity.X * 0.5f;
+                    float velocityY = Entity.Velocity.Y * 0.5f;
+                    float velocityZ = Entity.Velocity.Z * 0.5f;
+                    velocityX += x * invLength * KnockbackHorizontalForce;
+                    velocityY += KnockbackVerticalForce;
+                    velocityZ += z * invLength * KnockbackHorizontalForce;
+                    if (velocityY > KnockbackVerticalLimit)
+                    {
+                        velocityY = KnockbackVerticalLimit;
+                    }
 
+                    Entity.Velocity = new Vec3f
+                    {
+                        X = velocityX,
+                        Y = velocityY,
+                        Z = velocityZ
+                    };
+                    _lastKnockbackTick = currentTick;
+                }
+            }
+        }
         if (Entity.Dimension is not null)
         {
             ActorEventPacket packet = new()
             {
                 ActorRuntimeId = Entity.RuntimeId,
                 Event = ActorEvent.Hurt,
-                Data = (int)(signal.Cause ?? ActorDamageCause.None)
+                Data = (int)(signal.Cause ?? ActorDamageCause.None),
+                FiredAt = new Optional<Vec3f>
+                {
+                    HasValue = true,
+                    Value = Entity.Position
+                }
             };
             Entity.Dimension.Broadcast(packet);
         }

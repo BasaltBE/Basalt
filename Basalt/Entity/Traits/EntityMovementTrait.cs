@@ -87,6 +87,12 @@ public sealed class EntityMovementTrait : EntityTrait
                     Y = Entity.Velocity.Y * Drag,
                     Z = Entity.Velocity.Z
                 };
+                Entity.Velocity = new Vec3f
+                {
+                    X = Entity.Velocity.X * Drag,
+                    Y = Entity.Velocity.Y,
+                    Z = Entity.Velocity.Z * Drag
+                };
                 if (Entity.Velocity.Y < TerminalVelocity)
                 {
                     Entity.Velocity = new Vec3f

@@ -31,6 +31,7 @@ public class CommandRegistry
         Register(new OpCommand());
         Register(new DeopCommand());
         Register(new ListCommand());
+        Register(new SummonCommand());
     }
 
     public void Register(Command command)
@@ -135,10 +136,10 @@ public class CommandRegistry
             Overload = overload
         };
 
+        int tokenIndex = argumentOffset;
         for (int i = 0; i < overload.Parameters.Count; i++)
         {
             CommandParameter parameter = overload.Parameters[i];
-            int tokenIndex = argumentOffset + i;
             if (tokenIndex >= tokens.Length)
             {
                 if (parameter.Required)
@@ -149,31 +150,52 @@ public class CommandRegistry
                 continue;
             }
 
-            state.Arguments.Add(new CommandArgument(parameter.Name, ParseArgument(server, player, parameter, tokens[tokenIndex])));
+            CommandEnum? parsed = ParseArgument(server, player, parameter, tokens, ref tokenIndex);
+            if (parsed is null)
+            {
+                if (parameter.Required)
+                {
+                    return CommandResult.Empty(false);
+                }
+
+                continue;
+            }
+
+            state.Arguments.Add(new CommandArgument(parameter.Name, parsed));
         }
 
         return target.Execute(state);
     }
 
-    static CommandEnum ParseArgument(ServerInstance server, Player? player, CommandParameter parameter, string token)
+    static CommandEnum? ParseArgument(ServerInstance server, Player? player, CommandParameter parameter, string[] tokens, ref int tokenIndex)
     {
+        if (tokenIndex >= tokens.Length)
+        {
+            return null;
+        }
+
+        string token = tokens[tokenIndex];
         if (parameter.Enum == typeof(IntEnum))
         {
+            tokenIndex++;
             return new IntEnum(int.Parse(token));
         }
 
         if (parameter.Enum == typeof(StringEnum))
         {
+            tokenIndex++;
             return new StringEnum(token);
         }
 
         if (parameter.Enum == typeof(JsonEnum))
         {
+            tokenIndex++;
             return new JsonEnum(token);
         }
 
         if (parameter.Enum == typeof(TargetEnum))
         {
+            tokenIndex++;
             EntityInstance[] entities = ResolveTargets(server, player, token);
             string[] offlineUsernames = ResolveOfflineTargets(server, token, entities);
             return new TargetEnum(token, entities, offlineUsernames);
@@ -181,9 +203,40 @@ public class CommandRegistry
 
         if (parameter.Enum == typeof(ItemEnum))
         {
+            tokenIndex++;
             string identifier = token.IndexOf(':') == -1 ? "minecraft:" + token : token;
             ItemType type = ItemType.Get(identifier) ?? throw new InvalidOperationException($"Invalid item '{token}' for command parameter '{parameter.Name}'.");
             return new ItemEnum(token, type);
+        }
+
+        if (parameter.Enum == typeof(EntityEnum))
+        {
+            tokenIndex++;
+            string identifier = token.IndexOf(':') == -1 ? "minecraft:" + token : token;
+            Entity.EntityType type = Entity.EntityType.Get(identifier) ?? throw new InvalidOperationException($"Invalid entity '{token}' for command parameter '{parameter.Name}'.");
+            return new EntityEnum(token, type.Identifier);
+        }
+
+        if (parameter.Enum == typeof(PositionEnum))
+        {
+            if (tokenIndex + 2 >= tokens.Length)
+            {
+                return null;
+            }
+
+            string xToken = tokens[tokenIndex];
+            string yToken = tokens[tokenIndex + 1];
+            string zToken = tokens[tokenIndex + 2];
+
+            if (!TryParsePositionComponent(xToken, player?.Position.X ?? 0f, out float x) ||
+                !TryParsePositionComponent(yToken, player?.Position.Y ?? 0f, out float y) ||
+                !TryParsePositionComponent(zToken, player?.Position.Z ?? 0f, out float z))
+            {
+                return null;
+            }
+
+            tokenIndex += 3;
+            return new PositionEnum(new Basalt.Protocol.Types.Vec3f { X = x, Y = y, Z = z });
         }
 
         if (typeof(CustomEnum).IsAssignableFrom(parameter.Enum))
@@ -200,10 +253,41 @@ public class CommandRegistry
             }
 
             customEnum.Value = value;
+            tokenIndex++;
             return customEnum;
         }
 
         throw new InvalidOperationException($"Unsupported command parameter enum: {parameter.Enum.FullName}.");
+    }
+
+    static bool TryParsePositionComponent(string token, float origin, out float value)
+    {
+        value = 0f;
+        if (token == "~")
+        {
+            value = origin;
+            return true;
+        }
+
+        if (token.StartsWith('~'))
+        {
+            string offset = token[1..];
+            if (offset.Length == 0)
+            {
+                value = origin;
+                return true;
+            }
+
+            if (!float.TryParse(offset, out float step))
+            {
+                return false;
+            }
+
+            value = origin + step;
+            return true;
+        }
+
+        return float.TryParse(token, out value);
     }
 
     static EntityInstance[] ResolveTargets(ServerInstance server, Player? player, string token)
@@ -366,7 +450,7 @@ public class CommandRegistry
         Dictionary<Type, uint> enumOffsets,
         CommandParameter parameter)
     {
-        if (parameter.Enum == typeof(ItemEnum))
+        if (parameter.Enum == typeof(ItemEnum) || parameter.Enum == typeof(EntityEnum))
         {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, parameter.Enum);
             return new ProtocolCommandParameter
@@ -411,6 +495,11 @@ public class CommandRegistry
         if (type == typeof(StringEnum))
         {
             return CommandParameterType.String;
+        }
+
+        if (type == typeof(PositionEnum))
+        {
+            return CommandParameterType.Position;
         }
 
         if (type == typeof(JsonEnum))
