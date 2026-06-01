@@ -9,6 +9,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
 using Basalt.Server.World;
+using Basalt.Server.Entity.Metadata;
 
 using Player = Player.Player;
 using Basalt.Server.Traits;
