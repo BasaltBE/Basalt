@@ -300,6 +300,70 @@ public sealed class Player : Entity.Entity
         SendAttributes();
     }
 
+    public void Teleport(Vec3f position, Dimension? dimension = null)
+    {
+        Dimension? previousDimension = Dimension;
+        Dimension targetDimension = dimension ?? previousDimension ??
+            throw new InvalidOperationException("Player must have a dimension to teleport without a target dimension.");
+
+        Vec3f previousPosition = Position;
+        bool changedDimension = previousDimension != targetDimension;
+        bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
+
+        Position = position;
+        OnTeleport(new EntityTeleportOptions(previousPosition, position));
+
+        if (changedDimension)
+        {
+            previousDimension?.Broadcast(new RemoveActorPacket
+            {
+                EntityUniqueId = UniqueId
+            }, new BroadcastOptions { Except = [this] });
+
+            previousDimension?.RemoveEntity(this, complete: false);
+            Dimension = targetDimension;
+            targetDimension.AddEntity(this);
+        }
+
+        ulong tick = targetDimension.World is Tickable tickable ? tickable.TickValue : 0;
+
+        if (changedDimensionType)
+        {
+            Send(new ChangeDimensionPacket
+            {
+                Dimension = targetDimension.Type,
+                Position = position,
+                Respawn = true,
+                HasLoadingScreen = false
+            });
+        }
+        else
+        {
+            Send(new MovePlayerPacket
+            {
+                RuntimeId = RuntimeId,
+                Position = position,
+                Pitch = Pitch,
+                Yaw = Yaw,
+                HeadYaw = HeadYaw,
+                Mode = MoveMode.Teleport,
+                OnGround = false,
+                RiddenRuntimeId = 0,
+                TeleportCause = TeleportCause.Command,
+                TeleportSourceEntityType = 0,
+                Tick = tick
+            });
+        }
+
+        if (changedDimension)
+        {
+            targetDimension.Broadcast(CreateActorDataPacket(tick), new BroadcastOptions { Except = [this] });
+        }
+
+        GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
+        SendAttributes();
+    }
+
     public void RegisterOpenContainer(int windowId, Container container)
     {
         openedContainers[windowId] = container;

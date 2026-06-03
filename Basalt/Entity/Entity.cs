@@ -31,7 +31,7 @@ public class Entity
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
-    public Dimension? Dimension { get; private set; }
+    public Dimension? Dimension { get; protected set; }
     public bool IsAlive { get; private set; }
     public bool PendingDespawn { get; private set; }
     public bool IsSprinting
