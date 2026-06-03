@@ -112,6 +112,15 @@ public static class PlayerAuthInput
                 player.IsSprinting = false;
             }
 
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSneaking))
+            {
+                player.IsSneaking = true;
+            }
+
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSneaking))
+            {
+                player.IsSneaking = false;
+            }
             else if (mineBlockRequest is not null && player.LastActionBlockPosition.HasValue)
             {
                 BlockPos position = player.LastActionBlockPosition.Value;

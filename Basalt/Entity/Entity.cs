@@ -37,6 +37,12 @@ public class Entity
         set => Flags.SetActorFlag(ActorFlag.Sprinting, value);
     }
 
+    public bool IsSneaking
+    {
+        get => Flags.GetActorFlag(ActorFlag.Sneaking);
+        set => Flags.SetActorFlag(ActorFlag.Sneaking, value);
+    }
+
     public bool IsSwimming;
     private readonly HashSet<EffectType> _effects = [];
 
