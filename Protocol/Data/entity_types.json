@@ -53,43 +53,6 @@
           "value": 0.3
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:cat_adult": {
-          "minecraft:scale": {
-            "value": 0.8
-          }
-        },
-        "minecraft:cat_baby": {
-          "minecraft:scale": {
-            "value": 0.4
-          }
-        },
-        "minecraft:cat_tame": {
-          "minecraft:health": {
-            "max": 20,
-            "value": 20
-          }
-        },
-        "minecraft:cat_wild": {
-          "minecraft:health": {
-            "max": 10,
-            "value": 10
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.35,
-                0
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -250,13 +213,6 @@
           "value": 0.3
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:fox_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -386,53 +342,6 @@
             ]
           }
         }
-      },
-      "componentGroups": {
-        "minecraft:spider_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.54,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:spider_stray_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.54,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:spider_wither_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.54,
-                0
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -492,52 +401,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:llama_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        },
-        "minecraft:llama_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.mount",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.25,
-                -0.3
-              ]
-            }
-          }
-        },
-        "minecraft:llama_adult": {
-          "minecraft:collision_box": {
-            "height": 1.87,
-            "width": 0.9
-          }
-        },
-        "minecraft:llama_tamed": {
-          "minecraft:rideable": {
-            "crouching_skip_interact": true,
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.1,
-                -0.2
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -577,42 +440,6 @@
           }
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:horse_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "player",
-              "zombie"
-            ],
-            "interact_text": "action.interact.mount",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.1,
-                -0.2
-              ]
-            }
-          }
-        },
-        "minecraft:horse_tamed": {
-          "minecraft:rideable": {
-            "crouching_skip_interact": true,
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.1,
-                -0.2
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -684,34 +511,6 @@
         "minecraft:scale": {
           "value": 1
         }
-      },
-      "componentGroups": {
-        "minecraft:panda_adult": {
-          "minecraft:attack": {
-            "damage": 2
-          }
-        },
-        "minecraft:panda_lazy": {
-          "minecraft:movement": {
-            "value": 0.07
-          }
-        },
-        "minecraft:panda_aggressive": {
-          "minecraft:attack": {
-            "damage": 6
-          }
-        },
-        "minecraft:panda_baby": {
-          "minecraft:scale": {
-            "value": 0.4
-          }
-        },
-        "minecraft:panda_weak": {
-          "minecraft:health": {
-            "max": 10,
-            "value": 10
-          }
-        }
       }
     }
   },
@@ -775,49 +574,6 @@
               ]
             }
           ]
-        }
-      },
-      "componentGroups": {
-        "minecraft:can_ride": {
-          "minecraft:rideable": {
-            "interact_text": "action.interact.ride.boat",
-            "pull_in_entities": true,
-            "seat_count": 2,
-            "seats": [
-              {
-                "lock_rider_rotation": 90,
-                "min_rider_count": 0,
-                "max_rider_count": 1,
-                "position": [
-                  0,
-                  -0.2,
-                  0
-                ],
-                "rotate_rider_by": -90
-              },
-              {
-                "lock_rider_rotation": 90,
-                "min_rider_count": 2,
-                "max_rider_count": 2,
-                "position": [
-                  0.2,
-                  -0.2,
-                  0
-                ],
-                "rotate_rider_by": -90
-              },
-              {
-                "lock_rider_rotation": 90,
-                "min_rider_count": 2,
-                "max_rider_count": 2,
-                "position": [
-                  -0.6,
-                  -0.2,
-                  0
-                ]
-              }
-            ]
-          }
         }
       }
     }
@@ -914,34 +670,6 @@
           "value": 20
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "adult": {
-          "minecraft:movement": {
-            "value": 0.23
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.1,
-                -0.35
-              ]
-            }
-          }
-        },
-        "baby": {
-          "minecraft:movement": {
-            "value": 0.35
-          },
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -981,29 +709,6 @@
           "value": 0.23
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:pig_zombie_adult": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "lock_rider_rotation": 0,
-              "position": [
-                0,
-                1.1,
-                -0.35
-              ]
-            }
-          }
-        },
-        "minecraft:pig_zombie_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1041,35 +746,6 @@
           "value": 20
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:zombie_adult": {
-          "minecraft:movement": {
-            "value": 0.23
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "lock_rider_rotation": 0,
-              "position": [
-                0,
-                1.1,
-                -0.35
-              ]
-            }
-          }
-        },
-        "minecraft:zombie_baby": {
-          "minecraft:movement": {
-            "value": 0.35
-          },
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1128,13 +804,6 @@
             ]
           }
         }
-      },
-      "componentGroups": {
-        "minecraft:cow_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1168,13 +837,6 @@
           "value": 0.5
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1210,13 +872,6 @@
           "value": 0.2
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:squid_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1251,43 +906,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:rideable_wooly": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.975,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:rideable_sheared": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.9,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:sheep_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -1371,38 +989,6 @@
           "value": 20
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:zombie_husk_adult": {
-          "minecraft:movement": {
-            "value": 0.23
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "lock_rider_rotation": 0,
-              "position": [
-                0,
-                1.1,
-                -0.35
-              ]
-            }
-          },
-          "minecraft:scale": {
-            "value": 1.0625
-          }
-        },
-        "minecraft:zombie_husk_baby": {
-          "minecraft:movement": {
-            "value": 0.35
-          },
-          "minecraft:scale": {
-            "value": 0.53125
-          }
-        }
       }
     }
   },
@@ -1476,33 +1062,6 @@
         },
         "minecraft:underwater_movement": {
           "value": 0.08
-        }
-      },
-      "componentGroups": {
-        "minecraft:skeleton_horse_adult": {
-          "minecraft:collision_box": {
-            "height": 1.6,
-            "width": 1.4
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "player",
-              "skeleton",
-              "zombie"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.2,
-                -0.2
-              ]
-            }
-          }
-        },
-        "minecraft:skeleton_horse_r5_upgrade": {
-          "minecraft:rideable": {}
         }
       }
     }
@@ -1580,42 +1139,6 @@
           "value": 0.175
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:donkey_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "player",
-              "zombie"
-            ],
-            "interact_text": "action.interact.mount",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.925,
-                -0.2
-              ]
-            }
-          }
-        },
-        "minecraft:donkey_tamed": {
-          "minecraft:rideable": {
-            "crouching_skip_interact": true,
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.925,
-                -0.2
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -1667,24 +1190,6 @@
         "minecraft:movement.generic": {},
         "minecraft:underwater_movement": {
           "value": 0.06
-        }
-      },
-      "componentGroups": {
-        "minecraft:baby_drowned": {
-          "minecraft:movement": {
-            "value": 0.25
-          },
-          "minecraft:scale": {
-            "value": 0.5
-          },
-          "minecraft:underwater_movement": {
-            "value": 0.08
-          }
-        },
-        "minecraft:melee_mode": {
-          "minecraft:attack": {
-            "damage": 3
-          }
         }
       }
     }
@@ -1743,24 +1248,6 @@
           "value": 0.2
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:horse_adult": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.2,
-                -0.2
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -1799,37 +1286,6 @@
           "value": 0.3
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:wolf_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        },
-        "minecraft:wolf_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.675,
-                -0.1
-              ]
-            }
-          }
-        },
-        "minecraft:wolf_tame": {
-          "minecraft:attack": {
-            "damage": 4
-          },
-          "minecraft:health": {
-            "max": 20,
-            "value": 20
-          }
-        }
       }
     }
   },
@@ -1864,18 +1320,6 @@
           "value": 0.3
         },
         "minecraft:movement.skip": {}
-      },
-      "componentGroups": {
-        "adult": {
-          "minecraft:scale": {
-            "value": 0.6
-          }
-        },
-        "baby": {
-          "minecraft:scale": {
-            "value": 0.4
-          }
-        }
       }
     }
   },
@@ -1919,29 +1363,6 @@
         },
         "minecraft:movement.amphibious": {
           "max_turn": 5
-        }
-      },
-      "componentGroups": {
-        "minecraft:adult": {
-          "minecraft:collision_box": {
-            "height": 0.4,
-            "width": 1.2
-          },
-          "minecraft:underwater_movement": {
-            "value": 0.12
-          }
-        },
-        "minecraft:baby": {
-          "minecraft:collision_box": {
-            "height": 0.2,
-            "width": 0.6
-          },
-          "minecraft:scale": {
-            "value": 0.16
-          },
-          "minecraft:underwater_movement": {
-            "value": 0.06
-          }
         }
       }
     }
@@ -1998,18 +1419,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        },
-        "minecraft:adult_hostile": {
-          "minecraft:attack": {
-            "damage": 6
-          }
-        }
       }
     }
   },
@@ -2044,28 +1453,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:chicken_adult": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.4,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:chicken_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -2100,44 +1487,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:pig_unsaddled": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.63,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:pig_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        },
-        "minecraft:pig_saddled": {
-          "minecraft:rideable": {
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.mount",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.63,
-                0
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -2204,39 +1553,6 @@
           "value": 0.3
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:ocelot_adult": {
-          "minecraft:scale": {
-            "value": 1
-          }
-        },
-        "minecraft:ocelot_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        },
-        "minecraft:ocelot_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.35,
-                0
-              ]
-            }
-          }
-        },
-        "minecraft:ocelot_tame": {
-          "minecraft:health": {
-            "max": 20,
-            "value": 20
-          }
-        }
       }
     }
   },
@@ -2284,42 +1600,6 @@
           "value": 0.175
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:mule_wild": {
-          "minecraft:rideable": {
-            "family_types": [
-              "player",
-              "zombie"
-            ],
-            "interact_text": "action.interact.mount",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.975,
-                -0.2
-              ]
-            }
-          }
-        },
-        "minecraft:mule_tamed": {
-          "minecraft:rideable": {
-            "crouching_skip_interact": true,
-            "family_types": [
-              "player"
-            ],
-            "interact_text": "action.interact.ride.horse",
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                0.975,
-                -0.2
-              ]
-            }
-          }
-        }
       }
     }
   },
@@ -2367,13 +1647,6 @@
             ]
           }
         }
-      },
-      "componentGroups": {
-        "minecraft:cow_baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -2414,13 +1687,6 @@
         },
         "minecraft:underwater_movement": {
           "value": 0.15
-        }
-      },
-      "componentGroups": {
-        "minecraft:dolphin_baby": {
-          "minecraft:scale": {
-            "value": 0.65
-          }
         }
       }
     }
@@ -2465,18 +1731,6 @@
           "height": 2.9
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:enderman_calm": {
-          "minecraft:movement": {
-            "value": 0.3
-          }
-        },
-        "minecraft:enderman_angry": {
-          "minecraft:movement": {
-            "value": 0.45
-          }
-        }
       }
     }
   },
@@ -2522,15 +1776,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:melee_attack": {
-          "minecraft:attack": {
-            "damage": 3,
-            "effect_duration": 10,
-            "effect_name": "slowness"
-          }
-        }
       }
     }
   },
@@ -2628,13 +1873,6 @@
           "value": 0.25
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:melee_attack": {
-          "minecraft:attack": {
-            "damage": 3
-          }
-        }
       }
     }
   },
@@ -2701,74 +1939,6 @@
               0.3,
               0
             ]
-          }
-        }
-      },
-      "componentGroups": {
-        "minecraft:spider_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.3,
-                -0.1
-              ]
-            }
-          }
-        },
-        "minecraft:spider_stray_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.3,
-                -0.1
-              ]
-            }
-          }
-        },
-        "minecraft:spider_wither_jockey": {
-          "minecraft:rideable": {
-            "seat_count": 1,
-            "family_types": [
-              "skeleton"
-            ],
-            "seats": {
-              "position": [
-                0,
-                0.25,
-                -0.1
-              ]
-            }
-          }
-        },
-        "minecraft:spider_poison_easy": {
-          "minecraft:attack": {
-            "damage": 2,
-            "effect_name": "poison",
-            "effect_duration": 0
-          }
-        },
-        "minecraft:spider_poison_normal": {
-          "minecraft:attack": {
-            "damage": 2,
-            "effect_name": "poison",
-            "effect_duration": 7
-          }
-        },
-        "minecraft:spider_poison_hard": {
-          "minecraft:attack": {
-            "damage": 2,
-            "effect_name": "poison",
-            "effect_duration": 15
           }
         }
       }
@@ -2973,13 +2143,6 @@
             ]
           }
         }
-      },
-      "componentGroups": {
-        "minecraft:hostile": {
-          "minecraft:movement": {
-            "value": 0.3
-          }
-        }
       }
     }
   },
@@ -3153,35 +2316,6 @@
         },
         "minecraft:underwater_movement": {
           "value": 0.12
-        }
-      },
-      "componentGroups": {
-        "scale_large": {
-          "minecraft:health": {
-            "max": 6,
-            "value": 6
-          },
-          "minecraft:scale": {
-            "value": 1.5
-          }
-        },
-        "scale_normal": {
-          "minecraft:health": {
-            "max": 6,
-            "value": 6
-          },
-          "minecraft:scale": {
-            "value": 1
-          }
-        },
-        "scale_small": {
-          "minecraft:health": {
-            "max": 6,
-            "value": 6
-          },
-          "minecraft:scale": {
-            "value": 0.5
-          }
         }
       }
     }
@@ -3514,13 +2648,6 @@
           "value": 0.35
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "minecraft:melee_attack": {
-          "minecraft:attack": {
-            "damage": 3
-          }
-        }
       }
     }
   },
@@ -3546,72 +2673,6 @@
             0.5,
             1.5
           ]
-        }
-      },
-      "componentGroups": {
-        "minecraft:slime_aggressive": {
-          "minecraft:movement.jump": {
-            "jump_delay": [
-              0.16,
-              0.5
-            ]
-          }
-        },
-        "minecraft:slime_calm": {
-          "minecraft:movement.jump": {
-            "jump_delay": [
-              0.5,
-              1.5
-            ]
-          }
-        },
-        "minecraft:slime_large": {
-          "minecraft:attack": {
-            "damage": 4
-          },
-          "minecraft:collision_box": {
-            "height": 2.08,
-            "width": 2.08
-          },
-          "minecraft:health": {
-            "max": 16,
-            "value": 16
-          },
-          "minecraft:movement": {
-            "value": 0.6
-          }
-        },
-        "minecraft:slime_medium": {
-          "minecraft:attack": {
-            "damage": 2
-          },
-          "minecraft:collision_box": {
-            "height": 1.04,
-            "width": 1.04
-          },
-          "minecraft:health": {
-            "max": 4,
-            "value": 4
-          },
-          "minecraft:movement": {
-            "value": 0.4
-          }
-        },
-        "minecraft:slime_small": {
-          "minecraft:attack": {
-            "damage": 0
-          },
-          "minecraft:collision_box": {
-            "height": 0.52,
-            "width": 0.52
-          },
-          "minecraft:health": {
-            "max": 1,
-            "value": 1
-          },
-          "minecraft:movement": {
-            "value": 0.3
-          }
         }
       }
     }
@@ -3815,13 +2876,6 @@
           "value": 0.5
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "baby": {
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -3862,34 +2916,6 @@
           "value": 20
         },
         "minecraft:movement.basic": {}
-      },
-      "componentGroups": {
-        "adult": {
-          "minecraft:movement": {
-            "value": 0.23
-          },
-          "minecraft:rideable": {
-            "family_types": [
-              "zombie"
-            ],
-            "seat_count": 1,
-            "seats": {
-              "position": [
-                0,
-                1.1,
-                -0.35
-              ]
-            }
-          }
-        },
-        "baby": {
-          "minecraft:movement": {
-            "value": 0.35
-          },
-          "minecraft:scale": {
-            "value": 0.5
-          }
-        }
       }
     }
   },
@@ -3991,72 +3017,6 @@
             2,
             6
           ]
-        }
-      },
-      "componentGroups": {
-        "minecraft:slime_aggressive": {
-          "minecraft:movement.jump": {
-            "jump_delay": [
-              0.667,
-              2
-            ]
-          }
-        },
-        "minecraft:slime_calm": {
-          "minecraft:movement.jump": {
-            "jump_delay": [
-              2,
-              6
-            ]
-          }
-        },
-        "minecraft:slime_large": {
-          "minecraft:attack": {
-            "damage": 6
-          },
-          "minecraft:collision_box": {
-            "height": 2.08,
-            "width": 2.08
-          },
-          "minecraft:health": {
-            "max": 16,
-            "value": 16
-          },
-          "minecraft:movement": {
-            "value": 0.75
-          }
-        },
-        "minecraft:slime_medium": {
-          "minecraft:attack": {
-            "damage": 4
-          },
-          "minecraft:collision_box": {
-            "height": 0.78,
-            "width": 0.78
-          },
-          "minecraft:health": {
-            "max": 4,
-            "value": 4
-          },
-          "minecraft:movement": {
-            "value": 0.66
-          }
-        },
-        "minecraft:slime_small": {
-          "minecraft:attack": {
-            "damage": 2
-          },
-          "minecraft:collision_box": {
-            "height": 0.52,
-            "width": 0.52
-          },
-          "minecraft:health": {
-            "max": 1,
-            "value": 1
-          },
-          "minecraft:movement": {
-            "value": 0.6
-          }
         }
       }
     }
