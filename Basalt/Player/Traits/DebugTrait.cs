@@ -35,45 +35,45 @@ public sealed class DebugTrait : PlayerTrait
     {
         _lastSentTick = Player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
         _averageMspt = 0;
-        if (!_gaveDebugItems)
-        {
-            EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
-            if (inventory is not null)
-            {
-                string[] debugItems =
-                [
-                    ItemIdentifier.Barrel.ToIdentifier(),
-                    ItemIdentifier.Chest.ToIdentifier(),
-                    ItemIdentifier.Stick.ToIdentifier(),
-                    ItemIdentifier.DiamondPickaxe.ToIdentifier(),
-                    ItemIdentifier.GrassBlock.ToIdentifier(),
-                    ItemIdentifier.Stone.ToIdentifier(),
-                    ItemIdentifier.Dirt.ToIdentifier(),
-                ];
+        // if (!_gaveDebugItems)
+        // {
+        //     EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
+        //     if (inventory is not null)
+        //     {
+        //         string[] debugItems =
+        //         [
+        //             ItemIdentifier.Barrel.ToIdentifier(),
+        //             ItemIdentifier.Chest.ToIdentifier(),
+        //             ItemIdentifier.Stick.ToIdentifier(),
+        //             ItemIdentifier.DiamondPickaxe.ToIdentifier(),
+        //             ItemIdentifier.GrassBlock.ToIdentifier(),
+        //             ItemIdentifier.Stone.ToIdentifier(),
+        //             ItemIdentifier.Dirt.ToIdentifier(),
+        //         ];
 
-                int[] targetSlots = [0, 9, 10, 11, 12];
-                for (int i = 0; i < debugItems.Length; i++)
-                {
-                    string identifier = debugItems[i];
-                    ItemType? type = ItemType.Get(identifier);
-                    if (type is null)
-                    {
-                        continue;
-                    }
+        //         int[] targetSlots = [0, 9, 10, 11, 12];
+        //         for (int i = 0; i < debugItems.Length; i++)
+        //         {
+        //             string identifier = debugItems[i];
+        //             ItemType? type = ItemType.Get(identifier);
+        //             if (type is null)
+        //             {
+        //                 continue;
+        //             }
 
-                    ushort amount = identifier is "minecraft:diamond_pickaxe" or "minecraft:stick" ? (ushort)1 : (ushort)64;
-                    ItemStack itemStack = new(type, amount);
-                    if (identifier == "minecraft:stick")
-                    {
-                        itemStack.AddTrait(new ItemDebugTrait(itemStack));
-                    }
+        //             ushort amount = identifier is "minecraft:diamond_pickaxe" or "minecraft:stick" ? (ushort)1 : (ushort)64;
+        //             ItemStack itemStack = new(type, amount);
+        //             if (identifier == "minecraft:stick")
+        //             {
+        //                 itemStack.AddTrait(new ItemDebugTrait(itemStack));
+        //             }
 
-                    inventory.Container.AddItem(itemStack);
-                }
-            }
+        //             inventory.Container.AddItem(itemStack);
+        //         }
+        //     }
 
-            _gaveDebugItems = true;
-        }
+        //     _gaveDebugItems = true;
+        // }
     }
 
     public override void OnTick(TraitOnTickDetails details)
@@ -105,7 +105,7 @@ public sealed class DebugTrait : PlayerTrait
                 FilteredMessage = null
             };
 
-            // Player.Send(packet);
+            Player.Send(packet);
             _lastSentTick = details.CurrentTick;
         }
         catch (Exception exception)
