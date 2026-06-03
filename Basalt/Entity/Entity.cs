@@ -10,9 +10,12 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
 using Basalt.Server.World;
 using Basalt.Server.Entity.Metadata;
+using Basalt.Server.Item;
 
 using Player = Player.Player;
 using Basalt.Server.Traits;
+
+using Basalt.Server.Loot;
 
 public class Entity
 {
@@ -54,7 +57,7 @@ public class Entity
             throw new ArgumentException("Entity identifier cannot be empty.", nameof(identifier));
         }
 
-        Type = EntityType.GetOrPlayer(identifier);
+        Type = EntityType.GetOrCreate(identifier);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
         foreach (Type traitType in Type.Traits.Values)
@@ -190,6 +193,32 @@ public class Entity
 
     public void OnDeath(EntityDeathOptions options)
     {
+        if (!IsAlive || PendingDespawn)
+        {
+            return;
+        }
+
+        Dimension? dimension = Dimension;
+        if (!options.Cancel && dimension is not null)
+        {
+            List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
+            for (int i = 0; i < drops.Count; i++)
+            {
+                ItemEntity drop = new(drops[i])
+                {
+                    Position = Position,
+                    Velocity = new Vec3f
+                    {
+                        X = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f,
+                        Y = 0.18f,
+                        Z = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f
+                    }
+                };
+
+                drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+            }
+        }
+
         IsAlive = false;
         for (int i = 0; i < _traits.Count; i++)
         {
