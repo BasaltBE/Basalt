@@ -15,10 +15,10 @@ public static class RequestChunkRadius
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (RequestChunkRadiusPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        int requestedRadius = packet.MaxChunkRadius > 0
-            ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
-            : packet.ChunkRadius;
-        int radius = Math.Clamp(requestedRadius, 4, 22);
+        int requestedRadius = packet.ChunkRadius;
+        // TODO: TEMPORARY 120 MAX CHUNK RENDER DISTANCE
+        // TODO: Server does not handle this many chunks well
+        int radius = Math.Clamp(requestedRadius, 4, 120);
         // UpdateChunkRadiusPacket response = new()
         // {
         //     ChunkRadius = radius
