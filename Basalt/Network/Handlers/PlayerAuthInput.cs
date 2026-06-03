@@ -325,7 +325,7 @@ public static class PlayerAuthInput
     {
         if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
         {
-            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
+            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
             return;
         }
 
@@ -338,7 +338,7 @@ public static class PlayerAuthInput
 
         if (player.Dimension is null)
         {
-            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
+            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
             return;
         }
 
@@ -347,24 +347,24 @@ public static class PlayerAuthInput
 
         if (block is null)
         {
-            Logger.Warn(
-                "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
-                player.Username,
-                blockPosition.X,
-                blockPosition.Y,
-                blockPosition.Z);
+            // Logger.Warn(
+            //     "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
+            //     player.Username,
+            //     blockPosition.X,
+            //     blockPosition.Y,
+            //     blockPosition.Z);
             return;
         }
 
-        Logger.Warn(
-            "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
-            player.Username,
-            blockPosition.X,
-            blockPosition.Y,
-            blockPosition.Z,
-            block.Type.Identifier,
-            block.NetworkId,
-            action.Action);
+        // Logger.Warn(
+        //     "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
+        //     player.Username,
+        //     blockPosition.X,
+        //     blockPosition.Y,
+        //     blockPosition.Z,
+        //     block.Type.Identifier,
+        //     block.NetworkId,
+        //     action.Action);
 
         Server? server = player.Dimension.World?.Server;
         if (server is not null)
@@ -419,14 +419,14 @@ public static class PlayerAuthInput
         Basalt.Server.Block.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
-        Logger.Warn(
-            "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
-            player.Username,
-            blockPosition.X,
-            blockPosition.Y,
-            blockPosition.Z,
-            after.Type.Identifier,
-            after.NetworkId);
+        // Logger.Warn(
+        //     "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
+        //     player.Username,
+        //     blockPosition.X,
+        //     blockPosition.Y,
+        //     blockPosition.Z,
+        //     after.Type.Identifier,
+        //     after.NetworkId);
 
         player.Dimension.Broadcast(new UpdateBlockPacket
         {

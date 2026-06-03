@@ -51,7 +51,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     private int _currentChunkX = int.MinValue;
     private int _currentChunkZ = int.MinValue;
 
-    public int ViewDistance { get; private set; } = 6;
+    public int ViewDistance { get; private set; } = 16;
 
     public int LoadedChunkCount => _loadedChunks.Count;
 
@@ -125,11 +125,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         lock (_lock)
         {
-            ReleaseLoadedChunks(unloadChunks: true);
+            HideAllVisibleEntities();
+            ReleaseLoadedChunks(unloadChunks: true, clearClient: true);
 
             _loadedChunks.Clear();
             _pendingChunks.Clear();
             _sendQueue.Clear();
+            _visibleEntityUniqueIds.Clear();
 
             _sendGeneration++;
             _tickCounter = 0;
@@ -517,7 +519,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         return true;
     }
 
-    private void ReleaseLoadedChunks(bool unloadChunks)
+    private void ReleaseLoadedChunks(bool unloadChunks, bool clearClient = false)
     {
         var dimension = Player.Dimension;
         if (dimension is null)
@@ -525,9 +527,30 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
+        if (clearClient && _loadedChunks.Count > 0 && _emptyChunkPayload is null)
+        {
+            using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+            BinaryWriter writer = stream;
+            ChunkColumn.Serialize(new ChunkColumn(0, 0, dimension.Type), writer);
+            _emptyChunkPayload = stream.GetProcessedBytes().ToArray();
+        }
+
         foreach (long hash in _loadedChunks)
         {
             UnhashChunk(hash, out int x, out int z);
+
+            if (clearClient && _emptyChunkPayload is not null)
+            {
+                Player.Send(new LevelChunkPacket
+                {
+                    ChunkX = x,
+                    ChunkZ = z,
+                    Dimension = (int)dimension.Type,
+                    SubChunkCount = 0,
+                    CacheEnabled = false,
+                    RawPayload = _emptyChunkPayload
+                });
+            }
 
             dimension.RemoveChunkViewer(x, z);
 
