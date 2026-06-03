@@ -1,6 +1,9 @@
 namespace Basalt.Server.Entity.Container;
 
 using Basalt.Server.Containers;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 
 public sealed class EntityContainer : Containers.Container
 {
@@ -24,6 +27,27 @@ public sealed class EntityContainer : Containers.Container
     public override void UpdateSlot(int slot)
     {
         Entity.OnContainerUpdate(this);
+        if (slot < 0 || slot >= GetSize())
+        {
+            base.UpdateSlot(slot);
+            return;
+        }
+
+        if (Entity is Player.Player player && Identifier == 0 && player.Spawned)
+        {
+            player.Send(new InventorySlotPacket
+            {
+                WindowId = Identifier ?? 0,
+                Slot = slot,
+                Container = new Optional<FullContainerName>
+                {
+                    HasValue = true,
+                    Value = new FullContainerName { ContainerId = (byte)ContainerId.Inventory }
+                },
+                NewItem = ToItemInstanceNew(GetItem(slot))
+            });
+        }
+
         base.UpdateSlot(slot);
     }
 
