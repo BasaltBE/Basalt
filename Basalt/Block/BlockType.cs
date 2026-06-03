@@ -14,7 +14,18 @@ public sealed class BlockType
     private readonly HashSet<string> _booleanStates = new(StringComparer.Ordinal);
 
     public string Identifier { get; }
+    public bool Air { get; internal set; }
+    public bool Liquid { get; internal set; }
+    public bool Solid { get; internal set; }
+    public float BlastResistance { get; internal set; }
+    public float Brightness { get; internal set; }
+    public float FlameEncouragement { get; internal set; }
+    public float Flammability { get; internal set; }
+    public float Friction { get; internal set; }
     public float Hardness { get; internal set; }
+    public float Opacity { get; internal set; }
+    public bool Loggable { get; internal set; }
+    public string? MapColor { get; internal set; }
     public List<string> States { get; } = [];
     public List<string> Components { get; } = [];
     public List<string> Tags { get; } = [];
