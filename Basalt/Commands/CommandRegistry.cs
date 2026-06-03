@@ -63,6 +63,26 @@ public class CommandRegistry
         throw new KeyNotFoundException($"Could not find command '{name}'.");
     }
 
+    public const string PermissionDeniedMessage = "§cYou do not have permission to run this command.";
+
+    public static bool CanPlayerExecute(Command command, Player player)
+    {
+        if (command.Permissions.Count == 0)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < command.Permissions.Count; i++)
+        {
+            if (player.HasPermission(command.Permissions[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public CommandResult Execute(ServerInstance server, Player player, string commandLine)
     {
         return Execute(server, new PlayerExecutor { Player = player }, player, commandLine);
@@ -91,26 +111,6 @@ public class CommandRegistry
         CommandOverload overload = command.Overload;
         int argumentOffset = 1;
 
-        if (command.Permissions.Count > 0 && executor is PlayerExecutor playerExecutor)
-        {
-            bool allowed = false;
-            for (int i = 0; i < command.Permissions.Count; i++)
-            {
-                if (!playerExecutor.Player.HasPermission(command.Permissions[i]))
-                {
-                    continue;
-                }
-
-                allowed = true;
-                break;
-            }
-
-            if (!allowed)
-            {
-                return CommandResult.Message("§cYou do not have permission to run this command.", false);
-            }
-        }
-
         if (tokens.Length > 1)
         {
             for (int i = 0; i < command.SubCommands.Count; i++)
@@ -126,6 +126,11 @@ public class CommandRegistry
                 argumentOffset = 2;
                 break;
             }
+        }
+
+        if (executor is PlayerExecutor playerExecutor && !CanPlayerExecute(target, playerExecutor.Player))
+        {
+            return CommandResult.Message(PermissionDeniedMessage, false);
         }
 
         CommandExecutionState state = new()
@@ -367,7 +372,17 @@ public class CommandRegistry
         AvailableCommandsPacket = BuildAvailableCommandsPacket();
     }
 
-    public AvailableCommandsPacket BuildAvailableCommandsPacket()
+    public void SendAvailableCommands(ServerInstance server, Player player)
+    {
+        if (player.Connection is null)
+        {
+            return;
+        }
+
+        server.Network.SendPacket(player.Connection, BuildAvailableCommandsPacket(player));
+    }
+
+    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null)
     {
         AvailableCommandsPacket packet = new();
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
@@ -375,17 +390,29 @@ public class CommandRegistry
 
         foreach (Command command in Commands)
         {
+            if (player is not null && !CanPlayerExecute(command, player))
+            {
+                continue;
+            }
+
             packet.Commands.Add(new ProtocolCommand
             {
                 Name = command.Name,
                 Description = command.Description,
-                PermissionLevel = CommandPermissionLevel.Any,
+                PermissionLevel = GetCommandPermissionLevel(command),
                 AliasesOffset = GetAliasesOffset(packet, enumValueOffsets, command),
                 Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, command)
             });
         }
 
         return packet;
+    }
+
+    static CommandPermissionLevel GetCommandPermissionLevel(Command command)
+    {
+        return command.Permissions.Count == 0
+            ? CommandPermissionLevel.Any
+            : CommandPermissionLevel.Admin;
     }
 
     static uint GetAliasesOffset(AvailableCommandsPacket packet, Dictionary<string, uint> enumValueOffsets, Command command)

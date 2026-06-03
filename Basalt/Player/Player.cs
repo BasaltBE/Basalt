@@ -114,6 +114,11 @@ public sealed class Player : Entity.Entity
         }
 
         Network.SendPacket(Connection, CreateAbilitiesPacket());
+
+        if (Dimension?.World?.Server is global::Basalt.Server.Server server)
+        {
+            server.Commands.SendAvailableCommands(server, this);
+        }
     }
 
     public bool HasPermission(string permission)

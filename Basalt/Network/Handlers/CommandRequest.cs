@@ -29,6 +29,27 @@ public static class CommandRequest
         {
             try
             {
+                string[] tokens = packet.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (tokens.Length == 0)
+                {
+                    result = CommandResult.Empty(false);
+                }
+                else
+                {
+                    string commandName = tokens[0].TrimStart('/');
+                    Basalt.Server.Commands.Command command = server.Commands.Get(commandName);
+                    if (!CommandRegistry.CanPlayerExecute(command, player))
+                    {
+                        result = CommandResult.Message(CommandRegistry.PermissionDeniedMessage, false);
+                    }
+                    else
+                    {
+                        result = server.Commands.Execute(server, player, packet.Command);
+                    }
+                }
+            }
+            catch (KeyNotFoundException)
+            {
                 result = server.Commands.Execute(server, player, packet.Command);
             }
             catch (Exception exception)
