@@ -4,7 +4,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Server.Commands;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.World.Dimension;
-using Player = global::Basalt.Server.Player.Player;
+using Player = Player.Player;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
 
 public sealed class SummonCommand : Command
@@ -36,10 +36,10 @@ public sealed class SummonCommand : Command
             return CommandResult.Message("§cYou must specify x y z when running this command from console.", false);
         }
 
-        global::Basalt.Server.Entity.Entity entity;
+       Entity.Entity entity;
         try
         {
-            entity = new global::Basalt.Server.Entity.Entity(identifier);
+            entity = new Entity.Entity(identifier);
         }
         catch (Exception exception)
         {
