@@ -419,7 +419,7 @@ public sealed class Dimension : IDisposable
         _entities.Add(entity);
     }
 
-    internal void RemoveEntity(Entity entity)
+    internal void RemoveEntity(Entity entity, bool complete = true)
     {
         if (_tickingEntities)
         {
@@ -428,7 +428,10 @@ public sealed class Dimension : IDisposable
             return;
         }
 
-        entity.CompleteDespawn();
+        if (complete)
+        {
+            entity.CompleteDespawn();
+        }
         _entities.Remove(entity);
     }
 
@@ -465,7 +468,10 @@ public sealed class Dimension : IDisposable
         {
             foreach (Entity entity in _pendingEntityRemoves)
             {
-                entity.CompleteDespawn();
+                if (entity.Dimension == this)
+                {
+                    entity.CompleteDespawn();
+                }
                 _entities.Remove(entity);
             }
 
