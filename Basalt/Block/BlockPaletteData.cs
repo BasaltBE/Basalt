@@ -16,6 +16,42 @@ public sealed class BlockTypeData
 
     [JsonPropertyName("states")]
     public List<string> States { get; set; } = [];
+
+    [JsonPropertyName("air")]
+    public bool Air { get; set; }
+
+    [JsonPropertyName("liquid")]
+    public bool Liquid { get; set; }
+
+    [JsonPropertyName("solid")]
+    public bool Solid { get; set; }
+
+    [JsonPropertyName("blastResistance")]
+    public float BlastResistance { get; set; }
+
+    [JsonPropertyName("brightness")]
+    public float Brightness { get; set; }
+
+    [JsonPropertyName("flameEncouragement")]
+    public float FlameEncouragement { get; set; }
+
+    [JsonPropertyName("flammability")]
+    public float Flammability { get; set; }
+
+    [JsonPropertyName("friction")]
+    public float Friction { get; set; }
+
+    [JsonPropertyName("hardness")]
+    public float Hardness { get; set; }
+
+    [JsonPropertyName("opacity")]
+    public float Opacity { get; set; }
+
+    [JsonPropertyName("loggable")]
+    public bool Loggable { get; set; }
+
+    [JsonPropertyName("mapColor")]
+    public string? MapColor { get; set; }
 }
 
 public sealed class BlockPermutationData
@@ -30,19 +66,9 @@ public sealed class BlockPermutationData
     public Dictionary<string, object> State { get; set; } = [];
 }
 
-public sealed class BlockMetadataData
-{
-    [JsonPropertyName("identifier")]
-    public string Identifier { get; set; } = string.Empty;
-
-    [JsonPropertyName("hardness")]
-    public float Hardness { get; set; }
-}
-
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<BlockTypeData>))]
 [JsonSerializable(typeof(List<BlockPermutationData>))]
-[JsonSerializable(typeof(List<BlockMetadataData>))]
 internal partial class BlockPaletteJsonContext : JsonSerializerContext
 {
 }
