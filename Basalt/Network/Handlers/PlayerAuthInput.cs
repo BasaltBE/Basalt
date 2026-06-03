@@ -101,6 +101,17 @@ public static class PlayerAuthInput
                     HandleBlockAction(player, action);
                 }
             }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting))
+            {
+                player.IsSprinting = true;
+            }
+
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSprinting))
+            {
+                player.IsSprinting = false;
+            }
+
             else if (mineBlockRequest is not null && player.LastActionBlockPosition.HasValue)
             {
                 BlockPos position = player.LastActionBlockPosition.Value;

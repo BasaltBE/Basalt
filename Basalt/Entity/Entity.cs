@@ -31,7 +31,12 @@ public class Entity
     public Dimension? Dimension { get; private set; }
     public bool IsAlive { get; private set; }
     public bool PendingDespawn { get; private set; }
-    public bool IsSprinting;
+    public bool IsSprinting
+    {
+        get => Flags.GetActorFlag(ActorFlag.Sprinting);
+        set => Flags.SetActorFlag(ActorFlag.Sprinting, value);
+    }
+
     public bool IsSwimming;
     private readonly HashSet<EffectType> _effects = [];
 
