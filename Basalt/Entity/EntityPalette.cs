@@ -27,7 +27,7 @@ public sealed class EntityPalette
 
     public EntityType ResolveType(string identifier)
     {
-        return EntityType.GetOrPlayer(identifier);
+        return EntityType.GetOrCreate(identifier);
     }
 
     public void RegisterTrait<TTrait>() where TTrait : EntityTrait
@@ -95,15 +95,15 @@ public sealed class EntityPalette
                     continue;
                 }
 
-                _ = new EntityType(entry.Identifier, entry.Components);
-                EntityTraitRegistry.BindTraitsToType(EntityType.Get(entry.Identifier)!);
+                _ = new EntityType(entry.Identifier, entry.Components, entry.PropertiesPayload, entry.Loot?.Table);
             }
 
             if (EntityType.Get(PlayerIdentifier) is null)
             {
                 _ = new EntityType(PlayerIdentifier, []);
-                EntityTraitRegistry.BindTraitsToType(EntityType.Get(PlayerIdentifier)!);
             }
+
+            global::Basalt.Server.Loot.LootTableManager.LoadFromEntities(root, EntityType.GetAll());
             _vanillaLoaded = true;
         }
     }

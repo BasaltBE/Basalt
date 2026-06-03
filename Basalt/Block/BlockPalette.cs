@@ -107,11 +107,9 @@ public sealed class BlockPalette
             string root = ResolveDataDirectory(dataDirectory);
             string typesPath = Path.Combine(root, "block_types.json");
             string permutationsPath = Path.Combine(root, "block_permutations.json");
-            string metadataPath = Path.Combine(root, "block_metadata.json");
             List<BlockTypeData> types = ReadTypes(typesPath);
             List<BlockPermutationData> permutations = ReadPermutations(permutationsPath);
-            List<BlockMetadataData> metadata = ReadMetadata(metadataPath);
-            LoadRegistries(types, permutations, metadata);
+            LoadRegistries(types, permutations);
 
             _vanillaLoaded = true;
         }
@@ -131,15 +129,7 @@ public sealed class BlockPalette
         return result ?? [];
     }
 
-    private static List<BlockMetadataData> ReadMetadata(string metadataPath)
-    {
-        if (!File.Exists(metadataPath)) return [];
-        using FileStream stream = File.OpenRead(metadataPath);
-        List<BlockMetadataData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockMetadataData);
-        return result ?? [];
-    }
-
-    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockMetadataData> metadata)
+    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations)
     {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
@@ -153,6 +143,18 @@ public sealed class BlockPalette
             }
 
             BlockType type = BlockType.Get(identifier) ?? new BlockType(identifier);
+            type.Air = types[i].Air;
+            type.Liquid = types[i].Liquid;
+            type.Solid = types[i].Solid;
+            type.BlastResistance = types[i].BlastResistance;
+            type.Brightness = types[i].Brightness;
+            type.FlameEncouragement = types[i].FlameEncouragement;
+            type.Flammability = types[i].Flammability;
+            type.Friction = types[i].Friction;
+            type.Hardness = types[i].Hardness;
+            type.Opacity = types[i].Opacity;
+            type.Loggable = types[i].Loggable;
+            type.MapColor = types[i].MapColor;
 
             for (int j = 0; j < types[i].Components.Count; j++)
             {
@@ -171,14 +173,6 @@ public sealed class BlockPalette
         }
 
         _ = BlockType.Get(AirIdentifier) ?? new BlockType(AirIdentifier);
-
-        for (int i = 0; i < metadata.Count; i++)
-        {
-            if (BlockType.Types.TryGetValue(metadata[i].Identifier, out BlockType? type))
-            {
-                type.Hardness = metadata[i].Hardness;
-            }
-        }
 
         for (int i = 0; i < permutations.Count; i++)
         {

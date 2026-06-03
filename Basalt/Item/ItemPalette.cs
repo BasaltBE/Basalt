@@ -182,77 +182,30 @@ public sealed class ItemPalette
 
             string root = ResolveDataRoot(dataDirectory);
             string typesPath = Path.Combine(root, "item_types.json");
-            string metadataPath = Path.Combine(root, "item_metadata.json");
             List<ItemTypeData> types;
             using (FileStream typesStream = File.OpenRead(typesPath))
             {
                 types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
             }
 
-            List<ItemMetadataData> metadata;
-            using (FileStream metadataStream = File.OpenRead(metadataPath))
-            {
-                metadata = JsonSerializer.Deserialize(metadataStream, ItemPaletteJsonContext.Default.ListItemMetadataData) ?? [];
-            }
+            ItemType.EnsureRegistryCapacity(types.Count + 1);
 
-            ItemType.EnsureRegistryCapacity(metadata.Count + 1);
-            Dictionary<string, ItemTypeData> typeMap = new(StringComparer.Ordinal);
             for (int i = 0; i < types.Count; i++)
             {
-                ItemTypeData type = types[i];
-                if (string.IsNullOrEmpty(type.Identifier))
+                ItemTypeData entry = types[i];
+                if (string.IsNullOrEmpty(entry.Identifier) || entry.NetworkId is null || ItemType.Get(entry.Identifier) is not null)
                 {
                     continue;
-                }
-
-                typeMap[type.Identifier] = type;
-            }
-
-            for (int i = 0; i < metadata.Count; i++)
-            {
-                ItemMetadataData entry = metadata[i];
-                if (string.IsNullOrEmpty(entry.Identifier) || ItemType.Get(entry.Identifier) is not null)
-                {
-                    continue;
-                }
-
-                typeMap.TryGetValue(entry.Identifier, out ItemTypeData? typeData);
-                typeData ??= new ItemTypeData { Identifier = entry.Identifier };
-
-                CompoundTag properties;
-                if (string.IsNullOrWhiteSpace(entry.Properties))
-                {
-                    properties = new CompoundTag();
-                }
-                else
-                {
-                    // TODO we could conver base64 in place somehow
-                    byte[] data = Convert.FromBase64String(entry.Properties);
-                    if (data.Length == 0)
-                    {
-                        properties = new CompoundTag();
-                    }
-                    else
-                    {
-                        BinaryStream reader = new(data);
-                        TagType rootType = (TagType)reader.GetReader().ReadInt8();
-                        if (rootType != TagType.Compound)
-                        {
-                            throw new InvalidOperationException($"Unexpected item properties root tag type '{rootType}'.");
-                        }
-
-                        properties = CompoundTag.Read(reader);
-                    }
                 }
 
                 _ = new ItemType(
                     entry.Identifier,
-                    entry.NetworkId,
-                    typeData.MaxAmount,
-                    typeData.Tags,
-                    entry.IsComponentBased,
+                    entry.NetworkId.Value,
+                    entry.MaxAmount,
+                    entry.Tags,
+                    entry.ComponentBased,
                     entry.ItemVersion,
-                    properties);
+                    BuildProperties(entry.PropertiesPayload));
             }
 
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
@@ -331,6 +284,68 @@ public sealed class ItemPalette
         }
 
         throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
+    }
+
+    private static CompoundTag BuildProperties(JsonElement? payload)
+    {
+        return payload is { ValueKind: JsonValueKind.Object } element
+            ? ToCompoundTag(element)
+            : new CompoundTag();
+    }
+
+    private static CompoundTag ToCompoundTag(JsonElement element)
+    {
+        CompoundTag tag = new();
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            BaseTag? value = ToNbtTag(property.Value);
+            if (value is not null)
+            {
+                tag.Set(property.Name, value);
+            }
+        }
+
+        return tag;
+    }
+
+    private static BaseTag? ToNbtTag(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => ToCompoundTag(element),
+            JsonValueKind.Array => ToListTag(element),
+            JsonValueKind.String => new StringTag { Value = element.GetString() ?? string.Empty },
+            JsonValueKind.Number => ToNumberTag(element),
+            JsonValueKind.True => new ByteTag { Value = 1 },
+            JsonValueKind.False => new ByteTag { Value = 0 },
+            JsonValueKind.Null => null,
+            _ => null
+        };
+    }
+
+    private static ListTag ToListTag(JsonElement element)
+    {
+        ListTag tag = new();
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            BaseTag? value = ToNbtTag(item);
+            if (value is not null)
+            {
+                tag.Values.Add(value);
+            }
+        }
+
+        return tag;
+    }
+
+    private static BaseTag ToNumberTag(JsonElement element)
+    {
+        if (element.TryGetInt32(out int value))
+        {
+            return new IntTag { Value = value };
+        }
+
+        return new FloatTag { Value = element.GetSingle() };
     }
 
     private static CreativeItemInstanceDescriptor BuildGroupIcon(string identifier)
