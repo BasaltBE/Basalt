@@ -17,7 +17,7 @@ public sealed record RequestChunkRadiusPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        ChunkRadius = reader.ReadVarInt();
+        ChunkRadius = reader.ReadZigZag();
         MaxChunkRadius = reader.ReadUInt8();
     }
 
