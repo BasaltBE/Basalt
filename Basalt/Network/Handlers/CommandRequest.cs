@@ -17,7 +17,6 @@ public static class CommandRequest
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (CommandRequestPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        Logger.Info($"Received command request: {packet.Command}");
 
         CommandResult result = CommandResult.Empty(false);
 
@@ -29,6 +28,8 @@ public static class CommandRequest
         {
             try
             {
+                Logger.Info($"{player.Username} executed command {packet.Command}");
+
                 string[] tokens = packet.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (tokens.Length == 0)
                 {
