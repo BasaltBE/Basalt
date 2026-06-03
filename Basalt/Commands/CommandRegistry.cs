@@ -128,7 +128,8 @@ public class CommandRegistry
             }
         }
 
-        if (executor is PlayerExecutor playerExecutor && !CanPlayerExecute(target, playerExecutor.Player))
+        if (executor is PlayerExecutor playerExecutor &&
+            (!CanPlayerExecute(command, playerExecutor.Player) || !CanPlayerExecute(target, playerExecutor.Player)))
         {
             return CommandResult.Message(PermissionDeniedMessage, false);
         }
@@ -401,7 +402,7 @@ public class CommandRegistry
                 Description = command.Description,
                 PermissionLevel = GetCommandPermissionLevel(command),
                 AliasesOffset = GetAliasesOffset(packet, enumValueOffsets, command),
-                Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, command)
+                Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, command, player)
             });
         }
 
@@ -429,13 +430,19 @@ public class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
-        Command command)
+        Command command,
+        Player? player)
     {
         List<ProtocolCommandOverload> overloads = new();
 
         for (int i = 0; i < command.SubCommands.Count; i++)
         {
             SubCommand subCommand = command.SubCommands[i];
+            if (player is not null && !CanPlayerExecute(subCommand, player))
+            {
+                continue;
+            }
+
             List<ProtocolCommandParameter> parameters = new()
             {
                 CreateEnumParameter(packet, enumValueOffsets, subCommand.Name, subCommand.Name, [subCommand.Name], required: true)
