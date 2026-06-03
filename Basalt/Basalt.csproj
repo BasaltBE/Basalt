@@ -29,8 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Protocol\Data\*.json">
-      <Link>Protocol\Data\%(Filename)%(Extension)</Link>
+    <Content Include="..\Protocol\Data\**\*.json">
+      <Link>Protocol\Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
