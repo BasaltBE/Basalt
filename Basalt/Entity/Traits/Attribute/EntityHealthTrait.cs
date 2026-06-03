@@ -10,6 +10,7 @@ using Entity = Basalt.Server.Entity.Entity;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Player.Traits;
 using Basalt.Server.World;
+using System.Text.Json;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait
 {
@@ -114,7 +115,30 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
 
     public override void OnAdd()
     {
-        EnsureAttribute(new AttributeProperties(0, 20, 20, 20));
+        EnsureAttribute(GetHealthProperties());
+    }
+
+    private AttributeProperties GetHealthProperties()
+    {
+        const float DefaultHealth = 20f;
+        if (!Entity.Type.TryGetComponentProperties("minecraft:health", out JsonElement health))
+        {
+            return new AttributeProperties(0, DefaultHealth, DefaultHealth, DefaultHealth);
+        }
+
+        float max = ReadFloat(health, "max") ?? DefaultHealth;
+        float current = ReadFloat(health, "value") ?? max;
+        return new AttributeProperties(0, max, max, current);
+    }
+
+    private static float? ReadFloat(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number)
+        {
+            return null;
+        }
+
+        return value.TryGetSingle(out float result) ? result : null;
     }
 
     public override void OnSpawn(EntitySpawnOptions details)
