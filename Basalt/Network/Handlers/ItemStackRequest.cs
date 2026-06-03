@@ -8,6 +8,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
+using Basalt.Server.Player.Traits;
 
 
 public static class ItemStackRequest
@@ -78,6 +79,12 @@ public static class ItemStackRequest
             }
 
             Console.WriteLine($"ItemStackRequest failed: request: {request.RequestId} status={status} action={DescribeAction(action)}");
+            foreach (Container container in player.openedContainers.Values.Distinct())
+            {
+                container.Update();
+            }
+
+            player.GetTrait<PlayerCursorTrait>()?.Container.UpdateSlot(0);
 
             return new ItemStackResponse
             {
