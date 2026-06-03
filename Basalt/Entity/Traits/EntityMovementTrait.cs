@@ -24,6 +24,7 @@ public sealed class EntityMovementTrait : EntityTrait
     public float TerminalVelocity { get; set; } = -3.92f;
     public float GroundFriction { get; set; } = 0.6f;
     public float MinHorizontalVelocity { get; set; } = 0.01f;
+    private const float CollisionEpsilon = 0.001f;
 
 
     public EntityMovementTrait(Entity entity) : base(entity)
@@ -69,6 +70,13 @@ public sealed class EntityMovementTrait : EntityTrait
         }
 
         Vec3f previousPosition = Entity.Position;
+        EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
+        if (collision is not null)
+        {
+            collision.XAxisCollision = 0;
+            collision.YAxisCollision = 0;
+            collision.ZAxisCollision = 0;
+        }
 
         for (uint i = 0; i < details.DeltaTick; i++)
         {
@@ -104,15 +112,43 @@ public sealed class EntityMovementTrait : EntityTrait
                 }
             }
 
-            float nextX = Entity.Position.X + Entity.Velocity.X;
+            float velocityX = Entity.Velocity.X;
+            float velocityZ = Entity.Velocity.Z;
+            float nextX = Entity.Position.X + velocityX;
             float nextY = Entity.Position.Y + Entity.Velocity.Y;
-            float nextZ = Entity.Position.Z + Entity.Velocity.Z;
-
-            if (applyGravity && Entity.Velocity.Y <= 0f && IsGrounded(nextY))
+            float nextZ = Entity.Position.Z + velocityZ;
+            if (velocityX != 0f && CollidesWithSolidBlocks(nextX, Entity.Position.Y, Entity.Position.Z))
             {
+                if (collision is not null)
+                {
+                    collision.XAxisCollision = velocityX > 0f ? 1 : -1;
+                }
+
+                nextX = Entity.Position.X;
+                velocityX = 0f;
+            }
+
+            if (velocityZ != 0f && CollidesWithSolidBlocks(nextX, Entity.Position.Y, nextZ))
+            {
+                if (collision is not null)
+                {
+                    collision.ZAxisCollision = velocityZ > 0f ? 1 : -1;
+                }
+
+                nextZ = Entity.Position.Z;
+                velocityZ = 0f;
+            }
+
+            if (applyGravity && Entity.Velocity.Y <= 0f && IsGrounded(nextX, nextY, nextZ))
+            {
+                if (collision is not null)
+                {
+                    collision.YAxisCollision = -1;
+                }
+
                 int groundY = (int)MathF.Floor(nextY - 0.001f);
-                float groundedVelocityX = Entity.Velocity.X * GroundFriction;
-                float groundedVelocityZ = Entity.Velocity.Z * GroundFriction;
+                float groundedVelocityX = velocityX * GroundFriction;
+                float groundedVelocityZ = velocityZ * GroundFriction;
                 if (MathF.Abs(groundedVelocityX) < MinHorizontalVelocity)
                 {
                     groundedVelocityX = 0f;
@@ -159,13 +195,19 @@ public sealed class EntityMovementTrait : EntityTrait
                 Y = nextY,
                 Z = nextZ
             };
+            Entity.Velocity = new Vec3f
+            {
+                X = velocityX,
+                Y = Entity.Velocity.Y,
+                Z = velocityZ
+            };
         }
 
         if (previousPosition.X == Entity.Position.X &&
             previousPosition.Y == Entity.Position.Y &&
             previousPosition.Z == Entity.Position.Z)
         {
-            Entity.OnPhysicsTick(details.CurrentTick, IsGrounded(Entity.Position.Y));
+            Entity.OnPhysicsTick(details.CurrentTick, IsGrounded(Entity.Position.X, Entity.Position.Y, Entity.Position.Z));
             return;
         }
 
@@ -175,7 +217,7 @@ public sealed class EntityMovementTrait : EntityTrait
             new MovementRotation(),
             new MovementRotation()));
 
-        Entity.OnPhysicsTick(details.CurrentTick, IsGrounded(Entity.Position.Y));
+        Entity.OnPhysicsTick(details.CurrentTick, IsGrounded(Entity.Position.X, Entity.Position.Y, Entity.Position.Z));
     }
 
     // public override void OnSpawn(EntitySpawnOptions details) {}
@@ -238,30 +280,94 @@ public sealed class EntityMovementTrait : EntityTrait
         Entity.Attributes.SetAttribute(attribute);
     }
 
-    private bool IsGrounded(float y)
+    private bool IsGrounded(float x, float y, float z)
     {
         if (Entity.Dimension is null)
         {
             return false;
         }
 
-        string identifier = Entity.Dimension.GetPermutation(
-            (int)MathF.Floor(Entity.Position.X),
-            (int)MathF.Floor(y - 0.001f),
-            (int)MathF.Floor(Entity.Position.Z)
-        ).Type.Identifier;
+        return HasSolidBelow(
+            x,
+            y - 0.001f,
+            z
+        );
+    }
 
-        if (string.Equals(identifier, "minecraft:air", StringComparison.Ordinal))
+    private bool HasSolidBelow(float x, float y, float z)
+    {
+        float halfWidth = CollisionWidth() * 0.5f;
+        int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
+        int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
+        int blockY = (int)MathF.Floor(y);
+        int minZ = (int)MathF.Floor(z - halfWidth + CollisionEpsilon);
+        int maxZ = (int)MathF.Floor(z + halfWidth - CollisionEpsilon);
+
+        for (int blockX = minX; blockX <= maxX; blockX++)
+        {
+            for (int blockZ = minZ; blockZ <= maxZ; blockZ++)
+            {
+                if (IsSolid(blockX, blockY, blockZ))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool CollidesWithSolidBlocks(float x, float y, float z)
+    {
+        float halfWidth = CollisionWidth() * 0.5f;
+        int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
+        int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
+        int minY = (int)MathF.Floor(y + CollisionEpsilon);
+        int maxY = (int)MathF.Floor(y + CollisionHeight() - CollisionEpsilon);
+        int minZ = (int)MathF.Floor(z - halfWidth + CollisionEpsilon);
+        int maxZ = (int)MathF.Floor(z + halfWidth - CollisionEpsilon);
+
+        for (int blockX = minX; blockX <= maxX; blockX++)
+        {
+            for (int blockY = minY; blockY <= maxY; blockY++)
+            {
+                for (int blockZ = minZ; blockZ <= maxZ; blockZ++)
+                {
+                    if (IsSolid(blockX, blockY, blockZ))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsSolid(int x, int y, int z)
+    {
+        if (Entity.Dimension is null)
         {
             return false;
         }
 
-        if (identifier.Contains("water", StringComparison.Ordinal) || identifier.Contains("lava", StringComparison.Ordinal))
-        {
-            return false;
-        }
+        var type = Entity.Dimension.GetPermutation(
+            x,
+            y,
+            z
+        ).Type;
 
-        return true;
+        return type.Solid && !type.Air && !type.Liquid;
+    }
+
+    private float CollisionWidth()
+    {
+        return Entity.GetTrait<EntityCollisionTrait>()?.Width ?? EntityCollisionTrait.DefaultWidth;
+    }
+
+    private float CollisionHeight()
+    {
+        return Entity.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
     }
 }
 
