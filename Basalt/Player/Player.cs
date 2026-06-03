@@ -101,14 +101,40 @@ public sealed class Player : Entity.Entity
         Abilities.SetOperator(isOperator);
         if (isOperator)
         {
-            Permissions.Add("basalt.op");
+            AddPermission("basalt.op", syncClient: false);
         }
         else
         {
-            Permissions.Remove("basalt.op");
+            RemovePermission("basalt.op", syncClient: false);
         }
 
-        if (!syncClient || Connection is null || Network is null)
+        if (syncClient)
+        {
+            SyncPermissions();
+        }
+    }
+
+    public void AddPermission(string permission, bool syncClient = true)
+    {
+        Permissions.Add(permission);
+        if (syncClient)
+        {
+            SyncPermissions();
+        }
+    }
+
+    public void RemovePermission(string permission, bool syncClient = true)
+    {
+        Permissions.Remove(permission);
+        if (syncClient)
+        {
+            SyncPermissions();
+        }
+    }
+
+    public void SyncPermissions()
+    {
+        if (Connection is null || Network is null)
         {
             return;
         }

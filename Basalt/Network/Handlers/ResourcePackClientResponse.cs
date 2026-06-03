@@ -200,7 +200,6 @@ public static class ResourcePackClientResponse
                     }
 
                     player.Spawn(dimension, spawnSignal.Options);
-                    player.SetOperator(player.IsOperator, syncClient: true);
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
@@ -213,9 +212,9 @@ public static class ResourcePackClientResponse
                 PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
                 server.Network.SendPackets(connection, [startGame]);
+                player.SyncPermissions();
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 // server.Network.SendPackets(connection, [spawnStatus]);
-                server.Commands.SendAvailableCommands(server, player);
                 server.Network.SendPackets(connection, [actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 return;
