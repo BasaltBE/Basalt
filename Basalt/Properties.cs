@@ -46,6 +46,11 @@ public class Properties
     [ServerProperties.PropertyKey("default-world")]
     [ServerProperties.PropertyComment("Identifier of the default world.")]
     public string DefaultWorldIdentifier { get; set; } = "world";
+
+    [ServerProperties.PropertyOrder(10)]
+    [ServerProperties.PropertyKey("plugins-directory")]
+    [ServerProperties.PropertyComment("Directory where plugin DLLs are loaded from.")]
+    public string PluginsDirectory { get; set; } = "plugins";
 }
 
 
