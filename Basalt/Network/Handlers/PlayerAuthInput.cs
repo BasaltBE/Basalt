@@ -2,6 +2,7 @@ namespace Basalt.Server.Network.Handlers;
 
 using System.Collections.Concurrent;
 using Basalt.Server;
+using Basalt.Server.Block.Traits.Types;
 using Basalt.Server.Entity.Traits;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Events;
@@ -406,6 +407,12 @@ public static class PlayerAuthInput
         Basalt.Server.Block.BlockPermutation air = Basalt.Server.Block.BlockType
             .GetOrAir("minecraft:air")
             .GetPermutation();
+
+        Basalt.Server.Block.Block breakingBlock =
+            player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
+            new Basalt.Server.Block.Block(block);
+
+        breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 

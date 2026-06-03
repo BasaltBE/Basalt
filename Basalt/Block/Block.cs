@@ -1,8 +1,14 @@
 namespace Basalt.Server.Block;
 
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
+using Basalt.Server.Entity;
+using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Block.Traits;
 using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Item;
+using Basalt.Server.Loot;
 
 
 public sealed class Block
@@ -87,6 +93,25 @@ public sealed class Block
 
     public void OnBreak(BlockBreakDetails details)
     {
+        if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
+        {
+            List<ItemStack> drops = LootTableManager.GenerateLootFromBlock(this);
+            for (int i = 0; i < drops.Count; i++)
+            {
+                ItemEntity drop = new(drops[i])
+                {
+                    Position = new Vec3f
+                    {
+                        X = details.BlockPosition.X + 0.5f,
+                        Y = details.BlockPosition.Y + 0.5f,
+                        Z = details.BlockPosition.Z + 0.5f
+                    }
+                };
+
+                drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+            }
+        }
+
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnBreak(details);
