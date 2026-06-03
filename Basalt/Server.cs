@@ -3,6 +3,7 @@ namespace Basalt.Server;
 using System.Diagnostics;
 using Basalt.Server.Commands;
 using Basalt.Server.Network;
+using Basalt.Server.Plugins;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -63,6 +64,7 @@ public sealed class Server
     /// Registry for commands
     /// </summary>
     public CommandRegistry Commands = new();
+    public PluginManager Plugins { get; }
     /// <summary>
     /// Network handler for processing minecraft packets and packet handlers
     /// </summary>
@@ -82,11 +84,15 @@ public sealed class Server
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
+        Plugins = new PluginManager(this);
 
         RegisterProvider<LevelDbProvider>("leveldb");
         RegisterProvider<InMemoryProvider>("memory");
         RegisterGenerator<VoidGenerator>("void");
         RegisterGenerator<SuperFlatGenerator>("superflat");
+
+        
+        Plugins.LoadAll(Properties.PluginsDirectory);
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
@@ -106,6 +112,7 @@ public sealed class Server
 
     public void Start()
     {
+        Plugins.StartAll();
         Commands.CacheAvailableCommands();
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
@@ -207,6 +214,7 @@ public sealed class Server
 
     public void Stop()
     {
+        Plugins.DisableAll();
         CancellationTokenSource? runCancellation = _runCancellation;
         Task? networkLoopTask = _networkLoopTask;
         _runCancellation = null;
@@ -262,6 +270,11 @@ public sealed class Server
         if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType))
         {
             throw new KeyNotFoundException($"Unknown provider identifier '{providerIdentifier}'.");
+        }
+
+        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
+        {
+            providerArgs = [Path.Combine("worlds", name)];
         }
 
         object? providerInstance = Activator.CreateInstance(providerType, providerArgs);
