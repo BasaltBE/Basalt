@@ -6,7 +6,7 @@
 
 worlds
 server.properties
-
+/plugins/
 
 artifacts
 .*

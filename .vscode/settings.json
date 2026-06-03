@@ -29,7 +29,9 @@
         "Waterfall/bin": true,
         "Basalt/.tmp_build_verify": true,
         "Basalt/.tmp": true,
-        "Basalt/Basalt.csproj.lscache": true
+        "Basalt/Basalt.csproj.lscache": true,
+        "plugins/Skyblock/obj": true,
+        "plugins/Skyblock/bin": true
     },
     "hide-files.files": [
         "Basalt/obj",
@@ -56,6 +58,8 @@
         "Waterfall/bin",
         "Basalt/.tmp_build_verify",
         "Basalt/.tmp",
-        "Basalt/Basalt.csproj.lscache"
+        "Basalt/Basalt.csproj.lscache",
+        "plugins/Skyblock/obj",
+        "plugins/Skyblock/bin"
     ]
 }

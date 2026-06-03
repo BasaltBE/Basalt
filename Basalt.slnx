@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/plugins/">
+    <Project Path="plugins/Skyblock/Skyblock.csproj" />
+  </Folder>
   <Project Path="Basalt/Basalt.csproj" />
   <Project Path="Binary/Binary.csproj" Id="9d65d42a-1ceb-4be7-b088-32d4b64c0b37" />
   <Project Path="Logger/Logger.csproj" />
