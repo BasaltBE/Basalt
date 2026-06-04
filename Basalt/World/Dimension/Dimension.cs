@@ -1,5 +1,6 @@
 namespace Basalt.Server.World.Dimension;
 
+using System.Collections.Concurrent;
 using Basalt.Server.Block;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
@@ -13,6 +14,9 @@ using Entity = Basalt.Server.Entity.Entity;
 
 public sealed class Dimension : IDisposable
 {
+    private const int CompletedChunkLimit = 128;
+    private static readonly int ChunkWorkerLimit = Math.Clamp(Environment.ProcessorCount - 1, 1, 4);
+
     /// <summary>
     /// A mapping of block actors with containers
     /// </summary>
@@ -45,9 +49,17 @@ public sealed class Dimension : IDisposable
 
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
+    private readonly Lock _chunkRequestLock = new();
+    private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
+    private readonly ConcurrentQueue<long> _chunkRequests = new();
+    private readonly ConcurrentQueue<CompletedChunkRequest> _completedChunkRequests = new();
+    private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
+    private readonly SemaphoreSlim _chunkRequestSignal = new(0);
+    private readonly CancellationTokenSource _chunkRequestCancel = new();
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
     private bool _tickingEntities;
+    private bool _disposed;
 
     public string Identifier { get; }
     public DimensionType Type { get; }
@@ -64,6 +76,11 @@ public sealed class Dimension : IDisposable
         _entities = [];
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
+
+        for (int i = 0; i < ChunkWorkerLimit; i++)
+        {
+            _ = Task.Run(ChunkRequestWorker);
+        }
     }
 
     public int ChunkCount => _chunks.Count;
@@ -101,6 +118,40 @@ public sealed class Dimension : IDisposable
     {
         _chunks[HashChunk(chunk.X, chunk.Z)] = chunk;
         _provider.SaveChunk(chunk);
+    }
+
+    public void RequestChunks(ReadOnlySpan<(int X, int Z)> chunks, Action<ChunkColumn> ready)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        for (int i = 0; i < chunks.Length; i++)
+        {
+            (int x, int z) = chunks[i];
+            long hash = HashChunk(x, z);
+
+            if (_chunks.TryGetValue(hash, out ChunkColumn? chunk))
+            {
+                _chunkRequestCallbacks.Enqueue(new ChunkRequestCallback(chunk, ready));
+                continue;
+            }
+
+            lock (_chunkRequestLock)
+            {
+                if (_pendingChunkRequests.TryGetValue(hash, out PendingChunkRequest? request))
+                {
+                    request.Callbacks.Add(ready);
+                    continue;
+                }
+
+                _pendingChunkRequests[hash] = new PendingChunkRequest(ready);
+            }
+
+            _chunkRequests.Enqueue(hash);
+            _chunkRequestSignal.Release();
+        }
     }
 
     public bool RemoveChunk(int x, int z)
@@ -334,11 +385,17 @@ public sealed class Dimension : IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
+        _chunkRequestCancel.Cancel();
+        _chunkRequestSignal.Release(ChunkWorkerLimit);
+        FlushCompletedChunkRequests(int.MaxValue);
         SaveDirtyChunks();
     }
 
     public void Tick(ulong currentTick, uint deltaTick)
     {
+        FlushCompletedChunkRequests(CompletedChunkLimit);
+
         if (currentTick % 20 == 0 && _chunks.Count > 0)
         {
             int unloadLimit = Math.Min(Math.Max(_chunks.Count / 8, 32), 256);
@@ -614,6 +671,98 @@ public sealed class Dimension : IDisposable
     {
         return new Vec3f { X = x, Y = y, Z = z };
     }
+
+    private void FlushCompletedChunkRequests(int limit)
+    {
+        int completed = 0;
+        while (completed < limit && _chunkRequestCallbacks.TryDequeue(out ChunkRequestCallback ready))
+        {
+            ready.Callback(ready.Chunk);
+            completed++;
+        }
+
+        while (completed < limit && _completedChunkRequests.TryDequeue(out CompletedChunkRequest completedRequest))
+        {
+            PendingChunkRequest? request;
+            lock (_chunkRequestLock)
+            {
+                if (!_pendingChunkRequests.Remove(completedRequest.Hash, out request))
+                {
+                    continue;
+                }
+            }
+
+            if (completedRequest.Chunk is null)
+            {
+                continue;
+            }
+
+            _chunks[completedRequest.Hash] = completedRequest.Chunk;
+
+            foreach (Action<ChunkColumn> callback in request.Callbacks)
+            {
+                callback(completedRequest.Chunk);
+            }
+
+            completed++;
+        }
+    }
+
+    private async Task ChunkRequestWorker()
+    {
+        CancellationToken token = _chunkRequestCancel.Token;
+
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                await _chunkRequestSignal.WaitAsync(token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (!_chunkRequests.TryDequeue(out long hash))
+            {
+                continue;
+            }
+
+            int x = (int)(hash >> 32);
+            int z = (int)hash;
+
+            try
+            {
+                ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
+                if (loaded is null)
+                {
+                    loaded = _generator.Generate(Type, x, z);
+                    _generator.Populate(loaded);
+                    loaded.Dirty = true;
+                }
+
+                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, loaded));
+            }
+            catch (Exception exception)
+            {
+                Logger.Err($"Failed to request chunk {x}, {z}: {exception.Message}");
+                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, null));
+            }
+        }
+    }
+
+    private sealed class PendingChunkRequest
+    {
+        public readonly List<Action<ChunkColumn>> Callbacks;
+
+        public PendingChunkRequest(Action<ChunkColumn> callback)
+        {
+            Callbacks = [callback];
+        }
+    }
+
+    private readonly record struct CompletedChunkRequest(long Hash, ChunkColumn? Chunk);
+    private readonly record struct ChunkRequestCallback(ChunkColumn Chunk, Action<ChunkColumn> Callback);
 }
 
 

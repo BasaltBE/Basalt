@@ -265,6 +265,11 @@ public sealed class Server
 
     public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs)
     {
+        if (_worlds.ContainsKey(name))
+        {
+            throw new InvalidOperationException($"World '{name}' already exists.");
+        }
+
         if (string.IsNullOrWhiteSpace(providerIdentifier))
         {
             throw new ArgumentException("Provider identifier cannot be empty.", nameof(providerIdentifier));
