@@ -46,6 +46,8 @@ namespace Basalt.Server
             if (!props.HasProperty("plugins-directory")) props.SetStringProperty("plugins-directory", "plugins");
             if (!props.HasProperty("compression-threshold")) props.SetNumericalProperty("compression-threshold", 1);
             if (!props.HasProperty("compression-algorithm")) props.SetStringProperty("compression-algorithm", "zlib");
+            if (!props.HasProperty("max-view-distance")) props.SetNumericalProperty("max-view-distance", 32);
+            if (!props.HasProperty("simulation-distance")) props.SetNumericalProperty("simulation-distance", 4);
         }
 
     }

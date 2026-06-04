@@ -350,12 +350,57 @@ public sealed class Dimension : IDisposable
             return;
         }
 
+        foreach (ChunkColumn chunk in _chunks.Values)
+        {
+            chunk.Simulated = false;
+        }
+
+        if (World?.Server is global::Basalt.Server.Server server)
+        {
+            int simulationDistance = Math.Clamp(server.Properties.SimulationDistance, 0, 120);
+            foreach ((_, var player) in server.Players)
+            {
+                if (player.Dimension != this)
+                {
+                    continue;
+                }
+
+                int currentChunkX = WorldToChunk(player.Position.X);
+                int currentChunkZ = WorldToChunk(player.Position.Z);
+
+                for (int dx = -simulationDistance; dx <= simulationDistance; dx++)
+                {
+                    for (int dz = -simulationDistance; dz <= simulationDistance; dz++)
+                    {
+                        int x = currentChunkX + dx;
+                        int z = currentChunkZ + dz;
+                        ChunkColumn? chunk = GetChunk(x, z);
+                        if (chunk is not null)
+                        {
+                            chunk.Simulated = true;
+                        }
+                    }
+                }
+            }
+        }
+
         _tickingEntities = true;
         foreach (Entity entity in _entities)
         {
             if (entity.PendingDespawn || entity.Dimension != this)
             {
                 _pendingEntityRemoves.Add(entity);
+                continue;
+            }
+
+            if (entity is global::Basalt.Server.Player.Player)
+            {
+                entity.Tick(currentTick, deltaTick);
+                continue;
+            }
+
+            if (!EntityInSimulatedChunk(entity))
+            {
                 continue;
             }
 
@@ -438,6 +483,18 @@ public sealed class Dimension : IDisposable
     private static long HashChunk(int x, int z)
     {
         return ((long)x << 32) | (uint)z;
+    }
+
+    private bool EntityInSimulatedChunk(Entity entity)
+    {
+        int chunkX = WorldToChunk(entity.Position.X);
+        int chunkZ = WorldToChunk(entity.Position.Z);
+        return _chunks.TryGetValue(HashChunk(chunkX, chunkZ), out ChunkColumn? chunk) && chunk.Simulated;
+    }
+
+    private static int WorldToChunk(float coordinate)
+    {
+        return (int)MathF.Floor(coordinate) >> 4;
     }
 
     private ChunkColumn? GetOrLoadChunk(int x, int z)

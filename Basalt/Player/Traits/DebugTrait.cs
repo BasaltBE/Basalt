@@ -25,7 +25,7 @@ public sealed class DebugTrait : PlayerTrait
 
     private ulong _lastSentTick;
     private double _averageMspt;
-    private bool _gaveDebugItems;
+    // private bool _gaveDebugItems;
 
     public DebugTrait(Entity entity) : base(entity)
     {

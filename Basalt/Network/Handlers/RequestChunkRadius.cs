@@ -16,9 +16,8 @@ public static class RequestChunkRadius
         packet = (RequestChunkRadiusPacket)Protocol.Io.Packet.Deserialize(reader);
 
         int requestedRadius = packet.ChunkRadius;
-        // TODO: TEMPORARY 120 MAX CHUNK RENDER DISTANCE
-        // TODO: Server does not handle this many chunks well
-        int radius = Math.Clamp(requestedRadius, 4, 120);
+        int maxViewDistance = Math.Clamp(server.Properties.MaxViewDistance, 4, 120);
+        int radius = Math.Clamp(requestedRadius, 4, maxViewDistance);
         // UpdateChunkRadiusPacket response = new()
         // {
         //     ChunkRadius = radius
