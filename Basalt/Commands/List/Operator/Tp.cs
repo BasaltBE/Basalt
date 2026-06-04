@@ -1,17 +1,14 @@
 namespace Basalt.Server.Commands.List.Operator;
 
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
 using Basalt.Server.Commands;
+using Vec3f = Basalt.Protocol.Types.Vec3f;
 using Basalt.Server.World.Dimension;
 using Player = global::Basalt.Server.Player.Player;
 using WorldInstance = Basalt.Server.World.World;
 
-public sealed class TpCommand : Basalt.Server.Commands.Command
+public class TpCommand : Command
 {
-    const string HelpMessage =
-        "§cUsage: /tp <destination> [dimension] | /tp <x> <y> <z> [dimension] | /tp <victim> <destination> [dimension] | /tp <victim> <x> <y> <z> [dimension]";
-
     public TpCommand() : base("tp", "Teleport entities", ["teleport"], [])
     {
         Permissions.Add("basalt.op");
@@ -36,17 +33,13 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
             .Set<StringEnum>("dimension", false);
     }
 
-    public override string? GetHelpMessage() => HelpMessage;
+    public override string? GetHelpMessage() =>
+        "§cUsage: /tp <destination> [dimension] | /tp <x> <y> <z> [dimension] | /tp <victim> <destination> [dimension] | /tp <victim> <x> <y> <z> [dimension]";
 
     public override CommandResult? ExecuteManual(CommandExecutionState state, string[] tokens, int argumentOffset)
     {
-        if (argumentOffset >= tokens.Length)
-        {
-            return CommandResult.Message(HelpMessage, false);
-        }
-
         string[] args = tokens[argumentOffset..];
-        Player? executor = state.Executor is PlayerExecutor playerExecutor ? playerExecutor.Player : null;
+        Player? executor = GetExecutor(state);
         WorldInstance contextWorld = executor?.Dimension?.World ?? state.Server.GetWorld();
 
         CommandParsing.TryStripTrailingDimension(contextWorld, args, out args, out string? explicitDimensionId);
@@ -56,15 +49,16 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
             return TeleportVictimsToPosition(state, executor, contextWorld, explicitDimensionId, args[0], args, positionStart: 1);
         }
 
-        if (args.Length == 3 && TryParsePositionWithContext(executor, args, 0, null, out Vec3f selfCoords))
+        if (args.Length == 3 && TryParsePosition(executor, args, 0, null, out Vec3f selfCoords))
         {
-            if (executor is null)
+            CommandResult? executorError = RequireExecutor(executor);
+            if (executorError is not null)
             {
-                return CommandResult.Message("§cYou must specify a player when running this command from console.", false);
+                return executorError;
             }
 
-            Dimension? dimension = ResolveCoordsDimension(contextWorld, executor, explicitDimensionId);
-            return TeleportPlayers([executor], selfCoords, dimension, state, isSelf: true);
+            Dimension? dimension = ResolveCoordsDimension(contextWorld, executor!, explicitDimensionId);
+            return TeleportPlayers(state, [executor!], selfCoords, dimension, destinationName: null);
         }
 
         if (args.Length == 2)
@@ -77,7 +71,7 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
             return TeleportExecutorToPlayer(state, executor, contextWorld, explicitDimensionId, args[0]);
         }
 
-        return CommandResult.Message(HelpMessage, false);
+        return CommandResult.Message(GetHelpMessage()!, false);
     }
 
     static CommandResult TeleportExecutorToPlayer(
@@ -87,26 +81,19 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
         string? explicitDimensionId,
         string destinationToken)
     {
-        if (executor is null)
+        CommandResult? executorError = RequireExecutor(executor);
+        if (executorError is not null)
         {
-            return CommandResult.Message("§cYou must specify a player when running this command from console.", false);
+            return executorError;
         }
 
-        CommandResult? targetError = CommandParsing.ResolveSinglePlayerTarget(
-            state.Server,
-            executor,
-            destinationToken,
-            "§cNo online players matched the target selector.",
-            "§cMultiple entities matched the target selector, please be more specific.");
-        if (targetError is not null)
+        if (!TryGetSinglePlayer(state, executor, destinationToken, out Player destination, out CommandResult? targetError))
         {
-            return targetError;
+            return targetError!;
         }
 
-        Player destination = CommandParsing.ResolvePlayers(state.Server, executor, destinationToken)[0];
         Dimension? dimension = ResolvePlayerDestinationDimension(contextWorld, destination, explicitDimensionId);
-
-        return TeleportPlayers([executor], destination.Position, dimension, state, isSelf: true);
+        return TeleportPlayers(state, [executor!], destination.Position, dimension, destinationName: destination.Username);
     }
 
     static CommandResult TeleportVictimsToPlayer(
@@ -117,33 +104,18 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
         string victimToken,
         string destinationToken)
     {
-        CommandResult? victimError = CommandParsing.ResolveSinglePlayerTarget(
-            state.Server,
-            executor,
-            victimToken,
-            "§cNo online players matched the victim selector.",
-            "§cMultiple entities matched the victim selector, please be more specific.");
-        if (victimError is not null)
+        if (!TryGetPlayers(state, executor, victimToken, out List<Player> victims, out CommandResult? victimError))
         {
-            return victimError;
+            return victimError!;
         }
 
-        CommandResult? destinationError = CommandParsing.ResolveSinglePlayerTarget(
-            state.Server,
-            executor,
-            destinationToken,
-            "§cNo online players matched the destination selector.",
-            "§cMultiple entities matched the destination selector, please be more specific.");
-        if (destinationError is not null)
+        if (!TryGetSinglePlayer(state, executor, destinationToken, out Player destination, out CommandResult? destinationError))
         {
-            return destinationError;
+            return destinationError!;
         }
 
-        List<Player> victims = CommandParsing.ResolvePlayers(state.Server, executor, victimToken);
-        Player destination = CommandParsing.ResolvePlayers(state.Server, executor, destinationToken)[0];
         Dimension? dimension = ResolvePlayerDestinationDimension(contextWorld, destination, explicitDimensionId);
-
-        return TeleportPlayers(victims, destination.Position, dimension, state, isSelf: false, destinationName: destination.Username);
+        return TeleportPlayers(state, victims, destination.Position, dimension, destinationName: destination.Username);
     }
 
     static CommandResult TeleportVictimsToPosition(
@@ -155,20 +127,81 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
         string[] args,
         int positionStart)
     {
-        List<Player> victims = CommandParsing.ResolvePlayers(state.Server, executor, victimToken);
-        if (victims.Count == 0)
+        if (!TryGetPlayers(state, executor, victimToken, out List<Player> victims, out CommandResult? victimError))
         {
-            return CommandResult.Message("§cNo online players matched the victim selector.", false);
+            return victimError!;
         }
 
-        Player? originPlayer = victims[0];
-        if (!TryParsePositionWithContext(executor, args, positionStart, originPlayer, out Vec3f position))
+        Player originPlayer = victims[0];
+        if (!TryParsePosition(executor, args, positionStart, originPlayer, out Vec3f position))
         {
             return CommandResult.Message("§cInvalid coordinates.", false);
         }
 
         Dimension? dimension = ResolveCoordsDimension(contextWorld, executor ?? originPlayer, explicitDimensionId);
-        return TeleportPlayers(victims, position, dimension, state, isSelf: false);
+        return TeleportPlayers(state, victims, position, dimension, destinationName: null);
+    }
+
+    static Player? GetExecutor(CommandExecutionState state) =>
+        state.Executor is PlayerExecutor executor ? executor.Player : null;
+
+    static CommandResult? RequireExecutor(Player? executor)
+    {
+        if (executor is not null)
+        {
+            return null;
+        }
+
+        return CommandResult.Message("You must specify a target, or be a player!", false);
+    }
+
+    static bool TryGetSinglePlayer(
+        CommandExecutionState state,
+        Player? context,
+        string token,
+        out Player player,
+        out CommandResult? error)
+    {
+        player = null!;
+        error = CommandParsing.ResolveSinglePlayerTarget(
+            state.Server,
+            context,
+            token,
+            "No online players matched the target selector",
+            "Multiple entities matched the target selector, please be more specific");
+
+        if (error is not null)
+        {
+            return false;
+        }
+
+        List<Player> players = CommandParsing.ResolvePlayers(state.Server, context, token);
+        if (players.Count == 0)
+        {
+            error = CommandResult.Message("The target selector must be a player!", false);
+            return false;
+        }
+
+        player = players[0];
+        return true;
+    }
+
+    static bool TryGetPlayers(
+        CommandExecutionState state,
+        Player? context,
+        string token,
+        out List<Player> players,
+        out CommandResult? error)
+    {
+        players = CommandParsing.ResolvePlayers(state.Server, context, token);
+        if (players.Count == 0)
+        {
+            error = CommandResult.Message("No online players matched the target selector", false);
+            return false;
+        }
+
+        error = null;
+        return true;
     }
 
     static Dimension? ResolvePlayerDestinationDimension(
@@ -197,25 +230,20 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
         return contextPlayer.Dimension ?? contextWorld.GetDimension(DimensionType.Overworld);
     }
 
-    static bool TryParsePositionWithContext(
-        Player? executor,
-        string[] args,
-        int start,
-        Player? originPlayer,
-        out Vec3f position)
+    static bool TryParsePosition(Player? executor, string[] args, int start, Player? originPlayer, out Vec3f position)
     {
         Vec3f origin = originPlayer?.Position ?? executor?.Position ?? new Vec3f();
         return CommandParsing.TryParsePosition(args, start, origin, out position);
     }
 
     static CommandResult TeleportPlayers(
+        CommandExecutionState state,
         List<Player> players,
         Vec3f position,
         Dimension? dimension,
-        CommandExecutionState state,
-        bool isSelf,
-        string? destinationName = null)
+        string? destinationName)
     {
+        Player? executor = GetExecutor(state);
         List<string> messages = [];
         int successCount = 0;
 
@@ -227,7 +255,7 @@ public sealed class TpCommand : Basalt.Server.Commands.Command
                 player.Teleport(position, dimension);
                 successCount++;
 
-                if (isSelf && ReferenceEquals((state.Executor as PlayerExecutor)?.Player, player))
+                if (ReferenceEquals(executor, player))
                 {
                     if (destinationName is not null)
                     {
