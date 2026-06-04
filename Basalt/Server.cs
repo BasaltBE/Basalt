@@ -116,7 +116,7 @@ public sealed class Server
     public void Start()
     {
         Plugins.StartAll();
-        Commands.CacheAvailableCommands();
+        Commands.CacheAvailableCommands(this);
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 

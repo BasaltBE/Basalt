@@ -27,6 +27,11 @@ public class Command
 
     public CommandOverload Overload = new();
 
+    /// <summary>
+    /// Extra overloads sent to the client in AvailableCommandsPacket (e.g. when execution uses manual parsing).
+    /// </summary>
+    public List<CommandOverload> DisplayOverloads = new();
+
     public Command
     (
         string name,
@@ -83,6 +88,20 @@ public class Command
         Overload = new CommandOverload();
         return Overload;
     }
+
+    public CommandOverload AddDisplayOverload()
+    {
+        CommandOverload overload = new();
+        DisplayOverloads.Add(overload);
+        return overload;
+    }
+
+    public virtual string? GetHelpMessage() => null;
+
+    /// <summary>
+    /// Optional manual parsing and execution. When non-null, the registry skips overload parsing.
+    /// </summary>
+    public virtual CommandResult? ExecuteManual(CommandExecutionState state, string[] tokens, int argumentOffset) => null;
 
     public virtual CommandResult Execute(CommandExecutionState state)
     {
