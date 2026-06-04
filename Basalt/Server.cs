@@ -96,15 +96,18 @@ public sealed class Server
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
-            ? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
-            : CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath);
+            ? LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
+            : LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath);
 
         if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType))
         {
             throw new KeyNotFoundException("No generator registered with identifier 'superflat'.");
         }
 
-        defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+        if (defaultWorld.GetDimension("overworld") is null)
+        {
+            defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+        }
         defaultWorld.ConfigurePersistence(Properties.WorldPath);
 
         Commands.RegisterDefaultCommands();
@@ -287,6 +290,71 @@ public sealed class Server
         world.Server = this;
         _worlds[name] = world;
         return world;
+    }
+
+    public WorldInstance? LoadWorld(string name, string providerIdentifier, params object[] providerArgs)
+    {
+        if (string.IsNullOrWhiteSpace(providerIdentifier))
+        {
+            throw new ArgumentException("Provider identifier cannot be empty.", nameof(providerIdentifier));
+        }
+
+        if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType))
+        {
+            throw new KeyNotFoundException($"Unknown provider identifier '{providerIdentifier}'.");
+        }
+
+        if (providerIdentifier.Equals("memory", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
+        {
+            providerArgs = [Path.Combine("worlds", name)];
+        }
+
+        if (providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
+        {
+            string path = providerArgs.Length > 0 ? providerArgs[0] as string ?? string.Empty : string.Empty;
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path) || !Directory.EnumerateFileSystemEntries(path).Any())
+            {
+                return null;
+            }
+        }
+
+        object? providerInstance = Activator.CreateInstance(providerType, providerArgs);
+        if (providerInstance is not WorldProvider provider)
+        {
+            throw new InvalidOperationException($"Could not construct provider '{providerType.FullName}'.");
+        }
+
+        WorldInstance world = new(name, provider);
+        world.Server = this;
+        _worlds[name] = world;
+        return world;
+    }
+
+    public bool UnloadWorld(string identifier)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            throw new ArgumentException("World identifier cannot be empty.", nameof(identifier));
+        }
+
+        if (identifier.Equals(DefaultWorldIdentifier, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Cannot unload the default world.");
+        }
+
+        if (!_worlds.Remove(identifier, out WorldInstance? world))
+        {
+            return false;
+        }
+
+        world.Server = null;
+        world.Dispose();
+        return true;
     }
 
     public WorldInstance GetWorld()
