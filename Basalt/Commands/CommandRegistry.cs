@@ -8,6 +8,7 @@ using Basalt.Server.Item;
 using EntityInstance = Basalt.Server.Entity.Entity;
 using Player = global::Basalt.Server.Player.Player;
 using ServerInstance = global::Basalt.Server.Server;
+using WorldInstance = Basalt.Server.World.World;
 using ProtocolCommand = Basalt.Protocol.Types.Command;
 using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
 using ProtocolCommandOverload = Basalt.Protocol.Types.CommandOverload;
@@ -143,6 +144,18 @@ public class CommandRegistry
             Overload = overload
         };
 
+        string? helpMessage = target.GetHelpMessage();
+        if (argumentOffset >= tokens.Length && helpMessage is not null)
+        {
+            return CommandResult.Message(helpMessage, false);
+        }
+
+        CommandResult? manualResult = target.ExecuteManual(state, tokens, argumentOffset);
+        if (manualResult is not null)
+        {
+            return manualResult;
+        }
+
         int tokenIndex = argumentOffset;
         for (int i = 0; i < overload.Parameters.Count; i++)
         {
@@ -151,7 +164,9 @@ public class CommandRegistry
             {
                 if (parameter.Required)
                 {
-                    return CommandResult.Empty(false);
+                    return helpMessage is not null
+                        ? CommandResult.Message(helpMessage, false)
+                        : CommandResult.Empty(false);
                 }
 
                 continue;
@@ -162,7 +177,9 @@ public class CommandRegistry
             {
                 if (parameter.Required)
                 {
-                    return CommandResult.Empty(false);
+                    return helpMessage is not null
+                        ? CommandResult.Message(helpMessage, false)
+                        : CommandResult.Empty(false);
                 }
 
                 continue;
@@ -342,7 +359,7 @@ public class CommandRegistry
             {
                 CreateEnumParameter(packet, enumValueOffsets, subCommand.Name, subCommand.Name, [subCommand.Name], required: true)
             };
-            parameters.AddRange(BuildParameters(server, packet, enumValueOffsets, enumOffsets, subCommand.Overload));
+            parameters.AddRange(BuildParameters(server, player, packet, enumValueOffsets, enumOffsets, subCommand.Overload));
             overloads.Add(new ProtocolCommandOverload { Parameters = parameters });
         }
 
@@ -350,7 +367,7 @@ public class CommandRegistry
         {
             overloads.Add(new ProtocolCommandOverload
             {
-                Parameters = BuildParameters(server, packet, enumValueOffsets, enumOffsets, command.DisplayOverloads[i])
+                Parameters = BuildParameters(server, player, packet, enumValueOffsets, enumOffsets, command.DisplayOverloads[i])
             });
         }
 
@@ -358,7 +375,7 @@ public class CommandRegistry
         {
             overloads.Add(new ProtocolCommandOverload
             {
-                Parameters = BuildParameters(server, packet, enumValueOffsets, enumOffsets, command.Overload)
+                Parameters = BuildParameters(server, player, packet, enumValueOffsets, enumOffsets, command.Overload)
             });
         }
 
@@ -367,6 +384,7 @@ public class CommandRegistry
 
     static List<ProtocolCommandParameter> BuildParameters(
         ServerInstance server,
+        Player? player,
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
@@ -376,7 +394,7 @@ public class CommandRegistry
         for (int i = 0; i < overload.Parameters.Count; i++)
         {
             CommandParameter parameter = overload.Parameters[i];
-            parameters.Add(BuildParameter(server, packet, enumValueOffsets, enumOffsets, parameter));
+            parameters.Add(BuildParameter(server, player, packet, enumValueOffsets, enumOffsets, parameter));
         }
 
         return parameters;
@@ -384,6 +402,7 @@ public class CommandRegistry
 
     static ProtocolCommandParameter BuildParameter(
         ServerInstance server,
+        Player? player,
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
@@ -400,9 +419,10 @@ public class CommandRegistry
             };
         }
 
-        if (parameter.Enum == typeof(DimensionEnum))
+        if (string.Equals(parameter.Name, "dimension", StringComparison.OrdinalIgnoreCase))
         {
-            uint enumOffset = AddEnum(packet, enumValueOffsets, "dimension", CommandParsing.GetRegisteredDimensionIdentifiers(server));
+            WorldInstance world = player?.Dimension?.World ?? server.GetWorld();
+            uint enumOffset = AddEnum(packet, enumValueOffsets, "dimension", CommandParsing.GetRegisteredDimensionIdentifiers(world));
             return new ProtocolCommandParameter
             {
                 Name = parameter.Name,

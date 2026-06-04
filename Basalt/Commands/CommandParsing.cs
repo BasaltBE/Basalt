@@ -1,5 +1,6 @@
 namespace Basalt.Server.Commands;
 
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using DimensionInstance = Basalt.Server.World.Dimension.Dimension;
 using EntityInstance = Basalt.Server.Entity.Entity;
@@ -143,43 +144,29 @@ public static class CommandParsing
         return players;
     }
 
-    public static string[] GetRegisteredDimensionIdentifiers(ServerInstance server)
+    public static string[] GetRegisteredDimensionIdentifiers(WorldInstance world)
     {
-        HashSet<string> identifiers = new(StringComparer.OrdinalIgnoreCase);
-        foreach (WorldInstance world in server.Worlds)
+        List<string> identifiers = [];
+        foreach (DimensionInstance dimension in world.Dimensions)
         {
-            foreach (DimensionInstance dimension in world.Dimensions)
-            {
-                identifiers.Add(dimension.Identifier);
-            }
+            identifiers.Add(dimension.Identifier);
         }
 
-        string[] result = new string[identifiers.Count];
-        identifiers.CopyTo(result);
-        Array.Sort(result, StringComparer.OrdinalIgnoreCase);
-        return result;
+        identifiers.Sort(StringComparer.OrdinalIgnoreCase);
+        return identifiers.ToArray();
     }
 
-    public static bool TryFindRegisteredDimension(ServerInstance server, string identifier, out DimensionInstance? dimension)
+    public static bool TryFindRegisteredDimension(WorldInstance world, string identifier, out DimensionInstance? dimension)
     {
-        foreach (WorldInstance world in server.Worlds)
-        {
-            dimension = world.GetDimension(identifier);
-            if (dimension is not null)
-            {
-                return true;
-            }
-        }
-
-        dimension = null;
-        return false;
+        dimension = world.GetDimension(identifier);
+        return dimension is not null;
     }
 
-    public static bool IsRegisteredDimensionToken(ServerInstance server, string token) =>
-        TryFindRegisteredDimension(server, token, out _);
+    public static bool IsRegisteredDimensionToken(WorldInstance world, string token) =>
+        TryFindRegisteredDimension(world, token, out _);
 
     public static bool TryStripTrailingDimension(
-        ServerInstance server,
+        WorldInstance world,
         string[] args,
         out string[] stripped,
         out string? dimensionIdentifier)
@@ -193,7 +180,7 @@ public static class CommandParsing
         }
 
         string last = args[^1];
-        if (!IsRegisteredDimensionToken(server, last))
+        if (!IsRegisteredDimensionToken(world, last))
         {
             return false;
         }
@@ -201,5 +188,31 @@ public static class CommandParsing
         dimensionIdentifier = last;
         stripped = args[..^1];
         return true;
+    }
+
+    public static CommandResult? ResolveSinglePlayerTarget(
+        ServerInstance server,
+        Player? context,
+        string token,
+        string emptyMessage,
+        string ambiguousMessage)
+    {
+        if (token == "@a")
+        {
+            return CommandResult.Message(ambiguousMessage, false);
+        }
+
+        List<Player> players = ResolvePlayers(server, context, token);
+        if (players.Count == 0)
+        {
+            return CommandResult.Message(emptyMessage, false);
+        }
+
+        if (players.Count > 1)
+        {
+            return CommandResult.Message(ambiguousMessage, false);
+        }
+
+        return null;
     }
 }

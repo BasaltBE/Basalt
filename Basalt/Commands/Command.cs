@@ -96,6 +96,13 @@ public class Command
         return overload;
     }
 
+    public virtual string? GetHelpMessage() => null;
+
+    /// <summary>
+    /// Optional manual parsing and execution. When non-null, the registry skips overload parsing.
+    /// </summary>
+    public virtual CommandResult? ExecuteManual(CommandExecutionState state, string[] tokens, int argumentOffset) => null;
+
     public virtual CommandResult Execute(CommandExecutionState state)
     {
         return CommandResult.Empty(false);
