@@ -60,6 +60,7 @@ public static class InventoryTransaction
             return;
         }
 
+
         switch (packet.TransactionData)
         {
             case NormalInventoryTransactionData:

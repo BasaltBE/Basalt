@@ -7,7 +7,9 @@ using Basalt.Server.Entity.Traits;
 using Basalt.Server.Entity.Traits.Types;
 using Basalt.Server.Events;
 using Basalt.Server.Item;
+using Basalt.Server.Item.Traits;
 using Basalt.Server.Item.Traits.Types;
+using Basalt.Server.Player.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -17,8 +19,12 @@ using Basalt.RakNet;
 public static class PlayerAuthInput
 {
     private const float MaxHorizontalMovePerTick = 2.0f;
+    private const ulong DefaultFoodUseTicks = 32UL;
 
     private static readonly ConcurrentDictionary<ulong, ulong> LastInputTickByRuntimeId = new();
+    private static readonly ConcurrentDictionary<ulong, PendingItemUse> PendingItemUses = new();
+
+    private readonly record struct PendingItemUse(int Slot, int StackNetworkId, ulong FinishTick);
 
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
@@ -62,6 +68,7 @@ public static class PlayerAuthInput
             }
 
             MovePlayer(player, packet);
+            TickPendingItemUse(player);
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
             {
@@ -101,6 +108,11 @@ public static class PlayerAuthInput
                 {
                     HandleBlockAction(player, action);
                 }
+            }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem))
+            {
+                StartUsingItem(player);
             }
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting))
@@ -151,6 +163,104 @@ public static class PlayerAuthInput
         {
             Logger.Warn("PlayerAuthInput handler failed: {0}", exception);
         }
+    }
+
+    private static void StartUsingItem(global::Basalt.Server.Player.Player player)
+    {
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        ItemStack? heldItem = inventory?.GetHeldItem();
+        ItemStackFoodTrait? food = heldItem?.GetTrait<ItemStackFoodTrait>();
+        if (inventory is null || heldItem is null || food is null)
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
+        if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue))
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        ulong currentTick = GetCurrentTick(player);
+        ulong useTicks = GetUseDurationTicks(heldItem);
+        PendingItemUses[player.RuntimeId] = new PendingItemUse(
+            inventory.SelectedSlot,
+            heldItem.NetworkStackId,
+            currentTick + Math.Max(1UL, useTicks));
+
+        player.Flags.SetActorFlag(ActorFlag.UsingItem, true);
+    }
+
+    private static void TickPendingItemUse(global::Basalt.Server.Player.Player player)
+    {
+        if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending))
+        {
+            return;
+        }
+
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        ItemStack? heldItem = inventory?.Container.GetItem(pending.Slot);
+        if (inventory is null || heldItem is null || heldItem.NetworkStackId != pending.StackNetworkId)
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        if (GetCurrentTick(player) < pending.FinishTick)
+        {
+            return;
+        }
+
+        PendingItemUses.TryRemove(player.RuntimeId, out _);
+        player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+
+        ItemStackFoodTrait? food = heldItem.GetTrait<ItemStackFoodTrait>();
+        PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
+        if (food is null || hunger is null || !hunger.Eat(food.Nutrition, food.SaturationModifier, food.CanAlwaysEat))
+        {
+            return;
+        }
+
+        heldItem.DecrementStack();
+        if (heldItem.StackSize == 0)
+        {
+            inventory.Container.ClearSlot(pending.Slot);
+        }
+        else
+        {
+            inventory.Container.UpdateSlot(pending.Slot);
+        }
+
+        if (!string.IsNullOrWhiteSpace(food.UsingConvertsTo) && ItemType.Get(food.UsingConvertsTo) is ItemType convertedType)
+        {
+            ItemStack converted = new(convertedType);
+            if (!inventory.Container.AddItem(converted))
+            {
+                _ = player.DropItem(converted);
+            }
+        }
+
+        player.SendAttributes();
+    }
+
+    private static ulong GetCurrentTick(global::Basalt.Server.Player.Player player)
+    {
+        return player.Dimension?.World is Basalt.Server.World.Tickable tickable ? tickable.TickValue : 0UL;
+    }
+
+    private static ulong GetUseDurationTicks(ItemStack item)
+    {
+        if (item.Type.TryGetComponentProperties("minecraft:use_duration", out Basalt.Protocol.Nbt.CompoundTag tag))
+        {
+            return (ulong)Math.Max(1, tag.Get<Basalt.Protocol.Nbt.IntTag>("value")?.Value ?? (int)DefaultFoodUseTicks);
+        }
+
+        return DefaultFoodUseTicks;
     }
 
     private static ItemStackResponse ProcessItemStackRequest(global::Basalt.Server.Player.Player player, Protocol.Types.ItemStackRequest request)

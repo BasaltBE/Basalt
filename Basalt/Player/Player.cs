@@ -466,6 +466,8 @@ public sealed class Player : Entity.Entity
         {
             Network.SendPacket(Connection, attributes);
         }
+
+        AttributesDirty = false;
     }
 
     public PlayerListEntry CreatePlayerListEntry()

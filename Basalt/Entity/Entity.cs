@@ -32,6 +32,7 @@ public class Entity
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
     public Dimension? Dimension { get; protected set; }
+    public bool AttributesDirty { get; set; }
     public bool IsAlive { get; private set; }
     public bool PendingDespawn { get; private set; }
     public bool IsSprinting
@@ -131,6 +132,11 @@ public class Entity
             {
                 Logger.Warn($"Trait tick failed for {Identifier} ({trait.Identifier}): {exception}");
             }
+        }
+
+        if (AttributesDirty && this is Player player)
+        {
+            player.SendAttributes();
         }
     }
 

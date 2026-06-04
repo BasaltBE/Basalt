@@ -288,9 +288,67 @@ public sealed class ItemPalette
 
     private static CompoundTag BuildProperties(JsonElement? payload)
     {
-        return payload is { ValueKind: JsonValueKind.Object } element
-            ? ToCompoundTag(element)
-            : new CompoundTag();
+        if (payload is not { ValueKind: JsonValueKind.Object } element)
+        {
+            return new CompoundTag();
+        }
+
+        CompoundTag properties = ToCompoundTag(element);
+        NormalizeItemComponents(properties);
+        return properties;
+    }
+
+    private static void NormalizeItemComponents(CompoundTag properties)
+    {
+        if (properties.Get<ListTag>("components") is not ListTag componentList)
+        {
+            return;
+        }
+
+        CompoundTag components = new();
+        for (int i = 0; i < componentList.Values.Count; i++)
+        {
+            if (componentList.Values[i] is not StringTag component || string.IsNullOrWhiteSpace(component.Value))
+            {
+                continue;
+            }
+
+            string identifier = component.Value;
+            string payloadKey = identifier.StartsWith("minecraft:", StringComparison.Ordinal)
+                ? identifier["minecraft:".Length..]
+                : identifier;
+
+            CompoundTag componentPayload = properties.Get<CompoundTag>(payloadKey) ?? new CompoundTag();
+            if (identifier == "minecraft:food")
+            {
+                componentPayload = NormalizeFoodComponent(componentPayload);
+                if (!components.Values.ContainsKey("minecraft:use_duration"))
+                {
+                    components.Set("minecraft:use_duration", new IntTag { Value = 32 });
+                }
+            }
+
+            components.Set(identifier, componentPayload);
+        }
+
+        if (properties.Get<IntTag>("maxAmount") is IntTag maxAmount)
+        {
+            CompoundTag maxStackSize = new();
+            maxStackSize.Set("value", new ByteTag { Value = (sbyte)Math.Clamp(maxAmount.Value, 0, 64) });
+            components.Set("minecraft:max_stack_size", maxStackSize);
+        }
+
+        properties.Set("components", components);
+    }
+
+    private static CompoundTag NormalizeFoodComponent(CompoundTag food)
+    {
+        CompoundTag normalized = new();
+        normalized.Set("nutrition", new IntTag { Value = food.Get<IntTag>("nutrition")?.Value ?? 0 });
+        normalized.Set("saturation_modifier", new FloatTag { Value = food.Get<FloatTag>("saturationModifier")?.Value ?? 0f });
+        normalized.Set("can_always_eat", new ByteTag { Value = food.Get<ByteTag>("canAlwaysEat")?.Value ?? 0 });
+        normalized.Set("using_converts_to", new StringTag { Value = food.Get<StringTag>("usingConvertsTo")?.Value ?? string.Empty });
+        return normalized;
     }
 
     private static CompoundTag ToCompoundTag(JsonElement element)

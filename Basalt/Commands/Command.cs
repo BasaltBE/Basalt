@@ -89,7 +89,7 @@ public class Command
         return Overload;
     }
 
-    public CommandOverload AddDisplayOverload()
+    public CommandOverload AddOverload()
     {
         CommandOverload overload = new();
         DisplayOverloads.Add(overload);

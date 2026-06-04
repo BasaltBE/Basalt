@@ -69,6 +69,17 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
             : JumpCost;
     }
 
+    public bool Eat(int nutrition, float saturationModifier, bool canAlwaysEat)
+    {
+        if (!canAlwaysEat && CurrentValue >= MaximumValue)
+            return false;
+
+        CurrentValue = Math.Clamp(CurrentValue + nutrition, MinimumValue, MaximumValue);
+        Saturation = Math.Clamp(Saturation + nutrition * saturationModifier * 2f, 0f, CurrentValue);
+
+        return true;
+    }
+
     public override void OnSpawn(EntitySpawnOptions details)
     {
         if (details.InitialSpawn)

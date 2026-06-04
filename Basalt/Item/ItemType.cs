@@ -82,6 +82,11 @@ public sealed class ItemType
         _traits.TryAdd(identifier, traitType);
     }
 
+    public bool TryGetComponentProperties(string component, out CompoundTag properties)
+    {
+        return Components.TryGetComponentProperties(component, out properties);
+    }
+
     public static void EnsureRegistryCapacity(int capacity)
     {
         Registry.EnsureCapacity(capacity);

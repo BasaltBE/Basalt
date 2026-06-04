@@ -19,8 +19,15 @@ public abstract class EntityAttributeTrait : EntityTrait
         set
         {
             ProtoAttribute attribute = GetAttribute();
-            attribute.Min = Truncate4(value);
+            float next = Truncate4(value);
+            if (attribute.Min == next)
+            {
+                return;
+            }
+
+            attribute.Min = next;
             Entity.Attributes.SetAttribute(attribute);
+            MarkDirty();
         }
     }
 
@@ -30,8 +37,15 @@ public abstract class EntityAttributeTrait : EntityTrait
         set
         {
             ProtoAttribute attribute = GetAttribute();
-            attribute.Max = Truncate4(value);
+            float next = Truncate4(value);
+            if (attribute.Max == next)
+            {
+                return;
+            }
+
+            attribute.Max = next;
             Entity.Attributes.SetAttribute(attribute);
+            MarkDirty();
         }
     }
 
@@ -41,8 +55,15 @@ public abstract class EntityAttributeTrait : EntityTrait
         set
         {
             ProtoAttribute attribute = GetAttribute();
-            attribute.Default = Truncate4(value);
+            float next = Truncate4(value);
+            if (attribute.Default == next)
+            {
+                return;
+            }
+
+            attribute.Default = next;
             Entity.Attributes.SetAttribute(attribute);
+            MarkDirty();
         }
     }
 
@@ -52,8 +73,15 @@ public abstract class EntityAttributeTrait : EntityTrait
         set
         {
             ProtoAttribute attribute = GetAttribute();
-            attribute.Current = Truncate4(value);
+            float next = Truncate4(value);
+            if (attribute.Current == next)
+            {
+                return;
+            }
+
+            attribute.Current = next;
             Entity.Attributes.SetAttribute(attribute);
+            MarkDirty();
         }
     }
 
@@ -91,6 +119,7 @@ public abstract class EntityAttributeTrait : EntityTrait
         float current = Truncate4(properties.CurrentValue ?? @default);
 
         Entity.Attributes.SetAttribute(new ProtoAttribute(min, max, current, @default, Attribute));
+        MarkDirty();
     }
 
     public override void OnRemove()
@@ -101,6 +130,14 @@ public abstract class EntityAttributeTrait : EntityTrait
     private static float Truncate4(float value)
     {
         return MathF.Truncate(value * 10000f) / 10000f;
+    }
+
+    private void MarkDirty()
+    {
+        if (Sync)
+        {
+            Entity.AttributesDirty = true;
+        }
     }
 }
 
