@@ -32,6 +32,7 @@ public class CommandRegistry
         Register(new DeopCommand());
         Register(new ListCommand());
         Register(new SummonCommand());
+        Register(new TpCommand());
     }
 
     public void Register(Command command)
@@ -202,8 +203,8 @@ public class CommandRegistry
         if (parameter.Enum == typeof(TargetEnum))
         {
             tokenIndex++;
-            EntityInstance[] entities = ResolveTargets(server, player, token);
-            string[] offlineUsernames = ResolveOfflineTargets(server, token, entities);
+            EntityInstance[] entities = CommandParsing.ResolveTargets(server, player, token);
+            string[] offlineUsernames = CommandParsing.ResolveOfflineTargets(server, token, entities);
             return new TargetEnum(token, entities, offlineUsernames);
         }
 
@@ -230,19 +231,14 @@ public class CommandRegistry
                 return null;
             }
 
-            string xToken = tokens[tokenIndex];
-            string yToken = tokens[tokenIndex + 1];
-            string zToken = tokens[tokenIndex + 2];
-
-            if (!TryParsePositionComponent(xToken, player?.Position.X ?? 0f, out float x) ||
-                !TryParsePositionComponent(yToken, player?.Position.Y ?? 0f, out float y) ||
-                !TryParsePositionComponent(zToken, player?.Position.Z ?? 0f, out float z))
+            Basalt.Protocol.Types.Vec3f origin = player?.Position ?? new Basalt.Protocol.Types.Vec3f();
+            if (!CommandParsing.TryParsePosition(tokens, tokenIndex, origin, out Basalt.Protocol.Types.Vec3f position))
             {
                 return null;
             }
 
             tokenIndex += 3;
-            return new PositionEnum(new Basalt.Protocol.Types.Vec3f { X = x, Y = y, Z = z });
+            return new PositionEnum(position);
         }
 
         if (typeof(CustomEnum).IsAssignableFrom(parameter.Enum))
@@ -266,111 +262,9 @@ public class CommandRegistry
         throw new InvalidOperationException($"Unsupported command parameter enum: {parameter.Enum.FullName}.");
     }
 
-    static bool TryParsePositionComponent(string token, float origin, out float value)
+    public void CacheAvailableCommands(ServerInstance server)
     {
-        value = 0f;
-        if (token == "~")
-        {
-            value = origin;
-            return true;
-        }
-
-        if (token.StartsWith('~'))
-        {
-            string offset = token[1..];
-            if (offset.Length == 0)
-            {
-                value = origin;
-                return true;
-            }
-
-            if (!float.TryParse(offset, out float step))
-            {
-                return false;
-            }
-
-            value = origin + step;
-            return true;
-        }
-
-        return float.TryParse(token, out value);
-    }
-
-    static EntityInstance[] ResolveTargets(ServerInstance server, Player? player, string token)
-    {
-        if (token == "@s")
-        {
-            return player is null ? [] : [player];
-        }
-
-        if (token == "@a")
-        {
-            return server.Players.Values.ToArray<EntityInstance>();
-        }
-
-        if (token == "@e")
-        {
-            if (player is not null)
-            {
-                return player.Dimension?.Entities.ToArray() ?? [];
-            }
-
-            return server.Worlds.SelectMany(world => world.Dimensions).SelectMany(dimension => dimension.Entities).ToArray();
-        }
-
-        if (token == "@p")
-        {
-            Player? nearest = null;
-            float nearestDistance = float.MaxValue;
-            foreach (Player candidate in server.Players.Values)
-            {
-                if (player is not null && candidate.Dimension != player.Dimension)
-                {
-                    continue;
-                }
-
-                float dx = candidate.Position.X - (player?.Position.X ?? candidate.Position.X);
-                float dy = candidate.Position.Y - (player?.Position.Y ?? candidate.Position.Y);
-                float dz = candidate.Position.Z - (player?.Position.Z ?? candidate.Position.Z);
-                float distance = dx * dx + dy * dy + dz * dz;
-                if (distance >= nearestDistance)
-                {
-                    continue;
-                }
-
-                nearest = candidate;
-                nearestDistance = distance;
-            }
-
-            return nearest is null ? [] : [nearest];
-        }
-
-        foreach (Player candidate in server.Players.Values)
-        {
-            if (string.Equals(candidate.Username, token, StringComparison.OrdinalIgnoreCase))
-            {
-                return [candidate];
-            }
-        }
-
-        return [];
-    }
-
-    static string[] ResolveOfflineTargets(ServerInstance server, string token, EntityInstance[] onlineTargets)
-    {
-        if (onlineTargets.Length > 0 || token.StartsWith('@'))
-        {
-            return [];
-        }
-
-
-
-        return [];
-    }
-
-    public void CacheAvailableCommands()
-    {
-        AvailableCommandsPacket = BuildAvailableCommandsPacket();
+        AvailableCommandsPacket = BuildAvailableCommandsPacket(server);
     }
 
     public void SendAvailableCommands(ServerInstance server, Player player)
@@ -380,10 +274,10 @@ public class CommandRegistry
             return;
         }
 
-        server.Network.SendPacket(player.Connection, BuildAvailableCommandsPacket(player));
+        server.Network.SendPacket(player.Connection, BuildAvailableCommandsPacket(server, player));
     }
 
-    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null)
+    public AvailableCommandsPacket BuildAvailableCommandsPacket(ServerInstance server, Player? player = null)
     {
         AvailableCommandsPacket packet = new();
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
@@ -402,7 +296,7 @@ public class CommandRegistry
                 Description = command.Description,
                 PermissionLevel = GetCommandPermissionLevel(command),
                 AliasesOffset = GetAliasesOffset(packet, enumValueOffsets, command),
-                Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, command, player)
+                Overloads = BuildOverloads(server, packet, enumValueOffsets, enumOffsets, command, player)
             });
         }
 
@@ -427,6 +321,7 @@ public class CommandRegistry
     }
 
     static List<ProtocolCommandOverload> BuildOverloads(
+        ServerInstance server,
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
@@ -447,15 +342,23 @@ public class CommandRegistry
             {
                 CreateEnumParameter(packet, enumValueOffsets, subCommand.Name, subCommand.Name, [subCommand.Name], required: true)
             };
-            parameters.AddRange(BuildParameters(packet, enumValueOffsets, enumOffsets, subCommand.Overload));
+            parameters.AddRange(BuildParameters(server, packet, enumValueOffsets, enumOffsets, subCommand.Overload));
             overloads.Add(new ProtocolCommandOverload { Parameters = parameters });
+        }
+
+        for (int i = 0; i < command.DisplayOverloads.Count; i++)
+        {
+            overloads.Add(new ProtocolCommandOverload
+            {
+                Parameters = BuildParameters(server, packet, enumValueOffsets, enumOffsets, command.DisplayOverloads[i])
+            });
         }
 
         if (command.Overload.Parameters.Count > 0 || overloads.Count == 0)
         {
             overloads.Add(new ProtocolCommandOverload
             {
-                Parameters = BuildParameters(packet, enumValueOffsets, enumOffsets, command.Overload)
+                Parameters = BuildParameters(server, packet, enumValueOffsets, enumOffsets, command.Overload)
             });
         }
 
@@ -463,6 +366,7 @@ public class CommandRegistry
     }
 
     static List<ProtocolCommandParameter> BuildParameters(
+        ServerInstance server,
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
@@ -472,13 +376,14 @@ public class CommandRegistry
         for (int i = 0; i < overload.Parameters.Count; i++)
         {
             CommandParameter parameter = overload.Parameters[i];
-            parameters.Add(BuildParameter(packet, enumValueOffsets, enumOffsets, parameter));
+            parameters.Add(BuildParameter(server, packet, enumValueOffsets, enumOffsets, parameter));
         }
 
         return parameters;
     }
 
     static ProtocolCommandParameter BuildParameter(
+        ServerInstance server,
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
@@ -487,6 +392,17 @@ public class CommandRegistry
         if (parameter.Enum == typeof(ItemEnum) || parameter.Enum == typeof(EntityEnum))
         {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, parameter.Enum);
+            return new ProtocolCommandParameter
+            {
+                Name = parameter.Name,
+                Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
+                Optional = !parameter.Required
+            };
+        }
+
+        if (parameter.Enum == typeof(DimensionEnum))
+        {
+            uint enumOffset = AddEnum(packet, enumValueOffsets, "dimension", CommandParsing.GetRegisteredDimensionIdentifiers(server));
             return new ProtocolCommandParameter
             {
                 Name = parameter.Name,
