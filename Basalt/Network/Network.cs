@@ -182,6 +182,10 @@ public sealed class NetworkHandler
             case PacketId.Text:
                 Text.Handle(_server, connection, packetBuffer);
                 break;
+
+            case PacketId.ModalFormResponse:
+                ModalFormResponse.Handle(_server, connection, packetBuffer);
+                break;
         }
     }
 
