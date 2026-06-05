@@ -20,7 +20,7 @@ public static class CommandRequest
 
         CommandResult result = CommandResult.Empty(false);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
             result = CommandResult.Message("Command executor was not found.", false);
         }

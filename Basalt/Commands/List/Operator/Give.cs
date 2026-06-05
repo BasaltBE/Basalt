@@ -4,7 +4,7 @@ using Basalt.Core.Commands;
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
-using Player = global::Basalt.Core.Player.Player;
+using Player = Player.Player;
 
 public class GiveCommand : Command
 {
