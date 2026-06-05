@@ -4,10 +4,9 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Server;
 using Basalt.Server.Commands.List.Operator;
-using Basalt.Server.Item;
-using EntityInstance = Basalt.Server.Entity.Entity;
 using Player = global::Basalt.Server.Player.Player;
 using ServerInstance = global::Basalt.Server.Server;
+using DimensionInstance = Basalt.Server.World.Dimension.Dimension;
 using WorldInstance = Basalt.Server.World.World;
 using ProtocolCommand = Basalt.Protocol.Types.Command;
 using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
@@ -172,7 +171,7 @@ public class CommandRegistry
                 continue;
             }
 
-            CommandEnum? parsed = ParseArgument(server, player, parameter, tokens, ref tokenIndex);
+            CommandEnum? parsed = ParseArgument(state, parameter, tokens, ref tokenIndex);
             if (parsed is null)
             {
                 if (parameter.Required)
@@ -191,92 +190,24 @@ public class CommandRegistry
         return target.Execute(state);
     }
 
-    static CommandEnum? ParseArgument(ServerInstance server, Player? player, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    static CommandEnum? ParseArgument(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
     {
         if (tokenIndex >= tokens.Length)
         {
             return null;
         }
 
-        string token = tokens[tokenIndex];
-        if (parameter.Enum == typeof(IntEnum))
+        if (Activator.CreateInstance(parameter.Enum) is not CommandEnum parsed)
         {
-            tokenIndex++;
-            return new IntEnum(int.Parse(token));
+            throw new InvalidOperationException($"Command enum '{parameter.Enum.FullName}' could not be created.");
         }
 
-        if (parameter.Enum == typeof(StringEnum))
+        if (!parsed.Parse(state, parameter, tokens, ref tokenIndex))
         {
-            tokenIndex++;
-            return new StringEnum(token);
+            return null;
         }
 
-        if (parameter.Enum == typeof(JsonEnum))
-        {
-            tokenIndex++;
-            return new JsonEnum(token);
-        }
-
-        if (parameter.Enum == typeof(TargetEnum))
-        {
-            tokenIndex++;
-            EntityInstance[] entities = CommandParsing.ResolveTargets(server, player, token);
-            string[] offlineUsernames = CommandParsing.ResolveOfflineTargets(server, token, entities);
-            return new TargetEnum(token, entities, offlineUsernames);
-        }
-
-        if (parameter.Enum == typeof(ItemEnum))
-        {
-            tokenIndex++;
-            string identifier = token.IndexOf(':') == -1 ? "minecraft:" + token : token;
-            ItemType type = ItemType.Get(identifier) ?? throw new InvalidOperationException($"Invalid item '{token}' for command parameter '{parameter.Name}'.");
-            return new ItemEnum(token, type);
-        }
-
-        if (parameter.Enum == typeof(EntityEnum))
-        {
-            tokenIndex++;
-            string identifier = token.IndexOf(':') == -1 ? "minecraft:" + token : token;
-            Entity.EntityType type = Entity.EntityType.Get(identifier) ?? throw new InvalidOperationException($"Invalid entity '{token}' for command parameter '{parameter.Name}'.");
-            return new EntityEnum(token, type.Identifier);
-        }
-
-        if (parameter.Enum == typeof(PositionEnum))
-        {
-            if (tokenIndex + 2 >= tokens.Length)
-            {
-                return null;
-            }
-
-            Basalt.Protocol.Types.Vec3f origin = player?.Position ?? new Basalt.Protocol.Types.Vec3f();
-            if (!CommandParsing.TryParsePosition(tokens, tokenIndex, origin, out Basalt.Protocol.Types.Vec3f position))
-            {
-                return null;
-            }
-
-            tokenIndex += 3;
-            return new PositionEnum(position);
-        }
-
-        if (typeof(CustomEnum).IsAssignableFrom(parameter.Enum))
-        {
-            if (Activator.CreateInstance(parameter.Enum) is not CustomEnum customEnum)
-            {
-                throw new InvalidOperationException($"Command enum '{parameter.Enum.FullName}' could not be created.");
-            }
-
-            string? value = customEnum.Options.FirstOrDefault(option => string.Equals(option, token, StringComparison.OrdinalIgnoreCase));
-            if (value is null)
-            {
-                throw new InvalidOperationException($"Invalid value '{token}' for command parameter '{parameter.Name}'.");
-            }
-
-            customEnum.Value = value;
-            tokenIndex++;
-            return customEnum;
-        }
-
-        throw new InvalidOperationException($"Unsupported command parameter enum: {parameter.Enum.FullName}.");
+        return parsed;
     }
 
     public void CacheAvailableCommands(ServerInstance server)
@@ -422,7 +353,7 @@ public class CommandRegistry
         if (string.Equals(parameter.Name, "dimension", StringComparison.OrdinalIgnoreCase))
         {
             WorldInstance world = player?.Dimension?.World ?? server.GetWorld();
-            uint enumOffset = AddEnum(packet, enumValueOffsets, "dimension", CommandParsing.GetRegisteredDimensionIdentifiers(world));
+            uint enumOffset = AddEnum(packet, enumValueOffsets, "dimension", GetRegisteredDimensionIdentifiers(world));
             return new ProtocolCommandParameter
             {
                 Name = parameter.Name,
@@ -478,6 +409,18 @@ public class CommandRegistry
         }
 
         throw new InvalidOperationException($"Unsupported command parameter enum: {type.FullName}.");
+    }
+
+    static string[] GetRegisteredDimensionIdentifiers(WorldInstance world)
+    {
+        List<string> identifiers = [];
+        foreach (DimensionInstance dimension in world.Dimensions)
+        {
+            identifiers.Add(dimension.Identifier);
+        }
+
+        identifiers.Sort(StringComparer.OrdinalIgnoreCase);
+        return identifiers.ToArray();
     }
 
     static ProtocolCommandParameter CreateEnumParameter(

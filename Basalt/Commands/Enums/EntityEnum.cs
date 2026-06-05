@@ -23,6 +23,21 @@ public sealed class EntityEnum : CommandEnum
         EntityIdentifier = identifier;
     }
 
+    public override bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    {
+        if (tokenIndex >= tokens.Length)
+        {
+            return false;
+        }
+
+        Raw = tokens[tokenIndex];
+        string identifier = Raw.IndexOf(':') == -1 ? VanillaPrefix + Raw : Raw;
+        EntityType type = EntityType.Get(identifier) ?? throw new InvalidOperationException($"Invalid entity '{Raw}' for command parameter '{parameter.Name}'.");
+        EntityIdentifier = type.Identifier;
+        tokenIndex++;
+        return true;
+    }
+
     static string TrimPrefix(string identifier)
     {
         if (!identifier.StartsWith(VanillaPrefix, StringComparison.Ordinal))

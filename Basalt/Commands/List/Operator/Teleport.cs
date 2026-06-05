@@ -42,9 +42,9 @@ public class TpCommand : Command
         Player? executor = GetExecutor(state);
         WorldInstance contextWorld = executor?.Dimension?.World ?? state.Server.GetWorld();
 
-        CommandParsing.TryStripTrailingDimension(contextWorld, args, out args, out string? explicitDimensionId);
+        StripTrailingDimension(contextWorld, args, out args, out string? explicitDimensionId);
 
-        if (args.Length >= 4 && CommandParsing.TryParsePosition(args, 1, new Vec3f(), out _))
+        if (args.Length >= 4 && PositionEnum.Parse(args, 1, new Vec3f(), out _))
         {
             return TeleportVictimsToPosition(state, executor, contextWorld, explicitDimensionId, args[0], args, positionStart: 1);
         }
@@ -163,7 +163,7 @@ public class TpCommand : Command
         out CommandResult? error)
     {
         player = null!;
-        error = CommandParsing.ResolveSinglePlayerTarget(
+        error = TargetEnum.ResolveSinglePlayerTarget(
             state.Server,
             context,
             token,
@@ -175,7 +175,7 @@ public class TpCommand : Command
             return false;
         }
 
-        List<Player> players = CommandParsing.ResolvePlayers(state.Server, context, token);
+        List<Player> players = TargetEnum.ResolvePlayers(state.Server, context, token);
         if (players.Count == 0)
         {
             error = CommandResult.Message("The target selector must be a player!", false);
@@ -193,7 +193,7 @@ public class TpCommand : Command
         out List<Player> players,
         out CommandResult? error)
     {
-        players = CommandParsing.ResolvePlayers(state.Server, context, token);
+        players = TargetEnum.ResolvePlayers(state.Server, context, token);
         if (players.Count == 0)
         {
             error = CommandResult.Message("No online players matched the target selector", false);
@@ -233,7 +233,32 @@ public class TpCommand : Command
     static bool TryParsePosition(Player? executor, string[] args, int start, Player? originPlayer, out Vec3f position)
     {
         Vec3f origin = originPlayer?.Position ?? executor?.Position ?? new Vec3f();
-        return CommandParsing.TryParsePosition(args, start, origin, out position);
+        return PositionEnum.Parse(args, start, origin, out position);
+    }
+
+    static bool StripTrailingDimension(
+        WorldInstance world,
+        string[] args,
+        out string[] stripped,
+        out string? dimensionIdentifier)
+    {
+        stripped = args;
+        dimensionIdentifier = null;
+
+        if (args.Length == 0)
+        {
+            return false;
+        }
+
+        string last = args[^1];
+        if (world.GetDimension(last) is null)
+        {
+            return false;
+        }
+
+        dimensionIdentifier = last;
+        stripped = args[..^1];
+        return true;
     }
 
     static CommandResult TeleportPlayers(

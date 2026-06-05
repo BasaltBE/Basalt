@@ -10,6 +10,18 @@ public class IntEnum : CommandEnum
     {
         Value = value;
     }
+
+    public override bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    {
+        if (tokenIndex >= tokens.Length)
+        {
+            return false;
+        }
+
+        Value = int.Parse(tokens[tokenIndex]);
+        tokenIndex++;
+        return true;
+    }
 }
 
 
