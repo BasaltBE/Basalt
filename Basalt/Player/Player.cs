@@ -13,6 +13,7 @@ using Basalt.Binary;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player.Traits;
+using Basalt.Core.Forms;
 
 public sealed class Player : Entities.Entity
 {
@@ -36,6 +37,7 @@ public sealed class Player : Entities.Entity
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
     public Dictionary<int, Container> openedContainers = [];
+    internal Dictionary<int, FormParticipant> PendingForms = [];
 
     public Player(string username, string xuid, Guid uuid) :
         base(EntityIdentifier.Player.ToIdentifierString())
