@@ -1,10 +1,10 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
-using Basalt.Server;
-using Basalt.Server.Entity;
-using Basalt.Server.Entity.Traits;
-using Player = global::Basalt.Server.Player.Player;
+using Basalt.Core.Commands;
+using Basalt.Core;
+using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits;
+using Player = global::Basalt.Core.Player.Player;
 
 
 public class ClearCommand : Command

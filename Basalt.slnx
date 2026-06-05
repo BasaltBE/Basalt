@@ -1,11 +1,9 @@
 <Solution>
-  <Folder Name="/plugins/">
-    <Project Path="plugins/Skyblock/Skyblock.csproj" />
-  </Folder>
+  <Folder Name="/plugins/" />
   <Project Path="Basalt/Basalt.csproj" />
   <Project Path="Binary/Binary.csproj" Id="9d65d42a-1ceb-4be7-b088-32d4b64c0b37" />
+  <Project Path="DedicatedServer/DedicatedServer.csproj" Id="90561e7b-e40d-432e-8776-74cade28e0a2" />
   <Project Path="Logger/Logger.csproj" />
-  <Project Path="RakNet/RakNet.csproj" Id="0f80e604-c0a6-45b4-9cb6-8737297b006d" />
   <Project Path="Protocol/Protocol.csproj" />
-  <!-- <Project Path="Waterfall/Waterfall.csproj" /> -->
+  <Project Path="RakNet/RakNet.csproj" Id="0f80e604-c0a6-45b4-9cb6-8737297b006d" />
 </Solution>

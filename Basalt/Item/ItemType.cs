@@ -1,8 +1,8 @@
-namespace Basalt.Server.Item;
+namespace Basalt.Core.Item;
 
-using Basalt.Server.Block;
-using Basalt.Server.Item.Components;
-using Basalt.Server.Item.Traits;
+using Basalt.Core.Blocks;
+using Basalt.Core.Item.Components;
+using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 

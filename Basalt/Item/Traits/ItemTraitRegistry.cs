@@ -1,4 +1,4 @@
-namespace Basalt.Server.Item.Traits;
+namespace Basalt.Core.Item.Traits;
 
 using System.Reflection;
 

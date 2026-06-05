@@ -1,10 +1,10 @@
-namespace Basalt.Server.Item.Traits.Types;
+namespace Basalt.Core.Item.Traits.Types;
 
-using Player = Basalt.Server.Player.Player;
+using Player = Basalt.Core.Player.Player;
 using Basalt.Protocol.Types;
 
 
-public readonly record struct ItemUseAttackDetails(Player Player, Basalt.Server.Entity.Entity Target, int HotBarSlot, Vec3f Position, Vec3f ClickedPosition);
+public readonly record struct ItemUseAttackDetails(Player Player, Basalt.Core.Entities.Entity Target, int HotBarSlot, Vec3f Position, Vec3f ClickedPosition);
 
 
 

@@ -1,7 +1,7 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
-using EntityInstance = Basalt.Server.Entity.Entity;
-using Player = global::Basalt.Server.Player.Player;
+using EntityInstance = Basalt.Core.Entities.Entity;
+using Player = global::Basalt.Core.Player.Player;
 
 public class TargetEnum : CommandEnum
 {
@@ -67,9 +67,9 @@ public class TargetEnum : CommandEnum
                     continue;
                 }
 
-                float dx = candidate.Position.X - (player?.Position.X ?? candidate.Position.X);
-                float dy = candidate.Position.Y - (player?.Position.Y ?? candidate.Position.Y);
-                float dz = candidate.Position.Z - (player?.Position.Z ?? candidate.Position.Z);
+                float dx = candidate.Location.X - (player?.Location.X ?? candidate.Location.X);
+                float dy = candidate.Location.Y - (player?.Location.Y ?? candidate.Location.Y);
+                float dz = candidate.Location.Z - (player?.Location.Z ?? candidate.Location.Z);
                 float distance = dx * dx + dy * dy + dz * dz;
                 if (distance >= nearestDistance)
                 {

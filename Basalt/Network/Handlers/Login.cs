@@ -1,8 +1,8 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Binary;
-using Basalt.Server;
-using Basalt.Server.Events;
+using Basalt.Core;
+using Basalt.Core.Events;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -72,8 +72,8 @@ public static class Login
 
         ClientData clientData = LoginPayload.Parse(packet.Client);
 
-        KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>? existingPlayerSession = null;
-        foreach ((NetworkConnection existingConnection, global::Basalt.Server.Player.Player existingPlayer) in server.Players)
+        KeyValuePair<NetworkConnection, global::Basalt.Core.Player.Player>? existingPlayerSession = null;
+        foreach ((NetworkConnection existingConnection, global::Basalt.Core.Player.Player existingPlayer) in server.Players)
         {
             bool sameXuid = !string.IsNullOrWhiteSpace(identity.Xuid) &&
                 string.Equals(existingPlayer.Xuid, identity.Xuid, StringComparison.Ordinal);
@@ -84,7 +84,7 @@ public static class Login
                 continue;
             }
 
-            existingPlayerSession = new KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>(existingConnection, existingPlayer);
+            existingPlayerSession = new KeyValuePair<NetworkConnection, global::Basalt.Core.Player.Player>(existingConnection, existingPlayer);
             break;
         }
 
@@ -104,7 +104,7 @@ public static class Login
 
         Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId, identity.Username, server.Properties.OnlineMode);
         string playerXuid = ResolvePlayerXuid(identity.Xuid, playerUuid, server.Properties.OnlineMode);
-        var player = new global::Basalt.Server.Player.Player(identity.Username, playerXuid, playerUuid);
+        var player = new global::Basalt.Core.Player.Player(identity.Username, playerXuid, playerUuid);
         var world = server.GetWorld();
         var savedData = LoadPlayerDataCompat(world, playerXuid, identity.Xuid, identity.Username, playerUuid);
         if (savedData is not null)
@@ -216,7 +216,7 @@ public static class Login
     }
 
     private static CompoundTag? LoadPlayerDataCompat(
-        global::Basalt.Server.World.World world,
+        global::Basalt.Core.Worlds.World world,
         string primaryXuid,
         string identityXuid,
         string username,

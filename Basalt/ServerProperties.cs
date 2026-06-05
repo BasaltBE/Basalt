@@ -2,7 +2,7 @@ using System.Text;
 using System.Globalization;
 using System.Reflection;
 
-namespace Basalt.Server;
+namespace Basalt.Core;
 
 public class ServerProperties
 {

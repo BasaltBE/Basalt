@@ -1,20 +1,20 @@
-namespace Basalt.Server.Player;
+namespace Basalt.Core.Player;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Server.Network;
+using Basalt.Core.Network;
 using Basalt.RakNet;
-using Basalt.Server.Containers;
+using Basalt.Core.Containers;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
-using Basalt.Server.World;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Binary;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Player.Traits;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Player.Traits;
 
-public sealed class Player : Entity.Entity
+public sealed class Player : Entities.Entity
 {
     public readonly string Username;
     public readonly string Xuid;
@@ -141,7 +141,7 @@ public sealed class Player : Entity.Entity
 
         Network.SendPacket(Connection, CreateAbilitiesPacket());
 
-        if (Dimension?.World?.Server is global::Basalt.Server.Server server)
+        if (Dimension?.World?.Server is global::Basalt.Core.Server server)
         {
             server.Commands.SendAvailableCommands(server, this);
         }
@@ -216,9 +216,9 @@ public sealed class Player : Entity.Entity
         float yaw = MathF.PI / 180f * Yaw;
         float pitch = MathF.PI / 180f * Pitch;
 
-        global::Basalt.Server.Entity.ItemEntity drop = new(item)
+        global::Basalt.Core.Entities.ItemEntity drop = new(item)
         {
-            Position = new Vec3f
+            Location = new Vec3f
             {
                 X = feet.X,
                 Y = feet.Y + 1.15f,
@@ -332,11 +332,11 @@ public sealed class Player : Entity.Entity
         Dimension targetDimension = dimension ?? previousDimension ??
             throw new InvalidOperationException("Player must have a dimension to teleport without a target dimension.");
 
-        Vec3f previousPosition = Position;
+        Vec3f previousPosition = Location;
         bool changedDimension = previousDimension != targetDimension;
         bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
 
-        Position = position;
+        Location = position;
         OnTeleport(new EntityTeleportOptions(previousPosition, position));
 
         if (changedDimension)
@@ -522,7 +522,7 @@ public sealed class Player : Entity.Entity
             Username = Username,
             EntityRuntimeId = RuntimeId,
             PlatformChatId = string.Empty,
-            Position = Position,
+            Position = Location,
             Velocity = new Vec3f(),
             Pitch = Pitch,
             Yaw = Yaw,

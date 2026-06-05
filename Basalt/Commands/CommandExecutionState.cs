@@ -1,8 +1,8 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
-using Basalt.Server;
-using Player = global::Basalt.Server.Player.Player;
-using ServerInstance = global::Basalt.Server.Server;
+using Basalt.Core;
+using Player = global::Basalt.Core.Player.Player;
+using ServerInstance = global::Basalt.Core.Server;
 
 
 public interface ICommandExecutor { }

@@ -1,4 +1,4 @@
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
 public interface ISignal
 {

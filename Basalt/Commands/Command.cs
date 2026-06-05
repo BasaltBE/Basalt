@@ -1,4 +1,4 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
 public class Command
 {
@@ -16,21 +16,21 @@ public class Command
     /// <summary>
     /// A list of aliases for the command.
     /// </summary>
-    public List<string> Aliases = new();
+    public List<string> Aliases = [];
 
     /// <summary>
     /// A list of string permissions where at least one is required to execute the command.
     /// </summary>
-    public List<string> Permissions = new();
+    public List<string> Permissions = [];
 
-    public List<SubCommand> SubCommands = new();
+    public List<SubCommand> SubCommands = [];
 
     public CommandOverload Overload = new();
 
     /// <summary>
     /// Extra overloads sent to the client in AvailableCommandsPacket (e.g. when execution uses manual parsing).
     /// </summary>
-    public List<CommandOverload> DisplayOverloads = new();
+    public List<CommandOverload> DisplayOverloads = [];
 
     public Command
     (
@@ -42,8 +42,8 @@ public class Command
     {
         Name = name;
         Description = description;
-        Aliases = new List<string>(aliases);
-        Permissions = new List<string>(permissions);
+        Aliases = [..aliases];
+        Permissions = [..permissions];
     }
 
     public Command

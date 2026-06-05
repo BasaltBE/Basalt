@@ -1,13 +1,13 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Server;
-using Basalt.Server.Commands.List.Operator;
-using Player = global::Basalt.Server.Player.Player;
-using ServerInstance = global::Basalt.Server.Server;
-using DimensionInstance = Basalt.Server.World.Dimension.Dimension;
-using WorldInstance = Basalt.Server.World.World;
+using Basalt.Core;
+using Basalt.Core.Commands.List.Operator;
+using Player = global::Basalt.Core.Player.Player;
+using ServerInstance = global::Basalt.Core.Server;
+using DimensionInstance = Basalt.Core.Worlds.Dimensions.Dimension;
+using WorldInstance = Basalt.Core.Worlds.World;
 using ProtocolCommand = Basalt.Protocol.Types.Command;
 using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
 using ProtocolCommandOverload = Basalt.Protocol.Types.CommandOverload;

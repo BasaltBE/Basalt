@@ -1,7 +1,7 @@
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
-using Basalt.Server.Entity;
-using Basalt.Server.Entity.Traits.Types;
+using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits.Types;
 
 public sealed class EntityDieSignal : EntitySignal
 {

@@ -1,7 +1,7 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Server.Player;
+namespace Basalt.Core.Player;
 
 public sealed class PlayerAbilities
 {

@@ -1,6 +1,6 @@
-namespace Basalt.Server.Containers;
+namespace Basalt.Core.Containers;
 
-using Basalt.Server.Item;
+using Basalt.Core.Item;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;

@@ -1,8 +1,8 @@
-namespace Basalt.Server.Item.Traits;
+namespace Basalt.Core.Item.Traits;
 
 using System.Reflection;
 using Basalt.Protocol.Nbt;
-using Basalt.Server.Item.Traits.Types;
+using Basalt.Core.Item.Traits.Types;
 
 
 public abstract class ItemTrait

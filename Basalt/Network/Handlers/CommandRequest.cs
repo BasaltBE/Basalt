@@ -1,7 +1,7 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Server;
-using Basalt.Server.Commands;
+using Basalt.Core;
+using Basalt.Core.Commands;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -20,7 +20,7 @@ public static class CommandRequest
 
         CommandResult result = CommandResult.Empty(false);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
         {
             result = CommandResult.Message("Command executor was not found.", false);
         }
@@ -38,7 +38,7 @@ public static class CommandRequest
                 else
                 {
                     string commandName = tokens[0].TrimStart('/');
-                    Basalt.Server.Commands.Command command = server.Commands.Get(commandName);
+                    Basalt.Core.Commands.Command command = server.Commands.Get(commandName);
                     if (!CommandRegistry.CanPlayerExecute(command, player))
                     {
                         result = CommandResult.Message(CommandRegistry.PermissionDeniedMessage, false);

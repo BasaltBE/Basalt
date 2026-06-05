@@ -1,8 +1,8 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
+using Basalt.Core.Commands;
 using Basalt.Protocol.Enums;
-using Player = global::Basalt.Server.Player.Player;
+using Player = global::Basalt.Core.Player.Player;
 
 public class GamemodeEnum : CustomEnum
 {

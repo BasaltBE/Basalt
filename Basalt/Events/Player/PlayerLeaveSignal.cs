@@ -1,7 +1,7 @@
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
-using Basalt.Server.Player;
-using Basalt.Server.Entity.Traits.Types;
+using Basalt.Core.Player;
+using Basalt.Core.Entities.Traits.Types;
 
 public sealed class PlayerLeaveSignal : PlayerSignal
 {

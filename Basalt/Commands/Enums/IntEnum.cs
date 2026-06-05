@@ -1,4 +1,4 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
 public class IntEnum : CommandEnum
 {

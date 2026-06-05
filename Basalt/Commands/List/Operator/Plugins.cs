@@ -1,7 +1,7 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
-using Basalt.Server.Plugins;
+using Basalt.Core.Commands;
+using Basalt.Core.Plugins;
 
 public class PluginsCommand : Command
 {

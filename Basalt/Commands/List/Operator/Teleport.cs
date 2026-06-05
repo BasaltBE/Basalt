@@ -1,11 +1,11 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
 using Basalt.Protocol.Enums;
-using Basalt.Server.Commands;
+using Basalt.Core.Commands;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
-using Basalt.Server.World.Dimension;
-using Player = global::Basalt.Server.Player.Player;
-using WorldInstance = Basalt.Server.World.World;
+using Basalt.Core.Worlds.Dimensions;
+using Player = global::Basalt.Core.Player.Player;
+using WorldInstance = Basalt.Core.Worlds.World;
 
 public class TpCommand : Command
 {
@@ -93,7 +93,7 @@ public class TpCommand : Command
         }
 
         Dimension? dimension = ResolvePlayerDestinationDimension(contextWorld, destination, explicitDimensionId);
-        return TeleportPlayers(state, [executor!], destination.Position, dimension, destinationName: destination.Username);
+        return TeleportPlayers(state, [executor!], destination.Location, dimension, destinationName: destination.Username);
     }
 
     static CommandResult TeleportVictimsToPlayer(
@@ -115,7 +115,7 @@ public class TpCommand : Command
         }
 
         Dimension? dimension = ResolvePlayerDestinationDimension(contextWorld, destination, explicitDimensionId);
-        return TeleportPlayers(state, victims, destination.Position, dimension, destinationName: destination.Username);
+        return TeleportPlayers(state, victims, destination.Location, dimension, destinationName: destination.Username);
     }
 
     static CommandResult TeleportVictimsToPosition(
@@ -232,7 +232,7 @@ public class TpCommand : Command
 
     static bool TryParsePosition(Player? executor, string[] args, int start, Player? originPlayer, out Vec3f position)
     {
-        Vec3f origin = originPlayer?.Position ?? executor?.Position ?? new Vec3f();
+        Vec3f origin = originPlayer?.Location ?? executor?.Location ?? new Vec3f();
         return PositionEnum.Parse(args, start, origin, out position);
     }
 

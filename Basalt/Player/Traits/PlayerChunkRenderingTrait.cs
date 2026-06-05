@@ -1,16 +1,16 @@
-namespace Basalt.Server.Player.Traits;
+namespace Basalt.Core.Player.Traits;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Server.Block;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Traits;
-using Basalt.Server.World;
-using Basalt.Server.World.Dimension;
-using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
-using Entity = Basalt.Server.Entity.Entity;
+using Basalt.Core.Blocks;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Traits;
+using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions;
+using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+using Entity = Basalt.Core.Entities.Entity;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait
 {
@@ -152,8 +152,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         lock (_lock)
         {
             Dimension dimension = Player.Dimension;
-            int chunkX = WorldToChunk(Player.Position.X);
-            int chunkZ = WorldToChunk(Player.Position.Z);
+            int chunkX = WorldToChunk(Player.Location.X);
+            int chunkZ = WorldToChunk(Player.Location.Z);
 
             UpdateChunkPosition(chunkX, chunkZ);
             UnloadChunks(dimension, clearClient: true);
@@ -426,8 +426,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     private void UpdateTrackedChunkPosition()
     {
-        _currentChunkX = WorldToChunk(Player.Position.X);
-        _currentChunkZ = WorldToChunk(Player.Position.Z);
+        _currentChunkX = WorldToChunk(Player.Location.X);
+        _currentChunkZ = WorldToChunk(Player.Location.Z);
 
         if (_publisherChunkX == int.MinValue)
         {
@@ -466,9 +466,9 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
     {
         NetworkChunkPublisherUpdatePacket packet = new()
         {
-            CoordinateX = (int)MathF.Floor(Player.Position.X),
-            CoordinateY = (int)MathF.Floor(Player.Position.Y),
-            CoordinateZ = (int)MathF.Floor(Player.Position.Z),
+            CoordinateX = (int)MathF.Floor(Player.Location.X),
+            CoordinateY = (int)MathF.Floor(Player.Location.Y),
+            CoordinateZ = (int)MathF.Floor(Player.Location.Z),
             Radius = (uint)(ViewDistance << 4),
             SavedChunks = []
         };
@@ -544,8 +544,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 continue;
             }
 
-            int chunkX = WorldToChunk(entity.Position.X);
-            int chunkZ = WorldToChunk(entity.Position.Z);
+            int chunkX = WorldToChunk(entity.Location.X);
+            int chunkZ = WorldToChunk(entity.Location.Z);
             long hash = HashChunk(chunkX, chunkZ);
 
             if (!_loadedChunks.Contains(hash))

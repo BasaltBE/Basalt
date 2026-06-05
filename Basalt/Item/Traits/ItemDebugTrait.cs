@@ -1,7 +1,7 @@
-namespace Basalt.Server.Item.Traits;
+namespace Basalt.Core.Item.Traits;
 
-using Basalt.Server.Item.Traits.Types;
-using Player = Basalt.Server.Player.Player;
+using Basalt.Core.Item.Traits.Types;
+using Player = Basalt.Core.Player.Player;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;

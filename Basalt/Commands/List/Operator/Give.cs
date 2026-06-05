@@ -1,10 +1,10 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
-using Basalt.Server;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Item;
-using Player = global::Basalt.Server.Player.Player;
+using Basalt.Core.Commands;
+using Basalt.Core;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Item;
+using Player = global::Basalt.Core.Player.Player;
 
 public class GiveCommand : Command
 {
