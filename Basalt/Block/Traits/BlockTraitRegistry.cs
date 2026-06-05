@@ -1,4 +1,4 @@
-namespace Basalt.Server.Block.Traits;
+namespace Basalt.Core.Block.Traits;
 
 using System.Reflection;
 

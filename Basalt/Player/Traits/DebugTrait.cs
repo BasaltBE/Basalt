@@ -1,16 +1,16 @@
-namespace Basalt.Server.Player.Traits;
+namespace Basalt.Core.Player.Traits;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Server.Item;
-using Basalt.Server.Item.Traits;
-using Basalt.Server.World;
+using Basalt.Core.Item;
+using Basalt.Core.Item.Traits;
+using Basalt.Core.World;
 
-using Entity = Basalt.Server.Entity.Entity;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Traits;
+using Entity = Basalt.Core.Entity.Entity;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Traits;
 
 // using Player = Player.Player;
 

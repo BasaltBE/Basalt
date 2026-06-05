@@ -1,6 +1,6 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
-using Basalt.Server.Item;
+using Basalt.Core.Item;
 
 
 public class ItemEnum : CommandEnum

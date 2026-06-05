@@ -1,6 +1,6 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
+using Basalt.Core.Commands;
 
 public class StatusCommand : Command
 {

@@ -3,7 +3,7 @@ using System.Text;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Server.World.Dimension.Provider;
+namespace Basalt.Core.World.Dimension.Provider;
 
 internal static class LevelDbKeyBuilder
 {

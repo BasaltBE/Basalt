@@ -1,6 +1,6 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Server;
+using Basalt.Core;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 

@@ -1,14 +1,14 @@
-namespace Basalt.Server.Block.Container;
+namespace Basalt.Core.Block.Container;
 
-using Basalt.Server.Containers;
+using Basalt.Core.Containers;
 using Basalt.Protocol.Types;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.World.Dimension;
 
 
 public sealed class BlockContainer : Containers.Container
 {
-    public Action<BlockContainer, Basalt.Server.Player.Player>? OnViewerAddedEvent { get; set; }
-    public Action<BlockContainer, Basalt.Server.Player.Player>? OnViewerRemovedEvent { get; set; }
+    public Action<BlockContainer, Basalt.Core.Player.Player>? OnViewerAddedEvent { get; set; }
+    public Action<BlockContainer, Basalt.Core.Player.Player>? OnViewerRemovedEvent { get; set; }
     public Dimension? Dimension { get; set; }
     public BlockPos Position { get; set; }
     public Action<BlockContainer>? OnContainerUpdated { get; set; }
@@ -36,12 +36,12 @@ public sealed class BlockContainer : Containers.Container
         return Position;
     }
 
-    protected override void OnViewerAdded(Basalt.Server.Player.Player player, int windowId)
+    protected override void OnViewerAdded(Basalt.Core.Player.Player player, int windowId)
     {
         OnViewerAddedEvent?.Invoke(this, player);
     }
 
-    protected override void OnViewerRemoved(Basalt.Server.Player.Player player, int windowId)
+    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, int windowId)
     {
         OnViewerRemovedEvent?.Invoke(this, player);
     }

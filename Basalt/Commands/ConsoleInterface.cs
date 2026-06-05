@@ -1,11 +1,8 @@
-using Basalt.Server.Commands;
-using Basalt.Server;
-
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
 public static class ConsoleInterface
 {
-    public static void Start(global::Basalt.Server.Server server, CancellationToken cancellationToken, Action requestShutdown)
+    public static void Start(global::Basalt.Core.Server server, CancellationToken cancellationToken, Action requestShutdown)
     {
         Task.Run(() =>
         {

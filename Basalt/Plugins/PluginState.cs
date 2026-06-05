@@ -1,4 +1,4 @@
-namespace Basalt.Server.Plugins;
+namespace Basalt.Core.Plugins;
 
 public enum PluginState
 {

@@ -3,9 +3,9 @@ using Basalt.Protocol.Enums;
 using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
-using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.Server.World.Dimension.Provider;
+namespace Basalt.Core.World.Dimension.Provider;
 
 internal sealed class ChunkStore
 {

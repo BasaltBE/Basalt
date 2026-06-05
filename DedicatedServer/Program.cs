@@ -1,6 +1,6 @@
 ﻿
-using Basalt.Server;
-using Basalt.Server.Commands;
+using Basalt.Core;
+using Basalt.Core.Commands;
 
 namespace Basalt.DedicatedServer;
 class Program
@@ -17,7 +17,7 @@ class Program
         props.SaveToPath(serverPropertiesPath);
 
         Properties properties = props.Parse<Properties>();
-        Server.Server server = new(properties);
+        Core.Server server = new(properties);
         using ManualResetEventSlim shutdown = new(false);
         using CancellationTokenSource consoleCancellation = new();
 

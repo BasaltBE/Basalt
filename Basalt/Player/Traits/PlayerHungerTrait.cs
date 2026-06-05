@@ -1,12 +1,12 @@
-namespace Basalt.Server.Player.Traits;
+namespace Basalt.Core.Player.Traits;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Attribute;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Traits;
-using Entity = Basalt.Server.Entity.Entity;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entity.Traits.Attribute;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Traits;
+using Entity = Basalt.Core.Entity.Entity;
 
 public sealed class PlayerHungerTrait : EntityAttributeTrait
 {
@@ -39,7 +39,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
 
     public override void OnAdd()
     {
-        EnsureAttribute(new Basalt.Server.Entity.Traits.Types.AttributeProperties(0, 20, 20, 20));
+        EnsureAttribute(new Basalt.Core.Entity.Traits.Types.AttributeProperties(0, 20, 20, 20));
     }
 
     public override void OnTick(TraitOnTickDetails details)

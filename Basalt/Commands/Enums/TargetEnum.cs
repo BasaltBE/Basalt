@@ -1,7 +1,7 @@
-namespace Basalt.Server.Commands;
+namespace Basalt.Core.Commands;
 
-using EntityInstance = Basalt.Server.Entity.Entity;
-using Player = global::Basalt.Server.Player.Player;
+using EntityInstance = Basalt.Core.Entity.Entity;
+using Player = global::Basalt.Core.Player.Player;
 
 public class TargetEnum : CommandEnum
 {

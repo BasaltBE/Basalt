@@ -1,4 +1,4 @@
-namespace Basalt.Server.World;
+namespace Basalt.Core.World;
 
 /// <summary>
 /// This will be used for measuring tick times and current ticks.

@@ -1,19 +1,19 @@
-namespace Basalt.Server;
+namespace Basalt.Core;
 
 using System.Diagnostics;
-using Basalt.Server.Commands;
-using Basalt.Server.Network;
-using Basalt.Server.Plugins;
+using Basalt.Core.Commands;
+using Basalt.Core.Network;
+using Basalt.Core.Plugins;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using Basalt.Server.Events;
-using Basalt.Server.World;
-using Basalt.Server.World.Dimension.Generation;
-using Basalt.Server.World.Dimension.Provider;
+using Basalt.Core.Events;
+using Basalt.Core.World;
+using Basalt.Core.World.Dimension.Generation;
+using Basalt.Core.World.Dimension.Provider;
 
-using PlayerInstance = Basalt.Server.Player.Player;
-using WorldInstance = Basalt.Server.World.World;
+using PlayerInstance = Basalt.Core.Player.Player;
+using WorldInstance = Basalt.Core.World.World;
 
 public sealed class Server
 {

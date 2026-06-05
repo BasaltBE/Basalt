@@ -1,10 +1,10 @@
-namespace Basalt.Server.Entity;
+namespace Basalt.Core.Entity;
 
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Item;
-using Player = Basalt.Server.Player.Player;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Item;
+using Player = Basalt.Core.Player.Player;
 
 public sealed class ItemEntity : Entity
 {
@@ -34,7 +34,7 @@ public sealed class ItemEntity : Entity
         }
     }
 
-    public override void Spawn(Basalt.Server.World.Dimension.Dimension dimension, EntitySpawnOptions options)
+    public override void Spawn(Basalt.Core.World.Dimension.Dimension dimension, EntitySpawnOptions options)
     {
         base.Spawn(dimension, options);
         Dimension?.Broadcast(CreateAddItemActorPacket());
@@ -59,7 +59,7 @@ public sealed class ItemEntity : Entity
             },
             Position = Position,
             Velocity = Velocity,
-            EntityMetadata = CreateActorDataPacket(Dimension?.World is Basalt.Server.World.Tickable tickable ? tickable.TickValue : 0).Metadata,
+            EntityMetadata = CreateActorDataPacket(Dimension?.World is Basalt.Core.World.Tickable tickable ? tickable.TickValue : 0).Metadata,
             FromFishing = false
         };
     }
@@ -150,7 +150,7 @@ public sealed class ItemEntity : Entity
             return;
         }
 
-        if (Dimension.World?.Server is not Basalt.Server.Server server)
+        if (Dimension.World?.Server is not Basalt.Core.Server server)
         {
             return;
         }

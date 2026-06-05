@@ -1,6 +1,6 @@
-namespace Basalt.Server.Block;
+namespace Basalt.Core.Block;
 
-using Basalt.Server.Block.Types;
+using Basalt.Core.Block.Types;
 using Basalt.Protocol.Nbt;
 using System.Buffers;
 using System.Buffers.Binary;

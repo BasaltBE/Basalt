@@ -1,9 +1,9 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
 using Basalt.Protocol.Enums;
-using Basalt.Server.Commands;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.Commands;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.World.Dimension;
 using Player = Player.Player;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
 

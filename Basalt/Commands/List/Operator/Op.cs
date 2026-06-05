@@ -1,6 +1,6 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
-using Basalt.Server.Commands;
+using Basalt.Core.Commands;
 
 public class OpCommand : Command
 {
@@ -25,7 +25,7 @@ public class OpCommand : Command
             return CommandResult.Message("Multiple players matched the target selector, please be more specific", false);
         }
 
-        if (target.Entities.Length == 1 && target.Entities[0] is global::Basalt.Server.Player.Player player)
+        if (target.Entities.Length == 1 && target.Entities[0] is global::Basalt.Core.Player.Player player)
         {
             player.SetOperator(true);
             return CommandResult.Message($"Made {player.Username} a server operator.", true);

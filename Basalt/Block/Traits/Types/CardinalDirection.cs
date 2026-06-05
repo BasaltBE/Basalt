@@ -1,4 +1,4 @@
-namespace Basalt.Server.Block.Traits.Types;
+namespace Basalt.Core.Block.Traits.Types;
 
 public enum CardinalDirection
 {

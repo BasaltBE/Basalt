@@ -1,4 +1,4 @@
-namespace Basalt.Server.Block.Types;
+namespace Basalt.Core.Block.Types;
 
 public readonly struct BlockStateValue
 {

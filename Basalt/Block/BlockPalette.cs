@@ -1,7 +1,7 @@
-namespace Basalt.Server.Block;
+namespace Basalt.Core.Block;
 
-using Basalt.Server.Block.Types;
-using Basalt.Server.Block.Traits;
+using Basalt.Core.Block.Types;
+using Basalt.Core.Block.Traits;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;

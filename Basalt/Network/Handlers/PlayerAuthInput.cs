@@ -1,15 +1,15 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
 using System.Collections.Concurrent;
-using Basalt.Server;
-using Basalt.Server.Block.Traits.Types;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Events;
-using Basalt.Server.Item;
-using Basalt.Server.Item.Traits;
-using Basalt.Server.Item.Traits.Types;
-using Basalt.Server.Player.Traits;
+using Basalt.Core;
+using Basalt.Core.Block.Traits.Types;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Events;
+using Basalt.Core.Item;
+using Basalt.Core.Item.Traits;
+using Basalt.Core.Item.Traits.Types;
+using Basalt.Core.Player.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -43,7 +43,7 @@ public static class PlayerAuthInput
 
         try
         {
-            if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
+            if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
             {
                 return;
             }
@@ -165,7 +165,7 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void StartUsingItem(global::Basalt.Server.Player.Player player)
+    private static void StartUsingItem(global::Basalt.Core.Player.Player player)
     {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         ItemStack? heldItem = inventory?.GetHeldItem();
@@ -195,7 +195,7 @@ public static class PlayerAuthInput
         player.Flags.SetActorFlag(ActorFlag.UsingItem, true);
     }
 
-    private static void TickPendingItemUse(global::Basalt.Server.Player.Player player)
+    private static void TickPendingItemUse(global::Basalt.Core.Player.Player player)
     {
         if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending))
         {
@@ -248,9 +248,9 @@ public static class PlayerAuthInput
         player.SendAttributes();
     }
 
-    private static ulong GetCurrentTick(global::Basalt.Server.Player.Player player)
+    private static ulong GetCurrentTick(global::Basalt.Core.Player.Player player)
     {
-        return player.Dimension?.World is Basalt.Server.World.Tickable tickable ? tickable.TickValue : 0UL;
+        return player.Dimension?.World is Basalt.Core.World.Tickable tickable ? tickable.TickValue : 0UL;
     }
 
     private static ulong GetUseDurationTicks(ItemStack item)
@@ -263,7 +263,7 @@ public static class PlayerAuthInput
         return DefaultFoodUseTicks;
     }
 
-    private static ItemStackResponse ProcessItemStackRequest(global::Basalt.Server.Player.Player player, Protocol.Types.ItemStackRequest request)
+    private static ItemStackResponse ProcessItemStackRequest(global::Basalt.Core.Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         List<StackResponseContainerInfo> containers = [];
 
@@ -317,7 +317,7 @@ public static class PlayerAuthInput
         return null;
     }
 
-    private static bool MovedTooFar(global::Basalt.Server.Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
+    private static bool MovedTooFar(global::Basalt.Core.Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
     {
         float deltaX = packet.Position.X - player.Position.X;
         float deltaZ = packet.Position.Z - player.Position.Z;
@@ -332,7 +332,7 @@ public static class PlayerAuthInput
         return movedDistanceSquared > allowedDistance * allowedDistance;
     }
 
-    private static void MovePlayer(global::Basalt.Server.Player.Player player, PlayerAuthInputPacket packet)
+    private static void MovePlayer(global::Basalt.Core.Player.Player player, PlayerAuthInputPacket packet)
     {
         Vec3f previousPosition = player.Position;
 
@@ -377,7 +377,7 @@ public static class PlayerAuthInput
 
     }
 
-    private static void HandleBlockAction(global::Basalt.Server.Player.Player player, PlayerBlockAction action)
+    private static void HandleBlockAction(global::Basalt.Core.Player.Player player, PlayerBlockAction action)
     {
         // Logger.Warn(
         //     "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
@@ -412,7 +412,7 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void CrackBlock(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
+    private static void CrackBlock(global::Basalt.Core.Player.Player player, BlockPos blockPosition)
     {
         if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition))
         {
@@ -431,7 +431,7 @@ public static class PlayerAuthInput
         });
     }
 
-    private static void DestroyBlock(global::Basalt.Server.Player.Player player, PlayerBlockAction action)
+    private static void DestroyBlock(global::Basalt.Core.Player.Player player, PlayerBlockAction action)
     {
         if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
         {
@@ -452,7 +452,7 @@ public static class PlayerAuthInput
             return;
         }
 
-        Basalt.Server.Block.BlockPermutation? block =
+        Basalt.Core.Block.BlockPermutation? block =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)
@@ -514,19 +514,19 @@ public static class PlayerAuthInput
             Data = block.NetworkId
         });
 
-        Basalt.Server.Block.BlockPermutation air = Basalt.Server.Block.BlockType
+        Basalt.Core.Block.BlockPermutation air = Basalt.Core.Block.BlockType
             .GetOrAir("minecraft:air")
             .GetPermutation();
 
-        Basalt.Server.Block.Block breakingBlock =
+        Basalt.Core.Block.Block breakingBlock =
             player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
-            new Basalt.Server.Block.Block(block);
+            new Basalt.Core.Block.Block(block);
 
         breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
-        Basalt.Server.Block.BlockPermutation after =
+        Basalt.Core.Block.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         // Logger.Warn(
@@ -559,7 +559,7 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void StopCrackBlock(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
+    private static void StopCrackBlock(global::Basalt.Core.Player.Player player, BlockPos blockPosition)
     {
         player.Dimension?.Broadcast(new LevelEventPacket
         {
@@ -569,9 +569,9 @@ public static class PlayerAuthInput
         });
     }
 
-    private static int GetBreakTimeTicksForAnimation(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
+    private static int GetBreakTimeTicksForAnimation(global::Basalt.Core.Player.Player player, BlockPos blockPosition)
     {
-        Basalt.Server.Block.BlockPermutation? block =
+        Basalt.Core.Block.BlockPermutation? block =
             player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)

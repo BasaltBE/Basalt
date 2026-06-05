@@ -1,4 +1,4 @@
-namespace Basalt.Server;
+namespace Basalt.Core;
 
 public class Properties
 {   

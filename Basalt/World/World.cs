@@ -1,9 +1,9 @@
-namespace Basalt.Server.World;
+namespace Basalt.Core.World;
 
 using Basalt.Protocol.Enums;
-using Basalt.Server.World.Dimension.Generation;
-using Basalt.Server.World.Dimension.Provider;
-using DimensionInstance = Basalt.Server.World.Dimension.Dimension;
+using Basalt.Core.World.Dimension.Generation;
+using Basalt.Core.World.Dimension.Provider;
+using DimensionInstance = Basalt.Core.World.Dimension.Dimension;
 
 public sealed class World : IDisposable, Tickable
 {
@@ -23,7 +23,7 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// The Server instance.
     /// </summary>
-    public global::Basalt.Server.Server? Server { get; internal set; }
+    public global::Basalt.Core.Server? Server { get; internal set; }
 
     /// <summary>
     /// The current tick value.

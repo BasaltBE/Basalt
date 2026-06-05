@@ -1,6 +1,6 @@
-namespace Basalt.Server.Entity.Traits;
+namespace Basalt.Core.Entity.Traits;
 
-using Basalt.Server.Entity.Traits.Types;
+using Basalt.Core.Entity.Traits.Types;
 using Basalt.Protocol.Enums;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 

@@ -1,6 +1,6 @@
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
-using Basalt.Server.Player;
+using Basalt.Core.Player;
 using Basalt.Protocol.Types;
 
 

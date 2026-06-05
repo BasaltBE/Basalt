@@ -1,21 +1,21 @@
-namespace Basalt.Server.Entity;
+namespace Basalt.Core.Entity;
 
 using Basalt.Protocol.Types;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Enums;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entity.Traits.Enums;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.World.Dimension;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
-using Basalt.Server.World;
-using Basalt.Server.Entity.Metadata;
-using Basalt.Server.Item;
+using Basalt.Core.World;
+using Basalt.Core.Entity.Metadata;
+using Basalt.Core.Item;
 
 using Player = Player.Player;
-using Basalt.Server.Traits;
+using Basalt.Core.Traits;
 
-using Basalt.Server.Loot;
+using Basalt.Core.Loot;
 
 public class Entity
 {
@@ -268,7 +268,7 @@ public class Entity
         }
     }
 
-    public void OnContainerUpdate(Basalt.Server.Containers.Container container)
+    public void OnContainerUpdate(Basalt.Core.Containers.Container container)
     {
         for (int i = 0; i < _traits.Count; i++)
         {

@@ -1,4 +1,4 @@
-namespace Basalt.Server.Block.Components;
+namespace Basalt.Core.Block.Components;
 
 public abstract class BlockTypeComponent
 {

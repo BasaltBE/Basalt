@@ -1,6 +1,6 @@
-namespace Basalt.Server.Block.Components;
+namespace Basalt.Core.Block.Components;
 
-using Basalt.Server.Block.Traits.Types;
+using Basalt.Core.Block.Traits.Types;
 
 
 public sealed class BlockTypeRotationComponent : BlockTypeComponent

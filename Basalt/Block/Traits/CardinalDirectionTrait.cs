@@ -1,8 +1,8 @@
-namespace Basalt.Server.Block.Traits;
+namespace Basalt.Core.Block.Traits;
 
-using Basalt.Server.Block.Components;
-using Basalt.Server.Block.Traits.Types;
-using Basalt.Server.Block.Types;
+using Basalt.Core.Block.Components;
+using Basalt.Core.Block.Traits.Types;
+using Basalt.Core.Block.Types;
 
 
 public sealed class CardinalDirectionTrait : DirectionTrait

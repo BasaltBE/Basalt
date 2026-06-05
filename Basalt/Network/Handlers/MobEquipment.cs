@@ -1,7 +1,7 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Server;
-using Basalt.Server.Entity.Traits;
+using Basalt.Core;
+using Basalt.Core.Entity.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
@@ -13,7 +13,7 @@ public static class MobEquipment
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         MobEquipmentPacket packet = (MobEquipmentPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
         {
             return;
         }

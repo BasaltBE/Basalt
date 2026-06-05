@@ -1,18 +1,18 @@
-namespace Basalt.Server.Player;
+namespace Basalt.Core.Player;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Server.Network;
+using Basalt.Core.Network;
 using Basalt.RakNet;
-using Basalt.Server.Containers;
+using Basalt.Core.Containers;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
-using Basalt.Server.World;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.World;
+using Basalt.Core.World.Dimension;
 using Basalt.Binary;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Player.Traits;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Player.Traits;
 
 public sealed class Player : Entity.Entity
 {
@@ -141,7 +141,7 @@ public sealed class Player : Entity.Entity
 
         Network.SendPacket(Connection, CreateAbilitiesPacket());
 
-        if (Dimension?.World?.Server is global::Basalt.Server.Server server)
+        if (Dimension?.World?.Server is global::Basalt.Core.Server server)
         {
             server.Commands.SendAvailableCommands(server, this);
         }
@@ -216,7 +216,7 @@ public sealed class Player : Entity.Entity
         float yaw = MathF.PI / 180f * Yaw;
         float pitch = MathF.PI / 180f * Pitch;
 
-        global::Basalt.Server.Entity.ItemEntity drop = new(item)
+        global::Basalt.Core.Entity.ItemEntity drop = new(item)
         {
             Position = new Vec3f
             {

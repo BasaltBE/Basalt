@@ -1,4 +1,4 @@
-namespace Basalt.Server.Entity.Metadata;
+namespace Basalt.Core.Entity.Metadata;
 
 using Basalt.Protocol.Enums;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;

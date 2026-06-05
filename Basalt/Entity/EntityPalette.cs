@@ -1,8 +1,8 @@
-namespace Basalt.Server.Entity;
+namespace Basalt.Core.Entity;
 
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Basalt.Server.Entity.Traits;
+using Basalt.Core.Entity.Traits;
 using Basalt.Protocol.Nbt;
 
 public sealed class EntityPalette
@@ -103,7 +103,7 @@ public sealed class EntityPalette
                 _ = new EntityType(PlayerIdentifier, []);
             }
 
-            global::Basalt.Server.Loot.LootTableManager.LoadFromEntities(root, EntityType.GetAll());
+            global::Basalt.Core.Loot.LootTableManager.LoadFromEntities(root, EntityType.GetAll());
             _vanillaLoaded = true;
         }
     }

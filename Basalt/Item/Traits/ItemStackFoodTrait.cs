@@ -1,7 +1,7 @@
-namespace Basalt.Server.Item.Traits;
+namespace Basalt.Core.Item.Traits;
 
 using Basalt.Protocol.Nbt;
-using Basalt.Server.Item.Components;
+using Basalt.Core.Item.Components;
 
 
 public sealed class ItemStackFoodTrait : ItemTrait

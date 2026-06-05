@@ -1,7 +1,7 @@
-namespace Basalt.Server.Item;
+namespace Basalt.Core.Item;
 
 using Basalt.Binary;
-using Basalt.Server.Item.Traits;
+using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;

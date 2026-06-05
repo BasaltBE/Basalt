@@ -1,9 +1,9 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using Basalt.Server;
-using Basalt.Server.Entity.Traits;
+using Basalt.Core;
+using Basalt.Core.Entity.Traits;
 
 
 public static class ContainerClose
@@ -16,7 +16,7 @@ public static class ContainerClose
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (ContainerClosePacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
+        if (server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
         {
             ArgumentNullException.ThrowIfNull(player);
 
@@ -25,7 +25,7 @@ public static class ContainerClose
             {
                 inventory.Container.RemoveViewer(player, false);
             }
-            else if (player.TryGetOpenContainer(packet.WindowId, out Basalt.Server.Containers.Container? openContainer) && openContainer is not null)
+            else if (player.TryGetOpenContainer(packet.WindowId, out Basalt.Core.Containers.Container? openContainer) && openContainer is not null)
             {
                 openContainer.RemoveViewer(player, false);
             }

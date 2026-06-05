@@ -1,4 +1,4 @@
-namespace Basalt.Server.Entity.Traits.Types;
+namespace Basalt.Core.Entity.Traits.Types;
 
 public readonly record struct AttributeProperties(
     float? MinimumValue = null,

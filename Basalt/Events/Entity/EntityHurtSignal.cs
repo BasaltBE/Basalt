@@ -1,4 +1,4 @@
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
 using Basalt.Protocol.Enums;
 using Entity = Entity.Entity;
@@ -6,10 +6,10 @@ using Entity = Entity.Entity;
 public sealed class EntityHurtSignal : EntitySignal
 {
     public override ServerEvent Event => ServerEvent.EntityHurt;
-    public global::Basalt.Server.Entity.Entity Entity { get; }
+    public global::Basalt.Core.Entity.Entity Entity { get; }
     public float Amount;
     public ActorDamageCause? Cause { get; }
-    public global::Basalt.Server.Entity.Entity? Damager { get; }
+    public global::Basalt.Core.Entity.Entity? Damager { get; }
     public bool Cancelled;
 
     public EntityHurtSignal(Entity entity, float amount, ActorDamageCause? cause, Entity? damager)

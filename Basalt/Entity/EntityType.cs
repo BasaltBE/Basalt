@@ -1,6 +1,6 @@
-namespace Basalt.Server.Entity;
+namespace Basalt.Core.Entity;
 
-using Basalt.Server.Entity.Traits;
+using Basalt.Core.Entity.Traits;
 using System.Text.Json;
 
 public sealed class EntityType

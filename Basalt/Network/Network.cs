@@ -1,9 +1,9 @@
-namespace Basalt.Server.Network;
+namespace Basalt.Core.Network;
 
 using System.Buffers;
 using Basalt.Binary;
-using Basalt.Server.Events;
-using Basalt.Server.Network.Handlers;
+using Basalt.Core.Events;
+using Basalt.Core.Network.Handlers;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -27,19 +27,19 @@ public sealed class NetworkHandler
 
     public void HandleDisconnected(NetworkConnection connection)
     {
-        if (!_server.Players.Remove(connection, out global::Basalt.Server.Player.Player? player))
+        if (!_server.Players.Remove(connection, out global::Basalt.Core.Player.Player? player))
         {
             return;
         }
 
-        global::Basalt.Server.Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
+        global::Basalt.Core.Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
         
 
         string leaveMessage = $"§e{player.Username} left the server.";
-        foreach (global::Basalt.Server.Player.Player target in _server.Players.Values)
+        foreach (global::Basalt.Core.Player.Player target in _server.Players.Values)
         {
             target.SendMessage(leaveMessage);
         }

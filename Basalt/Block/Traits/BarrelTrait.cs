@@ -1,10 +1,10 @@
-namespace Basalt.Server.Block.Traits;
+namespace Basalt.Core.Block.Traits;
 
-using Basalt.Server.Block.Container;
-using Basalt.Server.Block.Traits.Types;
-using Basalt.Server.Block.Types;
-using Basalt.Server.Containers;
-using Basalt.Server.Item;
+using Basalt.Core.Block.Container;
+using Basalt.Core.Block.Traits.Types;
+using Basalt.Core.Block.Types;
+using Basalt.Core.Containers;
+using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
@@ -104,7 +104,7 @@ public class BarrelTrait : BlockTrait
             return;
         }
 
-        foreach ((Basalt.Server.Player.Player player, _) in _container.GetAllOccupants().ToList())
+        foreach ((Basalt.Core.Player.Player player, _) in _container.GetAllOccupants().ToList())
         {
             _container.Close(player);
         }
@@ -195,7 +195,7 @@ public class BarrelTrait : BlockTrait
         _container.OnContainerUpdated = OnContainerUpdated;
     }
 
-    private void OnViewerAdded(BlockContainer container, Basalt.Server.Player.Player _)
+    private void OnViewerAdded(BlockContainer container, Basalt.Core.Player.Player _)
     {
         if (container.occupants.Count == 1)
         {
@@ -203,7 +203,7 @@ public class BarrelTrait : BlockTrait
         }
     }
 
-    private void OnViewerRemoved(BlockContainer container, Basalt.Server.Player.Player _)
+    private void OnViewerRemoved(BlockContainer container, Basalt.Core.Player.Player _)
     {
         if (container.occupants.Count == 0)
         {

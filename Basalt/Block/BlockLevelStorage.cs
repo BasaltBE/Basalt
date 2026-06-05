@@ -1,8 +1,8 @@
-namespace Basalt.Server.Block;
+namespace Basalt.Core.Block;
 
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BinaryReader = Basalt.Binary.BinaryReader;

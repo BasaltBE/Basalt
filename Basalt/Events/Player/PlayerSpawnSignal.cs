@@ -1,7 +1,7 @@
-using Basalt.Server.Player;
-using Basalt.Server.Entity.Traits.Types;
+using Basalt.Core.Player;
+using Basalt.Core.Entity.Traits.Types;
 
-namespace Basalt.Server.Events;
+namespace Basalt.Core.Events;
 
 public sealed class PlayerSpawnSignal : PlayerSignal
 {

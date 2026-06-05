@@ -1,4 +1,4 @@
-namespace Basalt.Server.Plugins;
+namespace Basalt.Core.Plugins;
 
 [AttributeUsage(AttributeTargets.Assembly)]
 public sealed class PluginAttribute : Attribute

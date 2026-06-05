@@ -1,4 +1,4 @@
-namespace Basalt.Server.Item.Components;
+namespace Basalt.Core.Item.Components;
 
 using Basalt.Protocol.Nbt;
 using System.Reflection;

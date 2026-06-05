@@ -1,14 +1,14 @@
-namespace Basalt.Server.Block.Traits;
+namespace Basalt.Core.Block.Traits;
 
-using Basalt.Server.Block.Container;
-using Basalt.Server.Block.Traits.Types;
-using Basalt.Server.Block.Types;
-using Basalt.Server.Item;
+using Basalt.Core.Block.Container;
+using Basalt.Core.Block.Traits.Types;
+using Basalt.Core.Block.Types;
+using Basalt.Core.Item;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Server.Containers;
+using Basalt.Core.Containers;
 
 public class ChestTrait : BlockTrait
 {
@@ -171,7 +171,7 @@ public class ChestTrait : BlockTrait
                 continue;
             }
 
-            Basalt.Server.Block.Block? neighborBlock = dimension.GetBlock(x, y, z);
+            Basalt.Core.Block.Block? neighborBlock = dimension.GetBlock(x, y, z);
             ChestTrait? neighborChest = neighborBlock?.GetTrait<ChestTrait>();
             if (neighborChest is null || neighborChest.IsPaired || !CanPairWith(neighborChest))
             {
@@ -236,7 +236,7 @@ public class ChestTrait : BlockTrait
     {
         if (_container is not null)
         {
-            foreach ((Basalt.Server.Player.Player player, _) in _container.GetAllOccupants().ToList())
+            foreach ((Basalt.Core.Player.Player player, _) in _container.GetAllOccupants().ToList())
             {
                 _container.Close(player);
             }
@@ -461,7 +461,7 @@ public class ChestTrait : BlockTrait
             return null;
         }
 
-        Basalt.Server.Block.Block? block = dimension.GetBlock(_pairX!.Value, y, _pairZ!.Value);
+        Basalt.Core.Block.Block? block = dimension.GetBlock(_pairX!.Value, y, _pairZ!.Value);
         return block?.GetTrait<ChestTrait>();
     }
 
@@ -659,7 +659,7 @@ public class ChestTrait : BlockTrait
         return paired;
     }
 
-    private void OnViewerAdded(BlockContainer container, Basalt.Server.Player.Player _)
+    private void OnViewerAdded(BlockContainer container, Basalt.Core.Player.Player _)
     {
         if (container.occupants.Count != 1)
         {
@@ -674,7 +674,7 @@ public class ChestTrait : BlockTrait
         }
     }
 
-    private void OnViewerRemoved(BlockContainer container, Basalt.Server.Player.Player _)
+    private void OnViewerRemoved(BlockContainer container, Basalt.Core.Player.Player _)
     {
         if (container.occupants.Count != 0)
         {
@@ -939,7 +939,7 @@ public class ChestTrait : BlockTrait
             int candidateX = x + offsets[i][0];
             int candidateZ = z + offsets[i][1];
 
-            Basalt.Server.Block.Block? neighborBlock = dimension.GetBlock(candidateX, y, candidateZ);
+            Basalt.Core.Block.Block? neighborBlock = dimension.GetBlock(candidateX, y, candidateZ);
             ChestTrait? neighborChest = neighborBlock?.GetTrait<ChestTrait>();
             if (neighborChest is null || neighborChest.IsPaired || !CanPairWith(neighborChest))
             {

@@ -1,4 +1,4 @@
-namespace Basalt.Server.World;
+namespace Basalt.Core.World;
 
 /// <summary>
 /// A list of game rules in a dimension

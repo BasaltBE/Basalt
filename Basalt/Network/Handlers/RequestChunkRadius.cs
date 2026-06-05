@@ -1,7 +1,7 @@
-namespace Basalt.Server.Network.Handlers;
+namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Server;
-using Basalt.Server.Player.Traits;
+using Basalt.Core;
+using Basalt.Core.Player.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
@@ -27,7 +27,7 @@ public static class RequestChunkRadius
         /// PLEASE KEEP IT COMMENTED OUT!
         // server.Network.SendPacket(connection, response);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
         {
             return;
         }

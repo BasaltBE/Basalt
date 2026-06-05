@@ -1,4 +1,4 @@
-namespace Basalt.Server.Entity;
+namespace Basalt.Core.Entity;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;

@@ -1,16 +1,16 @@
-namespace Basalt.Server.Entity.Traits;
+namespace Basalt.Core.Entity.Traits;
 
-using Basalt.Server.Containers;
-using Basalt.Server.Entity.Container;
-using Basalt.Server.Entity.Traits.Enums;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Item;
+using Basalt.Core.Containers;
+using Basalt.Core.Entity.Container;
+using Basalt.Core.Entity.Traits.Enums;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Player = Player.Player;
-using Basalt.Server.Traits;
+using Basalt.Core.Traits;
 
 
 public sealed class EntityInventoryTrait : EntityTrait

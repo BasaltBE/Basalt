@@ -1,14 +1,14 @@
-namespace Basalt.Server.Block;
+namespace Basalt.Core.Block;
 
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
-using Basalt.Server.Entity;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Block.Traits;
-using Basalt.Server.Block.Traits.Types;
-using Basalt.Server.Item;
-using Basalt.Server.Loot;
+using Basalt.Core.Entity;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Block.Traits;
+using Basalt.Core.Block.Traits.Types;
+using Basalt.Core.Item;
+using Basalt.Core.Loot;
 
 
 public sealed class Block

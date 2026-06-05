@@ -1,7 +1,7 @@
 using Basalt.Protocol.Nbt;
-using Basalt.Server.Traits;
+using Basalt.Core.Traits;
 
-namespace Basalt.Server.Traits;
+namespace Basalt.Core.Traits;
 
 public abstract class Trait
 {

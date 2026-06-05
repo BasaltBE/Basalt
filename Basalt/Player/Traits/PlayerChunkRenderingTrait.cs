@@ -1,16 +1,16 @@
-namespace Basalt.Server.Player.Traits;
+namespace Basalt.Core.Player.Traits;
 
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Server.Block;
-using Basalt.Server.Entity.Traits;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Traits;
-using Basalt.Server.World;
-using Basalt.Server.World.Dimension;
-using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
-using Entity = Basalt.Server.Entity.Entity;
+using Basalt.Core.Block;
+using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Traits;
+using Basalt.Core.World;
+using Basalt.Core.World.Dimension;
+using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
+using Entity = Basalt.Core.Entity.Entity;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait
 {

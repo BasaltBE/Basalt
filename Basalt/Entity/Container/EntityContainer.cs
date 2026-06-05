@@ -1,6 +1,6 @@
-namespace Basalt.Server.Entity.Container;
+namespace Basalt.Core.Entity.Container;
 
-using Basalt.Server.Containers;
+using Basalt.Core.Containers;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -19,7 +19,7 @@ public sealed class EntityContainer : Containers.Container
         return ReferenceEquals(Entity, player);
     }
 
-    public override void SetItem(int slot, Basalt.Server.Item.ItemStack item)
+    public override void SetItem(int slot, Basalt.Core.Item.ItemStack item)
     {
         base.SetItem(slot, item);
     }

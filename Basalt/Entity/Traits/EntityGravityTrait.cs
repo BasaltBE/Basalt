@@ -1,4 +1,4 @@
-namespace Basalt.Server.Entity.Traits;
+namespace Basalt.Core.Entity.Traits;
 
 using Basalt.Protocol.Enums;
 

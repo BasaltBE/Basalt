@@ -1,14 +1,14 @@
-namespace Basalt.Server.Entity.Traits;
+namespace Basalt.Core.Entity.Traits;
 
-using Basalt.Server.Commands;
-using Basalt.Server.Entity.Traits.Enums;
-using Basalt.Server.Entity.Traits.Types;
+using Basalt.Core.Commands;
+using Basalt.Core.Entity.Traits.Enums;
+using Basalt.Core.Entity.Traits.Types;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
-using Basalt.Server.World.Dimension;
+using Basalt.Core.World.Dimension;
 using System.Reflection;
 using Player = Player.Player;
-using Basalt.Server.Traits;
+using Basalt.Core.Traits;
 
 public abstract class EntityTrait : Trait
 {
@@ -69,7 +69,7 @@ public abstract class EntityTrait : Trait
         return true;
     }
 
-    public virtual void OnContainerUpdate(Basalt.Server.Containers.Container container)
+    public virtual void OnContainerUpdate(Basalt.Core.Containers.Container container)
     {
     }
 

@@ -1,4 +1,4 @@
-namespace Basalt.Server.Containers;
+namespace Basalt.Core.Containers;
 
 public enum ContainerType
 {

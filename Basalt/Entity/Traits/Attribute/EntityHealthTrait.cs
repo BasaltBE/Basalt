@@ -1,15 +1,15 @@
-namespace Basalt.Server.Entity.Traits.Attribute;
+namespace Basalt.Core.Entity.Traits.Attribute;
 
-using Basalt.Server.Events;
-using Basalt.Server.Item.Traits;
+using Basalt.Core.Events;
+using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using Entity = Basalt.Server.Entity.Entity;
-using Basalt.Server.Entity.Traits.Types;
-using Basalt.Server.Player.Traits;
-using Basalt.Server.World;
+using Entity = Basalt.Core.Entity.Entity;
+using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Player.Traits;
+using Basalt.Core.World;
 using System.Text.Json;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait

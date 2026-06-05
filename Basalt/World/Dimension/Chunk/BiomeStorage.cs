@@ -1,7 +1,7 @@
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Server.World.Dimension.Chunk;
+namespace Basalt.Core.World.Dimension.Chunk;
 
 public sealed class BiomeStorage
 {

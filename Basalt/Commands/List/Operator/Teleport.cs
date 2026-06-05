@@ -1,11 +1,11 @@
-namespace Basalt.Server.Commands.List.Operator;
+namespace Basalt.Core.Commands.List.Operator;
 
 using Basalt.Protocol.Enums;
-using Basalt.Server.Commands;
+using Basalt.Core.Commands;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
-using Basalt.Server.World.Dimension;
-using Player = global::Basalt.Server.Player.Player;
-using WorldInstance = Basalt.Server.World.World;
+using Basalt.Core.World.Dimension;
+using Player = global::Basalt.Core.Player.Player;
+using WorldInstance = Basalt.Core.World.World;
 
 public class TpCommand : Command
 {

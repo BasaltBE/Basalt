@@ -1,6 +1,6 @@
-namespace Basalt.Server.Entity.Traits;
+namespace Basalt.Core.Entity.Traits;
 
-using Basalt.Server.Item;
+using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 

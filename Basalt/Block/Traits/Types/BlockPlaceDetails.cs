@@ -1,4 +1,4 @@
-namespace Basalt.Server.Block.Traits.Types;
+namespace Basalt.Core.Block.Traits.Types;
 
 using Basalt.Core;
 using Basalt.Protocol.Types;
