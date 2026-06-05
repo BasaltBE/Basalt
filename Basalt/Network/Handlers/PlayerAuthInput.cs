@@ -55,7 +55,7 @@ public static class PlayerAuthInput
                 server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket
                 {
                     PredictionType = PredictionType.Player,
-                    Position = player.Position,
+                    Position = player.Location,
                     PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
                     Rotation = new Vec2f { X = packet.Pitch, Y = packet.Yaw },
                     VehicleAngularVelocity = new OptionalValue<float> { HasValue = false },
@@ -250,7 +250,7 @@ public static class PlayerAuthInput
 
     private static ulong GetCurrentTick(global::Basalt.Core.Player.Player player)
     {
-        return player.Dimension?.World is Basalt.Core.World.Tickable tickable ? tickable.TickValue : 0UL;
+        return player.Dimension?.World is Basalt.Core.Worlds.Tickable tickable ? tickable.TickValue : 0UL;
     }
 
     private static ulong GetUseDurationTicks(ItemStack item)
@@ -319,8 +319,8 @@ public static class PlayerAuthInput
 
     private static bool MovedTooFar(global::Basalt.Core.Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
     {
-        float deltaX = packet.Position.X - player.Position.X;
-        float deltaZ = packet.Position.Z - player.Position.Z;
+        float deltaX = packet.Position.X - player.Location.X;
+        float deltaZ = packet.Position.Z - player.Location.Z;
         float movedDistanceSquared = deltaX * deltaX + deltaZ * deltaZ;
 
         ulong previousTick = LastInputTickByRuntimeId.GetOrAdd(player.RuntimeId, packet.Tick);
@@ -334,7 +334,7 @@ public static class PlayerAuthInput
 
     private static void MovePlayer(global::Basalt.Core.Player.Player player, PlayerAuthInputPacket packet)
     {
-        Vec3f previousPosition = player.Position;
+        Vec3f previousPosition = player.Location;
 
         MovementRotation fromRotation = new MovementRotation()
         {
@@ -364,7 +364,7 @@ public static class PlayerAuthInput
             packet.Delta.Y != 0f ||
             packet.Delta.Z != 0f;
 
-        player.Position = missingPosition && hasDelta
+        player.Location = missingPosition && hasDelta
             ? new Vec3f
             {
                 X = previousPosition.X + packet.Delta.X,
@@ -373,7 +373,7 @@ public static class PlayerAuthInput
             }
             : packet.Position;
 
-        player.OnMove(new EntityMoveOptions(previousPosition, player.Position, fromRotation, toRotation));
+        player.OnMove(new EntityMoveOptions(previousPosition, player.Location, fromRotation, toRotation));
 
     }
 

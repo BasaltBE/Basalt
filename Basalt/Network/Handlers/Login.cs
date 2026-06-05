@@ -216,7 +216,7 @@ public static class Login
     }
 
     private static CompoundTag? LoadPlayerDataCompat(
-        global::Basalt.Core.World.World world,
+        global::Basalt.Core.Worlds.World world,
         string primaryXuid,
         string identityXuid,
         string username,

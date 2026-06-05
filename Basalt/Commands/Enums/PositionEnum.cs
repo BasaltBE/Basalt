@@ -23,7 +23,7 @@ public sealed class PositionEnum : CommandEnum
             return false;
         }
 
-        Vec3f origin = state.Executor is PlayerExecutor executor ? executor.Player.Position : new Vec3f();
+        Vec3f origin = state.Executor is PlayerExecutor executor ? executor.Player.Location : new Vec3f();
         if (!Parse(tokens, tokenIndex, origin, out Vec3f position))
         {
             return false;

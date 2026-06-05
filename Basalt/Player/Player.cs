@@ -7,8 +7,8 @@ using Basalt.RakNet;
 using Basalt.Core.Containers;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
-using Basalt.Core.World;
-using Basalt.Core.World.Dimension;
+using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Binary;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
@@ -218,7 +218,7 @@ public sealed class Player : Entities.Entity
 
         global::Basalt.Core.Entities.ItemEntity drop = new(item)
         {
-            Position = new Vec3f
+            Location = new Vec3f
             {
                 X = feet.X,
                 Y = feet.Y + 1.15f,
@@ -332,11 +332,11 @@ public sealed class Player : Entities.Entity
         Dimension targetDimension = dimension ?? previousDimension ??
             throw new InvalidOperationException("Player must have a dimension to teleport without a target dimension.");
 
-        Vec3f previousPosition = Position;
+        Vec3f previousPosition = Location;
         bool changedDimension = previousDimension != targetDimension;
         bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
 
-        Position = position;
+        Location = position;
         OnTeleport(new EntityTeleportOptions(previousPosition, position));
 
         if (changedDimension)
@@ -522,7 +522,7 @@ public sealed class Player : Entities.Entity
             Username = Username,
             EntityRuntimeId = RuntimeId,
             PlatformChatId = string.Empty,
-            Position = Position,
+            Position = Location,
             Velocity = new Vec3f(),
             Pitch = Pitch,
             Yaw = Yaw,

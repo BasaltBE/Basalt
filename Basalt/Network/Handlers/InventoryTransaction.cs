@@ -124,9 +124,9 @@ public static class InventoryTransaction
         {
             transaction.BlockPosition = new BlockPos
             {
-                X = (int)MathF.Floor(player.Position.X),
-                Y = (int)MathF.Floor(player.Position.Y - 1f),
-                Z = (int)MathF.Floor(player.Position.Z)
+                X = (int)MathF.Floor(player.Location.X),
+                Y = (int)MathF.Floor(player.Location.Y - 1f),
+                Z = (int)MathF.Floor(player.Location.Z)
             };
 
             if (transaction.BlockFace is < 0 or > 5)
@@ -678,9 +678,9 @@ public static class InventoryTransaction
         float directionY = -MathF.Sin(pitch);
         float directionZ = MathF.Cos(yaw) * MathF.Cos(pitch);
 
-        float startX = player.Position.X;
-        float startY = player.Position.Y + 1.62f;
-        float startZ = player.Position.Z;
+        float startX = player.Location.X;
+        float startY = player.Location.Y + 1.62f;
+        float startZ = player.Location.Z;
 
         int previousX = (int)MathF.Floor(startX);
         int previousY = (int)MathF.Floor(startY);

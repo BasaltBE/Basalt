@@ -7,7 +7,7 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Core.Traits;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Core.World;
+using Basalt.Core.Worlds;
 
 
 public static class SetLocalPlayerAsInitialized

@@ -178,7 +178,7 @@ public static class ResourcePackClientResponse
                     WorldId = string.Empty,
                     OwnerId = player.Xuid
                 };
-                player.Position = startGame.PlayerPosition;
+                player.Location = startGame.PlayerPosition;
                 var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
                 if (dimension is not null)
                 {

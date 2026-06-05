@@ -57,7 +57,7 @@ public static class Interact
                 }
 
                 Vec3f clicked = packet.Position.HasValue && packet.Position.Value is Vec3f value ? value : new Vec3f();
-                heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(player, entity, 0, player.Position, clicked));
+                heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(player, entity, 0, player.Location, clicked));
                 break;
             }
         }

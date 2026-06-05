@@ -3,7 +3,7 @@ namespace Basalt.Core.Commands.List.Operator;
 using Basalt.Protocol.Enums;
 using Basalt.Core.Commands;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Core.World.Dimension;
+using Basalt.Core.Worlds.Dimensions;
 using Player = Player.Player;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
 
@@ -46,7 +46,7 @@ public sealed class SummonCommand : Command
             return CommandResult.Message($"§cCould not create entity '{identifier}': {exception.Message}", false);
         }
 
-        entity.Position = position;
+        entity.Location = position;
         entity.Spawn(dimension!, new EntitySpawnOptions(InitialSpawn: false));
 
         return CommandResult.Message($"§7Summoned §a{entity.FormatIdentifier()} §7at §a{position.X:0.##} {position.Y:0.##} {position.Z:0.##}§7.", true);
@@ -77,7 +77,7 @@ public sealed class SummonCommand : Command
 
         Player player = executor.Player;
         dimension = player.Dimension;
-        position = player.Position;
+        position = player.Location;
         return true;
     }
 }

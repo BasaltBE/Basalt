@@ -5,7 +5,7 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
-using Basalt.Core.World;
+using Basalt.Core.Worlds;
 
 using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities.Traits.Types;

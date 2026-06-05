@@ -8,12 +8,12 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Core.Events;
-using Basalt.Core.World;
-using Basalt.Core.World.Dimension.Generation;
-using Basalt.Core.World.Dimension.Provider;
+using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions.Generation;
+using Basalt.Core.Worlds.Dimensions.Provider;
 
 using PlayerInstance = Basalt.Core.Player.Player;
-using WorldInstance = Basalt.Core.World.World;
+using WorldInstance = Basalt.Core.Worlds.World;
 
 public sealed class Server
 {
