@@ -61,7 +61,7 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.Completed:
-                if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+                if (!server.Players.TryGetValue(connection, out Player.Player? player))
                 {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
                     DisconnectPacket missingSessionDisconnect = new()

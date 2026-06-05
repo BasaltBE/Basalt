@@ -18,7 +18,7 @@ public static class Interact
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (InteractPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
             return;
         }

@@ -496,7 +496,7 @@ public sealed class Player : Entities.Entity
         };
     }
 
-    public void SetSkin(global::Basalt.Protocol.Types.Skin skin)
+    public void SetSkin(Skin skin)
     {
         using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
         Binary.BinaryWriter writer = stream;

@@ -21,7 +21,7 @@ public static class ItemStackRequest
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player) || packet.Requests.Count == 0)
+        if (!server.Players.TryGetValue(connection, out Playeryer? player) || packet.Requests.Count == 0)
         {
             return;
         }
@@ -53,7 +53,7 @@ public static class ItemStackRequest
         });
     }
 
-    private static ItemStackResponse ProcessRequest(global::Basalt.Core.Player.Player player, Protocol.Types.ItemStackRequest request)
+    private static ItemStackResponse ProcessRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changedContainers = [];
 
@@ -105,7 +105,7 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus TransferItem(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         TransferStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
@@ -239,7 +239,7 @@ public static class ItemStackRequest
         return ItemStackResponseStatus.Ok;
     }
 
-    private static Container? GetContainer(global::Basalt.Core.Player.Player player, FullContainerName name, int slot)
+    private static Container? GetContainer(Player.Player player, FullContainerName name, int slot)
     {
         if (TryGetOpenedDynamicContainer(player, name, out Container openedContainer))
         {
@@ -259,7 +259,7 @@ public static class ItemStackRequest
         return player.GetContainer(name);
     }
 
-    private static int StorageSlot(global::Basalt.Core.Player.Player player, FullContainerName container, int slot)
+    private static int StorageSlot(Player.Player player, FullContainerName container, int slot)
     {
         if (container.ContainerId is not ((byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand))
         {
@@ -316,7 +316,7 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus CreateCreativeItem(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         CraftCreativeStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
@@ -349,7 +349,7 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus SwapItems(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         SwapStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
@@ -374,7 +374,7 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus RemoveDroppedItem(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         DropStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
@@ -404,7 +404,7 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus RemoveDestroyedItem(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         DestroyStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
@@ -472,7 +472,7 @@ public static class ItemStackRequest
         });
     }
 
-    private static bool TryResolveSlot(global::Basalt.Core.Player.Player player, StackRequestSlotInfo requestSlot, out Container container, out int slot)
+    private static bool TryResolveSlot(Player.Player player, StackRequestSlotInfo requestSlot, out Container container, out int slot)
     {
         container = null!;
         slot = -1;
@@ -494,7 +494,7 @@ public static class ItemStackRequest
         return true;
     }
 
-    private static int ResolveSlotIndex(global::Basalt.Core.Player.Player player, FullContainerName containerName, Container container, int slot)
+    private static int ResolveSlotIndex(Player.Player player, FullContainerName containerName, Container container, int slot)
     {
         if (containerName.ContainerId is (byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
         {
@@ -548,7 +548,7 @@ public static class ItemStackRequest
         return false;
     }
 
-    private static bool TryGetOpenedDynamicContainer(global::Basalt.Core.Player.Player player, FullContainerName name, out Container container)
+    private static bool TryGetOpenedDynamicContainer(Player.Player player, FullContainerName name, out Container container)
     {
         container = null!;
         if (name.ContainerId != (byte)ContainerId.DynamicContainer)
