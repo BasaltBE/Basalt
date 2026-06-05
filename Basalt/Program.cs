@@ -21,7 +21,7 @@ namespace Basalt.Server
             using ManualResetEventSlim shutdown = new(false);
             using CancellationTokenSource consoleCancellation = new();
 
-            System.Console.CancelKeyPress += (_, eventArgs) =>
+            Console.CancelKeyPress += (_, eventArgs) =>
             {
                 eventArgs.Cancel = true;
                 shutdown.Set();
