@@ -16,7 +16,7 @@ public static class ContainerClose
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (ContainerClosePacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+        if (server.Players.TryGetValue(connection, out Player.Player? player))
         {
             ArgumentNullException.ThrowIfNull(player);
 
@@ -25,7 +25,7 @@ public static class ContainerClose
             {
                 inventory.Container.RemoveViewer(player, false);
             }
-            else if (player.TryGetOpenContainer(packet.WindowId, out Basalt.Core.Containers.Container? openContainer) && openContainer is not null)
+            else if (player.TryGetOpenContainer(packet.WindowId, out Containers.Container? openContainer) && openContainer is not null)
             {
                 openContainer.RemoveViewer(player, false);
             }

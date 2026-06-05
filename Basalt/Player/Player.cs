@@ -141,7 +141,7 @@ public sealed class Player : Entities.Entity
 
         Network.SendPacket(Connection, CreateAbilitiesPacket());
 
-        if (Dimension?.World?.Server is global::Basalt.Core.Server server)
+        if (Dimension?.World?.Server is Server server)
         {
             server.Commands.SendAvailableCommands(server, this);
         }
@@ -216,7 +216,7 @@ public sealed class Player : Entities.Entity
         float yaw = MathF.PI / 180f * Yaw;
         float pitch = MathF.PI / 180f * Pitch;
 
-        global::Basalt.Core.Entities.ItemEntity drop = new(item)
+        Entities.ItemEntity drop = new(item)
         {
             Location = new Vec3f
             {
@@ -472,7 +472,7 @@ public sealed class Player : Entities.Entity
 
     public PlayerListEntry CreatePlayerListEntry()
     {
-        global::Basalt.Protocol.Types.Skin skin = new();
+        Skin skin = new();
         if (Skin is not null && Skin.Length > 0)
         {
             int offset = 0;
@@ -496,7 +496,7 @@ public sealed class Player : Entities.Entity
         };
     }
 
-    public void SetSkin(global::Basalt.Protocol.Types.Skin skin)
+    public void SetSkin(Skin skin)
     {
         using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
         Binary.BinaryWriter writer = stream;

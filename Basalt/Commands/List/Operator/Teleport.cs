@@ -4,8 +4,8 @@ using Basalt.Protocol.Enums;
 using Basalt.Core.Commands;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
 using Basalt.Core.Worlds.Dimensions;
-using Player = global::Basalt.Core.Player.Player;
-using WorldInstance = Basalt.Core.Worlds.World;
+using Player = Player.Player;
+using WorldInstance = Worlds.World;
 
 public class TpCommand : Command
 {

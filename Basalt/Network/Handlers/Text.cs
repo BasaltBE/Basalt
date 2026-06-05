@@ -15,7 +15,7 @@ public static class Text
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (TextPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? sender))
+        if (!server.Players.TryGetValue(connection, out Player.Player? sender))
         {
             Logger.Warn("Text received for unknown player session.");
             return;
@@ -30,7 +30,7 @@ public static class Text
             return;
         }
 
-        foreach (global::Basalt.Core.Player.Player player in server.Players.Values)
+        foreach (Player.Player player in server.Players.Values)
         {
             player.SendMessage(signal.Message);
         }

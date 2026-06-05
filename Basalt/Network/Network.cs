@@ -27,19 +27,19 @@ public sealed class NetworkHandler
 
     public void HandleDisconnected(NetworkConnection connection)
     {
-        if (!_server.Players.Remove(connection, out global::Basalt.Core.Player.Player? player))
+        if (!_server.Players.Remove(connection, out Player.Player? player))
         {
             return;
         }
 
-        global::Basalt.Core.Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
+        Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
         
 
         string leaveMessage = $"§e{player.Username} left the server.";
-        foreach (global::Basalt.Core.Player.Player target in _server.Players.Values)
+        foreach (Player.Player target in _server.Players.Values)
         {
             target.SendMessage(leaveMessage);
         }

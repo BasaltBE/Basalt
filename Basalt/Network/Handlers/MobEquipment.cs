@@ -13,7 +13,7 @@ public static class MobEquipment
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         MobEquipmentPacket packet = (MobEquipmentPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
             return;
         }

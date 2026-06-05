@@ -4,14 +4,14 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Core;
 using Basalt.Core.Commands.List.Operator;
-using Player = global::Basalt.Core.Player.Player;
-using ServerInstance = global::Basalt.Core.Server;
-using DimensionInstance = Basalt.Core.Worlds.Dimensions.Dimension;
-using WorldInstance = Basalt.Core.Worlds.World;
-using ProtocolCommand = Basalt.Protocol.Types.Command;
-using ProtocolCommandEnum = Basalt.Protocol.Types.CommandEnum;
-using ProtocolCommandOverload = Basalt.Protocol.Types.CommandOverload;
-using ProtocolCommandParameter = Basalt.Protocol.Types.CommandParameter;
+using Player = Player.Player;
+using ServerInstance = Server;
+using DimensionInstance = Worlds.Dimensions.Dimension;
+using WorldInstance = Worlds.World;
+using ProtocolCommand = Protocol.Types.Command;
+using ProtocolCommandEnum = Protocol.Types.CommandEnum;
+using ProtocolCommandOverload = Protocol.Types.CommandOverload;
+using ProtocolCommandParameter = Protocol.Types.CommandParameter;
 
 
 public class CommandRegistry

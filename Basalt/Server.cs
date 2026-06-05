@@ -12,8 +12,8 @@ using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 
-using PlayerInstance = Basalt.Core.Player.Player;
-using WorldInstance = Basalt.Core.Worlds.World;
+using PlayerInstance = Player.Player;
+using WorldInstance = Worlds.World;
 
 public sealed class Server
 {

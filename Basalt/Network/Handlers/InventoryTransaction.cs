@@ -49,7 +49,7 @@ public static class InventoryTransaction
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (InventoryTransactionPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out global::Basalt.Core.Player.Player? player))
+        if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
             return;
         }
@@ -82,7 +82,7 @@ public static class InventoryTransaction
 
     }
 
-    public static void HandleUseItemFromAuthInput(global::Basalt.Core.Player.Player player, UseItemTransactionData data, float pitch, float yaw)
+    public static void HandleUseItemFromAuthInput(Player.Player player, UseItemTransactionData data, float pitch, float yaw)
     {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null)
@@ -139,7 +139,7 @@ public static class InventoryTransaction
     }
 
     private static void HandleInventoryActions(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         EntityInventoryTrait inventory,
         List<InventoryAction> actions,
         List<LegacySetItemSlot> legacySetItemSlots)
@@ -260,7 +260,7 @@ public static class InventoryTransaction
         return (int)action.InventorySlot;
     }
 
-    private static void SpawnWorldDrop(global::Basalt.Core.Player.Player player, InventoryAction action)
+    private static void SpawnWorldDrop(Player.Player player, InventoryAction action)
     {
         if (player.Dimension is null)
         {
@@ -286,7 +286,7 @@ public static class InventoryTransaction
     }
 
     private static void HandleUseItem(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         EntityInventoryTrait inventory,
         UseItemInventoryTransactionData transaction,
         List<InventoryAction> actions)
@@ -389,7 +389,7 @@ public static class InventoryTransaction
     }
 
     private static void UseItemOnBlock(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         EntityInventoryTrait inventory,
         ItemStack heldItem,
         UseItemInventoryTransactionData transaction)
@@ -552,7 +552,7 @@ public static class InventoryTransaction
     }
 
     private static void HandleUseItemOnEntity(
-        global::Basalt.Core.Player.Player player,
+        Player.Player player,
         EntityInventoryTrait inventory,
         UseItemOnEntityInventoryTransactionData transaction)
     {
@@ -631,7 +631,7 @@ public static class InventoryTransaction
         return heldItem is null || heldItem.StackSize == 0 ? null : heldItem;
     }
 
-    private static void SendBlockUpdate(global::Basalt.Core.Player.Player player, BlockPos position, int networkId)
+    private static void SendBlockUpdate(Player.Player player, BlockPos position, int networkId)
     {
         player.Send(new UpdateBlockPacket
         {
@@ -661,7 +661,7 @@ public static class InventoryTransaction
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 
-    private static bool FindBlockFromView(global::Basalt.Core.Player.Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
+    private static bool FindBlockFromView(Player.Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face)
     {
         blockPosition = default;
         face = 1;

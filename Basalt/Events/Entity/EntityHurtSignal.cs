@@ -6,10 +6,10 @@ using Entity = Entities.Entity;
 public sealed class EntityHurtSignal : EntitySignal
 {
     public override ServerEvent Event => ServerEvent.EntityHurt;
-    public global::Basalt.Core.Entities.Entity Entity { get; }
+    public Entity Entity { get; }
     public float Amount;
     public ActorDamageCause? Cause { get; }
-    public global::Basalt.Core.Entities.Entity? Damager { get; }
+    public Entity? Damager { get; }
     public bool Cancelled;
 
     public EntityHurtSignal(Entity entity, float amount, ActorDamageCause? cause, Entity? damager)

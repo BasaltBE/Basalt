@@ -25,7 +25,7 @@ public class DeopCommand : Command
             return CommandResult.Message("Multiple players matched the target selector, please be more specific", false);
         }
 
-        if (target.Entities.Length == 1 && target.Entities[0] is global::Basalt.Core.Player.Player player)
+        if (target.Entities.Length == 1 && target.Entities[0] is Player.Player player)
         {
             player.SetOperator(false);
             return CommandResult.Message($"Removed {player.Username} from server operators.", true);
