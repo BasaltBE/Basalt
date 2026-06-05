@@ -6,9 +6,18 @@ namespace Basalt.Protocol.Types;
 public sealed class TransferStackRequestAction(byte type) : IStackRequestAction, DataType
 {
     public byte ActionType => type;
-    public byte Count { get; set; }
-    public StackRequestSlotInfo Source { get; set; } = new();
-    public StackRequestSlotInfo Destination { get; set; } = new();
+    /// <summary>
+    /// Item count to transfer.
+    /// </summary>
+    public byte Count;
+    /// <summary>
+    /// Source slot info.
+    /// </summary>
+    public StackRequestSlotInfo Source = new();
+    /// <summary>
+    /// Destination slot info.
+    /// </summary>
+    public StackRequestSlotInfo Destination = new();
 
     public void Read(BinaryReader reader)
     {

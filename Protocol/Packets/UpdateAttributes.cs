@@ -1,30 +1,38 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.UpdateAttributes)]
 public sealed record UpdateAttributesPacket : DataPacket
 {
-    public ulong RuntimeId { get; set; }
-    public List<ProtoAttribute> Attributes { get; set; } = [];
-    public ulong Tick { get; set; }
+    /// <summary>
+    /// Runtime id of the actor.
+    /// </summary>
+    public ulong RuntimeId;
 
-    public override PacketId PacketId => PacketId.UpdateAttributes;
+    /// <summary>
+    /// Attribute values to update.
+    /// </summary>
+    public List<ProtoAttribute> Attributes = [];
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Server tick for this update.
+    /// </summary>
+    public ulong Tick;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
-        RuntimeId = unchecked((ulong)reader.ReadVarLong());
+        RuntimeId = reader.ReadVarULong();
         Attributes = ProtoAttribute.ReadList(reader);
-        Tick = unchecked((ulong)reader.ReadVarLong());
+        Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarLong(unchecked((long)RuntimeId));
+        writer.WriteVarULong(RuntimeId);
         ProtoAttribute.WriteList(writer, Attributes);
-        writer.WriteVarLong(unchecked((long)Tick));
+        writer.WriteVarULong(Tick);
     }
 }

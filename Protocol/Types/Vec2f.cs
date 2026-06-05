@@ -5,9 +5,14 @@ namespace Basalt.Protocol.Types;
 
 public struct Vec2f : DataType
 {
-    public float X { get; set; }
-    public float Y { get; set; }
-
+    /// <summary>
+    /// X coordinate of the vector.
+    /// </summary>
+    public float X;
+    /// <summary>
+    /// Y coordinate of the vector.
+    /// </summary>
+    public float Y;
     public void Read(BinaryReader reader)
     {
         X = reader.ReadF32(true);

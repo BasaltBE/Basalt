@@ -6,9 +6,14 @@ namespace Basalt.Protocol.Types;
 public sealed class CraftLoomRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 17;
-    public string Pattern { get; set; } = string.Empty;
-    public byte TimesCrafted { get; set; }
-
+    /// <summary>
+    /// Loom pattern identifier string.
+    /// </summary>
+    public string Pattern = string.Empty;
+    /// <summary>
+    /// Times the loom recipe was crafted.
+    /// </summary>
+    public byte TimesCrafted;
     public void Read(BinaryReader reader)
     {
         Pattern = reader.ReadVarString();

@@ -5,8 +5,15 @@ namespace Basalt.Protocol.Types;
 
 public sealed class StoreEntryPointInfo : DataType
 {
-    public string StoreId { get; set; } = string.Empty;
-    public string StoreName { get; set; } = string.Empty;
+    /// <summary>
+    /// The id of the store
+    /// </summary>
+    public string StoreId = string.Empty;
+    
+    /// <summary>
+    /// The name of the store
+    /// </summary>
+    public string StoreName = string.Empty;
 
     public void Read(BinaryReader reader)
     {

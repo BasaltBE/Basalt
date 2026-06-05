@@ -1,4 +1,4 @@
-namespace Basalt.Entity.Traits.Enums;
+namespace Basalt.Server.Entity.Traits.Enums;
 
 public enum EntityInteractMethod : byte
 {
@@ -7,3 +7,9 @@ public enum EntityInteractMethod : byte
     Interact = 2,
     Mount = 3
 }
+
+
+
+
+
+

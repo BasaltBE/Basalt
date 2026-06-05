@@ -1,14 +1,15 @@
-using Basalt.Protocol.IO;
+namespace Basalt.Server.Block;
+
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Block;
 
+[Tag(TagType.Compound)]
 public sealed class BlockLevelStorage : CompoundTag
 {
     private readonly ChunkColumn? _chunk;
@@ -265,7 +266,7 @@ public sealed class BlockLevelStorage : CompoundTag
 
     public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer)
     {
-        NBT.WriteTag(writer, storage, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+        Protocol.Io.NBT.WriteTag(writer, storage, new TagOptions(Name: true, Type: true, VarInt: false));
         return writer.GetProcessedBytes();
     }
 
@@ -290,3 +291,10 @@ public sealed class BlockLevelStorage : CompoundTag
         }
     }
 }
+
+
+
+
+
+
+

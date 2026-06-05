@@ -1,6 +1,7 @@
+namespace Basalt.Server.Block;
+
 using Basalt.Protocol.Nbt;
 
-namespace Basalt.Block;
 
 public sealed class BlockTypeComponentCollection : CompoundTag
 {
@@ -18,3 +19,10 @@ public sealed class BlockTypeComponentCollection : CompoundTag
         Name = "components";
     }
 }
+
+
+
+
+
+
+

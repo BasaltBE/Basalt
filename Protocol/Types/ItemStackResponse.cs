@@ -6,9 +6,18 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemStackResponse : DataType
 {
-    public ItemStackResponseStatus Status { get; set; }
-    public int RequestId { get; set; }
-    public List<StackResponseContainerInfo> ContainerInfo { get; set; } = [];
+    /// <summary>
+    /// Response status for the request.
+    /// </summary>
+    public ItemStackResponseStatus Status;
+    /// <summary>
+    /// Request id this response belongs to.
+    /// </summary>
+    public int RequestId;
+    /// <summary>
+    /// Updated container slot state when successful.
+    /// </summary>
+    public List<StackResponseContainerInfo> ContainerInfo = [];
 
     public void Read(BinaryReader reader)
     {

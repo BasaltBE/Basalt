@@ -4,12 +4,20 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ResourcePackClientResponse)]
 public sealed record ResourcePackClientResponsePacket : DataPacket
 {
-    public ResourcePackResponse Response { get; set; }
-    public List<string> PacksToDownload { get; set; } = [];
+    /// <summary>
+    /// The client's response to the resource pack request. 
+    /// Whether they accepted, refused, have all the packs or even completed.
+    /// </summary>
+    public ResourcePackResponse Response;
 
-    public override PacketId PacketId => PacketId.ResourcePackClientResponse;
+    /// <summary>
+    /// List of resource packs that the client wants to download.
+    /// </summary>
+    public List<string> PacksToDownload = [];
+
 
     public override void Deserialize(BinaryReader reader)
     {

@@ -1,12 +1,20 @@
+namespace Basalt.Server.Network.Handlers;
+
 using Basalt.Binary;
-using Basalt.Core;
+using Basalt.Server;
+using Basalt.Server.Events;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Io;
 using Basalt.Protocol.Login;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using Basalt.Protocol.Types;
+using Basalt.Protocol.Login.Data;
+using Basalt.Protocol.Nbt;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace Basalt.Network.Handlers;
 
 public static class Login
 {
@@ -15,11 +23,11 @@ public static class Login
         LoginPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (LoginPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (packet.Protocol != ProtocolInfo.ProtocolVersion)
+        if (packet.Protocol != Constants.ProtocolVersion)
         {
-            DisconnectReason reason = packet.Protocol < ProtocolInfo.ProtocolVersion
+            DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
                 ? DisconnectReason.OutdatedClient
                 : DisconnectReason.OutdatedServer;
 
@@ -32,20 +40,108 @@ public static class Login
             };
 
             server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
-            Console.WriteLine($"Login rejected protocol={packet.Protocol} expected={ProtocolInfo.ProtocolVersion}");
             return;
         }
 
-
-        var identity = LoginIdentityVerifier.Verify(packet.Identity);
-        _ = LoginPayload.Parse(packet.Client);
-
-
-
-        PlayStatusPacket status = new()
+        VerifiedIdentity identity;
+        try
         {
-            Status = PlayStatus.LoginSuccess,
-        };
+            identity = VerifyIdentity(server, packet);
+        }
+        catch (Exception exception)
+        {
+            Logger.Info($"Login rejected: {exception.Message}");
+            string message = exception.Message switch
+            {
+                "Offline authentication is disabled." =>
+                    "Offline mode is not supported. Please connect to Xbox services.",
+                _ => "Authentication failed."
+            };
+
+            DisconnectPacket disconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = message,
+                FilteredMessage = message
+            };
+
+            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            return;
+        }
+
+        ClientData clientData = LoginPayload.Parse(packet.Client);
+
+        KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>? existingPlayerSession = null;
+        foreach ((NetworkConnection existingConnection, global::Basalt.Server.Player.Player existingPlayer) in server.Players)
+        {
+            bool sameXuid = !string.IsNullOrWhiteSpace(identity.Xuid) &&
+                string.Equals(existingPlayer.Xuid, identity.Xuid, StringComparison.Ordinal);
+            bool sameUsername = string.Equals(existingPlayer.Username, identity.Username, StringComparison.OrdinalIgnoreCase);
+
+            if (!sameXuid && !sameUsername)
+            {
+                continue;
+            }
+
+            existingPlayerSession = new KeyValuePair<NetworkConnection, global::Basalt.Server.Player.Player>(existingConnection, existingPlayer);
+            break;
+        }
+
+        if (existingPlayerSession.HasValue)
+        {
+            DisconnectPacket duplicateDisconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = "Logged in from another location.",
+                FilteredMessage = "Logged in from another location."
+            };
+
+            server.Network.SendPacket(existingPlayerSession.Value.Key, duplicateDisconnect, CompressionMethod.NotPresent);
+            existingPlayerSession.Value.Key.Disconnect();
+        }
+
+        Guid playerUuid = ResolvePlayerUuid(identity.Uuid, clientData.SelfSignedId, identity.Username, server.Properties.OnlineMode);
+        string playerXuid = ResolvePlayerXuid(identity.Xuid, playerUuid, server.Properties.OnlineMode);
+        var player = new global::Basalt.Server.Player.Player(identity.Username, playerXuid, playerUuid);
+        var world = server.GetWorld();
+        var savedData = LoadPlayerDataCompat(world, playerXuid, identity.Xuid, identity.Username, playerUuid);
+        if (savedData is not null)
+        {
+            player.FromNBT(savedData);
+            if (!string.Equals(playerXuid, identity.Xuid, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(playerXuid))
+            {
+                world.Provider.SavePlayerData(playerXuid, savedData);
+            }
+        }
+
+        bool isOperator = (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
+        player.SetOperator(isOperator, syncClient: false);
+
+        PlayerJoinSignal joinSignal = new(player);
+        server.Emit(joinSignal);
+        if (!joinSignal.Emit())
+        {
+            DisconnectPacket disconnect = new()
+            {
+                Reason = DisconnectReason.Disconnected,
+                HideDisconnectionScreen = false,
+                Message = "Server force closed the connection.",
+                FilteredMessage = "Server force closed the connection."
+            };
+            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            connection.Disconnect();
+            return;
+        }
+
+        player.Connection = connection;
+        player.Network = server.Network;
+        player.DeviceOS = clientData.DeviceOs;
+        player.SetSkin(Skin.FromClientData(clientData));
+        server.Players[connection] = player;
+
+        PlayStatusPacket status = new(PlayStatus.LoginSuccess);
 
         ResourcePacksInfoPacket resources = new()
         {
@@ -60,19 +156,130 @@ public static class Login
 
         server.Network.SendPackets(connection, [status, resources]);
 
-
-
-        var player = new Player(identity.Username, identity.Xuid, identity.Uuid);
-        var savedData = server.World.Provider.LoadPlayerData(identity.Xuid);
-        if (savedData is not null)
-        {
-            player.FromNBT(savedData);
-        }
-
-        player.Connection = connection;
-        player.Network = server.Network;
-        server.Players[connection] = player;
-
         Logger.Info($"Player {identity.Username} has logged in!");
     }
+
+    private static VerifiedIdentity VerifyIdentity(Server server, LoginPacket packet)
+    {
+        LoginEnvelope envelope = LoginEnvelope.Parse(packet.Identity);
+
+        if (OfflineIdentity.IsOfflineLogin(envelope))
+        {
+            if (server.Properties.OnlineMode)
+            {
+                throw new InvalidOperationException("Offline authentication is disabled.");
+            }
+
+            return OfflineIdentity.VerifyOffline(envelope, packet.Client);
+        }
+
+        return LoginIdentity.Verify(packet.Identity);
+    }
+
+    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId, string username, bool onlineMode)
+    {
+        if (Guid.TryParse(identityUuid, out Guid parsedIdentity))
+        {
+            return parsedIdentity;
+        }
+
+        if (Guid.TryParse(selfSignedId, out Guid parsedSelfSigned))
+        {
+            return parsedSelfSigned;
+        }
+
+        if (!onlineMode)
+        {
+            return CreateOfflineGuid(username);
+        }
+
+        return Guid.NewGuid();
+    }
+
+    private static string ResolvePlayerXuid(string identityXuid, Guid uuid, bool onlineMode)
+    {
+        if (onlineMode && !string.IsNullOrWhiteSpace(identityXuid))
+        {
+            return identityXuid;
+        }
+
+        return uuid.ToString("N");
+    }
+
+    private static Guid CreateOfflineGuid(string username)
+    {
+        string normalized = username.Trim().ToLowerInvariant();
+        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes("basalt:offline:" + normalized));
+        Span<byte> guidBytes = stackalloc byte[16];
+        bytes.AsSpan(0, 16).CopyTo(guidBytes);
+        return new Guid(guidBytes);
+    }
+
+    private static CompoundTag? LoadPlayerDataCompat(
+        global::Basalt.Server.World.World world,
+        string primaryXuid,
+        string identityXuid,
+        string username,
+        Guid uuid)
+    {
+        if (!string.IsNullOrWhiteSpace(primaryXuid))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(primaryXuid);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(identityXuid) && !string.Equals(identityXuid, primaryXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(identityXuid);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        string uuidN = uuid.ToString("N");
+        if (!string.Equals(uuidN, primaryXuid, StringComparison.Ordinal) &&
+            !string.Equals(uuidN, identityXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(uuidN);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        string uuidD = uuid.ToString();
+        if (!string.Equals(uuidD, primaryXuid, StringComparison.Ordinal) &&
+            !string.Equals(uuidD, identityXuid, StringComparison.Ordinal))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(uuidD);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            CompoundTag? data = world.Provider.LoadPlayerData(username);
+            if (data is not null)
+            {
+                return data;
+            }
+        }
+
+        return null;
+    }
 }
+
+
+
+
+
+
+
+
+

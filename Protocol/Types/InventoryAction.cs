@@ -5,12 +5,30 @@ namespace Basalt.Protocol.Types;
 
 public sealed class InventoryAction : DataType
 {
-    public uint SourceType { get; set; }
-    public int WindowId { get; set; }
-    public uint SourceFlags { get; set; }
-    public uint InventorySlot { get; set; }
-    public ItemInstance OldItem { get; set; } = new();
-    public ItemInstance NewItem { get; set; } = new();
+    /// <summary>
+    /// Source type of this action.
+    /// </summary>
+    public uint SourceType;
+    /// <summary>
+    /// Window id for container sources.
+    /// </summary>
+    public int WindowId;
+    /// <summary>
+    /// Source flags for world sources.
+    /// </summary>
+    public uint SourceFlags;
+    /// <summary>
+    /// Slot index affected by the action.
+    /// </summary>
+    public uint InventorySlot;
+    /// <summary>
+    /// Item state before the action.
+    /// </summary>
+    public ItemInstance OldItem = new();
+    /// <summary>
+    /// Item state after the action.
+    /// </summary>
+    public ItemInstance NewItem = new();
 
     public void Read(BinaryReader reader)
     {

@@ -6,13 +6,40 @@ namespace Basalt.Protocol.Types;
 
 public sealed class Attribute : DataType
 {
-    public float Min { get; set; }
-    public float Max { get; set; }
-    public float Current { get; set; }
-    public float DefaultMin { get; set; }
-    public float DefaultMax { get; set; }
-    public float Default { get; set; }
-    public AttributeName Name { get; set; }
+    /// <summary>
+    /// Minimum value.
+    /// </summary>
+    public float Min;
+
+    /// <summary>
+    /// Maximum value.
+    /// </summary>
+    public float Max;
+
+    /// <summary>
+    /// Current value.
+    /// </summary>
+    public float Current;
+
+    /// <summary>
+    /// Default minimum value.
+    /// </summary>
+    public float DefaultMin;
+
+    /// <summary>
+    /// Default maximum value.
+    /// </summary>
+    public float DefaultMax;
+
+    /// <summary>
+    /// Default value.
+    /// </summary>
+    public float Default;
+
+    /// <summary>
+    /// Attribute name id.
+    /// </summary>
+    public AttributeName Name;
 
     public Attribute(float min, float max, float current, float defaultValue, AttributeName name)
     {
@@ -38,6 +65,7 @@ public sealed class Attribute : DataType
         DefaultMax = reader.ReadF32(true);
         Default = reader.ReadF32(true);
         Name = AttributeNameHelper.FromProtocolString(reader.ReadVarString());
+
         int modifiers = reader.ReadVarInt();
         for (int i = 0; i < modifiers; i++)
         {

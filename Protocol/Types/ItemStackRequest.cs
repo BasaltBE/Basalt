@@ -5,11 +5,22 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemStackRequest : DataType
 {
-    public int RequestId { get; set; }
-    public List<IStackRequestAction> Actions { get; set; } = [];
-    public List<string> FilterStrings { get; set; } = [];
-    public int FilterCause { get; set; }
-
+    /// <summary>
+    /// Unique request id from the client.
+    /// </summary>
+    public int RequestId;
+    /// <summary>
+    /// Actions included in this request.
+    /// </summary>
+    public List<IStackRequestAction> Actions = [];
+    /// <summary>
+    /// Filter strings used by UI actions.
+    /// </summary>
+    public List<string> FilterStrings = [];
+    /// <summary>
+    /// Cause id for filtering.
+    /// </summary>
+    public int FilterCause;
     public void Read(BinaryReader reader)
     {
         RequestId = reader.ReadZigZag();

@@ -1,15 +1,14 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.Attribute;
-using Basalt.Entity.Traits;
-using Basalt.Entity.Traits.PlayerTraits;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
-using Basalt.RakNet;
-using Basalt.Traits;
-using Basalt.Entity.Traits.Types;
+namespace Basalt.Server.Network.Handlers;
 
-namespace Basalt.Network.Handlers;
+using Basalt.Server;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Player.Traits;
+using Basalt.Protocol.Packets;
+using Basalt.RakNet;
+using Basalt.Server.Traits;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.World;
+
 
 public static class SetLocalPlayerAsInitialized
 {
@@ -18,48 +17,17 @@ public static class SetLocalPlayerAsInitialized
         SetLocalPlayerAsInitializedPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (SetLocalPlayerAsInitializedPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
         }
+        ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
-        SetActorDataPacket actorData = new()
-        {
-            RuntimeId = player.RuntimeId,
-            Tick = player.Dimension?.World?.CurrentTick ?? 0,
-            Metadata = []
-        };
-
-        actorData.Metadata.Add(new ActorMetadataItem
-        {
-            Id = ActorDataId.Reserved0,
-            Type = ActorDataType.Long,
-            Value = player.Flags.Lower64()
-        });
-
-        actorData.Metadata.Add(new ActorMetadataItem
-        {
-            Id = ActorDataId.Reserved092,
-            Type = ActorDataType.Long,
-            Value = player.Flags.Upper64()
-        });
-
-        UpdateAttributesPacket attributes = new()
-        {
-            RuntimeId = player.RuntimeId,
-            Tick = player.Dimension?.World?.CurrentTick ?? 0,
-            Attributes = player.Attributes.GetAll().ToList()
-        };
-
-        if (attributes.Attributes.Count > 0)
-        {
-            server.Network.SendPacket(connection, attributes);
-        }
-
-        server.Network.SendPacket(connection, actorData);
+        server.Network.SendPacket(connection, player.CreateActorDataPacket(tick));
+        player.SendAttributes();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is not null)
@@ -82,8 +50,22 @@ public static class SetLocalPlayerAsInitialized
             inventory.Container.Update();
         }
 
-       
+        string joinMessage = $"§e{player.Username} joined the server.";
+        foreach (global::Basalt.Server.Player.Player target in server.Players.Values)
+        {
+            // target.SendMessage(joinMessage);
+        }
 
         Logger.Info($"Player {player.Username} has spawned.");
     }
 }
+
+
+
+
+
+
+
+
+
+

@@ -1,28 +1,45 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ContainerOpen)]
 public sealed record ContainerOpenPacket : DataPacket
 {
-    public byte WindowId { get; set; }
-    public byte ContainerType { get; set; }
-    public BlockPos ContainerPosition { get; set; }
-    public long ContainerEntityUniqueId { get; set; }
+    /// <summary>
+    /// Window id of the container.
+    /// </summary>
+    public byte WindowId;
 
-    public override PacketId PacketId => PacketId.ContainerOpen;
+    /// <summary>
+    /// Container type id.
+    /// </summary>
+    public byte ContainerType;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Container block position.
+    /// </summary>
+    public BlockPos ContainerPosition;
+
+    /// <summary>
+    /// Unique id of the container entity.
+    /// </summary>
+    public long ContainerEntityUniqueId;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         WindowId = reader.ReadUInt8();
         ContainerType = reader.ReadUInt8();
-        ContainerPosition.Read(reader);
+
+        BlockPos containerPosition = ContainerPosition;
+        containerPosition.Read(reader);
+        ContainerPosition = containerPosition;
+
         ContainerEntityUniqueId = reader.ReadZigZong();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteUInt8(WindowId);
         writer.WriteUInt8(ContainerType);

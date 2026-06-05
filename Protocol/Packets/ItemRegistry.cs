@@ -1,21 +1,21 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ItemRegistry)]
 public sealed record ItemRegistryPacket : DataPacket
 {
-    public List<ItemEntry> Items { get; set; } = [];
+    /// <summary>
+    /// Item registry entries.
+    /// </summary>
+    public List<ItemEntry> Items = [];
 
-    public override PacketId PacketId => PacketId.ItemRegistry;
-
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         int count = checked((int)reader.ReadVarUInt());
         Items = new List<ItemEntry>(count);
-
         for (int i = 0; i < count; i++)
         {
             ItemEntry entry = new();
@@ -24,7 +24,7 @@ public sealed record ItemRegistryPacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Items.Count);
         for (int i = 0; i < Items.Count; i++)

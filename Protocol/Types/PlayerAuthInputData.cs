@@ -6,7 +6,10 @@ namespace Basalt.Protocol.Types;
 
 public struct PlayerAuthInputData : DataType
 {
-    public UInt128 Flags { get; set; }
+    /// <summary>
+    /// Packed player auth input flags.
+    /// </summary>
+    public UInt128 Flags;
 
     public PlayerAuthInputData(UInt128 flags)
     {
@@ -32,32 +35,15 @@ public struct PlayerAuthInputData : DataType
         return (Flags & flagBit) != UInt128.Zero;
     }
 
-    public List<PlayerAuthInputFlag> GetFlags()
-    {
-        List<PlayerAuthInputFlag> flags = [];
-        for (int i = 0; i <= 64; i++)
-        {
-            PlayerAuthInputFlag flag = (PlayerAuthInputFlag)i;
-            if (HasFlag(flag))
-            {
-                flags.Add(flag);
-            }
-        }
-
-        return flags;
-    }
-
     public void Read(BinaryReader reader)
     {
         Flags = UInt128.Zero;
         int shift = 0;
-
         while (true)
         {
             byte current = reader.ReadUInt8();
             UInt128 bits = (UInt128)(current & 0x7F);
             Flags |= bits << shift;
-
             if ((current & 0x80) == 0)
             {
                 break;

@@ -1,6 +1,7 @@
+namespace Basalt.Server.Item.Components;
+
 using Basalt.Protocol.Nbt;
 
-namespace Basalt.Item.Components;
 
 public sealed class ItemTypeDurabilityComponent : ItemTypeComponent
 {
@@ -28,3 +29,9 @@ public sealed class ItemTypeDurabilityComponent : ItemTypeComponent
         return (min, max);
     }
 }
+
+
+
+
+
+

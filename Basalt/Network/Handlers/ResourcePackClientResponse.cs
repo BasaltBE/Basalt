@@ -1,14 +1,17 @@
-using Basalt.Core;
-using Basalt.Entity;
-using Basalt.Item;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Entity;
+using Basalt.Server.Events;
+using Basalt.Server.Item;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
-using Basalt.Entity.Traits.Types;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Protocol.Io;
 
-namespace Basalt.Network.Handlers;
 
 public static class ResourcePackClientResponse
 {
@@ -17,7 +20,7 @@ public static class ResourcePackClientResponse
         ResourcePackClientResponsePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ResourcePackClientResponsePacket)Protocol.Io.Packet.Deserialize(reader);
 
         switch (packet.Response)
         {
@@ -49,7 +52,7 @@ public static class ResourcePackClientResponse
                             SubPackName = string.Empty
                         }
                     ],
-                    BaseGameVersion = ProtocolInfo.MinecraftVersion,
+                    BaseGameVersion = Constants.MinecraftVersion,
                     Experiments = [],
                     ExperimentsPreviouslyToggled = false,
                     IncludeEditorPacks = true
@@ -58,17 +61,38 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.Completed:
-                if (!server.Players.TryGetValue(connection, out Basalt.Core.Player? player))
+                if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
                 {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
+                    DisconnectPacket missingSessionDisconnect = new()
+                    {
+                        Reason = DisconnectReason.Disconnected,
+                        HideDisconnectionScreen = false,
+                        Message = "Server force closed the connection.",
+                        FilteredMessage = "Server force closed the connection."
+                    };
+                    server.Network.SendPacket(connection, missingSessionDisconnect);
+                    connection.Disconnect();
                     return;
                 }
+
+                PlayerListPacket playerList = new()
+                {
+                    ActionType = PlayerListActionType.Add,
+                    Entries = server.Players.Values.Select(static online => online.CreatePlayerListEntry()).ToList()
+                };
+                server.Network.SendPacket(connection, playerList);
+                server.Broadcast(new PlayerListPacket
+                {
+                    ActionType = PlayerListActionType.Add,
+                    Entries = [player.CreatePlayerListEntry()]
+                }, player);
 
                 StartGamePacket startGame = new()
                 {
                     EntityUniqueId = player.UniqueId,
                     EntityRuntimeId = player.RuntimeId,
-                    PlayerGameMode = 0,
+                    PlayerGameMode = (int)player.GetGamemode(),
                     PlayerPosition = new Vec3f { X = 0f, Y = -57f, Z = 0f },
                     Pitch = 0f,
                     Yaw = 0f,
@@ -103,7 +127,7 @@ public static class ResourcePackClientResponse
                     ExperimentsPreviouslyToggled = false,
                     BonusChestEnabled = false,
                     StartWithMapEnabled = false,
-                    PlayerPermissions = 1,
+                    PlayerPermissions = player.IsOperator ? 2 : 1,
                     ServerChunkTickRadius = 4,
                     HasLockedBehaviourPack = false,
                     HasLockedTexturePack = false,
@@ -115,7 +139,7 @@ public static class ResourcePackClientResponse
                     PersonaDisabled = false,
                     CustomSkinsDisabled = false,
                     EmoteChatMuted = false,
-                    BaseGameVersion = ProtocolInfo.MinecraftVersion,
+                    BaseGameVersion = Constants.MinecraftVersion,
                     LimitedWorldWidth = 0,
                     LimitedWorldDepth = 0,
                     NewNether = true,
@@ -141,7 +165,7 @@ public static class ResourcePackClientResponse
                     Blocks = [],
                     MultiPlayerCorrelationId = Guid.NewGuid().ToString(),
                     ServerAuthoritativeInventory = true,
-                    GameVersion = ProtocolInfo.MinecraftVersion,
+                    GameVersion = Constants.MinecraftVersion,
                     PropertyData = new Basalt.Protocol.Nbt.CompoundTag(),
                     ServerBlockStateChecksum = 0,
                     WorldTemplateId = Guid.Empty,
@@ -155,10 +179,27 @@ public static class ResourcePackClientResponse
                     OwnerId = player.Xuid
                 };
                 player.Position = startGame.PlayerPosition;
-                var dimension = server.World.GetDimension(DimensionType.Overworld);
+                var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
                 if (dimension is not null)
                 {
-                    player.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: true));
+                    EntitySpawnOptions options = new(InitialSpawn: true);
+                    PlayerSpawnSignal spawnSignal = new(player, options);
+                    server.Emit(spawnSignal);
+                    if (!spawnSignal.Emit())
+                    {
+                        DisconnectPacket forcedDisconnect = new()
+                        {
+                            Reason = DisconnectReason.Disconnected,
+                            HideDisconnectionScreen = false,
+                            Message = "Server force closed the connection.",
+                            FilteredMessage = "Server force closed the connection."
+                        };
+                        server.Network.SendPacket(connection, forcedDisconnect);
+                        connection.Disconnect();
+                        return;
+                    }
+
+                    player.Spawn(dimension, spawnSignal.Options);
                 }
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
@@ -168,13 +209,13 @@ public static class ResourcePackClientResponse
                     Data = EntityPalette.BuildAvailableActorIdentifiersTag()
                 };
 
-                PlayStatusPacket spawnStatus = new()
-                {
-                    Status = PlayStatus.PlayerSpawn
-                };
+                PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
-                server.Network.SendPackets(connection, [startGame, actorIdentifiers, spawnStatus]);
+                server.Network.SendPackets(connection, [startGame]);
+                player.SyncPermissions();
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
+                // server.Network.SendPackets(connection, [spawnStatus]);
+                server.Network.SendPackets(connection, [actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
                 return;
 
@@ -185,3 +226,13 @@ public static class ResourcePackClientResponse
     }
 
 }
+
+
+
+
+
+
+
+
+
+

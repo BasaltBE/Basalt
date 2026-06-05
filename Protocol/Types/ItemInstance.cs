@@ -5,9 +5,14 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemInstance : DataType
 {
-    public NetworkItemStackDescriptor Stack { get; set; } = new();
-    public int StackNetworkId { get; set; }
-
+    /// <summary>
+    /// Item stack payload.
+    /// </summary>
+    public LegacyItem Stack = new();
+    /// <summary>
+    /// Stack network id value.
+    /// </summary>
+    public int StackNetworkId;
     public void Read(BinaryReader reader)
     {
         Stack.NetworkId = reader.ReadZigZag();
@@ -48,6 +53,7 @@ public sealed class ItemInstance : DataType
         }
     }
 
+
     public void Write(BinaryWriter writer)
     {
         writer.WriteZigZag(Stack.NetworkId);
@@ -80,4 +86,5 @@ public sealed class ItemInstance : DataType
         writer.WriteVarUInt((uint)payload.Length);
         writer.WriteBytes(payloadBuffer[payloadWriter.GetProcessedRange()]);
     }
+
 }

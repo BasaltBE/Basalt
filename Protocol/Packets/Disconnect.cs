@@ -1,27 +1,48 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.Disconnect)]
 public sealed record DisconnectPacket : DataPacket
 {
-    public DisconnectReason Reason { get; set; } = DisconnectReason.Unknown;
-    public bool HideDisconnectionScreen { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string FilteredMessage { get; set; } = string.Empty;
+    /// <summary>
+    /// Disconnect reason code.
+    /// </summary>
+    public DisconnectReason Reason = DisconnectReason.Unknown;
 
-    public override PacketId PacketId => PacketId.Disconnect;
+    /// <summary>
+    /// Whether the disconnect screen should be hidden.
+    /// </summary>
+    public bool HideDisconnectionScreen;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Disconnect message text.
+    /// </summary>
+    public string Message = string.Empty;
+
+    /// <summary>
+    /// Filtered message text.
+    /// </summary>
+    public string FilteredMessage = string.Empty;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
-        Reason = (DisconnectReason)reader.ReadVarInt();
+        Reason = (DisconnectReason)reader.ReadVarUInt();
         HideDisconnectionScreen = reader.ReadBool();
 
         if (!HideDisconnectionScreen)
         {
             Message = reader.ReadVarString();
-            FilteredMessage = reader.ReadVarString();
+            if (reader.Remaining > 0)
+            {
+                bool hasFilteredMessage = reader.ReadBool();
+                FilteredMessage = hasFilteredMessage ? reader.ReadVarString() : Message;
+            }
+            else
+            {
+                FilteredMessage = Message;
+            }
         }
         else
         {
@@ -30,15 +51,21 @@ public sealed record DisconnectPacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt((int)Reason);
+        writer.WriteVarUInt((uint)Reason);
         writer.WriteBool(HideDisconnectionScreen);
 
         if (!HideDisconnectionScreen)
         {
             writer.WriteVarString(Message);
-            writer.WriteVarString(FilteredMessage);
+            bool hasFilteredMessage = !string.IsNullOrEmpty(FilteredMessage) &&
+                                      !string.Equals(FilteredMessage, Message, StringComparison.Ordinal);
+            writer.WriteBool(hasFilteredMessage);
+            if (hasFilteredMessage)
+            {
+                writer.WriteVarString(FilteredMessage);
+            }
         }
     }
 }

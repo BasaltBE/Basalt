@@ -3,11 +3,9 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-// Intended for Optional<T>-style fields where a protocol bool needs type-based Read/Write wiring.
 public struct BoolType : DataType
 {
-    public bool Value { get; set; }
-
+    public bool Value;
     public void Read(BinaryReader reader) => Value = reader.ReadBool();
     public void Write(BinaryWriter writer) => writer.WriteBool(Value);
 

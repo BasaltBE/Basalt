@@ -1,28 +1,41 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.InventoryContent)]
 public sealed record InventoryContentPacket : DataPacket
 {
-    public int WindowId { get; set; }
-    public List<NetworkItemStackDescriptor> Content { get; set; } = [];
-    public FullContainerName Container { get; set; } = new();
-    public NetworkItemStackDescriptor StorageItem { get; set; } = new();
+    /// <summary>
+    /// Window id of the inventory.
+    /// </summary>
+    public int WindowId;
 
-    public override PacketId PacketId => PacketId.InventoryContent;
+    /// <summary>
+    /// Inventory content entries.
+    /// </summary>
+    public List<LegacyItem> Content = [];
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Full container identity.
+    /// </summary>
+    public FullContainerName Container = new();
+
+    /// <summary>
+    /// Optional storage item descriptor.
+    /// </summary>
+    public LegacyItem StorageItem = new();
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         WindowId = reader.ReadVarInt();
 
         int count = checked((int)reader.ReadVarUInt());
-        Content = new List<NetworkItemStackDescriptor>(count);
+        Content = new List<LegacyItem>(count);
         for (int i = 0; i < count; i++)
         {
-            NetworkItemStackDescriptor item = new();
+            LegacyItem item = new();
             item.Read(reader);
             Content.Add(item);
         }
@@ -31,7 +44,7 @@ public sealed record InventoryContentPacket : DataPacket
         StorageItem.Read(reader);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarInt(WindowId);
         writer.WriteVarUInt((uint)Content.Count);

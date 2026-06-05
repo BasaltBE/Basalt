@@ -1,6 +1,7 @@
+namespace Basalt.Server.Item.Components;
+
 using Basalt.Protocol.Nbt;
 
-namespace Basalt.Item.Components;
 
 public abstract class ItemTypeComponent
 {
@@ -15,3 +16,9 @@ public abstract class ItemTypeComponent
         Component = component;
     }
 }
+
+
+
+
+
+

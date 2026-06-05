@@ -1,26 +1,27 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.RequestChunkRadius)]
 public sealed record RequestChunkRadiusPacket : DataPacket
 {
-    // Max chunk radius in the players settings
-    public int ChunkRadius { get; set; }
-    // Max chunk radius the client thinks is best depending on the device specs
-    // Or reasonable rendering distance
-    public byte MaxChunkRadius { get; set; }
+    /// <summary>
+    /// The chunk radius to request
+    /// </summary>
+    public int ChunkRadius;
+    /// <summary>
+    /// The maximum chunk radius that is reasonable
+    /// </summary>
+    public byte MaxChunkRadius;
 
-    public override PacketId PacketId => PacketId.RequestChunkRadius;
-
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
-        ChunkRadius = reader.ReadVarInt();
+        ChunkRadius = reader.ReadZigZag();
         MaxChunkRadius = reader.ReadUInt8();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarInt(ChunkRadius);
         writer.WriteUInt8(MaxChunkRadius);

@@ -1,21 +1,38 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.InventorySlot)]
 public sealed record InventorySlotPacket : DataPacket
 {
-    public int WindowId { get; set; }
-    public int Slot { get; set; }
-    public Optional<FullContainerName> Container { get; set; } = new();
-    public Optional<ItemInstanceNew> StorageItem { get; set; } = new();
-    public ItemInstanceNew NewItem { get; set; } = new();
+    /// <summary>
+    /// Window id of the inventory.
+    /// </summary>
+    public int WindowId;
 
-    public override PacketId PacketId => PacketId.InventorySlot;
+    /// <summary>
+    /// Slot index in the container.
+    /// </summary>
+    public int Slot;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Optional full container identity.
+    /// </summary>
+    public Optional<FullContainerName> Container = new();
+
+    /// <summary>
+    /// Optional storage item descriptor.
+    /// </summary>
+    public Optional<NetworkItemStackDescriptor> StorageItem = new();
+
+    /// <summary>
+    /// New item descriptor for this slot.
+    /// </summary>
+    public NetworkItemStackDescriptor NewItem = new();
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         WindowId = reader.ReadVarInt();
         Slot = reader.ReadVarInt();
@@ -24,7 +41,7 @@ public sealed record InventorySlotPacket : DataPacket
         NewItem.Read(reader);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarInt(WindowId);
         writer.WriteVarInt(Slot);

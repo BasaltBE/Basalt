@@ -5,8 +5,14 @@ namespace Basalt.Protocol.Types;
 
 public sealed class RawStackRequestAction : IStackRequestAction, DataType
 {
-    public byte Type { get; set; }
-    public byte[] Data { get; set; } = [];
+    /// <summary>
+    /// Raw stack action type id.
+    /// </summary>
+    public byte Type;
+    /// <summary>
+    /// Raw action payload bytes.
+    /// </summary>
+    public byte[] Data = [];
     public byte ActionType => Type;
     public void Read(BinaryReader reader) { }
     public void Write(BinaryWriter writer) => writer.WriteBytes(Data);

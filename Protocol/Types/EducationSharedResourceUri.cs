@@ -5,8 +5,16 @@ namespace Basalt.Protocol.Types;
 
 public sealed class EducationSharedResourceUri : DataType
 {
-    public string ButtonName { get; set; } = string.Empty;
-    public string LinkUri { get; set; } = string.Empty;
+    /// <summary>
+    /// The name of the button
+    /// </summary>
+    public string ButtonName = string.Empty;
+
+    /// <summary>
+    /// The URI that will be opened when the button is pressed
+    /// Not really sure how it works tho
+    /// </summary>
+    public string LinkUri = string.Empty;
 
     public void Read(BinaryReader reader)
     {

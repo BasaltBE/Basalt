@@ -1,21 +1,30 @@
+namespace Basalt.Server.Network.Handlers;
+
 using System.Collections.Concurrent;
-using Basalt.Core;
-using Basalt.Entity.Traits;
-using Basalt.Entity.Traits.Types;
-using Basalt.Item;
-using Basalt.Item.Traits.Types;
+using Basalt.Server;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Events;
+using Basalt.Server.Item;
+using Basalt.Server.Item.Traits;
+using Basalt.Server.Item.Traits.Types;
+using Basalt.Server.Player.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class PlayerAuthInput
 {
     private const float MaxHorizontalMovePerTick = 2.0f;
+    private const ulong DefaultFoodUseTicks = 32UL;
 
     private static readonly ConcurrentDictionary<ulong, ulong> LastInputTickByRuntimeId = new();
+    private static readonly ConcurrentDictionary<ulong, PendingItemUse> PendingItemUses = new();
+
+    private readonly record struct PendingItemUse(int Slot, int StackNetworkId, ulong FinishTick);
 
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
@@ -24,7 +33,7 @@ public static class PlayerAuthInput
         {
             int offset = 0;
             Binary.BinaryReader reader = new(packetBuffer, ref offset);
-            packet.Deserialize(reader);
+            packet = (PlayerAuthInputPacket)Protocol.Io.Packet.Deserialize(reader);
         }
         catch (Exception exception)
         {
@@ -34,7 +43,7 @@ public static class PlayerAuthInput
 
         try
         {
-            if (!server.Players.TryGetValue(connection, out Player? player))
+            if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
             {
                 return;
             }
@@ -50,7 +59,7 @@ public static class PlayerAuthInput
                     PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
                     Rotation = new Vec2f { X = packet.Pitch, Y = packet.Yaw },
                     VehicleAngularVelocity = new OptionalValue<float> { HasValue = false },
-                    OnGround = packet.HasFlag(PlayerAuthInputFlag.VerticalCollision),
+                    OnGround = packet.InputData.HasFlag(PlayerAuthInputFlag.VerticalCollision),
                     InputTick = packet.Tick
                 });
 
@@ -59,8 +68,9 @@ public static class PlayerAuthInput
             }
 
             MovePlayer(player, packet);
+            TickPendingItemUse(player);
 
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
             {
                 InventoryTransaction.HandleUseItemFromAuthInput(
                     player,
@@ -70,7 +80,7 @@ public static class PlayerAuthInput
             }
 
             MineBlockStackRequestAction? mineBlockRequest = null;
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
             {
                 mineBlockRequest = GetMineBlockRequest(packet.ItemStackRequest);
                 Logger.Warn(
@@ -86,18 +96,43 @@ public static class PlayerAuthInput
                 });
             }
 
-            if (packet.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
             {
-                Logger.Warn(
-                    "PlayerAuthInput block actions player={0} count={1} tick={2}",
-                    player.Username,
-                    packet.BlockActions.Count,
-                    packet.Tick);
+                // Logger.Warn(
+                //     "PlayerAuthInput block actions player={0} count={1} tick={2}",
+                //     player.Username,
+                //     packet.BlockActions.Count,
+                //     packet.Tick);
 
                 foreach (PlayerBlockAction action in packet.BlockActions)
                 {
                     HandleBlockAction(player, action);
                 }
+            }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem))
+            {
+                StartUsingItem(player);
+            }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting))
+            {
+                player.IsSprinting = true;
+            }
+
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSprinting))
+            {
+                player.IsSprinting = false;
+            }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSneaking))
+            {
+                player.IsSneaking = true;
+            }
+
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSneaking))
+            {
+                player.IsSneaking = false;
             }
             else if (mineBlockRequest is not null && player.LastActionBlockPosition.HasValue)
             {
@@ -130,7 +165,105 @@ public static class PlayerAuthInput
         }
     }
 
-    private static ItemStackResponse ProcessItemStackRequest(Player player, Protocol.Types.ItemStackRequest request)
+    private static void StartUsingItem(global::Basalt.Server.Player.Player player)
+    {
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        ItemStack? heldItem = inventory?.GetHeldItem();
+        ItemStackFoodTrait? food = heldItem?.GetTrait<ItemStackFoodTrait>();
+        if (inventory is null || heldItem is null || food is null)
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
+        if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue))
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        ulong currentTick = GetCurrentTick(player);
+        ulong useTicks = GetUseDurationTicks(heldItem);
+        PendingItemUses[player.RuntimeId] = new PendingItemUse(
+            inventory.SelectedSlot,
+            heldItem.NetworkStackId,
+            currentTick + Math.Max(1UL, useTicks));
+
+        player.Flags.SetActorFlag(ActorFlag.UsingItem, true);
+    }
+
+    private static void TickPendingItemUse(global::Basalt.Server.Player.Player player)
+    {
+        if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending))
+        {
+            return;
+        }
+
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        ItemStack? heldItem = inventory?.Container.GetItem(pending.Slot);
+        if (inventory is null || heldItem is null || heldItem.NetworkStackId != pending.StackNetworkId)
+        {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        if (GetCurrentTick(player) < pending.FinishTick)
+        {
+            return;
+        }
+
+        PendingItemUses.TryRemove(player.RuntimeId, out _);
+        player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+
+        ItemStackFoodTrait? food = heldItem.GetTrait<ItemStackFoodTrait>();
+        PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
+        if (food is null || hunger is null || !hunger.Eat(food.Nutrition, food.SaturationModifier, food.CanAlwaysEat))
+        {
+            return;
+        }
+
+        heldItem.DecrementStack();
+        if (heldItem.StackSize == 0)
+        {
+            inventory.Container.ClearSlot(pending.Slot);
+        }
+        else
+        {
+            inventory.Container.UpdateSlot(pending.Slot);
+        }
+
+        if (!string.IsNullOrWhiteSpace(food.UsingConvertsTo) && ItemType.Get(food.UsingConvertsTo) is ItemType convertedType)
+        {
+            ItemStack converted = new(convertedType);
+            if (!inventory.Container.AddItem(converted))
+            {
+                _ = player.DropItem(converted);
+            }
+        }
+
+        player.SendAttributes();
+    }
+
+    private static ulong GetCurrentTick(global::Basalt.Server.Player.Player player)
+    {
+        return player.Dimension?.World is Basalt.Server.World.Tickable tickable ? tickable.TickValue : 0UL;
+    }
+
+    private static ulong GetUseDurationTicks(ItemStack item)
+    {
+        if (item.Type.TryGetComponentProperties("minecraft:use_duration", out Basalt.Protocol.Nbt.CompoundTag tag))
+        {
+            return (ulong)Math.Max(1, tag.Get<Basalt.Protocol.Nbt.IntTag>("value")?.Value ?? (int)DefaultFoodUseTicks);
+        }
+
+        return DefaultFoodUseTicks;
+    }
+
+    private static ItemStackResponse ProcessItemStackRequest(global::Basalt.Server.Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         List<StackResponseContainerInfo> containers = [];
 
@@ -184,7 +317,7 @@ public static class PlayerAuthInput
         return null;
     }
 
-    private static bool MovedTooFar(Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
+    private static bool MovedTooFar(global::Basalt.Server.Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
     {
         float deltaX = packet.Position.X - player.Position.X;
         float deltaZ = packet.Position.Z - player.Position.Z;
@@ -199,9 +332,24 @@ public static class PlayerAuthInput
         return movedDistanceSquared > allowedDistance * allowedDistance;
     }
 
-    private static void MovePlayer(Player player, PlayerAuthInputPacket packet)
+    private static void MovePlayer(global::Basalt.Server.Player.Player player, PlayerAuthInputPacket packet)
     {
         Vec3f previousPosition = player.Position;
+
+        MovementRotation fromRotation = new MovementRotation()
+        {
+            HeadYaw = player.HeadYaw,
+            Pitch = player.Pitch,
+            Yaw = player.Yaw,
+        };
+
+        MovementRotation toRotation = new MovementRotation()
+        {
+            HeadYaw = packet.Yaw,
+            Pitch = packet.Pitch,
+            Yaw = packet.Yaw,
+        };
+
         player.Pitch = packet.Pitch;
         player.Yaw = packet.Yaw;
         player.HeadYaw = packet.Yaw;
@@ -225,19 +373,20 @@ public static class PlayerAuthInput
             }
             : packet.Position;
 
-        player.OnMove(new EntityMoveOptions(previousPosition, player.Position));
+        player.OnMove(new EntityMoveOptions(previousPosition, player.Position, fromRotation, toRotation));
+
     }
 
-    private static void HandleBlockAction(Player player, PlayerBlockAction action)
+    private static void HandleBlockAction(global::Basalt.Server.Player.Player player, PlayerBlockAction action)
     {
-        Logger.Warn(
-            "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
-            player.Username,
-            action.Action,
-            action.BlockPos.X,
-            action.BlockPos.Y,
-            action.BlockPos.Z,
-            action.Face);
+        // Logger.Warn(
+        //     "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
+        //     player.Username,
+        //     action.Action,
+        //     action.BlockPos.X,
+        //     action.BlockPos.Y,
+        //     action.BlockPos.Z,
+        //     action.Face);
 
         switch (action.Action)
         {
@@ -263,7 +412,7 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void CrackBlock(Player player, BlockPos blockPosition)
+    private static void CrackBlock(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
     {
         if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition))
         {
@@ -282,11 +431,11 @@ public static class PlayerAuthInput
         });
     }
 
-    private static void DestroyBlock(Player player, PlayerBlockAction action)
+    private static void DestroyBlock(global::Basalt.Server.Player.Player player, PlayerBlockAction action)
     {
         if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
         {
-            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
+            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
             return;
         }
 
@@ -299,33 +448,64 @@ public static class PlayerAuthInput
 
         if (player.Dimension is null)
         {
-            Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
+            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
             return;
         }
 
-        Basalt.Block.BlockPermutation? block =
+        Basalt.Server.Block.BlockPermutation? block =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)
         {
-            Logger.Warn(
-                "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
-                player.Username,
-                blockPosition.X,
-                blockPosition.Y,
-                blockPosition.Z);
+            // Logger.Warn(
+            //     "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
+            //     player.Username,
+            //     blockPosition.X,
+            //     blockPosition.Y,
+            //     blockPosition.Z);
             return;
         }
 
-        Logger.Warn(
-            "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
-            player.Username,
-            blockPosition.X,
-            blockPosition.Y,
-            blockPosition.Z,
-            block.Type.Identifier,
-            block.NetworkId,
-            action.Action);
+        // Logger.Warn(
+        //     "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
+        //     player.Username,
+        //     blockPosition.X,
+        //     blockPosition.Y,
+        //     blockPosition.Z,
+        //     block.Type.Identifier,
+        //     block.NetworkId,
+        //     action.Action);
+
+        Server? server = player.Dimension.World?.Server;
+        if (server is not null)
+        {
+            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                player.Send(new UpdateBlockPacket
+                {
+                    Position = blockPosition,
+                    NetworkBlockId = (uint)block.NetworkId,
+                    Flags = UpdateBlockFlagsType.Network,
+                    Layer = UpdateBlockLayerType.Normal
+                });
+
+                EntityInventoryTrait? cancelInventory = player.GetTrait<EntityInventoryTrait>();
+                if (cancelInventory is not null)
+                {
+                    ItemStack? rollbackItem = cancelInventory.GetHeldItem();
+                    if (rollbackItem is not null)
+                    {
+                        cancelInventory.Container.SetItem(cancelInventory.SelectedSlot, rollbackItem.Clone());
+                    }
+                    cancelInventory.Container.UpdateSlot(cancelInventory.SelectedSlot);
+                    cancelInventory.Container.Update();
+                    cancelInventory.SyncToPlayer(player);
+                }
+                return;
+            }
+        }
 
         player.Dimension.Broadcast(new LevelEventPacket
         {
@@ -334,23 +514,29 @@ public static class PlayerAuthInput
             Data = block.NetworkId
         });
 
-        Basalt.Block.BlockPermutation air = Basalt.Block.BlockType
+        Basalt.Server.Block.BlockPermutation air = Basalt.Server.Block.BlockType
             .GetOrAir("minecraft:air")
             .GetPermutation();
 
+        Basalt.Server.Block.Block breakingBlock =
+            player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
+            new Basalt.Server.Block.Block(block);
+
+        breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
+
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
-        Basalt.Block.BlockPermutation after =
+        Basalt.Server.Block.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
-        Logger.Warn(
-            "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
-            player.Username,
-            blockPosition.X,
-            blockPosition.Y,
-            blockPosition.Z,
-            after.Type.Identifier,
-            after.NetworkId);
+        // Logger.Warn(
+        //     "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
+        //     player.Username,
+        //     blockPosition.X,
+        //     blockPosition.Y,
+        //     blockPosition.Z,
+        //     after.Type.Identifier,
+        //     after.NetworkId);
 
         player.Dimension.Broadcast(new UpdateBlockPacket
         {
@@ -373,7 +559,7 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void StopCrackBlock(Player player, BlockPos blockPosition)
+    private static void StopCrackBlock(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
     {
         player.Dimension?.Broadcast(new LevelEventPacket
         {
@@ -383,9 +569,9 @@ public static class PlayerAuthInput
         });
     }
 
-    private static int GetBreakTimeTicksForAnimation(Player player, BlockPos blockPosition)
+    private static int GetBreakTimeTicksForAnimation(global::Basalt.Server.Player.Player player, BlockPos blockPosition)
     {
-        Basalt.Block.BlockPermutation? block =
+        Basalt.Server.Block.BlockPermutation? block =
             player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)
@@ -427,5 +613,15 @@ public static class PlayerAuthInput
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 
-  
+
 }
+
+
+
+
+
+
+
+
+
+

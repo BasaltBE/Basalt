@@ -1,20 +1,33 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.InventoryTransaction)]
 public sealed record InventoryTransactionPacket : DataPacket
 {
-    public int LegacyRequestId { get; set; }
-    public List<LegacySetItemSlot> LegacySetItemSlots { get; set; } = [];
-    public IInventoryTransactionData TransactionData { get; set; } = new NormalInventoryTransactionData();
-    public List<InventoryAction> Actions { get; set; } = [];
+    /// <summary>
+    /// Legacy request id.
+    /// </summary>
+    public int LegacyRequestId;
 
-    public override PacketId PacketId => PacketId.InventoryTransaction;
+    /// <summary>
+    /// Legacy set-slot entries.
+    /// </summary>
+    public List<LegacySetItemSlot> LegacySetItemSlots = [];
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Typed transaction data payload.
+    /// </summary>
+    public IInventoryTransactionData TransactionData = new NormalInventoryTransactionData();
+
+    /// <summary>
+    /// Inventory action list.
+    /// </summary>
+    public List<InventoryAction> Actions = [];
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
@@ -51,7 +64,7 @@ public sealed record InventoryTransactionPacket : DataPacket
         TransactionData = transactionData;
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteZigZag(LegacyRequestId);
         if (LegacyRequestId != 0)

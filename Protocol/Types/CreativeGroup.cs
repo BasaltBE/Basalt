@@ -5,9 +5,20 @@ namespace Basalt.Protocol.Types;
 
 public sealed class CreativeGroup : DataType
 {
-    public int Category { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public CreativeItemInstanceDescriptor Icon { get; set; } = new();
+    /// <summary>
+    /// Creative category id.
+    /// </summary>
+    public int Category;
+
+    /// <summary>
+    /// Group name.
+    /// </summary>
+    public string Name = string.Empty;
+
+    /// <summary>
+    /// Group icon item descriptor.
+    /// </summary>
+    public CreativeItemInstanceDescriptor Icon = new();
 
     public void Read(BinaryReader reader)
     {

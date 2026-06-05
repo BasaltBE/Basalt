@@ -5,38 +5,33 @@ namespace Basalt.Protocol.Types;
 
 public sealed class FullContainerName : DataType
 {
-    public byte ContainerId { get; set; }
+    /// <summary>
+    /// Container id.
+    /// </summary>
+    public byte ContainerId;
 
-    public uint? DynamicContainerId { get; set; }
+    /// <summary>
+    /// Optional dynamic container id.
+    /// </summary>
+    public uint? DynamicContainerId;
 
     public void Read(BinaryReader reader)
     {
         ContainerId = reader.ReadUInt8();
-
-        var isDynamic = reader.ReadBool();
-
-        if (isDynamic)
-        {
-            DynamicContainerId = reader.ReadUInt32(true);
-        }
+        bool isDynamic = reader.ReadBool();
+        DynamicContainerId = isDynamic ? reader.ReadUInt32(true) : null;
     }
 
     public void Write(BinaryWriter writer)
     {
         writer.WriteUInt8(ContainerId);
-        // DynamicContainerId.Write(writer, static (BinaryWriter w, uint value) => w.WriteUInt32(value, true));
-
         if (DynamicContainerId.HasValue)
         {
-            // Has Dinamic value bool
             writer.WriteBool(true);
-            // The dinamic value itself
             writer.WriteUInt32(DynamicContainerId.Value, true);
-
         }
         else
         {
-            // no value
             writer.WriteBool(false);
         }
     }

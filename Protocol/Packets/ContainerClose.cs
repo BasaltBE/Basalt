@@ -1,25 +1,34 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ContainerClose)]
 public sealed record ContainerClosePacket : DataPacket
 {
-    public byte WindowId { get; set; }
-    public byte ContainerType { get; set; }
-    public bool ServerSide { get; set; }
+    /// <summary>
+    /// Window id of the container.
+    /// </summary>
+    public byte WindowId;
 
-    public override PacketId PacketId => PacketId.ContainerClose;
+    /// <summary>
+    /// Container type id.
+    /// </summary>
+    public byte ContainerType;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Whether this close is server initiated.
+    /// </summary>
+    public bool ServerSide;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         WindowId = reader.ReadUInt8();
         ContainerType = reader.ReadUInt8();
         ServerSide = reader.ReadBool();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteUInt8(WindowId);
         writer.WriteUInt8(ContainerType);

@@ -1,16 +1,21 @@
+namespace Basalt.Server.Entity;
+
 using Basalt.Protocol.Types;
-using Basalt.Entity.Traits;
-using Basalt.Entity.Traits.Enums;
-using Basalt.Entity.Traits.Types;
-using Basalt.Core;
-using Basalt.World.Dimension;
-using Basalt.Traits;
-using Basalt.Containers;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Entity.Traits.Enums;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.World.Dimension;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Nbt;
+using Basalt.Server.World;
+using Basalt.Server.Entity.Metadata;
+using Basalt.Server.Item;
 
-namespace Basalt.Entity;
+using Player = Player.Player;
+using Basalt.Server.Traits;
+
+using Basalt.Server.Loot;
 
 public class Entity
 {
@@ -21,19 +26,30 @@ public class Entity
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; } = ++_runtimeCounter;
     public long UniqueId => unchecked((long)RuntimeId);
-    public float Speed { get; private set; } = 1f;
     public Vec3f Position;
+    public Vec3f Velocity;
     public EntityAttributes Attributes { get; } = new();
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
-    public Dimension? Dimension { get; private set; }
+    public Dimension? Dimension { get; protected set; }
+    public bool AttributesDirty { get; set; }
     public bool IsAlive { get; private set; }
-    public bool IsSprinting;
+    public bool PendingDespawn { get; private set; }
+    public bool IsSprinting
+    {
+        get => Flags.GetActorFlag(ActorFlag.Sprinting);
+        set => Flags.SetActorFlag(ActorFlag.Sprinting, value);
+    }
+
+    public bool IsSneaking
+    {
+        get => Flags.GetActorFlag(ActorFlag.Sneaking);
+        set => Flags.SetActorFlag(ActorFlag.Sneaking, value);
+    }
+
     public bool IsSwimming;
     private readonly HashSet<EffectType> _effects = [];
-    protected virtual float BaseMovementSpeed => 0.1f;
-    protected virtual float BaseUnderwaterMovementSpeed => 0.02f;
-    protected virtual float BaseLavaMovementSpeed => 0.02f;
+
 
     public Entity(string identifier)
     {
@@ -42,7 +58,7 @@ public class Entity
             throw new ArgumentException("Entity identifier cannot be empty.", nameof(identifier));
         }
 
-        Type = EntityType.GetOrPlayer(identifier);
+        Type = EntityType.GetOrCreate(identifier);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
         foreach (Type traitType in Type.Traits.Values)
@@ -117,35 +133,98 @@ public class Entity
                 Logger.Warn($"Trait tick failed for {Identifier} ({trait.Identifier}): {exception}");
             }
         }
+
+        if (AttributesDirty && this is Player player)
+        {
+            player.SendAttributes();
+        }
     }
 
 
-    public void Spawn(Dimension dimension, EntitySpawnOptions options)
+    public virtual void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
+        PendingDespawn = false;
         dimension.AddEntity(this);
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnSpawn(options);
         }
+
+        SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
+        if (this is Player player)
+        {
+            Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });
+            return;
+        }
+
+        Dimension.Broadcast(actorData);
     }
 
     public void Despawn(EntityDespawnOptions options)
     {
-        Dimension?.RemoveEntity(this);
+        if (PendingDespawn)
+        {
+            return;
+        }
+
+        PendingDespawn = true;
         IsAlive = false;
+
+        if (Dimension is not null)
+        {
+            if (this is Player player)
+            {
+                Dimension.Broadcast(new RemoveActorPacket
+                {
+                    EntityUniqueId = UniqueId
+                }, new BroadcastOptions { Except = [player] });
+            }
+            else
+            {
+                Dimension.Broadcast(new RemoveActorPacket
+                {
+                    EntityUniqueId = UniqueId
+                });
+            }
+        }
+
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnDespawn(options);
         }
-
-        Dimension = null;
     }
 
     public void OnDeath(EntityDeathOptions options)
     {
+        if (!IsAlive || PendingDespawn)
+        {
+            return;
+        }
+
+        Dimension? dimension = Dimension;
+        if (!options.Cancel && dimension is not null)
+        {
+            List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
+            for (int i = 0; i < drops.Count; i++)
+            {
+                ItemEntity drop = new(drops[i])
+                {
+                    Position = Position,
+                    Velocity = new Vec3f
+                    {
+                        X = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f,
+                        Y = 0.18f,
+                        Z = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f
+                    }
+                };
+
+                drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+            }
+        }
+
         IsAlive = false;
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -156,6 +235,13 @@ public class Entity
     public void Kill(EntityDeathOptions options)
     {
         OnDeath(options);
+        PendingDespawn = true;
+    }
+
+    internal void CompleteDespawn()
+    {
+        PendingDespawn = false;
+        Dimension = null;
     }
 
     public void OnTeleport(EntityTeleportOptions options)
@@ -182,7 +268,7 @@ public class Entity
         }
     }
 
-    public void OnContainerUpdate(Basalt.Containers.Container container)
+    public void OnContainerUpdate(Basalt.Server.Containers.Container container)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -206,32 +292,32 @@ public class Entity
         }
     }
 
-    public virtual void SetSpeed(float speed = 1f)
-    {
-        Speed = speed;
-        float movement = BaseMovementSpeed * Speed;
-        float underwater = BaseUnderwaterMovementSpeed * Speed;
-        float lava = BaseLavaMovementSpeed * Speed;
+    // public virtual void SetSpeed(float speed = 1f)
+    // {
+    //     Speed = speed;
+    //     float movement = BaseMovementSpeed * Speed;
+    //     float underwater = BaseUnderwaterMovementSpeed * Speed;
+    //     float lava = BaseLavaMovementSpeed * Speed;
 
-        SetMovementAttribute(AttributeName.Movement, movement, BaseMovementSpeed);
-        SetMovementAttribute(AttributeName.UnderwaterMovement, underwater, BaseUnderwaterMovementSpeed);
-        SetMovementAttribute(AttributeName.LavaMovement, lava, BaseLavaMovementSpeed);
-    }
+    //     SetMovementAttribute(AttributeName.Movement, movement, BaseMovementSpeed);
+    //     SetMovementAttribute(AttributeName.UnderwaterMovement, underwater, BaseUnderwaterMovementSpeed);
+    //     SetMovementAttribute(AttributeName.LavaMovement, lava, BaseLavaMovementSpeed);
+    // }
 
-    private void SetMovementAttribute(AttributeName name, float current, float @default)
-    {
-        const float min = 0f;
-        const float max = float.MaxValue;
+    // private void SetMovementAttribute(AttributeName name, float current, float @default)
+    // {
+    //     const float min = 0f;
+    //     const float max = float.MaxValue;
 
-        Protocol.Types.Attribute attribute = Attributes.GetAttribute(name) ?? new Protocol.Types.Attribute(min, max, current, @default, name);
-        attribute.Min = min;
-        attribute.Max = max;
-        attribute.DefaultMin = min;
-        attribute.DefaultMax = max;
-        attribute.Default = @default;
-        attribute.Current = current;
-        Attributes.SetAttribute(attribute);
-    }
+    //     Protocol.Types.Attribute attribute = Attributes.GetAttribute(name) ?? new Protocol.Types.Attribute(min, max, current, @default, name);
+    //     attribute.Min = min;
+    //     attribute.Max = max;
+    //     attribute.DefaultMin = min;
+    //     attribute.DefaultMax = max;
+    //     attribute.Default = @default;
+    //     attribute.Current = current;
+    //     Attributes.SetAttribute(attribute);
+    // }
 
     public CompoundTag WriteToNbt()
     {
@@ -311,7 +397,6 @@ public class Entity
         }
     }
 
-    // AddTrait methods are now defined above
 
     public EntityTrait? GetTrait(string identifier)
     {
@@ -333,10 +418,25 @@ public class Entity
 
     public Vec3f GetHeadLocation()
     {
+        return GetEyePosition();
+    }
+
+    public Vec3f GetPosition()
+    {
         return new Vec3f
         {
             X = Position.X,
-            Y = Position.Y + 1.62f,
+            Y = Position.Y - 1.62f,
+            Z = Position.Z
+        };
+    }
+
+    public Vec3f GetEyePosition()
+    {
+        return new Vec3f
+        {
+            X = Position.X,
+            Y = Position.Y,
             Z = Position.Z
         };
     }
@@ -366,7 +466,7 @@ public class Entity
         SetActorDataPacket packet = new()
         {
             RuntimeId = RuntimeId,
-            Tick = Dimension.World?.CurrentTick ?? 0,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
             Metadata =
             [
                 new ActorMetadataItem
@@ -387,6 +487,54 @@ public class Entity
         Dimension.Broadcast(packet);
     }
 
+    public SetActorDataPacket CreateActorDataPacket(ulong tick)
+    {
+        List<ActorMetadataItem> metadata = Metadata.GetAll();
+        metadata.Add(new ActorMetadataItem
+        {
+            Id = ActorDataId.Reserved0,
+            Type = ActorDataType.Long,
+            Value = Flags.Lower64()
+        });
+        metadata.Add(new ActorMetadataItem
+        {
+            Id = ActorDataId.Reserved092,
+            Type = ActorDataType.Long,
+            Value = Flags.Upper64()
+        });
+
+        return new SetActorDataPacket
+        {
+            RuntimeId = RuntimeId,
+            Tick = tick,
+            Metadata = metadata
+        };
+    }
+
+    public virtual void SpawnTo(Player player, ulong tick)
+    {
+        player.Send(new AddActorPacket
+        {
+            EntityUniqueId = UniqueId,
+            EntityRuntimeId = RuntimeId,
+            EntityType = Identifier,
+            Position = Position,
+            Velocity = new Vec3f(),
+            Pitch = 0,
+            Yaw = 0,
+            HeadYaw = 0,
+            BodyYaw = 0,
+            Attributes = [],
+            EntityMetadata = CreateActorDataPacket(tick).Metadata,
+            EntityProperties = new EntityProperties(),
+            EntityLinks = []
+        });
+    }
+
+    public virtual void OnPhysicsTick(ulong currentTick, bool grounded)
+    {
+    }
+
     internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value)
     {
         if (Dimension is null)
@@ -397,7 +545,7 @@ public class Entity
         SetActorDataPacket packet = new()
         {
             RuntimeId = RuntimeId,
-            Tick = Dimension.World?.CurrentTick ?? 0,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
             Metadata =
             [
                 new ActorMetadataItem
@@ -411,4 +559,21 @@ public class Entity
 
         Dimension.Broadcast(packet);
     }
+
+    public string FormatIdentifier()
+    {
+        if (string.IsNullOrWhiteSpace(Identifier))
+            return string.Empty;
+
+        var name = Identifier.Contains(':') ? Identifier.Split(':')[1] : Identifier;
+
+        return string.Join(" ", name.Split('_')
+            .Select(word => char.ToUpper(word[0]) + word[1..]));
+    }
 }
+
+
+
+
+
+

@@ -5,7 +5,18 @@
 *.lscache
 
 worlds
-# These are not actual tests but rather temp runtimes
-Tests
+server.properties
+/plugins/
+
 artifacts
 .*
+
+# Not proper tests so not pushing them
+Tests/
+T
+# The old protocol
+_Protocol
+
+# WIP client / debugger
+Waterfall/Program2.cs
+Waterfall

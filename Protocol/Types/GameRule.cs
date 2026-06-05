@@ -6,14 +6,22 @@ namespace Basalt.Protocol.Types;
 
 public sealed class GameRule : DataType
 {
-    public string Name { get; set; } = string.Empty;
-    public bool CanBeModifiedByPlayer { get; set; }
-    public object Value { get; set; } = false;
+    /// <summary>
+    /// Name of the game rule.
+    /// </summary>
+    public string Name = string.Empty;
 
-    public void Read(BinaryReader reader) => ReadLegacy(reader);
-    public void Write(BinaryWriter writer) => WriteLegacy(writer);
+    /// <summary>
+    /// Whether the game rule can be modified by the player or not.
+    /// </summary>
+    public bool CanBeModifiedByPlayer;
 
-    public void ReadLegacy(BinaryReader reader)
+    /// <summary>
+    /// Value of the game rule. The type of this value is determined by the GameRuleValueType enum.
+    /// </summary>
+    public object Value = false;
+
+    public void Read(BinaryReader reader)
     {
         Name = reader.ReadVarString();
         CanBeModifiedByPlayer = reader.ReadBool();
@@ -28,7 +36,7 @@ public sealed class GameRule : DataType
         };
     }
 
-    public void WriteLegacy(BinaryWriter writer)
+    public void Write(BinaryWriter writer)
     {
         writer.WriteVarString(Name);
         writer.WriteBool(CanBeModifiedByPlayer);

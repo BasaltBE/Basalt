@@ -8,11 +8,22 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
 {
     public InventoryTransactionType Type => InventoryTransactionType.ReleaseItem;
 
-    public uint ActionType { get; set; }
-    public int HotBarSlot { get; set; }
-    public ItemInstance HeldItem { get; set; } = new();
-    public Vec3f HeadPosition { get; set; }
-
+    /// <summary>
+    /// Release-item action type.
+    /// </summary>
+    public uint ActionType;
+    /// <summary>
+    /// Hotbar slot used by the client.
+    /// </summary>
+    public int HotBarSlot;
+    /// <summary>
+    /// Item held by the player.
+    /// </summary>
+    public ItemInstance HeldItem = new();
+    /// <summary>
+    /// Head position at release time.
+    /// </summary>
+    public Vec3f HeadPosition;
     public void Read(BinaryReader reader)
     {
         ActionType = reader.ReadVarUInt();

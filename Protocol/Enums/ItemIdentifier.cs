@@ -1,4 +1,4 @@
-namespace Basalt.Item;
+namespace Basalt.Protocol.Enums;
 
 public enum ItemIdentifier
 {

@@ -6,8 +6,14 @@ namespace Basalt.Protocol.Types;
 public sealed class SwapStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 2;
-    public StackRequestSlotInfo Source { get; set; } = new();
-    public StackRequestSlotInfo Destination { get; set; } = new();
+    /// <summary>
+    /// Source slot info.
+    /// </summary>
+    public StackRequestSlotInfo Source = new();
+    /// <summary>
+    /// Destination slot info.
+    /// </summary>
+    public StackRequestSlotInfo Destination = new();
 
     public void Read(BinaryReader reader)
     {

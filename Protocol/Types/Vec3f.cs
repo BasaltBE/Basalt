@@ -4,11 +4,19 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public struct Vec3f : DataType
-{
-    public float X { get; set; }
-    public float Y { get; set; }
-    public float Z { get; set; }
-
+{   
+    /// <summary>
+    /// X coordinate of the vector.
+    /// </summary>
+    public float X;
+    /// <summary>
+    /// Y coordinate of the vector.
+    /// </summary>
+    public float Y;
+    /// <summary>
+    /// Z coordinate of the vector.
+    /// </summary>
+    public float Z;
     public void Read(BinaryReader reader)
     {
         X = reader.ReadF32(true);

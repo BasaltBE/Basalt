@@ -1,7 +1,7 @@
 using Basalt.Protocol.Enums;
-using ChunkColumn = Basalt.World.Dimension.Chunk.Chunk;
+using ChunkColumn = Basalt.Server.World.Dimension.Chunk.Chunk;
 
-namespace Basalt.World.Dimension.Generation;
+namespace Basalt.Server.World.Dimension.Generation;
 
 public abstract class Generator
 {
@@ -11,3 +11,10 @@ public abstract class Generator
     {
     }
 }
+
+
+
+
+
+
+

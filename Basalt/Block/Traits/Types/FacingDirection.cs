@@ -1,4 +1,4 @@
-namespace Basalt.Block.Traits.Types;
+namespace Basalt.Server.Block.Traits.Types;
 
 public enum FacingDirection
 {
@@ -9,3 +9,10 @@ public enum FacingDirection
     West = 4,
     East = 5
 }
+
+
+
+
+
+
+

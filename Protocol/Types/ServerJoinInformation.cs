@@ -5,9 +5,9 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ServerJoinInformation : DataType
 {
-    public Optional<GatheringJoinInfo> GatheringJoinInfo { get; set; } = new();
-    public Optional<StoreEntryPointInfo> StoreEntryPointInfo { get; set; } = new();
-    public Optional<PresenceInfo> PresenceInfo { get; set; } = new();
+    public Optional<GatheringJoinInfo> GatheringJoinInfo = new();
+    public Optional<StoreEntryPointInfo> StoreEntryPointInfo = new();
+    public Optional<PresenceInfo> PresenceInfo = new();
 
     public void Read(BinaryReader reader)
     {

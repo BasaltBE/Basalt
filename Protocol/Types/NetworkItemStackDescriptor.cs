@@ -1,90 +1,206 @@
+using Basalt.Binary;
+using Basalt.Protocol.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
+/// <summary>
+/// Pretty much same as LegacyItem just some types are different,
+/// e.g network runtime id is Uint16 instead of ZigZag
+/// </summary>
 public sealed class NetworkItemStackDescriptor : DataType
 {
-    public int NetworkId { get; set; } = 0;
-    public ushort StackSize { get; set; } = 0;
-    public int Metadata { get; set; } = 0;
-    public int? ItemStackId { get; set; }
-    public int NetworkBlockId { get; set; } = 0;
-    public ItemInstanceUserData? ExtraData { get; set; }
+    /// <summary>
+    /// Network item id.
+    /// </summary>
+    public int NetworkId;
+
+    /// <summary>
+    /// Item count.
+    /// </summary>
+    public ushort Count;
+
+    /// <summary>
+    /// Item metadata value.
+    /// </summary>
+    public uint Metadata;
+
+    /// <summary>
+    /// Stack network id.
+    /// </summary>
+    public int StackNetworkId;
+
+    /// <summary>
+    /// Block runtime id.
+    /// </summary>
+    public int BlockRuntimeId;
+
+    /// <summary>
+    /// Optional item NBT payload.
+    /// </summary>
+    public CompoundTag? Nbt;
+
+    /// <summary>
+    /// Blocks item can be placed on.
+    /// </summary>
+    public List<string> CanPlaceOn = [];
+
+    /// <summary>
+    /// Blocks item can destroy.
+    /// </summary>
+    public List<string> CanDestroy = [];
+
+    /// <summary>
+    /// Shield blocking tick value.
+    /// </summary>
+    public long BlockingTick;
 
     public void Read(BinaryReader reader)
     {
-        NetworkId = reader.ReadZigZag();
-        if (NetworkId == 0)
+        NetworkId = reader.ReadInt16(true);
+        Count = reader.ReadUInt16(true);
+        Metadata = reader.ReadVarUInt();
+
+        bool hasNetId = reader.ReadBool();
+        if (hasNetId)
         {
-            StackSize = 0;
-            Metadata = 0;
-            ItemStackId = null;
-            NetworkBlockId = 0;
-            ExtraData = null;
+            // its always 0 for some reason
+            _ = reader.ReadVarUInt();
+            StackNetworkId = reader.ReadVarInt();
+        }
+        else
+        {
+            StackNetworkId = 0;
+        }
+
+        BlockRuntimeId = unchecked((int)reader.ReadVarUInt());
+        uint extraLengthRaw = reader.ReadVarUInt();
+        if (extraLengthRaw > int.MaxValue)
+        {
+            throw new FormatException("Invalid network item extra length.");
+        }
+
+        int extraLength = (int)extraLengthRaw;
+        if (extraLength > reader.Remaining)
+        {
+            throw new FormatException("Network item extra length exceeds remaining buffer.");
+        }
+
+        if (extraLength == 0)
+        {
             return;
         }
 
-        StackSize = reader.ReadUInt16(true);
-        Metadata = reader.ReadVarInt();
-
-        bool hasStackId = reader.ReadBool();
-        ItemStackId = hasStackId ? reader.ReadZigZag() : null;
-
-        NetworkBlockId = reader.ReadZigZag();
-
-        int extrasLength = reader.ReadVarInt();
-        if (extrasLength < 0)
+        int endOffset = reader.Offset + extraLength;
+        short marker = reader.ReadInt16(true);
+        if (marker == -1)
         {
-            throw new FormatException("Negative extras length in network item stack descriptor.");
+            byte version = reader.ReadUInt8();
+            if (version != 1)
+            {
+                throw new InvalidOperationException($"Unsupported network item NBT version: {version}");
+            }
+
+            Nbt = Io.NBT.ReadTag<CompoundTag>(reader, new Basalt.Protocol.Nbt.TagOptions(Name: true, Type: true, VarInt: false));
         }
-        if (extrasLength == 0)
+        else
         {
-            ExtraData = null;
-            return;
+            Nbt = null;
         }
 
-        int extrasEndOffset = reader.Offset + extrasLength;
-        ItemInstanceUserData extraData = new();
-        extraData.Read(reader, NetworkId);
-        ExtraData = extraData;
-        if (reader.Offset < extrasEndOffset)
+        uint canPlaceOnCountRaw = reader.ReadUInt32(true);
+        if (canPlaceOnCountRaw > int.MaxValue)
         {
-            reader.Seek(extrasEndOffset);
+            throw new FormatException("Invalid can-place-on count.");
+        }
+
+        int canPlaceOnCount = (int)canPlaceOnCountRaw;
+        CanPlaceOn = new List<string>(Math.Max(canPlaceOnCount, 0));
+        for (int i = 0; i < canPlaceOnCount; i++)
+        {
+            CanPlaceOn.Add(reader.ReadString16(true));
+        }
+
+        uint canDestroyCountRaw = reader.ReadUInt32(true);
+        if (canDestroyCountRaw > int.MaxValue)
+        {
+            throw new FormatException("Invalid can-destroy count.");
+        }
+
+        int canDestroyCount = (int)canDestroyCountRaw;
+        CanDestroy = new List<string>(Math.Max(canDestroyCount, 0));
+        for (int i = 0; i < canDestroyCount; i++)
+        {
+            CanDestroy.Add(reader.ReadString16(true));
+        }
+
+        if (NetworkId == Io.Constants.ShieldNetworkId && reader.Offset + sizeof(long) <= endOffset)
+        {
+            BlockingTick = reader.ReadInt64(true);
+        }
+
+        if (reader.Offset < endOffset)
+        {
+            reader.Seek(endOffset);
         }
     }
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteZigZag(NetworkId);
+        writer.WriteInt16(unchecked((short)NetworkId), true);
+        writer.WriteUInt16(Count, true);
+        writer.WriteVarUInt(Metadata);
+
+        bool hasNetId = StackNetworkId != 0;
+        writer.WriteBool(hasNetId);
+        if (hasNetId)
+        {
+            writer.WriteVarUInt(0);
+            writer.WriteVarInt(StackNetworkId);
+        }
+
+        writer.WriteVarUInt(unchecked((uint)BlockRuntimeId));
+
         if (NetworkId == 0)
         {
+            writer.WriteVarUInt(0);
             return;
         }
 
-        writer.WriteUInt16(StackSize, true);
-        writer.WriteVarInt(Metadata);
+        using BinaryStream extraBuffer = BinaryStream.Rent(16384);
+        BinaryWriter extraWriter = extraBuffer.GetWriter();
 
-        bool hasStackId = ItemStackId.HasValue && ItemStackId.Value != 0;
-        writer.WriteBool(hasStackId);
-        if (hasStackId)
+        if (Nbt is null)
         {
-            writer.WriteZigZag(ItemStackId!.Value);
+            extraWriter.WriteInt16(0, true);
+        }
+        else
+        {
+            extraWriter.WriteInt16(-1, true);
+            extraWriter.WriteUInt8(1);
+            Io.NBT.WriteTag(extraWriter, Nbt, new Basalt.Protocol.Nbt.TagOptions(Name: true, Type: true, VarInt: false));
         }
 
-        writer.WriteZigZag(NetworkBlockId);
-        if (ExtraData is null)
+        extraWriter.WriteUInt32(checked((uint)CanPlaceOn.Count), true);
+        for (int i = 0; i < CanPlaceOn.Count; i++)
         {
-            writer.WriteVarInt(0);
-            return;
+            extraWriter.WriteString16(CanPlaceOn[i], true);
         }
 
-        byte[] payloadBuffer = new byte[8192];
-        int offset = 0;
-        BinaryWriter payloadWriter = new(payloadBuffer, ref offset);
-        ExtraData.Write(payloadWriter, NetworkId);
-        ReadOnlySpan<byte> payload = payloadWriter.GetProcessedBytes();
-        writer.WriteVarInt(payload.Length);
-        writer.WriteBytes(payloadBuffer[payloadWriter.GetProcessedRange()]);
+        extraWriter.WriteUInt32(checked((uint)CanDestroy.Count), true);
+        for (int i = 0; i < CanDestroy.Count; i++)
+        {
+            extraWriter.WriteString16(CanDestroy[i], true);
+        }
+
+        if (NetworkId == Io.Constants.ShieldNetworkId)
+        { 
+            extraWriter.WriteInt64(BlockingTick, true);
+        }
+
+        ReadOnlySpan<byte> payload = extraWriter.GetProcessedBytes();
+        writer.WriteVarUInt(checked((uint)payload.Length));
+        writer.WriteBytes(payload);
     }
 }

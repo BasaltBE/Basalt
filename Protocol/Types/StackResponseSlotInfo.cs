@@ -5,14 +5,34 @@ namespace Basalt.Protocol.Types;
 
 public sealed class StackResponseSlotInfo : DataType
 {
-    public byte Slot { get; set; }
-    public byte HotbarSlot { get; set; }
-    public byte Count { get; set; }
-    public int StackNetworkId { get; set; }
-    public string CustomName { get; set; } = string.Empty;
-    public string FilteredCustomName { get; set; } = string.Empty;
-    public int DurabilityCorrection { get; set; }
-
+    /// <summary>
+    /// Slot index in the container.
+    /// </summary>
+    public byte Slot;
+    /// <summary>
+    /// Hotbar slot mirror value.
+    /// </summary>
+    public byte HotbarSlot;
+    /// <summary>
+    /// Item count for the slot.
+    /// </summary>
+    public byte Count;
+    /// <summary>
+    /// Stack network id for the slot.
+    /// </summary>
+    public int StackNetworkId;
+    /// <summary>
+    /// Optional custom item name.
+    /// </summary>
+    public string CustomName = string.Empty;
+    /// <summary>
+    /// Filtered custom item name.
+    /// </summary>
+    public string FilteredCustomName = string.Empty;
+    /// <summary>
+    /// Durability correction value.
+    /// </summary>
+    public int DurabilityCorrection;
     public void Read(BinaryReader reader)
     {
         byte requestedSlot = reader.ReadUInt8();

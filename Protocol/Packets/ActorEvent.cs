@@ -1,28 +1,41 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ActorEvent)]
 public sealed record ActorEventPacket : DataPacket
 {
-    public ulong ActorRuntimeId { get; set; }
-    public ActorEvent Event { get; set; }
-    public int Data { get; set; }
+    /// <summary>
+    /// Runtime id of the actor.
+    /// </summary>
+    public ulong ActorRuntimeId;
 
-    public override PacketId PacketId => PacketId.ActorEvent;
+    /// <summary>
+    /// Actor event type.
+    /// </summary>
+    public ActorEvent Event;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Event-specific data value.
+    /// </summary>
+    public int Data;
+    public Optional<Vec3f> FiredAt = new();
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         ActorRuntimeId = reader.ReadVarULong();
         Event = (ActorEvent)reader.ReadUInt8();
-        Data = reader.ReadVarInt();
+        Data = reader.ReadZigZag();
+        FiredAt.Read(reader);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarULong(ActorRuntimeId);
         writer.WriteUInt8((byte)Event);
-        writer.WriteVarInt(Data);
+        writer.WriteZigZag(Data);
+        FiredAt.Write(writer);
     }
 }

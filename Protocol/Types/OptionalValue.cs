@@ -10,8 +10,17 @@ public class OptionalValue<T>
     public delegate void WriterDelegate(BinaryWriter writer, T value);
     public delegate void WriterDelegate<TParameter>(BinaryWriter writer, T value, TParameter parameter);
 
-    public bool HasValue { get; set; }
-    public T? Value { get; set; }
+    /// <summary>
+    /// Whether the optional value is present or not.
+    ///  If false, Value should be ignored and can be null.
+    /// </summary>
+    public bool HasValue;
+
+    /// <summary>
+    /// The value of the optional value. 
+    /// Should be ignored if HasValue is false.
+    /// </summary>
+    public T? Value;
 
     public void Read(BinaryReader reader, ReaderDelegate read)
     {

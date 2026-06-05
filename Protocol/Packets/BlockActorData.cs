@@ -1,30 +1,36 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.BlockActorData)]
 public sealed record BlockActorDataPacket : DataPacket
 {
-    public BlockPos Position { get; set; }
-    public CompoundTag Data { get; set; } = new();
+    private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
 
-    public override PacketId PacketId => PacketId.BlockActorData;
+    /// <summary>
+    /// Block entity position.
+    /// </summary>
+    public BlockPos Position;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Block entity NBT payload.
+    /// </summary>
+    public CompoundTag Data = new();
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         BlockPos position = Position;
         position.Read(reader);
         Position = position;
-        Data = NBT.ReadRootCompoundTag(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        Data = Io.NBT.ReadTag<CompoundTag>(reader, NetworkNbtOptions);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         Position.Write(writer);
-        NBT.WriteTag(writer, Data, new ReadWriteOptions(Name: true, Type: true, VarInt: true), canHaveName: true);
+        Io.NBT.WriteTag(writer, Data, NetworkNbtOptions);
     }
 }

@@ -1,12 +1,13 @@
-using Basalt.Core;
-using Basalt.Entity.Traits;
-using Basalt.Item.Traits.Types;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class Interact
 {
@@ -15,9 +16,9 @@ public static class Interact
         InteractPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (InteractPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
@@ -48,7 +49,7 @@ public static class Interact
                 return;
             }
 
-            foreach (Basalt.Entity.Entity entity in player.Dimension.Entities)
+            foreach (Basalt.Server.Entity.Entity entity in player.Dimension.Entities)
             {
                 if (entity.RuntimeId != packet.TargetEntityRuntimeId)
                 {
@@ -62,3 +63,13 @@ public static class Interact
         }
     }
 }
+
+
+
+
+
+
+
+
+
+

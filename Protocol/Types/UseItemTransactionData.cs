@@ -5,21 +5,62 @@ namespace Basalt.Protocol.Types;
 
 public sealed class UseItemTransactionData : DataType
 {
-    public int LegacyRequestId { get; set; }
-    public List<LegacySetItemSlot> LegacySetItemSlots { get; set; } = [];
-    public List<InventoryAction> Actions { get; set; } = [];
-    public uint ActionType { get; set; }
-    public uint TriggerType { get; set; }
-    public BlockPos BlockPosition { get; set; }
-    public int BlockFace { get; set; }
-    public int HotBarSlot { get; set; }
-    public ItemInstance HeldItem { get; set; } = new();
-    public Vec3f Position { get; set; }
-    public Vec3f ClickedPosition { get; set; }
-    public uint BlockRuntimeId { get; set; }
-    public uint ClientPrediction { get; set; }
-    public byte ClientCooldownState { get; set; }
-
+    /// <summary>
+    /// Legacy request id from older inventory flow.
+    /// </summary>
+    public int LegacyRequestId;
+    /// <summary>
+    /// Legacy slot updates tied to the legacy request.
+    /// </summary>
+    public List<LegacySetItemSlot> LegacySetItemSlots = [];
+    /// <summary>
+    /// Inventory actions included in this transaction.
+    /// </summary>
+    public List<InventoryAction> Actions = [];
+    /// <summary>
+    /// Use-item action type.
+    /// </summary>
+    public uint ActionType;
+    /// <summary>
+    /// Trigger source for this transaction.
+    /// </summary>
+    public uint TriggerType;
+    /// <summary>
+    /// Target block position.
+    /// </summary>
+    public BlockPos BlockPosition;
+    /// <summary>
+    /// Block face used for the action.
+    /// </summary>
+    public int BlockFace;
+    /// <summary>
+    /// Hotbar slot used by the client.
+    /// </summary>
+    public int HotBarSlot;
+    /// <summary>
+    /// Item held by the player.
+    /// </summary>
+    public ItemInstance HeldItem = new();
+    /// <summary>
+    /// Player position at action time.
+    /// </summary>
+    public Vec3f Position;
+    /// <summary>
+    /// Clicked position relative to target.
+    /// </summary>
+    public Vec3f ClickedPosition;
+    /// <summary>
+    /// Block runtime id seen by the client.
+    /// </summary>
+    public uint BlockRuntimeId;
+    /// <summary>
+    /// Client-side prediction state.
+    /// </summary>
+    public uint ClientPrediction;
+    /// <summary>
+    /// Client cooldown state value.
+    /// </summary>
+    public byte ClientCooldownState;
     public void Read(BinaryReader reader)
     {
         int startOffset = reader.Offset;

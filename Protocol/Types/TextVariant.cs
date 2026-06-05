@@ -4,28 +4,34 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class TextVariant : DataType<TextVariantType>
+public sealed class TextVariant
 {
-    public TextType Type { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string Source { get; set; } = string.Empty;
-    public List<string> Parameters { get; set; } = [];
+    /// <summary>
+    /// Text display type (chat, tip, popup, etc).
+    /// </summary>
+    public TextType Type;
 
-    public void Read(BinaryReader reader)
-    {
-        Read(reader, TextVariantType.MessageOnly);
-    }
+    /// <summary>
+    /// Main message body.
+    /// </summary>
+    public string Message = string.Empty;
 
-    public void Write(BinaryWriter writer)
-    {
-        Write(writer, TextVariantType.MessageOnly);
-    }
+    /// <summary>
+    /// Message source/sender when authored.
+    /// </summary>
+    public string Source = string.Empty;
 
-    public void Read(BinaryReader reader, TextVariantType parameter)
+    /// <summary>
+    /// Translation parameters for parameterized messages.
+    /// </summary>
+    public List<string> Parameters = [];
+
+    public void Read(BinaryReader reader, int parameter = 0)
     {
+        TextVariantType variantType = (TextVariantType)parameter;
         Type = (TextType)reader.ReadUInt8();
 
-        switch (parameter)
+        switch (variantType)
         {
             case TextVariantType.MessageOnly:
                 Message = reader.ReadVarString();
@@ -49,15 +55,16 @@ public sealed class TextVariant : DataType<TextVariantType>
                 Source = string.Empty;
                 break;
             default:
-                throw new InvalidOperationException($"Unsupported text variant type {parameter}.");
+                throw new InvalidOperationException($"Unsupported text variant type {variantType}.");
         }
     }
 
-    public void Write(BinaryWriter writer, TextVariantType parameter)
+    public void Write(BinaryWriter writer, int parameter = 0)
     {
+        TextVariantType variantType = (TextVariantType)parameter;
         writer.WriteUInt8((byte)Type);
 
-        switch (parameter)
+        switch (variantType)
         {
             case TextVariantType.MessageOnly:
                 writer.WriteVarString(Message);
@@ -76,7 +83,7 @@ public sealed class TextVariant : DataType<TextVariantType>
 
                 break;
             default:
-                throw new InvalidOperationException($"Unsupported text variant type {parameter}.");
+                throw new InvalidOperationException($"Unsupported text variant type {variantType}.");
         }
     }
 }

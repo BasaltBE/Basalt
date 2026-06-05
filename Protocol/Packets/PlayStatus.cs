@@ -4,18 +4,23 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.PlayStatus)]
 public sealed record PlayStatusPacket : DataPacket
-{
-    public PlayStatus Status { get; set; }
+{       
+    /// <summary>
+    /// Status of the session.
+    /// Whether the client is able to log in or not, and if it is able to spawn in
+    /// </summary>
+    public PlayStatus Status;
 
-    public PlayStatusPacket() {}
+    public PlayStatusPacket()
+    {
+    }
 
     public PlayStatusPacket(PlayStatus status)
     {
         Status = status;
     }
-
-    public override PacketId PacketId => PacketId.PlayStatus;
 
     public override void Deserialize(BinaryReader reader)
     {

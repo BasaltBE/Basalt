@@ -1,19 +1,27 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.Types;
-using Basalt.Events;
-using Basalt.Item.Traits;
+namespace Basalt.Server.Entity.Traits.Attribute;
+
+using Basalt.Server.Events;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
-using Basalt.Entity.Traits.PlayerTraits;
 using Basalt.Protocol.Nbt;
-
-namespace Basalt.Entity.Traits.Attribute;
+using Basalt.Protocol.Types;
+using Entity = Basalt.Server.Entity.Entity;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Player.Traits;
+using Basalt.Server.World;
+using System.Text.Json;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait
 {
     public new static string Identifier => "health";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
     public new static readonly string[] Components = ["minecraft:health"];
+    private const float KnockbackHorizontalForce = 0.28f;
+    private const float KnockbackVerticalForce = 0.38f;
+    private const float KnockbackVerticalLimit = 0.4f;
+    private const ulong KnockbackCooldownTicks = 10;
+    private ulong _lastKnockbackTick;
 
     public override AttributeName Attribute => AttributeName.Health;
 
@@ -30,14 +38,50 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         }
 
         CurrentValue -= signal.Amount;
+        if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension)
+        {
+            ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+            if (currentTick >= _lastKnockbackTick && currentTick - _lastKnockbackTick >= KnockbackCooldownTicks)
+            {
+                float x = Entity.Position.X - damager.Position.X;
+                float z = Entity.Position.Z - damager.Position.Z;
+                float length = MathF.Sqrt((x * x) + (z * z));
+                if (length > 0.0001f)
+                {
+                    float invLength = 1f / length;
+                    float velocityX = Entity.Velocity.X * 0.5f;
+                    float velocityY = Entity.Velocity.Y * 0.5f;
+                    float velocityZ = Entity.Velocity.Z * 0.5f;
+                    velocityX += x * invLength * KnockbackHorizontalForce;
+                    velocityY += KnockbackVerticalForce;
+                    velocityZ += z * invLength * KnockbackHorizontalForce;
+                    if (velocityY > KnockbackVerticalLimit)
+                    {
+                        velocityY = KnockbackVerticalLimit;
+                    }
 
+                    Entity.Velocity = new Vec3f
+                    {
+                        X = velocityX,
+                        Y = velocityY,
+                        Z = velocityZ
+                    };
+                    _lastKnockbackTick = currentTick;
+                }
+            }
+        }
         if (Entity.Dimension is not null)
         {
             ActorEventPacket packet = new()
             {
                 ActorRuntimeId = Entity.RuntimeId,
                 Event = ActorEvent.Hurt,
-                Data = (int)(signal.Cause ?? ActorDamageCause.None)
+                Data = (int)(signal.Cause ?? ActorDamageCause.None),
+                FiredAt = new Optional<Vec3f>
+                {
+                    HasValue = true,
+                    Value = Entity.Position
+                }
             };
             Entity.Dimension.Broadcast(packet);
         }
@@ -71,7 +115,30 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
 
     public override void OnAdd()
     {
-        EnsureAttribute(new AttributeProperties(0, 20, 20, 20));
+        EnsureAttribute(GetHealthProperties());
+    }
+
+    private AttributeProperties GetHealthProperties()
+    {
+        const float DefaultHealth = 20f;
+        if (!Entity.Type.TryGetComponentProperties("minecraft:health", out JsonElement health))
+        {
+            return new AttributeProperties(0, DefaultHealth, DefaultHealth, DefaultHealth);
+        }
+
+        float max = ReadFloat(health, "max") ?? DefaultHealth;
+        float current = ReadFloat(health, "value") ?? max;
+        return new AttributeProperties(0, max, max, current);
+    }
+
+    private static float? ReadFloat(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number)
+        {
+            return null;
+        }
+
+        return value.TryGetSingle(out float result) ? result : null;
     }
 
     public override void OnSpawn(EntitySpawnOptions details)
@@ -118,3 +185,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         tag.Set("current", new FloatTag { Value = CurrentValue });
     }
 }
+
+
+
+
+
+

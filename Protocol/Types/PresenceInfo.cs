@@ -5,8 +5,17 @@ namespace Basalt.Protocol.Types;
 
 public sealed class PresenceInfo : DataType
 {
-    public string ExperienceName { get; set; } = string.Empty;
-    public string WorldName { get; set; } = string.Empty;
+    /// <summary>
+    /// The name of the experience the player is in
+    /// I think this is a dimension identifier, but I'm not sure
+    /// Coming up with this after the new custom dimension stuff came out
+    /// </summary>
+    public string ExperienceName = string.Empty;
+
+    /// <summary>
+    /// The name of the world the player is in
+    /// </summary>
+    public string WorldName = string.Empty;
 
     public void Read(BinaryReader reader)
     {

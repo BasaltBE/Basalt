@@ -1,13 +1,17 @@
-using Basalt.Containers;
-using Basalt.Entity.Container;
-using Basalt.Entity.Traits.Enums;
-using Basalt.Entity.Traits.Types;
-using Basalt.Item;
+namespace Basalt.Server.Entity.Traits;
+
+using Basalt.Server.Containers;
+using Basalt.Server.Entity.Container;
+using Basalt.Server.Entity.Traits.Enums;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-using Basalt.Traits;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
+using Player = Player.Player;
+using Basalt.Server.Traits;
 
-namespace Basalt.Entity.Traits;
 
 public sealed class EntityInventoryTrait : EntityTrait
 {
@@ -45,6 +49,26 @@ public sealed class EntityInventoryTrait : EntityTrait
         }
     }
 
+    public void Clear()
+    {
+        Container.Clear();
+
+        if (Entity is not Player player || !player.Spawned)
+        {
+            return;
+        }
+
+        InventoryContentPacket packet = new()
+        {
+            WindowId = Container.Identifier ?? 0,
+            Content = Enumerable.Repeat(new LegacyItem(), Container.GetSize()).ToList(),
+            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            StorageItem = new LegacyItem()
+        };
+
+        player.Send(packet);
+    }
+
     public override void OnTick(TraitOnTickDetails details)
     {
         bool hasViewers = Container.GetAllOccupants().Count > 0;
@@ -65,7 +89,7 @@ public sealed class EntityInventoryTrait : EntityTrait
 
     public override void OnSpawn(EntitySpawnOptions details)
     {
-        if (Entity is Core.Player player)
+        if (Entity is Player player)
         {
             Container.Show(player);
             Container.Update();
@@ -78,7 +102,7 @@ public sealed class EntityInventoryTrait : EntityTrait
         Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
     }
 
-    public override void OnInteract(Core.Player player, EntityInteractMethod method)
+    public override void OnInteract(Player player, EntityInteractMethod method)
     {
         if (method == EntityInteractMethod.Interact && !Entity.IsPlayer())
         {
@@ -223,4 +247,33 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         return clone;
     }
+
+    public void SyncToPlayer(Player player)
+    {
+        if (!player.Spawned)
+        {
+            return;
+        }
+
+        InventoryContentPacket packet = new()
+        {
+            WindowId = Container.Identifier ?? 0,
+            Content = new List<LegacyItem>(Container.GetSize()),
+            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            StorageItem = new LegacyItem()
+        };
+
+        for (int i = 0; i < Container.GetSize(); i++)
+        {
+            packet.Content.Add(Container.GetItem(i)?.ToNetworkStack() ?? new LegacyItem());
+        }
+
+        player.Send(packet);
+    }
 }
+
+
+
+
+
+

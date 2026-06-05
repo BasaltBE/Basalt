@@ -34,6 +34,7 @@ public static class Logger
     public static void Warn(string Format, params object?[] Args) => Log(LogLevel.Warn, Format, Args);
     public static void Err(string Format, params object?[] Args) => Log(LogLevel.Err, Format, Args);
     public static void Chat(string Format, params object?[] Args) => Log(LogLevel.Chat, Format, Args);
+    public static void Error (string Format, params object?[] Args) => Log(LogLevel.Err, Format, Args);
 
     public static void Log(LogLevel Level, string Format, params object?[] Args)
     {

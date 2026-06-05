@@ -1,26 +1,55 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.LevelChunk)]
 public sealed record LevelChunkPacket : DataPacket
 {
     public const uint SubChunkRequestModeLimitless = 0xFFFFFFFF;
     public const uint SubChunkRequestModeLimited = 0xFFFFFFFE;
 
-    public int ChunkX { get; set; }
-    public int ChunkZ { get; set; }
-    public int Dimension { get; set; }
-    public uint SubChunkCount { get; set; }
-    public ushort HighestSubChunk { get; set; }
-    public bool CacheEnabled { get; set; }
-    public List<ulong> BlobHashes { get; set; } = [];
-    public byte[] RawPayload { get; set; } = [];
+    /// <summary>
+    /// Chunk X coordinate.
+    /// </summary>
+    public int ChunkX;
 
-    public override PacketId PacketId => PacketId.LevelChunk;
+    /// <summary>
+    /// Chunk Z coordinate.
+    /// </summary>
+    public int ChunkZ;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Dimension id.
+    /// </summary>
+    public int Dimension;
+
+    /// <summary>
+    /// Subchunk count indicator.
+    /// </summary>
+    public uint SubChunkCount;
+
+    /// <summary>
+    /// Highest subchunk when using limited mode.
+    /// </summary>
+    public ushort HighestSubChunk;
+
+    /// <summary>
+    /// Whether blob cache is enabled.
+    /// </summary>
+    public bool CacheEnabled;
+
+    /// <summary>
+    /// Blob hash list when cache is enabled.
+    /// </summary>
+    public List<ulong> BlobHashes = [];
+
+    /// <summary>
+    /// Raw serialized chunk payload.
+    /// </summary>
+    public byte[] RawPayload = [];
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         ChunkX = reader.ReadZigZag();
         ChunkZ = reader.ReadZigZag();
@@ -51,7 +80,7 @@ public sealed record LevelChunkPacket : DataPacket
         RawPayload = reader.ReadBytes(payloadLength).ToArray();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteZigZag(ChunkX);
         writer.WriteZigZag(ChunkZ);

@@ -1,5 +1,9 @@
-using Basalt.Containers;
-namespace Basalt.Entity.Container;
+namespace Basalt.Server.Entity.Container;
+
+using Basalt.Server.Containers;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 
 public sealed class EntityContainer : Containers.Container
 {
@@ -10,12 +14,12 @@ public sealed class EntityContainer : Containers.Container
         Entity = entity;
     }
 
-    public bool IsOwnedBy(Core.Player player)
+    public bool IsOwnedBy(Player.Player player)
     {
         return ReferenceEquals(Entity, player);
     }
 
-    public override void SetItem(int slot, Basalt.Item.ItemStack item)
+    public override void SetItem(int slot, Basalt.Server.Item.ItemStack item)
     {
         base.SetItem(slot, item);
     }
@@ -23,6 +27,27 @@ public sealed class EntityContainer : Containers.Container
     public override void UpdateSlot(int slot)
     {
         Entity.OnContainerUpdate(this);
+        if (slot < 0 || slot >= GetSize())
+        {
+            base.UpdateSlot(slot);
+            return;
+        }
+
+        if (Entity is Player.Player player && Identifier == 0 && player.Spawned)
+        {
+            player.Send(new InventorySlotPacket
+            {
+                WindowId = Identifier ?? 0,
+                Slot = slot,
+                Container = new Optional<FullContainerName>
+                {
+                    HasValue = true,
+                    Value = new FullContainerName { ContainerId = (byte)ContainerId.Inventory }
+                },
+                NewItem = ToItemInstanceNew(GetItem(slot))
+            });
+        }
+
         base.UpdateSlot(slot);
     }
 
@@ -39,7 +64,7 @@ public sealed class EntityContainer : Containers.Container
 
     protected override Basalt.Protocol.Types.BlockPos GetContainerPosition()
     {
-        if (Entity is Core.Player)
+        if (Entity is Player.Player)
         {
             return new Basalt.Protocol.Types.BlockPos
             {
@@ -59,7 +84,7 @@ public sealed class EntityContainer : Containers.Container
 
     // TODO: Add proper checks, e.g container already opened
     // Or if something is preventing it from opening
-    protected override bool CanOpen(Core.Player player, int windowId)
+    protected override bool CanOpen(Player.Player player, int windowId)
     {
         return true;
     }
@@ -74,3 +99,9 @@ public sealed class EntityContainer : Containers.Container
         return base.GetFullContainerNameId();
     }
 }
+
+
+
+
+
+

@@ -1,9 +1,10 @@
-using Basalt.Core;
-using Basalt.Entity.Traits.PlayerTraits;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
+using Basalt.Server.Player.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class RequestChunkRadius
 {
@@ -12,19 +13,21 @@ public static class RequestChunkRadius
         RequestChunkRadiusPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (RequestChunkRadiusPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        int requestedRadius = packet.MaxChunkRadius > 0
-            ? Math.Min(packet.ChunkRadius, packet.MaxChunkRadius)
-            : packet.ChunkRadius;
-        int radius = Math.Clamp(requestedRadius, 4, 22);
-        ChunkRadiusUpdatedPacket response = new()
-        {
-            ChunkRadius = radius
-        };
-        server.Network.SendPacket(connection, response);
+        int requestedRadius = packet.ChunkRadius;
+        int maxViewDistance = Math.Clamp(server.Properties.MaxViewDistance, 4, 120);
+        int radius = Math.Clamp(requestedRadius, 4, maxViewDistance);
+        // UpdateChunkRadiusPacket response = new()
+        // {
+        //     ChunkRadius = radius
+        // };  
 
-        if (!server.Players.TryGetValue(connection, out Player? player))
+        // THIS STUPID PACKET CRASHES MOBILE DEVICES!!!
+        /// PLEASE KEEP IT COMMENTED OUT!
+        // server.Network.SendPacket(connection, response);
+
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player))
         {
             return;
         }
@@ -38,3 +41,13 @@ public static class RequestChunkRadius
         chunkRendering.ApplyViewDistance(radius);
     }
 }
+
+
+
+
+
+
+
+
+
+

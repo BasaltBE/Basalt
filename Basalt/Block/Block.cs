@@ -1,8 +1,15 @@
-using Basalt.Protocol.Nbt;
-using Basalt.Block.Traits;
-using Basalt.Block.Traits.Types;
+namespace Basalt.Server.Block;
 
-namespace Basalt.Block;
+using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
+using Basalt.Server.Entity;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Server.Block.Traits;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Item;
+using Basalt.Server.Loot;
+
 
 public sealed class Block
 {
@@ -86,6 +93,25 @@ public sealed class Block
 
     public void OnBreak(BlockBreakDetails details)
     {
+        if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
+        {
+            List<ItemStack> drops = LootTableManager.GenerateLootFromBlock(this);
+            for (int i = 0; i < drops.Count; i++)
+            {
+                ItemEntity drop = new(drops[i])
+                {
+                    Position = new Vec3f
+                    {
+                        X = details.BlockPosition.X + 0.5f,
+                        Y = details.BlockPosition.Y + 0.5f,
+                        Z = details.BlockPosition.Z + 0.5f
+                    }
+                };
+
+                drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+            }
+        }
+
         for (int i = 0; i < _traits.Count; i++)
         {
             _traits[i].OnBreak(details);
@@ -124,7 +150,7 @@ public sealed class Block
         }
     }
 
-    public void OnRender(Core.Player player, int x, int y, int z)
+    public void OnRender(Player.Player player, int x, int y, int z)
     {
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -168,7 +194,15 @@ public sealed class Block
     public void ReadTraits(CompoundTag nbt)
     {
         ListTag? traitsTag = nbt.Get<ListTag>("traits");
-        if (traitsTag is null) return;
+        if (traitsTag is null)
+        {
+            for (int i = 0; i < _traits.Count; i++)
+            {
+                _traits[i].OnRead(nbt);
+            }
+
+            return;
+        }
 
         foreach (BaseTag tag in traitsTag.Values)
         {
@@ -196,3 +230,10 @@ public sealed class Block
         }
     }
 }
+
+
+
+
+
+
+

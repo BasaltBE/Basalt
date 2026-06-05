@@ -1,6 +1,7 @@
+namespace Basalt.Server.Block.Traits;
+
 using System.Reflection;
 
-namespace Basalt.Block.Traits;
 
 public static class BlockTraitRegistry
 {
@@ -174,3 +175,10 @@ public static class BlockTraitRegistry
         return false;
     }
 }
+
+
+
+
+
+
+

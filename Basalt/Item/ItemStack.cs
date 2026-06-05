@@ -1,9 +1,9 @@
+namespace Basalt.Server.Item;
+
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
-using Basalt.Item.Traits;
-using Basalt.Item.Traits.Types;
-
-namespace Basalt.Item;
+using Basalt.Server.Item.Traits;
+using Basalt.Server.Item.Traits.Types;
 
 public sealed class ItemStack {
     private static int _nextNetworkStackId;
@@ -77,15 +77,15 @@ public sealed class ItemStack {
                && HasSameTraits(other);
     }
 
-    public NetworkItemStackDescriptor ToNetworkStack()
+    public LegacyItem ToNetworkStack()
     {
-        NetworkItemStackDescriptor descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
+        LegacyItem descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
         descriptor.ItemStackId = NetworkStackId;
         descriptor.ExtraData = ExtraData;
         return descriptor;
     }
 
-    public static ItemStack FromNetworkStack(NetworkItemStackDescriptor descriptor)
+    public static ItemStack FromNetworkStack(LegacyItem descriptor)
     {
         ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
                         ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");
@@ -339,3 +339,9 @@ public sealed class ItemStack {
         return true;
     }
 }
+
+
+
+
+
+

@@ -6,9 +6,14 @@ namespace Basalt.Protocol.Types;
 public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 15;
-    public uint RecipeNetworkId { get; set; }
-    public int FilterStringIndex { get; set; }
-
+    /// <summary>
+    /// Network id of the optional recipe.
+    /// </summary>
+    public uint RecipeNetworkId;
+    /// <summary>
+    /// Index into request filter strings.
+    /// </summary>
+    public int FilterStringIndex;
     public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();

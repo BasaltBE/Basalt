@@ -1,7 +1,8 @@
+namespace Basalt.Server.Entity.Traits;
+
 using System.Reflection;
 using Basalt.Protocol.Enums;
 
-namespace Basalt.Entity.Traits;
 
 public static class EntityTraitRegistry
 {
@@ -138,3 +139,8 @@ public static class EntityTraitRegistry
         return [];
     }
 }
+
+
+
+
+

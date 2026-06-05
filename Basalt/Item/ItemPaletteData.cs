@@ -1,6 +1,8 @@
+namespace Basalt.Server.Item;
+
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Basalt.Item;
 
 public sealed class ItemTypeData
 {
@@ -12,24 +14,18 @@ public sealed class ItemTypeData
 
     [JsonPropertyName("maxAmount")]
     public int MaxAmount { get; set; } = 64;
-}
 
-public sealed class ItemMetadataData
-{
-    [JsonPropertyName("identifier")]
-    public string Identifier { get; set; } = string.Empty;
+    [JsonPropertyName("componentBased")]
+    public bool ComponentBased { get; set; }
 
     [JsonPropertyName("networkId")]
-    public int NetworkId { get; set; }
-
-    [JsonPropertyName("isComponentBased")]
-    public bool IsComponentBased { get; set; }
+    public int? NetworkId { get; set; }
 
     [JsonPropertyName("itemVersion")]
     public int ItemVersion { get; set; } = 1;
 
-    [JsonPropertyName("properties")]
-    public string Properties { get; set; } = string.Empty;
+    [JsonPropertyName("propertiesPayload")]
+    public JsonElement? PropertiesPayload { get; set; }
 }
 
 public sealed class CreativeGroupData
@@ -58,9 +54,14 @@ public sealed class CreativeContentData
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<ItemTypeData>))]
-[JsonSerializable(typeof(List<ItemMetadataData>))]
 [JsonSerializable(typeof(List<CreativeGroupData>))]
 [JsonSerializable(typeof(List<CreativeContentData>))]
 internal partial class ItemPaletteJsonContext : JsonSerializerContext
 {
 }
+
+
+
+
+
+

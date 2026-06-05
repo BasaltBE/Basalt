@@ -5,8 +5,15 @@ namespace Basalt.Protocol.Types;
 
 public sealed class PlayerMovementSettings : DataType
 {
-    public int RewindHistorySize { get; set; }
-    public bool ServerAuthoritativeBlockBreaking { get; set; }
+    /// <summary>
+    /// The size of the rewind history
+    /// </summary>
+    public int RewindHistorySize;
+
+    /// <summary>
+    /// Whether the server is authoritative for block breaking or not
+    /// </summary>
+    public bool ServerAuthoritativeBlockBreaking;
 
     public void Read(BinaryReader reader)
     {

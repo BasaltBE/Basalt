@@ -1,7 +1,8 @@
+namespace Basalt.Server.Item.Components;
+
 using Basalt.Protocol.Nbt;
 using System.Reflection;
 
-namespace Basalt.Item.Components;
 
 public sealed class ItemTypeComponentCollection
 {
@@ -12,24 +13,51 @@ public sealed class ItemTypeComponentCollection
     {
         _itemType = itemType;
         _components = new Dictionary<string, CompoundTag>(StringComparer.Ordinal);
-        CompoundTag? componentsTag = properties.Get<CompoundTag>("components");
-        if (componentsTag is null)
+        if (properties.Get<CompoundTag>("components") is CompoundTag componentsTag)
+        {
+            foreach ((string key, BaseTag value) in componentsTag.Values)
+            {
+                if (value is CompoundTag compound)
+                {
+                    _components[key] = compound;
+                }
+            }
+        }
+
+        if (properties.Get<ListTag>("components") is not ListTag componentsList)
         {
             return;
         }
 
-        foreach ((string key, BaseTag value) in componentsTag.Values)
+        for (int i = 0; i < componentsList.Values.Count; i++)
         {
-            if (value is CompoundTag compound)
+            if (componentsList.Values[i] is not StringTag component)
             {
-                _components[key] = compound;
+                continue;
             }
+
+            string key = component.Value;
+            if (string.IsNullOrWhiteSpace(key) || _components.ContainsKey(key))
+            {
+                continue;
+            }
+
+            string payloadKey = key.StartsWith("minecraft:", StringComparison.Ordinal)
+                ? key["minecraft:".Length..]
+                : key;
+
+            _components[key] = properties.Get<CompoundTag>(payloadKey) ?? new CompoundTag();
         }
     }
 
     public bool HasComponent(string identifier)
     {
         return _components.ContainsKey(identifier);
+    }
+
+    public bool TryGetComponentProperties(string identifier, out CompoundTag properties)
+    {
+        return _components.TryGetValue(identifier, out properties!);
     }
 
     public bool HasComponent<T>() where T : ItemTypeComponent
@@ -61,3 +89,9 @@ public sealed class ItemTypeComponentCollection
         throw new InvalidOperationException($"Component type {type.FullName} must declare public static string Identifier.");
     }
 }
+
+
+
+
+
+

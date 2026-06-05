@@ -5,9 +5,20 @@ namespace Basalt.Protocol.Types;
 
 public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, DataType
 {
+    /// <summary>
+    /// Stack request action id.
+    /// </summary>
     public byte ActionType => type;
-    public byte Count { get; set; }
-    public StackRequestSlotInfo Source { get; set; } = new();
+
+    /// <summary>
+    /// Amount of items to destroy.
+    /// </summary>
+    public byte Count;
+
+    /// <summary>
+    /// Source slot for the removed items.
+    /// </summary>
+    public StackRequestSlotInfo Source = new();
 
     public void Read(BinaryReader reader)
     {

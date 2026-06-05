@@ -1,10 +1,11 @@
-using Basalt.Core;
-using Basalt.Item;
+namespace Basalt.Server.Containers;
+
+using Basalt.Server.Item;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Containers;
+using Player = Player.Player;
 
 public class Container
 {
@@ -332,9 +333,9 @@ public class Container
             InventoryContentPacket packet = new()
             {
                 WindowId = windowId,
-                Content = new List<NetworkItemStackDescriptor>(Storage.Count),
+                Content = new List<LegacyItem>(Storage.Count),
                 Container = GetFullContainerName(windowId),
-                StorageItem = new NetworkItemStackDescriptor()
+                StorageItem = new LegacyItem()
             };
 
             for (int i = 0; i < Storage.Count; i++)
@@ -567,11 +568,11 @@ public class Container
         return GetFullContainerNameId();
     }
 
-    protected static NetworkItemStackDescriptor ToNetworkItem(ItemStack? item)
+    protected static LegacyItem ToNetworkItem(ItemStack? item)
     {
         if (item is null || item.Type.NetworkId == 0 || item.StackSize == 0)
         {
-            return new NetworkItemStackDescriptor();
+            return new LegacyItem();
         }
 
         int networkBlockId = 0;
@@ -580,7 +581,7 @@ public class Container
             networkBlockId = item.Type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new NetworkItemStackDescriptor
+        return new LegacyItem
         {
             NetworkId = item.Type.NetworkId,
             StackSize = item.StackSize,
@@ -597,11 +598,11 @@ public class Container
         };
     }
 
-    protected static ItemInstanceNew ToItemInstanceNew(ItemStack? item)
+    protected static NetworkItemStackDescriptor ToItemInstanceNew(ItemStack? item)
     {
         if (item is null || item.Type.NetworkId == 0 || item.StackSize == 0)
         {
-            return new ItemInstanceNew();
+            return new NetworkItemStackDescriptor();
         }
 
         int runtimeId = 0;
@@ -610,7 +611,7 @@ public class Container
             runtimeId = item.Type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new ItemInstanceNew
+        return new NetworkItemStackDescriptor
         {
             NetworkId = item.Type.NetworkId,
             Count = item.StackSize,
@@ -624,3 +625,9 @@ public class Container
         };
     }
 }
+
+
+
+
+
+

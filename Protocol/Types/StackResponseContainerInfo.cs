@@ -5,8 +5,14 @@ namespace Basalt.Protocol.Types;
 
 public sealed class StackResponseContainerInfo : DataType
 {
-    public FullContainerName Container { get; set; } = new();
-    public List<StackResponseSlotInfo> SlotInfo { get; set; } = [];
+    /// <summary>
+    /// Container being updated.
+    /// </summary>
+    public FullContainerName Container = new();
+    /// <summary>
+    /// Updated slots in this container.
+    /// </summary>
+    public List<StackResponseSlotInfo> SlotInfo = [];
 
     public void Read(BinaryReader reader)
     {

@@ -5,12 +5,35 @@ namespace Basalt.Protocol.Types;
 
 public sealed class CreativeItemInstanceDescriptor : DataType
 {
-    public byte[]? RawData { get; set; }
-    public int NetworkId { get; set; }
-    public ushort StackSize { get; set; }
-    public int Metadata { get; set; }
-    public int NetworkBlockId { get; set; }
-    public ItemInstanceUserData? ExtraData { get; set; }
+    /// <summary>
+    /// Optional raw encoded payload.
+    /// </summary>
+    public byte[]? RawData;
+
+    /// <summary>
+    /// Network item id.
+    /// </summary>
+    public int NetworkId;
+
+    /// <summary>
+    /// Item stack size.
+    /// </summary>
+    public ushort StackSize;
+
+    /// <summary>
+    /// Item metadata value.
+    /// </summary>
+    public int Metadata;
+
+    /// <summary>
+    /// Network block runtime id.
+    /// </summary>
+    public int NetworkBlockId;
+
+    /// <summary>
+    /// Optional item user data.
+    /// </summary>
+    public ItemInstanceUserData? ExtraData;
 
     public void Read(BinaryReader reader)
     {
@@ -39,6 +62,7 @@ public sealed class CreativeItemInstanceDescriptor : DataType
         ItemInstanceUserData extraData = new();
         extraData.Read(reader, NetworkId);
         ExtraData = extraData;
+
         if (reader.Offset < extrasEndOffset)
         {
             reader.Seek(extrasEndOffset);

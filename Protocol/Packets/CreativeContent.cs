@@ -1,18 +1,23 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.CreativeContent)]
 public sealed record CreativeContentPacket : DataPacket
 {
-    public List<CreativeGroup> Groups { get; set; } = [];
-    public List<CreativeItem> Items { get; set; } = [];
+    /// <summary>
+    /// Creative item groups.
+    /// </summary>
+    public List<CreativeGroup> Groups = [];
 
-    public override PacketId PacketId => PacketId.CreativeContent;
+    /// <summary>
+    /// Creative item entries.
+    /// </summary>
+    public List<CreativeItem> Items = [];
 
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         int groupCount = checked((int)reader.ReadVarUInt());
         Groups = new List<CreativeGroup>(groupCount);
@@ -33,7 +38,7 @@ public sealed record CreativeContentPacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Groups.Count);
         for (int i = 0; i < Groups.Count; i++)

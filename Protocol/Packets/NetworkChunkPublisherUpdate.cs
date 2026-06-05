@@ -1,20 +1,37 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.NetworkChunkPublisherUpdate)]
 public sealed record NetworkChunkPublisherUpdatePacket : DataPacket
 {
-    public int CoordinateX { get; set; }
-    public int CoordinateY { get; set; }
-    public int CoordinateZ { get; set; }
-    public uint Radius { get; set; }
-    public List<(int X, int Z)> SavedChunks { get; set; } = [];
+    /// <summary>
+    /// Publisher center X in world coordinates.
+    /// </summary>
+    public int CoordinateX;
 
-    public override PacketId PacketId => PacketId.NetworkChunkPublisherUpdate;
+    /// <summary>
+    /// Publisher center Y in world coordinates.
+    /// </summary>
+    public int CoordinateY;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Publisher center Z in world coordinates.
+    /// </summary>
+    public int CoordinateZ;
+
+    /// <summary>
+    /// Publisher radius in blocks.
+    /// </summary>
+    public uint Radius;
+
+    /// <summary>
+    /// Already-known chunk coordinates
+    /// </summary>
+    public List<(int X, int Z)> SavedChunks = [];
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         CoordinateX = reader.ReadZigZag();
         CoordinateY = unchecked((int)reader.ReadVarUInt());
@@ -36,7 +53,7 @@ public sealed record NetworkChunkPublisherUpdatePacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteZigZag(CoordinateX);
         writer.WriteVarUInt(unchecked((uint)CoordinateY));

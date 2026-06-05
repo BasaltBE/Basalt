@@ -6,9 +6,14 @@ namespace Basalt.Protocol.Types;
 public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 14;
-    public uint CreativeItemNetworkId { get; set; }
-    public byte NumberOfCrafts { get; set; }
-
+    /// <summary>
+    /// Creative item network id to create.
+    /// </summary>
+    public uint CreativeItemNetworkId;
+    /// <summary>
+    /// Requested craft count value.
+    /// </summary>
+    public byte NumberOfCrafts;
     public void Read(BinaryReader reader)
     {
         CreativeItemNetworkId = reader.ReadVarUInt();

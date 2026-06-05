@@ -4,17 +4,56 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public sealed class ResourcePackInfo : DataType
-{
-    public Guid Uuid { get; set; } = Guid.Empty;
-    public string Version { get; set; } = "1.0.0";
-    public ulong Size { get; set; }
-    public string ContentKey { get; set; } = string.Empty;
-    public string SubPackName { get; set; } = string.Empty;
-    public string ContentIdentity { get; set; } = string.Empty;
-    public bool HasScripts { get; set; }
-    public bool HasAddons { get; set; }
-    public bool RtxEnabled { get; set; }
-    public string DownloadUrl { get; set; } = string.Empty;
+{   
+    /// <summary>
+    /// Unique Identifier of a resource pack
+    /// </summary>
+    public Guid Uuid = Guid.Empty;
+
+    /// <summary>
+    /// Version of the resource pack
+    /// </summary>
+    public string Version = "1.0.0";
+    
+    /// <summary>
+    /// Size of the resource pack
+    /// </summary>
+    public ulong Size;
+
+    /// <summary>
+    /// Content key of the resource pack
+    /// </summary>
+    public string ContentKey = string.Empty;
+
+    /// <summary>
+    /// Sub pack name of the resource pack
+    /// </summary>
+    public string SubPackName = string.Empty;
+
+    /// <summary>
+    /// Content identity of the resource pack
+    /// </summary>
+    public string ContentIdentity = string.Empty;
+
+    /// <summary>
+    /// Whether the resource pack has scripts or not
+    /// </summary>
+    public bool HasScripts;
+
+    /// <summary>
+    /// Whether the resource pack has addons or not
+    /// </summary>
+    public bool HasAddons;
+
+    /// <summary>
+    /// Whether the resource pack has RTX enabled or not
+    /// </summary>
+    public bool RtxEnabled;
+
+    /// <summary>
+    /// Download URL of the resource pack
+    /// </summary>
+    public string DownloadUrl = string.Empty;
 
     public void Read(BinaryReader reader)
     {

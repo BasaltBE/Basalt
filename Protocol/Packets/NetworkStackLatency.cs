@@ -1,23 +1,28 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.NetworkStackLatency)]
 public sealed record NetworkStackLatencyPacket : DataPacket
 {
-    public long Timestamp { get; set; }
-    public bool NeedsResponse { get; set; }
+    /// <summary>
+    /// Timestamp value carried over the network.
+    /// </summary>
+    public long Timestamp;
 
-    public override PacketId PacketId => PacketId.NetworkStackLatency;
+    /// <summary>
+    /// Whether the receiver should send a response.
+    /// </summary>
+    public bool NeedsResponse;
 
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         Timestamp = reader.ReadInt64(true);
         NeedsResponse = reader.ReadBool();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteInt64(Timestamp, true);
         writer.WriteBool(NeedsResponse);

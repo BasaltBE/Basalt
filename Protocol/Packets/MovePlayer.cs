@@ -1,36 +1,82 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.MovePlayer)]
 public sealed record MovePlayerPacket : DataPacket
 {
-    public ulong RuntimeId { get; set; }
-    public Vec3f Position { get; set; }
-    public float Pitch { get; set; }
-    public float Yaw { get; set; }
-    public float HeadYaw { get; set; }
-    public MoveMode Mode { get; set; }
-    public bool OnGround { get; set; }
-    public ulong RiddenRuntimeId { get; set; }
-    public TeleportCause TeleportCause { get; set; }
-    public int TeleportSourceEntityType { get; set; }
-    public ulong Tick { get; set; }
+    /// <summary>
+    /// Runtime id of the moving actor.
+    /// </summary>
+    public ulong RuntimeId;
 
-    public override PacketId PacketId => PacketId.MovePlayer;
+    /// <summary>
+    /// Actor position in world coordinates.
+    /// </summary>
+    public Vec3f Position;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Camera pitch angle.
+    /// </summary>
+    public float Pitch;
+
+    /// <summary>
+    /// Body yaw angle.
+    /// </summary>
+    public float Yaw;
+
+    /// <summary>
+    /// Head yaw angle.
+    /// </summary>
+    public float HeadYaw;
+
+    /// <summary>
+    /// Movement mode.
+    /// </summary>
+    public MoveMode Mode;
+
+    /// <summary>
+    /// Whether the actor is on ground.
+    /// </summary>
+    public bool OnGround;
+
+    /// <summary>
+    /// Runtime id of the ridden entity.
+    /// </summary>
+    public ulong RiddenRuntimeId;
+
+    /// <summary>
+    /// Teleport cause when mode is teleport.
+    /// </summary>
+    public TeleportCause TeleportCause;
+
+    /// <summary>
+    /// Source entity type for teleports.
+    /// </summary>
+    public int TeleportSourceEntityType;
+
+    /// <summary>
+    /// Server tick for this move.
+    /// </summary>
+    public ulong Tick;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         RuntimeId = reader.ReadVarULong();
-        Position.Read(reader);
+
+        Vec3f position = Position;
+        position.Read(reader);
+        Position = position;
+
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
         HeadYaw = reader.ReadF32(true);
         Mode = (MoveMode)reader.ReadUInt8();
         OnGround = reader.ReadBool();
         RiddenRuntimeId = reader.ReadVarULong();
+
         if (Mode == MoveMode.Teleport)
         {
             TeleportCause = (TeleportCause)reader.ReadInt32(true);
@@ -40,7 +86,7 @@ public sealed record MovePlayerPacket : DataPacket
         Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarULong(RuntimeId);
         Position.Write(writer);
@@ -50,6 +96,7 @@ public sealed record MovePlayerPacket : DataPacket
         writer.WriteUInt8((byte)Mode);
         writer.WriteBool(OnGround);
         writer.WriteVarULong(RiddenRuntimeId);
+
         if (Mode == MoveMode.Teleport)
         {
             writer.WriteInt32((int)TeleportCause, true);

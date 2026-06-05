@@ -5,8 +5,14 @@ namespace Basalt.Protocol.Types;
 
 public sealed class LegacySetItemSlot : DataType
 {
-    public byte ContainerId { get; set; }
-    public byte[] Slots { get; set; } = [];
+    /// <summary>
+    /// Legacy container id.
+    /// </summary>
+    public byte ContainerId;
+    /// <summary>
+    /// Legacy slot byte list.
+    /// </summary>
+    public byte[] Slots = [];
 
     public void Read(BinaryReader reader)
     {

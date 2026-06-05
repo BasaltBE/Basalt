@@ -14,6 +14,8 @@ public abstract class NetworkConnection
 
     private uint _datagramWindowStart;
     private uint _datagramWindowEnd = DatagramWindowSize;
+    private bool _datagramWindowInitialized;
+    private uint _highestDatagramSequence;
 
     private uint _reliableWindowStart;
     private uint _reliableWindowEnd = DatagramWindowSize;
@@ -50,6 +52,34 @@ public abstract class NetworkConnection
     public virtual void HandleFrameSet(FrameSet frameSet)
     {
         uint sequence = frameSet.Sequence;
+    
+        if (!_datagramWindowInitialized)
+        {
+            _datagramWindowStart = sequence;
+            _datagramWindowEnd = sequence + DatagramWindowSize;
+            _datagramWindowInitialized = true;
+        }
+
+        if (sequence > _datagramWindowEnd)
+        {
+            uint oldStart = _datagramWindowStart;
+            uint newStart = sequence - DatagramWindowSize + 1;
+            _datagramWindowStart = newStart;
+            _datagramWindowEnd = newStart + DatagramWindowSize;
+
+            for (uint missing = oldStart; missing < newStart; missing++)
+            {
+                if (!_receivedDatagrams.Contains(missing))
+                {
+                    lock (_sendLock)
+                    {
+                        _nackQueue.Add(missing);
+                    }
+                }
+            }
+
+            _receivedDatagrams.RemoveWhere(s => s < _datagramWindowStart);
+        }
 
         if (sequence < _datagramWindowStart || sequence > _datagramWindowEnd || _receivedDatagrams.Contains(sequence))
         {
@@ -57,6 +87,10 @@ public abstract class NetworkConnection
         }
 
         _receivedDatagrams.Add(sequence);
+        if (sequence > _highestDatagramSequence)
+        {
+            _highestDatagramSequence = sequence;
+        }
         lock (_sendLock)
         {
             _ackQueue.Add(sequence);
@@ -98,6 +132,12 @@ public abstract class NetworkConnection
         {
             HandleIncomingFrame(frame);
         }
+        
+        // Flush ACKs/NACKs immediately instead of waiting for tick
+        lock (_sendLock)
+        {
+            FlushAcks();
+        }
     }
 
     public void HandleAck(Ack ack)
@@ -129,21 +169,8 @@ public abstract class NetworkConnection
     {
         lock (_sendLock)
         {
-            if (_ackQueue.Count > 0)
-            {
-                byte[] buffer = new byte[ControlPacketBufferSize];
-                int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
-                SendMessage(buffer.AsSpan(0, length));
-                _ackQueue.Clear();
-            }
-
-            if (_nackQueue.Count > 0)
-            {
-                byte[] buffer = new byte[ControlPacketBufferSize];
-                int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
-                SendMessage(buffer.AsSpan(0, length));
-                _nackQueue.Clear();
-            }
+            QueueMissingDatagramNacks();
+            FlushAcks();
 
             foreach (uint sequence in _pendingDatagrams.Keys.ToArray())
             {
@@ -165,15 +192,52 @@ public abstract class NetworkConnection
         }
     }
 
-    public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered)
+    private void QueueMissingDatagramNacks()
     {
-        SendPayload(payload, reliability);
+        if (!_datagramWindowInitialized || _highestDatagramSequence <= _datagramWindowStart)
+        {
+            return;
+        }
+
+        uint upper = Math.Min(_highestDatagramSequence, _datagramWindowEnd);
+        for (uint sequence = _datagramWindowStart; sequence < upper; sequence++)
+        {
+            if (!_receivedDatagrams.Contains(sequence))
+            {
+                _nackQueue.Add(sequence);
+            }
+        }
+    }
+
+    private void FlushAcks()
+    {
+        if (_ackQueue.Count > 0)
+        {
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Ack.Serialize(Ack.FromSequences([.. _ackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _ackQueue.Clear();
+        }
+
+        if (_nackQueue.Count > 0)
+        {
+            byte[] buffer = new byte[ControlPacketBufferSize];
+            int length = Nack.Serialize(Nack.FromSequences([.. _nackQueue]), buffer);
+            SendMessage(buffer.AsSpan(0, length));
+            _nackQueue.Clear();
+        }
+    }
+
+    public void SendPacket(ReadOnlySpan<byte> payload, Reliability reliability = Reliability.ReliableOrdered, bool immediate = false)
+    {
+        SendPayload(payload, reliability, immediate: immediate);
     }
 
     protected void SendPayload(
         ReadOnlySpan<byte> payload,
         Reliability reliability = Reliability.ReliableOrdered,
-        byte orderingChannel = 0)
+        byte orderingChannel = 0,
+        bool immediate = false)
     {
         if (NeedsOrdering(reliability) && orderingChannel >= MaxOrderChannels)
         {
@@ -187,6 +251,12 @@ public abstract class NetworkConnection
             if (payload.Length <= maxPayloadSize)
             {
                 _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
+                
+                if (immediate)
+                {
+                    FlushOutgoing(Environment.TickCount64);
+                }
+                
                 return;
             }
 
@@ -218,6 +288,11 @@ public abstract class NetworkConnection
                     splitIndex: (uint)splitIndex,
                     buffer: chunk
                 ));
+            }
+            
+            if (immediate)
+            {
+                FlushOutgoing(Environment.TickCount64);
             }
         }
     }
@@ -270,7 +345,6 @@ public abstract class NetworkConnection
 
             uint sequence = _sendSequence++;
             int length = FrameSet.Serialize(sequence, packedFrames, datagramBuffer);
-            SendMessage(datagramBuffer.AsSpan(0, length));
 
             bool reliable = false;
             for (int i = 0; i < packedFrames.Count; i++)
@@ -286,6 +360,8 @@ public abstract class NetworkConnection
             {
                 _pendingDatagrams[sequence] = new PendingDatagram([.. packedFrames], nowMs);
             }
+
+            SendMessage(datagramBuffer.AsSpan(0, length));
         }
     }
 

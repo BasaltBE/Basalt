@@ -1,13 +1,15 @@
-using Basalt.Containers;
-using Basalt.Core;
-using Basalt.Entity.Traits;
-using Basalt.Item;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server.Containers;
+using Basalt.Server;
+using Basalt.Server.Entity.Traits;
+using Basalt.Server.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
+using Basalt.Server.Player.Traits;
 
-namespace Basalt.Network.Handlers;
 
 public static class ItemStackRequest
 {
@@ -17,9 +19,9 @@ public static class ItemStackRequest
         ItemStackRequestPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player? player) || packet.Requests.Count == 0)
+        if (!server.Players.TryGetValue(connection, out global::Basalt.Server.Player.Player? player) || packet.Requests.Count == 0)
         {
             return;
         }
@@ -51,7 +53,7 @@ public static class ItemStackRequest
         });
     }
 
-    private static ItemStackResponse ProcessRequest(Player player, Protocol.Types.ItemStackRequest request)
+    private static ItemStackResponse ProcessRequest(global::Basalt.Server.Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changedContainers = [];
 
@@ -63,6 +65,7 @@ public static class ItemStackRequest
                 SwapStackRequestAction swap => SwapItems(player, swap, changedContainers),
                 DropStackRequestAction drop => RemoveDroppedItem(player, drop, changedContainers),
                 DestroyStackRequestAction destroy => RemoveDestroyedItem(player, destroy, changedContainers),
+                CraftCreativeStackRequestAction craftCreative => CreateCreativeItem(player, craftCreative, changedContainers),
 
                 EmptyStackRequestAction => ItemStackResponseStatus.Ok,
                 CraftResultsDeprecatedStackRequestAction => ItemStackResponseStatus.Ok,
@@ -76,6 +79,12 @@ public static class ItemStackRequest
             }
 
             Console.WriteLine($"ItemStackRequest failed: request: {request.RequestId} status={status} action={DescribeAction(action)}");
+            foreach (Container container in player.openedContainers.Values.Distinct())
+            {
+                container.Update();
+            }
+
+            player.GetTrait<PlayerCursorTrait>()?.Container.UpdateSlot(0);
 
             return new ItemStackResponse
             {
@@ -96,16 +105,12 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus TransferItem(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         TransferStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        Container? sourceContainer = GetContainer(player, action.Source.Container, action.Source.Slot);
-        Container? destinationContainer = GetContainer(player, action.Destination.Container, action.Destination.Slot);
-        int sourceSlot = StorageSlot(player, action.Source.Container, action.Source.Slot);
-        int destinationSlot = StorageSlot(player, action.Destination.Container, action.Destination.Slot);
-
-        if (sourceContainer is null || destinationContainer is null)
+        if (!TryResolveSlot(player, action.Source, out Container sourceContainer, out int sourceSlot) ||
+            !TryResolveSlot(player, action.Destination, out Container destinationContainer, out int destinationSlot))
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
@@ -124,17 +129,36 @@ public static class ItemStackRequest
 
         int amount = Math.Min(Math.Max(1, (int)action.Count), sourceItem.StackSize);
         ItemStack? destinationItem = destinationContainer.GetItem(destinationSlot);
-        if (destinationItem is not null &&
-            action.Destination.Container.ContainerId == (byte)ContainerId.InventoryUi &&
-            action.Destination.StackNetworkId == 0)
+        if (action.Destination.Slot >= 0 &&
+            action.Destination.StackNetworkId == 0 &&
+            destinationItem is not null &&
+            sourceItem is not null)
         {
-            destinationContainer.ClearSlot(destinationSlot);
-            destinationItem = null;
+            int resolvedSlot = ResolveDestinationSlot(destinationContainer, sourceItem, destinationSlot);
+            if (resolvedSlot >= 0)
+            {
+                destinationSlot = resolvedSlot;
+                destinationItem = destinationContainer.GetItem(destinationSlot);
+            }
         }
 
         if (destinationItem is null)
         {
             ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
+            if ((movedItem.Type == ItemType.Air || movedItem.StackSize == 0) &&
+                action.Source.StackNetworkId != 0 &&
+                TryFindSlotByStackNetworkId(sourceContainer, action.Source.StackNetworkId, out int actualSourceSlot))
+            {
+                sourceSlot = actualSourceSlot;
+                sourceItem = sourceContainer.GetItem(sourceSlot);
+                if (sourceItem is null)
+                {
+                    return ItemStackResponseStatus.CannotRemoveItem;
+                }
+
+                amount = Math.Min(Math.Max(1, (int)action.Count), sourceItem.StackSize);
+                movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
+            }
 
             if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
             {
@@ -145,12 +169,48 @@ public static class ItemStackRequest
         }
         else
         {
-            if (!sourceItem.CanStackWith(destinationItem))
+            if (destinationItem is null)
             {
                 return ItemStackResponseStatus.CannotPlaceItem;
             }
 
-            int availableSpace = destinationItem.Type.MaxStackSize - destinationItem.StackSize;
+            ItemStack destinationExisting = destinationItem;
+            ItemStack sourceExisting = sourceItem ?? ItemStack.Empty();
+            if (sourceExisting.Type == ItemType.Air || sourceExisting.StackSize == 0)
+            {
+                return ItemStackResponseStatus.CannotRemoveItem;
+            }
+            if (!sourceExisting.CanStackWith(destinationExisting))
+            {
+                if (action.Destination.StackNetworkId == 0 && sourceItem is not null)
+                {
+                    int resolvedSlot = ResolveDestinationSlot(destinationContainer, sourceItem, destinationSlot);
+                    if (resolvedSlot >= 0 && resolvedSlot != destinationSlot)
+                    {
+                        destinationSlot = resolvedSlot;
+                        destinationItem = destinationContainer.GetItem(destinationSlot);
+                        if (destinationItem is null)
+                        {
+                            ItemStack movedItem = sourceContainer.TakeItem(sourceSlot, amount) ?? ItemStack.Empty();
+                            if (movedItem.Type == ItemType.Air || movedItem.StackSize == 0)
+                            {
+                                return ItemStackResponseStatus.CannotRemoveItem;
+                            }
+
+                            destinationContainer.SetItem(destinationSlot, movedItem);
+                            AddChangedSlot(changedContainers, action.Source.Container, sourceContainer, action.Source.Slot, sourceSlot);
+                            AddChangedSlot(changedContainers, action.Destination.Container, destinationContainer, action.Destination.Slot, destinationSlot);
+                            return ItemStackResponseStatus.Ok;
+                        }
+
+                        destinationExisting = destinationItem;
+                    }
+                }
+
+                return ItemStackResponseStatus.CannotPlaceItem;
+            }
+
+            int availableSpace = destinationExisting.Type.MaxStackSize - destinationExisting.StackSize;
             if (availableSpace <= 0)
             {
                 return ItemStackResponseStatus.CannotPlaceItem;
@@ -158,10 +218,10 @@ public static class ItemStackRequest
 
             amount = Math.Min(amount, availableSpace);
 
-            destinationItem.IncrementStack((ushort)amount);
-            sourceItem.DecrementStack((ushort)amount);
+            destinationExisting.IncrementStack((ushort)amount);
+            sourceExisting.DecrementStack((ushort)amount);
 
-            if (sourceItem.StackSize == 0)
+            if (sourceExisting.StackSize == 0)
             {
                 sourceContainer.ClearSlot(sourceSlot);
             }
@@ -179,17 +239,122 @@ public static class ItemStackRequest
         return ItemStackResponseStatus.Ok;
     }
 
+    private static Container? GetContainer(global::Basalt.Server.Player.Player player, FullContainerName name, int slot)
+    {
+        if (TryGetOpenedDynamicContainer(player, name, out Container openedContainer))
+        {
+            if (slot < openedContainer.GetSize())
+            {
+                return openedContainer;
+            }
+
+            return player.GetTrait<EntityInventoryTrait>()?.Container;
+        }
+
+        if (name.ContainerId == (byte)ContainerId.DynamicContainer)
+        {
+            return null;
+        }
+
+        return player.GetContainer(name);
+    }
+
+    private static int StorageSlot(global::Basalt.Server.Player.Player player, FullContainerName container, int slot)
+    {
+        if (container.ContainerId is not ((byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand))
+        {
+            return slot;
+        }
+
+        if (slot is >= 36 and <= 44)
+        {
+            return slot - 36;
+        }
+
+        return slot;
+    }
+
+    private static int ResolveDestinationSlot(Container container, ItemStack sourceItem, int preferredSlot)
+    {
+        if (preferredSlot >= 0 && preferredSlot < container.GetSize())
+        {
+            ItemStack? preferred = container.GetItem(preferredSlot);
+            if (preferred is null)
+            {
+                return preferredSlot;
+            }
+
+            if (preferred.CanStackWith(sourceItem) && preferred.StackSize < preferred.Type.MaxStackSize)
+            {
+                return preferredSlot;
+            }
+        }
+
+        for (int i = 0; i < container.GetSize(); i++)
+        {
+            ItemStack? item = container.GetItem(i);
+            if (item is null)
+            {
+                continue;
+            }
+
+            if (item.CanStackWith(sourceItem) && item.StackSize < item.Type.MaxStackSize)
+            {
+                return i;
+            }
+        }
+
+        for (int i = 0; i < container.GetSize(); i++)
+        {
+            if (container.GetItem(i) is null)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static ItemStackResponseStatus CreateCreativeItem(
+        global::Basalt.Server.Player.Player player,
+        CraftCreativeStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changedContainers)
+    {
+        if (player.Gamemode != Gamemode.Creative)
+        {
+            return ItemStackResponseStatus.PlayerNotInCreativeMode;
+        }
+
+        Container? cursor = player.GetContainer(new FullContainerName { ContainerId = (byte)ContainerId.Cursor });
+        if (cursor is null)
+        {
+            return ItemStackResponseStatus.MissingCreatedOutputContainer;
+        }
+
+        ItemStack? item = ItemPalette.GetCreativeItem(action.CreativeItemNetworkId);
+        if (item is null)
+        {
+            return ItemStackResponseStatus.FailedToCraftCreative;
+        }
+
+        cursor.SetItem(0, item);
+        AddChangedSlot(
+            changedContainers,
+            new FullContainerName { ContainerId = (byte)ContainerId.Cursor },
+            cursor,
+            0,
+            0);
+
+        return ItemStackResponseStatus.Ok;
+    }
+
     private static ItemStackResponseStatus SwapItems(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         SwapStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        Container? sourceContainer = GetContainer(player, action.Source.Container, action.Source.Slot);
-        Container? destinationContainer = GetContainer(player, action.Destination.Container, action.Destination.Slot);
-        int sourceSlot = StorageSlot(player, action.Source.Container, action.Source.Slot);
-        int destinationSlot = StorageSlot(player, action.Destination.Container, action.Destination.Slot);
-
-        if (sourceContainer is null || destinationContainer is null)
+        if (!TryResolveSlot(player, action.Source, out Container sourceContainer, out int sourceSlot) ||
+            !TryResolveSlot(player, action.Destination, out Container destinationContainer, out int destinationSlot))
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
@@ -209,13 +374,11 @@ public static class ItemStackRequest
     }
 
     private static ItemStackResponseStatus RemoveDroppedItem(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         DropStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        Container? container = GetContainer(player, action.Source.Container, action.Source.Slot);
-        int slot = StorageSlot(player, action.Source.Container, action.Source.Slot);
-        if (container is null)
+        if (!TryResolveSlot(player, action.Source, out Container container, out int slot))
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
@@ -233,19 +396,19 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.CannotDropItem;
         }
 
+        _ = player.DropItem(removedItem);
+
         AddChangedSlot(changedContainers, action.Source.Container, container, action.Source.Slot, slot);
 
         return ItemStackResponseStatus.Ok;
     }
 
     private static ItemStackResponseStatus RemoveDestroyedItem(
-        Player player,
+        global::Basalt.Server.Player.Player player,
         DestroyStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changedContainers)
     {
-        Container? container = GetContainer(player, action.Source.Container, action.Source.Slot);
-        int slot = StorageSlot(player, action.Source.Container, action.Source.Slot);
-        if (container is null)
+        if (!TryResolveSlot(player, action.Source, out Container container, out int slot))
         {
             return ItemStackResponseStatus.InvalidSourceContainer;
         }
@@ -309,48 +472,75 @@ public static class ItemStackRequest
         });
     }
 
-    private static int StorageSlot(Player player, FullContainerName container, int slot)
+    private static bool TryResolveSlot(global::Basalt.Server.Player.Player player, StackRequestSlotInfo requestSlot, out Container container, out int slot)
     {
-        bool openContainerInventory = container.ContainerId == (byte)ContainerId.DynamicContainer && HasOpenInventoryView(player) && slot is >= 27 and <= 62;
-        if (!openContainerInventory && container.ContainerId is not ((byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand))
+        container = null!;
+        slot = -1;
+        FullContainerName containerName = requestSlot.Container;
+        Container? resolved = GetContainer(player, containerName, requestSlot.Slot);
+        if (resolved is null)
         {
-            return slot;
+            return false;
         }
 
-        if (HasOpenInventoryView(player) && slot is >= 54 and <= 62)
+        int resolvedSlot = ResolveSlotIndex(player, containerName, resolved, requestSlot.Slot);
+        if (resolvedSlot < 0 || resolvedSlot >= resolved.GetSize())
         {
-            return slot - 54;
+            return false;
         }
 
-        if (slot is >= 36 and <= 44)
+        container = resolved;
+        slot = resolvedSlot;
+        return true;
+    }
+
+    private static int ResolveSlotIndex(global::Basalt.Server.Player.Player player, FullContainerName containerName, Container container, int slot)
+    {
+        if (containerName.ContainerId is (byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
         {
-            return slot - 36;
+            return StorageSlot(player, containerName, slot);
         }
 
-        if (HasOpenInventoryView(player) && slot is >= 27 and <= 53)
+        if (containerName.ContainerId == (byte)ContainerId.DynamicContainer || containerName.ContainerId == (byte)ContainerId.Barrel || containerName.ContainerId == (byte)ContainerId.InventoryUi)
         {
-            return slot - 18;
+            if (container.Type != ContainerType.Inventory)
+            {
+                if (slot >= 0 && slot < container.GetSize())
+                {
+                    return slot;
+                }
+
+                if (container.GetSize() == 27 && slot is >= 27 and <= 53)
+                {
+                    return slot - 27;
+                }
+            }
+
+            return StorageSlot(player, containerName, slot);
         }
 
         return slot;
     }
 
-    private static Container? GetContainer(Player player, FullContainerName name, int slot)
+    private static bool TryFindSlotByStackNetworkId(Container container, int stackNetworkId, out int slot)
     {
-        if (name.ContainerId == (byte)ContainerId.DynamicContainer && HasOpenInventoryView(player) && slot is >= 27 and <= 62)
+        slot = -1;
+        if (stackNetworkId == 0)
         {
-            return player.GetTrait<EntityInventoryTrait>()?.Container;
+            return false;
         }
 
-        return player.GetContainer(name);
-    }
-
-    private static bool HasOpenInventoryView(Player player)
-    {
-        foreach ((int _, Container container) in player.openedContainers)
+        for (int i = 0; i < container.GetSize(); i++)
         {
-            if (container.Type != ContainerType.Inventory)
+            ItemStack? item = container.GetItem(i);
+            if (item is null)
             {
+                continue;
+            }
+
+            if (item.NetworkStackId == stackNetworkId)
+            {
+                slot = i;
                 return true;
             }
         }
@@ -358,6 +548,49 @@ public static class ItemStackRequest
         return false;
     }
 
+    private static bool TryGetOpenedDynamicContainer(global::Basalt.Server.Player.Player player, FullContainerName name, out Container container)
+    {
+        container = null!;
+        if (name.ContainerId != (byte)ContainerId.DynamicContainer)
+        {
+            return false;
+        }
+
+        if (name.DynamicContainerId.HasValue)
+        {
+            if (!player.TryGetOpenContainer((int)name.DynamicContainerId.Value, out Container? opened) || opened is null || opened.Type == ContainerType.Inventory)
+            {
+                return false;
+            }
+
+            container = opened;
+            return true;
+        }
+
+        Container? singleOpened = null;
+        foreach ((_, Container opened) in player.openedContainers)
+        {
+            if (opened.Type == ContainerType.Inventory)
+            {
+                continue;
+            }
+
+            if (singleOpened is not null)
+            {
+                return false;
+            }
+
+            singleOpened = opened;
+        }
+
+        if (singleOpened is null)
+        {
+            return false;
+        }
+
+        container = singleOpened;
+        return true;
+    }
 
     // These are temp cause it's a mess
     private static string DescribeAction(IStackRequestAction action)
@@ -372,6 +605,8 @@ public static class ItemStackRequest
                 $"drop count={drop.Count} src={DescribeSlot(drop.Source)}",
             DestroyStackRequestAction destroy =>
                 $"destroy count={destroy.Count} src={DescribeSlot(destroy.Source)}",
+            CraftCreativeStackRequestAction craftCreative =>
+                $"craft_creative creative={craftCreative.CreativeItemNetworkId} count={craftCreative.NumberOfCrafts}",
             _ => action.GetType().Name
         };
     }
@@ -386,3 +621,13 @@ public static class ItemStackRequest
         return $"container={slot.Container.ContainerId} dynamic={dynamicId} slot={slot.Slot} stack={slot.StackNetworkId}";
     }
 }
+
+
+
+
+
+
+
+
+
+

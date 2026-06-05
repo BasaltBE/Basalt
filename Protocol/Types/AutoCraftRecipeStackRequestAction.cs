@@ -6,10 +6,22 @@ namespace Basalt.Protocol.Types;
 public sealed class AutoCraftRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 13;
-    public uint RecipeNetworkId { get; set; }
-    public byte NumberOfCrafts { get; set; }
-    public byte TimesCrafted { get; set; }
-    public List<ItemDescriptorCount> Ingredients { get; set; } = [];
+    /// <summary>
+    /// Network id of the recipe to craft.
+    /// </summary>
+    public uint RecipeNetworkId;
+    /// <summary>
+    /// Requested craft count value.
+    /// </summary>
+    public byte NumberOfCrafts;
+    /// <summary>
+    /// Times the recipe was crafted.
+    /// </summary>
+    public byte TimesCrafted;
+    /// <summary>
+    /// Ingredient descriptors used by the request.
+    /// </summary>
+    public List<ItemDescriptorCount> Ingredients = [];
 
     public void Read(BinaryReader reader)
     {

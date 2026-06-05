@@ -1,4 +1,3 @@
-using Basalt.Protocol.IO;
 using Basalt.Protocol.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -8,13 +7,27 @@ namespace Basalt.Protocol.Types;
 public sealed class ItemInstanceUserData : DataType<int?>
 {
     private const short NbtMarker = -1;
-    // i dont why it is like that but it is
-    private const byte NbtVersion = 0x01;
+    private const byte NbtVersion = 1;
 
-    public CompoundTag? Nbt { get; set; }
-    public List<string> CanPlaceOn { get; set; } = [];
-    public List<string> CanDestroy { get; set; } = [];
-    public long? Ticking { get; set; }
+    /// <summary>
+    /// Optional NBT payload.
+    /// </summary>
+    public CompoundTag? Nbt;
+
+    /// <summary>
+    /// Blocks the item can be placed on.
+    /// </summary>
+    public List<string> CanPlaceOn = [];
+
+    /// <summary>
+    /// Blocks the item can destroy.
+    /// </summary>
+    public List<string> CanDestroy = [];
+
+    /// <summary>
+    /// Optional ticking value for shield items.
+    /// </summary>
+    public long? Ticking;
 
     public void Read(BinaryReader reader)
     {
@@ -37,11 +50,11 @@ public sealed class ItemInstanceUserData : DataType<int?>
                 throw new InvalidOperationException($"Unsupported item NBT formatting version: {version}");
             }
 
-            Nbt = NBT.Read<CompoundTag>(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Nbt = Io.NBT.ReadTag<CompoundTag>(reader, new Nbt.TagOptions(Name: true, Type: true, VarInt: false));
         }
         else if (marker > 0)
         {
-            Nbt = NBT.Read<CompoundTag>(reader, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Nbt = Io.NBT.ReadTag<CompoundTag>(reader, new Nbt.TagOptions(Name: true, Type: true, VarInt: false));
         }
         else
         {
@@ -62,16 +75,9 @@ public sealed class ItemInstanceUserData : DataType<int?>
             CanDestroy.Add(reader.ReadString16(true));
         }
 
-        if (networkId == ProtocolInfo.ShieldNetworkId)
+        if (networkId == Io.Constants.ShieldNetworkId)
         {
-            if (reader.Remaining >= sizeof(long))
-            {
-                Ticking = reader.ReadInt64(true);
-            }
-            else
-            {
-                Ticking = null;
-            }
+            Ticking = reader.Remaining >= sizeof(long) ? reader.ReadInt64(true) : null;
         }
         else
         {
@@ -89,7 +95,7 @@ public sealed class ItemInstanceUserData : DataType<int?>
         {
             writer.WriteInt16(NbtMarker, true);
             writer.WriteUInt8(NbtVersion);
-            NBT.WriteTag(writer, Nbt, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+            Io.NBT.WriteTag(writer, Nbt, new Nbt.TagOptions(Name: true, Type: true, VarInt: false));
         }
 
         writer.WriteUInt32(checked((uint)CanPlaceOn.Count), true);
@@ -104,10 +110,9 @@ public sealed class ItemInstanceUserData : DataType<int?>
             writer.WriteString16(CanDestroy[i], true);
         }
 
-        if (networkId == ProtocolInfo.ShieldNetworkId)
+        if (networkId == Io.Constants.ShieldNetworkId)
         {
             writer.WriteInt64(Ticking ?? 0, true);
         }
     }
-
 }

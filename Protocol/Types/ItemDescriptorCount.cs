@@ -5,13 +5,30 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ItemDescriptorCount : DataType
 {
-    public byte DescriptorType { get; set; }
-    public short NetworkId { get; set; }
-    public short MetadataValue { get; set; }
-    public string Text { get; set; } = string.Empty;
-    public byte Version { get; set; }
-    public int Count { get; set; }
-
+    /// <summary>
+    /// Descriptor format type id.
+    /// </summary>
+    public byte DescriptorType;
+    /// <summary>
+    /// Item network id value.
+    /// </summary>
+    public short NetworkId;
+    /// <summary>
+    /// Item metadata value.
+    /// </summary>
+    public short MetadataValue;
+    /// <summary>
+    /// Descriptor text value.
+    /// </summary>
+    public string Text = string.Empty;
+    /// <summary>
+    /// Descriptor version value.
+    /// </summary>
+    public byte Version;
+    /// <summary>
+    /// Item count value.
+    /// </summary>
+    public int Count;
     public void Read(BinaryReader reader)
     {
         DescriptorType = reader.ReadUInt8();

@@ -4,7 +4,7 @@ namespace Basalt.RakNet.Packets;
 
 public struct ConnectionRequest(
     ulong clientGuid = 0,
-    ulong clientSendTime = 0,
+    long clientSendTime = 0,
     bool doSecurity = false,
     byte[]? clientProof = null,
     bool doIdentity = false,
@@ -14,7 +14,7 @@ public struct ConnectionRequest(
     public const byte PacketId = 0x09;
 
     public ulong ClientGuid = clientGuid;
-    public ulong ClientSendTime = clientSendTime;
+    public long ClientSendTime = clientSendTime;
     public bool DoSecurity = doSecurity;
     public byte[] ClientProof = clientProof ?? new byte[32];
     public bool DoIdentity = doIdentity;
@@ -39,7 +39,7 @@ public struct ConnectionRequest(
         ulong clientGuid = src.ReadUInt64(offset, false);
         offset += 8;
 
-        ulong clientSendTime = src.ReadUInt64(offset, false);
+        long clientSendTime = src.ReadInt64(offset, false);
         offset += 8;
 
         bool doSecurity = src.ReadBool(offset);
@@ -84,7 +84,7 @@ public struct ConnectionRequest(
         dest.WriteUInt64(packet.ClientGuid, offset, false);
         offset += 8;
 
-        dest.WriteUInt64(packet.ClientSendTime, offset, false);
+        dest.WriteInt64(packet.ClientSendTime, offset, false);
         offset += 8;
 
         dest.WriteBool(packet.DoSecurity, offset);

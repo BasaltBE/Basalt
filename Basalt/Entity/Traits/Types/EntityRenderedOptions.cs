@@ -1,3 +1,9 @@
-namespace Basalt.Entity.Traits.Types;
+namespace Basalt.Server.Entity.Traits.Types;
 
-public readonly record struct EntityRenderedOptions(global::Basalt.Core.Player Viewer);
+public readonly record struct EntityRenderedOptions(global::Basalt.Server.Player.Player Viewer);
+
+
+
+
+
+

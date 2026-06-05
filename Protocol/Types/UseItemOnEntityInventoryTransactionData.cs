@@ -8,13 +8,30 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
 {
     public InventoryTransactionType Type => InventoryTransactionType.UseItemOnEntity;
 
-    public ulong TargetEntityRuntimeId { get; set; }
-    public uint ActionType { get; set; }
-    public int HotBarSlot { get; set; }
-    public ItemInstance HeldItem { get; set; } = new();
-    public Vec3f Position { get; set; }
-    public Vec3f ClickedPosition { get; set; }
-
+    /// <summary>
+    /// Runtime id of the target entity.
+    /// </summary>
+    public ulong TargetEntityRuntimeId;
+    /// <summary>
+    /// Use-on-entity action type.
+    /// </summary>
+    public uint ActionType;
+    /// <summary>
+    /// Hotbar slot used by the client.
+    /// </summary>
+    public int HotBarSlot;
+    /// <summary>
+    /// Item held by the player.
+    /// </summary>
+    public ItemInstance HeldItem = new();
+    /// <summary>
+    /// Player position at action time.
+    /// </summary>
+    public Vec3f Position;
+    /// <summary>
+    /// Clicked position relative to entity.
+    /// </summary>
+    public Vec3f ClickedPosition;
     public void Read(BinaryReader reader)
     {
         TargetEntityRuntimeId = reader.ReadVarULong();

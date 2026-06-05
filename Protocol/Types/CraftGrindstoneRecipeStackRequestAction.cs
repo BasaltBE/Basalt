@@ -6,10 +6,18 @@ namespace Basalt.Protocol.Types;
 public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 16;
-    public uint RecipeNetworkId { get; set; }
-    public byte NumberOfCrafts { get; set; }
-    public int Cost { get; set; }
-
+    /// <summary>
+    /// Network id of the grindstone recipe.
+    /// </summary>
+    public uint RecipeNetworkId;
+    /// <summary>
+    /// Requested craft count value.
+    /// </summary>
+    public byte NumberOfCrafts;
+    /// <summary>
+    /// Recipe cost value.
+    /// </summary>
+    public int Cost;
     public void Read(BinaryReader reader)
     {
         RecipeNetworkId = reader.ReadVarUInt();

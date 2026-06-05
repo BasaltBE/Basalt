@@ -1,37 +1,57 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.PlayerAction)]
 public sealed record PlayerActionPacket : DataPacket
 {
-    public ulong EntityRuntimeId { get; set; }
-    public int ActionType { get; set; }
-    public BlockPos BlockPosition { get; set; }
-    public BlockPos ResultPosition { get; set; }
-    public int BlockFace { get; set; }
+    /// <summary>
+    /// Runtime id of the actor performing the action.
+    /// </summary>
+    public ulong EntityRuntimeId;
 
-    public override PacketId PacketId => PacketId.PlayerAction;
+    /// <summary>
+    /// Action type requested by the client.
+    /// </summary>
+    public PlayerActionType ActionType;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Primary block position for the action.
+    /// </summary>
+    public BlockPos BlockPosition;
+
+    /// <summary>
+    /// Secondary/result block position for the action.
+    /// </summary>
+    public BlockPos ResultPosition;
+
+    /// <summary>
+    /// Block face associated with the action.
+    /// </summary>
+    public int BlockFace;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         EntityRuntimeId = reader.ReadVarULong();
-        ActionType = reader.ReadVarInt();
+        ActionType = (PlayerActionType)reader.ReadVarInt();
+
         BlockPos blockPosition = BlockPosition;
         blockPosition.Read(reader);
         BlockPosition = blockPosition;
+
         BlockPos resultPosition = ResultPosition;
         resultPosition.Read(reader);
         ResultPosition = resultPosition;
+
         BlockFace = reader.ReadVarInt();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarULong(EntityRuntimeId);
-        writer.WriteVarInt(ActionType);
+        writer.WriteVarInt((int)ActionType);
         BlockPosition.Write(writer);
         ResultPosition.Write(writer);
         writer.WriteVarInt(BlockFace);

@@ -5,16 +5,38 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ResourcePackStack)]
 public sealed record ResourcePackStackPacket : DataPacket
 {
-    public bool MustAccept { get; set; }
-    public List<ResourcePackStackEntry> Packs { get; set; } = [];
-    public string BaseGameVersion { get; set; } = string.Empty;
-    public List<ExperimentData> Experiments { get; set; } = [];
-    public bool ExperimentsPreviouslyToggled { get; set; }
-    public bool IncludeEditorPacks { get; set; }
+    /// <summary>
+    /// Whether the client must accept the resource packs.
+    /// </summary>
+    public bool MustAccept;
 
-    public override PacketId PacketId => PacketId.ResourcePackStack;
+    /// <summary>
+    /// List of resource packs that the client must accept.
+    /// </summary>
+    public List<ResourcePackStackEntry> Packs = [];
+
+    /// <summary>
+    /// The base game version of the client.
+    /// </summary>
+    public string BaseGameVersion = string.Empty;
+
+    /// <summary>
+    /// List of experiments that the server has enabled.
+    /// </summary>
+    public List<ExperimentData> Experiments = [];
+
+    /// <summary>
+    /// Whether the client has previously toggled any experiments.
+    /// </summary>
+    public bool ExperimentsPreviouslyToggled;
+
+    /// <summary>
+    /// Whether the server includes editor packs.
+    /// </summary>
+    public bool IncludeEditorPacks;
 
     public override void Deserialize(BinaryReader reader)
     {

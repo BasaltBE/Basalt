@@ -4,11 +4,19 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public struct BlockPos : DataType
-{
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Z { get; set; }
-
+{   
+    /// <summary>
+    /// The X coordinate of the block position.
+    /// </summary>
+    public int X;
+    /// <summary>
+    /// The Y coordinate of the block position.
+    /// </summary>
+    public int Y;
+    /// <summary>
+    /// The Z coordinate of the block position.
+    /// </summary>
+    public int Z;
     public void Read(BinaryReader reader)
     {
         X = reader.ReadZigZag();

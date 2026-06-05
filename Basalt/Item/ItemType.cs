@@ -1,10 +1,11 @@
-using Basalt.Block;
-using Basalt.Item.Components;
-using Basalt.Item.Traits;
+namespace Basalt.Server.Item;
+
+using Basalt.Server.Block;
+using Basalt.Server.Item.Components;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Item;
 
 public sealed class ItemType
 {
@@ -44,7 +45,7 @@ public sealed class ItemType
         Tags = tags is null ? [] : [.. tags];
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
-        BlockType = Block.BlockType.Get(identifier);
+        BlockType = BlockType.Get(identifier);
 
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
@@ -81,13 +82,18 @@ public sealed class ItemType
         _traits.TryAdd(identifier, traitType);
     }
 
+    public bool TryGetComponentProperties(string component, out CompoundTag properties)
+    {
+        return Components.TryGetComponentProperties(component, out properties);
+    }
+
     public static void EnsureRegistryCapacity(int capacity)
     {
         Registry.EnsureCapacity(capacity);
         NetworkRegistry.EnsureCapacity(capacity);
     }
 
-    public static NetworkItemStackDescriptor ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0)
+    public static LegacyItem ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0)
     {
         int networkBlockId = 0;
         if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
@@ -95,7 +101,7 @@ public sealed class ItemType
             networkBlockId = type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new NetworkItemStackDescriptor
+        return new LegacyItem
         {
             NetworkId = type.NetworkId,
             StackSize = stackSize,
@@ -112,3 +118,9 @@ public sealed class ItemType
         };
     }
 }
+
+
+
+
+
+

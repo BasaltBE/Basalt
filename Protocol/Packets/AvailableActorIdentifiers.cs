@@ -1,24 +1,26 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.AvailableActorIdentifiers)]
 public sealed record AvailableActorIdentifiersPacket : DataPacket
 {
-    private static readonly ReadWriteOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
-    public CompoundTag Data { get; set; } = new();
+    private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
 
-    public override PacketId PacketId => PacketId.AvailableActorIdentifiers;
+    /// <summary>
+    /// Actor identifier table as NBT.
+    /// </summary>
+    public CompoundTag Data = new();
 
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
-        Data = Basalt.Protocol.IO.NBT.Read<CompoundTag>(reader, NetworkNbtOptions, canHaveName: true);
+        Data = Io.NBT.ReadTag<CompoundTag>(reader, NetworkNbtOptions);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
-        Basalt.Protocol.IO.NBT.WriteTag(writer, Data, NetworkNbtOptions, canHaveName: true);
+        Io.NBT.WriteTag(writer, Data, NetworkNbtOptions);
     }
 }

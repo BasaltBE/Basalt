@@ -5,10 +5,20 @@ namespace Basalt.Protocol.Types;
 
 public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestAction, DataType
 {
+    /// <summary>
+    /// Stack request action id.
+    /// </summary>
     public byte ActionType => 19;
-    public List<NetworkItemStackDescriptor> ResultItems { get; set; } = [];
-    public byte TimesCrafted { get; set; }
 
+    /// <summary>
+    /// Crafted result items.
+    /// </summary>
+    public List<NetworkItemStackDescriptor> ResultItems = [];
+
+    /// <summary>
+    /// Amount of times the recipe was crafted.
+    /// </summary>
+    public byte TimesCrafted;
     public void Read(BinaryReader reader)
     {
         int count = checked((int)reader.ReadVarUInt());

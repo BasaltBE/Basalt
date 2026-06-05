@@ -1,8 +1,9 @@
-using Basalt.Core;
+namespace Basalt.Server.Network.Handlers;
+
+using Basalt.Server;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-namespace Basalt.Network.Handlers;
 
 public static class ClientCacheStatus
 {
@@ -11,6 +12,16 @@ public static class ClientCacheStatus
         ClientCacheStatusPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet.Deserialize(reader);
+        packet = (ClientCacheStatusPacket)Protocol.Io.Packet.Deserialize(reader);
     }
 }
+
+
+
+
+
+
+
+
+
+

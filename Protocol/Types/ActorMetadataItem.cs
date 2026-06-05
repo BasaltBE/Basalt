@@ -6,9 +6,20 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ActorMetadataItem : DataType
 {
-    public ActorDataId Id { get; set; }
-    public ActorDataType Type { get; set; }
-    public object Value { get; set; } = 0;
+    /// <summary>
+    /// Metadata key id.
+    /// </summary>
+    public ActorDataId Id;
+
+    /// <summary>
+    /// Metadata value type.
+    /// </summary>
+    public ActorDataType Type;
+
+    /// <summary>
+    /// Metadata value payload.
+    /// </summary>
+    public object Value = 0;
 
     public void Read(BinaryReader reader)
     {
@@ -22,13 +33,12 @@ public sealed class ActorMetadataItem : DataType
             ActorDataType.Float => reader.ReadF32(true),
             ActorDataType.String => reader.ReadVarString(),
             ActorDataType.Long => reader.ReadZigZong(),
-            ActorDataType.Vec3 =>
-                new Vec3f
-                {
-                    X = reader.ReadF32(true),
-                    Y = reader.ReadF32(true),
-                    Z = reader.ReadF32(true)
-                },
+            ActorDataType.Vec3 => new Vec3f
+            {
+                X = reader.ReadF32(true),
+                Y = reader.ReadF32(true),
+                Z = reader.ReadF32(true)
+            },
             _ => throw new NotSupportedException($"Unsupported ActorDataType: {Type}")
         };
     }
@@ -37,6 +47,7 @@ public sealed class ActorMetadataItem : DataType
     {
         writer.WriteVarInt((int)Id);
         writer.WriteVarInt((int)Type);
+
         switch (Type)
         {
             case ActorDataType.Byte:

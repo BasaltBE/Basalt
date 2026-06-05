@@ -1,14 +1,15 @@
-using Basalt.Block.Container;
-using Basalt.Block.Traits.Types;
-using Basalt.Block.Types;
-using Basalt.Containers;
-using Basalt.Item;
+namespace Basalt.Server.Block.Traits;
+
+using Basalt.Server.Block.Container;
+using Basalt.Server.Block.Traits.Types;
+using Basalt.Server.Block.Types;
+using Basalt.Server.Containers;
+using Basalt.Server.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-namespace Basalt.Block.Traits;
 
 public class BarrelTrait : BlockTrait
 {
@@ -103,13 +104,13 @@ public class BarrelTrait : BlockTrait
             return;
         }
 
-        foreach ((Basalt.Core.Player player, _) in _container.GetAllOccupants().ToList())
+        foreach ((Basalt.Server.Player.Player player, _) in _container.GetAllOccupants().ToList())
         {
             _container.Close(player);
         }
     }
 
-    public override void OnRender(Core.Player player, int x, int y, int z)
+    public override void OnRender(Player.Player player, int x, int y, int z)
     {
         var dimension = player.Dimension;
         if (dimension is null)
@@ -134,25 +135,25 @@ public class BarrelTrait : BlockTrait
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
         player.Send(
-            new BlockActorDataPacket
-            {
-                Position = position,
-                Data = storage
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = 0,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            },
-            new UpdateBlockPacket
-            {
-                Position = position,
-                NetworkBlockId = networkId,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
-            });
+        new BlockActorDataPacket
+        {
+            Position = position,
+            Data = storage
+        },
+        new UpdateBlockPacket
+        {
+            Position = position,
+            NetworkBlockId = 0,
+            Flags = UpdateBlockFlagsType.None,
+            Layer = UpdateBlockLayerType.Normal
+        },
+        new UpdateBlockPacket
+        {
+            Position = position,
+            NetworkBlockId = networkId,
+            Flags = UpdateBlockFlagsType.None,
+            Layer = UpdateBlockLayerType.Normal
+        });
     }
 
     public void Open(bool silent = false)
@@ -194,7 +195,7 @@ public class BarrelTrait : BlockTrait
         _container.OnContainerUpdated = OnContainerUpdated;
     }
 
-    private void OnViewerAdded(BlockContainer container, Basalt.Core.Player _)
+    private void OnViewerAdded(BlockContainer container, Basalt.Server.Player.Player _)
     {
         if (container.occupants.Count == 1)
         {
@@ -202,7 +203,7 @@ public class BarrelTrait : BlockTrait
         }
     }
 
-    private void OnViewerRemoved(BlockContainer container, Basalt.Core.Player _)
+    private void OnViewerRemoved(BlockContainer container, Basalt.Server.Player.Player _)
     {
         if (container.occupants.Count == 0)
         {
@@ -228,13 +229,13 @@ public class BarrelTrait : BlockTrait
         BlockPermutation permutation = Block.Type.GetPermutation(state);
         Block.SetPermutation(permutation);
         _container.Dimension.SetPermutation(_container.Position.X, _container.Position.Y, _container.Position.Z, permutation);
-        _container.Dimension.Broadcast(new UpdateBlockPacket
-        {
-            Position = _container.Position,
-            NetworkBlockId = (uint)permutation.NetworkId,
-            Flags = UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
-        });
+        // _container.Dimension.Broadcast(new UpdateBlockPacket
+        // {
+        //     Position = _container.Position,
+        //     NetworkBlockId = (uint)permutation.NetworkId,
+        //     Flags = UpdateBlockFlagsType.Network,
+        //     Layer = UpdateBlockLayerType.Normal
+        // });
     }
 
     private void BroadcastSound(LevelSoundEvent soundEvent)
@@ -297,3 +298,10 @@ public class BarrelTrait : BlockTrait
         chunk.SetBlockStorage(position, storage, dirty: true);
     }
 }
+
+
+
+
+
+
+

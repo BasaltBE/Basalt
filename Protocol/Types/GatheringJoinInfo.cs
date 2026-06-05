@@ -5,14 +5,45 @@ namespace Basalt.Protocol.Types;
 
 public sealed class GatheringJoinInfo : DataType
 {
-    public Guid ExperienceId { get; set; } = Guid.Empty;
-    public string ExperienceName { get; set; } = string.Empty;
-    public Guid ExperienceWorldId { get; set; } = Guid.Empty;
-    public string ExperienceWorldName { get; set; } = string.Empty;
-    public string CreatorId { get; set; } = string.Empty;
-    public Guid TargetId { get; set; } = Guid.Empty;
-    public string ScenarioId { get; set; } = string.Empty;
-    public string ServerId { get; set; } = string.Empty;
+    /// <summary>
+    /// The UUID of the experience
+    /// </summary>
+    public Guid ExperienceId = Guid.Empty;
+
+    /// <summary>
+    /// The name of the experience
+    /// </summary>
+    public string ExperienceName = string.Empty;
+
+    /// <summary>
+    /// The UUID of the experience world
+    /// </summary>
+    public Guid ExperienceWorldId = Guid.Empty;
+
+    /// <summary>
+    /// The name of the experience world
+    /// </summary>
+    public string ExperienceWorldName = string.Empty;
+
+    /// <summary>
+    /// The Xbox Live ID of the creator of the experience
+    /// </summary>
+    public string CreatorId = string.Empty;
+
+    /// <summary>
+    /// The UUID of the target gathering to join
+    /// </summary>
+    public Guid TargetId = Guid.Empty;
+
+    /// <summary>
+    /// The ID of the scenario
+    /// </summary>
+    public string ScenarioId = string.Empty;
+
+    /// <summary>
+    /// The ID of the server
+    /// </summary>
+    public string ServerId = string.Empty;
 
     public void Read(BinaryReader reader)
     {

@@ -1,21 +1,30 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.SetActorData)]
 public sealed record SetActorDataPacket : DataPacket
 {
-    public ulong RuntimeId { get; set; }
-    public List<ActorMetadataItem> Metadata { get; set; } = [];
-    public ulong Tick { get; set; }
+    /// <summary>
+    /// Runtime id of the actor.
+    /// </summary>
+    public ulong RuntimeId;
 
-    public override PacketId PacketId => PacketId.SetActorData;
+    /// <summary>
+    /// Metadata entries to apply.
+    /// </summary>
+    public List<ActorMetadataItem> Metadata = [];
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Server tick for this update.
+    /// </summary>
+    public ulong Tick;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
-        RuntimeId = unchecked((ulong)reader.ReadVarLong());
+        RuntimeId = reader.ReadVarULong();
 
         int metadataCount = reader.ReadVarInt();
         Metadata = new List<ActorMetadataItem>(metadataCount);
@@ -40,12 +49,12 @@ public sealed record SetActorDataPacket : DataPacket
             _ = reader.ReadF32(true);
         }
 
-        Tick = unchecked((ulong)reader.ReadVarLong());
+        Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarLong(unchecked((long)RuntimeId));
+        writer.WriteVarULong(RuntimeId);
         writer.WriteVarInt(Metadata.Count);
         for (int i = 0; i < Metadata.Count; i++)
         {
@@ -54,6 +63,6 @@ public sealed record SetActorDataPacket : DataPacket
 
         writer.WriteVarInt(0);
         writer.WriteVarInt(0);
-        writer.WriteVarLong(unchecked((long)Tick));
+        writer.WriteVarULong(Tick);
     }
 }

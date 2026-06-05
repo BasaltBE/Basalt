@@ -1,21 +1,22 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.SetLocalPlayerAsInitialized)]
 public sealed record SetLocalPlayerAsInitializedPacket : DataPacket
-{
-    public ulong EntityRuntimeId { get; set; }
+{   
+    /// <summary>
+    /// The runtime id of the entity
+    /// </summary>
+    public ulong EntityRuntimeId;
 
-    public override PacketId PacketId => PacketId.SetLocalPlayerAsInitialized;
-
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         EntityRuntimeId = reader.ReadVarULong();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarULong(EntityRuntimeId);
     }

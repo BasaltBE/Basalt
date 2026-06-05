@@ -11,4 +11,8 @@
     <ProjectReference Include="..\Binary\Binary.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="conmaster.compression.spanzlib" Version="1.1.0" />
+  </ItemGroup>
+
 </Project>

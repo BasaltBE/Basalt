@@ -1,10 +1,11 @@
-using Basalt.Block;
-using Basalt.Protocol.IO;
+using Basalt.Protocol;
+using Basalt.Server.Block;
 using Basalt.Protocol.Nbt;
+
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.World.Dimension.Chunk;
+namespace Basalt.Server.World.Dimension.Chunk;
 
 public sealed class BlockStorage
 {
@@ -97,7 +98,7 @@ public sealed class BlockStorage
             {
                 BlockPermutation permutation = BlockPermutation.Resolve(state);
                 CompoundTag tag = BlockPermutation.ToCompound(permutation);
-                NBT.WriteTag(writer, tag, new ReadWriteOptions(Name: true, Type: true, VarInt: false), canHaveName: true);
+                Protocol.Io.NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
             }
             else
             {
@@ -137,7 +138,7 @@ public sealed class BlockStorage
                     throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
                 }
 
-                CompoundTag tag = CompoundTag.Read(reader);
+                CompoundTag tag = CompoundTag.Read(reader, new TagOptions(Name: true, Type: false, VarInt: false));
                 palette.Add(BlockPermutation.FromCompound(tag).NetworkId);
             }
             else
@@ -190,3 +191,10 @@ public sealed class BlockStorage
         }
     }
 }
+
+
+
+
+
+
+

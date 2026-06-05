@@ -1,17 +1,18 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ItemStackRequest)]
 public sealed record ItemStackRequestPacket : DataPacket
 {
-    public List<ItemStackRequest> Requests { get; set; } = [];
+    /// <summary>
+    /// Stack request entries.
+    /// </summary>
+    public List<ItemStackRequest> Requests = [];
 
-    public override PacketId PacketId => PacketId.ItemStackRequest;
-
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         int count = checked((int)reader.ReadVarUInt());
         Requests = new(count);
@@ -23,7 +24,7 @@ public sealed record ItemStackRequestPacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteVarUInt((uint)Requests.Count);
         for (int i = 0; i < Requests.Count; i++)

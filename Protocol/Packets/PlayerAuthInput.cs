@@ -1,82 +1,150 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.PlayerAuthInput)]
 public sealed record PlayerAuthInputPacket : DataPacket
 {
-    public float Pitch { get; set; }
-    public float Yaw { get; set; }
-    public Vec3f Position { get; set; }
-    public Vec2f MoveVector { get; set; }
-    public float HeadYaw { get; set; }
-    public PlayerAuthInputData InputData { get; set; }
-    public InputMode InputMode { get; set; }
-    public PlayMode PlayMode { get; set; }
-    public InteractionModel InteractionModel { get; set; }
-    public float InteractPitch { get; set; }
-    public float InteractYaw { get; set; }
-    public ulong Tick { get; set; }
-    public Vec3f Delta { get; set; }
-    public UseItemTransactionData ItemInteractionData { get; set; } = new();
-    public ItemStackRequest ItemStackRequest { get; set; } = new();
-    public List<PlayerBlockAction> BlockActions { get; set; } = [];
-    public Vec2f VehicleRotation { get; set; }
-    public long ClientPredictedVehicle { get; set; }
-    public Vec2f AnalogueMoveVector { get; set; }
-    public Vec3f CameraOrientation { get; set; }
-    public Vec2f RawMoveVector { get; set; }
+    /// <summary>
+    /// Player camera pitch.
+    /// </summary>
+    public float Pitch;
 
-    public override PacketId PacketId => PacketId.PlayerAuthInput;
+    /// <summary>
+    /// Player camera yaw.
+    /// </summary>
+    public float Yaw;
 
-    public bool HasFlag(PlayerAuthInputFlag flag)
-    {
-        return InputData.HasFlag(flag);
-    }
+    /// <summary>
+    /// Reported player position.
+    /// </summary>
+    public Vec3f Position;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Movement input vector.
+    /// </summary>
+    public Vec2f MoveVector;
+
+    /// <summary>
+    /// Player head yaw.
+    /// </summary>
+    public float HeadYaw;
+
+    /// <summary>
+    /// Input bitset flags for this tick.
+    /// </summary>
+    public PlayerAuthInputData InputData;
+
+    /// <summary>
+    /// Active input mode.
+    /// </summary>
+    public InputMode InputMode;
+
+    /// <summary>
+    /// Active play mode.
+    /// </summary>
+    public PlayMode PlayMode;
+
+    /// <summary>
+    /// Active interaction model.
+    /// </summary>
+    public InteractionModel InteractionModel;
+
+    /// <summary>
+    /// Interaction pitch value.
+    /// </summary>
+    public float InteractPitch;
+
+    /// <summary>
+    /// Interaction yaw value.
+    /// </summary>
+    public float InteractYaw;
+
+    /// <summary>
+    /// Server tick when sent.
+    /// </summary>
+    public ulong Tick;
+
+    /// <summary>
+    /// Position delta.
+    /// </summary>
+    public Vec3f Delta;
+
+    /// <summary>
+    /// Item interaction transaction data.
+    /// </summary>
+    public UseItemTransactionData ItemInteractionData = new();
+
+    /// <summary>
+    /// Item stack request payload.
+    /// </summary>
+    public ItemStackRequest ItemStackRequest = new();
+
+    /// <summary>
+    /// Player block action entries.
+    /// Contains block breaking actions
+    /// </summary>
+    public List<PlayerBlockAction> BlockActions = [];
+
+    /// <summary>
+    /// Vehicle rotation when predicted vehicle flag is set.
+    /// </summary>
+    public Vec2f VehicleRotation;
+
+    /// <summary>
+    /// Predicted vehicle runtime id.
+    /// </summary>
+    public long ClientPredictedVehicle;
+
+    /// <summary>
+    /// Analogue movement vector.
+    /// </summary>
+    public Vec2f AnalogueMoveVector;
+
+    /// <summary>
+    /// Camera forward orientation vector.
+    /// </summary>
+    public Vec3f CameraOrientation;
+
+    /// <summary>
+    /// Raw movement vector before modifiers.
+    /// </summary>
+    public Vec2f RawMoveVector;
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
-        Vec3f position = Position;
-        position.Read(reader);
-        Position = position;
-        Vec2f moveVector = MoveVector;
-        moveVector.Read(reader);
-        MoveVector = moveVector;
+        Position.Read(reader);
+        MoveVector.Read(reader);
         HeadYaw = reader.ReadF32(true);
 
-        PlayerAuthInputData inputData = InputData;
-        inputData.Read(reader);
-        InputData = inputData;
-
+        InputData.Read(reader);
         InputMode = (InputMode)reader.ReadVarUInt();
         PlayMode = (PlayMode)reader.ReadVarUInt();
         InteractionModel = (InteractionModel)reader.ReadVarUInt();
         InteractPitch = reader.ReadF32(true);
         InteractYaw = reader.ReadF32(true);
         Tick = reader.ReadVarULong();
-        Vec3f delta = Delta;
-        delta.Read(reader);
-        Delta = delta;
+        Delta.Read(reader);
 
-        if (HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
         {
             ItemInteractionData.Read(reader);
         }
 
-        if (HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
         {
             ItemStackRequest.Read(reader);
         }
 
-        if (HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
         {
-            int blockActionCount = checked((int)reader.ReadZigZag());
-            BlockActions = new(blockActionCount);
-            for (int i = 0; i < blockActionCount; i++)
+            int count = checked((int)reader.ReadZigZag());
+            BlockActions = new(count);
+            for (int i = 0; i < count; i++)
             {
                 PlayerBlockAction action = new();
                 action.Read(reader);
@@ -84,26 +152,18 @@ public sealed record PlayerAuthInputPacket : DataPacket
             }
         }
 
-        if (HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
+        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
         {
-            Vec2f vehicleRotation = VehicleRotation;
-            vehicleRotation.Read(reader);
-            VehicleRotation = vehicleRotation;
+            VehicleRotation.Read(reader);
             ClientPredictedVehicle = reader.ReadZigZong();
         }
 
-        Vec2f analogueMoveVector = AnalogueMoveVector;
-        analogueMoveVector.Read(reader);
-        AnalogueMoveVector = analogueMoveVector;
-        Vec3f cameraOrientation = CameraOrientation;
-        cameraOrientation.Read(reader);
-        CameraOrientation = cameraOrientation;
-        Vec2f rawMoveVector = RawMoveVector;
-        rawMoveVector.Read(reader);
-        RawMoveVector = rawMoveVector;
+        AnalogueMoveVector.Read(reader);
+        CameraOrientation.Read(reader);
+        RawMoveVector.Read(reader);
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteF32(Pitch, true);
         writer.WriteF32(Yaw, true);
@@ -112,7 +172,6 @@ public sealed record PlayerAuthInputPacket : DataPacket
         writer.WriteF32(HeadYaw, true);
 
         InputData.Write(writer);
-
         writer.WriteVarUInt((uint)InputMode);
         writer.WriteVarUInt((uint)PlayMode);
         writer.WriteVarUInt((uint)InteractionModel);
@@ -121,17 +180,17 @@ public sealed record PlayerAuthInputPacket : DataPacket
         writer.WriteVarULong(Tick);
         Delta.Write(writer);
 
-        if (HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
         {
             ItemInteractionData.Write(writer);
         }
 
-        if (HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
         {
             ItemStackRequest.Write(writer);
         }
 
-        if (HasFlag(PlayerAuthInputFlag.PerformBlockActions))
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
         {
             writer.WriteZigZag(BlockActions.Count);
             for (int i = 0; i < BlockActions.Count; i++)
@@ -140,7 +199,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
             }
         }
 
-        if (HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
+        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
         {
             VehicleRotation.Write(writer);
             writer.WriteZigZong(ClientPredictedVehicle);
@@ -150,5 +209,4 @@ public sealed record PlayerAuthInputPacket : DataPacket
         CameraOrientation.Write(writer);
         RawMoveVector.Write(writer);
     }
-
 }

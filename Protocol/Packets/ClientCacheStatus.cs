@@ -1,21 +1,22 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ClientCacheStatus)]
 public sealed record ClientCacheStatusPacket : DataPacket
 {
-    public bool Enabled { get; set; }
+    /// <summary>
+    /// Whether client-side cache is enabled.
+    /// </summary>
+    public bool Enabled;
 
-    public override PacketId PacketId => PacketId.ClientCacheStatus;
-
-    public override void Deserialize(BinaryReader reader)
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         Enabled = reader.ReadBool();
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteBool(Enabled);
     }

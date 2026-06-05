@@ -1,6 +1,21 @@
-namespace Basalt.World;
+namespace Basalt.Server.World;
 
+/// <summary>
+/// A list of game rules in a dimension
+/// 
+/// TODO: Add more
+/// </summary>
 public sealed class DimensionGameRules
 {
-    public bool DrowningDamage { get; set; } = true;
+    /// <summary>
+    /// Whether or not players can drown in this dimension.
+    /// </summary>
+    public bool DrowningDamage  = true;
 }
+
+
+
+
+
+
+

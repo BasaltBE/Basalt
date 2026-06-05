@@ -6,9 +6,14 @@ namespace Basalt.Protocol.Types;
 public sealed class BeaconPaymentStackRequestAction : IStackRequestAction, DataType
 {
     public byte ActionType => 10;
-    public int PrimaryEffect { get; set; }
-    public int SecondaryEffect { get; set; }
-
+    /// <summary>
+    /// Selected primary beacon effect id.
+    /// </summary>
+    public int PrimaryEffect;
+    /// <summary>
+    /// Selected secondary beacon effect id.
+    /// </summary>
+    public int SecondaryEffect;
     public void Read(BinaryReader reader)
     {
         PrimaryEffect = reader.ReadZigZag();

@@ -1,88 +1,276 @@
-// credit to https://github.com/Sandertv/gophertunnel/blob/master/minecraft/protocol/skin.go
+using Basalt.Protocol.Login.Data;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public static class SkinAnimationType
-{
-    public const uint Head = 1;
-    public const uint Body32x32 = 2;
-    public const uint Body128x128 = 3;
-}
-
-public static class SkinExpressionType
-{
-    public const uint Linear = 0;
-    public const uint Blinking = 1;
-}
-
 public sealed class Skin : DataType
 {
-    public string SkinID { get; set; } = string.Empty;
-    public string PlayFabID { get; set; } = string.Empty;
-    public byte[] SkinResourcePatch { get; set; } = [];
-    public uint SkinImageWidth { get; set; }
-    public uint SkinImageHeight { get; set; }
-    public byte[] SkinData { get; set; } = [];
-    public List<SkinAnimation> Animations { get; set; } = [];
-    public uint CapeImageWidth { get; set; }
-    public uint CapeImageHeight { get; set; }
-    public byte[] CapeData { get; set; } = [];
-    public byte[] SkinGeometry { get; set; } = [];
-    public byte[] AnimationData { get; set; } = [];
-    public byte[] GeometryDataEngineVersion { get; set; } = [];
-    public bool PremiumSkin { get; set; }
-    public bool PersonaSkin { get; set; }
-    public bool PersonaCapeOnClassicSkin { get; set; }
-    public bool PrimaryUser { get; set; }
-    public string CapeID { get; set; } = string.Empty;
-    public string FullID { get; set; } = string.Empty;
-    public string SkinColour { get; set; } = string.Empty;
-    public string ArmSize { get; set; } = string.Empty;
-    public List<PersonaPiece> PersonaPieces { get; set; } = [];
-    public List<PersonaPieceTintColour> PieceTintColours { get; set; } = [];
-    public bool Trusted { get; set; }
-    public bool OverrideAppearance { get; set; }
+    public static Skin FromClientData(ClientData clientData)
+    {
+        static byte[] DecodeBase64(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return [];
+            }
+
+            string normalized = value.Replace('-', '+').Replace('_', '/');
+            int padding = normalized.Length % 4;
+            if (padding != 0)
+            {
+                normalized = normalized.PadRight(normalized.Length + (4 - padding), '=');
+            }
+
+            try
+            {
+                return Convert.FromBase64String(normalized);
+            }
+            catch (FormatException)
+            {
+                return [];
+            }
+        }
+
+        static (uint W, uint H, byte[] Data) ReadImage(string value, uint w, uint h)
+        {
+            byte[] data = DecodeBase64(value);
+            return (ulong)w * h * 4 == (ulong)data.Length ? (w, h, data) : (0, 0, []);
+        }
+
+        var (skinW, skinH, skinData) = ReadImage(clientData.SkinData, clientData.SkinImageWidth, clientData.SkinImageHeight);
+        var (capeW, capeH, capeData) = ReadImage(clientData.CapeData, clientData.CapeImageWidth, clientData.CapeImageHeight);
+
+        List<SkinAnimation> animations = clientData.AnimatedImageData.Select(a =>
+        {
+            var (w, h, data) = ReadImage(a.Image, a.ImageWidth, a.ImageHeight);
+            return new SkinAnimation
+            {
+                ImageWidth = w,
+                ImageHeight = h,
+                ImageData = data,
+                AnimationType = a.Type,
+                FrameCount = a.Frames,
+                ExpressionType = a.AnimationExpression
+            };
+        }).ToList();
+
+        List<PersonaPiece> pieces = clientData.PersonaPieces.Select(p => new PersonaPiece
+        {
+            PieceId = p.PieceId,
+            PieceType = p.PieceType,
+            PackId = p.PackId,
+            Default = p.IsDefault,
+            ProductId = p.ProductId
+        }).ToList();
+
+        List<PersonaPieceTintColor> tintColors = clientData.PieceTintColors.Select(t => new PersonaPieceTintColor
+        {
+            PieceType = t.PieceType,
+            Colors = [.. t.Colors]
+        }).ToList();
+
+        return new Skin
+        {
+            SkinId = clientData.SkinId,
+            PlayFabId = clientData.PlayFabId,
+            SkinResourcePatch = DecodeBase64(clientData.SkinResourcePatch),
+            SkinImageWidth = skinW,
+            SkinImageHeight = skinH,
+            SkinData = skinData,
+            Animations = animations,
+            CapeImageWidth = capeW,
+            CapeImageHeight = capeH,
+            CapeData = capeData,
+            SkinGeometry = DecodeBase64(clientData.SkinGeometryData),
+            GeometryDataEngineVersion = DecodeBase64(clientData.SkinGeometryDataEngineVersion),
+            AnimationData = DecodeBase64(clientData.SkinAnimationData),
+            CapeId = clientData.CapeId,
+            FullId = clientData.SkinId,
+            ArmSize = clientData.ArmSize,
+            SkinColor = clientData.SkinColor,
+            PersonaPieces = pieces,
+            PieceTintColors = tintColors,
+            PremiumSkin = clientData.PremiumSkin,
+            PersonaSkin = clientData.PersonaSkin,
+            PersonaCapeOnClassicSkin = clientData.CapeOnClassicSkin,
+            PrimaryUser = true,
+            OverrideAppearance = clientData.OverrideSkin,
+            Trusted = clientData.TrustedSkin
+        };
+    }
+
+    /// <summary>
+    /// Skin id value.
+    /// </summary>
+    public string SkinId = string.Empty;
+
+    /// <summary>
+    /// PlayFab id value.
+    /// </summary>
+    public string PlayFabId = string.Empty;
+
+    /// <summary>
+    /// Skin resource patch bytes.
+    /// </summary>
+    public byte[] SkinResourcePatch = [];
+
+    /// <summary>
+    /// Skin image width.
+    /// </summary>
+    public uint SkinImageWidth;
+
+    /// <summary>
+    /// Skin image height.
+    /// </summary>
+    public uint SkinImageHeight;
+
+    /// <summary>
+    /// Raw skin image bytes.
+    /// </summary>
+    public byte[] SkinData = [];
+
+    /// <summary>
+    /// Skin animations.
+    /// </summary>
+    public List<SkinAnimation> Animations = [];
+
+    /// <summary>
+    /// Cape image width.
+    /// </summary>
+    public uint CapeImageWidth;
+
+    /// <summary>
+    /// Cape image height.
+    /// </summary>
+    public uint CapeImageHeight;
+
+    /// <summary>
+    /// Raw cape image bytes.
+    /// </summary>
+    public byte[] CapeData = [];
+
+    /// <summary>
+    /// Skin geometry bytes.
+    /// </summary>
+    public byte[] SkinGeometry = [];
+
+    /// <summary>
+    /// Geometry engine version bytes.
+    /// </summary>
+    public byte[] GeometryDataEngineVersion = [];
+
+    /// <summary>
+    /// Skin animation data bytes.
+    /// </summary>
+    public byte[] AnimationData = [];
+
+    /// <summary>
+    /// Cape id value.
+    /// </summary>
+    public string CapeId = string.Empty;
+
+    /// <summary>
+    /// Full skin id value.
+    /// </summary>
+    public string FullId = string.Empty;
+
+    /// <summary>
+    /// Arm size value.
+    /// </summary>
+    public string ArmSize = string.Empty;
+
+    /// <summary>
+    /// Skin color value.
+    /// </summary>
+    public string SkinColor = string.Empty;
+
+    /// <summary>
+    /// Persona pieces.
+    /// </summary>
+    public List<PersonaPiece> PersonaPieces = [];
+
+    /// <summary>
+    /// Persona tint colors.
+    /// </summary>
+    public List<PersonaPieceTintColor> PieceTintColors = [];
+
+    /// <summary>
+    /// Whether this is a premium skin.
+    /// </summary>
+    public bool PremiumSkin;
+
+    /// <summary>
+    /// Whether this is a persona skin.
+    /// </summary>
+    public bool PersonaSkin;
+
+    /// <summary>
+    /// Whether persona cape is on classic skin.
+    /// </summary>
+    public bool PersonaCapeOnClassicSkin;
+
+    /// <summary>
+    /// Whether this is a primary user skin.
+    /// </summary>
+    public bool PrimaryUser;
+
+    /// <summary>
+    /// Whether this skin overrides appearance.
+    /// </summary>
+    public bool OverrideAppearance;
+
+    /// <summary>
+    /// Whether this skin is trusted.
+    /// </summary>
+    public bool Trusted;
 
     public void Read(BinaryReader reader)
     {
-        SkinID = reader.ReadVarString();
-        PlayFabID = reader.ReadVarString();
-        SkinResourcePatch = ProtocolTypeIO.ReadByteArray(reader);
+        SkinId = reader.ReadVarString();
+        PlayFabId = reader.ReadVarString();
+        SkinResourcePatch = SkinAnimation.ReadByteArray(reader);
         SkinImageWidth = reader.ReadUInt32(true);
         SkinImageHeight = reader.ReadUInt32(true);
-        SkinData = ProtocolTypeIO.ReadByteArray(reader);
-        Animations = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
+        SkinData = SkinAnimation.ReadByteArray(reader);
+
+        int animationCount = checked((int)reader.ReadUInt32(true));
+        Animations = new List<SkinAnimation>(animationCount);
+        for (int i = 0; i < animationCount; i++)
         {
-            SkinAnimation value = new();
-            value.Read(r);
-            return value;
-        });
+            SkinAnimation animation = new();
+            animation.Read(reader);
+            Animations.Add(animation);
+        }
+
         CapeImageWidth = reader.ReadUInt32(true);
         CapeImageHeight = reader.ReadUInt32(true);
-        CapeData = ProtocolTypeIO.ReadByteArray(reader);
-        SkinGeometry = ProtocolTypeIO.ReadByteArray(reader);
-        GeometryDataEngineVersion = ProtocolTypeIO.ReadByteArray(reader);
-        AnimationData = ProtocolTypeIO.ReadByteArray(reader);
-        CapeID = reader.ReadVarString();
-        FullID = reader.ReadVarString();
+        CapeData = SkinAnimation.ReadByteArray(reader);
+        SkinGeometry = SkinAnimation.ReadByteArray(reader);
+        GeometryDataEngineVersion = SkinAnimation.ReadByteArray(reader);
+        AnimationData = SkinAnimation.ReadByteArray(reader);
+        CapeId = reader.ReadVarString();
+        FullId = reader.ReadVarString();
         ArmSize = reader.ReadVarString();
-        SkinColour = reader.ReadVarString();
-        PersonaPieces = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
-        {
-            PersonaPiece value = new();
-            value.Read(r);
-            return value;
-        });
-        PieceTintColours = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) =>
-        {
-            PersonaPieceTintColour value = new();
-            value.Read(r);
-            return value;
-        });
+        SkinColor = reader.ReadVarString();
 
-        Validate();
+        int pieceCount = checked((int)reader.ReadUInt32(true));
+        PersonaPieces = new List<PersonaPiece>(pieceCount);
+        for (int i = 0; i < pieceCount; i++)
+        {
+            PersonaPiece piece = new();
+            piece.Read(reader);
+            PersonaPieces.Add(piece);
+        }
+
+        int tintCount = checked((int)reader.ReadUInt32(true));
+        PieceTintColors = new List<PersonaPieceTintColor>(tintCount);
+        for (int i = 0; i < tintCount; i++)
+        {
+            PersonaPieceTintColor tint = new();
+            tint.Read(reader);
+            PieceTintColors.Add(tint);
+        }
 
         PremiumSkin = reader.ReadBool();
         PersonaSkin = reader.ReadBool();
@@ -93,27 +281,41 @@ public sealed class Skin : DataType
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarString(SkinID);
-        writer.WriteVarString(PlayFabID);
-        ProtocolTypeIO.WriteByteArray(writer, SkinResourcePatch);
+        writer.WriteVarString(SkinId);
+        writer.WriteVarString(PlayFabId);
+        SkinAnimation.WriteByteArray(writer, SkinResourcePatch);
         writer.WriteUInt32(SkinImageWidth, true);
         writer.WriteUInt32(SkinImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(writer, SkinData);
-        ProtocolTypeIO.WriteList(writer, Animations, static (BinaryWriter w, SkinAnimation value) => value.Write(w));
+        SkinAnimation.WriteByteArray(writer, SkinData);
+
+        writer.WriteUInt32((uint)Animations.Count, true);
+        for (int i = 0; i < Animations.Count; i++)
+        {
+            Animations[i].Write(writer);
+        }
+
         writer.WriteUInt32(CapeImageWidth, true);
         writer.WriteUInt32(CapeImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(writer, CapeData);
-        ProtocolTypeIO.WriteByteArray(writer, SkinGeometry);
-        ProtocolTypeIO.WriteByteArray(writer, GeometryDataEngineVersion);
-        ProtocolTypeIO.WriteByteArray(writer, AnimationData);
-        writer.WriteVarString(CapeID);
-        writer.WriteVarString(FullID);
+        SkinAnimation.WriteByteArray(writer, CapeData);
+        SkinAnimation.WriteByteArray(writer, SkinGeometry);
+        SkinAnimation.WriteByteArray(writer, GeometryDataEngineVersion);
+        SkinAnimation.WriteByteArray(writer, AnimationData);
+        writer.WriteVarString(CapeId);
+        writer.WriteVarString(FullId);
         writer.WriteVarString(ArmSize);
-        writer.WriteVarString(SkinColour);
-        ProtocolTypeIO.WriteList(writer, PersonaPieces, static (BinaryWriter w, PersonaPiece value) => value.Write(w));
-        ProtocolTypeIO.WriteList(writer, PieceTintColours, static (BinaryWriter w, PersonaPieceTintColour value) => value.Write(w));
+        writer.WriteVarString(SkinColor);
 
-        Validate();
+        writer.WriteUInt32((uint)PersonaPieces.Count, true);
+        for (int i = 0; i < PersonaPieces.Count; i++)
+        {
+            PersonaPieces[i].Write(writer);
+        }
+
+        writer.WriteUInt32((uint)PieceTintColors.Count, true);
+        for (int i = 0; i < PieceTintColors.Count; i++)
+        {
+            PieceTintColors[i].Write(writer);
+        }
 
         writer.WriteBool(PremiumSkin);
         writer.WriteBool(PersonaSkin);
@@ -121,141 +323,4 @@ public sealed class Skin : DataType
         writer.WriteBool(PrimaryUser);
         writer.WriteBool(OverrideAppearance);
     }
-
-    public void Validate()
-    {
-        if (SkinImageHeight * SkinImageWidth * 4 != SkinData.Length)
-        {
-            throw new FormatException($"Expected skin data to be {SkinImageWidth}x{SkinImageHeight} ({SkinImageHeight * SkinImageWidth * 4} bytes), got {SkinData.Length} bytes.");
-        }
-
-        if (CapeImageHeight * CapeImageWidth * 4 != CapeData.Length)
-        {
-            throw new FormatException($"Expected cape data to be {CapeImageWidth}x{CapeImageHeight} ({CapeImageHeight * CapeImageWidth * 4} bytes), got {CapeData.Length} bytes.");
-        }
-
-        for (int i = 0; i < Animations.Count; i++)
-        {
-            SkinAnimation animation = Animations[i];
-            if (animation.ImageHeight * animation.ImageWidth * 4 != animation.ImageData.Length)
-            {
-                throw new FormatException($"Expected animation {i} data to be {animation.ImageWidth}x{animation.ImageHeight} ({animation.ImageHeight * animation.ImageWidth * 4} bytes), got {animation.ImageData.Length} bytes.");
-            }
-        }
-    }
 }
-
-public sealed class SkinAnimation : DataType
-{
-    public uint ImageWidth { get; set; }
-    public uint ImageHeight { get; set; }
-    public byte[] ImageData { get; set; } = [];
-    public uint AnimationType { get; set; }
-    public float FrameCount { get; set; }
-    public uint ExpressionType { get; set; }
-
-    public void Read(BinaryReader reader)
-    {
-        ImageWidth = reader.ReadUInt32(true);
-        ImageHeight = reader.ReadUInt32(true);
-        ImageData = ProtocolTypeIO.ReadByteArray(reader);
-        AnimationType = reader.ReadUInt32(true);
-        FrameCount = reader.ReadF32(true);
-        ExpressionType = reader.ReadUInt32(true);
-    }
-
-    public void Write(BinaryWriter writer)
-    {
-        writer.WriteUInt32(ImageWidth, true);
-        writer.WriteUInt32(ImageHeight, true);
-        ProtocolTypeIO.WriteByteArray(writer, ImageData);
-        writer.WriteUInt32(AnimationType, true);
-        writer.WriteF32(FrameCount, true);
-        writer.WriteUInt32(ExpressionType, true);
-    }
-}
-
-public sealed class PersonaPiece : DataType
-{
-    public string PieceID { get; set; } = string.Empty;
-    public string PieceType { get; set; } = string.Empty;
-    public string PackID { get; set; } = string.Empty;
-    public bool Default { get; set; }
-    public string ProductID { get; set; } = string.Empty;
-
-    public void Read(BinaryReader reader)
-    {
-        PieceID = reader.ReadVarString();
-        PieceType = reader.ReadVarString();
-        PackID = reader.ReadVarString();
-        Default = reader.ReadBool();
-        ProductID = reader.ReadVarString();
-    }
-
-    public void Write(BinaryWriter writer)
-    {
-        writer.WriteVarString(PieceID);
-        writer.WriteVarString(PieceType);
-        writer.WriteVarString(PackID);
-        writer.WriteBool(Default);
-        writer.WriteVarString(ProductID);
-    }
-}
-
-public sealed class PersonaPieceTintColour : DataType
-{
-    public string PieceType { get; set; } = string.Empty;
-    public List<string> Colours { get; set; } = [];
-
-    public void Read(BinaryReader reader)
-    {
-        PieceType = reader.ReadVarString();
-        Colours = ProtocolTypeIO.ReadList(reader, static (BinaryReader r) => r.ReadVarString());
-    }
-
-    public void Write(BinaryWriter writer)
-    {
-        writer.WriteVarString(PieceType);
-        ProtocolTypeIO.WriteList(writer, Colours, static (BinaryWriter w, string value) => w.WriteVarString(value));
-    }
-}
-
-file static class ProtocolTypeIO
-{
-    public static byte[] ReadByteArray(BinaryReader reader)
-    {
-        int length = checked((int)reader.ReadVarUInt());
-        return reader.ReadBytes(length).ToArray();
-    }
-
-    public static void WriteByteArray(BinaryWriter writer, ReadOnlySpan<byte> value)
-    {
-        writer.WriteVarUInt((uint)value.Length);
-        writer.WriteBytes(value);
-    }
-
-    public static List<T> ReadList<T>(BinaryReader reader, ReadItem<T> read)
-    {
-        int length = checked((int)reader.ReadUInt32(true));
-        List<T> list = new(length);
-        for (int i = 0; i < length; i++)
-        {
-            list.Add(read(reader));
-        }
-
-        return list;
-    }
-
-    public static void WriteList<T>(BinaryWriter writer, IReadOnlyList<T> values, WriteItem<T> write)
-    {
-        writer.WriteUInt32((uint)values.Count, true);
-        for (int i = 0; i < values.Count; i++)
-        {
-            write(writer, values[i]);
-        }
-    }
-
-    public delegate T ReadItem<out T>(BinaryReader reader);
-    public delegate void WriteItem<T>(BinaryWriter writer, T value);
-}
-

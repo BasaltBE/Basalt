@@ -5,17 +5,44 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.ResourcePacksInfo)]
 public sealed record ResourcePacksInfoPacket : DataPacket
-{
-    public bool MustAccept { get; set; }
-    public bool HasAddons { get; set; }
-    public bool HasScripts { get; set; }
-    public bool ForceDisableVibrantVisuals { get; set; }
-    public Guid WorldTemplateUuid { get; set; } = Guid.Empty;
-    public string WorldTemplateVersion { get; set; } = string.Empty;
-    public List<ResourcePackInfo> Packs { get; set; } = [];
+{   
+    /// <summary>
+    /// Whether the client must accept the resource packs or not. 
+    /// If this is true, vanilla forces the client to accept or else it will disconnect
+    /// </summary>
+    public bool MustAccept;
 
-    public override PacketId PacketId => PacketId.ResourcePacksInfo;
+    /// <summary>
+    /// Whether the server has any addons.
+    /// </summary>
+    public bool HasAddons;
+
+    /// <summary>
+    /// Whether the server has any scripts.
+    /// </summary>
+    public bool HasScripts;
+
+    /// <summary>
+    /// Whether the server forces vibrant visuals to be disabled.
+    /// </summary>
+    public bool ForceDisableVibrantVisuals;
+
+    /// <summary>
+    /// The UUID of the world template.
+    /// </summary>
+    public Guid WorldTemplateUuid = Guid.Empty;
+
+    /// <summary>
+    /// The version of the world template.
+    /// </summary>
+    public string WorldTemplateVersion = string.Empty;
+
+    /// <summary>
+    /// List of resource packs that the server has. 
+    /// </summary>
+    public List<ResourcePackInfo> Packs = [];
 
     public override void Deserialize(BinaryReader reader)
     {

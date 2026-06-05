@@ -1,5 +1,7 @@
+namespace Basalt.Server.Item;
+
 using Basalt.Binary;
-using Basalt.Item.Traits;
+using Basalt.Server.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
@@ -9,7 +11,6 @@ using System.Text.Json;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Item;
 
 public sealed class ItemPalette
 {
@@ -18,6 +19,7 @@ public sealed class ItemPalette
     private static readonly object LoadLock = new();
     private static byte[]? _itemRegistryPayload;
     private static byte[]? _creativeContentPayload;
+    private static Dictionary<uint, ItemStack>? _creativeItems;
 
     [ModuleInitializer]
     public static void Initialize()
@@ -99,6 +101,7 @@ public sealed class ItemPalette
                 Groups = new List<CreativeGroup>(groups.Count),
                 Items = new List<CreativeItem>(content.Count)
             };
+            Dictionary<uint, ItemStack> creativeItems = [];
 
             for (int i = 0; i < groups.Count; i++)
             {
@@ -119,18 +122,38 @@ public sealed class ItemPalette
                     continue;
                 }
 
-                CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry.Instance);
+                CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry);
+                uint itemIndex = checked((uint)packet.Items.Count);
                 packet.Items.Add(new CreativeItem
                 {
-                    ItemIndex = packet.Items.Count,
+                    ItemIndex = checked((int)itemIndex),
                     ItemInstance = descriptor,
                     GroupIndex = entry.GroupIndex
                 });
+
+                ItemStack? stack = CreateCreativeStack(entry);
+                if (stack is not null)
+                {
+                    creativeItems[itemIndex] = stack;
+                }
             }
 
             _creativeContentPayload = SerializePacketBody(packet);
+            _creativeItems = creativeItems;
             return _creativeContentPayload;
         }
+    }
+
+    public static ItemStack? GetCreativeItem(uint creativeItemNetworkId)
+    {
+        if (_creativeItems is null)
+        {
+            GetCreativeContentPayload();
+        }
+
+        return _creativeItems is not null && _creativeItems.TryGetValue(creativeItemNetworkId, out ItemStack? item)
+            ? item.Clone()
+            : null;
     }
 
     public ItemType ResolveType(string identifier)
@@ -159,79 +182,30 @@ public sealed class ItemPalette
 
             string root = ResolveDataRoot(dataDirectory);
             string typesPath = Path.Combine(root, "item_types.json");
-            string metadataPath = Path.Combine(root, "item_metadata.json");
             List<ItemTypeData> types;
             using (FileStream typesStream = File.OpenRead(typesPath))
             {
                 types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
             }
 
-            List<ItemMetadataData> metadata;
-            using (FileStream metadataStream = File.OpenRead(metadataPath))
-            {
-                metadata = JsonSerializer.Deserialize(metadataStream, ItemPaletteJsonContext.Default.ListItemMetadataData) ?? [];
-            }
-
             ItemType.EnsureRegistryCapacity(types.Count + 1);
-            Dictionary<string, ItemTypeData> typeMap = new(StringComparer.Ordinal);
+
             for (int i = 0; i < types.Count; i++)
             {
-                ItemTypeData type = types[i];
-                if (string.IsNullOrEmpty(type.Identifier))
+                ItemTypeData entry = types[i];
+                if (string.IsNullOrEmpty(entry.Identifier) || entry.NetworkId is null || ItemType.Get(entry.Identifier) is not null)
                 {
                     continue;
-                }
-
-                typeMap[type.Identifier] = type;
-            }
-
-            for (int i = 0; i < metadata.Count; i++)
-            {
-                ItemMetadataData entry = metadata[i];
-                if (string.IsNullOrEmpty(entry.Identifier) || ItemType.Get(entry.Identifier) is not null)
-                {
-                    continue;
-                }
-
-                if (!typeMap.TryGetValue(entry.Identifier, out ItemTypeData? typeData))
-                {
-                    continue;
-                }
-
-                CompoundTag properties;
-                if (string.IsNullOrWhiteSpace(entry.Properties))
-                {
-                    properties = new CompoundTag();
-                }
-                else
-                {
-                    // TODO we could conver base64 in place somehow
-                    byte[] data = Convert.FromBase64String(entry.Properties);
-                    if (data.Length == 0)
-                    {
-                        properties = new CompoundTag();
-                    }
-                    else
-                    {
-                        BinaryStream reader = new(data);
-                        TagType rootType = (TagType)reader.GetReader().ReadInt8();
-                        if (rootType != TagType.Compound)
-                        {
-                            throw new InvalidOperationException($"Unexpected item properties root tag type '{rootType}'.");
-                        }
-
-                        properties = CompoundTag.Read(reader);
-                    }
                 }
 
                 _ = new ItemType(
                     entry.Identifier,
-                    entry.NetworkId,
-                    typeData.MaxAmount,
-                    typeData.Tags,
-                    entry.IsComponentBased,
+                    entry.NetworkId.Value,
+                    entry.MaxAmount,
+                    entry.Tags,
+                    entry.ComponentBased,
                     entry.ItemVersion,
-                    properties);
+                    BuildProperties(entry.PropertiesPayload));
             }
 
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
@@ -312,6 +286,126 @@ public sealed class ItemPalette
         throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
     }
 
+    private static CompoundTag BuildProperties(JsonElement? payload)
+    {
+        if (payload is not { ValueKind: JsonValueKind.Object } element)
+        {
+            return new CompoundTag();
+        }
+
+        CompoundTag properties = ToCompoundTag(element);
+        NormalizeItemComponents(properties);
+        return properties;
+    }
+
+    private static void NormalizeItemComponents(CompoundTag properties)
+    {
+        if (properties.Get<ListTag>("components") is not ListTag componentList)
+        {
+            return;
+        }
+
+        CompoundTag components = new();
+        for (int i = 0; i < componentList.Values.Count; i++)
+        {
+            if (componentList.Values[i] is not StringTag component || string.IsNullOrWhiteSpace(component.Value))
+            {
+                continue;
+            }
+
+            string identifier = component.Value;
+            string payloadKey = identifier.StartsWith("minecraft:", StringComparison.Ordinal)
+                ? identifier["minecraft:".Length..]
+                : identifier;
+
+            CompoundTag componentPayload = properties.Get<CompoundTag>(payloadKey) ?? new CompoundTag();
+            if (identifier == "minecraft:food")
+            {
+                componentPayload = NormalizeFoodComponent(componentPayload);
+                if (!components.Values.ContainsKey("minecraft:use_duration"))
+                {
+                    components.Set("minecraft:use_duration", new IntTag { Value = 32 });
+                }
+            }
+
+            components.Set(identifier, componentPayload);
+        }
+
+        if (properties.Get<IntTag>("maxAmount") is IntTag maxAmount)
+        {
+            CompoundTag maxStackSize = new();
+            maxStackSize.Set("value", new ByteTag { Value = (sbyte)Math.Clamp(maxAmount.Value, 0, 64) });
+            components.Set("minecraft:max_stack_size", maxStackSize);
+        }
+
+        properties.Set("components", components);
+    }
+
+    private static CompoundTag NormalizeFoodComponent(CompoundTag food)
+    {
+        CompoundTag normalized = new();
+        normalized.Set("nutrition", new IntTag { Value = food.Get<IntTag>("nutrition")?.Value ?? 0 });
+        normalized.Set("saturation_modifier", new FloatTag { Value = food.Get<FloatTag>("saturationModifier")?.Value ?? 0f });
+        normalized.Set("can_always_eat", new ByteTag { Value = food.Get<ByteTag>("canAlwaysEat")?.Value ?? 0 });
+        normalized.Set("using_converts_to", new StringTag { Value = food.Get<StringTag>("usingConvertsTo")?.Value ?? string.Empty });
+        return normalized;
+    }
+
+    private static CompoundTag ToCompoundTag(JsonElement element)
+    {
+        CompoundTag tag = new();
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            BaseTag? value = ToNbtTag(property.Value);
+            if (value is not null)
+            {
+                tag.Set(property.Name, value);
+            }
+        }
+
+        return tag;
+    }
+
+    private static BaseTag? ToNbtTag(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => ToCompoundTag(element),
+            JsonValueKind.Array => ToListTag(element),
+            JsonValueKind.String => new StringTag { Value = element.GetString() ?? string.Empty },
+            JsonValueKind.Number => ToNumberTag(element),
+            JsonValueKind.True => new ByteTag { Value = 1 },
+            JsonValueKind.False => new ByteTag { Value = 0 },
+            JsonValueKind.Null => null,
+            _ => null
+        };
+    }
+
+    private static ListTag ToListTag(JsonElement element)
+    {
+        ListTag tag = new();
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            BaseTag? value = ToNbtTag(item);
+            if (value is not null)
+            {
+                tag.Values.Add(value);
+            }
+        }
+
+        return tag;
+    }
+
+    private static BaseTag ToNumberTag(JsonElement element)
+    {
+        if (element.TryGetInt32(out int value))
+        {
+            return new IntTag { Value = value };
+        }
+
+        return new FloatTag { Value = element.GetSingle() };
+    }
+
     private static CreativeItemInstanceDescriptor BuildGroupIcon(string identifier)
     {
         ItemType type = ItemType.Get(identifier) ?? ItemType.Air;
@@ -331,16 +425,58 @@ public sealed class ItemPalette
         };
     }
 
-    private static CreativeItemInstanceDescriptor ReadCreativeDescriptor(string base64)
+    private static CreativeItemInstanceDescriptor ReadCreativeDescriptor(CreativeContentData entry)
     {
-        if (string.IsNullOrWhiteSpace(base64))
+        ItemType type = ItemType.Get(entry.Type) ?? ItemType.Air;
+        CreativeItemInstanceDescriptor descriptor = new();
+        if (!string.IsNullOrWhiteSpace(entry.Instance))
         {
-            return BuildGroupIcon("minecraft:air");
+            byte[] raw = Convert.FromBase64String(entry.Instance);
+            int offset = 0;
+            BinaryReader reader = new(raw, ref offset);
+            descriptor.Read(reader);
+        }
+
+        int blockRuntimeId = 0;
+        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
+        {
+            blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
         }
 
         return new CreativeItemInstanceDescriptor
         {
-            RawData = Convert.FromBase64String(base64)
+            NetworkId = type.NetworkId,
+            StackSize = descriptor.StackSize == 0 ? (ushort)1 : descriptor.StackSize,
+            Metadata = descriptor.Metadata,
+            NetworkBlockId = blockRuntimeId,
+            ExtraData = descriptor.ExtraData
         };
     }
+
+    private static ItemStack? CreateCreativeStack(CreativeContentData entry)
+    {
+        ItemType? type = ItemType.Get(entry.Type);
+        if (type is null || type == ItemType.Air || string.IsNullOrWhiteSpace(entry.Instance))
+        {
+            return null;
+        }
+
+        byte[] raw = Convert.FromBase64String(entry.Instance);
+        int offset = 0;
+        BinaryReader reader = new(raw, ref offset);
+        CreativeItemInstanceDescriptor descriptor = new();
+        descriptor.Read(reader);
+
+        return new ItemStack(
+            type,
+            checked((ushort)type.MaxStackSize),
+            unchecked((uint)descriptor.Metadata),
+            descriptor.ExtraData);
+    }
 }
+
+
+
+
+
+

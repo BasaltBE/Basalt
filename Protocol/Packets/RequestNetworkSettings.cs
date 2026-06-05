@@ -1,31 +1,34 @@
 using Basalt.Protocol.Enums;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
+using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
-/// <summary>
-/// Sent by the client to request the server's network settings
-/// Includes the client's protocol version that is used to check if the 
-/// server is compatible
-/// </summary>
+[Packet(PacketId.RequestNetworkSettings)]
 public sealed record RequestNetworkSettingsPacket : DataPacket
-{
-    public RequestNetworkSettingsPacket(int protocolVersion = 0)
+{   
+    /// <summary>
+    /// Protocol version.
+    /// This is used to determine if client and server are compatible. 
+    /// If the protocol versions mismatch, then they are on different mc versions.
+    /// </summary>
+    public int Protocol;
+
+    public RequestNetworkSettingsPacket() : this(Io.Constants.ProtocolVersion)
     {
-        ProtocolVersion = protocolVersion;
     }
 
-    public int ProtocolVersion { get; set; }
-    public override PacketId PacketId => PacketId.RequestNetworkSettings;
-
-    public override void Deserialize(BinaryReader reader)
+    public RequestNetworkSettingsPacket(int protocol)
     {
-        ProtocolVersion = reader.ReadInt32(false);
+        Protocol = protocol;
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Deserialize(Basalt.Binary.BinaryReader reader)
     {
-        writer.WriteInt32(ProtocolVersion, false);
+        Protocol = reader.ReadInt32(false);
     }
-}
+
+    public override void Serialize(Basalt.Binary.BinaryWriter writer)
+    {
+        writer.WriteInt32(Protocol, false);
+    }
+};

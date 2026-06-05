@@ -1,10 +1,11 @@
-using Basalt.Entity.Traits.Attribute;
-using Basalt.Entity.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Traits;
-using Basalt.Protocol.Types;
+namespace Basalt.Server.Entity.Traits;
 
-namespace Basalt.Entity.Traits;
+using Basalt.Server.Entity.Traits.Attribute;
+using Basalt.Server.Entity.Traits.Types;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
+using Basalt.Server.Traits;
+
 
 public sealed class EntityAirSupplyTrait : EntityTrait
 {
@@ -32,7 +33,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait
             return;
         }
 
-        if (Entity is Core.Player player &&
+        if (Entity is Player.Player player &&
             player.GetGamemode() is not (Gamemode.Survival or Gamemode.Adventure))
         {
             return;
@@ -115,3 +116,8 @@ public sealed class EntityAirSupplyTrait : EntityTrait
         return block == "minecraft:air";
     }
 }
+
+
+
+
+

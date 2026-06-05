@@ -5,8 +5,15 @@ namespace Basalt.Protocol.Types;
 
 public sealed class ExperimentData : DataType
 {
-    public string Name { get; set; } = string.Empty;
-    public bool Enabled { get; set; }
+    /// <summary>
+    /// The name of the experiment
+    /// </summary>
+    public string Name = string.Empty;
+
+    /// <summary>
+    /// Whether the experiment is enabled or not
+    /// </summary>
+    public bool Enabled;
 
     public void Read(BinaryReader reader)
     {

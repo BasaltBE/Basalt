@@ -1,21 +1,31 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using BinaryReader = Basalt.Binary.BinaryReader;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Packets;
 
+[Packet(PacketId.Interact)]
 public sealed record InteractPacket : DataPacket
 {
-    public InteractActionType ActionType { get; set; }
-    public ulong TargetEntityRuntimeId { get; set; }
-    public OptionalValue<Vec3f> Position { get; set; } = new();
+    /// <summary>
+    /// Interaction action type.
+    /// </summary>
+    public InteractActionType ActionType;
 
-    public override PacketId PacketId => PacketId.Interact;
+    /// <summary>
+    /// Target entity runtime id.
+    /// </summary>
+    public ulong TargetEntityRuntimeId;
 
-    public override void Deserialize(BinaryReader reader)
+    /// <summary>
+    /// Optional interaction position.
+    /// </summary>
+    public OptionalValue<Vec3f> Position = new();
+
+    public override void Deserialize(Binary.BinaryReader reader)
     {
         ActionType = (InteractActionType)reader.ReadUInt8();
+
         if (reader.Remaining > 0)
         {
             TargetEntityRuntimeId = reader.ReadVarULong();
@@ -37,10 +47,9 @@ public sealed record InteractPacket : DataPacket
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
+    public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteUInt8((byte)ActionType);
-
         writer.WriteVarULong(TargetEntityRuntimeId);
 
         if (ActionType == InteractActionType.MouseOverEntity && Position.HasValue && Position.Value is { } value)
