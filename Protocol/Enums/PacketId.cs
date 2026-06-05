@@ -1,6 +1,6 @@
 namespace Basalt.Protocol.Enums
 {
-    public enum PacketId : byte
+    public enum PacketId
     {
         Login = 0x01,
         PlayStatus = 0x02,
@@ -47,6 +47,8 @@ namespace Basalt.Protocol.Enums
         AvailableCommands = 0x4c,
         CommandRequest = 0x4d,
         CommandResponse = 0x4f,
+        ModalFormRequest = 0x64,
+        ModalFormResponse = 0x65,
         MoveActorDelta = 0x6f,
         SetLocalPlayerAsInitialized = 0x71,
         NetworkStackLatency = 0x73,
@@ -64,6 +66,7 @@ namespace Basalt.Protocol.Enums
         ItemRegistry = 0xa2,
         SyncActorProperty = 0xa8,
         UpdateAbilities = 0xbb,
-        RequestNetworkSettings = 0xc1
+        RequestNetworkSettings = 0xc1,
+        ClientboundCloseForm = 0x136
     }
 }
