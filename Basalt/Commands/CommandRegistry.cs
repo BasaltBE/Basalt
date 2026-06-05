@@ -334,7 +334,7 @@ public class CommandRegistry
             return uint.MaxValue;
         }
 
-        return AddEnum(packet, enumValueOffsets, command.Name + "_aliases", command.Aliases);
+        return AddEnum(packet, enumValueOffsets, command.Name + "_aliases", command.Aliases.Prepend(command.Name));
     }
 
     static List<ProtocolCommandOverload> BuildOverloads(
