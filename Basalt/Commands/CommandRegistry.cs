@@ -33,6 +33,7 @@ public class CommandRegistry
         Register(new ListCommand());
         Register(new SummonCommand());
         Register(new TpCommand());
+        Register(new PluginsCommand());
     }
 
     public void Register(Command command)
