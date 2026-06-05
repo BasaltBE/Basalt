@@ -1,5 +1,5 @@
 using Basalt.Core.Player;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities.Traits.Types;
 
 namespace Basalt.Core.Events;
 

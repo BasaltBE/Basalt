@@ -2,8 +2,8 @@ namespace Basalt.Core.Loot;
 
 using System.Text.Json;
 
-using Basalt.Core.Block;
-using Basalt.Core.Entity;
+using Basalt.Core.Blocks;
+using Basalt.Core.Entities;
 using Basalt.Core.Item;
 
 public static class LootTableManager
@@ -30,7 +30,7 @@ public static class LootTableManager
         }
     }
 
-    public static List<ItemStack> GenerateLootFromEntity(Basalt.Core.Entity.Entity entity)
+    public static List<ItemStack> GenerateLootFromEntity(Basalt.Core.Entities.Entity entity)
     {
         return GenerateLootFromEntityType(entity.Type);
     }
@@ -45,7 +45,7 @@ public static class LootTableManager
         return table.Generate();
     }
 
-    public static List<ItemStack> GenerateLootFromBlock(Basalt.Core.Block.Block block)
+    public static List<ItemStack> GenerateLootFromBlock(Basalt.Core.Blocks.Block block)
     {
         return GenerateLootFromBlockPermutation(block.Permutation);
     }

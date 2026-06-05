@@ -1,4 +1,4 @@
-using Basalt.Core.Block;
+using Basalt.Core.Blocks;
 using Basalt.Protocol.Enums;
 using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
 

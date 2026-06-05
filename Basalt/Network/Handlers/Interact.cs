@@ -1,7 +1,7 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -49,7 +49,7 @@ public static class Interact
                 return;
             }
 
-            foreach (Basalt.Core.Entity.Entity entity in player.Dimension.Entities)
+            foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities)
             {
                 if (entity.RuntimeId != packet.TargetEntityRuntimeId)
                 {

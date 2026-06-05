@@ -1,8 +1,8 @@
 namespace Basalt.Core.Player;
 
 
-using Basalt.Core.Entity.Traits;
-using Entity = Basalt.Core.Entity.Entity;
+using Basalt.Core.Entities.Traits;
+using Entity = Basalt.Core.Entities.Entity;
 
 public abstract class PlayerTrait : EntityTrait
 {

@@ -3,14 +3,14 @@ namespace Basalt.Core.Player.Traits;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Core.Block;
-using Basalt.Core.Entity.Traits;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Blocks;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Traits;
 using Basalt.Core.World;
 using Basalt.Core.World.Dimension;
 using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
-using Entity = Basalt.Core.Entity.Entity;
+using Entity = Basalt.Core.Entities.Entity;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait
 {

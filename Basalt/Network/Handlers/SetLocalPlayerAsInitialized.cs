@@ -1,12 +1,12 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Player.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Core.Traits;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.World;
 
 

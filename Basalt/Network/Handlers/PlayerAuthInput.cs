@@ -2,9 +2,9 @@ namespace Basalt.Core.Network.Handlers;
 
 using System.Collections.Concurrent;
 using Basalt.Core;
-using Basalt.Core.Block.Traits.Types;
-using Basalt.Core.Entity.Traits;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Blocks.Traits.Types;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
@@ -452,7 +452,7 @@ public static class PlayerAuthInput
             return;
         }
 
-        Basalt.Core.Block.BlockPermutation? block =
+        Basalt.Core.Blocks.BlockPermutation? block =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)
@@ -514,19 +514,19 @@ public static class PlayerAuthInput
             Data = block.NetworkId
         });
 
-        Basalt.Core.Block.BlockPermutation air = Basalt.Core.Block.BlockType
+        Basalt.Core.Blocks.BlockPermutation air = Basalt.Core.Blocks.BlockType
             .GetOrAir("minecraft:air")
             .GetPermutation();
 
-        Basalt.Core.Block.Block breakingBlock =
+        Basalt.Core.Blocks.Block breakingBlock =
             player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
-            new Basalt.Core.Block.Block(block);
+            new Basalt.Core.Blocks.Block(block);
 
         breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
-        Basalt.Core.Block.BlockPermutation after =
+        Basalt.Core.Blocks.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         // Logger.Warn(
@@ -571,7 +571,7 @@ public static class PlayerAuthInput
 
     private static int GetBreakTimeTicksForAnimation(global::Basalt.Core.Player.Player player, BlockPos blockPosition)
     {
-        Basalt.Core.Block.BlockPermutation? block =
+        Basalt.Core.Blocks.BlockPermutation? block =
             player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         if (block is null)

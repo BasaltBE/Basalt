@@ -1,7 +1,7 @@
 namespace Basalt.Core.Events;
 
-using Basalt.Core.Entity;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits.Types;
 
 public sealed class EntitySpawnSignal : EntitySignal
 {

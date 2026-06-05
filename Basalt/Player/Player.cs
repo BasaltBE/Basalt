@@ -10,11 +10,11 @@ using Basalt.Protocol.Nbt;
 using Basalt.Core.World;
 using Basalt.Core.World.Dimension;
 using Basalt.Binary;
-using Basalt.Core.Entity.Traits;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player.Traits;
 
-public sealed class Player : Entity.Entity
+public sealed class Player : Entities.Entity
 {
     public readonly string Username;
     public readonly string Xuid;
@@ -216,7 +216,7 @@ public sealed class Player : Entity.Entity
         float yaw = MathF.PI / 180f * Yaw;
         float pitch = MathF.PI / 180f * Pitch;
 
-        global::Basalt.Core.Entity.ItemEntity drop = new(item)
+        global::Basalt.Core.Entities.ItemEntity drop = new(item)
         {
             Position = new Vec3f
             {

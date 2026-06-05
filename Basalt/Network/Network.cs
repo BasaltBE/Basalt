@@ -32,7 +32,7 @@ public sealed class NetworkHandler
             return;
         }
 
-        global::Basalt.Core.Entity.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
+        global::Basalt.Core.Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());

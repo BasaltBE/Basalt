@@ -7,9 +7,9 @@ using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.World;
 
-using Entity = Basalt.Core.Entity.Entity;
-using Basalt.Core.Entity.Traits.Types;
-using Basalt.Core.Entity.Traits;
+using Entity = Basalt.Core.Entities.Entity;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Traits;
 
 // using Player = Player.Player;

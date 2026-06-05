@@ -1,9 +1,9 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Block.Traits.Types;
-using Basalt.Core.Entity.Traits;
-using Basalt.Core.Entity.Traits.Attribute;
+using Basalt.Core.Blocks.Traits.Types;
+using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits.Types;
@@ -314,7 +314,7 @@ public static class InventoryTransaction
                     }
                 }
 
-                Basalt.Core.Block.BlockPermutation clickedBlock =
+                Basalt.Core.Blocks.BlockPermutation clickedBlock =
                     player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
                 if (clickedBlock.Type.Identifier is not "minecraft:air" and not "minecraft:cave_air" and not "minecraft:void_air")
@@ -359,7 +359,7 @@ public static class InventoryTransaction
                 blockPosition = player.LastActionBlockPosition.Value;
             }
 
-            Basalt.Core.Block.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
+            Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
             if (block is not null)
             {
                 block.OnInteract(new BlockInteractDetails(
@@ -412,15 +412,15 @@ public static class InventoryTransaction
             }
         }
 
-        Basalt.Core.Block.BlockPermutation clickedBlock =
+        Basalt.Core.Blocks.BlockPermutation clickedBlock =
             player.Dimension.GetPermutation(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
         BlockPos placePosition = GetPlacedBlockPosition(clickedPosition, clickedFace);
 
-        Basalt.Core.Block.BlockPermutation existingBlock =
+        Basalt.Core.Blocks.BlockPermutation existingBlock =
             player.Dimension.GetPermutation(placePosition.X, placePosition.Y, placePosition.Z);
 
-        Basalt.Core.Block.Block? blockEntity =
+        Basalt.Core.Blocks.Block? blockEntity =
             player.Dimension.GetBlock(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
         if (blockEntity is not null)
@@ -435,7 +435,7 @@ public static class InventoryTransaction
             return;
         }
 
-        Basalt.Core.Block.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Core.Block.BlockType.Get(heldItem.Identifier);
+        Basalt.Core.Blocks.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier);
 
         if (blockType is null || blockType.Identifier == "minecraft:air")
         {
@@ -478,13 +478,13 @@ public static class InventoryTransaction
             }
         }
 
-        Basalt.Core.Block.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
+        Basalt.Core.Blocks.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
             ? blockType.Permutations[0]
             : blockType.GetPermutation();
 
         player.Dimension.SetPermutation(placePosition.X, placePosition.Y, placePosition.Z, placedPermutation);
 
-        Basalt.Core.Block.Block? placedBlock =
+        Basalt.Core.Blocks.Block? placedBlock =
             player.Dimension.GetBlock(placePosition.X, placePosition.Y, placePosition.Z);
 
         placedBlock?.OnPlace(new BlockPlaceDetails(
@@ -563,9 +563,9 @@ public static class InventoryTransaction
 
         ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
 
-        Basalt.Core.Entity.Entity? target = null;
+        Basalt.Core.Entities.Entity? target = null;
 
-        foreach (Basalt.Core.Entity.Entity entity in player.Dimension.Entities)
+        foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities)
         {
             if (entity.RuntimeId == transaction.TargetEntityRuntimeId)
             {
@@ -699,7 +699,7 @@ public static class InventoryTransaction
             int blockY = (int)MathF.Floor(rayY);
             int blockZ = (int)MathF.Floor(rayZ);
 
-            Basalt.Core.Block.BlockPermutation block =
+            Basalt.Core.Blocks.BlockPermutation block =
                 player.Dimension.GetPermutation(blockX, blockY, blockZ);
 
             if (block.Type.Identifier != "minecraft:air")

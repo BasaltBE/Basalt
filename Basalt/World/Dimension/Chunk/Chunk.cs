@@ -1,5 +1,5 @@
 using Basalt.Binary;
-using Basalt.Core.Block;
+using Basalt.Core.Blocks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
@@ -15,7 +15,7 @@ public sealed class Chunk
     public const int MaxSubChunks = 24;
 
     private readonly Dictionary<(int X, int Y, int Z), BlockLevelStorage> _blocks = [];
-    private readonly Dictionary<(int X, int Y, int Z), Block.Block> _blockActors = [];
+    private readonly Dictionary<(int X, int Y, int Z), Blocks.Block> _blockActors = [];
     private readonly Dictionary<long, CompoundTag> _entities = [];
 
     public DimensionType Type { get; }
@@ -223,12 +223,12 @@ public sealed class Chunk
         return _blockActors.ContainsKey((position.X, position.Y, position.Z));
     }
 
-    public Block.Block? GetBlockActor(BlockPos position)
+    public Blocks.Block? GetBlockActor(BlockPos position)
     {
         return _blockActors.GetValueOrDefault((position.X, position.Y, position.Z));
     }
 
-    public void SetBlockActor(BlockPos position, Block.Block? actor)
+    public void SetBlockActor(BlockPos position, Blocks.Block? actor)
     {
         var key = (position.X, position.Y, position.Z);
         if (actor is null)
@@ -240,7 +240,7 @@ public sealed class Chunk
         _blockActors[key] = actor;
     }
 
-    public List<KeyValuePair<(int X, int Y, int Z), Block.Block>> GetAllBlockActors()
+    public List<KeyValuePair<(int X, int Y, int Z), Blocks.Block>> GetAllBlockActors()
     {
         return [.. _blockActors];
     }
@@ -326,7 +326,7 @@ public sealed class Chunk
             _blocks[key] = value;
         }
 
-        foreach ((var key, Block.Block value) in source._blockActors)
+        foreach ((var key, Blocks.Block value) in source._blockActors)
         {
             _blockActors[key] = value;
         }
@@ -385,7 +385,7 @@ public sealed class Chunk
 
         writer.WriteUInt8(0);
 
-        foreach (KeyValuePair<(int X, int Y, int Z), Block.Block> actorEntry in chunk._blockActors)
+        foreach (KeyValuePair<(int X, int Y, int Z), Blocks.Block> actorEntry in chunk._blockActors)
         {
             (int x, int y, int z) = actorEntry.Key;
             BlockPos position = new() { X = x, Y = y, Z = z };

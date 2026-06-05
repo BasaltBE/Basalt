@@ -2,7 +2,7 @@ namespace Basalt.Core.Commands.List.Operator;
 
 using Basalt.Core.Commands;
 using Basalt.Core;
-using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
 using Player = global::Basalt.Core.Player.Player;
 

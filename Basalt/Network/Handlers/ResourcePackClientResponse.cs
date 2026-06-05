@@ -1,7 +1,7 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Entity;
+using Basalt.Core.Entities;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Protocol;
@@ -9,7 +9,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Protocol.Io;
 
 

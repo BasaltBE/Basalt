@@ -1,14 +1,14 @@
 namespace Basalt.Core.Player.Traits;
 
-using Basalt.Core.Entity.Container;
+using Basalt.Core.Entities.Container;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Core.Containers;
 using Basalt.Core.Player;
 
-using Entity = Basalt.Core.Entity.Entity;
-using Basalt.Core.Entity.Traits.Types;
-using Basalt.Core.Entity.Traits;
+using Entity = Basalt.Core.Entities.Entity;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Entities.Traits;
 
 
 

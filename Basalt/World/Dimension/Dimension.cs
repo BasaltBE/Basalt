@@ -1,7 +1,7 @@
 namespace Basalt.Core.World.Dimension;
 
 using System.Collections.Concurrent;
-using Basalt.Core.Block;
+using Basalt.Core.Blocks;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
@@ -10,7 +10,7 @@ using Basalt.Core.World.Dimension.Generation;
 using Basalt.Core.World.Dimension.Provider;
 using ChunkColumn = Basalt.Core.World.Dimension.Chunk.Chunk;
 
-using Entity = Basalt.Core.Entity.Entity;
+using Entity = Basalt.Core.Entities.Entity;
 
 public sealed class Dimension : IDisposable
 {
@@ -301,10 +301,10 @@ public sealed class Dimension : IDisposable
         BlockPos position = new() { X = x, Y = y, Z = z };
         if (permutation.Type.Traits.Count > 0)
         {
-            global::Basalt.Core.Block.Block? block = chunk.GetBlockActor(position);
+            global::Basalt.Core.Blocks.Block? block = chunk.GetBlockActor(position);
             if (block is null)
             {
-                block = new global::Basalt.Core.Block.Block(permutation);
+                block = new global::Basalt.Core.Blocks.Block(permutation);
                 chunk.SetBlockActor(position, block);
             }
             else
@@ -322,7 +322,7 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    public global::Basalt.Core.Block.Block? GetBlock(int x, int y, int z)
+    public global::Basalt.Core.Blocks.Block? GetBlock(int x, int y, int z)
     {
         ChunkColumn? chunk = GetChunk(x >> 4, z >> 4);
         if (chunk is null)
@@ -331,7 +331,7 @@ public sealed class Dimension : IDisposable
         }
 
         BlockPos position = new() { X = x, Y = y, Z = z };
-        global::Basalt.Core.Block.Block? block = chunk.GetBlockActor(position);
+        global::Basalt.Core.Blocks.Block? block = chunk.GetBlockActor(position);
         if (block is not null)
         {
             return block;
@@ -340,7 +340,7 @@ public sealed class Dimension : IDisposable
         BlockPermutation perm = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z));
         if (perm.Type.Traits.Count > 0)
         {
-            block = new global::Basalt.Core.Block.Block(perm);
+            block = new global::Basalt.Core.Blocks.Block(perm);
             BlockLevelStorage? storage = chunk.GetBlockStorage(position);
             if (storage is not null)
             {
@@ -354,7 +354,7 @@ public sealed class Dimension : IDisposable
         return null;
     }
 
-    public void SetBlock(int x, int y, int z, global::Basalt.Core.Block.Block block)
+    public void SetBlock(int x, int y, int z, global::Basalt.Core.Blocks.Block block)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
         chunk.SetBlockActor(new BlockPos { X = x, Y = y, Z = z }, block);
@@ -620,7 +620,7 @@ public sealed class Dimension : IDisposable
 
     private static void SyncBlockActorsToStorages(ChunkColumn chunk)
     {
-        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Core.Block.Block> actorEntry in chunk.GetAllBlockActors())
+        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Core.Blocks.Block> actorEntry in chunk.GetAllBlockActors())
         {
             BlockPos position = new()
             {

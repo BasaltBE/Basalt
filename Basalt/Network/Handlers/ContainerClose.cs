@@ -3,7 +3,7 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Core;
-using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entities.Traits;
 
 
 public static class ContainerClose

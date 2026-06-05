@@ -2,7 +2,7 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core.Containers;
 using Basalt.Core;
-using Basalt.Core.Entity.Traits;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;

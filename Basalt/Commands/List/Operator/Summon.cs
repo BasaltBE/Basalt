@@ -2,7 +2,7 @@ namespace Basalt.Core.Commands.List.Operator;
 
 using Basalt.Protocol.Enums;
 using Basalt.Core.Commands;
-using Basalt.Core.Entity.Traits.Types;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.World.Dimension;
 using Player = Player.Player;
 using Vec3f = Basalt.Protocol.Types.Vec3f;
@@ -36,10 +36,10 @@ public sealed class SummonCommand : Command
             return CommandResult.Message("§cYou must specify x y z when running this command from console.", false);
         }
 
-       Entity.Entity entity;
+       Entities.Entity entity;
         try
         {
-            entity = new Entity.Entity(identifier);
+            entity = new Entities.Entity(identifier);
         }
         catch (Exception exception)
         {

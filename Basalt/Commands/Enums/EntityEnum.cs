@@ -1,6 +1,6 @@
 namespace Basalt.Core.Commands;
 
-using Basalt.Core.Entity;
+using Basalt.Core.Entities;
 
 public sealed class EntityEnum : CommandEnum
 {

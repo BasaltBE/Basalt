@@ -1,5 +1,5 @@
 using Basalt.Protocol;
-using Basalt.Core.Block;
+using Basalt.Core.Blocks;
 using Basalt.Protocol.Nbt;
 
 using BinaryReader = Basalt.Binary.BinaryReader;

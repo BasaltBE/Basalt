@@ -1,6 +1,6 @@
 namespace Basalt.Core.Item;
 
-using Basalt.Core.Block;
+using Basalt.Core.Blocks;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Nbt;
