@@ -398,7 +398,7 @@ public sealed record StartGamePacket : DataPacket
     /// <summary>
     /// Whether the server records chat messages.
     /// </summary>
-    public bool LoggingChat;
+    public bool IsLoggingChat;
 
     /// <summary>
     /// Optional server join information.
@@ -525,76 +525,21 @@ public sealed record StartGamePacket : DataPacket
         ServerAuthoritativeInventory = reader.ReadBool();
         GameVersion = reader.ReadVarString();
         PropertyData = CompoundTag.Read(reader, TagOptions);
-        if (reader.Remaining < sizeof(ulong))
-        {
-            return;
-        }
-
         ServerBlockStateChecksum = reader.ReadUInt64(true);
-        if (reader.Remaining < 16)
-        {
-            return;
-        }
-
         WorldTemplateId = UUID.Read(reader);
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         ClientSideGeneration = reader.ReadBool();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         UseBlockNetworkIdHashes = reader.ReadBool();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         ServerAuthoritativeSound = reader.ReadBool();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
-        LoggingChat = reader.ReadBool();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
+        IsLoggingChat = reader.ReadBool();
         ServerJoinInformation.Read(reader, static (BinaryReader r) =>
         {
             ServerJoinInformation value = new();
             value.Read(r);
             return value;
         });
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         ServerId = reader.ReadVarString();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         ScenarioId = reader.ReadVarString();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         WorldId = reader.ReadVarString();
-        if (reader.Remaining < 1)
-        {
-            return;
-        }
-
         OwnerId = reader.ReadVarString();
     }
 
@@ -693,7 +638,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteBool(ClientSideGeneration);
         writer.WriteBool(UseBlockNetworkIdHashes);
         writer.WriteBool(ServerAuthoritativeSound);
-        writer.WriteBool(LoggingChat);
+        writer.WriteBool(IsLoggingChat);
         ServerJoinInformation.Write(writer, static (BinaryWriter w, ServerJoinInformation value) => value.Write(w));
         writer.WriteVarString(ServerId);
         writer.WriteVarString(ScenarioId);
