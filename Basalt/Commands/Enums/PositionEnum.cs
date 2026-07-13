@@ -4,32 +4,23 @@ using Basalt.Protocol.Types;
 
 public sealed class PositionEnum : CommandEnum
 {
-    public Vec3f Value;
+    public Vec3f Value { get; private set; }
 
-    public PositionEnum() : base("position")
-    {
-        Value = new Vec3f();
-    }
+    public PositionEnum() : base("position") { }
 
-    public PositionEnum(Vec3f value) : base("position")
-    {
-        Value = value;
-    }
-
-    public override bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex)
     {
         if (tokenIndex + 2 >= tokens.Length)
-        {
             return false;
-        }
 
-        Vec3f origin = state.Executor is PlayerExecutor executor ? executor.Player.Location : new Vec3f();
-        if (!Parse(tokens, tokenIndex, origin, out Vec3f position))
-        {
+        Vec3f origin = ctx.Sender.AsPlayer()?.Location ?? new Vec3f();
+
+        if (!ParseComponent(tokens[tokenIndex], origin.X, out float x) ||
+            !ParseComponent(tokens[tokenIndex + 1], origin.Y, out float y) ||
+            !ParseComponent(tokens[tokenIndex + 2], origin.Z, out float z))
             return false;
-        }
 
-        Value = position;
+        Value = new Vec3f { X = x, Y = y, Z = z };
         tokenIndex += 3;
         return true;
     }
@@ -42,44 +33,18 @@ public sealed class PositionEnum : CommandEnum
             value = origin;
             return true;
         }
-
         if (token.StartsWith('~'))
         {
-            string offset = token[1..];
-            if (offset.Length == 0)
+            if (token.Length == 1)
             {
                 value = origin;
                 return true;
             }
-
-            if (!float.TryParse(offset, out float step))
-            {
+            if (!float.TryParse(token[1..], out float offset))
                 return false;
-            }
-
-            value = origin + step;
+            value = origin + offset;
             return true;
         }
-
         return float.TryParse(token, out value);
-    }
-
-    public static bool Parse(string[] tokens, int start, Vec3f origin, out Vec3f position)
-    {
-        position = new Vec3f();
-        if (start + 2 >= tokens.Length)
-        {
-            return false;
-        }
-
-        if (!ParseComponent(tokens[start], origin.X, out float x) ||
-            !ParseComponent(tokens[start + 1], origin.Y, out float y) ||
-            !ParseComponent(tokens[start + 2], origin.Z, out float z))
-        {
-            return false;
-        }
-
-        position = new Vec3f { X = x, Y = y, Z = z };
-        return true;
     }
 }

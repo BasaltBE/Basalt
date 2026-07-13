@@ -1,32 +1,21 @@
 namespace Basalt.Core.Commands;
 
-public class IntEnum : CommandEnum
+public sealed class IntEnum : CommandEnum
 {
-    public int? Value;
+    public int? Value { get; private set; }
 
     public IntEnum() : base("int") { }
 
-    public IntEnum(int? value) : base("int")
-    {
-        Value = value;
-    }
-
-    public override bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex)
     {
         if (tokenIndex >= tokens.Length)
-        {
             return false;
-        }
 
-        Value = int.Parse(tokens[tokenIndex]);
+        if (!int.TryParse(tokens[tokenIndex], out int result))
+            return false;
+
+        Value = result;
         tokenIndex++;
         return true;
     }
 }
-
-
-
-
-
-
-

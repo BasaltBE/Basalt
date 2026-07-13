@@ -1,62 +1,33 @@
 namespace Basalt.Core.Commands;
 
-using System.Diagnostics.CodeAnalysis;
-
+/// <summary>
+/// Base class for custom enums with a fixed set of string values (e.g. GameMode, etc.)
+/// Subclass and define a static Values field/property.
+/// </summary>
 public abstract class CustomEnum : CommandEnum
 {
-    public string? Value;
+    public string? Value { get; private set; }
 
-    protected CustomEnum(string identifier) : base(identifier)
+    protected CustomEnum(string identifier, string[] values) : base(identifier)
     {
-#pragma warning disable IL2072
-        Options = GetValues(GetType());
-#pragma warning restore IL2072
+        Options = values;
     }
 
-    static string[] GetValues([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)] Type type)
-    {
-        const System.Reflection.BindingFlags flags =
-            System.Reflection.BindingFlags.Public |
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Static |
-            System.Reflection.BindingFlags.FlattenHierarchy;
-
-        if (type.GetField("Values", flags)?.GetValue(null) is string[] fieldValues)
-        {
-            return fieldValues;
-        }
-
-        if (type.GetProperty("Values", flags)?.GetValue(null) is string[] propertyValues)
-        {
-            return propertyValues;
-        }
-
-        throw new InvalidOperationException($"Command enum '{type.FullName}' must define static string[] Values.");
-    }
-
-    public override bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex)
+    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex)
     {
         if (tokenIndex >= tokens.Length)
-        {
             return false;
-        }
 
         string token = tokens[tokenIndex];
-        string? value = Options.FirstOrDefault(option => string.Equals(option, token, StringComparison.OrdinalIgnoreCase));
-        if (value is null)
+        for (int i = 0; i < Options.Length; i++)
         {
-            throw new InvalidOperationException($"Invalid value '{token}' for command parameter '{parameter.Name}'.");
+            if (string.Equals(Options[i], token, StringComparison.OrdinalIgnoreCase))
+            {
+                Value = Options[i];
+                tokenIndex++;
+                return true;
+            }
         }
-
-        Value = value;
-        tokenIndex++;
-        return true;
+        return false;
     }
 }
-
-
-
-
-
-
-
