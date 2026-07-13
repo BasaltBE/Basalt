@@ -2,6 +2,7 @@ namespace Basalt.Core.Worlds.Dimensions;
 
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
+using Basalt.Core.Tasks;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
@@ -15,11 +16,7 @@ using Entity = Basalt.Core.Entities.Entity;
 public sealed class Dimension : IDisposable
 {
     private const int CompletedChunkLimit = 128;
-    private static readonly int ChunkWorkerLimit = Math.Clamp(Environment.ProcessorCount - 1, 1, 4);
 
-    /// <summary>
-    /// A mapping of block actors with containers
-    /// </summary>
     private static readonly Dictionary<string, string> BlockActorIds = new()
     {
         ["minecraft:barrel"] = "Barrel",
@@ -27,35 +24,15 @@ public sealed class Dimension : IDisposable
         ["minecraft:trapped_chest"] = "Chest"
     };
 
-    /// <summary>
-    /// A list of chunks in the dimension
-    /// </summary>
     private readonly Dictionary<long, ChunkColumn> _chunks;
-
-    /// <summary>
-    /// A list of chunk viewers
-    /// </summary>
     private readonly Dictionary<long, int> _chunkViewers;
-
-    /// <summary>
-    /// A list of entities
-    /// </summary>
     private readonly HashSet<Entity> _entities;
-
-    /// <summary>
-    ///  A list of chunks to sweep
-    /// </summary>
     private readonly List<long> _chunkSweepBuffer = [];
-
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
     private readonly Lock _chunkRequestLock = new();
     private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
-    private readonly ConcurrentQueue<long> _chunkRequests = new();
-    private readonly ConcurrentQueue<CompletedChunkRequest> _completedChunkRequests = new();
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
-    private readonly SemaphoreSlim _chunkRequestSignal = new(0);
-    private readonly CancellationTokenSource _chunkRequestCancel = new();
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
     private bool _tickingEntities;
@@ -76,11 +53,6 @@ public sealed class Dimension : IDisposable
         _entities = [];
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
-
-        for (int i = 0; i < ChunkWorkerLimit; i++)
-        {
-            _ = Task.Run(ChunkRequestWorker);
-        }
     }
 
     public int ChunkCount => _chunks.Count;
@@ -136,6 +108,8 @@ public sealed class Dimension : IDisposable
             return;
         }
 
+        TaskScheduler? scheduler = World?.Server?.Scheduler;
+
         for (int i = 0; i < chunks.Length; i++)
         {
             (int x, int z) = chunks[i];
@@ -159,8 +133,22 @@ public sealed class Dimension : IDisposable
                 _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
             }
 
-            _chunkRequests.Enqueue(hash);
-            _chunkRequestSignal.Release();
+            if (scheduler is null)
+            {
+                ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
+                if (loaded is null)
+                {
+                    loaded = _generator.Generate(Type, x, z);
+                    _generator.Populate(loaded);
+                    loaded.Dirty = true;
+                }
+                HandleChunkCompleted(hash, loaded);
+            }
+            else
+            {
+                ChunkGenerationTask task = new(_provider, _generator, Type, x, z, hash, HandleChunkCompleted);
+                scheduler.Schedule(task);
+            }
         }
     }
 
@@ -413,15 +401,6 @@ public sealed class Dimension : IDisposable
     public void Dispose()
     {
         _disposed = true;
-        _chunkRequestCancel.Cancel();
-        _chunkRequestSignal.Release(ChunkWorkerLimit);
-
-        SpinWait spin = new();
-        while (!_chunkRequests.IsEmpty)
-        {
-            spin.SpinOnce();
-        }
-
         FlushCompletedChunkRequests(int.MaxValue);
         SaveDirtyChunks();
     }
@@ -714,83 +693,38 @@ public sealed class Dimension : IDisposable
             ready.Callback(ready.Chunk);
             completed++;
         }
-
-        while (completed < limit && _completedChunkRequests.TryDequeue(out CompletedChunkRequest completedRequest))
-        {
-            PendingChunkRequest? request;
-            lock (_chunkRequestLock)
-            {
-                if (!_pendingChunkRequests.Remove(completedRequest.Hash, out request))
-                {
-                    continue;
-                }
-            }
-
-            if (completedRequest.Chunk is null)
-            {
-                continue;
-            }
-
-            if (_chunks.TryGetValue(completedRequest.Hash, out ChunkColumn? existing))
-            {
-                foreach (Action<ChunkColumn> callback in request.Callbacks)
-                {
-                    callback(existing);
-                }
-            }
-            else
-            {
-                _chunks[completedRequest.Hash] = completedRequest.Chunk;
-
-                foreach (Action<ChunkColumn> callback in request.Callbacks)
-                {
-                    callback(completedRequest.Chunk);
-                }
-            }
-
-            completed++;
-        }
     }
 
-    private async Task ChunkRequestWorker()
+    private void HandleChunkCompleted(long hash, ChunkColumn? chunk)
     {
-        CancellationToken token = _chunkRequestCancel.Token;
-
-        while (!token.IsCancellationRequested)
+        PendingChunkRequest? request;
+        lock (_chunkRequestLock)
         {
-            try
-            {
-                await _chunkRequestSignal.WaitAsync(token);
-            }
-            catch (OperationCanceledException)
+            if (!_pendingChunkRequests.Remove(hash, out request))
             {
                 return;
             }
+        }
 
-            if (!_chunkRequests.TryDequeue(out long hash))
+        if (chunk is null)
+        {
+            return;
+        }
+
+        if (_chunks.TryGetValue(hash, out ChunkColumn? existing))
+        {
+            foreach (Action<ChunkColumn> callback in request.Callbacks)
             {
-                continue;
+                callback(existing);
             }
+        }
+        else
+        {
+            _chunks[hash] = chunk;
 
-            int x = (int)(hash >> 32);
-            int z = (int)hash;
-
-            try
+            foreach (Action<ChunkColumn> callback in request.Callbacks)
             {
-                ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
-                if (loaded is null)
-                {
-                    loaded = _generator.Generate(Type, x, z);
-                    _generator.Populate(loaded);
-                    loaded.Dirty = true;
-                }
-
-                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, loaded));
-            }
-            catch (Exception exception)
-            {
-                Logger.Err($"Failed to request chunk {x}, {z}: {exception.Message}");
-                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, null));
+                callback(chunk);
             }
         }
     }
@@ -805,7 +739,6 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    private readonly record struct CompletedChunkRequest(long Hash, ChunkColumn? Chunk);
     private readonly record struct ChunkRequestCallback(ChunkColumn Chunk, Action<ChunkColumn> Callback);
 }
 
