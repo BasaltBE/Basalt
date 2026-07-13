@@ -11,7 +11,7 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
     /// <summary>
     /// Release-item action type.
     /// </summary>
-    public uint ActionType;
+    public int ActionType;
     /// <summary>
     /// Hotbar slot used by the client.
     /// </summary>
@@ -19,14 +19,14 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
     /// <summary>
     /// Item held by the player.
     /// </summary>
-    public ItemInstance HeldItem = new();
+    public NetworkItemStackDescriptor HeldItem = new();
     /// <summary>
     /// Head position at release time.
     /// </summary>
     public Vec3f HeadPosition;
     public void Read(BinaryReader reader)
     {
-        ActionType = reader.ReadVarUInt();
+        ActionType = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(reader);
         HeadPosition.Read(reader);
@@ -34,7 +34,7 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarUInt(ActionType);
+        writer.WriteZigZag(ActionType);
         writer.WriteZigZag(HotBarSlot);
         HeldItem.Write(writer);
         HeadPosition.Write(writer);

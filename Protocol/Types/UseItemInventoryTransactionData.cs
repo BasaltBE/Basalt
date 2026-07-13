@@ -31,7 +31,7 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
     /// <summary>
     /// Item held by the player.
     /// </summary>
-    public ItemInstance HeldItem = new();
+    public NetworkItemStackDescriptor HeldItem = new();
     /// <summary>
     /// Player position at action time.
     /// </summary>
@@ -47,40 +47,40 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
     /// <summary>
     /// Client-side prediction state.
     /// </summary>
-    public uint ClientPrediction;
+    public byte ClientPrediction;
     /// <summary>
     /// Client cooldown state value.
     /// </summary>
     public byte ClientCooldownState;
     public void Read(BinaryReader reader)
     {
-        ActionType = reader.ReadVarUInt();
-        TriggerType = reader.ReadVarUInt();
+        ActionType = unchecked((uint)reader.ReadZigZag());
+        TriggerType = reader.ReadUInt8();
         BlockPos blockPosition = BlockPosition;
         blockPosition.Read(reader);
         BlockPosition = blockPosition;
-        BlockFace = reader.ReadZigZag();
+        BlockFace = reader.ReadUInt8();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(reader);
         Position.Read(reader);
         ClickedPosition.Read(reader);
         BlockRuntimeId = reader.ReadVarUInt();
-        ClientPrediction = reader.ReadVarUInt();
+        ClientPrediction = reader.ReadUInt8();
         ClientCooldownState = reader.ReadUInt8();
     }
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarUInt(ActionType);
-        writer.WriteVarUInt(TriggerType);
+        writer.WriteZigZag(unchecked((int)ActionType));
+        writer.WriteUInt8(unchecked((byte)TriggerType));
         BlockPosition.Write(writer);
-        writer.WriteZigZag(BlockFace);
+        writer.WriteUInt8(unchecked((byte)BlockFace));
         writer.WriteZigZag(HotBarSlot);
         HeldItem.Write(writer);
         Position.Write(writer);
         ClickedPosition.Write(writer);
         writer.WriteVarUInt(BlockRuntimeId);
-        writer.WriteVarUInt(ClientPrediction);
+        writer.WriteUInt8(ClientPrediction);
         writer.WriteUInt8(ClientCooldownState);
     }
 }

@@ -12,7 +12,7 @@ public sealed class InventoryAction : DataType
     /// <summary>
     /// Window id for container sources.
     /// </summary>
-    public int WindowId;
+    public sbyte WindowId;
     /// <summary>
     /// Source flags for world sources.
     /// </summary>
@@ -24,20 +24,25 @@ public sealed class InventoryAction : DataType
     /// <summary>
     /// Item state before the action.
     /// </summary>
-    public ItemInstance OldItem = new();
+    public NetworkItemStackDescriptor OldItem = new();
     /// <summary>
     /// Item state after the action.
     /// </summary>
-    public ItemInstance NewItem = new();
+    public NetworkItemStackDescriptor NewItem = new();
 
     public void Read(BinaryReader reader)
     {
         SourceType = reader.ReadVarUInt();
-        if (SourceType == 0 || SourceType == 99999)
+        _ = reader.ReadBool();
+        bool hasContainerId = reader.ReadBool();
+        if (hasContainerId)
         {
-            WindowId = reader.ReadZigZag();
+            WindowId = reader.ReadInt8();
         }
-        else if (SourceType == 2)
+
+        _ = reader.ReadBool();
+        bool hasFlags = reader.ReadBool();
+        if (hasFlags)
         {
             SourceFlags = reader.ReadVarUInt();
         }
@@ -50,11 +55,18 @@ public sealed class InventoryAction : DataType
     public void Write(BinaryWriter writer)
     {
         writer.WriteVarUInt(SourceType);
-        if (SourceType == 0 || SourceType == 99999)
+        writer.WriteBool(true);
+        bool hasContainerId = SourceType == 0 || SourceType == 99999;
+        writer.WriteBool(hasContainerId);
+        if (hasContainerId)
         {
-            writer.WriteZigZag(WindowId);
+            writer.WriteInt8(WindowId);
         }
-        else if (SourceType == 2)
+
+        writer.WriteBool(true);
+        bool hasFlags = SourceType == 2;
+        writer.WriteBool(hasFlags);
+        if (hasFlags)
         {
             writer.WriteVarUInt(SourceFlags);
         }

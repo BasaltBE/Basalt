@@ -238,7 +238,7 @@ public class BarrelTrait : BlockTrait
         // });
     }
 
-    private void BroadcastSound(LevelSoundEvent soundEvent)
+    private void BroadcastSound(string soundEvent)
     {
         if (_container?.Dimension is null)
         {
@@ -256,8 +256,8 @@ public class BarrelTrait : BlockTrait
             },
             Data = Block.Permutation.NetworkId,
             ActorIdentifier = string.Empty,
-            IsBabyMob = false,
-            IsGlobal = false,
+            BabyMob = false,
+            DisableRelativeVolume = false,
             UniqueActorId = -1
         });
     }

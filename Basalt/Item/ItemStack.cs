@@ -85,12 +85,49 @@ public sealed class ItemStack {
         return descriptor;
     }
 
+    public NetworkItemStackDescriptor ToNetworkStackDescriptor()
+    {
+        if (Type.NetworkId == 0 || StackSize == 0)
+        {
+            return new NetworkItemStackDescriptor();
+        }
+
+        int blockRuntimeId = Type.BlockType?.Permutations.FirstOrDefault()?.NetworkId ?? 0;
+        return new NetworkItemStackDescriptor
+        {
+            NetworkId = Type.NetworkId,
+            Count = StackSize,
+            Metadata = Metadata,
+            StackNetworkId = NetworkStackId,
+            BlockRuntimeId = blockRuntimeId,
+            Nbt = GetSerializedNbt(),
+            CanPlaceOn = ExtraData?.CanPlaceOn ?? [],
+            CanDestroy = ExtraData?.CanDestroy ?? [],
+            BlockingTick = ExtraData?.Ticking ?? 0
+        };
+    }
+
     public static ItemStack FromNetworkStack(LegacyItem descriptor)
     {
         ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
                         ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");
 
         return new ItemStack(type, descriptor.StackSize, unchecked((uint)descriptor.Metadata), descriptor.ExtraData);
+    }
+
+    public static ItemStack FromNetworkStack(NetworkItemStackDescriptor descriptor)
+    {
+        ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
+                        ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");
+
+        ItemInstanceUserData extraData = new()
+        {
+            Nbt = descriptor.Nbt,
+            CanPlaceOn = descriptor.CanPlaceOn,
+            CanDestroy = descriptor.CanDestroy,
+            Ticking = descriptor.BlockingTick
+        };
+        return new ItemStack(type, descriptor.Count, descriptor.Metadata, extraData);
     }
 
     public static ItemStack Empty()

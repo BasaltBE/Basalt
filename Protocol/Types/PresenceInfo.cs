@@ -6,27 +6,32 @@ namespace Basalt.Protocol.Types;
 public sealed class PresenceInfo : DataType
 {
     /// <summary>
-    /// The name of the experience the player is in
-    /// I think this is a dimension identifier, but I'm not sure
-    /// Coming up with this after the new custom dimension stuff came out
+    /// Optional experience name.
     /// </summary>
-    public string ExperienceName = string.Empty;
+    public OptionalValue<string> ExperienceName = new();
 
     /// <summary>
-    /// The name of the world the player is in
+    /// Optional world name.
     /// </summary>
-    public string WorldName = string.Empty;
+    public OptionalValue<string> WorldName = new();
+
+    /// <summary>
+    /// Rich presence id overriding the client-provided value.
+    /// </summary>
+    public string RichPresenceId = string.Empty;
 
     public void Read(BinaryReader reader)
     {
-        ExperienceName = reader.ReadVarString();
-        WorldName = reader.ReadVarString();
+        ExperienceName.Read(reader, static r => r.ReadVarString());
+        WorldName.Read(reader, static r => r.ReadVarString());
+        RichPresenceId = reader.ReadVarString();
     }
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarString(ExperienceName);
-        writer.WriteVarString(WorldName);
+        ExperienceName.Write(writer, static (w, value) => w.WriteVarString(value));
+        WorldName.Write(writer, static (w, value) => w.WriteVarString(value));
+        writer.WriteVarString(RichPresenceId);
     }
 }
 

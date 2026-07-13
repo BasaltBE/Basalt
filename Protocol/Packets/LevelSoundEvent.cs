@@ -10,7 +10,7 @@ public sealed record LevelSoundEventPacket : DataPacket
     /// <summary>
     /// Level sound event id.
     /// </summary>
-    public LevelSoundEvent Event;
+    public string Event = LevelSoundEvent.Undefined;
 
     /// <summary>
     /// Sound world position.
@@ -30,12 +30,12 @@ public sealed record LevelSoundEventPacket : DataPacket
     /// <summary>
     /// Whether actor is a baby variant.
     /// </summary>
-    public bool IsBabyMob;
+    public bool BabyMob;
 
     /// <summary>
-    /// Whether sound should be global.
+    /// Whether distance-based volume is disabled.
     /// </summary>
-    public bool IsGlobal;
+    public bool DisableRelativeVolume;
 
     /// <summary>
     /// Unique actor id tied to this sound.
@@ -49,7 +49,7 @@ public sealed record LevelSoundEventPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        Event = (LevelSoundEvent)reader.ReadVarUInt();
+        Event = reader.ReadVarString();
 
         Vec3f position = Position;
         position.Read(reader);
@@ -57,20 +57,20 @@ public sealed record LevelSoundEventPacket : DataPacket
 
         Data = reader.ReadVarInt();
         ActorIdentifier = reader.ReadVarString();
-        IsBabyMob = reader.ReadBool();
-        IsGlobal = reader.ReadBool();
+        BabyMob = reader.ReadBool();
+        DisableRelativeVolume = reader.ReadBool();
         UniqueActorId = reader.ReadInt64(true);
         FireAtPosition.Read(reader);
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarUInt((uint)Event);
+        writer.WriteVarString(Event);
         Position.Write(writer);
         writer.WriteZigZag(Data);
         writer.WriteVarString(ActorIdentifier);
-        writer.WriteBool(IsBabyMob);
-        writer.WriteBool(IsGlobal);
+        writer.WriteBool(BabyMob);
+        writer.WriteBool(DisableRelativeVolume);
         writer.WriteInt64(UniqueActorId, true);
         FireAtPosition.Write(writer);
     }

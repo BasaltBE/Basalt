@@ -10,12 +10,12 @@ public sealed record InventoryContentPacket : DataPacket
     /// <summary>
     /// Window id of the inventory.
     /// </summary>
-    public int WindowId;
+    public uint WindowId;
 
     /// <summary>
     /// Inventory content entries.
     /// </summary>
-    public List<LegacyItem> Content = [];
+    public List<NetworkItemStackDescriptor> Content = [];
 
     /// <summary>
     /// Full container identity.
@@ -25,17 +25,17 @@ public sealed record InventoryContentPacket : DataPacket
     /// <summary>
     /// Optional storage item descriptor.
     /// </summary>
-    public LegacyItem StorageItem = new();
+    public NetworkItemStackDescriptor StorageItem = new();
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        WindowId = reader.ReadVarInt();
+        WindowId = reader.ReadVarUInt();
 
         int count = checked((int)reader.ReadVarUInt());
-        Content = new List<LegacyItem>(count);
+        Content = new List<NetworkItemStackDescriptor>(count);
         for (int i = 0; i < count; i++)
         {
-            LegacyItem item = new();
+            NetworkItemStackDescriptor item = new();
             item.Read(reader);
             Content.Add(item);
         }
@@ -46,7 +46,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt(WindowId);
+        writer.WriteVarUInt(WindowId);
         writer.WriteVarUInt((uint)Content.Count);
         for (int i = 0; i < Content.Count; i++)
         {

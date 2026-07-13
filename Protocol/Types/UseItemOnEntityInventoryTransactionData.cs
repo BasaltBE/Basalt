@@ -15,7 +15,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
     /// <summary>
     /// Use-on-entity action type.
     /// </summary>
-    public uint ActionType;
+    public int ActionType;
     /// <summary>
     /// Hotbar slot used by the client.
     /// </summary>
@@ -23,7 +23,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
     /// <summary>
     /// Item held by the player.
     /// </summary>
-    public ItemInstance HeldItem = new();
+    public NetworkItemStackDescriptor HeldItem = new();
     /// <summary>
     /// Player position at action time.
     /// </summary>
@@ -35,7 +35,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
     public void Read(BinaryReader reader)
     {
         TargetEntityRuntimeId = reader.ReadVarULong();
-        ActionType = reader.ReadVarUInt();
+        ActionType = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(reader);
         Position.Read(reader);
@@ -45,7 +45,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
     public void Write(BinaryWriter writer)
     {
         writer.WriteVarULong(TargetEntityRuntimeId);
-        writer.WriteVarUInt(ActionType);
+        writer.WriteZigZag(ActionType);
         writer.WriteZigZag(HotBarSlot);
         HeldItem.Write(writer);
         Position.Write(writer);

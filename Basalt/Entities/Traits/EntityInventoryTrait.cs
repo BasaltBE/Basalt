@@ -60,10 +60,10 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         InventoryContentPacket packet = new()
         {
-            WindowId = Container.Identifier ?? 0,
-            Content = Enumerable.Repeat(new LegacyItem(), Container.GetSize()).ToList(),
+            WindowId = checked((uint)(Container.Identifier ?? 0)),
+            Content = Enumerable.Repeat(new NetworkItemStackDescriptor(), Container.GetSize()).ToList(),
             Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
-            StorageItem = new LegacyItem()
+            StorageItem = new NetworkItemStackDescriptor()
         };
 
         player.Send(packet);
@@ -257,15 +257,15 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         InventoryContentPacket packet = new()
         {
-            WindowId = Container.Identifier ?? 0,
-            Content = new List<LegacyItem>(Container.GetSize()),
+            WindowId = checked((uint)(Container.Identifier ?? 0)),
+            Content = new List<NetworkItemStackDescriptor>(Container.GetSize()),
             Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
-            StorageItem = new LegacyItem()
+            StorageItem = new NetworkItemStackDescriptor()
         };
 
         for (int i = 0; i < Container.GetSize(); i++)
         {
-            packet.Content.Add(Container.GetItem(i)?.ToNetworkStack() ?? new LegacyItem());
+            packet.Content.Add(Container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
         }
 
         player.Send(packet);

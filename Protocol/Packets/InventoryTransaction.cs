@@ -31,7 +31,8 @@ public sealed record InventoryTransactionPacket : DataPacket
     {
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
-        if (LegacyRequestId != 0)
+        bool hasLegacy = reader.ReadBool();
+        if (hasLegacy)
         {
             int legacySetItemSlotCount = checked((int)reader.ReadVarUInt());
             LegacySetItemSlots = new(legacySetItemSlotCount);
@@ -43,8 +44,18 @@ public sealed record InventoryTransactionPacket : DataPacket
             }
         }
 
+        if (!reader.ReadBool())
+        {
+            throw new FormatException("Inventory transaction type is missing.");
+        }
+
         InventoryTransactionType type = (InventoryTransactionType)reader.ReadVarUInt();
         IInventoryTransactionData transactionData = InventoryTransactionDataFactory.Create(type);
+
+        if (!reader.ReadBool())
+        {
+            throw new FormatException("Inventory transaction actions are missing.");
+        }
 
         int actionCount = checked((int)reader.ReadVarUInt());
         if (actionCount < 0 || actionCount > 4096)
@@ -67,7 +78,9 @@ public sealed record InventoryTransactionPacket : DataPacket
     public override void Serialize(Binary.BinaryWriter writer)
     {
         writer.WriteZigZag(LegacyRequestId);
-        if (LegacyRequestId != 0)
+        bool hasLegacy = LegacyRequestId < -1 && (LegacyRequestId & 1) == 0;
+        writer.WriteBool(hasLegacy);
+        if (hasLegacy)
         {
             writer.WriteVarUInt((uint)LegacySetItemSlots.Count);
             for (int i = 0; i < LegacySetItemSlots.Count; i++)
@@ -76,8 +89,10 @@ public sealed record InventoryTransactionPacket : DataPacket
             }
         }
 
+        writer.WriteBool(true);
         writer.WriteVarUInt((uint)TransactionData.Type);
 
+        writer.WriteBool(true);
         writer.WriteVarUInt((uint)Actions.Count);
         for (int i = 0; i < Actions.Count; i++)
         {

@@ -717,7 +717,7 @@ public class ChestTrait : BlockTrait
         return true;
     }
 
-    private void BroadcastState(int state, LevelSoundEvent soundEvent, BlockPos position)
+    private void BroadcastState(int state, string soundEvent, BlockPos position)
     {
         if (Container?.Dimension is null)
         {
@@ -744,8 +744,8 @@ public class ChestTrait : BlockTrait
             },
             Data = runtimeId,
             ActorIdentifier = string.Empty,
-            IsBabyMob = false,
-            IsGlobal = false,
+            BabyMob = false,
+            DisableRelativeVolume = false,
             UniqueActorId = -1
         });
     }

@@ -40,7 +40,7 @@ public sealed class UseItemTransactionData : DataType
     /// <summary>
     /// Item held by the player.
     /// </summary>
-    public ItemInstance HeldItem = new();
+    public NetworkItemStackDescriptor HeldItem = new();
     /// <summary>
     /// Player position at action time.
     /// </summary>
@@ -56,14 +56,13 @@ public sealed class UseItemTransactionData : DataType
     /// <summary>
     /// Client-side prediction state.
     /// </summary>
-    public uint ClientPrediction;
+    public byte ClientPrediction;
     /// <summary>
     /// Client cooldown state value.
     /// </summary>
     public byte ClientCooldownState;
     public void Read(BinaryReader reader)
     {
-        int startOffset = reader.Offset;
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
         if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0)
@@ -98,12 +97,9 @@ public sealed class UseItemTransactionData : DataType
         Position.Read(reader);
         ClickedPosition.Read(reader);
         BlockRuntimeId = reader.ReadVarUInt();
-        ClientPrediction = reader.ReadVarUInt();
+        ClientPrediction = reader.ReadUInt8();
         ClientCooldownState = reader.ReadUInt8();
 
-        int endOffset = reader.Offset;
-        ReadOnlySpan<byte> payload = reader.Buffer.Slice(startOffset, endOffset - startOffset);
-        Console.WriteLine($"[UseItemTxDump] bytes={payload.Length} hex={Convert.ToHexString(payload)} legacy={LegacyRequestId} actions={Actions.Count} action={ActionType} trigger={TriggerType} pos={BlockPosition.X},{BlockPosition.Y},{BlockPosition.Z} face={BlockFace} hotbar={HotBarSlot} runtime={BlockRuntimeId} prediction={ClientPrediction} cooldown={ClientCooldownState}");
     }
 
     public void Write(BinaryWriter writer)
@@ -133,7 +129,7 @@ public sealed class UseItemTransactionData : DataType
         Position.Write(writer);
         ClickedPosition.Write(writer);
         writer.WriteVarUInt(BlockRuntimeId);
-        writer.WriteVarUInt(ClientPrediction);
+        writer.WriteUInt8(ClientPrediction);
         writer.WriteUInt8(ClientCooldownState);
     }
 }
