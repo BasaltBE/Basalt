@@ -1,1 +1,2 @@
 Fix chests not relinking
+Improve Player class to work better with entity class.
