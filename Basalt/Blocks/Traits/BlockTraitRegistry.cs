@@ -85,7 +85,7 @@ public static class BlockTraitRegistry
 
         if (GetTypeMember(traitType, "Component") is Type componentType &&
             GetStringMember(componentType, "Identifier") is string componentIdentifier &&
-            ContainsOrdinal(blockType.Components, componentIdentifier))
+            ContainsOrdinal(blockType.ComponentIdentifiers, componentIdentifier))
         {
             return true;
         }

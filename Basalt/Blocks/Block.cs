@@ -8,6 +8,8 @@ using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
+using Basalt.Core.Blocks.Components;
+using Basalt.Core.Blocks.Types;
 using Basalt.Core.Item;
 using Basalt.Core.Loot;
 
@@ -15,6 +17,7 @@ using Basalt.Core.Loot;
 public sealed class Block
 {
     private readonly List<BlockTrait> _traits = [];
+    private readonly Dictionary<string, BlockComponent> _components = new(StringComparer.Ordinal);
 
     public BlockType Type { get; }
     public BlockPermutation Permutation { get; private set; }
@@ -24,6 +27,7 @@ public sealed class Block
     {
         Type = type;
         Permutation = permutation;
+        InitializeComponents();
         InitializeTraits();
     }
 
@@ -36,6 +40,15 @@ public sealed class Block
             {
                 AddTrait(trait);
             }
+        }
+    }
+
+    private void InitializeComponents()
+    {
+        foreach (BlockComponent typeComponent in Type.GetComponents())
+        {
+            BlockComponent instance = typeComponent.Clone();
+            _components[instance.ComponentIdentifier] = instance;
         }
     }
 
@@ -56,6 +69,68 @@ public sealed class Block
             throw new ArgumentException("Cannot set permutation for a different block type.", nameof(permutation));
         }
         Permutation = permutation;
+    }
+
+    public T? GetComponent<T>() where T : BlockComponent
+    {
+        foreach (BlockComponent component in _components.Values)
+        {
+            if (component is T typed)
+            {
+                return typed;
+            }
+        }
+        return null;
+    }
+
+    public BlockComponent? GetComponent(string identifier)
+    {
+        return _components.TryGetValue(identifier, out BlockComponent? component) ? component : null;
+    }
+
+    public bool HasComponent<T>() where T : BlockComponent
+    {
+        return GetComponent<T>() is not null;
+    }
+
+    public bool HasComponent(string identifier)
+    {
+        return _components.ContainsKey(identifier) || Type.HasComponent(identifier);
+    }
+
+    public void AddComponent(BlockComponent component)
+    {
+        _components[component.ComponentIdentifier] = component;
+    }
+
+    public bool HasTag(string tag) => Type.HasTag(tag);
+
+    public BlockStateValue? GetState(string key)
+    {
+        return Permutation.State.TryGetValue(key, out BlockStateValue value) ? value : default(BlockStateValue?);
+    }
+
+    public void SetState(string key, BlockStateValue value)
+    {
+        BlockState state = [];
+        foreach ((string k, BlockStateValue v) in Permutation.State)
+        {
+            state[k] = v;
+        }
+
+        state[key] = value;
+        SetPermutation(Type.GetPermutation(state));
+    }
+
+    public List<ItemStack> GenerateDrops()
+    {
+        List<ItemStack> drops = Type.GenerateDrops();
+        if (drops.Count > 0)
+        {
+            return drops;
+        }
+
+        return LootTableManager.GenerateLootFromBlock(this);
     }
 
     public T AddTrait<T>(T trait) where T : BlockTrait
@@ -101,7 +176,7 @@ public sealed class Block
     {
         if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
         {
-            List<ItemStack> drops = LootTableManager.GenerateLootFromBlock(this);
+            List<ItemStack> drops = GenerateDrops();
             for (int i = 0; i < drops.Count; i++)
             {
                 ItemEntity drop = new(drops[i])
@@ -179,26 +254,63 @@ public sealed class Block
 
     public void WriteTraits(CompoundTag nbt)
     {
-        if (_traits.Count == 0) return;
-
-        ListTag traitsTag = new() { Name = "traits" };
-        foreach (var trait in _traits)
+        if (_traits.Count > 0)
         {
-            CompoundTag traitEntry = new();
-            traitEntry.Set("id", new StringTag { Value = trait.Identifier });
+            ListTag traitsTag = new() { Name = "traits" };
+            foreach (var trait in _traits)
+            {
+                CompoundTag traitEntry = new();
+                traitEntry.Set("id", new StringTag { Value = trait.Identifier });
 
-            CompoundTag traitData = new();
-            trait.OnWrite(traitData);
-            traitEntry.Set("data", traitData);
+                CompoundTag traitData = new();
+                trait.OnWrite(traitData);
+                traitEntry.Set("data", traitData);
 
-            traitsTag.Values.Add(traitEntry);
+                traitsTag.Values.Add(traitEntry);
+            }
+
+            nbt.Set("traits", traitsTag);
         }
 
-        nbt.Set("traits", traitsTag);
+        if (_components.Count > 0)
+        {
+            CompoundTag componentsTag = new();
+            foreach ((string key, BlockComponent component) in _components)
+            {
+                CompoundTag componentData = new();
+                component.OnWrite(componentData);
+                if (componentData.Values.Count > 0)
+                {
+                    componentsTag.Set(key, componentData);
+                }
+            }
+
+            if (componentsTag.Values.Count > 0)
+            {
+                nbt.Set("components", componentsTag);
+            }
+        }
     }
 
     public void ReadTraits(CompoundTag nbt)
     {
+        CompoundTag? componentsTag = nbt.Get<CompoundTag>("components");
+        if (componentsTag is not null)
+        {
+            foreach ((string key, BaseTag value) in componentsTag.Values)
+            {
+                if (value is not CompoundTag componentData)
+                {
+                    continue;
+                }
+
+                if (_components.TryGetValue(key, out BlockComponent? component))
+                {
+                    component.OnRead(componentData);
+                }
+            }
+        }
+
         ListTag? traitsTag = nbt.Get<ListTag>("traits");
         if (traitsTag is null)
         {

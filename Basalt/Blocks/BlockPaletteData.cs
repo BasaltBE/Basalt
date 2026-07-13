@@ -1,5 +1,6 @@
 namespace Basalt.Core.Blocks;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 
@@ -9,7 +10,7 @@ public sealed class BlockTypeData
     public string Identifier { get; set; } = string.Empty;
 
     [JsonPropertyName("components")]
-    public List<string> Components { get; set; } = [];
+    public Dictionary<string, JsonElement> Components { get; set; } = [];
 
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = [];
@@ -66,9 +67,34 @@ public sealed class BlockPermutationData
     public Dictionary<string, object> State { get; set; } = [];
 }
 
+public sealed class BlockDropData
+{
+    [JsonPropertyName("identifier")]
+    public string Identifier { get; set; } = string.Empty;
+
+    [JsonPropertyName("drops")]
+    public List<BlockDropEntryData> Drops { get; set; } = [];
+}
+
+public sealed class BlockDropEntryData
+{
+    [JsonPropertyName("identifier")]
+    public string Identifier { get; set; } = string.Empty;
+
+    [JsonPropertyName("min")]
+    public int Min { get; set; } = 1;
+
+    [JsonPropertyName("max")]
+    public int Max { get; set; } = 1;
+
+    [JsonPropertyName("chance")]
+    public float Chance { get; set; } = 1.0f;
+}
+
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<BlockTypeData>))]
 [JsonSerializable(typeof(List<BlockPermutationData>))]
+[JsonSerializable(typeof(List<BlockDropData>))]
 internal partial class BlockPaletteJsonContext : JsonSerializerContext
 {
 }

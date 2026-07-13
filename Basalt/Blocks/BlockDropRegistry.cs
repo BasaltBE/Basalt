@@ -2,9 +2,6 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Item;
 
-/// <summary>
-/// Registry for block drop tables loaded from protocol data.
-/// </summary>
 public static class BlockDropRegistry
 {
     private static readonly Dictionary<string, List<BlockDrop>> Registry = new(StringComparer.Ordinal);
@@ -30,6 +27,12 @@ public static class BlockDropRegistry
             }
 
             Registry[entry.Identifier] = blockDrops;
+
+            BlockType? type = BlockType.Get(entry.Identifier);
+            if (type is not null)
+            {
+                type.SetDrops(blockDrops);
+            }
         }
     }
 
@@ -40,40 +43,16 @@ public static class BlockDropRegistry
 
     public static List<ItemStack> GenerateDrops(string blockIdentifier)
     {
-        if (!Registry.TryGetValue(blockIdentifier, out List<BlockDrop>? drops))
+        BlockType? type = BlockType.Get(blockIdentifier);
+        if (type is not null)
         {
-            return [];
+            return type.GenerateDrops();
         }
 
-        List<ItemStack> items = [];
-        for (int i = 0; i < drops.Count; i++)
-        {
-            BlockDrop drop = drops[i];
-            if (Random.Shared.NextDouble() > drop.Chance)
-            {
-                continue;
-            }
-
-            ItemType? itemType = ItemType.Get(drop.Identifier);
-            if (itemType is null || itemType == ItemType.Air)
-            {
-                continue;
-            }
-
-            int count = Random.Shared.Next(drop.Min, drop.Max + 1);
-            if (count > 0)
-            {
-                items.Add(new ItemStack(itemType, checked((ushort)count)));
-            }
-        }
-
-        return items;
+        return [];
     }
 }
 
-/// <summary>
-/// Represents a single drop entry for a block.
-/// </summary>
 public sealed class BlockDrop(string identifier, int min, int max, float chance)
 {
     public string Identifier { get; } = identifier;
