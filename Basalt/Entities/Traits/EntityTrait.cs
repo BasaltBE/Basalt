@@ -66,7 +66,7 @@ public abstract class EntityTrait : Trait
     {
     }
 
-    public virtual bool OnCommand(CommandExecutionState state)
+    public virtual bool OnCommand(CommandContext ctx)
     {
         return true;
     }

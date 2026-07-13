@@ -2,6 +2,7 @@ namespace Basalt.Core;
 
 using System.Diagnostics;
 using Basalt.Core.Commands;
+using Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Network;
 using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
@@ -106,13 +107,12 @@ public sealed class Server
         }
         defaultWorld.ConfigurePersistence(Properties.WorldPath);
 
-        Commands.RegisterDefaultCommands();
+        DefaultCommands.Register(Commands);
     }
 
     public void Start()
     {
         Plugins.StartAll();
-        Commands.CacheAvailableCommands(this);
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 
