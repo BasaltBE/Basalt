@@ -1,6 +1,7 @@
 namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -69,6 +70,7 @@ public sealed class EntityMovementTrait : EntityTrait
             return;
         }
 
+        using var __zone = Profiler.BeginZone("EntityMovement.OnTick");
         Vec3f previousPosition = Entity.Position;
         EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
         if (collision is not null)

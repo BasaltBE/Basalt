@@ -9,6 +9,7 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 using Entity = Basalt.Core.Entities.Entity;
 
@@ -149,6 +150,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
             return;
         }
 
+        using var __zone = Profiler.BeginZone("PlayerChunkRendering.OnTick");
         lock (_lock)
         {
             Dimension dimension = Player.Dimension;
@@ -182,6 +184,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     private void SendChunks(Dimension dimension)
     {
+        using var __zone = Profiler.BeginZone("PlayerChunkRendering.SendChunks");
         List<DataPacket> packets = [];
         List<(long Hash, int X, int Z)> sentChunks = [];
 
@@ -529,6 +532,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
     private void UpdateVisibleEntities(Dimension dimension)
     {
+        using var __zone = Profiler.BeginZone("PlayerChunkRendering.UpdateVisibleEntities");
         ulong tick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
         HashSet<ulong> currentVisible = [];
 

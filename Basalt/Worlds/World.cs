@@ -1,6 +1,7 @@
 namespace Basalt.Core.Worlds;
 
 using System.Diagnostics.CodeAnalysis;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
@@ -133,7 +134,10 @@ public sealed class World : IDisposable, Tickable
     {
         TickValue++;
         foreach (DimensionInstance dimension in _dimensions.Values)
+        {
+            using var _ = Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})");
             dimension.Tick(TickValue, 1);
+        }
     }
 
     /// <summary>

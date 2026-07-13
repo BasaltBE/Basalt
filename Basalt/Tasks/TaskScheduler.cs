@@ -1,6 +1,7 @@
 namespace Basalt.Core.Tasks;
 
 using System.Collections.Concurrent;
+using Basalt.Core.Profiling;
 
 public sealed class TaskScheduler
 {
@@ -93,13 +94,16 @@ public sealed class TaskScheduler
         {
             if (task.IsCancelled) continue;
 
-            try
+            using (Profiler.BeginZone($"MainThread:{task.GetType().Name}"))
             {
-                task.Execute();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Main thread task execution failed: {ex}");
+                try
+                {
+                    task.Execute();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Main thread task execution failed: {ex}");
+                }
             }
 
             task.IsExecuted = true;

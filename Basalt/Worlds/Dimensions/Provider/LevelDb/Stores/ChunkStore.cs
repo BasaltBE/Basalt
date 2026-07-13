@@ -1,4 +1,5 @@
 using System.Buffers;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -31,6 +32,7 @@ internal sealed class ChunkStore
 
     public ChunkColumn? Load(DimensionType dimensionType, int x, int z)
     {
+        using var __zone = Profiler.BeginZone("ChunkStore.Load");
         byte[]? terrain = ReadBytes(dimensionType, x, z);
         bool fromLegacy = false;
         if (terrain is null)
@@ -58,6 +60,7 @@ internal sealed class ChunkStore
 
     public void Save(WriteBatch batch, ChunkColumn chunk)
     {
+        using var __zone = Profiler.BeginZone("ChunkStore.Save");
         byte[] terrain = WriteChunkPayload(chunk);
 
         batch.Put(LevelDbKeyBuilder.BuildChunkKey(chunk.Type, chunk.X, chunk.Z), terrain);

@@ -1,6 +1,7 @@
 namespace Basalt.Core.Tasks;
 
 using System.Collections.Concurrent;
+using Basalt.Core.Profiling;
 
 public sealed class TaskWorkerPool : IDisposable
 {
@@ -15,7 +16,8 @@ public sealed class TaskWorkerPool : IDisposable
         _workers = new Thread[workerCount];
         for (int i = 0; i < workerCount; i++)
         {
-            _workers[i] = new Thread(WorkerLoop)
+            int index = i;
+            _workers[i] = new Thread(() => WorkerLoop(index))
             {
                 Name = $"BasaltWorker-{i}",
                 IsBackground = true
@@ -32,6 +34,7 @@ public sealed class TaskWorkerPool : IDisposable
 
     internal void DrainCompletions()
     {
+        using var _ = Profiler.BeginZone("WorkerPool.DrainCompletions");
         while (_completionQueue.TryDequeue(out ServerTask? task))
         {
             if (task.IsCancelled) continue;
@@ -40,19 +43,23 @@ public sealed class TaskWorkerPool : IDisposable
         }
     }
 
-    private void WorkerLoop()
+    private void WorkerLoop(int index)
     {
+        Profiler.SetThreadName($"BasaltWorker-{index}");
         foreach (ServerTask task in _workQueue.GetConsumingEnumerable())
         {
             if (task.IsCancelled) continue;
 
-            try
+            using (Profiler.BeginZone(task.GetType().Name))
             {
-                task.Execute();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Task execution failed: {ex}");
+                try
+                {
+                    task.Execute();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Task execution failed: {ex}");
+                }
             }
 
             task.IsExecuted = true;

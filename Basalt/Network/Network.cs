@@ -4,6 +4,7 @@ using System.Buffers;
 using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -67,6 +68,7 @@ public sealed class NetworkHandler
 
     public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
     {
+        using var __zone = Profiler.BeginZone("Network.HandlePacket");
         ReadOnlySpan<byte> packetData = payload.Span;
         byte[]? decompressedBuffer = null;
 

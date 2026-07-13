@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <PackageReference Include="LevelDB.Standard" Version="2.1.6.1" />
+    <PackageReference Include="Tracy-CSharp" Version="0.13.1" />
   </ItemGroup>
 
 </Project>

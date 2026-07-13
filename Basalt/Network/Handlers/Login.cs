@@ -3,6 +3,7 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Core.Events;
+using Basalt.Core.Profiling;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -20,6 +21,7 @@ public static class Login
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("Login.Handle");
         LoginPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
@@ -222,53 +224,44 @@ public static class Login
         string username,
         Guid uuid)
     {
-        if (!string.IsNullOrWhiteSpace(primaryXuid))
-        {
-            CompoundTag? data = world.Provider.LoadPlayerData(primaryXuid);
-            if (data is not null)
-            {
-                return data;
-            }
-        }
+        var provider = world.Provider;
 
-        if (!string.IsNullOrWhiteSpace(identityXuid) && !string.Equals(identityXuid, primaryXuid, StringComparison.Ordinal))
-        {
-            CompoundTag? data = world.Provider.LoadPlayerData(identityXuid);
-            if (data is not null)
-            {
-                return data;
-            }
-        }
+        // Try each candidate key with a raw byte lookup (no NBT deserialization).
+        // Only deserialize the first key that actually has data.
+        ReadOnlySpan<string> candidates =
+        [
+            primaryXuid,
+            identityXuid,
+            uuid.ToString("N"),
+            uuid.ToString(),
+            username
+        ];
 
-        string uuidN = uuid.ToString("N");
-        if (!string.Equals(uuidN, primaryXuid, StringComparison.Ordinal) &&
-            !string.Equals(uuidN, identityXuid, StringComparison.Ordinal))
-        {
-            CompoundTag? data = world.Provider.LoadPlayerData(uuidN);
-            if (data is not null)
-            {
-                return data;
-            }
-        }
+        string? previous1 = null;
+        string? previous2 = null;
 
-        string uuidD = uuid.ToString();
-        if (!string.Equals(uuidD, primaryXuid, StringComparison.Ordinal) &&
-            !string.Equals(uuidD, identityXuid, StringComparison.Ordinal))
+        foreach (string candidate in candidates)
         {
-            CompoundTag? data = world.Provider.LoadPlayerData(uuidD);
-            if (data is not null)
+            if (string.IsNullOrWhiteSpace(candidate))
             {
-                return data;
+                continue;
             }
-        }
 
-        if (!string.IsNullOrWhiteSpace(username))
-        {
-            CompoundTag? data = world.Provider.LoadPlayerData(username);
-            if (data is not null)
+            // Skip duplicates
+            if (string.Equals(candidate, previous1, StringComparison.Ordinal) ||
+                string.Equals(candidate, previous2, StringComparison.Ordinal))
             {
-                return data;
+                continue;
             }
+
+            byte[]? raw = provider.GetRawPlayerData(candidate);
+            if (raw is not null)
+            {
+                return provider.LoadPlayerDataFromRaw(raw);
+            }
+
+            previous2 = previous1;
+            previous1 = candidate;
         }
 
         return null;

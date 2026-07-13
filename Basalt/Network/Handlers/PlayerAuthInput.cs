@@ -10,6 +10,7 @@ using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -28,6 +29,7 @@ public static class PlayerAuthInput
 
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
         PlayerAuthInputPacket packet = new();
         try
         {

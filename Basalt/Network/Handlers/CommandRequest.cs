@@ -2,6 +2,7 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Commands;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -12,6 +13,7 @@ public static class CommandRequest
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("CommandRequest.Handle");
         CommandRequestPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);

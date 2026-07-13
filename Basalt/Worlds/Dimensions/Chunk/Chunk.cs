@@ -1,5 +1,6 @@
 using Basalt.Binary;
 using Basalt.Core.Blocks;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
@@ -341,6 +342,7 @@ public sealed class Chunk
 
     public static byte[] Serialize(Chunk chunk, bool nbt = false)
     {
+        using var __zone = Profiler.BeginZone("Chunk.Serialize");
         if (!nbt && chunk.Cache is not null)
         {
             return chunk.Cache;
@@ -424,6 +426,7 @@ public sealed class Chunk
 
     public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null)
     {
+        using var __zone = Profiler.BeginZone("Chunk.Deserialize");
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
         int explicitCount = -1;

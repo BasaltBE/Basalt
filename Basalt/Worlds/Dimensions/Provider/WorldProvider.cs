@@ -27,6 +27,23 @@ public abstract class WorldProvider : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Gets the raw byte data for a player without deserializing.
+    /// Useful for checking existence across multiple keys before committing to deserialization.
+    /// </summary>
+    public virtual byte[]? GetRawPlayerData(string xuid)
+    {
+        return null;
+    }
+
+    /// <summary>
+    /// Deserializes player data from raw bytes previously obtained via <see cref="GetRawPlayerData"/>.
+    /// </summary>
+    public virtual CompoundTag? LoadPlayerDataFromRaw(byte[] data)
+    {
+        return null;
+    }
+
     public virtual void SavePlayerData(string xuid, CompoundTag data)
     {
     }

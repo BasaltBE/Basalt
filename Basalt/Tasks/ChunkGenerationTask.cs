@@ -1,5 +1,6 @@
 namespace Basalt.Core.Tasks;
 
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Protocol.Enums;
@@ -30,6 +31,7 @@ public sealed class ChunkGenerationTask : ServerTask
 
     public override void Execute()
     {
+        using var _ = Profiler.BeginZone("ChunkGen.Execute");
         ChunkColumn? loaded = _provider.LoadChunk(_dimensionType, _x, _z);
         if (loaded is null)
         {

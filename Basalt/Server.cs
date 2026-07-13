@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Basalt.Core.Commands;
 using Basalt.Core.Network;
 using Basalt.Core.Plugins;
+using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -388,13 +389,22 @@ public sealed class Server
 
     public void Tick()
     {
+        using var _ = Profiler.BeginZone("Server.Tick");
         long startTimestamp = Stopwatch.GetTimestamp();
-        _raknet.Tick();
 
-        Scheduler.Tick(GetWorld().TickValue);
+        using (Profiler.BeginZone("Raknet.Tick"))
+        {
+            _raknet.Tick();
+        }
+
+        using (Profiler.BeginZone("TaskScheduler.Tick"))
+        {
+            Scheduler.Tick(GetWorld().TickValue);
+        }
 
         foreach (WorldInstance world in _worlds.Values.ToArray())
         {
+            using var worldZone = Profiler.BeginZone($"World.Tick({world.Name})");
             long worldStartTimestamp = Stopwatch.GetTimestamp();
             world.Tick();
             long worldEndTimestamp = Stopwatch.GetTimestamp();
@@ -403,6 +413,7 @@ public sealed class Server
 
         long endTimestamp = Stopwatch.GetTimestamp();
         UpdateTps(endTimestamp);
+        Profiler.FrameMark();
     }
 
     public void UpdateTps(long timestamp)

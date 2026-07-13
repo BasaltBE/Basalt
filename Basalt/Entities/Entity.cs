@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -128,6 +129,7 @@ public class Entity
 
     public void Tick(ulong currentTick, uint deltaTick)
     {
+        using var __zone = Profiler.BeginZone($"Entity.Tick({Identifier})");
         TraitOnTickDetails details = new(currentTick, deltaTick);
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -155,6 +157,7 @@ public class Entity
 
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
+        using var __zone = Profiler.BeginZone("Entity.Spawn");
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
