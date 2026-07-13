@@ -1,5 +1,6 @@
 namespace Basalt.Core.Forms;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 public sealed class MessageForm : Form<bool?>
@@ -27,6 +28,8 @@ public sealed class MessageForm : Form<bool?>
         };
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "...")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "...")]
     protected override bool? ReadResponse(string? data)
     {
         return data is null ? null : JsonSerializer.Deserialize<bool?>(data);

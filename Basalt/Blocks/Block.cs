@@ -1,5 +1,6 @@
 namespace Basalt.Core.Blocks;
 
+using System.Diagnostics.CodeAnalysis;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
@@ -23,7 +24,12 @@ public sealed class Block
     {
         Type = type;
         Permutation = permutation;
+        InitializeTraits();
+    }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
+    private void InitializeTraits()
+    {
         foreach (Type traitType in Type.Traits.Values)
         {
             if (Activator.CreateInstance(traitType, this) is BlockTrait trait)

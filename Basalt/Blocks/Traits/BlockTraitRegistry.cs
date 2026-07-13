@@ -1,5 +1,6 @@
 namespace Basalt.Core.Blocks.Traits;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 
@@ -9,6 +10,7 @@ public static class BlockTraitRegistry
 
     public static IReadOnlyDictionary<string, Type> RegisteredTraits => Traits;
 
+    [RequiresUnreferencedCode("...")]
     public static void RegisterFromAssembly(Assembly assembly)
     {
         foreach (Type type in assembly.GetTypes())
@@ -22,6 +24,7 @@ public static class BlockTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
     public static void Register(Type traitType)
     {
         if (!typeof(BlockTrait).IsAssignableFrom(traitType))
@@ -49,6 +52,7 @@ public static class BlockTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
     public static void BindTraitsToType(BlockType blockType)
     {
         foreach ((string identifier, Type traitType) in Traits)
@@ -60,7 +64,9 @@ public static class BlockTraitRegistry
         }
     }
 
-    private static bool Matches(BlockType blockType, Type traitType)
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Component types returned via reflection are preserved")]
+    private static bool Matches(BlockType blockType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         string[] types = GetStringTargets(traitType, "Types");
         for (int i = 0; i < types.Length; i++)
@@ -96,7 +102,7 @@ public static class BlockTraitRegistry
         return false;
     }
 
-    private static string GetIdentifier(Type traitType)
+    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         if (traitType.GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
             property.PropertyType == typeof(string) &&
@@ -109,7 +115,7 @@ public static class BlockTraitRegistry
         return traitType.FullName ?? traitType.Name;
     }
 
-    private static string[] GetStringTargets(Type traitType, string memberName)
+    private static string[] GetStringTargets([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType, string memberName)
     {
         if (traitType.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
             field.GetValue(null) is IEnumerable<string> values)
@@ -126,7 +132,7 @@ public static class BlockTraitRegistry
         return [];
     }
 
-    private static string? GetStringMember(Type type, string memberName)
+    private static string? GetStringMember([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string memberName)
     {
         if (type.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
             field.GetValue(null) is string fieldValue &&
@@ -145,8 +151,10 @@ public static class BlockTraitRegistry
         return null;
     }
 
-    private static Type? GetTypeMember(Type type, string memberName)
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
+    private static Type? GetTypeMember([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string memberName)
     {
+#pragma warning disable IL2073
         if (type.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
             field.GetValue(null) is Type fieldType)
         {
@@ -160,6 +168,7 @@ public static class BlockTraitRegistry
         }
 
         return null;
+#pragma warning restore IL2073
     }
 
     private static bool ContainsOrdinal(IReadOnlyList<string> values, string value)
@@ -175,10 +184,3 @@ public static class BlockTraitRegistry
         return false;
     }
 }
-
-
-
-
-
-
-

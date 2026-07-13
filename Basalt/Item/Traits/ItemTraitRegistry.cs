@@ -1,5 +1,6 @@
 namespace Basalt.Core.Item.Traits;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 
@@ -9,6 +10,7 @@ public static class ItemTraitRegistry
 
     public static IReadOnlyDictionary<string, Type> RegisteredTraits => Traits;
 
+    [RequiresUnreferencedCode("...")]
     public static void RegisterFromAssembly(Assembly assembly)
     {
         foreach (Type type in assembly.GetTypes())
@@ -22,6 +24,7 @@ public static class ItemTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
     public static void Register(Type traitType)
     {
         if (!typeof(ItemTrait).IsAssignableFrom(traitType))
@@ -49,6 +52,7 @@ public static class ItemTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
     public static void BindTraitsToType(ItemType itemType)
     {
         foreach ((string identifier, Type traitType) in Traits)
@@ -60,7 +64,9 @@ public static class ItemTraitRegistry
         }
     }
 
-    private static bool Matches(ItemType itemType, Type traitType)
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "...")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Component types returned via reflection are preserved")]
+    private static bool Matches(ItemType itemType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         string[] types = GetStringTargets(traitType, "Types");
         for (int i = 0; i < types.Length; i++)
@@ -83,7 +89,9 @@ public static class ItemTraitRegistry
             }
         }
 
+#pragma warning disable IL2072
         string[] components = GetComponentTargets(traitType);
+#pragma warning restore IL2072
         for (int i = 0; i < components.Length; i++)
         {
             if (itemType.Components.HasComponent(components[i]))
@@ -95,7 +103,7 @@ public static class ItemTraitRegistry
         return false;
     }
 
-    private static string GetIdentifier(Type traitType)
+    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         if (traitType.GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
             property.PropertyType == typeof(string) &&
@@ -108,7 +116,7 @@ public static class ItemTraitRegistry
         return traitType.FullName ?? traitType.Name;
     }
 
-    private static string[] GetStringTargets(Type traitType, string memberName)
+    private static string[] GetStringTargets([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType, string memberName)
     {
         if (traitType.GetField(memberName, BindingFlags.Public | BindingFlags.Static) is FieldInfo field &&
             field.GetValue(null) is IEnumerable<string> values)
@@ -125,10 +133,11 @@ public static class ItemTraitRegistry
         return [];
     }
 
-    private static string[] GetComponentTargets(Type traitType)
+    private static string[] GetComponentTargets([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         List<string> identifiers = [];
 
+#pragma warning disable IL2072
         if (traitType.GetField("Component", BindingFlags.Public | BindingFlags.Static) is FieldInfo singleField &&
             singleField.GetValue(null) is Type singleComponentType)
         {
@@ -158,11 +167,12 @@ public static class ItemTraitRegistry
                 AddComponentIdentifier(componentType, identifiers);
             }
         }
+#pragma warning restore IL2072
 
         return [.. identifiers.Distinct(StringComparer.Ordinal)];
     }
 
-    private static void AddComponentIdentifier(Type componentType, List<string> identifiers)
+    private static void AddComponentIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type componentType, List<string> identifiers)
     {
         if (!typeof(Components.ItemTypeComponent).IsAssignableFrom(componentType))
         {

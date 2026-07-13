@@ -21,11 +21,15 @@ public sealed class ItemPalette
     private static byte[]? _creativeContentPayload;
     private static Dictionary<uint, ItemStack>? _creativeItems;
 
+#pragma warning disable CA2255
     [ModuleInitializer]
     public static void Initialize()
+#pragma warning restore CA2255
     {
+#pragma warning disable IL2026
         LoadVanilla();
         ItemTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
+#pragma warning restore IL2026
     }
 
     public IReadOnlyDictionary<string, ItemType> Types => ItemType.Types;

@@ -1,5 +1,6 @@
 namespace Basalt.Core.Commands;
 
+using System.Diagnostics.CodeAnalysis;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Core;
@@ -445,7 +446,7 @@ public class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
-        Type type)
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type)
     {
         if (enumOffsets.TryGetValue(type, out uint offset))
         {

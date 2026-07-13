@@ -1,15 +1,19 @@
 namespace Basalt.Core.Commands;
 
+using System.Diagnostics.CodeAnalysis;
+
 public abstract class CustomEnum : CommandEnum
 {
     public string? Value;
 
     protected CustomEnum(string identifier) : base(identifier)
     {
+#pragma warning disable IL2072
         Options = GetValues(GetType());
+#pragma warning restore IL2072
     }
 
-    static string[] GetValues(Type type)
+    static string[] GetValues([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)] Type type)
     {
         const System.Reflection.BindingFlags flags =
             System.Reflection.BindingFlags.Public |

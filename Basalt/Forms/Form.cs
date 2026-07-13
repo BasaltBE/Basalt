@@ -1,5 +1,6 @@
 namespace Basalt.Core.Forms;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Basalt.Core.Player;
 using Basalt.Protocol.Packets;
@@ -16,6 +17,8 @@ public abstract class Form<TResponse>
         Title = title;
     }
 
+    [RequiresUnreferencedCode("...")]
+    [RequiresDynamicCode("...")]
     public void Show(Player player, Action<TResponse> result)
     {
         player.PendingForms[FormId] = new PendingForm((data, canceled) =>
@@ -35,6 +38,8 @@ public abstract class Form<TResponse>
         player.Send(new ClientboundCloseFormPacket());
     }
 
+    [RequiresUnreferencedCode("...")]
+    [RequiresDynamicCode("...")]
     public string ToJson()
     {
         return JsonSerializer.Serialize(CreatePayload());

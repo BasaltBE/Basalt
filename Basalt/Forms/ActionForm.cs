@@ -1,5 +1,6 @@
 namespace Basalt.Core.Forms;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 public sealed class ActionForm : Form<int?>
@@ -34,6 +35,8 @@ public sealed class ActionForm : Form<int?>
         };
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "...")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "...")]
     protected override int? ReadResponse(string? data)
     {
         return data is null ? null : JsonSerializer.Deserialize<int?>(data);

@@ -1,5 +1,6 @@
 namespace Basalt.Core.Plugins;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 public sealed class PluginManager
@@ -14,6 +15,7 @@ public sealed class PluginManager
         _server = server;
     }
 
+    [RequiresUnreferencedCode("Plugin loading uses Assembly.LoadFrom")]
     public void LoadAll(string directory)
     {
         if (!Directory.Exists(directory))
@@ -28,6 +30,7 @@ public sealed class PluginManager
         }
     }
 
+    [RequiresUnreferencedCode("Plugin loading uses Assembly.LoadFrom")]
     public void Load(string assemblyPath)
     {
         try
@@ -114,6 +117,7 @@ public sealed class PluginManager
         }
     }
 
+    [RequiresUnreferencedCode("...")]
     private static Type GetEntry(Assembly assembly)
     {
         Type[] entries = assembly.GetTypes()

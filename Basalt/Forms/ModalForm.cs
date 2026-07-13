@@ -1,5 +1,6 @@
 namespace Basalt.Core.Forms;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 public sealed class ModalForm : Form<object?[]?>
@@ -99,6 +100,8 @@ public sealed class ModalForm : Form<object?[]?>
         };
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Deserializing simple types for form responses.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Deserializing simple types for form responses.")]
     protected override object?[]? ReadResponse(string? data)
     {
         return data is null ? null : JsonSerializer.Deserialize<object?[]?>(data);

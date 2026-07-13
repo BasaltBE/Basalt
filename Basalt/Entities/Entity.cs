@@ -11,6 +11,7 @@ using Basalt.Protocol.Nbt;
 using Basalt.Core.Worlds;
 using Basalt.Core.Entities.Metadata;
 using Basalt.Core.Item;
+using System.Diagnostics.CodeAnalysis;
 
 using Player = Player.Player;
 using Basalt.Core.Traits;
@@ -66,6 +67,12 @@ public class Entity
         Type = EntityType.GetOrCreate(identifier);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
+        InitializeTraits();
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
+    private void InitializeTraits()
+    {
         foreach (Type traitType in Type.Traits.Values)
         {
             if (Activator.CreateInstance(traitType, this) is EntityTrait trait)

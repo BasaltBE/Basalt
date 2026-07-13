@@ -2,6 +2,7 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Blocks.Traits;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -13,11 +14,15 @@ public sealed class BlockPalette
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
 
+#pragma warning disable CA2255
     [ModuleInitializer]
     public static void Initialize()
+#pragma warning restore CA2255
     {
+#pragma warning disable IL2026
         LoadVanilla();
         BlockTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
+#pragma warning restore IL2026
     }
 
     public IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;

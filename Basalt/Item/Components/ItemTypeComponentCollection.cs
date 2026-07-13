@@ -1,5 +1,6 @@
 namespace Basalt.Core.Item.Components;
 
+using System.Diagnostics.CodeAnalysis;
 using Basalt.Protocol.Nbt;
 using System.Reflection;
 
@@ -60,12 +61,12 @@ public sealed class ItemTypeComponentCollection
         return _components.TryGetValue(identifier, out properties!);
     }
 
-    public bool HasComponent<T>() where T : ItemTypeComponent
+    public bool HasComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent
     {
         return HasComponent(GetIdentifier(typeof(T)));
     }
 
-    public T? GetComponent<T>() where T : ItemTypeComponent
+    public T? GetComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent
     {
         string identifier = GetIdentifier(typeof(T));
         if (!_components.TryGetValue(identifier, out CompoundTag? component))
@@ -76,7 +77,7 @@ public sealed class ItemTypeComponentCollection
         return (T?)Activator.CreateInstance(typeof(T), _itemType, component);
     }
 
-    private static string GetIdentifier(Type type)
+    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         if (type.GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
             property.PropertyType == typeof(string) &&
