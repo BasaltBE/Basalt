@@ -1,16 +1,16 @@
 namespace Basalt.Core.Network.Handlers;
 
+using Basalt.Core.DDUI;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-public static class ModalFormResponse
+public static class ServerboundDataStore
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
-        ModalFormResponsePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (ModalFormResponsePacket)Protocol.Io.Packet.Deserialize(reader);
+        ServerboundDataStorePacket packet = (ServerboundDataStorePacket)Protocol.Io.Packet.Deserialize(reader);
 
         if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
@@ -18,11 +18,11 @@ public static class ModalFormResponse
             return;
         }
 
-        if (!player.PendingForms.Remove(packet.FormId, out Player.PendingForm? participant))
+        if (!player.Screens.TryGetValue(packet.Update.Property, out DataDrivenScreen? screen))
         {
             return;
         }
 
-        participant.Complete(packet.Data, packet.Canceled);
+        screen.Handle(player, packet.Update);
     }
 }

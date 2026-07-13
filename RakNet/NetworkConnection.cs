@@ -233,7 +233,7 @@ public abstract class NetworkConnection
         SendPayload(payload, reliability, immediate: immediate);
     }
 
-    protected void SendPayload(
+    public void SendPayload(
         ReadOnlySpan<byte> payload,
         Reliability reliability = Reliability.ReliableOrdered,
         byte orderingChannel = 0,

@@ -67,6 +67,10 @@ namespace Basalt.Protocol.Enums
         SyncActorProperty = 0xa8,
         UpdateAbilities = 0xbb,
         RequestNetworkSettings = 0xc1,
-        ClientboundCloseForm = 0x136
+        ClientboundCloseForm = 0x136,
+        ClientboundDataStore = 0x14a,
+        ServerboundDataStore = 0x14c,
+        ClientboundDataDrivenUIShowScreen = 0x14d,
+        ClientboundDataDrivenUIClose = 0x14e
     }
 }

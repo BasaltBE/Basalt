@@ -49,7 +49,7 @@ public static class ResourcePackClientResponse
                         {
                             Uuid = Guid.Parse("0fba4063-dba1-4281-9b89-ff9390653530"),
                             Version = "1.0.0",
-                            SubPackName = string.Empty
+                            SubPackName = "Education Edition Resource Pack"
                         }
                     ],
                     BaseGameVersion = Constants.MinecraftVersion,

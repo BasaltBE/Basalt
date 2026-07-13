@@ -18,7 +18,7 @@ public abstract class Form<TResponse>
 
     public void Show(Player player, Action<TResponse> result)
     {
-        player.PendingForms[FormId] = new FormParticipant((data, canceled) =>
+        player.PendingForms[FormId] = new PendingForm((data, canceled) =>
         {
             result(canceled ? default! : ReadResponse(data));
         });
