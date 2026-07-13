@@ -51,6 +51,11 @@ public sealed class ItemStackHoeTrait : ItemTrait
 
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, resultPermutation);
 
+        if (string.Equals(resultIdentifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
+        {
+            Basalt.Core.Blocks.Traits.FarmlandTrait.ScheduleFarmlandTick(dimension, pos);
+        }
+
         dimension.Broadcast(new UpdateBlockPacket
         {
             Position = pos,

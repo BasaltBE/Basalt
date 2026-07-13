@@ -500,7 +500,9 @@ public static class InventoryTransaction
                 transaction.Position,
                 transaction.ClickedPosition));
 
-            SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
+            Basalt.Core.Blocks.BlockPermutation currentBlock =
+                player.Dimension.GetPermutation(placePosition.X, placePosition.Y, placePosition.Z);
+            SendBlockUpdate(player, placePosition, currentBlock.NetworkId);
             return;
         }
 

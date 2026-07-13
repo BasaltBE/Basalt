@@ -528,6 +528,15 @@ public static class PlayerAuthInput
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
+        if (block.Type.Liquid)
+        {
+            Basalt.Core.Blocks.Traits.FluidKind? fluidKind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(block);
+            if (fluidKind.HasValue)
+            {
+                Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(fluidKind.Value, player.Dimension, blockPosition);
+            }
+        }
+
         Basalt.Core.Blocks.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 

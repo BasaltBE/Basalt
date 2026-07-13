@@ -329,9 +329,13 @@ public sealed class Dimension : IDisposable
         return chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
     }
 
-    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true)
+    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true, bool broadcast = true)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
+
+        BlockPermutation previous = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
+        bool wasFluid = previous.Type.Liquid && !permutation.Type.Liquid;
+
         chunk.SetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), permutation, layer, dirty);
 
         BlockPos position = new() { X = x, Y = y, Z = z };
@@ -355,6 +359,30 @@ public sealed class Dimension : IDisposable
         {
             chunk.SetBlockActor(position, null);
             chunk.SetBlockStorage(position, null, dirty);
+        }
+
+        if (broadcast)
+        {
+            Broadcast(new UpdateBlockPacket
+            {
+                Position = position,
+                NetworkBlockId = (uint)permutation.NetworkId,
+                Flags = UpdateBlockFlagsType.Network,
+                Layer = (UpdateBlockLayerType)layer
+            },
+            new BroadcastOptions
+            {
+                Radius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256,
+            });
+        }
+
+        if (wasFluid)
+        {
+            Basalt.Core.Blocks.Traits.FluidKind? kind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(previous);
+            if (kind.HasValue)
+            {
+                Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(kind.Value, this, position);
+            }
         }
     }
 
@@ -737,6 +765,18 @@ public sealed class Dimension : IDisposable
             if (!_pendingChunkRequests.Remove(hash, out request))
             {
                 return;
+            }
+
+            if (_chunkViewers.TryGetValue(hash, out int count))
+            {
+                if (count <= 1)
+                {
+                    _chunkViewers.Remove(hash);
+                }
+                else
+                {
+                    _chunkViewers[hash] = count - 1;
+                }
             }
         }
 
