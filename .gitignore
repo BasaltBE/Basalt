@@ -10,12 +10,10 @@ server.properties
 
 artifacts
 .*
+publish
 
 # Not proper tests so not pushing them
 Tests/
-T
-# The old protocol
-_Protocol
 
 # WIP client / debugger
 Waterfall/Program2.cs
