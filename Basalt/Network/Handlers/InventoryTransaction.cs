@@ -291,6 +291,7 @@ public static class InventoryTransaction
         UseItemInventoryTransactionData transaction,
         List<InventoryAction> actions)
     {
+        
         if (transaction.ActionType == UseItemActionClickAir)
         {
             ItemStack? airHeldItem = GetHeldItem(inventory, transaction.HotBarSlot);
@@ -341,12 +342,54 @@ public static class InventoryTransaction
 
         if (transaction.TriggerType == UseItemTriggerRepeat)
         {
+            ItemStack? repeatItem = GetHeldItem(inventory, transaction.HotBarSlot);
+            if (repeatItem is not null && repeatItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(repeatItem.Identifier) is null)
+            {
+                if (player.Dimension is not null)
+                {
+                    BlockPos blockPosition = transaction.BlockPosition;
+
+                    if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
+                    {
+                        blockPosition = player.LastActionBlockPosition.Value;
+                    }
+
+                    repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                        player,
+                        transaction.HotBarSlot,
+                        blockPosition,
+                        transaction.BlockFace,
+                        transaction.Position,
+                        transaction.ClickedPosition));
+                }
+            }
             return;
         }
 
         if (transaction.TriggerType == UseItemTriggerInitial &&
             transaction.ClientPrediction != UseItemClientPredictionPlace)
         {
+            ItemStack? nonPlaceItem = GetHeldItem(inventory, transaction.HotBarSlot);
+            if (nonPlaceItem is not null && nonPlaceItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(nonPlaceItem.Identifier) is null)
+            {
+                if (player.Dimension is not null)
+                {
+                    BlockPos blockPosition = transaction.BlockPosition;
+
+                    if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
+                    {
+                        blockPosition = player.LastActionBlockPosition.Value;
+                    }
+
+                    nonPlaceItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                        player,
+                        transaction.HotBarSlot,
+                        blockPosition,
+                        transaction.BlockFace,
+                        transaction.Position,
+                        transaction.ClickedPosition));
+                }
+            }
             return;
         }
 
@@ -382,6 +425,16 @@ public static class InventoryTransaction
             transaction.TriggerType == UseItemTriggerInitial &&
             actions.Count == 0)
         {
+            if (heldItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier) is null)
+            {
+                heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                    player,
+                    transaction.HotBarSlot,
+                    transaction.BlockPosition,
+                    transaction.BlockFace,
+                    transaction.Position,
+                    transaction.ClickedPosition));
+            }
             return;
         }
 
