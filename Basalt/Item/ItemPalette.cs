@@ -326,20 +326,9 @@ public sealed class ItemPalette
             if (identifier == "minecraft:food")
             {
                 componentPayload = NormalizeFoodComponent(componentPayload);
-                if (!components.Values.ContainsKey("minecraft:use_duration"))
-                {
-                    components.Set("minecraft:use_duration", new IntTag { Value = 32 });
-                }
             }
 
             components.Set(identifier, componentPayload);
-        }
-
-        if (properties.Get<IntTag>("maxAmount") is IntTag maxAmount)
-        {
-            CompoundTag maxStackSize = new();
-            maxStackSize.Set("value", new ByteTag { Value = (sbyte)Math.Clamp(maxAmount.Value, 0, 64) });
-            components.Set("minecraft:max_stack_size", maxStackSize);
         }
 
         properties.Set("components", components);

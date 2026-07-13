@@ -98,14 +98,13 @@ public sealed class ItemStack {
             return new NetworkItemStackDescriptor();
         }
 
-        int blockRuntimeId = Type.BlockType?.Permutations.FirstOrDefault()?.NetworkId ?? 0;
         return new NetworkItemStackDescriptor
         {
             NetworkId = Type.NetworkId,
             Count = StackSize,
             Metadata = Metadata,
             StackNetworkId = NetworkStackId,
-            BlockRuntimeId = blockRuntimeId,
+            BlockRuntimeId = 0,
             Nbt = GetSerializedNbt(),
             CanPlaceOn = ExtraData?.CanPlaceOn ?? [],
             CanDestroy = ExtraData?.CanDestroy ?? [],
