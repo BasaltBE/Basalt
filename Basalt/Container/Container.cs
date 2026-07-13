@@ -311,7 +311,7 @@ public class Container
                     HasValue = true,
                     Value = GetFullContainerName(windowId)
                 },
-                NewItem = ToItemInstanceNew(Storage[slot])
+                NewItem = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             };
 
             player.Send(packet);
@@ -340,7 +340,7 @@ public class Container
 
             for (int i = 0; i < Storage.Count; i++)
             {
-                packet.Content.Add(ToItemInstanceNew(Storage[i]));
+                packet.Content.Add(Storage[i]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
             }
 
             player.Send(packet);
@@ -562,72 +562,6 @@ public class Container
     protected virtual void OnViewerRemoved(Player player, int windowId)
     {
     }
-
-    protected byte GetFullContainerNhameId()
-    {
-        return GetFullContainerNameId();
-    }
-
-    protected static LegacyItem ToNetworkItem(ItemStack? item)
-    {
-        if (item is null || item.Type.NetworkId == 0 || item.StackSize == 0)
-        {
-            return new LegacyItem();
-        }
-
-        int networkBlockId = 0;
-        if (item.Type.BlockType is not null && item.Type.BlockType.Permutations.Count > 0)
-        {
-            networkBlockId = item.Type.BlockType.Permutations[0].NetworkId;
-        }
-
-        return new LegacyItem
-        {
-            NetworkId = item.Type.NetworkId,
-            StackSize = item.StackSize,
-            Metadata = unchecked((int)item.Metadata),
-            ItemStackId = item.NetworkStackId,
-            NetworkBlockId = networkBlockId,
-            ExtraData = new ItemInstanceUserData
-            {
-                Nbt = item.GetSerializedNbt(),
-                CanPlaceOn = item.ExtraData?.CanPlaceOn ?? [],
-                CanDestroy = item.ExtraData?.CanDestroy ?? [],
-                Ticking = item.ExtraData?.Ticking
-            }
-        };
-    }
-
-    protected static NetworkItemStackDescriptor ToItemInstanceNew(ItemStack? item)
-    {
-        if (item is null || item.Type.NetworkId == 0 || item.StackSize == 0)
-        {
-            return new NetworkItemStackDescriptor();
-        }
-
-        int runtimeId = 0;
-        if (item.Type.BlockType is not null && item.Type.BlockType.Permutations.Count > 0)
-        {
-            runtimeId = item.Type.BlockType.Permutations[0].NetworkId;
-        }
-
-        return new NetworkItemStackDescriptor
-        {
-            NetworkId = item.Type.NetworkId,
-            Count = item.StackSize,
-            Metadata = item.Metadata,
-            StackNetworkId = item.NetworkStackId,
-            BlockRuntimeId = runtimeId,
-            Nbt = item.GetSerializedNbt(),
-            CanPlaceOn = item.ExtraData?.CanPlaceOn ?? [],
-            CanDestroy = item.ExtraData?.CanDestroy ?? [],
-            BlockingTick = item.ExtraData?.Ticking ?? 0
-        };
-    }
 }
-
-
-
-
 
 
