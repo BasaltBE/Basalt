@@ -27,6 +27,16 @@ public sealed class CommandRegistry
         }
     }
 
+    /// <summary>
+    /// Finds a command definition by name or alias. Returns null if not found.
+    /// </summary>
+    public CommandDefinition? FindCommand(string name)
+    {
+        string trimmed = name.TrimStart('/');
+        _commands.TryGetValue(trimmed, out CommandDefinition? def);
+        return def;
+    }
+
     public CommandResult Execute(ServerInstance server, Player player, string commandLine)
     {
         return Execute(server, new CommandSender.PlayerSender(player), commandLine);

@@ -2,6 +2,7 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Commands;
+using Basalt.Core.Events;
 using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -29,7 +30,22 @@ public static class CommandRequest
             try
             {
                 Logger.Info($"{player.Username} executed command {packet.Command}");
-                result = server.Commands.Execute(server, player, packet.Command);
+
+                // Emit PlayerCommand signal
+                string commandName = packet.Command.Split(' ', 2)[0].TrimStart('/');
+                CommandDefinition? definition = server.Commands.FindCommand(commandName);
+
+                PlayerCommandSignal signal = new(player, packet.Command, definition);
+                server.Emit(signal);
+
+                if (signal.Cancelled)
+                {
+                    result = CommandResult.Fail;
+                }
+                else
+                {
+                    result = server.Commands.Execute(server, player, packet.Command);
+                }
             }
             catch (Exception exception)
             {
