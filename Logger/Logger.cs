@@ -39,7 +39,7 @@ public static class Logger
     public static void Log(LogLevel Level, string Format, params object?[] Args)
     {
         var now = DateTime.Now;
-        var header = $"[{now:MM-dd HH:mm:ss}]";
+        var header = $"[{now:HH:mm:ss}]";
         var levelText = AsText(Level);
         var message = string.Format(Format, Args);
 
