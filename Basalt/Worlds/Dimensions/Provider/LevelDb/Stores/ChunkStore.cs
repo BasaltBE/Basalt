@@ -20,12 +20,19 @@ internal sealed class ChunkStore
 
     public bool Exists(DimensionType dimensionType, int x, int z)
     {
-        return ReadBytes(dimensionType, x, z) is not null;
+        if (ReadBytes(dimensionType, x, z) is not null)
+        {
+            return true;
+        }
+
+        byte[]? legacy = _database.Get(LevelDbKeyBuilder.BuildChunkKey(x, z));
+        return legacy is { Length: > 0 };
     }
 
     public ChunkColumn? Load(DimensionType dimensionType, int x, int z)
     {
         byte[]? terrain = ReadBytes(dimensionType, x, z);
+        bool fromLegacy = false;
         if (terrain is null)
         {
             terrain = _database.Get(LevelDbKeyBuilder.BuildChunkKey(x, z));
@@ -33,6 +40,8 @@ internal sealed class ChunkStore
             {
                 return null;
             }
+
+            fromLegacy = true;
         }
 
         ChunkColumn? chunk = DecodeChunk(terrain, dimensionType, x, z);
@@ -42,7 +51,8 @@ internal sealed class ChunkStore
         }
 
         _entities.Load(chunk);
-        chunk.Dirty = false;
+
+        chunk.Dirty = fromLegacy;
         return chunk;
     }
 
@@ -51,6 +61,9 @@ internal sealed class ChunkStore
         byte[] terrain = WriteChunkPayload(chunk);
 
         batch.Put(LevelDbKeyBuilder.BuildChunkKey(chunk.Type, chunk.X, chunk.Z), terrain);
+
+        batch.Delete(LevelDbKeyBuilder.BuildChunkKey(chunk.X, chunk.Z));
+
         _entities.WriteChunkEntities(batch, chunk);
     }
 

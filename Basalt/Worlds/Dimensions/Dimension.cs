@@ -106,6 +106,15 @@ public sealed class Dimension : IDisposable
             return chunk;
         }
 
+        if (_provider.HasChunk(Type, x, z))
+        {
+            Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; returning empty chunk to avoid data loss.");
+            chunk = new ChunkColumn(x, z, Type);
+            long safeHash = HashChunk(x, z);
+            _chunks[safeHash] = chunk;
+            return chunk;
+        }
+
         long hash = HashChunk(x, z);
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
@@ -147,6 +156,7 @@ public sealed class Dimension : IDisposable
                 }
 
                 _pendingChunkRequests[hash] = new PendingChunkRequest(ready);
+                _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
             }
 
             _chunkRequests.Enqueue(hash);
@@ -158,12 +168,6 @@ public sealed class Dimension : IDisposable
     {
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
-        if (!_chunks.TryGetValue(hash, out ChunkColumn? chunk))
-        {
-            return false;
-        }
-
-        chunk.ReleaseMemory();
         return _chunks.Remove(hash);
     }
 
@@ -181,8 +185,15 @@ public sealed class Dimension : IDisposable
                 continue;
             }
 
-            _provider.SaveChunk(chunk);
-            chunk.Dirty = false;
+            try
+            {
+                _provider.SaveChunk(chunk);
+                chunk.Dirty = false;
+            }
+            catch (Exception exception)
+            {
+                Logger.Err($"Failed to save chunk {chunk.X},{chunk.Z}: {exception.Message}");
+            }
         }
     }
 
@@ -194,8 +205,17 @@ public sealed class Dimension : IDisposable
         }
 
         SyncBlockActorsToStorages(chunk);
-        _provider.SaveChunk(chunk);
-        chunk.Dirty = false;
+        try
+        {
+            _provider.SaveChunk(chunk);
+            chunk.Dirty = false;
+        }
+        catch (Exception exception)
+        {
+            Logger.Err($"Failed to save chunk {x},{z}: {exception.Message}");
+            return false;
+        }
+
         return true;
     }
 
@@ -214,7 +234,6 @@ public sealed class Dimension : IDisposable
             chunk.Dirty = false;
         }
 
-        chunk.ReleaseMemory();
         return _chunks.Remove(hash);
     }
 
@@ -269,6 +288,14 @@ public sealed class Dimension : IDisposable
             if (_chunkViewers.ContainsKey(hash))
             {
                 continue;
+            }
+
+            lock (_chunkRequestLock)
+            {
+                if (_pendingChunkRequests.ContainsKey(hash))
+                {
+                    continue;
+                }
             }
 
             int x = (int)(hash >> 32);
@@ -388,6 +415,13 @@ public sealed class Dimension : IDisposable
         _disposed = true;
         _chunkRequestCancel.Cancel();
         _chunkRequestSignal.Release(ChunkWorkerLimit);
+
+        SpinWait spin = new();
+        while (!_chunkRequests.IsEmpty)
+        {
+            spin.SpinOnce();
+        }
+
         FlushCompletedChunkRequests(int.MaxValue);
         SaveDirtyChunks();
     }
@@ -697,11 +731,21 @@ public sealed class Dimension : IDisposable
                 continue;
             }
 
-            _chunks[completedRequest.Hash] = completedRequest.Chunk;
-
-            foreach (Action<ChunkColumn> callback in request.Callbacks)
+            if (_chunks.TryGetValue(completedRequest.Hash, out ChunkColumn? existing))
             {
-                callback(completedRequest.Chunk);
+                foreach (Action<ChunkColumn> callback in request.Callbacks)
+                {
+                    callback(existing);
+                }
+            }
+            else
+            {
+                _chunks[completedRequest.Hash] = completedRequest.Chunk;
+
+                foreach (Action<ChunkColumn> callback in request.Callbacks)
+                {
+                    callback(completedRequest.Chunk);
+                }
             }
 
             completed++;
