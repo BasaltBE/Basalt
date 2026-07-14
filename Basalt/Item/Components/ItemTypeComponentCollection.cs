@@ -23,6 +23,17 @@ public sealed class ItemTypeComponentCollection
                     _components[key] = compound;
                 }
             }
+
+            if (componentsTag.Get<CompoundTag>("item_properties") is CompoundTag itemProps)
+            {
+                foreach ((string key, BaseTag value) in itemProps.Values)
+                {
+                    if (value is CompoundTag compound && key.StartsWith("minecraft:", StringComparison.Ordinal))
+                    {
+                        _components.TryAdd(key, compound);
+                    }
+                }
+            }
         }
 
         if (properties.Get<ListTag>("components") is not ListTag componentsList)

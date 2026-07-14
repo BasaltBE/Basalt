@@ -336,18 +336,47 @@ public sealed class ItemPalette
         }
 
         CompoundTag properties = ToCompoundTag(element);
-        NormalizeItemComponents(properties);
+        SerializeComponents(properties);
         return properties;
     }
 
-    private static void NormalizeItemComponents(CompoundTag properties)
+    private static void SerializeComponents(CompoundTag properties)
     {
+        // TODO! Maybe add sum like Serialize inside a component?
         if (properties.Get<ListTag>("components") is not ListTag componentList)
         {
             return;
         }
 
         CompoundTag components = new();
+
+        CompoundTag itemProperties = new();
+
+        if (properties.Get<CompoundTag>("icon") is CompoundTag iconTag)
+        {
+            itemProperties.Set("minecraft:icon", iconTag);
+        }
+
+        if (properties.Get<IntTag>("maxAmount") is IntTag maxStack)
+        {
+            itemProperties.Set("max_stack_size", new IntTag { Value = maxStack.Value });
+        }
+
+        if (properties.Get<IntTag>("damage") is IntTag damage)
+        {
+            itemProperties.Set("damage", damage);
+        }
+
+        if (properties.Get<IntTag>("useDuration") is IntTag useDuration)
+        {
+            itemProperties.Set("use_duration", useDuration);
+        }
+
+        if (itemProperties.Values.Count > 0)
+        {
+            components.Set("item_properties", itemProperties);
+        }
+
         for (int i = 0; i < componentList.Values.Count; i++)
         {
             if (componentList.Values[i] is not StringTag component || string.IsNullOrWhiteSpace(component.Value))
