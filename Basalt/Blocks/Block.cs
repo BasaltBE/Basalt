@@ -18,6 +18,7 @@ public sealed class Block
 {
     private readonly List<BlockTrait> _traits = [];
     private readonly Dictionary<string, BlockComponent> _components = new(StringComparer.Ordinal);
+    private List<ItemStack>? _customDrops;
 
     public BlockType Type { get; }
     public BlockPermutation Permutation { get; private set; }
@@ -122,12 +123,38 @@ public sealed class Block
         SetPermutation(Type.GetPermutation(state));
     }
 
-    public List<ItemStack> GenerateDrops()
+    /// <summary>
+    /// Sets custom drops for this block instance.
+    /// Pass null to clear and revert to default behavior.
+    /// </summary>
+    public void SetDrops(List<ItemStack>? drops)
     {
-        List<ItemStack> drops = Type.GenerateDrops();
-        if (drops.Count > 0)
+        _customDrops = drops;
+    }
+
+    /// <summary>
+    /// Gets the drops for this block. 
+    /// </summary>
+    public List<ItemStack> GetDrops()
+    {
+        if (_customDrops is not null)
         {
-            return drops;
+            return _customDrops;
+        }
+
+        for (int i = 0; i < _traits.Count; i++)
+        {
+            List<ItemStack>? traitDrops = _traits[i].GetCustomDrops(Permutation);
+            if (traitDrops is not null)
+            {
+                return traitDrops;
+            }
+        }
+
+        List<ItemStack> typeDrops = Type.GenerateDrops();
+        if (typeDrops.Count > 0)
+        {
+            return typeDrops;
         }
 
         return LootTableManager.GenerateLootFromBlock(this);
@@ -176,7 +203,8 @@ public sealed class Block
     {
         if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
         {
-            List<ItemStack> drops = GenerateDrops();
+            List<ItemStack> drops = GetDrops();
+
             for (int i = 0; i < drops.Count; i++)
             {
                 ItemEntity drop = new(drops[i])
