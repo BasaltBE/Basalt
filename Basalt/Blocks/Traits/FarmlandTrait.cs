@@ -32,9 +32,7 @@ public class FarmlandTrait : BlockTrait
     public override void OnPlace(BlockPlaceDetails details)
     {
         if (details.Player.Dimension is { } dimension)
-        {
             ScheduleFarmlandTick(dimension, details.BlockPosition);
-        }
     }
 
     public override void OnTick(BlockTickDetails details)
@@ -45,10 +43,7 @@ public class FarmlandTrait : BlockTrait
     {
         Server? server = dimension.World?.Server;
         if (server is null)
-        {
-            // Logger.Warn($"[FarmlandTrait] Cannot schedule tick at ({pos.X}, {pos.Y}, {pos.Z}) — no server");
             return;
-        }
 
         uint delay = offset > 0 ? offset : (uint)Random.Shared.Next((int)CheckIntervalMin, (int)CheckIntervalMax + 1);
         server.Scheduler.Schedule(
@@ -136,10 +131,7 @@ public class FarmlandTrait : BlockTrait
         catch { return; }
 
         if (!string.Equals(perm.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
-        {
-            // Logger.Warn($"[FarmlandTrait] Tick at ({pos.X}, {pos.Y}, {pos.Z}) — block is no longer farmland ({perm.Type.Identifier})");
             return;
-        }
 
         Block? block = dimension.GetBlock(pos.X, pos.Y, pos.Z);
         FarmlandTrait? trait = block?.GetTrait<FarmlandTrait>();
@@ -153,9 +145,7 @@ public class FarmlandTrait : BlockTrait
             {
                 BlockPermutation? moistPerm = FindFarmlandPermutation(7);
                 if (moistPerm is not null)
-                {
                     dimension.SetPermutation(pos.X, pos.Y, pos.Z, moistPerm, 0, true);
-                }
             }
         }
         else
@@ -172,9 +162,7 @@ public class FarmlandTrait : BlockTrait
                 {
                     BlockPermutation? dryPerm = FindFarmlandPermutation(0);
                     if (dryPerm is not null)
-                    {
                         dimension.SetPermutation(pos.X, pos.Y, pos.Z, dryPerm, 0, true);
-                    }
                 }
                 else
                 {
