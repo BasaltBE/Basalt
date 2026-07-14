@@ -38,8 +38,15 @@ public sealed class ItemCatalog
     public ItemCatalog(string categoryName, string? groupName, string? groupIcon)
     {
         Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 0;
-        GroupName = string.IsNullOrEmpty(groupName) ? null : groupName;
+        GroupName = string.IsNullOrEmpty(groupName) ? null : StripMinecraftPrefix(groupName);
         GroupIcon = string.IsNullOrEmpty(groupIcon) ? null : groupIcon;
+    }
+
+    private static string StripMinecraftPrefix(string value)
+    {
+        return value.StartsWith("minecraft:", StringComparison.Ordinal)
+            ? value["minecraft:".Length..]
+            : value;
     }
 }
 

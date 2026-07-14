@@ -51,7 +51,62 @@ public sealed class ItemGroupIdentifierData
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<ItemTypeData>))]
+[JsonSerializable(typeof(CreativeContentJson))]
 internal partial class ItemPaletteJsonContext : JsonSerializerContext
+{
+}
+
+public sealed class CreativeContentJson
+{
+    [JsonPropertyName("Groups")]
+    public List<CreativeGroupJson> Groups { get; set; } = [];
+
+    [JsonPropertyName("Items")]
+    public List<CreativeItemJson> Items { get; set; } = [];
+}
+
+public sealed class CreativeGroupJson
+{
+    [JsonPropertyName("Category")]
+    public int Category { get; set; }
+
+    [JsonPropertyName("Name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("Icon")]
+    public CreativeItemStackJson Icon { get; set; } = new();
+}
+
+public sealed class CreativeItemJson
+{
+    [JsonPropertyName("CreativeItemNetworkID")]
+    public int CreativeItemNetworkID { get; set; }
+
+    [JsonPropertyName("Item")]
+    public CreativeItemStackJson Item { get; set; } = new();
+
+    [JsonPropertyName("GroupIndex")]
+    public int GroupIndex { get; set; }
+}
+
+public sealed class CreativeItemStackJson
+{
+    [JsonPropertyName("NetworkID")]
+    public int NetworkID { get; set; }
+
+    [JsonPropertyName("MetadataValue")]
+    public uint MetadataValue { get; set; }
+
+    [JsonPropertyName("BlockRuntimeID")]
+    public int BlockRuntimeID { get; set; }
+
+    [JsonPropertyName("Count")]
+    public int Count { get; set; } = 1;
+}
+
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
+[JsonSerializable(typeof(CreativeContentJson))]
+internal partial class CreativeContentJsonContext : JsonSerializerContext
 {
 }
 

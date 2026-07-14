@@ -4,6 +4,7 @@ using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Io;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Text.Json;
@@ -25,6 +26,7 @@ public sealed class ItemPalette
 #pragma warning restore CA2255
     {
 #pragma warning disable IL2026
+        Basalt.Core.Blocks.BlockPalette.LoadVanilla();
         LoadVanilla();
         ItemTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
 #pragma warning restore IL2026
@@ -58,7 +60,7 @@ public sealed class ItemPalette
                 Name = type.Identifier,
                 RuntimeId = checked((short)type.NetworkId),
                 ComponentBased = type.IsComponentBased,
-                Version = Math.Max(2, type.Version),
+                Version = type.Version,
                 Data = type.Properties
             })];
 
@@ -83,44 +85,66 @@ public sealed class ItemPalette
 
             LoadVanilla();
 
-            List<ItemType> allTypes = ItemType.GetAll();
-            Dictionary<string, int> groupIndexMap = new(StringComparer.Ordinal);
-            List<CreativeGroup> groups = [];
-            List<CreativeItem> items = [];
+            string root = ResolveDataRoot();
+            string contentPath = Path.Combine(root, "creative_content.json");
+            CreativeContentJson? data;
+            using (FileStream stream = File.OpenRead(contentPath))
+            {
+                data = JsonSerializer.Deserialize(stream, CreativeContentJsonContext.Default.CreativeContentJson);
+            }
+
+            if (data is null)
+            {
+                _creativeContentPayload = [0, 0];
+                _creativeItems = [];
+                return _creativeContentPayload;
+            }
+
+            List<CreativeGroup> groups = new(data.Groups.Count);
+            List<CreativeItem> items = new(data.Items.Count);
             Dictionary<uint, ItemStack> creativeItems = [];
 
-            for (int i = 0; i < allTypes.Count; i++)
+            for (int i = 0; i < data.Groups.Count; i++)
             {
-                ItemType type = allTypes[i];
-                if (type.Catalog is null || type == ItemType.Air)
+                CreativeGroupJson g = data.Groups[i];
+                groups.Add(new CreativeGroup
                 {
-                    continue;
-                }
+                    Category = g.Category,
+                    Name = g.Name,
+                    Icon = new CreativeItemInstanceDescriptor
+                    {
+                        NetworkId = g.Icon.NetworkID,
+                        StackSize = (ushort)g.Icon.Count,
+                        Metadata = (int)g.Icon.MetadataValue,
+                        NetworkBlockId = g.Icon.BlockRuntimeID,
+                        ExtraData = null
+                    }
+                });
+            }
 
-                int groupIndex = ResolveGroupIndex(type.Catalog, groups, groupIndexMap);
-
-                int blockRuntimeId = 0;
-                if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
-                {
-                    blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
-                }
-
-                uint creativeNetworkId = checked((uint)(items.Count + 1));
+            for (int i = 0; i < data.Items.Count; i++)
+            {
+                CreativeItemJson ci = data.Items[i];
                 items.Add(new CreativeItem
                 {
-                    ItemIndex = checked((int)creativeNetworkId),
+                    CreativeItemNetworkId = (uint)ci.CreativeItemNetworkID,
                     ItemInstance = new CreativeItemInstanceDescriptor
                     {
-                        NetworkId = type.NetworkId,
-                        StackSize = 1,
-                        Metadata = 0,
-                        NetworkBlockId = blockRuntimeId,
+                        NetworkId = ci.Item.NetworkID,
+                        StackSize = (ushort)ci.Item.Count,
+                        Metadata = (int)ci.Item.MetadataValue,
+                        NetworkBlockId = ci.Item.BlockRuntimeID,
                         ExtraData = null
                     },
-                    GroupIndex = groupIndex
+                    GroupIndex = (uint)ci.GroupIndex
                 });
 
-                creativeItems[creativeNetworkId] = new ItemStack(type, checked((ushort)type.MaxStackSize), 0, null);
+                ItemType? type = ItemType.GetByNetwork(ci.Item.NetworkID);
+                if (type is not null)
+                {
+                    creativeItems[(uint)ci.CreativeItemNetworkID] = new ItemStack(
+                        type, checked((ushort)type.MaxStackSize), ci.Item.MetadataValue, null);
+                }
             }
 
             CreativeContentPacket packet = new()
@@ -133,31 +157,6 @@ public sealed class ItemPalette
             _creativeItems = creativeItems;
             return _creativeContentPayload;
         }
-    }
-
-    private static int ResolveGroupIndex(
-        ItemCatalog catalog,
-        List<CreativeGroup> groups,
-        Dictionary<string, int> groupIndexMap)
-    {
-        string groupName = catalog.GroupName ?? string.Empty;
-        string groupIcon = catalog.GroupIcon ?? string.Empty;
-        string key = $"{catalog.Category}:{groupName}";
-
-        if (groupIndexMap.TryGetValue(key, out int existingIndex))
-        {
-            return existingIndex;
-        }
-
-        int newIndex = groups.Count;
-        groups.Add(new CreativeGroup
-        {
-            Category = catalog.Category,
-            Name = groupName,
-            Icon = BuildGroupIcon(groupIcon)
-        });
-        groupIndexMap[key] = newIndex;
-        return newIndex;
     }
 
     public static ItemStack? GetCreativeItem(uint creativeItemNetworkId)
@@ -424,25 +423,6 @@ public sealed class ItemPalette
         }
 
         return new FloatTag { Value = element.GetSingle() };
-    }
-
-    private static CreativeItemInstanceDescriptor BuildGroupIcon(string identifier)
-    {
-        ItemType type = ItemType.Get(identifier) ?? ItemType.Air;
-        int blockRuntimeId = 0;
-        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
-        {
-            blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
-        }
-
-        return new CreativeItemInstanceDescriptor
-        {
-            NetworkId = type.NetworkId,
-            StackSize = 1,
-            Metadata = 0,
-            NetworkBlockId = blockRuntimeId,
-            ExtraData = null
-        };
     }
 }
 

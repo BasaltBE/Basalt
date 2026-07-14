@@ -6,9 +6,9 @@ namespace Basalt.Protocol.Types;
 public sealed class CreativeItem : DataType
 {
     /// <summary>
-    /// Item index in creative content.
+    /// Creative item network id.
     /// </summary>
-    public int ItemIndex;
+    public uint CreativeItemNetworkId;
 
     /// <summary>
     /// Item descriptor payload.
@@ -18,19 +18,19 @@ public sealed class CreativeItem : DataType
     /// <summary>
     /// Creative group index.
     /// </summary>
-    public int GroupIndex;
+    public uint GroupIndex;
 
     public void Read(BinaryReader reader)
     {
-        ItemIndex = reader.ReadVarInt();
+        CreativeItemNetworkId = reader.ReadVarUInt();
         ItemInstance.Read(reader);
-        GroupIndex = reader.ReadVarInt();
+        GroupIndex = reader.ReadVarUInt();
     }
 
     public void Write(BinaryWriter writer)
     {
-        writer.WriteVarInt(ItemIndex);
+        writer.WriteVarUInt(CreativeItemNetworkId);
         ItemInstance.Write(writer);
-        writer.WriteVarInt(GroupIndex);
+        writer.WriteVarUInt(GroupIndex);
     }
 }

@@ -5,10 +5,7 @@ namespace Basalt.Protocol.Types;
 
 public sealed class CreativeItemInstanceDescriptor : DataType
 {
-    /// <summary>
-    /// Optional raw encoded payload.
-    /// </summary>
-    public byte[]? RawData;
+    private static readonly byte[] EmptyExtras = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     /// <summary>
     /// Network item id.
@@ -71,12 +68,6 @@ public sealed class CreativeItemInstanceDescriptor : DataType
 
     public void Write(BinaryWriter writer)
     {
-        if (RawData is not null)
-        {
-            writer.WriteBytes(RawData);
-            return;
-        }
-
         writer.WriteZigZag(NetworkId);
         if (NetworkId == 0)
         {
@@ -89,7 +80,8 @@ public sealed class CreativeItemInstanceDescriptor : DataType
 
         if (ExtraData is null)
         {
-            writer.WriteVarInt(0);
+            writer.WriteVarInt(EmptyExtras.Length);
+            writer.WriteBytes(EmptyExtras);
             return;
         }
 
