@@ -29,6 +29,7 @@ namespace Basalt.Protocol.Enums
         MobEquipment = 0x1f,
         Interact = 0x21,
         PlayerAction = 0x2C,
+        Respawn = 0x2D,
         SetActorData = 0x27,
         SetActorMotion = 0x28,
         SetActorLink = 0x29,
