@@ -35,6 +35,8 @@ public static class SetLocalPlayerAsInitialized
             chunkRendering.StartChunkLoad();
         }
 
+        player.Dimension?.AddPlayer(player);
+
         DebugTrait? debugTrait = player.GetTrait<DebugTrait>();
         if (debugTrait is null)
         {

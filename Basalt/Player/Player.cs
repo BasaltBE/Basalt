@@ -340,15 +340,12 @@ public sealed class Player : Entities.Entity
         bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
 
         Location = position;
+        Velocity = new Vec3f();
         OnTeleport(new EntityTeleportOptions(previousPosition, position));
 
         if (changedDimension)
         {
-            previousDimension?.Broadcast(new RemoveActorPacket
-            {
-                EntityUniqueId = UniqueId
-            }, new BroadcastOptions { Except = [this] });
-
+            previousDimension?.RemovePlayer(this);
             previousDimension?.RemoveEntity(this, complete: false);
             Dimension = targetDimension;
             targetDimension.AddEntity(this);
@@ -366,27 +363,27 @@ public sealed class Player : Entities.Entity
                 HasLoadingScreen = false
             });
         }
-        else
+
+        Send(new MovePlayerPacket
         {
-            Send(new MovePlayerPacket
-            {
-                RuntimeId = RuntimeId,
-                Position = position,
-                Pitch = Pitch,
-                Yaw = Yaw,
-                HeadYaw = HeadYaw,
-                Mode = MoveMode.Teleport,
-                OnGround = false,
-                RiddenRuntimeId = 0,
-                TeleportCause = TeleportCause.Command,
-                TeleportSourceEntityType = 0,
-                Tick = tick
-            });
-        }
+            RuntimeId = RuntimeId,
+            Position = position,
+            Pitch = Pitch,
+            Yaw = Yaw,
+            HeadYaw = HeadYaw,
+            Mode = changedDimension ? MoveMode.Reset : MoveMode.Teleport,
+            OnGround = false,
+            RiddenRuntimeId = 0,
+            TeleportCause = TeleportCause.Command,
+            TeleportSourceEntityType = 0,
+            Tick = tick
+        });
 
         if (changedDimension)
         {
-            targetDimension.Broadcast(CreateActorDataPacket(tick), new BroadcastOptions { Except = [this] });
+            Send(CreateActorDataPacket(tick));
+            Send(CreateAbilitiesPacket());
+            targetDimension.AddPlayer(this);
         }
 
         GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
@@ -509,6 +506,11 @@ public sealed class Player : Entities.Entity
 
     public override void SpawnTo(Player player, ulong tick)
     {
+        SpawnToWithPosition(player, tick, Location);
+    }
+
+    public void SpawnToWithPosition(Player player, ulong tick, Vec3f position)
+    {
         ItemInstance heldItem = new();
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
         Item.ItemStack? held = inventory?.GetHeldItem();
@@ -518,14 +520,13 @@ public sealed class Player : Entities.Entity
             heldItem.StackNetworkId = held.NetworkStackId;
         }
 
-        // return;
         player.Send(new AddPlayerPacket
         {
             Uuid = Uuid,
             Username = Username,
             EntityRuntimeId = RuntimeId,
             PlatformChatId = string.Empty,
-            Position = Location,
+            Position = position,
             Velocity = new Vec3f(),
             Pitch = Pitch,
             Yaw = Yaw,
