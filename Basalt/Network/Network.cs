@@ -169,6 +169,10 @@ public sealed class NetworkHandler
                 PlayerAction.Handle(_server, connection, packetBuffer);
                 break;
 
+            case PacketId.Respawn:
+                Respawn.Handle(_server, connection, packetBuffer);
+                break;
+
             case PacketId.ItemStackRequest:
                 ItemStackRequest.Handle(_server, connection, packetBuffer);
                 break;

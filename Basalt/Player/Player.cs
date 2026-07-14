@@ -339,6 +339,30 @@ public sealed class Player : Entities.Entity
         SendAttributes();
     }
 
+    public void Respawn()
+    {
+        if (IsAlive || Dimension is null)
+        {
+            return;
+        }
+
+        Vec3f spawnPosition = Location;
+        Spawn(Dimension, new EntitySpawnOptions(InitialSpawn: false));
+        Location = spawnPosition;
+
+        ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+
+        Send(new RespawnPacket
+        {
+            Position = spawnPosition,
+            State = RespawnState.ReadyToSpawn,
+            EntityRuntimeId = RuntimeId
+        });
+
+        Send(CreateActorDataPacket(tick));
+        SendAttributes();
+    }
+
     public void Teleport(Vec3f position, Dimension? dimension = null)
     {
         Dimension? previousDimension = Dimension;
