@@ -246,8 +246,8 @@ public sealed class Player : Entities.Entity
         };
 
         ulong currentTick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-        drop.LockMergeUntil(currentTick + 50);
-        drop.LockPickupUntil(currentTick + 50);
+        drop.LockMergeUntil(currentTick + 40);
+        drop.LockPickupUntil(currentTick + 40);
         drop.Spawn(Dimension, new EntitySpawnOptions(InitialSpawn: false));
         return true;
     }

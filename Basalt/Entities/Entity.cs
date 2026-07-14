@@ -222,6 +222,7 @@ public class Entity
         Dimension? dimension = Dimension;
         if (!options.Cancel && dimension is not null)
         {
+            ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
             List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
             for (int i = 0; i < drops.Count; i++)
             {
@@ -236,6 +237,7 @@ public class Entity
                     }
                 };
 
+                drop.LockPickupUntil(currentTick + 10);
                 drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
             }
         }

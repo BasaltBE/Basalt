@@ -12,6 +12,7 @@ using Basalt.Core.Blocks.Components;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Item;
 using Basalt.Core.Loot;
+using Basalt.Core.Worlds;
 
 
 public sealed class Block
@@ -203,6 +204,7 @@ public sealed class Block
     {
         if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
         {
+            ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
             List<ItemStack> drops = GetDrops();
 
             for (int i = 0; i < drops.Count; i++)
@@ -217,6 +219,7 @@ public sealed class Block
                     }
                 };
 
+                drop.LockPickupUntil(currentTick + 10);
                 drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
             }
         }
