@@ -1,2 +1,3 @@
 Fix chests not relinking
 Improve Player class to work better with entity class.
+Fix CreativeItemRequests where Creative Item Transactions send CREATIVE ITEM NETWORK IDS but we take them as Item network ids which causes mismatches and fails any transaction
