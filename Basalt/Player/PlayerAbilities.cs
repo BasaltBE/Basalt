@@ -1,4 +1,5 @@
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 namespace Basalt.Core.Player;
@@ -55,6 +56,17 @@ public sealed class PlayerAbilities
     {
         SetAbility(AbilityIndex.OperatorCommands, isOperator);
         SetAbility(AbilityIndex.Teleport, isOperator);
+    }
+
+    public UpdateAbilitiesPacket CreatePacket(long entityUniqueId, bool isOperator)
+    {
+        return new UpdateAbilitiesPacket
+        {
+            EntityUniqueId = entityUniqueId,
+            PlayerPermission = isOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
+            CommandPermission = isOperator ? CommandPermissionLevel.Admin : CommandPermissionLevel.Any,
+            Layers = [ToLayer()]
+        };
     }
 
     public AbilityLayer ToLayer()

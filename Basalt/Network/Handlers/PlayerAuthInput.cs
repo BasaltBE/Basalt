@@ -247,7 +247,7 @@ public static class PlayerAuthInput
             }
         }
 
-        player.SendAttributes();
+        player.Attributes.Send();
     }
 
     private static ulong GetCurrentTick(Player.Player player)

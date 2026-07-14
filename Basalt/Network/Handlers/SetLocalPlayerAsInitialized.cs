@@ -27,7 +27,7 @@ public static class SetLocalPlayerAsInitialized
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
         server.Network.SendPacket(connection, player.CreateActorDataPacket(tick));
-        player.SendAttributes();
+        player.Attributes.Send();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is not null)
@@ -44,7 +44,7 @@ public static class SetLocalPlayerAsInitialized
             debugTrait.OnSpawn(new EntitySpawnOptions(InitialSpawn: false));
         }
 
-        player.SetSpawned(true);
+        player.Spawned = true;
 
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is not null)

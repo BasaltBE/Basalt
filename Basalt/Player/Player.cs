@@ -25,10 +25,10 @@ public sealed class Player : Entities.Entity
     internal NetworkConnection? Connection;
     internal NetworkHandler? Network;
     public PlayerAbilities Abilities { get; } = new();
-    public HashSet<string> Permissions { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public PlayerPermissions Permissions { get; }
     public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
-    public bool IsOperator { get; private set; }
-    public bool Spawned { get; private set; }
+    public bool IsOperator { get; internal set; }
+    public bool Spawned { get; internal set; }
     public float Pitch;
     public float Yaw;
     public float HeadYaw { get; set; }
@@ -46,6 +46,7 @@ public sealed class Player : Entities.Entity
         Username = username;
         Xuid = xuid;
         Uuid = uuid;
+        Permissions = new PlayerPermissions(this);
 
         Flags.SetActorFlag(ActorFlag.HasGravity, true);
         Flags.SetActorFlag(ActorFlag.Breathing, true);
@@ -70,7 +71,7 @@ public sealed class Player : Entities.Entity
         };
         Abilities.SetGamemode(gamemode);
 
-        UpdateAbilitiesPacket abilitiesPacket = CreateAbilitiesPacket();
+        UpdateAbilitiesPacket abilitiesPacket = Abilities.CreatePacket(UniqueId, IsOperator);
 
         Dimension?.Broadcast(gamemodePacket, new BroadcastOptions { Except = [this] });
 
@@ -88,7 +89,7 @@ public sealed class Player : Entities.Entity
         }
     }
 
-    public void LoadGamemode(Gamemode gamemode)
+    public void RestoreGamemode(Gamemode gamemode)
     {
         Gamemode = gamemode;
         Abilities.SetGamemode(gamemode);
@@ -100,64 +101,17 @@ public sealed class Player : Entities.Entity
 
     public void SetOperator(bool isOperator, bool syncClient = true)
     {
-        IsOperator = isOperator;
-        Abilities.SetOperator(isOperator);
-        if (isOperator)
-        {
-            AddPermission("basalt.op", syncClient: false);
-        }
-        else
-        {
-            RemovePermission("basalt.op", syncClient: false);
-        }
-
-        if (syncClient)
-        {
-            SyncPermissions();
-        }
-    }
-
-    public void AddPermission(string permission, bool syncClient = true)
-    {
-        Permissions.Add(permission);
-        if (syncClient)
-        {
-            SyncPermissions();
-        }
-    }
-
-    public void RemovePermission(string permission, bool syncClient = true)
-    {
-        Permissions.Remove(permission);
-        if (syncClient)
-        {
-            SyncPermissions();
-        }
-    }
-
-    public void SyncPermissions()
-    {
-        if (Connection is null || Network is null)
-        {
-            return;
-        }
-
-        Network.SendPacket(Connection, CreateAbilitiesPacket());
-
-        if (Dimension?.World?.Server is Server server)
-        {
-            server.Commands.SendAvailableCommands(server, this);
-        }
+        Permissions.SetOperator(isOperator, syncClient);
     }
 
     public bool HasPermission(string permission)
     {
-        return Permissions.Contains(permission);
+        return Permissions.Has(permission);
     }
 
-    public new CompoundTag WriteToNbt()
+    public new CompoundTag Write()
     {
-        CompoundTag root = base.WriteToNbt();
+        CompoundTag root = base.Write();
         root.Set("username", new StringTag { Value = Username });
         root.Set("xuid", new StringTag { Value = Xuid });
         root.Set("uuid", new StringTag { Value = Uuid.ToString() });
@@ -166,37 +120,20 @@ public sealed class Player : Entities.Entity
         return root;
     }
 
-    public new void FromNBT(CompoundTag root)
+    public new void Read(CompoundTag root)
     {
-        base.FromNBT(root);
+        base.Read(root);
 
         if (root.Get<IntTag>("gamemode") is { } gamemodeTag)
         {
-            LoadGamemode((Gamemode)gamemodeTag.Value);
+            RestoreGamemode((Gamemode)gamemodeTag.Value);
         }
 
         IsOperator = (root.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
-        Abilities.SetOperator(IsOperator);
-        if (IsOperator)
-        {
-            Permissions.Add("basalt.op");
-        }
-        else
-        {
-            Permissions.Remove("basalt.op");
-        }
+        Permissions.RestoreOperator(IsOperator);
     }
 
-    UpdateAbilitiesPacket CreateAbilitiesPacket()
-    {
-        return new UpdateAbilitiesPacket
-        {
-            EntityUniqueId = UniqueId,
-            PlayerPermission = IsOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
-            CommandPermission = IsOperator ? CommandPermissionLevel.Admin : CommandPermissionLevel.Any,
-            Layers = [Abilities.ToLayer()]
-        };
-    }
+
 
     public void Send(params DataPacket[] packets)
     {
@@ -210,103 +147,14 @@ public sealed class Player : Entities.Entity
 
     public bool DropItem(Item.ItemStack item)
     {
-        if (Dimension is null || item.StackSize == 0 || item.Type == Item.ItemType.Air)
-        {
-            return false;
-        }
-
-        if (Dimension.World?.Server is Server server)
-        {
-            var signal = new Events.PlayerItemDropSignal(this, item);
-            server.Emit(signal);
-            if (!signal.Emit())
-            {
-                return false;
-            }
-        }
-
-        Vec3f feet = GetPosition();
-        float yaw = MathF.PI / 180f * Yaw;
-        float pitch = MathF.PI / 180f * Pitch;
-
-        Entities.ItemEntity drop = new(item)
-        {
-            Location = new Vec3f
-            {
-                X = feet.X,
-                Y = feet.Y + 1.15f,
-                Z = feet.Z
-            },
-            Velocity = new Vec3f
-            {
-                X = (-MathF.Sin(yaw) * MathF.Cos(pitch)) / 3f,
-                Y = ((-MathF.Sin(pitch)) / 2f) + 0.2f,
-                Z = (MathF.Cos(yaw) * MathF.Cos(pitch)) / 3f
-            }
-        };
-
-        ulong currentTick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-        drop.LockMergeUntil(currentTick + 40);
-        drop.LockPickupUntil(currentTick + 40);
-        drop.Spawn(Dimension, new EntitySpawnOptions(InitialSpawn: false));
-        return true;
+        var inventory = GetTrait<EntityInventoryTrait>();
+        return inventory?.DropItem(item) ?? false;
     }
 
     public ushort CollectItem(Item.ItemStack item)
     {
         var inventory = GetTrait<EntityInventoryTrait>();
-        if (inventory is null || item.StackSize == 0)
-        {
-            return 0;
-        }
-
-        var container = inventory.Container;
-        ushort remaining = item.StackSize;
-        ushort moved = 0;
-
-        for (int i = 0; i < container.GetSize() && remaining > 0; i++)
-        {
-            Item.ItemStack? existing = container.GetItem(i);
-            if (existing is null || !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
-            {
-                continue;
-            }
-
-            int space = existing.Type.MaxStackSize - existing.StackSize;
-            int transfer = Math.Min(space, remaining);
-            if (transfer <= 0)
-            {
-                continue;
-            }
-
-            existing.IncrementStack((ushort)transfer);
-            container.UpdateSlot(i);
-            remaining = (ushort)(remaining - transfer);
-            moved = (ushort)(moved + transfer);
-        }
-
-        for (int i = 0; i < container.GetSize() && remaining > 0; i++)
-        {
-            if (container.GetItem(i) is not null)
-            {
-                continue;
-            }
-
-            ushort transfer = (ushort)Math.Min(remaining, item.Type.MaxStackSize);
-            Item.ItemStack stack = item.Clone(transfer);
-            container.SetItem(i, stack);
-            remaining = (ushort)(remaining - transfer);
-            moved = (ushort)(moved + transfer);
-        }
-
-        if (moved == 0)
-        {
-            return 0;
-        }
-
-        item.SetStackSize(remaining);
-        inventory.SyncToPlayer(this);
-        return moved;
+        return inventory?.CollectItem(item) ?? 0;
     }
 
     public void Disconnect(string reason = "")
@@ -328,15 +176,12 @@ public sealed class Player : Entities.Entity
         Connection.Disconnect();
     }
 
-    public void SetSpawned(bool spawned)
-    {
-        Spawned = true;
-    }
+
 
     public override void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
         base.Spawn(dimension, options);
-        SendAttributes();
+        Attributes.Send();
     }
 
     public void Respawn()
@@ -360,7 +205,7 @@ public sealed class Player : Entities.Entity
         });
 
         Send(CreateActorDataPacket(tick));
-        SendAttributes();
+        Attributes.Send();
     }
 
     public void Teleport(Vec3f position, Dimension? dimension = null)
@@ -379,7 +224,19 @@ public sealed class Player : Entities.Entity
 
         if (changedDimension)
         {
-            RemoveVisiblePlayers(previousDimension);
+            if (previousDimension?.World?.Server is Server dimServer)
+            {
+                foreach ((_, Player other) in dimServer.Players)
+                {
+                    if (ReferenceEquals(other, this) || other.Dimension != previousDimension)
+                    {
+                        continue;
+                    }
+
+                    Send(new RemoveActorPacket { EntityUniqueId = other.UniqueId });
+                }
+            }
+
             previousDimension?.RemovePlayer(this);
             previousDimension?.RemoveEntity(this, complete: false);
             Dimension = targetDimension;
@@ -417,31 +274,15 @@ public sealed class Player : Entities.Entity
         if (changedDimension)
         {
             Send(CreateActorDataPacket(tick));
-            Send(CreateAbilitiesPacket());
+            Send(Abilities.CreatePacket(UniqueId, IsOperator));
             targetDimension.AddPlayer(this);
         }
 
         GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
-        SendAttributes();
+        Attributes.Send();
     }
 
-    private void RemoveVisiblePlayers(Dimension? dimension)
-    {
-        if (dimension?.World?.Server is not Server server)
-        {
-            return;
-        }
 
-        foreach ((_, Player other) in server.Players)
-        {
-            if (ReferenceEquals(other, this) || other.Dimension != dimension)
-            {
-                continue;
-            }
-
-            Send(new RemoveActorPacket { EntityUniqueId = other.UniqueId });
-        }
-    }
 
     public void RegisterOpenContainer(int windowId, Container container)
     {
@@ -484,7 +325,7 @@ public sealed class Player : Entities.Entity
             return inventory.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerId.Cursor)
+        if (name.ContainerId is (byte)ContainerId.Cursor or (byte)ContainerId.CreatedOutput)
         {
             PlayerCursorTrait? cursor = GetTrait<PlayerCursorTrait>();
             return cursor?.Container;
@@ -498,30 +339,6 @@ public sealed class Player : Entities.Entity
         return null;
     }
 
-
-    public void SendAttributes()
-    {
-        if (Network == null || Connection == null)
-        {
-            return;
-        }
-
-        ulong tick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
-
-        UpdateAttributesPacket attributes = new()
-        {
-            RuntimeId = RuntimeId,
-            Tick = tick,
-            Attributes = Attributes.GetAll().ToList()
-        };
-
-        if (attributes.Attributes.Count > 0)
-        {
-            Network.SendPacket(Connection, attributes);
-        }
-
-        AttributesDirty = false;
-    }
 
     public PlayerListEntry CreatePlayerListEntry()
     {
@@ -557,13 +374,9 @@ public sealed class Player : Entities.Entity
         Skin = writer.GetProcessedBytes().ToArray();
     }
 
-    public override void SpawnTo(Player player, ulong tick)
+    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null)
     {
-        SpawnToWithPosition(player, tick, Location);
-    }
-
-    public void SpawnToWithPosition(Player player, ulong tick, Vec3f position)
-    {
+        Vec3f spawnPosition = position ?? Location;
         ItemInstance heldItem = new();
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
         Item.ItemStack? held = inventory?.GetHeldItem();
@@ -579,7 +392,7 @@ public sealed class Player : Entities.Entity
             Username = Username,
             EntityRuntimeId = RuntimeId,
             PlatformChatId = string.Empty,
-            Position = position,
+            Position = spawnPosition,
             Velocity = new Vec3f(),
             Pitch = Pitch,
             Yaw = Yaw,

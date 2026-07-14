@@ -40,7 +40,7 @@ public sealed class ItemEntity : Entity
         Dimension?.Broadcast(CreateAddItemActorPacket());
     }
 
-    public override void SpawnTo(Player player, ulong tick)
+    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null)
     {
         player.Send(CreateAddItemActorPacket());
     }

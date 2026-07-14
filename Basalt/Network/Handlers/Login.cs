@@ -111,7 +111,7 @@ public static class Login
         var savedData = LoadPlayerDataCompat(world, playerXuid, identity.Xuid, identity.Username, playerUuid);
         if (savedData is not null)
         {
-            player.FromNBT(savedData);
+            player.Read(savedData);
             if (!string.Equals(playerXuid, identity.Xuid, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(playerXuid))
             {
                 world.Provider.SavePlayerData(playerXuid, savedData);

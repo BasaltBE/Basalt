@@ -13,36 +13,52 @@ public static class ItemStackRequest
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        ItemStackRequestPacket packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
-
-        if (!server.Players.TryGetValue(connection, out Player.Player? player) || packet.Requests.Count == 0)
+        try
         {
-            return;
+            int offset = 0;
+            Binary.BinaryReader reader = new(packetBuffer, ref offset);
+            ItemStackRequestPacket packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
+
+            if (!server.Players.TryGetValue(connection, out Player.Player? player) || packet.Requests.Count == 0)
+            {
+                return;
+            }
+
+            List<ItemStackResponse> responses = new(packet.Requests.Count);
+
+            foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
+            {
+                try
+                {
+                    responses.Add(ProcessRequest(player, request));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(string.Format("[ItemStackRequest] Exception on request: {0} {1}", request.RequestId, ex));
+                    responses.Add(ErrorResponse(request.RequestId));
+                }
+            }
+
+            server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
         }
-
-        List<ItemStackResponse> responses = new(packet.Requests.Count);
-
-        foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
+        catch (Exception)
         {
-            try
-            {
-                responses.Add(ProcessRequest(player, request));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(string.Format("[ItemStackRequest] Exception on request: {0} {1}", request.RequestId, ex));
-                responses.Add(ErrorResponse(request.RequestId));
-            }
+            Console.WriteLine(string.Format("[ItemStackRequest] Packet hex dump ({0} bytes): {1}", packetBuffer.Length, Convert.ToHexString(packetBuffer)));
+            throw;
         }
-
-        server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
     }
+
+    /// <summary>
+    /// Maps a creative item network ID to the server-assigned stack network ID for the current request.
+    /// Populated by CraftCreative so that subsequent Transfer actions can match the item.
+    /// </summary>
+    [ThreadStatic]
+    private static int _pendingCreativeStackId;
 
     private static ItemStackResponse ProcessRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changed = [];
+        _pendingCreativeStackId = 0;
 
         foreach (IStackRequestAction action in request.Actions)
         {
@@ -256,6 +272,7 @@ public static class ItemStackRequest
         }
 
         cursor.SetItem(0, item);
+        _pendingCreativeStackId = item.NetworkStackId;
 
         FullContainerName cursorName = new() { ContainerId = (byte)ContainerId.Cursor };
         RecordChange(changed, cursorName, cursor, 0, 0);
@@ -433,10 +450,14 @@ public static class ItemStackRequest
             return false;
         }
 
+        int targetId = stackNetworkId < 0 && _pendingCreativeStackId != 0
+            ? _pendingCreativeStackId
+            : stackNetworkId;
+
         for (int i = 0; i < container.GetSize(); i++)
         {
             ItemStack? item = container.GetItem(i);
-            if (item?.NetworkStackId == stackNetworkId)
+            if (item?.NetworkStackId == targetId)
             {
                 slot = i;
                 return true;

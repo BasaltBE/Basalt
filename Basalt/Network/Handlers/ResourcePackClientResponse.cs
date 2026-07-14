@@ -214,7 +214,7 @@ public static class ResourcePackClientResponse
                 PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
                 server.Network.SendPackets(connection, [startGame]);
-                player.SyncPermissions();
+                player.Permissions.Sync();
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 // server.Network.SendPackets(connection, [spawnStatus]);
                 server.Network.SendPackets(connection, [actorIdentifiers, spawnStatus]);

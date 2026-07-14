@@ -632,10 +632,10 @@ public sealed class Dimension : IDisposable
             int otherChunkZ = WorldToChunk(other.Location.Z);
 
             bool otherInRange = InViewRange(joiningChunkX, joiningChunkZ, otherChunkX, otherChunkZ, viewDistance);
-            other.SpawnToWithPosition(joining, tick, otherInRange ? other.Location : new Vec3f());
+            other.SpawnTo(joining, tick, otherInRange ? other.Location : new Vec3f());
 
             bool joiningInRange = InViewRange(otherChunkX, otherChunkZ, joiningChunkX, joiningChunkZ, viewDistance);
-            joining.SpawnToWithPosition(other, tick, joiningInRange ? joining.Location : new Vec3f());
+            joining.SpawnTo(other, tick, joiningInRange ? joining.Location : new Vec3f());
         }
     }
 
