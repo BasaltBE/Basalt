@@ -345,6 +345,7 @@ public sealed class Player : Entities.Entity
 
         if (changedDimension)
         {
+            RemoveVisiblePlayers(previousDimension);
             previousDimension?.RemovePlayer(this);
             previousDimension?.RemoveEntity(this, complete: false);
             Dimension = targetDimension;
@@ -388,6 +389,24 @@ public sealed class Player : Entities.Entity
 
         GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
         SendAttributes();
+    }
+
+    private void RemoveVisiblePlayers(Dimension? dimension)
+    {
+        if (dimension?.World?.Server is not Server server)
+        {
+            return;
+        }
+
+        foreach ((_, Player other) in server.Players)
+        {
+            if (ReferenceEquals(other, this) || other.Dimension != dimension)
+            {
+                continue;
+            }
+
+            Send(new RemoveActorPacket { EntityUniqueId = other.UniqueId });
+        }
     }
 
     public void RegisterOpenContainer(int windowId, Container container)

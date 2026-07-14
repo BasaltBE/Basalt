@@ -92,6 +92,11 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
       UpdateTrackedChunkPosition();
       ResetRingScan();
       SendPublisherUpdate(includeSavedChunks: true);
+
+      if (Player.Dimension is not null)
+      {
+        RequestAndSendAvailableChunks(Player.Dimension);
+      }
     }
   }
 
@@ -290,6 +295,95 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
       });
 
       _sentChunkBuffer.Add((chunk.Hash, chunk.X, chunk.Z));
+    }
+  }
+
+  private void RequestAndSendAvailableChunks(Dimension dimension)
+  {
+    _sendBuffer.Clear();
+    _sentChunkBuffer.Clear();
+
+    Span<(int X, int Z)> deferredRequests = stackalloc (int X, int Z)[ChunksPerTick];
+    int deferredCount = 0;
+
+    while (_sendBuffer.Count < ChunksPerTick && NextRingPosition(out int x, out int z))
+    {
+      long hash = HashChunk(x, z);
+      if (_loadedChunks.Contains(hash) || _requestedChunks.Contains(hash))
+      {
+        continue;
+      }
+
+      ChunkColumn? chunk = dimension.GetChunk(x, z);
+      if (chunk is not null)
+      {
+        byte[] payload;
+        try
+        {
+          payload = ChunkColumn.Serialize(chunk);
+        }
+        catch (Exception exception)
+        {
+          Logger.Err($"Failed to serialize chunk {x}, {z}: {exception.Message}");
+          continue;
+        }
+
+        _sendBuffer.Add(new LevelChunkPacket
+        {
+          ChunkX = chunk.X,
+          ChunkZ = chunk.Z,
+          Dimension = (int)chunk.Type,
+          SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
+          CacheEnabled = false,
+          RawPayload = payload
+        });
+        _sentChunkBuffer.Add((hash, x, z));
+      }
+      else if (deferredCount < ChunksPerTick)
+      {
+        _requestedChunks.Add(hash);
+        deferredRequests[deferredCount++] = (x, z);
+      }
+    }
+
+    if (deferredCount > 0)
+    {
+      dimension.RequestChunks(deferredRequests[..deferredCount], chunk =>
+      {
+        lock (_lock)
+        {
+          if (!_started || Player.Dimension != dimension || !_requestedChunks.Contains(chunk.Hash))
+          {
+            return;
+          }
+
+          if (_loadedChunks.Contains(chunk.Hash) || !ChunkInRange(chunk.X, chunk.Z))
+          {
+            _requestedChunks.Remove(chunk.Hash);
+            return;
+          }
+
+          _readyChunks.Enqueue(chunk);
+        }
+      });
+    }
+
+    if (_sendBuffer.Count == 0)
+    {
+      return;
+    }
+
+    Player.Send([.. _sendBuffer]);
+
+    foreach ((long hash, int x, int z) in _sentChunkBuffer)
+    {
+      if (!_loadedChunks.Add(hash))
+      {
+        continue;
+      }
+
+      dimension.AddChunkViewer(x, z);
+      SendChunkChestVisualUpdates(dimension, x, z);
     }
   }
 

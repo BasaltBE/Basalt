@@ -88,16 +88,13 @@ public sealed class Dimension : IDisposable
             return chunk;
         }
 
+        long hash = HashChunk(x, z);
+
         if (_provider.HasChunk(Type, x, z))
         {
-            Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; returning empty chunk to avoid data loss.");
-            chunk = new ChunkColumn(x, z, Type);
-            long safeHash = HashChunk(x, z);
-            _chunks[safeHash] = chunk;
-            return chunk;
+            Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
         }
 
-        long hash = HashChunk(x, z);
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
         chunk.Dirty = true;

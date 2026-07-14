@@ -112,6 +112,11 @@ public sealed class BlockStorage
         byte paletteAndFlag = reader.ReadUInt8();
         int bitsPerBlock = paletteAndFlag >> 1;
 
+        if (bitsPerBlock > 16)
+        {
+            throw new InvalidOperationException($"Invalid bits per block: {bitsPerBlock}.");
+        }
+
         if (bitsPerBlock == 0)
         {
             int zeroPaletteSize = nbt ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
