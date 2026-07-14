@@ -17,5 +17,6 @@ public static class DefaultCommands
         registry.Register(SummonCommand.Definition);
         registry.Register(TpCommand.Definition);
         registry.Register(PluginsCommand.Definition);
+        registry.Register(WorldsCommand.Definition);
     }
 }
