@@ -109,7 +109,28 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
 
         if (CurrentValue <= 0)
         {
-            Entity.Kill(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
+            if (Entity is Player.Player player)
+            {
+                Entity.OnDeath(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
+
+                player.Send(new RespawnPacket
+                {
+                    Position = player.Location,
+                    State = RespawnState.SearchingForSpawn,
+                    EntityRuntimeId = player.RuntimeId
+                });
+
+                player.Send(new RespawnPacket
+                {
+                    Position = player.Location,
+                    State = RespawnState.ReadyToSpawn,
+                    EntityRuntimeId = player.RuntimeId
+                });
+            }
+            else
+            {
+                Entity.Kill(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
+            }
         }
     }
 

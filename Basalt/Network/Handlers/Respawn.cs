@@ -37,6 +37,13 @@ public static class Respawn
             return;
         }
 
+        player.Send(new RespawnPacket
+        {
+            Position = player.Location,
+            State = RespawnState.ReadyToSpawn,
+            EntityRuntimeId = player.RuntimeId
+        });
+
         player.Respawn();
     }
 }
