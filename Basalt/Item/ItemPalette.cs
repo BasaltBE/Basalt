@@ -1,6 +1,5 @@
 namespace Basalt.Core.Item;
 
-using Basalt.Binary;
 using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -8,7 +7,6 @@ using Basalt.Protocol.Nbt;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Text.Json;
-using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
@@ -84,68 +82,82 @@ public sealed class ItemPalette
             }
 
             LoadVanilla();
-            string root = ResolveDataRoot();
-            string groupsPath = Path.Combine(root, "creative_groups.json");
-            string contentPath = Path.Combine(root, "creative_content.json");
 
-            List<CreativeGroupData> groups;
-            using (FileStream groupsStream = File.OpenRead(groupsPath))
-            {
-                groups = JsonSerializer.Deserialize(groupsStream, ItemPaletteJsonContext.Default.ListCreativeGroupData) ?? [];
-            }
-
-            List<CreativeContentData> content;
-            using (FileStream contentStream = File.OpenRead(contentPath))
-            {
-                content = JsonSerializer.Deserialize(contentStream, ItemPaletteJsonContext.Default.ListCreativeContentData) ?? [];
-            }
-
-            CreativeContentPacket packet = new()
-            {
-                Groups = new List<CreativeGroup>(groups.Count),
-                Items = new List<CreativeItem>(content.Count)
-            };
+            List<ItemType> allTypes = ItemType.GetAll();
+            Dictionary<string, int> groupIndexMap = new(StringComparer.Ordinal);
+            List<CreativeGroup> groups = [];
+            List<CreativeItem> items = [];
             Dictionary<uint, ItemStack> creativeItems = [];
 
-            for (int i = 0; i < groups.Count; i++)
+            for (int i = 0; i < allTypes.Count; i++)
             {
-                CreativeGroupData group = groups[i];
-                packet.Groups.Add(new CreativeGroup
-                {
-                    Category = group.Category,
-                    Name = group.Name,
-                    Icon = BuildGroupIcon(group.Icon)
-                });
-            }
-
-            for (int i = 0; i < content.Count; i++)
-            {
-                CreativeContentData entry = content[i];
-                if ((uint)entry.GroupIndex >= (uint)packet.Groups.Count)
+                ItemType type = allTypes[i];
+                if (type.Catalog is null || type == ItemType.Air)
                 {
                     continue;
                 }
 
-                CreativeItemInstanceDescriptor descriptor = ReadCreativeDescriptor(entry);
-                uint itemIndex = checked((uint)packet.Items.Count);
-                packet.Items.Add(new CreativeItem
+                int groupIndex = ResolveGroupIndex(type.Catalog, groups, groupIndexMap);
+
+                int blockRuntimeId = 0;
+                if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
                 {
-                    ItemIndex = checked((int)itemIndex),
-                    ItemInstance = descriptor,
-                    GroupIndex = entry.GroupIndex
+                    blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
+                }
+
+                uint creativeNetworkId = checked((uint)(items.Count + 1));
+                items.Add(new CreativeItem
+                {
+                    ItemIndex = checked((int)creativeNetworkId),
+                    ItemInstance = new CreativeItemInstanceDescriptor
+                    {
+                        NetworkId = type.NetworkId,
+                        StackSize = 1,
+                        Metadata = 0,
+                        NetworkBlockId = blockRuntimeId,
+                        ExtraData = null
+                    },
+                    GroupIndex = groupIndex
                 });
 
-                ItemStack? stack = CreateCreativeStack(entry);
-                if (stack is not null)
-                {
-                    creativeItems[itemIndex] = stack;
-                }
+                creativeItems[creativeNetworkId] = new ItemStack(type, checked((ushort)type.MaxStackSize), 0, null);
             }
+
+            CreativeContentPacket packet = new()
+            {
+                Groups = groups,
+                Items = items
+            };
 
             _creativeContentPayload = SerializePacketBody(packet);
             _creativeItems = creativeItems;
             return _creativeContentPayload;
         }
+    }
+
+    private static int ResolveGroupIndex(
+        ItemCatalog catalog,
+        List<CreativeGroup> groups,
+        Dictionary<string, int> groupIndexMap)
+    {
+        string groupName = catalog.GroupName ?? string.Empty;
+        string groupIcon = catalog.GroupIcon ?? string.Empty;
+        string key = $"{catalog.Category}:{groupName}";
+
+        if (groupIndexMap.TryGetValue(key, out int existingIndex))
+        {
+            return existingIndex;
+        }
+
+        int newIndex = groups.Count;
+        groups.Add(new CreativeGroup
+        {
+            Category = catalog.Category,
+            Name = groupName,
+            Icon = BuildGroupIcon(groupIcon)
+        });
+        groupIndexMap[key] = newIndex;
+        return newIndex;
     }
 
     public static ItemStack? GetCreativeItem(uint creativeItemNetworkId)
@@ -202,6 +214,20 @@ public sealed class ItemPalette
                     continue;
                 }
 
+                ItemCatalog? catalog = null;
+                if (entry.Catalog is not null && !string.IsNullOrEmpty(entry.Catalog.CategoryName))
+                {
+                    string? groupName = null;
+                    string? groupIcon = null;
+                    if (entry.Catalog.GroupIdentifier is { } gid && !string.IsNullOrEmpty(gid.Name))
+                    {
+                        groupName = gid.Name;
+                        groupIcon = gid.Icon;
+                    }
+
+                    catalog = new ItemCatalog(entry.Catalog.CategoryName, groupName, groupIcon);
+                }
+
                 _ = new ItemType(
                     entry.Identifier,
                     entry.NetworkId.Value,
@@ -209,7 +235,8 @@ public sealed class ItemPalette
                     entry.Tags,
                     entry.ComponentBased,
                     entry.ItemVersion,
-                    BuildProperties(entry.PropertiesPayload));
+                    BuildProperties(entry.PropertiesPayload),
+                    catalog);
             }
 
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
@@ -416,55 +443,6 @@ public sealed class ItemPalette
             NetworkBlockId = blockRuntimeId,
             ExtraData = null
         };
-    }
-
-    private static CreativeItemInstanceDescriptor ReadCreativeDescriptor(CreativeContentData entry)
-    {
-        ItemType type = ItemType.Get(entry.Type) ?? ItemType.Air;
-        CreativeItemInstanceDescriptor descriptor = new();
-        if (!string.IsNullOrWhiteSpace(entry.Instance))
-        {
-            byte[] raw = Convert.FromBase64String(entry.Instance);
-            int offset = 0;
-            BinaryReader reader = new(raw, ref offset);
-            descriptor.Read(reader);
-        }
-
-        int blockRuntimeId = 0;
-        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
-        {
-            blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
-        }
-
-        return new CreativeItemInstanceDescriptor
-        {
-            NetworkId = type.NetworkId,
-            StackSize = descriptor.StackSize == 0 ? (ushort)1 : descriptor.StackSize,
-            Metadata = descriptor.Metadata,
-            NetworkBlockId = blockRuntimeId,
-            ExtraData = descriptor.ExtraData
-        };
-    }
-
-    private static ItemStack? CreateCreativeStack(CreativeContentData entry)
-    {
-        ItemType? type = ItemType.Get(entry.Type);
-        if (type is null || type == ItemType.Air || string.IsNullOrWhiteSpace(entry.Instance))
-        {
-            return null;
-        }
-
-        byte[] raw = Convert.FromBase64String(entry.Instance);
-        int offset = 0;
-        BinaryReader reader = new(raw, ref offset);
-        CreativeItemInstanceDescriptor descriptor = new();
-        descriptor.Read(reader);
-
-        return new ItemStack(
-            type,
-            checked((ushort)type.MaxStackSize),
-            unchecked((uint)descriptor.Metadata),
-            descriptor.ExtraData);
     }
 }
 
