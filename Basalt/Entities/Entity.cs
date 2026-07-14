@@ -35,7 +35,7 @@ public class Entity
         set => Position = value;
     }
     public Vec3f Velocity;
-    public EntityAttributes Attributes { get; } = new();
+    public EntityAttributes Attributes { get; }
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
     public Dimension? Dimension { get; protected set; }
@@ -66,6 +66,7 @@ public class Entity
         }
 
         Type = EntityType.GetOrCreate(identifier);
+        Attributes = new EntityAttributes(this);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
         InitializeTraits();
@@ -150,7 +151,7 @@ public class Entity
 
         if (AttributesDirty && this is Player player)
         {
-            player.SendAttributes();
+            player.Attributes.Send();
         }
     }
 
@@ -336,7 +337,7 @@ public class Entity
     //     Attributes.SetAttribute(attribute);
     // }
 
-    public CompoundTag WriteToNbt()
+    public CompoundTag Write()
     {
         CompoundTag root = new();
         root.Set("identifier", new StringTag { Value = Identifier });
@@ -364,7 +365,7 @@ public class Entity
         return root;
     }
 
-    public void FromNBT(CompoundTag root)
+    public void Read(CompoundTag root)
     {
         Position = new Vec3f
         {
@@ -528,14 +529,14 @@ public class Entity
         };
     }
 
-    public virtual void SpawnTo(Player player, ulong tick)
+    public virtual void SpawnTo(Player player, ulong tick, Vec3f? position = null)
     {
         player.Send(new AddActorPacket
         {
             EntityUniqueId = UniqueId,
             EntityRuntimeId = RuntimeId,
             EntityType = Identifier,
-            Position = Position,
+            Position = position ?? Position,
             Velocity = new Vec3f(),
             Pitch = 0,
             Yaw = 0,
