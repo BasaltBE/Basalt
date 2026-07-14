@@ -171,6 +171,13 @@ public sealed class ItemEntity : Entity
                 continue;
             }
 
+            var signal = new Basalt.Core.Events.PlayerItemPickupSignal(player, Item, this);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                continue;
+            }
+
             ushort moved = player.CollectItem(Item);
             if (moved == 0)
             {

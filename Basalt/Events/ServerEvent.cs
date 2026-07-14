@@ -11,6 +11,8 @@ public enum ServerEvent : int
     PlayerPlaceBlock = 8,
     PlayerBreakBlock = 9,
     PlayerCommand = 10,
+    PlayerItemDrop = 11,
+    PlayerItemPickup = 12,
 }
 
 

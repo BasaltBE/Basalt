@@ -215,6 +215,16 @@ public sealed class Player : Entities.Entity
             return false;
         }
 
+        if (Dimension.World?.Server is Server server)
+        {
+            var signal = new Events.PlayerItemDropSignal(this, item);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                return false;
+            }
+        }
+
         Vec3f feet = GetPosition();
         float yaw = MathF.PI / 180f * Yaw;
         float pitch = MathF.PI / 180f * Pitch;
