@@ -14,16 +14,19 @@ public class FarmlandTrait : BlockTrait
     public static new readonly string[] Types = [BlockIdentifier.Farmland.ToIdentifier()];
 
     private const int WaterSearchRadius = 4;
-    private const uint CheckInterval = 10;
+    private const uint CheckIntervalMin = 8;
+    private const uint CheckIntervalMax = 20;
     private const int DryChecksToDecay = 5;
 
     private static int? _waterHash;
     private static int? _flowingWaterHash;
 
     private int _dryTicks;
+    private readonly int _dryChecksNeeded;
 
     public FarmlandTrait(Block block) : base(block)
     {
+        _dryChecksNeeded = Random.Shared.Next(DryChecksToDecay, DryChecksToDecay + 4);
     }
 
     public override void OnPlace(BlockPlaceDetails details)
@@ -38,17 +41,18 @@ public class FarmlandTrait : BlockTrait
     {
     }
 
-    public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = CheckInterval)
+    public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = 0)
     {
         Server? server = dimension.World?.Server;
         if (server is null)
         {
-            Logger.Warn($"[FarmlandTrait] Cannot schedule tick at ({pos.X}, {pos.Y}, {pos.Z}) — no server");
+            // Logger.Warn($"[FarmlandTrait] Cannot schedule tick at ({pos.X}, {pos.Y}, {pos.Z}) — no server");
             return;
         }
 
+        uint delay = offset > 0 ? offset : (uint)Random.Shared.Next((int)CheckIntervalMin, (int)CheckIntervalMax + 1);
         server.Scheduler.Schedule(
-            new FarmlandTickTask(dimension, pos) { DelayTicks = offset, RunOnMainThread = true },
+            new FarmlandTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true },
             dimension.World!.TickValue);
     }
 
@@ -133,7 +137,7 @@ public class FarmlandTrait : BlockTrait
 
         if (!string.Equals(perm.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
         {
-            Logger.Warn($"[FarmlandTrait] Tick at ({pos.X}, {pos.Y}, {pos.Z}) — block is no longer farmland ({perm.Type.Identifier})");
+            // Logger.Warn($"[FarmlandTrait] Tick at ({pos.X}, {pos.Y}, {pos.Z}) — block is no longer farmland ({perm.Type.Identifier})");
             return;
         }
 
@@ -157,8 +161,9 @@ public class FarmlandTrait : BlockTrait
         else
         {
             int dryCount = (trait?._dryTicks ?? 0) + 1;
+            int threshold = trait?._dryChecksNeeded ?? DryChecksToDecay;
 
-            if (dryCount >= DryChecksToDecay)
+            if (dryCount >= threshold)
             {
                 if (trait is not null) trait._dryTicks = 0;
 
