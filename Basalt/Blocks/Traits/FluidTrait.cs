@@ -499,7 +499,7 @@ public class FluidTrait : BlockTrait
 
     private static void NotifyNearbyFarmland(Dimension dimension, BlockPos pos)
     {
-        int radius = 4; // Match FarmlandTrait.WaterSearchRadius
+        int radius = 4; 
         string farmlandId = BlockIdentifier.Farmland.ToIdentifier();
 
         for (int dx = -radius; dx <= radius; dx++)
@@ -519,7 +519,7 @@ public class FluidTrait : BlockTrait
                     if (string.Equals(perm.Type.Identifier, farmlandId, StringComparison.Ordinal))
                     {
                         BlockPos farmPos = new() { X = bx, Y = by, Z = bz };
-                        uint delay = (uint)Random.Shared.Next(20, 61);
+                        uint delay = (uint)Random.Shared.Next(50, 300);
                         FarmlandTrait.ScheduleFarmlandTick(dimension, farmPos, offset: delay);
                     }
                 }
