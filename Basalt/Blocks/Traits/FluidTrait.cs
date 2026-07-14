@@ -456,6 +456,11 @@ public class FluidTrait : BlockTrait
         dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, perm);
         ScheduleFluidTick(dimension, pos, kind);
+
+        if (kind == FluidKind.Water)
+        {
+            NotifyNearbyFarmland(dimension, pos);
+        }
     }
 
     private static void FormBlock(Dimension dimension, BlockPos pos, BlockPermutation newPermutation)
@@ -485,6 +490,41 @@ public class FluidTrait : BlockTrait
             }
         }
         // Logger.Warn($"[FluidTrait] NotifyFluidNeighbors at ({pos.X},{pos.Y},{pos.Z}) scheduled {scheduled} ticks");
+
+        if (kind == FluidKind.Water)
+        {
+            NotifyNearbyFarmland(dimension, pos);
+        }
+    }
+
+    private static void NotifyNearbyFarmland(Dimension dimension, BlockPos pos)
+    {
+        int radius = 4; // Match FarmlandTrait.WaterSearchRadius
+        string farmlandId = BlockIdentifier.Farmland.ToIdentifier();
+
+        for (int dx = -radius; dx <= radius; dx++)
+        {
+            for (int dz = -radius; dz <= radius; dz++)
+            {
+                for (int dy = -1; dy <= 0; dy++)
+                {
+                    int bx = pos.X + dx;
+                    int by = pos.Y + dy;
+                    int bz = pos.Z + dz;
+
+                    BlockPermutation? perm;
+                    try { perm = dimension.GetPermutation(bx, by, bz, 0); }
+                    catch { continue; }
+
+                    if (string.Equals(perm.Type.Identifier, farmlandId, StringComparison.Ordinal))
+                    {
+                        BlockPos farmPos = new() { X = bx, Y = by, Z = bz };
+                        uint delay = (uint)Random.Shared.Next(20, 61);
+                        FarmlandTrait.ScheduleFarmlandTick(dimension, farmPos, offset: delay);
+                    }
+                }
+            }
+        }
     }
 
     private sealed class FluidTickTask : DelayedTask
