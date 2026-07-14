@@ -39,6 +39,12 @@ public class FarmlandTrait : BlockTrait
     {
     }
 
+    public override void OnLandOn(BlockLandOnDetails details)
+    {
+        base.OnLandOn(details);
+        // TODO! Implement farmland decay on landing (1 in 2 chance iirc)
+    }
+
     public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = 0)
     {
         Server? server = dimension.World?.Server;
