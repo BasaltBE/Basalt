@@ -612,6 +612,51 @@ public sealed class Dimension : IDisposable
         _entities.Remove(entity);
     }
 
+    public void AddPlayer(Player.Player joining)
+    {
+        if (World?.Server is not Server server)
+        {
+            return;
+        }
+
+        ulong tick = World is Tickable tickable ? tickable.TickValue : 0;
+        int joiningChunkX = WorldToChunk(joining.Location.X);
+        int joiningChunkZ = WorldToChunk(joining.Location.Z);
+        int viewDistance = server.Properties.MaxViewDistance;
+
+        foreach ((_, Player.Player other) in server.Players)
+        {
+            if (ReferenceEquals(other, joining) || other.Dimension != this)
+            {
+                continue;
+            }
+
+            int otherChunkX = WorldToChunk(other.Location.X);
+            int otherChunkZ = WorldToChunk(other.Location.Z);
+
+            bool otherInRange = InViewRange(joiningChunkX, joiningChunkZ, otherChunkX, otherChunkZ, viewDistance);
+            other.SpawnToWithPosition(joining, tick, otherInRange ? other.Location : new Vec3f());
+
+            bool joiningInRange = InViewRange(otherChunkX, otherChunkZ, joiningChunkX, joiningChunkZ, viewDistance);
+            joining.SpawnToWithPosition(other, tick, joiningInRange ? joining.Location : new Vec3f());
+        }
+    }
+
+    public void RemovePlayer(Player.Player leaving)
+    {
+        Broadcast(new RemoveActorPacket
+        {
+            EntityUniqueId = leaving.UniqueId
+        }, new BroadcastOptions { Except = [leaving] });
+    }
+
+    private static bool InViewRange(int viewerChunkX, int viewerChunkZ, int targetChunkX, int targetChunkZ, int viewDistance)
+    {
+        int dx = targetChunkX - viewerChunkX;
+        int dz = targetChunkZ - viewerChunkZ;
+        return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= viewDistance;
+    }
+
     private static long HashChunk(int x, int z)
     {
         return ((long)x << 32) | (uint)z;
