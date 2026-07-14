@@ -13,6 +13,7 @@ public enum ServerEvent : int
     PlayerCommand = 10,
     PlayerItemDrop = 11,
     PlayerItemPickup = 12,
+    PlayerRespawn = 13,
 }
 
 
