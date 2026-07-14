@@ -85,66 +85,78 @@ public sealed class ItemPalette
 
             LoadVanilla();
 
-            string root = ResolveDataRoot();
-            string contentPath = Path.Combine(root, "creative_content.json");
-            CreativeContentJson? data;
-            using (FileStream stream = File.OpenRead(contentPath))
-            {
-                data = JsonSerializer.Deserialize(stream, CreativeContentJsonContext.Default.CreativeContentJson);
-            }
-
-            if (data is null)
-            {
-                _creativeContentPayload = [0, 0];
-                _creativeItems = [];
-                return _creativeContentPayload;
-            }
-
-            List<CreativeGroup> groups = new(data.Groups.Count);
-            List<CreativeItem> items = new(data.Items.Count);
+            List<ItemType> allTypes = ItemType.GetAll();
+            Dictionary<string, int> groupIndexMap = new(StringComparer.Ordinal);
+            List<CreativeGroup> groups = [];
+            List<CreativeItem> items = [];
             Dictionary<uint, ItemStack> creativeItems = [];
 
-            for (int i = 0; i < data.Groups.Count; i++)
+            for (int i = 0; i < allTypes.Count; i++)
             {
-                CreativeGroupJson g = data.Groups[i];
-                groups.Add(new CreativeGroup
+                ItemType type = allTypes[i];
+                if (type.Catalog is null || type == ItemType.Air || type.NetworkId == 0)
                 {
-                    Category = g.Category,
-                    Name = g.Name,
-                    Icon = new CreativeItemInstanceDescriptor
-                    {
-                        NetworkId = g.Icon.NetworkID,
-                        StackSize = (ushort)g.Icon.Count,
-                        Metadata = (int)g.Icon.MetadataValue,
-                        NetworkBlockId = g.Icon.BlockRuntimeID,
-                        ExtraData = null
-                    }
-                });
-            }
+                    continue;
+                }
 
-            for (int i = 0; i < data.Items.Count; i++)
-            {
-                CreativeItemJson ci = data.Items[i];
+                string groupName = type.Catalog.GroupName ?? string.Empty;
+                string groupIcon = type.Catalog.GroupIcon ?? string.Empty;
+                string key = $"{type.Catalog.Category}:{groupName}";
+
+                int groupIndex;
+                if (groupIndexMap.TryGetValue(key, out int existingIndex))
+                {
+                    groupIndex = existingIndex;
+                }
+                else
+                {
+                    groupIndex = groups.Count;
+                    int blockRuntimeIdIcon = 0;
+                    ItemType iconType = ItemType.Get(groupIcon) ?? ItemType.Air;
+                    if (iconType.BlockType is not null && iconType.BlockType.Permutations.Count > 0)
+                    {
+                        blockRuntimeIdIcon = iconType.BlockType.Permutations[0].NetworkId;
+                    }
+
+                    groups.Add(new CreativeGroup
+                    {
+                        Category = type.Catalog.Category,
+                        Name = groupName,
+                        Icon = new CreativeItemInstanceDescriptor
+                        {
+                            NetworkId = iconType.NetworkId,
+                            StackSize = 1,
+                            Metadata = 0,
+                            NetworkBlockId = blockRuntimeIdIcon,
+                            ExtraData = null
+                        }
+                    });
+                    groupIndexMap[key] = groupIndex;
+                }
+
+                uint creativeNetworkId = checked((uint)(items.Count + 1));
+
+                int blockRuntimeId = 0;
+                if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
+                {
+                    blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
+                }
+
                 items.Add(new CreativeItem
                 {
-                    CreativeItemNetworkId = (uint)ci.CreativeItemNetworkID,
+                    CreativeItemNetworkId = creativeNetworkId,
                     ItemInstance = new CreativeItemInstanceDescriptor
                     {
-                        NetworkId = ci.Item.NetworkID,
-                        StackSize = (ushort)ci.Item.Count,
-                        Metadata = (int)ci.Item.MetadataValue,
-                        NetworkBlockId = ci.Item.BlockRuntimeID,
+                        NetworkId = type.NetworkId,
+                        StackSize = 1,
+                        Metadata = 0,
+                        NetworkBlockId = blockRuntimeId,
                         ExtraData = null
                     },
-                    GroupIndex = (uint)ci.GroupIndex
+                    GroupIndex = checked((uint)groupIndex)
                 });
 
-                ItemType? type = ItemType.GetByNetwork(ci.Item.NetworkID);
-                if (type is not null)
-                {
-                    creativeItems[(uint)ci.CreativeItemNetworkID] = new ItemStack(
-                        type, checked((ushort)type.MaxStackSize), ci.Item.MetadataValue, null);
-                }
+                creativeItems[creativeNetworkId] = new ItemStack(type, checked((ushort)type.MaxStackSize), 0, null);
             }
 
             CreativeContentPacket packet = new()
