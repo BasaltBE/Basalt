@@ -7,6 +7,42 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 
 
+/// <summary>
+/// Catalog metadata for an item's creative menu placement.
+/// </summary>
+public sealed class ItemCatalog
+{
+    private static readonly Dictionary<string, int> CategoryMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["construction"] = 1,
+        ["nature"] = 2,
+        ["equipment"] = 3,
+        ["items"] = 4
+    };
+
+    /// <summary>
+    /// Numeric category id sent over the protocol.
+    /// </summary>
+    public int Category { get; }
+
+    /// <summary>
+    /// Group display name, or null if this item has no group.
+    /// </summary>
+    public string? GroupName { get; }
+
+    /// <summary>
+    /// Group icon identifier, or null if this item has no group.
+    /// </summary>
+    public string? GroupIcon { get; }
+
+    public ItemCatalog(string categoryName, string? groupName, string? groupIcon)
+    {
+        Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 0;
+        GroupName = string.IsNullOrEmpty(groupName) ? null : groupName;
+        GroupIcon = string.IsNullOrEmpty(groupIcon) ? null : groupIcon;
+    }
+}
+
 public sealed class ItemType
 {
     private static readonly Dictionary<string, ItemType> Registry = new(StringComparer.Ordinal);
@@ -21,6 +57,7 @@ public sealed class ItemType
     public CompoundTag Properties { get; }
     public BlockType? BlockType { get; }
     public ItemTypeComponentCollection Components { get; }
+    public ItemCatalog? Catalog { get; }
     public IReadOnlyDictionary<string, Type> Traits => _traits;
 
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
@@ -35,7 +72,8 @@ public sealed class ItemType
         IEnumerable<string>? tags,
         bool isComponentBased,
         int version,
-        CompoundTag? properties = null)
+        CompoundTag? properties = null,
+        ItemCatalog? catalog = null)
     {
         Identifier = identifier;
         NetworkId = networkId;
@@ -46,6 +84,7 @@ public sealed class ItemType
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
         BlockType = BlockType.Get(identifier);
+        Catalog = catalog;
 
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
