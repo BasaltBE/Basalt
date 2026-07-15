@@ -6,6 +6,7 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
+using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -666,7 +667,15 @@ public static class InventoryTransaction
                     EntityHealthTrait? health = target.GetTrait<EntityHealthTrait>();
                     if (health is not null && target.IsAlive)
                     {
-                        health.ApplyDamage(1f, player, ActorDamageCause.EntityAttack);
+                        float damage = heldItem?.Type.AttackDamage ?? 1f;
+
+                        ItemStackEnchantmentTrait? enchantments = heldItem?.GetTrait<ItemStackEnchantmentTrait>();
+                        if (enchantments is not null)
+                        {
+                            damage += enchantments.GetAttackBonus();
+                        }
+
+                        health.ApplyDamage(damage, player, ActorDamageCause.EntityAttack);
                     }
                 }
                 break;

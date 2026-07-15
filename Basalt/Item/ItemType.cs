@@ -65,6 +65,7 @@ public sealed class ItemType
     public BlockType? BlockType { get; }
     public ItemTypeComponentCollection Components { get; }
     public ItemCatalog? Catalog { get; }
+    public float AttackDamage { get; }
     public IReadOnlyDictionary<string, Type> Traits => _traits;
 
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
@@ -96,6 +97,7 @@ public sealed class ItemType
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
         ItemTraitRegistry.BindTraitsToType(this);
+        AttackDamage = ResolveDamage(Tags);
     }
 
     public static ItemType? Get(string identifier)
@@ -162,6 +164,40 @@ public sealed class ItemType
                 Ticking = null
             }
         };
+    }
+
+    private static readonly float[] SwordDamage =    [4, 5, 5, 6, 4, 7, 8];
+    private static readonly float[] AxeDamage =      [3, 4, 4, 5, 3, 6, 7];
+    private static readonly float[] PickaxeDamage =  [2, 3, 3, 4, 2, 5, 6];
+    private static readonly float[] ShovelDamage =   [1, 2, 2, 3, 1, 4, 5];
+    private static readonly float[] HoeDamage =      [2, 3, 3, 4, 2, 5, 7];
+
+    private static float ResolveDamage(IReadOnlyList<string> tags)
+    {
+        float[]? table = null;
+        int tier = -1;
+
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:is_sword": table = SwordDamage; break;
+                case "minecraft:is_axe": table = AxeDamage; break;
+                case "minecraft:is_pickaxe": table = PickaxeDamage; break;
+                case "minecraft:is_shovel": table = ShovelDamage; break;
+                case "minecraft:is_hoe": table = HoeDamage; break;
+                case "minecraft:wooden_tier": tier = 0; break;
+                case "minecraft:stone_tier": tier = 1; break;
+                case "minecraft:copper_tier": tier = 2; break;
+                case "minecraft:iron_tier": tier = 3; break;
+                case "minecraft:golden_tier": tier = 4; break;
+                case "minecraft:diamond_tier": tier = 5; break;
+                case "minecraft:netherite_tier": tier = 6; break;
+            }
+        }
+
+        if (table is null || tier < 0) return 1f;
+        return table[tier];
     }
 }
 
