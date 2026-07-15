@@ -2,12 +2,13 @@ namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Item.Enchantment;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Types;
 
 /// <summary>
-/// Trait that holds enchantments on an item stack.
-/// Attached to items with the "minecraft:enchantable" component.
+/// Holds enchantments on an item stack.
+/// Attached on items with the "minecraft:enchantable" component.
 /// </summary>
-public sealed class ItemStackEnchantmentTrait : ItemTrait
+public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(itemStack)
 {
   public new static string Identifier => "enchantments";
   public new static readonly string[] Tags = ["minecraft:bookshelf_books"];
@@ -16,8 +17,31 @@ public sealed class ItemStackEnchantmentTrait : ItemTrait
 
   public IReadOnlyList<EnchantmentInstance> Enchantments => _enchantments;
 
-  public ItemStackEnchantmentTrait(ItemStack itemStack) : base(itemStack)
+  public bool HasEnchantment(int id)
   {
+    for (int i = 0; i < _enchantments.Count; i++)
+    {
+      if (_enchantments[i].Type.Id == id) return true;
+    }
+    return false;
+  }
+
+  public EnchantmentInstance? GetEnchantment(int id)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+    {
+      if (_enchantments[i].Type.Id == id) return _enchantments[i];
+    }
+    return null;
+  }
+
+  public int GetLevel(int id)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+    {
+      if (_enchantments[i].Type.Id == id) return _enchantments[i].Level;
+    }
+    return 0;
   }
 
   public void AddEnchantment(EnchantmentInstance enchantment)
@@ -36,60 +60,90 @@ public sealed class ItemStackEnchantmentTrait : ItemTrait
     SetTag();
   }
 
-  public bool RemoveEnchantment(int enchantmentId)
+  public void SetEnchantment(int id, int level)
+  {
+    RemoveEnchantment(id);
+
+    EnchantmentInstance? instance = EnchantmentInstance.Create(id, level);
+    if (instance.HasValue)
+    {
+      _enchantments.Add(instance.Value);
+      SetTag();
+    }
+  }
+
+  public bool RemoveEnchantment(int id)
   {
     for (int i = 0; i < _enchantments.Count; i++)
     {
-      if (_enchantments[i].Type.Id == enchantmentId)
+      if (_enchantments[i].Type.Id == id)
       {
         _enchantments.RemoveAt(i);
         SetTag();
         return true;
       }
     }
-
     return false;
   }
 
-  public bool HasEnchantment(int enchantmentId)
-  {
-    for (int i = 0; i < _enchantments.Count; i++)
-    {
-      if (_enchantments[i].Type.Id == enchantmentId) return true;
-    }
-
-    return false;
-  }
-
-  public EnchantmentInstance? GetEnchantment(int enchantmentId)
-  {
-    for (int i = 0; i < _enchantments.Count; i++)
-    {
-      if (_enchantments[i].Type.Id == enchantmentId) return _enchantments[i];
-    }
-
-    return null;
-  }
-
-  public int GetLevel(int enchantmentId)
-  {
-    for (int i = 0; i < _enchantments.Count; i++)
-    {
-      if (_enchantments[i].Type.Id == enchantmentId) return _enchantments[i].Level;
-    }
-
-    return 0;
-  }
-
-  public void ClearEnchantments()
+  public void Clear()
   {
     _enchantments.Clear();
     SetTag();
   }
 
+  public float GetAttackBonus()
+  {
+    float total = 0f;
+    for (int i = 0; i < _enchantments.Count; i++)
+      total += _enchantments[i].GetAttackBonus();
+    return total;
+  }
+
+  public float GetProtectionBonus()
+  {
+    float total = 0f;
+    for (int i = 0; i < _enchantments.Count; i++)
+      total += _enchantments[i].GetProtectionBonus();
+    return total;
+  }
+
+  public float GetMiningSpeedBonus()
+  {
+    float total = 0f;
+    for (int i = 0; i < _enchantments.Count; i++)
+      total += _enchantments[i].GetMiningSpeedBonus();
+    return total;
+  }
+
+  public void OnBlockBreak(BlockBreakEnchantmentContext ctx)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+      _enchantments[i].Type.OnBlockBreak(_enchantments[i].Level, ctx);
+  }
+
+  public void OnAttackEntity(AttackEntityEnchantmentContext ctx)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+      _enchantments[i].Type.OnAttackEntity(_enchantments[i].Level, ctx);
+  }
+
+  public void OnHurt(HurtEnchantmentContext ctx)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+      _enchantments[i].Type.OnHurt(_enchantments[i].Level, ctx);
+  }
+
+  public void OnTick(TickEnchantmentContext ctx)
+  {
+    for (int i = 0; i < _enchantments.Count; i++)
+      _enchantments[i].Type.OnTick(_enchantments[i].Level, ctx);
+  }
+
   public override void OnRead(CompoundTag tag)
   {
     _enchantments.Clear();
+
     ListTag? enchList = tag.Get<ListTag>("ench");
     if (enchList is null) return;
 
@@ -111,21 +165,11 @@ public sealed class ItemStackEnchantmentTrait : ItemTrait
   public override void OnWrite(CompoundTag tag)
   {
     if (_enchantments.Count == 0) return;
-
-    ListTag enchList = new();
-    for (int i = 0; i < _enchantments.Count; i++)
-    {
-      CompoundTag entry = new();
-      entry.Set("id", new ShortTag { Value = (short)_enchantments[i].Type.Id });
-      entry.Set("lvl", new ShortTag { Value = (short)_enchantments[i].Level });
-      enchList.Values.Add(entry);
-    }
-
-    tag.Set("ench", enchList);
+    tag.Set("ench", BuildEnchListTag());
   }
 
   /// <summary>
-  /// Builds the "ench" NBT tag for this enchantment set (used by creative content).
+  /// Builds a CompoundTag with the "ench" list for creative content.
   /// </summary>
   public static CompoundTag BuildEnchantmentNbt(IReadOnlyList<EnchantmentInstance> enchantments)
   {
@@ -144,6 +188,19 @@ public sealed class ItemStackEnchantmentTrait : ItemTrait
     return nbt;
   }
 
+  private ListTag BuildEnchListTag()
+  {
+    ListTag enchList = new();
+    for (int i = 0; i < _enchantments.Count; i++)
+    {
+      CompoundTag entry = new();
+      entry.Set("id", new ShortTag { Value = (short)_enchantments[i].Type.Id });
+      entry.Set("lvl", new ShortTag { Value = (short)_enchantments[i].Level });
+      enchList.Values.Add(entry);
+    }
+    return enchList;
+  }
+
   private void SetTag()
   {
     CompoundTag nbt = ItemStack.ExtraData?.Nbt ?? new CompoundTag();
@@ -154,21 +211,12 @@ public sealed class ItemStackEnchantmentTrait : ItemTrait
     }
     else
     {
-      ListTag enchList = new();
-      for (int i = 0; i < _enchantments.Count; i++)
-      {
-        CompoundTag entry = new();
-        entry.Set("id", new ShortTag { Value = (short)_enchantments[i].Type.Id });
-        entry.Set("lvl", new ShortTag { Value = (short)_enchantments[i].Level });
-        enchList.Values.Add(entry);
-      }
-
-      nbt.Set("ench", enchList);
+      nbt.Set("ench", BuildEnchListTag());
     }
 
     if (nbt.Values.Count > 0)
     {
-      ItemStack.SetExtraData(new Protocol.Types.ItemInstanceUserData
+      ItemStack.SetExtraData(new ItemInstanceUserData
       {
         Nbt = nbt,
         CanPlaceOn = ItemStack.ExtraData?.CanPlaceOn ?? [],

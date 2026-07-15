@@ -1,18 +1,16 @@
 namespace Basalt.Core.Item.Enchantment;
 
 /// <summary>
-/// Represents a single enchantment applied to an item (type + level).
+/// A single enchantment applied to an item 
 /// </summary>
-public readonly struct EnchantmentInstance
+public readonly struct EnchantmentInstance(EnchantmentType type, int level)
 {
-  public EnchantmentType Type { get; }
-  public int Level { get; }
+  public EnchantmentType Type { get; } = type;
+  public int Level { get; } = Math.Clamp(level, 1, type.MaxLevel);
 
-  public EnchantmentInstance(EnchantmentType type, int level)
-  {
-    Type = type;
-    Level = Math.Clamp(level, 1, type.MaxLevel);
-  }
+  public float GetAttackBonus() => Type.GetAttackBonus(Level);
+  public float GetProtectionBonus() => Type.GetProtectionBonus(Level);
+  public float GetMiningSpeedBonus() => Type.GetMiningSpeedBonus(Level);
 
   public static EnchantmentInstance? Create(int id, int level)
   {
