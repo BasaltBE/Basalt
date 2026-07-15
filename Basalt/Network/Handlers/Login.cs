@@ -162,8 +162,10 @@ public static class Login
     private static VerifiedIdentity VerifyIdentity(Server server, LoginPacket packet)
     {
         LoginEnvelope envelope = LoginEnvelope.Parse(packet.Identity);
+        bool offlineLogin = OfflineIdentity.IsOfflineLogin(envelope)
+            || envelope.AuthenticationType == 2;
 
-        if (OfflineIdentity.IsOfflineLogin(envelope))
+        if (offlineLogin)
         {
             if (server.Properties.OnlineMode)
             {

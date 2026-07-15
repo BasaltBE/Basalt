@@ -21,6 +21,11 @@ public static class OfflineIdentity
 {
     private const string AudienceApi = "api://auth-minecraft-services/multiplayer";
 
+    // Bedrock AuthenticationType: Online = 0, SubClient = 1, OfflineSelfSigned = 2
+    private const uint AuthOnline = 0;
+    private const uint AuthSubClient = 1;
+    private const uint AuthOfflineSelfSigned = 2;
+
     public static bool IsOfflineLogin(string identityJson)
     {
         LoginEnvelope envelope = LoginEnvelope.Parse(identityJson);
@@ -29,7 +34,13 @@ public static class OfflineIdentity
 
     public static bool IsOfflineLogin(LoginEnvelope envelope)
     {
-        if (envelope.AuthenticationType == 1)
+        // OfflineSelfSigned (type 2) is always the self-signed/offline path.
+        if (envelope.AuthenticationType == AuthOfflineSelfSigned)
+        {
+            return true;
+        }
+
+        if (envelope.AuthenticationType == AuthSubClient)
         {
             return false;
         }
@@ -45,27 +56,27 @@ public static class OfflineIdentity
         }
 
         string algorithm = JsonValue.GetString(header, "alg");
-        if (string.Equals(algorithm, "RS256", StringComparison.OrdinalIgnoreCase))
+        if (IsEcAlgorithm(algorithm))
         {
-            if (string.Equals(JsonValue.GetString(payload, "aud"), AudienceApi, StringComparison.Ordinal))
-            {
-                return false;
-            }
+            return true;
         }
-        else if (!IsEcAlgorithm(algorithm))
+
+        if (string.Equals(algorithm, "RS256", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(JsonValue.GetString(payload, "aud"), AudienceApi, StringComparison.Ordinal))
         {
             return false;
         }
 
-        string displayName = JsonValue.GetString(payload, "xname");
-        string publicKey = JsonValue.GetString(payload, "cpk");
+        string displayName = ResolveDisplayName(payload);
+        string publicKey = ResolvePublicKey(header, payload);
         if (string.IsNullOrWhiteSpace(displayName) || string.IsNullOrWhiteSpace(publicKey))
         {
             return TryParseLegacyChain(envelope.Chain, out _);
         }
 
         string xuid = JsonValue.GetString(payload, "xid");
-        if (!string.IsNullOrWhiteSpace(xuid) && IsOnlineIssuer(JsonValue.GetString(payload, "iss")))
+        if (envelope.AuthenticationType == AuthOnline
+            || (!string.IsNullOrWhiteSpace(xuid) && IsOnlineIssuer(JsonValue.GetString(payload, "iss"))))
         {
             return false;
         }
@@ -75,35 +86,81 @@ public static class OfflineIdentity
 
     public static VerifiedIdentity VerifyOffline(LoginEnvelope envelope, string clientJwt)
     {
+        if (envelope.AuthenticationType == AuthOfflineSelfSigned)
+        {
+            if (!string.IsNullOrWhiteSpace(envelope.Token)
+                && TryBuildOfflineToken(envelope.Token, clientJwt, out OfflineTokenData token, out _))
+            {
+                return CompleteOfflineToken(envelope.Token, clientJwt, token);
+            }
+
+            if (TryParseLegacyChain(envelope.Chain, out OfflineCertificateData selfSignedCertificate))
+            {
+                return CompleteLegacyCertificate(selfSignedCertificate, clientJwt);
+            }
+
+            if (!string.IsNullOrWhiteSpace(envelope.Token))
+            {
+                _ = ParseOfflineToken(envelope.Token, clientJwt);
+            }
+
+            throw new InvalidOperationException("Invalid offline certificate: missing player identity.");
+        }
+
         if (TryParseLegacyChain(envelope.Chain, out OfflineCertificateData certificate))
         {
-            VerifyClientJwt(clientJwt, certificate.IdentityPublicKey);
-            string xuid = OfflineIdentity.GetOfflineXuid(certificate.DisplayName);
-            return ToVerifiedIdentity(certificate, certificate.DisplayName, xuid);
+            return CompleteLegacyCertificate(certificate, clientJwt);
         }
 
         if (!string.IsNullOrWhiteSpace(envelope.Token))
         {
-            OfflineTokenData token = ParseOfflineToken(envelope.Token);
-            VerifyClientJwt(clientJwt, token.IdentityPublicKey);
-
-            string xuid = string.IsNullOrWhiteSpace(token.Xuid)
-                ? GetOfflineXuid(token.DisplayName)
-                : token.Xuid;
-
-            Guid uuid = Guid.TryParse(token.IdentityUuid, out Guid parsed)
-                ? parsed
-                : GetUuidFromUsername(token.DisplayName);
-
-            return new VerifiedIdentity(
-                token.IdentityPublicKey,
-                token.DisplayName,
-                xuid,
-                uuid.ToString()
-            );
+            return CompleteOfflineToken(envelope.Token, clientJwt, ParseOfflineToken(envelope.Token, clientJwt));
         }
 
         throw new InvalidOperationException("Invalid offline certificate: missing extraData.");
+    }
+
+    private static VerifiedIdentity CompleteLegacyCertificate(OfflineCertificateData certificate, string clientJwt)
+    {
+        string publicKey = certificate.IdentityPublicKey;
+        if (string.IsNullOrWhiteSpace(publicKey)
+            && JwtVerification.TryDecodeJwt(clientJwt, out JsonElement clientHeader, out _))
+        {
+            publicKey = GetStringIgnoreCase(clientHeader, "x5u");
+        }
+
+        if (string.IsNullOrWhiteSpace(publicKey))
+        {
+            throw new InvalidOperationException("Invalid offline certificate: missing public key.");
+        }
+
+        VerifyClientJwt(clientJwt, publicKey);
+        string xuid = GetOfflineXuid(certificate.DisplayName);
+        return ToVerifiedIdentity(
+            new OfflineCertificateData(publicKey, certificate.DisplayName, certificate.IdentityUuid),
+            certificate.DisplayName,
+            xuid);
+    }
+
+    private static VerifiedIdentity CompleteOfflineToken(string identityJwt, string clientJwt, OfflineTokenData token)
+    {
+        VerifyIdentityJwt(identityJwt, token.IdentityPublicKey);
+        VerifyClientJwt(clientJwt, token.IdentityPublicKey);
+
+        string xuid = string.IsNullOrWhiteSpace(token.Xuid)
+            ? GetOfflineXuid(token.DisplayName)
+            : token.Xuid;
+
+        Guid uuid = Guid.TryParse(token.IdentityUuid, out Guid parsed)
+            ? parsed
+            : GetUuidFromUsername(token.DisplayName);
+
+        return new VerifiedIdentity(
+            token.IdentityPublicKey,
+            token.DisplayName,
+            xuid,
+            uuid.ToString()
+        );
     }
 
     public static OfflineCertificateData ParseCertificate(string identityJson)
@@ -117,31 +174,78 @@ public static class OfflineIdentity
         return data;
     }
 
-    public static OfflineTokenData ParseOfflineToken(string token)
+    public static OfflineTokenData ParseOfflineToken(string token) =>
+        ParseOfflineToken(token, clientJwt: null);
+
+    public static OfflineTokenData ParseOfflineToken(string token, string? clientJwt)
     {
-        if (!JwtVerification.TryDecodeJwt(token, out _, out JsonElement payload))
+        if (!TryBuildOfflineToken(token, clientJwt, out OfflineTokenData data, out string error))
         {
-            throw new InvalidOperationException("Invalid offline token.");
+            throw new InvalidOperationException(error);
         }
 
-        string displayName = JsonValue.GetString(payload, "xname");
-        string publicKey = JsonValue.GetString(payload, "cpk");
+        return data;
+    }
+
+    private static bool TryBuildOfflineToken(
+        string token,
+        string? clientJwt,
+        out OfflineTokenData data,
+        out string error)
+    {
+        data = default;
+        error = string.Empty;
+
+        if (!JwtVerification.TryDecodeJwt(token, out JsonElement header, out JsonElement payload))
+        {
+            error = "Invalid offline token.";
+            return false;
+        }
+
+        string displayName = ResolveDisplayName(payload);
+        string publicKey = ResolvePublicKey(header, payload);
+
+        JsonElement clientHeader = default;
+        JsonElement clientPayload = default;
+        bool hasClient = !string.IsNullOrWhiteSpace(clientJwt)
+            && JwtVerification.TryDecodeJwt(clientJwt, out clientHeader, out clientPayload);
+
+        if (string.IsNullOrWhiteSpace(publicKey) && hasClient)
+        {
+            publicKey = GetStringIgnoreCase(clientHeader, "x5u");
+        }
+
+        if (string.IsNullOrWhiteSpace(displayName) && hasClient)
+        {
+            displayName = GetStringIgnoreCase(clientPayload, "ThirdPartyName");
+        }
+
         if (string.IsNullOrWhiteSpace(displayName) || string.IsNullOrWhiteSpace(publicKey))
         {
-            throw new InvalidOperationException("Invalid offline token: missing player identity.");
+            string headerKeys = DescribeKeys(header);
+            string claimKeys = DescribeKeys(payload);
+            error =
+                $"Invalid offline token: missing player identity (nameEmpty={string.IsNullOrWhiteSpace(displayName)}, keyEmpty={string.IsNullOrWhiteSpace(publicKey)}, header=[{headerKeys}], claims=[{claimKeys}]).";
+            return false;
         }
 
-        return new OfflineTokenData(
+        data = new OfflineTokenData(
             publicKey,
             displayName,
-            JsonValue.GetString(payload, "identity"),
-            JsonValue.GetString(payload, "xid")
+            ResolveIdentityUuid(payload),
+            GetStringIgnoreCase(payload, "xid")
         );
+        return true;
     }
 
     public static void VerifyClientJwt(string clientJwt, string identityPublicKey)
     {
         JwtVerification.VerifyJwtSignature(clientJwt, identityPublicKey);
+    }
+
+    public static void VerifyIdentityJwt(string identityJwt, string identityPublicKey)
+    {
+        JwtVerification.VerifyJwtSignature(identityJwt, identityPublicKey);
     }
 
     public static string GetOfflineXuid(string username)
@@ -173,6 +277,94 @@ public static class OfflineIdentity
         );
     }
 
+    private static string ResolveDisplayName(JsonElement payload)
+    {
+        string displayName = GetStringIgnoreCase(payload, "xname", "displayName", "ThirdPartyName");
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            return displayName;
+        }
+
+        if (TryGetPropertyIgnoreCase(payload, "extraData", out JsonElement extraData))
+        {
+            return GetStringIgnoreCase(extraData, "displayName", "xname", "ThirdPartyName");
+        }
+
+        return string.Empty;
+    }
+
+    private static string ResolvePublicKey(JsonElement header, JsonElement payload)
+    {
+        string publicKey = GetStringIgnoreCase(payload, "cpk", "identityPublicKey", "ClientPublicKey");
+        if (!string.IsNullOrWhiteSpace(publicKey))
+        {
+            return publicKey;
+        }
+
+        return GetStringIgnoreCase(header, "x5u");
+    }
+
+    private static string ResolveIdentityUuid(JsonElement payload)
+    {
+        string identity = GetStringIgnoreCase(payload, "identity", "leguuid", "uuid", "sub");
+        if (!string.IsNullOrWhiteSpace(identity))
+        {
+            return identity;
+        }
+
+        if (TryGetPropertyIgnoreCase(payload, "extraData", out JsonElement extraData))
+        {
+            return GetStringIgnoreCase(extraData, "identity", "leguuid", "uuid");
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetStringIgnoreCase(JsonElement element, params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (TryGetPropertyIgnoreCase(element, name, out JsonElement value)
+                && value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString() ?? string.Empty;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string name, out JsonElement value)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            value = default;
+            return false;
+        }
+
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string DescribeKeys(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            return element.ValueKind.ToString();
+        }
+
+        return string.Join(',', element.EnumerateObject().Select(property => property.Name));
+    }
+
     private static bool TryParseLegacyChain(string[] chain, out OfflineCertificateData data)
     {
         data = default;
@@ -192,19 +384,19 @@ public static class OfflineIdentity
     {
         data = default;
 
-        if (!JwtVerification.TryDecodeJwt(jwt, out _, out JsonElement payload))
+        if (!JwtVerification.TryDecodeJwt(jwt, out JsonElement header, out JsonElement payload))
         {
             return false;
         }
 
-        if (!payload.TryGetProperty("extraData", out JsonElement extraData))
+        if (!TryGetPropertyIgnoreCase(payload, "extraData", out JsonElement extraData))
         {
             return false;
         }
 
-        string displayName = JsonValue.GetString(extraData, "displayName");
-        string identity = JsonValue.GetString(extraData, "identity");
-        string publicKey = JsonValue.GetString(payload, "identityPublicKey");
+        string displayName = GetStringIgnoreCase(extraData, "displayName", "xname");
+        string identity = GetStringIgnoreCase(extraData, "identity", "leguuid");
+        string publicKey = ResolvePublicKey(header, payload);
 
         if (string.IsNullOrWhiteSpace(displayName))
         {
