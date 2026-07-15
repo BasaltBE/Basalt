@@ -18,7 +18,7 @@ public sealed class CreativeGroup : DataType
     /// <summary>
     /// Group icon item descriptor.
     /// </summary>
-    public CreativeItemInstanceDescriptor Icon = new();
+    public LegacyNetworkItemStackDescriptor Icon = new();
 
     public void Read(BinaryReader reader)
     {

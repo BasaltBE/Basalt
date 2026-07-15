@@ -13,7 +13,7 @@ public sealed class CreativeItem : DataType
     /// <summary>
     /// Item descriptor payload.
     /// </summary>
-    public CreativeItemInstanceDescriptor ItemInstance = new();
+    public LegacyNetworkItemStackDescriptor ItemInstance = new();
 
     /// <summary>
     /// Creative group index.

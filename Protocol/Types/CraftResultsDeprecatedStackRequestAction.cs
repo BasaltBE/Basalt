@@ -13,7 +13,7 @@ public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestActi
     /// <summary>
     /// Crafted result items.
     /// </summary>
-    public List<LegacyItem> ResultItems = [];
+    public List<LegacyNetworkItemStackDescriptor> ResultItems = [];
 
     /// <summary>
     /// Amount of times the recipe was crafted.
@@ -25,7 +25,7 @@ public sealed class CraftResultsDeprecatedStackRequestAction : IStackRequestActi
         ResultItems = new(count);
         for (int i = 0; i < count; i++)
         {
-            LegacyItem item = new();
+            LegacyNetworkItemStackDescriptor item = new();
             item.Read(reader);
             ResultItems.Add(item);
         }

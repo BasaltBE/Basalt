@@ -122,7 +122,7 @@ public sealed class ItemPalette
                     {
                         Category = type.Catalog.Category,
                         Name = groupName,
-                        Icon = new CreativeItemInstanceDescriptor
+                        Icon = new LegacyNetworkItemStackDescriptor
                         {
                             NetworkId = iconType.NetworkId,
                             StackSize = 1,
@@ -145,7 +145,7 @@ public sealed class ItemPalette
                 items.Add(new CreativeItem
                 {
                     CreativeItemNetworkId = creativeNetworkId,
-                    ItemInstance = new CreativeItemInstanceDescriptor
+                    ItemInstance = new LegacyNetworkItemStackDescriptor
                     {
                         NetworkId = type.NetworkId,
                         StackSize = 1,
