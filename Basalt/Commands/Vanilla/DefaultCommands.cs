@@ -9,6 +9,7 @@ public static class DefaultCommands
     {
         registry.Register(StatusCommand.Definition);
         registry.Register(ClearCommand.Definition);
+        registry.Register(EnchantCommand.Definition);
         registry.Register(GamemodeCommand.Definition);
         registry.Register(GiveCommand.Definition);
         registry.Register(OpCommand.Definition);
