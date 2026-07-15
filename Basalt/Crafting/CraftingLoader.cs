@@ -7,6 +7,7 @@ public static class CraftingLoader
   public static void Load(string? dataDirectory = null)
   {
     CraftingRegistry.Initialize();
+    FurnaceRegistry.Initialize();
     string root = ResolveDataRoot(dataDirectory);
     string recipesPath = Path.Combine(root, "crafting_recipes.json");
 
@@ -26,10 +27,27 @@ public static class CraftingLoader
     }
 
     int loaded = 0;
+    int furnaceLoaded = 0;
     int skipped = 0;
 
     foreach (JsonElement element in document.RootElement.EnumerateArray())
     {
+      string type = ReadString(element, "type");
+
+      if (type == "furnace")
+      {
+        FurnaceRecipe? furnace = ParseFurnaceRecipe(element);
+        if (furnace is null)
+        {
+          skipped++;
+          continue;
+        }
+
+        FurnaceRegistry.Instance.Register(furnace);
+        furnaceLoaded++;
+        continue;
+      }
+
       CraftingRecipe? recipe = ParseRecipe(element);
       if (recipe is null)
       {
@@ -41,7 +59,34 @@ public static class CraftingLoader
       loaded++;
     }
 
-    Logger.Info($"Crafting: parsed {loaded} recipes ({skipped} skipped).");
+    Logger.Info($"Crafting: parsed {loaded} crafting, {furnaceLoaded} furnace recipes ({skipped} skipped).");
+  }
+
+  private static FurnaceRecipe? ParseFurnaceRecipe(JsonElement element)
+  {
+    string identifier = ReadString(element, "identifier");
+    if (string.IsNullOrEmpty(identifier)) return null;
+
+    List<string> tags = ParseStringArray(element, "tags");
+    if (tags.Count == 0) return null;
+
+    if (!element.TryGetProperty("input", out JsonElement inputEl) || inputEl.ValueKind != JsonValueKind.Object)
+    {
+      return null;
+    }
+
+    string inputItem = ReadString(inputEl, "item");
+    if (string.IsNullOrEmpty(inputItem)) return null;
+
+    if (!element.TryGetProperty("output", out JsonElement outputEl) || outputEl.ValueKind != JsonValueKind.Object)
+    {
+      return null;
+    }
+
+    string outputItem = ReadString(outputEl, "item");
+    if (string.IsNullOrEmpty(outputItem)) return null;
+
+    return new FurnaceRecipe(identifier, tags, inputItem, outputItem);
   }
 
   private static CraftingRecipe? ParseRecipe(JsonElement element)

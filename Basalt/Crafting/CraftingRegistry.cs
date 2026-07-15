@@ -113,6 +113,26 @@ public sealed class CraftingRegistry
       networkId++;
     }
 
+    int furnaceSkipped = 0;
+    IReadOnlyList<FurnaceRecipe> furnaceRecipes = FurnaceRegistry.Instance.GetAll();
+    for (int i = 0; i < furnaceRecipes.Count; i++)
+    {
+      FurnaceRecipe furnace = furnaceRecipes[i];
+      for (int t = 0; t < furnace.Tags.Count; t++)
+      {
+        CraftingDataEntry? entry = BuildFurnaceAsShapeless(furnace, furnace.Tags[t], networkId);
+        if (entry is null)
+        {
+          furnaceSkipped++;
+          networkId++;
+          continue;
+        }
+
+        entries.Add(entry);
+        networkId++;
+      }
+    }
+
     CraftingDataPacket packet = new()
     {
       Recipes = entries,
@@ -120,7 +140,7 @@ public sealed class CraftingRegistry
     };
 
     _cachedPayload = SerializePacket(packet);
-    Logger.Info("CraftingData: {0} recipes loaded ({1} skipped), {2} bytes.", entries.Count, _recipes.Count - entries.Count, _cachedPayload.Length);
+    Logger.Info("CraftingData: {0} entries ({1} skipped), {2} bytes.", entries.Count, (_recipes.Count - entries.Count + furnaceSkipped), _cachedPayload.Length);
     return _cachedPayload;
   }
 
@@ -244,6 +264,67 @@ public sealed class CraftingRegistry
       Block = ResolveBlock(recipe.Tags),
       Priority = recipe.Priority,
       UnlockRequirement = new RecipeUnlockingRequirement { Context = RecipeUnlockingRequirement.ContextNone },
+      RecipeNetworkId = networkId
+    };
+
+    return new CraftingDataEntry
+    {
+      RecipeType = CraftingDataRecipeType.Shapeless,
+      Shapeless = data
+    };
+  }
+
+  private static CraftingDataEntry? BuildFurnaceAsShapeless(FurnaceRecipe recipe, string block, uint networkId)
+  {
+    ItemType? inputType = ResolveItemType(recipe.InputItem);
+    if (inputType is null)
+    {
+      Logger.Warn("Crafting: skipping furnace '{0}', input '{1}' not found.", recipe.Identifier, recipe.InputItem);
+      return null;
+    }
+
+    ItemType? outputType = ResolveItemType(recipe.OutputItem);
+    if (outputType is null)
+    {
+      Logger.Warn("Crafting: skipping furnace '{0}', output '{1}' not found.", recipe.Identifier, recipe.OutputItem);
+      return null;
+    }
+
+    ItemDescriptorCount inputDescriptor = new()
+    {
+      DescriptorType = 1,
+      NetworkId = checked((short)inputType.NetworkId),
+      MetadataValue = 0x7FFF,
+      Count = 1
+    };
+
+    int blockRuntimeId = 0;
+    if (outputType.BlockType is not null && outputType.BlockType.Permutations.Count > 0)
+    {
+      blockRuntimeId = outputType.BlockType.Permutations[0].NetworkId;
+    }
+
+    RecipeItemStack output = new()
+    {
+      NetworkId = outputType.NetworkId,
+      Count = 1,
+      Metadata = 0,
+      BlockRuntimeId = blockRuntimeId
+    };
+
+    ShapelessRecipeData data = new()
+    {
+      RecipeId = recipe.Identifier,
+      Input = [inputDescriptor],
+      Output = [output],
+      Uuid = Guid.NewGuid().ToByteArray(),
+      Block = block,
+      Priority = 0,
+      UnlockRequirement = new RecipeUnlockingRequirement
+      {
+        Context = RecipeUnlockingRequirement.ContextNone,
+        Ingredients = [inputDescriptor]
+      },
       RecipeNetworkId = networkId
     };
 
