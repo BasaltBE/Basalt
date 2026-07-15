@@ -331,6 +331,12 @@ public sealed class Player : Entities.Entity
             return cursor?.Container;
         }
 
+        if (name.ContainerId == (byte)ContainerId.CraftingInput)
+        {
+            Traits.PlayerCraftingGridTrait? grid = GetTrait<Traits.PlayerCraftingGridTrait>();
+            return grid?.Container;
+        }
+
         if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? container))
         {
             return container;

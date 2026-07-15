@@ -4,6 +4,7 @@ public enum ContainerId : byte
 {
     Armor = 6,
     DynamicContainer = 7,
+    CraftingInput = 13,
     Inventory = 27,
     Hotbar = 28,
     FixedInventory = 29,

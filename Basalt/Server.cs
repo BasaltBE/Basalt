@@ -108,6 +108,7 @@ public sealed class Server
         defaultWorld.ConfigurePersistence(Properties.WorldPath);
 
         DefaultCommands.Register(Commands);
+        Crafting.CraftingLoader.Load();
     }
 
     public void Start()
