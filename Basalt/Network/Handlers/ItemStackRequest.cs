@@ -136,7 +136,29 @@ public static class ItemStackRequest
             ItemStack item = _pendingCraftResult;
             _pendingCraftResult = null;
 
-            craftDst.SetItem(craftDstSlot, item);
+            ItemStack? existing = craftDst.GetItem(craftDstSlot);
+            if (existing is not null)
+            {
+                if (!existing.CanStackWith(item))
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
+
+                int available = existing.Type.MaxStackSize - existing.StackSize;
+                if (available <= 0)
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
+
+                int toAdd = Math.Min(item.StackSize, available);
+                existing.IncrementStack((ushort)toAdd);
+                craftDst.UpdateSlot(craftDstSlot);
+            }
+            else
+            {
+                craftDst.SetItem(craftDstSlot, item);
+            }
+
             RecordChange(changed, action.Destination.Container, craftDst, action.Destination.Slot, craftDstSlot);
             return ItemStackResponseStatus.Ok;
         }
@@ -319,12 +341,18 @@ public static class ItemStackRequest
         Crafting.CraftingRecipe? recipe = Crafting.CraftingRegistry.Instance.GetByNetworkId(recipeNetworkId);
         if (recipe is null)
         {
+            Logger.Warn("Could not Find a Recipe for " + recipeNetworkId);
             return ItemStackResponseStatus.Error;
         }
 
         ItemType? resultType = ItemType.Get(recipe.Result.Item);
+        if (resultType is null && !recipe.Result.Item.Contains(':'))
+        {
+            resultType = ItemType.Get("minecraft:" + recipe.Result.Item);
+        }
         if (resultType is null)
         {
+            Logger.Info("Result item for crafting was not found: " + recipe.Result.Item);
             return ItemStackResponseStatus.Error;
         }
 

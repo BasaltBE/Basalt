@@ -114,6 +114,11 @@ public sealed class Server
     public void Start()
     {
         Plugins.StartAll();
+
+        _ = Item.ItemPalette.GetItemRegistryPayload();
+        _ = Item.ItemPalette.GetCreativeContentPayload();
+        _ = Crafting.CraftingRegistry.Instance.GetCraftingDataPayload();
+
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 

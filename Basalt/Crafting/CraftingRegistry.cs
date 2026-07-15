@@ -132,7 +132,7 @@ public sealed class CraftingRegistry
 
   private static CraftingDataEntry? BuildEntry(CraftingRecipe recipe, uint networkId)
   {
-    ItemType? resultType = ItemType.Get(recipe.Result.Item);
+    ItemType? resultType = ResolveItemType(recipe.Result.Item);
     if (resultType is null)
     {
       Logger.Warn("Crafting: skipping '{0}', result item '{1}' not found.", recipe.Identifier, recipe.Result.Item);
@@ -255,7 +255,7 @@ public sealed class CraftingRegistry
 
     if (ingredient.Item is null) return null;
 
-    ItemType? type = ItemType.Get(ingredient.Item);
+    ItemType? type = ResolveItemType(ingredient.Item);
     if (type is null) return null;
 
     return new ItemDescriptorCount
@@ -283,6 +283,19 @@ public sealed class CraftingRegistry
       NetworkBlockId = blockRuntimeId,
       ExtraData = null
     };
+  }
+
+  private static ItemType? ResolveItemType(string identifier)
+  {
+    ItemType? type = ItemType.Get(identifier);
+    if (type is not null) return type;
+
+    if (!identifier.Contains(':'))
+    {
+      type = ItemType.Get("minecraft:" + identifier);
+    }
+
+    return type;
   }
 
   private static string ResolveBlock(IReadOnlyList<string> tags)
