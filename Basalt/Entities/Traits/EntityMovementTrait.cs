@@ -13,9 +13,9 @@ public sealed class EntityMovementTrait : EntityTrait
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player, EntityIdentifier.Item];
     public new static readonly string[] Components = ["minecraft:movement", "minecraft:movement.basic", "minecraft:movement.jump"];
 
-    public float BaseMovementSpeed => 0.1f;
-    public float BaseUnderwaterMovementSpeed => 0.02f;
-    public float BaseLavaMovementSpeed => 0.02f;
+    public static float BaseMovementSpeed => 0.1f;
+    public static float BaseUnderwaterMovementSpeed => 0.02f;
+    public static float BaseLavaMovementSpeed => 0.02f;
 
 
     public float Speed { get; private set; } = 1f;

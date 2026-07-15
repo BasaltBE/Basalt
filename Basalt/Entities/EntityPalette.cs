@@ -22,24 +22,24 @@ public sealed class EntityPalette
 #pragma warning restore IL2026
     }
 
-    public IReadOnlyDictionary<string, EntityType> Types => EntityType.Types;
+    public static IReadOnlyDictionary<string, EntityType> TypesMap => EntityType.Types;
 
-    public List<EntityType> GetAllTypes()
+    public static List<EntityType> GetAllTypes()
     {
         return EntityType.GetAll();
     }
 
-    public EntityType ResolveType(string identifier)
+    public static EntityType ResolveType(string identifier)
     {
         return EntityType.GetOrCreate(identifier);
     }
 
-    public void RegisterTrait<TTrait>() where TTrait : EntityTrait
+    public static void RegisterTrait<TTrait>() where TTrait : EntityTrait
     {
         EntityTraitRegistry.Register<TTrait>();
     }
 
-    public void RegisterTrait(params Type[] traitTypes)
+    public static void RegisterTrait(params Type[] traitTypes)
     {
         EntityTraitRegistry.Register(traitTypes);
     }

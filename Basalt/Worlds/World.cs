@@ -58,7 +58,7 @@ public sealed class World : IDisposable, Tickable
         Provider = provider ?? new InMemoryProvider();
     }
 
-    public void ConfigurePersistence(string dataPath)
+    public static void ConfigurePersistence(string dataPath)
     {
     }
 

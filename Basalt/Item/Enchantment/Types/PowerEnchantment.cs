@@ -5,5 +5,5 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class PowerEnchantment() : EnchantmentType("power", 19, 5)
 {
-  public float GetDamageMultiplier(int level) => 1f + (level + 1) * 0.25f;
+  public static float GetDamageMultiplier(int level) => 1f + (level + 1) * 0.25f;
 }

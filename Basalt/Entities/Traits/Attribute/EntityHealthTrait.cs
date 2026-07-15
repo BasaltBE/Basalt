@@ -96,8 +96,10 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
                     continue;
                 }
 
-                ItemStackDurabilityTrait? durabilityTrait = itemStack.GetTrait<ItemStackDurabilityTrait>();
-                durabilityTrait?.ProcessDamage(Entity);
+                if (itemStack.GetTrait<ItemStackDurabilityTrait>() is not null)
+                {
+                    ItemStackDurabilityTrait.ProcessDamage(Entity);
+                }
             }
         }
 

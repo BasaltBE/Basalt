@@ -9,8 +9,8 @@ public static class UUID
     {
         byte[] uuidBytes = new byte[16];
         reader.ReadBytes(16).CopyTo(uuidBytes);
-        uuidBytes[..8].Reverse();
-        uuidBytes[8..].Reverse();
+        Array.Reverse(uuidBytes, 0, 8);
+        Array.Reverse(uuidBytes, 8, 8);
         return new Guid($"{Convert.ToHexString(uuidBytes[..4])}-{Convert.ToHexString(uuidBytes[4..6])}-{Convert.ToHexString(uuidBytes[6..8])}-{Convert.ToHexString(uuidBytes[8..10])}-{Convert.ToHexString(uuidBytes[10..])}");
     }
 
@@ -23,8 +23,8 @@ public static class UUID
             uuidBytes[i] = Convert.ToByte(text.Substring(i * 2, 2), 16);
         }
 
-        uuidBytes[..8].Reverse();
-        uuidBytes[8..].Reverse();
+        Array.Reverse(uuidBytes, 0, 8);
+        Array.Reverse(uuidBytes, 8, 8);
         writer.WriteBytes(uuidBytes);
     }
 }

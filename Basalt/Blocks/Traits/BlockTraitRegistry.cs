@@ -171,7 +171,7 @@ public static class BlockTraitRegistry
 #pragma warning restore IL2073
     }
 
-    private static bool ContainsOrdinal(IReadOnlyList<string> values, string value)
+    private static bool ContainsOrdinal(List<string> values, string value)
     {
         for (int i = 0; i < values.Count; i++)
         {

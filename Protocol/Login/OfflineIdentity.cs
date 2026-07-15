@@ -153,7 +153,9 @@ public static class OfflineIdentity
 
     public static Guid GetUuidFromUsername(string username)
     {
+#pragma warning disable CA5351 
         byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes($"OfflinePlayer:{username}"));
+#pragma warning restore CA5351
         hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
         hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
         return new Guid(hash);

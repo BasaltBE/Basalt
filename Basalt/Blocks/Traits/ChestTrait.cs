@@ -805,7 +805,7 @@ public class ChestTrait : BlockTrait
         return [[1, 0], [-1, 0], [0, 1], [0, -1]];
     }
 
-    private bool IsValidPairOffset(int x, int z, int pairX, int pairZ)
+    private static bool IsValidPairOffset(int x, int z, int pairX, int pairZ)
     {
         int deltaX = Math.Abs(pairX - x);
         int deltaZ = Math.Abs(pairZ - z);
@@ -961,14 +961,7 @@ public class ChestTrait : BlockTrait
 
     private static bool GetValue(BlockState state, string key, out BlockStateValue value)
     {
-        if (state.ContainsKey(key))
-        {
-            value = state[key];
-            return true;
-        }
-
-        value = default;
-        return false;
+        return state.TryGetValue(key, out value);
     }
 
 }

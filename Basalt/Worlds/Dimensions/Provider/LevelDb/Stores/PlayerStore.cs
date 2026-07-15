@@ -65,7 +65,7 @@ internal sealed class PlayerStore
         return data is { Length: > 0 } ? data : null;
     }
 
-    public CompoundTag? LoadFromRaw(byte[] data)
+    public static CompoundTag? LoadFromRaw(byte[] data)
     {
         int offset = 0;
         BinaryReader reader = new(data, ref offset);

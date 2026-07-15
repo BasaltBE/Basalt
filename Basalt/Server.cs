@@ -105,7 +105,7 @@ public sealed class Server
         {
             defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
         }
-        defaultWorld.ConfigurePersistence(Properties.WorldPath);
+        WorldInstance.ConfigurePersistence(Properties.WorldPath);
 
         DefaultCommands.Register(Commands);
         Crafting.CraftingLoader.Load();

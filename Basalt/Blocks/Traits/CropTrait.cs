@@ -87,7 +87,7 @@ public class CropTrait : BlockTrait
             dimension.World!.TickValue);
     }
 
-    private void TryGrow(BlockPos pos)
+    private static void TryGrow(BlockPos pos)
     {
     }
 

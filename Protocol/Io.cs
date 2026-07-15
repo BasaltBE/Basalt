@@ -27,8 +27,8 @@ namespace Basalt.Protocol.Io
     /// </summary>
     public static class Packet
     {
-        static readonly IReadOnlyDictionary<PacketId, Func<DataPacket>> Pool;
-        static readonly IReadOnlyDictionary<Type, PacketId> TypeIds;
+        static readonly Dictionary<PacketId, Func<DataPacket>> Pool;
+        static readonly Dictionary<Type, PacketId> TypeIds;
 
 
         /// <summary>

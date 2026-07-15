@@ -148,7 +148,7 @@ internal sealed class EntityStore
         }
     }
 
-    private static byte[] WriteEntityList(IReadOnlyList<KeyValuePair<long, CompoundTag>> entities)
+    private static byte[] WriteEntityList(List<KeyValuePair<long, CompoundTag>> entities)
     {
         byte[] entityList = new byte[sizeof(uint) + sizeof(int) + entities.Count * sizeof(long)];
         int offset = 0;

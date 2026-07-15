@@ -33,9 +33,9 @@ public sealed class ItemPalette
 #pragma warning restore IL2026
     }
 
-    public IReadOnlyDictionary<string, ItemType> Types => ItemType.Types;
+    public static IReadOnlyDictionary<string, ItemType> TypesMap => ItemType.Types;
 
-    public List<ItemType> GetAllTypes()
+    public static List<ItemType> GetAllTypes()
     {
         return ItemType.GetAll();
     }
@@ -186,12 +186,12 @@ public sealed class ItemPalette
             : null;
     }
 
-    public ItemType ResolveType(string identifier)
+    public static ItemType ResolveType(string identifier)
     {
         return ItemType.GetOrAir(identifier);
     }
 
-    public ItemType ResolveType(int networkId)
+    public static ItemType ResolveType(int networkId)
     {
         return ItemType.GetByNetwork(networkId) ?? ItemType.GetOrAir(AirIdentifier);
     }
