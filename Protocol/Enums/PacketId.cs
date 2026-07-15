@@ -39,6 +39,7 @@ namespace Basalt.Protocol.Enums
         PlayerHotBar = 0x30,
         InventoryContent = 0x31,
         InventorySlot = 0x32,
+        ContainerSetData = 0x33,
         CraftingData = 0x34,
         LevelChunk = 0x3a,
         ChangeDimension = 0x3d,

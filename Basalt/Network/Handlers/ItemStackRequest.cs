@@ -403,6 +403,17 @@ public static class ItemStackRequest
             return null;
         }
 
+        if (name.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        {
+            foreach ((_, Container opened) in player.openedContainers)
+            {
+                if (opened.Type is ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker)
+                {
+                    return opened;
+                }
+            }
+        }
+
         return player.GetContainer(name);
     }
 
@@ -424,6 +435,12 @@ public static class ItemStackRequest
             or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
         {
             return NormalizeInventorySlot(slot);
+        }
+
+        // Furnace UI slot IDs pass through directly.
+        if (containerName.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        {
+            return slot;
         }
 
         if (containerName.ContainerId is (byte)ContainerId.DynamicContainer
