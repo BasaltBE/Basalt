@@ -1,5 +1,6 @@
 using Basalt.Binary;
 using Basalt.Core.Blocks;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
@@ -341,6 +342,7 @@ public sealed class Chunk
 
     public static byte[] Serialize(Chunk chunk, bool nbt = false)
     {
+        using var __zone = Profiler.BeginZone("Chunk.Serialize");
         if (!nbt && chunk.Cache is not null)
         {
             return chunk.Cache;
@@ -359,6 +361,12 @@ public sealed class Chunk
     public static int Serialize(Chunk chunk, BinaryWriter writer, bool nbt = false)
     {
         int subChunkCount = chunk.GetSubChunkSendCount();
+
+        if (nbt)
+        {
+            writer.WriteUInt8(checked((byte)subChunkCount));
+        }
+
         for (int index = 0; index < subChunkCount; index++)
         {
             int offset = chunk.Type == DimensionType.Overworld ? 4 : 0;
@@ -418,22 +426,48 @@ public sealed class Chunk
 
     public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null)
     {
+        using var __zone = Profiler.BeginZone("Chunk.Deserialize");
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
-        for (int index = 0; index < MaxSubChunks; index++)
+        int explicitCount = -1;
+        if (nbt && reader.Remaining > 0)
         {
-            if (reader.Remaining <= 0)
+            byte peek = reader.Buffer[reader.Offset];
+            if (peek != 8 && peek != 9)
             {
-                break;
+                explicitCount = reader.ReadUInt8();
             }
+        }
 
-            byte header = reader.Buffer[reader.Offset];
-            if (header != 8 && header != 9)
+        if (explicitCount >= 0)
+        {
+            for (int index = 0; index < explicitCount && index < MaxSubChunks; index++)
             {
-                break;
-            }
+                if (reader.Remaining <= 0)
+                {
+                    break;
+                }
 
-            subChunks[index] = SubChunk.Deserialize(reader, nbt);
+                subChunks[index] = SubChunk.Deserialize(reader, nbt);
+            }
+        }
+        else
+        {
+            for (int index = 0; index < MaxSubChunks; index++)
+            {
+                if (reader.Remaining <= 0)
+                {
+                    break;
+                }
+
+                byte header = reader.Buffer[reader.Offset];
+                if (header != 8 && header != 9)
+                {
+                    break;
+                }
+
+                subChunks[index] = SubChunk.Deserialize(reader, nbt);
+            }
         }
 
         for (int i = 0; i < subChunks.Length; i++)

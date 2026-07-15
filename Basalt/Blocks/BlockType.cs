@@ -2,6 +2,8 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Blocks.Traits;
+using Basalt.Core.Blocks.Components;
+using Basalt.Core.Item;
 
 
 public sealed class BlockType
@@ -12,6 +14,8 @@ public sealed class BlockType
     private readonly HashSet<string> _tagSet = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BlockPermutation> _permutationStateIndex = new(StringComparer.Ordinal);
     private readonly HashSet<string> _booleanStates = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, BlockComponent> _components = new(StringComparer.Ordinal);
+    private List<BlockDrop>? _drops;
 
     public string Identifier { get; }
     public bool Air { get; internal set; }
@@ -27,7 +31,7 @@ public sealed class BlockType
     public bool Loggable { get; internal set; }
     public string? MapColor { get; internal set; }
     public List<string> States { get; } = [];
-    public List<string> Components { get; } = [];
+    public List<string> ComponentIdentifiers { get; } = [];
     public List<string> Tags { get; } = [];
     public List<BlockPermutation> Permutations { get; } = [];
     public IReadOnlyDictionary<string, Type> Traits => _traits;
@@ -92,8 +96,87 @@ public sealed class BlockType
     {
         if (_componentSet.Add(key))
         {
-            Components.Add(key);
+            ComponentIdentifiers.Add(key);
         }
+    }
+
+    public void AddComponent(BlockComponent component)
+    {
+        string key = component.ComponentIdentifier;
+        if (_componentSet.Add(key))
+        {
+            ComponentIdentifiers.Add(key);
+        }
+        _components[key] = component;
+    }
+
+    public T? GetComponent<T>() where T : BlockComponent
+    {
+        foreach (BlockComponent component in _components.Values)
+        {
+            if (component is T typed)
+            {
+                return typed;
+            }
+        }
+        return null;
+    }
+
+    public BlockComponent? GetComponent(string identifier)
+    {
+        return _components.TryGetValue(identifier, out BlockComponent? component) ? component : null;
+    }
+
+    public IEnumerable<BlockComponent> GetComponents()
+    {
+        return _components.Values;
+    }
+
+    public bool HasComponent(string identifier)
+    {
+        return _componentSet.Contains(identifier);
+    }
+
+    public bool HasComponent<T>() where T : BlockComponent
+    {
+        return GetComponent<T>() is not null;
+    }
+
+    public void SetDrops(List<BlockDrop> drops)
+    {
+        _drops = drops;
+    }
+
+    public List<ItemStack> GenerateDrops()
+    {
+        if (_drops is null || _drops.Count == 0)
+        {
+            return [];
+        }
+
+        List<ItemStack> items = [];
+        for (int i = 0; i < _drops.Count; i++)
+        {
+            BlockDrop drop = _drops[i];
+            if (Random.Shared.NextDouble() > drop.Chance)
+            {
+                continue;
+            }
+
+            ItemType? itemType = ItemType.Get(drop.Identifier);
+            if (itemType is null || itemType == ItemType.Air)
+            {
+                continue;
+            }
+
+            int count = Random.Shared.Next(drop.Min, drop.Max + 1);
+            if (count > 0)
+            {
+                items.Add(new ItemStack(itemType, checked((ushort)count)));
+            }
+        }
+
+        return items;
     }
 
     public void EnsureTag(string key)
@@ -102,6 +185,11 @@ public sealed class BlockType
         {
             Tags.Add(key);
         }
+    }
+
+    public bool HasTag(string tag)
+    {
+        return _tagSet.Contains(tag);
     }
 
     public BlockPermutation GetPermutation(BlockState? state = null)

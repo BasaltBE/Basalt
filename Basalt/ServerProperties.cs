@@ -1,4 +1,5 @@
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 
@@ -169,7 +170,7 @@ public class ServerProperties
         lines.AddRange(comments);
     }
 
-    public void ApplyMetadata<T>()
+    public void ApplyMetadata<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] T>()
     {
         ApplyMetadata(typeof(T));
     }
@@ -200,21 +201,21 @@ public class ServerProperties
         OrderedKeys = OrderedKeys.Where(MetadataKeys.Contains).ToList();
     }
 
-    public T Parse<T>() where T : new()
+    public T Parse<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : new()
     {
         object instance = new T();
         Apply(instance, typeof(T));
         return (T)instance;
     }
 
-    public TInterface Parse<TInterface, TImplementation>() where TImplementation : TInterface, new()
+    public TInterface Parse<TInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TImplementation>() where TImplementation : TInterface, new()
     {
         object instance = new TImplementation();
         Apply(instance, typeof(TImplementation));
         return (TInterface)instance;
     }
 
-    private void Apply(object instance, Type type)
+    private void Apply(object instance, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
         {
@@ -257,7 +258,7 @@ public class ServerProperties
         return ToBdsKey(member.Name);
     }
 
-    private void ApplyMetadata(Type type)
+    private void ApplyMetadata([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         List<(string Key, int Order, string[] Comments)> keys = [];
         foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))

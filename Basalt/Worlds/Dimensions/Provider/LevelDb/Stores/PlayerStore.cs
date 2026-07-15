@@ -43,17 +43,30 @@ internal sealed class PlayerStore
 
     public CompoundTag? Load(string xuid)
     {
+        byte[]? data = GetRaw(xuid);
+        if (data is null)
+        {
+            return null;
+        }
+
+        int offset = 0;
+        BinaryReader reader = new(data, ref offset);
+        return ReadPlayerPayload(reader);
+    }
+
+    public byte[]? GetRaw(string xuid)
+    {
         if (string.IsNullOrWhiteSpace(xuid))
         {
             return null;
         }
 
         byte[]? data = _database.Get(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid));
-        if (data is null || data.Length == 0)
-        {
-            return null;
-        }
+        return data is { Length: > 0 } ? data : null;
+    }
 
+    public CompoundTag? LoadFromRaw(byte[] data)
+    {
         int offset = 0;
         BinaryReader reader = new(data, ref offset);
         return ReadPlayerPayload(reader);

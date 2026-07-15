@@ -1,5 +1,6 @@
 namespace Basalt.Core.Item;
 
+using System.Diagnostics.CodeAnalysis;
 using Basalt.Protocol.Types;
 using Basalt.Protocol.Nbt;
 using Basalt.Core.Item.Traits;
@@ -22,7 +23,12 @@ public sealed class ItemStack {
         StackSize = (ushort)Math.Min(stackSize, type.MaxStackSize);
         Metadata = metadata;
         ExtraData = extraData;
+        InitializeTraits();
+    }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
+    private void InitializeTraits()
+    {
         foreach (Type traitType in Type.Traits.Values)
         {
             if (Activator.CreateInstance(traitType, this) is Traits.ItemTrait trait)
@@ -92,14 +98,13 @@ public sealed class ItemStack {
             return new NetworkItemStackDescriptor();
         }
 
-        int blockRuntimeId = Type.BlockType?.Permutations.FirstOrDefault()?.NetworkId ?? 0;
         return new NetworkItemStackDescriptor
         {
             NetworkId = Type.NetworkId,
             Count = StackSize,
             Metadata = Metadata,
             StackNetworkId = NetworkStackId,
-            BlockRuntimeId = blockRuntimeId,
+            BlockRuntimeId = 0,
             Nbt = GetSerializedNbt(),
             CanPlaceOn = ExtraData?.CanPlaceOn ?? [],
             CanDestroy = ExtraData?.CanDestroy ?? [],

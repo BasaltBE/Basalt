@@ -44,7 +44,7 @@ public sealed class EntityContainer : Containers.Container
                     HasValue = true,
                     Value = new FullContainerName { ContainerId = (byte)ContainerId.Inventory }
                 },
-                NewItem = ToItemInstanceNew(GetItem(slot))
+                NewItem = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             });
         }
 

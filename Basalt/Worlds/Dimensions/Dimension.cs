@@ -2,6 +2,8 @@ namespace Basalt.Core.Worlds.Dimensions;
 
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
+using Basalt.Core.Profiling;
+using Basalt.Core.Tasks;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
@@ -15,11 +17,7 @@ using Entity = Basalt.Core.Entities.Entity;
 public sealed class Dimension : IDisposable
 {
     private const int CompletedChunkLimit = 128;
-    private static readonly int ChunkWorkerLimit = Math.Clamp(Environment.ProcessorCount - 1, 1, 4);
 
-    /// <summary>
-    /// A mapping of block actors with containers
-    /// </summary>
     private static readonly Dictionary<string, string> BlockActorIds = new()
     {
         ["minecraft:barrel"] = "Barrel",
@@ -27,35 +25,18 @@ public sealed class Dimension : IDisposable
         ["minecraft:trapped_chest"] = "Chest"
     };
 
-    /// <summary>
-    /// A list of chunks in the dimension
-    /// </summary>
     private readonly Dictionary<long, ChunkColumn> _chunks;
-
-    /// <summary>
-    /// A list of chunk viewers
-    /// </summary>
     private readonly Dictionary<long, int> _chunkViewers;
-
-    /// <summary>
-    /// A list of entities
-    /// </summary>
     private readonly HashSet<Entity> _entities;
-
-    /// <summary>
-    ///  A list of chunks to sweep
-    /// </summary>
     private readonly List<long> _chunkSweepBuffer = [];
-
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
     private readonly Lock _chunkRequestLock = new();
     private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
-    private readonly ConcurrentQueue<long> _chunkRequests = new();
-    private readonly ConcurrentQueue<CompletedChunkRequest> _completedChunkRequests = new();
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
-    private readonly SemaphoreSlim _chunkRequestSignal = new(0);
-    private readonly CancellationTokenSource _chunkRequestCancel = new();
+    private readonly ConcurrentQueue<ChunkColumn> _chunkSaveQueue = new();
+    private readonly Thread _chunkSaveThread;
+    private readonly ManualResetEventSlim _chunkSaveSignal = new(false);
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
     private bool _tickingEntities;
@@ -76,11 +57,12 @@ public sealed class Dimension : IDisposable
         _entities = [];
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
-
-        for (int i = 0; i < ChunkWorkerLimit; i++)
+        _chunkSaveThread = new Thread(ChunkSaveLoop)
         {
-            _ = Task.Run(ChunkRequestWorker);
-        }
+            Name = $"ChunkSave-{identifier}",
+            IsBackground = true
+        };
+        _chunkSaveThread.Start();
     }
 
     public int ChunkCount => _chunks.Count;
@@ -107,6 +89,12 @@ public sealed class Dimension : IDisposable
         }
 
         long hash = HashChunk(x, z);
+
+        if (_provider.HasChunk(Type, x, z))
+        {
+            Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
+        }
+
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
         chunk.Dirty = true;
@@ -126,6 +114,8 @@ public sealed class Dimension : IDisposable
         {
             return;
         }
+
+        TaskScheduler? scheduler = World?.Server?.Scheduler;
 
         for (int i = 0; i < chunks.Length; i++)
         {
@@ -147,10 +137,25 @@ public sealed class Dimension : IDisposable
                 }
 
                 _pendingChunkRequests[hash] = new PendingChunkRequest(ready);
+                _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
             }
 
-            _chunkRequests.Enqueue(hash);
-            _chunkRequestSignal.Release();
+            if (scheduler is null)
+            {
+                ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
+                if (loaded is null)
+                {
+                    loaded = _generator.Generate(Type, x, z);
+                    _generator.Populate(loaded);
+                    loaded.Dirty = true;
+                }
+                HandleChunkCompleted(hash, loaded);
+            }
+            else
+            {
+                ChunkGenerationTask task = new(_provider, _generator, Type, x, z, hash, HandleChunkCompleted);
+                scheduler.Schedule(task);
+            }
         }
     }
 
@@ -158,17 +163,12 @@ public sealed class Dimension : IDisposable
     {
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
-        if (!_chunks.TryGetValue(hash, out ChunkColumn? chunk))
-        {
-            return false;
-        }
-
-        chunk.ReleaseMemory();
         return _chunks.Remove(hash);
     }
 
     public void SaveDirtyChunks()
     {
+        using var __zone = Profiler.BeginZone("Dimension.SaveDirtyChunks");
         foreach (ChunkColumn loadedChunk in _chunks.Values)
         {
             SyncBlockActorsToStorages(loadedChunk);
@@ -181,8 +181,15 @@ public sealed class Dimension : IDisposable
                 continue;
             }
 
-            _provider.SaveChunk(chunk);
-            chunk.Dirty = false;
+            try
+            {
+                _provider.SaveChunk(chunk);
+                chunk.Dirty = false;
+            }
+            catch (Exception exception)
+            {
+                Logger.Err($"Failed to save chunk {chunk.X},{chunk.Z}: {exception.Message}");
+            }
         }
     }
 
@@ -194,8 +201,17 @@ public sealed class Dimension : IDisposable
         }
 
         SyncBlockActorsToStorages(chunk);
-        _provider.SaveChunk(chunk);
-        chunk.Dirty = false;
+        try
+        {
+            _provider.SaveChunk(chunk);
+            chunk.Dirty = false;
+        }
+        catch (Exception exception)
+        {
+            Logger.Err($"Failed to save chunk {x},{z}: {exception.Message}");
+            return false;
+        }
+
         return true;
     }
 
@@ -210,11 +226,11 @@ public sealed class Dimension : IDisposable
         if (save && chunk.Dirty)
         {
             SyncBlockActorsToStorages(chunk);
-            _provider.SaveChunk(chunk);
             chunk.Dirty = false;
+            _chunkSaveQueue.Enqueue(chunk);
+            _chunkSaveSignal.Set();
         }
 
-        chunk.ReleaseMemory();
         return _chunks.Remove(hash);
     }
 
@@ -256,21 +272,38 @@ public sealed class Dimension : IDisposable
 
         int unloaded = 0;
         _chunkSweepBuffer.Clear();
-        _chunkSweepBuffer.EnsureCapacity(_chunks.Count);
+
+        HashSet<long>? pendingSnapshot = null;
+        lock (_chunkRequestLock)
+        {
+            if (_pendingChunkRequests.Count > 0)
+            {
+                pendingSnapshot = new HashSet<long>(_pendingChunkRequests.Keys);
+            }
+        }
 
         foreach (long hash in _chunks.Keys)
         {
-            _chunkSweepBuffer.Add(hash);
-        }
-
-        for (int i = 0; i < _chunkSweepBuffer.Count && unloaded < limit; i++)
-        {
-            long hash = _chunkSweepBuffer[i];
             if (_chunkViewers.ContainsKey(hash))
             {
                 continue;
             }
 
+            if (pendingSnapshot is not null && pendingSnapshot.Contains(hash))
+            {
+                continue;
+            }
+
+            _chunkSweepBuffer.Add(hash);
+            if (_chunkSweepBuffer.Count >= limit)
+            {
+                break;
+            }
+        }
+
+        for (int i = 0; i < _chunkSweepBuffer.Count; i++)
+        {
+            long hash = _chunkSweepBuffer[i];
             int x = (int)(hash >> 32);
             int z = (int)hash;
             if (UnloadChunk(x, z, save))
@@ -293,9 +326,13 @@ public sealed class Dimension : IDisposable
         return chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
     }
 
-    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true)
+    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true, bool broadcast = true)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
+
+        BlockPermutation previous = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
+        bool wasFluid = previous.Type.Liquid && !permutation.Type.Liquid;
+
         chunk.SetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), permutation, layer, dirty);
 
         BlockPos position = new() { X = x, Y = y, Z = z };
@@ -319,6 +356,30 @@ public sealed class Dimension : IDisposable
         {
             chunk.SetBlockActor(position, null);
             chunk.SetBlockStorage(position, null, dirty);
+        }
+
+        if (broadcast)
+        {
+            Broadcast(new UpdateBlockPacket
+            {
+                Position = position,
+                NetworkBlockId = (uint)permutation.NetworkId,
+                Flags = UpdateBlockFlagsType.Network,
+                Layer = (UpdateBlockLayerType)layer
+            },
+            new BroadcastOptions
+            {
+                Radius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256,
+            });
+        }
+
+        if (wasFluid)
+        {
+            Basalt.Core.Blocks.Traits.FluidKind? kind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(previous);
+            if (kind.HasValue)
+            {
+                Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(kind.Value, this, position);
+            }
         }
     }
 
@@ -386,20 +447,28 @@ public sealed class Dimension : IDisposable
     public void Dispose()
     {
         _disposed = true;
-        _chunkRequestCancel.Cancel();
-        _chunkRequestSignal.Release(ChunkWorkerLimit);
+        _chunkSaveSignal.Set();
+        _chunkSaveThread.Join();
+        FlushChunkSaveQueue();
         FlushCompletedChunkRequests(int.MaxValue);
         SaveDirtyChunks();
+        _chunkSaveSignal.Dispose();
     }
 
     public void Tick(ulong currentTick, uint deltaTick)
     {
-        FlushCompletedChunkRequests(CompletedChunkLimit);
+        using var __tick = Profiler.BeginZone("Dimension.Tick");
+
+        using (Profiler.BeginZone("FlushCompletedChunks"))
+        {
+            FlushCompletedChunkRequests(CompletedChunkLimit);
+        }
 
         if (currentTick % 20 == 0 && _chunks.Count > 0)
         {
+            using var unloadZone = Profiler.BeginZone("UnloadUnviewedChunks");
             int unloadLimit = Math.Min(Math.Max(_chunks.Count / 8, 32), 256);
-            _ = UnloadUnviewedChunks(unloadLimit, save: true);
+            UnloadUnviewedChunks(unloadLimit, save: true);
         }
 
         if (_entities.Count == 0)
@@ -442,34 +511,37 @@ public sealed class Dimension : IDisposable
         }
 
         _tickingEntities = true;
-        foreach (Entity entity in _entities)
+        using (Profiler.BeginZone("Dimension.TickEntities"))
         {
-            if (entity.PendingDespawn || entity.Dimension != this)
+            foreach (Entity entity in _entities)
             {
-                _pendingEntityRemoves.Add(entity);
-                continue;
-            }
+                if (entity.PendingDespawn || entity.Dimension != this)
+                {
+                    _pendingEntityRemoves.Add(entity);
+                    continue;
+                }
 
-            if (entity is global::Basalt.Core.Player.Player)
-            {
+                if (entity is global::Basalt.Core.Player.Player)
+                {
+                    entity.Tick(currentTick, deltaTick);
+                    continue;
+                }
+
+                if (!EntityInSimulatedChunk(entity))
+                {
+                    continue;
+                }
+
                 entity.Tick(currentTick, deltaTick);
-                continue;
             }
-
-            if (!EntityInSimulatedChunk(entity))
-            {
-                continue;
-            }
-
-            entity.Tick(currentTick, deltaTick);
         }
-
         _tickingEntities = false;
         FlushPendingEntityChanges();
     }
 
     public void Broadcast(DataPacket packet, BroadcastOptions? options = null)
     {
+        using var __zone = Profiler.BeginZone("Dimension.Broadcast");
         if (World?.Server is not global::Basalt.Core.Server server)
         {
             return;
@@ -535,6 +607,51 @@ public sealed class Dimension : IDisposable
             entity.CompleteDespawn();
         }
         _entities.Remove(entity);
+    }
+
+    public void AddPlayer(Player.Player joining)
+    {
+        if (World?.Server is not Server server)
+        {
+            return;
+        }
+
+        ulong tick = World is Tickable tickable ? tickable.TickValue : 0;
+        int joiningChunkX = WorldToChunk(joining.Location.X);
+        int joiningChunkZ = WorldToChunk(joining.Location.Z);
+        int viewDistance = server.Properties.MaxViewDistance;
+
+        foreach ((_, Player.Player other) in server.Players)
+        {
+            if (ReferenceEquals(other, joining) || other.Dimension != this)
+            {
+                continue;
+            }
+
+            int otherChunkX = WorldToChunk(other.Location.X);
+            int otherChunkZ = WorldToChunk(other.Location.Z);
+
+            bool otherInRange = InViewRange(joiningChunkX, joiningChunkZ, otherChunkX, otherChunkZ, viewDistance);
+            other.SpawnTo(joining, tick, otherInRange ? other.Location : new Vec3f());
+
+            bool joiningInRange = InViewRange(otherChunkX, otherChunkZ, joiningChunkX, joiningChunkZ, viewDistance);
+            joining.SpawnTo(other, tick, joiningInRange ? joining.Location : new Vec3f());
+        }
+    }
+
+    public void RemovePlayer(Player.Player leaving)
+    {
+        Broadcast(new RemoveActorPacket
+        {
+            EntityUniqueId = leaving.UniqueId
+        }, new BroadcastOptions { Except = [leaving] });
+    }
+
+    private static bool InViewRange(int viewerChunkX, int viewerChunkZ, int targetChunkX, int targetChunkZ, int viewDistance)
+    {
+        int dx = targetChunkX - viewerChunkX;
+        int dz = targetChunkZ - viewerChunkZ;
+        return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= viewDistance;
     }
 
     private static long HashChunk(int x, int z)
@@ -680,73 +797,50 @@ public sealed class Dimension : IDisposable
             ready.Callback(ready.Chunk);
             completed++;
         }
-
-        while (completed < limit && _completedChunkRequests.TryDequeue(out CompletedChunkRequest completedRequest))
-        {
-            PendingChunkRequest? request;
-            lock (_chunkRequestLock)
-            {
-                if (!_pendingChunkRequests.Remove(completedRequest.Hash, out request))
-                {
-                    continue;
-                }
-            }
-
-            if (completedRequest.Chunk is null)
-            {
-                continue;
-            }
-
-            _chunks[completedRequest.Hash] = completedRequest.Chunk;
-
-            foreach (Action<ChunkColumn> callback in request.Callbacks)
-            {
-                callback(completedRequest.Chunk);
-            }
-
-            completed++;
-        }
     }
 
-    private async Task ChunkRequestWorker()
+    private void HandleChunkCompleted(long hash, ChunkColumn? chunk)
     {
-        CancellationToken token = _chunkRequestCancel.Token;
-
-        while (!token.IsCancellationRequested)
+        PendingChunkRequest? request;
+        lock (_chunkRequestLock)
         {
-            try
-            {
-                await _chunkRequestSignal.WaitAsync(token);
-            }
-            catch (OperationCanceledException)
+            if (!_pendingChunkRequests.Remove(hash, out request))
             {
                 return;
             }
 
-            if (!_chunkRequests.TryDequeue(out long hash))
+            if (_chunkViewers.TryGetValue(hash, out int count))
             {
-                continue;
-            }
-
-            int x = (int)(hash >> 32);
-            int z = (int)hash;
-
-            try
-            {
-                ChunkColumn? loaded = _provider.LoadChunk(Type, x, z);
-                if (loaded is null)
+                if (count <= 1)
                 {
-                    loaded = _generator.Generate(Type, x, z);
-                    _generator.Populate(loaded);
-                    loaded.Dirty = true;
+                    _chunkViewers.Remove(hash);
                 }
-
-                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, loaded));
+                else
+                {
+                    _chunkViewers[hash] = count - 1;
+                }
             }
-            catch (Exception exception)
+        }
+
+        if (chunk is null)
+        {
+            return;
+        }
+
+        if (_chunks.TryGetValue(hash, out ChunkColumn? existing))
+        {
+            foreach (Action<ChunkColumn> callback in request.Callbacks)
             {
-                Logger.Err($"Failed to request chunk {x}, {z}: {exception.Message}");
-                _completedChunkRequests.Enqueue(new CompletedChunkRequest(hash, null));
+                callback(existing);
+            }
+        }
+        else
+        {
+            _chunks[hash] = chunk;
+
+            foreach (Action<ChunkColumn> callback in request.Callbacks)
+            {
+                callback(chunk);
             }
         }
     }
@@ -761,8 +855,32 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    private readonly record struct CompletedChunkRequest(long Hash, ChunkColumn? Chunk);
     private readonly record struct ChunkRequestCallback(ChunkColumn Chunk, Action<ChunkColumn> Callback);
+
+    private void ChunkSaveLoop()
+    {
+        while (!_disposed)
+        {
+            _chunkSaveSignal.Wait();
+            _chunkSaveSignal.Reset();
+            FlushChunkSaveQueue();
+        }
+    }
+
+    private void FlushChunkSaveQueue()
+    {
+        while (_chunkSaveQueue.TryDequeue(out ChunkColumn? chunk))
+        {
+            try
+            {
+                _provider.SaveChunk(chunk);
+            }
+            catch (Exception exception)
+            {
+                Logger.Err($"Failed to save chunk {chunk.X},{chunk.Z}: {exception.Message}");
+            }
+        }
+    }
 }
 
 

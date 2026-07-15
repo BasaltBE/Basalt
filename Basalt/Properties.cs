@@ -61,6 +61,11 @@ public class Properties
     [ServerProperties.PropertyKey("plugins-directory")]
     [ServerProperties.PropertyComment("Directory where plugin DLLs are loaded from.")]
     public string PluginsDirectory { get; set; } = "plugins";
+
+    [ServerProperties.PropertyOrder(13)]
+    [ServerProperties.PropertyKey("worker-threads")]
+    [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
+    public int WorkerThreads { get; set; } = 2;
 }
 
 

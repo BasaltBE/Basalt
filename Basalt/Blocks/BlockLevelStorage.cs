@@ -1,5 +1,6 @@
 namespace Basalt.Core.Blocks;
 
+using System.Diagnostics.CodeAnalysis;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
@@ -179,6 +180,8 @@ public sealed class BlockLevelStorage : CompoundTag
         return false;
     }
 
+    [RequiresUnreferencedCode("...")]
+    [RequiresDynamicCode("...")]
     public T? GetDynamicProperty<T>(string key)
     {
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");

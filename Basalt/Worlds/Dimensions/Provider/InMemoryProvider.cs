@@ -5,24 +5,24 @@ namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 public sealed class InMemoryProvider : WorldProvider
 {
-    private readonly Dictionary<long, ChunkColumn> _chunks = [];
+    private readonly Dictionary<(DimensionType, long), ChunkColumn> _chunks = [];
     public override string Identifier => "memory";
-    public override bool HasChunk(DimensionType dimensionType, int x, int z) => _chunks.ContainsKey(HashChunk(x, z));
+    public override bool HasChunk(DimensionType dimensionType, int x, int z) => _chunks.ContainsKey((dimensionType, HashChunk(x, z)));
 
     public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z)
     {
-        _chunks.TryGetValue(HashChunk(x, z), out ChunkColumn? chunk);
+        _chunks.TryGetValue((dimensionType, HashChunk(x, z)), out ChunkColumn? chunk);
         return chunk;
     }
 
     public override void SaveChunk(ChunkColumn chunk)
     {
-        _chunks[HashChunk(chunk.X, chunk.Z)] = chunk;
+        _chunks[(chunk.Type, HashChunk(chunk.X, chunk.Z))] = chunk;
     }
 
     public override void DeleteChunk(DimensionType dimensionType, int x, int z)
     {
-        _chunks.Remove(HashChunk(x, z));
+        _chunks.Remove((dimensionType, HashChunk(x, z)));
     }
 
     public override void Dispose()

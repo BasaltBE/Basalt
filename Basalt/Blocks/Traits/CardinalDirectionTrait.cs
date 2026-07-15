@@ -9,7 +9,7 @@ public sealed class CardinalDirectionTrait : DirectionTrait
 {
     public static new readonly string Identifier = "minecraft:cardinal_direction";
     public static new readonly string State = "minecraft:cardinal_direction";
-    public static new readonly Type? Component = typeof(BlockTypeRotationComponent);
+    public static new readonly Type? Component = typeof(RotationComponent);
 
     public CardinalDirectionTrait(Block block) : base(block)
     {
@@ -17,7 +17,7 @@ public sealed class CardinalDirectionTrait : DirectionTrait
 
     public override void OnPlace(BlockPlaceDetails details)
     {
-        CardinalDirection direction = BlockTypeRotationComponent.GetCardinalDirection(details.Player.Yaw);
+        CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
 
         switch (direction)
         {

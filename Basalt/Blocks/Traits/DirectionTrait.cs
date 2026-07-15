@@ -9,7 +9,7 @@ public class DirectionTrait : BlockTrait
 {
     public static new readonly string Identifier = "direction";
     public static readonly string State = "direction";
-    public static new readonly Type? Component = typeof(BlockTypeRotationComponent);
+    public static new readonly Type? Component = typeof(RotationComponent);
 
     public DirectionTrait(Block block) : base(block)
     {
@@ -17,7 +17,7 @@ public class DirectionTrait : BlockTrait
 
     public override void OnPlace(BlockPlaceDetails details)
     {
-        CardinalDirection direction = BlockTypeRotationComponent.GetCardinalDirection(details.Player.Yaw);
+        CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
 
         switch (direction)
         {

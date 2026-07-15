@@ -125,6 +125,11 @@ public sealed class BiomeStorage
             return new BiomeStorage();
         }
 
+        if (bitsPerBiome > 16)
+        {
+            throw new InvalidOperationException($"Invalid bits per biome: {bitsPerBiome}.");
+        }
+
         if (bitsPerBiome == 0)
         {
             int value = disk ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();

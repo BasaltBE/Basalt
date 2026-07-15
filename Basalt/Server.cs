@@ -2,8 +2,11 @@ namespace Basalt.Core;
 
 using System.Diagnostics;
 using Basalt.Core.Commands;
+using Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Network;
 using Basalt.Core.Plugins;
+using Basalt.Core.Profiling;
+using Basalt.Core.Tasks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -17,12 +20,9 @@ using WorldInstance = Worlds.World;
 
 public sealed class Server
 {
-    /// <summary>
-    /// TODO! Adjust cause of faking windows
-    /// </summary>
     private const ulong TpsUpdateIntervalTicks = 20;
-    private const double TickIntervalMs = 50.0;
-    private const double SpinThresholdMs = 16.0;
+    private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
+    private static readonly long SpinThresholdTicks = (long)(2.0 / 1000.0 * Stopwatch.Frequency);
 
     /// <summary>
     /// Raknet server
@@ -56,20 +56,13 @@ public sealed class Server
     private long _lastTpsTimestamp;
     private ulong _lastTpsTick;
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
-    /// <summary>
-    /// Registry for players
-    /// </summary>
     public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
-    /// <summary>
-    /// Registry for commands
-    /// </summary>
     public CommandRegistry Commands = new();
     public PluginManager Plugins { get; }
-    /// <summary>
-    /// Network handler for processing minecraft packets and packet handlers
-    /// </summary>
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
+    public TaskWorkerPool WorkerPool { get; private set; } = null!;
+    public TaskScheduler Scheduler { get; private set; } = null!;
     public IEnumerable<WorldInstance> Worlds => _worlds.Values;
 
     public string DefaultWorldIdentifier { get; }
@@ -85,6 +78,8 @@ public sealed class Server
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
         Plugins = new PluginManager(this);
+        WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
+        Scheduler = new TaskScheduler(WorkerPool);
 
         RegisterProvider<LevelDbProvider>("leveldb");
         RegisterProvider<InMemoryProvider>("memory");
@@ -92,7 +87,9 @@ public sealed class Server
         RegisterGenerator<SuperFlatGenerator>("superflat");
 
         
+#pragma warning disable IL2026
         Plugins.LoadAll(Properties.PluginsDirectory);
+#pragma warning restore IL2026
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
@@ -110,13 +107,12 @@ public sealed class Server
         }
         defaultWorld.ConfigurePersistence(Properties.WorldPath);
 
-        Commands.RegisterDefaultCommands();
+        DefaultCommands.Register(Commands);
     }
 
     public void Start()
     {
         Plugins.StartAll();
-        Commands.CacheAvailableCommands(this);
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 
@@ -131,32 +127,25 @@ public sealed class Server
         _tickLoopTask = Task.Run(() =>
         {
             CancellationToken token = tickCancellation.Token;
+            long nextTick = Stopwatch.GetTimestamp() + TickDurationTicks;
+
             while (!token.IsCancellationRequested)
             {
-                long tickStartTimestamp = Stopwatch.GetTimestamp();
-                Tick();
+                long remaining = nextTick - Stopwatch.GetTimestamp();
 
-                long tickDeadlineTimestamp = tickStartTimestamp + (long)(TickIntervalMs * Stopwatch.Frequency / 1000.0);
-                double remainingMs = GRTM(tickDeadlineTimestamp, Stopwatch.GetTimestamp());
-                if (remainingMs <= 0)
+                if (remaining > SpinThresholdTicks)
                 {
-                    continue;
+                    long sleepTicks = remaining - SpinThresholdTicks;
+                    Thread.Sleep(TimeSpan.FromSeconds((double)sleepTicks / Stopwatch.Frequency));
                 }
 
-                while (remainingMs > SpinThresholdMs)
-                {
-                    Thread.Sleep(1);
-                    remainingMs = GRTM(tickDeadlineTimestamp, Stopwatch.GetTimestamp());
-                    if (remainingMs <= 0)
-                    {
-                        break;
-                    }
-                }
-
-                while (Stopwatch.GetTimestamp() < tickDeadlineTimestamp)
+                while (Stopwatch.GetTimestamp() < nextTick)
                 {
                     Thread.SpinWait(1);
                 }
+
+                Tick();
+                nextTick += TickDurationTicks;
             }
         }, _tickCancellation.Token);
 
@@ -259,6 +248,7 @@ public sealed class Server
         {
             runCancellation?.Dispose();
             cancellation?.Dispose();
+            WorkerPool.Dispose();
         }
         Logger.Info("Basalt successfully stopped.");
     }
@@ -399,10 +389,22 @@ public sealed class Server
 
     public void Tick()
     {
+        using var _ = Profiler.BeginZone("Server.Tick");
         long startTimestamp = Stopwatch.GetTimestamp();
-        _raknet.Tick();
+
+        using (Profiler.BeginZone("Raknet.Tick"))
+        {
+            _raknet.Tick();
+        }
+
+        using (Profiler.BeginZone("TaskScheduler.Tick"))
+        {
+            Scheduler.Tick(GetWorld().TickValue);
+        }
+
         foreach (WorldInstance world in _worlds.Values.ToArray())
         {
+            using var worldZone = Profiler.BeginZone($"World.Tick({world.Name})");
             long worldStartTimestamp = Stopwatch.GetTimestamp();
             world.Tick();
             long worldEndTimestamp = Stopwatch.GetTimestamp();
@@ -411,6 +413,7 @@ public sealed class Server
 
         long endTimestamp = Stopwatch.GetTimestamp();
         UpdateTps(endTimestamp);
+        Profiler.FrameMark();
     }
 
     public void UpdateTps(long timestamp)
@@ -441,10 +444,6 @@ public sealed class Server
         _lastTpsTick = GetWorld().TickValue;
     }
 
-    private static double GRTM(long deadlineTimestamp, long timestamp)
-    {
-        return (deadlineTimestamp - timestamp) * 1000.0 / Stopwatch.Frequency;
-    }
 
     public void Broadcast(DataPacket packet, params PlayerInstance[]? exclude)
     {

@@ -11,11 +11,15 @@ public sealed class EntityPalette
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
 
+#pragma warning disable CA2255
     [ModuleInitializer]
     public static void Initialize()
+#pragma warning restore CA2255
     {
+#pragma warning disable IL2026
         LoadVanilla();
         EntityTraitRegistry.RegisterFromAssembly(typeof(EntityTraitRegistry).Assembly);
+#pragma warning restore IL2026
     }
 
     public IReadOnlyDictionary<string, EntityType> Types => EntityType.Types;

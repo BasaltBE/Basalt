@@ -10,5 +10,6 @@ public enum ContainerId : byte
     Offhand = 33,
     Barrel = 58,
     InventoryUi = 58,
-    Cursor = 59
+    Cursor = 59,
+    CreatedOutput = 60
 }

@@ -9,7 +9,7 @@ public sealed class FacingDirectionTrait : DirectionTrait
 {
     public static new readonly string Identifier = "facing_direction";
     public static new readonly string State = "facing_direction";
-    public static new readonly Type? Component = typeof(BlockTypeRotationComponent);
+    public static new readonly Type? Component = typeof(RotationComponent);
 
     public FacingDirectionTrait(Block block) : base(block)
     {
@@ -30,7 +30,7 @@ public sealed class FacingDirectionTrait : DirectionTrait
             return;
         }
 
-        CardinalDirection direction = BlockTypeRotationComponent.GetCardinalDirection(details.Player.Yaw);
+        CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
         switch (direction)
         {
             case CardinalDirection.North:

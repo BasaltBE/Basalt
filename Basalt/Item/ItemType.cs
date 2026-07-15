@@ -7,6 +7,49 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 
 
+/// <summary>
+/// Catalog metadata for an item's creative menu placement.
+/// </summary>
+public sealed class ItemCatalog
+{
+    private static readonly Dictionary<string, int> CategoryMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["construction"] = 1,
+        ["nature"] = 2,
+        ["equipment"] = 3,
+        ["items"] = 4
+    };
+
+    /// <summary>
+    /// Numeric category id sent over the protocol.
+    /// </summary>
+    public int Category { get; }
+
+    /// <summary>
+    /// Group display name, or null if this item has no group.
+    /// </summary>
+    public string? GroupName { get; }
+
+    /// <summary>
+    /// Group icon identifier, or null if this item has no group.
+    /// </summary>
+    public string? GroupIcon { get; }
+
+    public ItemCatalog(string categoryName, string? groupName, string? groupIcon)
+    {
+        Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 0;
+        GroupName = string.IsNullOrEmpty(groupName) ? null : StripMinecraftPrefix(groupName);
+        GroupIcon = string.IsNullOrEmpty(groupIcon) ? null : groupIcon;
+    }
+
+    private static string StripMinecraftPrefix(string value)
+    {
+        return value.StartsWith("minecraft:", StringComparison.Ordinal)
+            ? value["minecraft:".Length..]
+            : value;
+    }
+}
+
 public sealed class ItemType
 {
     private static readonly Dictionary<string, ItemType> Registry = new(StringComparer.Ordinal);
@@ -21,6 +64,8 @@ public sealed class ItemType
     public CompoundTag Properties { get; }
     public BlockType? BlockType { get; }
     public ItemTypeComponentCollection Components { get; }
+    public ItemCatalog? Catalog { get; }
+    public float AttackDamage { get; }
     public IReadOnlyDictionary<string, Type> Traits => _traits;
 
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
@@ -35,7 +80,8 @@ public sealed class ItemType
         IEnumerable<string>? tags,
         bool isComponentBased,
         int version,
-        CompoundTag? properties = null)
+        CompoundTag? properties = null,
+        ItemCatalog? catalog = null)
     {
         Identifier = identifier;
         NetworkId = networkId;
@@ -46,10 +92,12 @@ public sealed class ItemType
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
         BlockType = BlockType.Get(identifier);
+        Catalog = catalog;
 
         Registry[identifier] = this;
         NetworkRegistry[networkId] = this;
         ItemTraitRegistry.BindTraitsToType(this);
+        AttackDamage = ResolveDamage(Tags);
     }
 
     public static ItemType? Get(string identifier)
@@ -116,6 +164,40 @@ public sealed class ItemType
                 Ticking = null
             }
         };
+    }
+
+    private static readonly float[] SwordDamage =    [4, 5, 5, 6, 4, 7, 8];
+    private static readonly float[] AxeDamage =      [3, 4, 4, 5, 3, 6, 7];
+    private static readonly float[] PickaxeDamage =  [2, 3, 3, 4, 2, 5, 6];
+    private static readonly float[] ShovelDamage =   [1, 2, 2, 3, 1, 4, 5];
+    private static readonly float[] HoeDamage =      [2, 3, 3, 4, 2, 5, 7];
+
+    private static float ResolveDamage(IReadOnlyList<string> tags)
+    {
+        float[]? table = null;
+        int tier = -1;
+
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:is_sword": table = SwordDamage; break;
+                case "minecraft:is_axe": table = AxeDamage; break;
+                case "minecraft:is_pickaxe": table = PickaxeDamage; break;
+                case "minecraft:is_shovel": table = ShovelDamage; break;
+                case "minecraft:is_hoe": table = HoeDamage; break;
+                case "minecraft:wooden_tier": tier = 0; break;
+                case "minecraft:stone_tier": tier = 1; break;
+                case "minecraft:copper_tier": tier = 2; break;
+                case "minecraft:iron_tier": tier = 3; break;
+                case "minecraft:golden_tier": tier = 4; break;
+                case "minecraft:diamond_tier": tier = 5; break;
+                case "minecraft:netherite_tier": tier = 6; break;
+            }
+        }
+
+        if (table is null || tier < 0) return 1f;
+        return table[tier];
     }
 }
 

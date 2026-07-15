@@ -4,6 +4,7 @@ using System.Buffers;
 using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -35,7 +36,7 @@ public sealed class NetworkHandler
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
-        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.WriteToNbt());
+        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.Write());
         
 
         string leaveMessage = $"§e{player.Username} left the server.";
@@ -67,6 +68,7 @@ public sealed class NetworkHandler
 
     public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
     {
+        using var __zone = Profiler.BeginZone("Network.HandlePacket");
         ReadOnlySpan<byte> packetData = payload.Span;
         byte[]? decompressedBuffer = null;
 
@@ -165,6 +167,10 @@ public sealed class NetworkHandler
 
             case PacketId.PlayerAction:
                 PlayerAction.Handle(_server, connection, packetBuffer);
+                break;
+
+            case PacketId.Respawn:
+                Respawn.Handle(_server, connection, packetBuffer);
                 break;
 
             case PacketId.ItemStackRequest:

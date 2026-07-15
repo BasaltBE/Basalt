@@ -1,5 +1,6 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
+using Basalt.Core.Profiling;
 using LevelDB;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
@@ -29,11 +30,13 @@ public sealed class LevelDbProvider : WorldProvider
 
     public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z)
     {
+        using var __zone = Profiler.BeginZone("LevelDb.LoadChunk");
         return _chunks.Load(dimensionType, x, z);
     }
 
     public override void SaveChunk(ChunkColumn chunk)
     {
+        using var __zone = Profiler.BeginZone("LevelDb.SaveChunk");
         using WriteBatch batch = new();
         _chunks.Save(batch, chunk);
         _database.Write(batch);
@@ -41,6 +44,7 @@ public sealed class LevelDbProvider : WorldProvider
 
     public override void DeleteChunk(DimensionType dimensionType, int x, int z)
     {
+        using var __zone = Profiler.BeginZone("LevelDb.DeleteChunk");
         using WriteBatch batch = new();
         _chunks.Delete(batch, dimensionType, x, z);
         _database.Write(batch);
@@ -48,11 +52,23 @@ public sealed class LevelDbProvider : WorldProvider
 
     public override CompoundTag? LoadPlayerData(string xuid)
     {
+        using var __zone = Profiler.BeginZone("LevelDb.LoadPlayerData");
         return _players.Load(xuid);
+    }
+
+    public override byte[]? GetRawPlayerData(string xuid)
+    {
+        return _players.GetRaw(xuid);
+    }
+
+    public override CompoundTag? LoadPlayerDataFromRaw(byte[] data)
+    {
+        return _players.LoadFromRaw(data);
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data)
     {
+        using var __zone = Profiler.BeginZone("LevelDb.SavePlayerData");
         _players.Save(xuid, data);
     }
 

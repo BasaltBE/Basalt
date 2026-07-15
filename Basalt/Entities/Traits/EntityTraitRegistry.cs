@@ -1,5 +1,6 @@
 namespace Basalt.Core.Entities.Traits;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Basalt.Protocol.Enums;
 
@@ -23,6 +24,7 @@ public static class EntityTraitRegistry
         }
     }
 
+    [RequiresUnreferencedCode("Uses GetTypes() which is incompatible with trinmming")]
     public static void RegisterFromAssembly(Assembly assembly)
     {
         foreach (Type type in assembly.GetTypes())
@@ -31,6 +33,7 @@ public static class EntityTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Trait types are discovered via reflection")]
     public static void Register(Type traitType)
     {
         if (traitType.IsAbstract || !typeof(EntityTrait).IsAssignableFrom(traitType))
@@ -54,6 +57,7 @@ public static class EntityTraitRegistry
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Trait types are discovered via reflection")]
     public static void BindTraitsToType(EntityType entityType)
     {
         foreach ((string identifier, Type traitType) in Traits)
@@ -65,7 +69,8 @@ public static class EntityTraitRegistry
         }
     }
 
-    private static bool TraitAppliesTo(EntityType entityType, Type traitType)
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Trait types are discovered via reflection")]
+    private static bool TraitAppliesTo(EntityType entityType, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         foreach (string targetType in ReadTraitTargets(traitType, "Types"))
         {
@@ -86,7 +91,7 @@ public static class EntityTraitRegistry
         return false;
     }
 
-    private static string GetIdentifier(Type traitType)
+    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType)
     {
         PropertyInfo? property = traitType.GetProperty(
             "Identifier",
@@ -103,7 +108,7 @@ public static class EntityTraitRegistry
         return traitType.FullName ?? traitType.Name;
     }
 
-    private static string[] ReadTraitTargets(Type traitType, string name)
+    private static string[] ReadTraitTargets([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type traitType, string name)
     {
         object? value = null;
 

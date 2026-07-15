@@ -62,6 +62,12 @@ public static class LootTableManager
             return [];
         }
 
+        List<ItemStack> drops = BlockDropRegistry.GenerateDrops(blockType.Identifier);
+        if (drops.Count > 0)
+        {
+            return drops;
+        }
+
         ItemType? itemType = ItemType.Get(blockType.Identifier);
         if (itemType is null || itemType == ItemType.Air)
         {

@@ -2,7 +2,7 @@ namespace Basalt.Core.Commands;
 
 public static class ConsoleInterface
 {
-    public static void Start(global::Basalt.Core.Server server, CancellationToken cancellationToken, Action requestShutdown)
+    public static void Start(Server server, CancellationToken cancellationToken, Action requestShutdown)
     {
         Task.Run(() =>
         {
@@ -12,23 +12,23 @@ public static class ConsoleInterface
                 {
                     string? line = System.Console.ReadLine();
                     if (line is null)
-                    {
                         continue;
-                    }
 
-                    string[] tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    if (tokens.Length == 0)
-                    {
+                    string trimmed = line.Trim();
+                    if (trimmed.Length == 0)
                         continue;
-                    }
 
-                    if (tokens[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.Equals("stop", StringComparison.OrdinalIgnoreCase))
                     {
                         requestShutdown();
                         return;
                     }
 
-                    HandleResult(server.Commands.Execute(server, line));
+                    CommandResult result = server.Commands.Execute(server, trimmed);
+                    if (result.Message is not null)
+                    {
+                        Logger.Chat(result.Message);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -36,13 +36,5 @@ public static class ConsoleInterface
                 }
             }
         }, cancellationToken);
-    }
-
-    static void HandleResult(CommandResult result)
-    {
-        for (int i = 0; i < result.Messages.Count; i++)
-        {
-            Logger.Chat(result.Messages[i]);
-        }
     }
 }

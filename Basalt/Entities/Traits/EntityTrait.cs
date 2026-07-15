@@ -18,6 +18,7 @@ public abstract class EntityTrait : Trait
     {
         get
         {
+#pragma warning disable IL2075
             if (GetType().GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
                 property.PropertyType == typeof(string) &&
                 property.GetValue(null) is string identifier &&
@@ -27,6 +28,7 @@ public abstract class EntityTrait : Trait
             }
 
             return base.Identifier;
+#pragma warning restore IL2075
         }
     }
 
@@ -64,7 +66,7 @@ public abstract class EntityTrait : Trait
     {
     }
 
-    public virtual bool OnCommand(CommandExecutionState state)
+    public virtual bool OnCommand(CommandContext ctx)
     {
         return true;
     }

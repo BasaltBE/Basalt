@@ -4,6 +4,7 @@ using Basalt.Core;
 using Basalt.Core.Entities;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
+using Basalt.Core.Profiling;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -17,6 +18,7 @@ public static class ResourcePackClientResponse
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("ResourcePackResponse.Handle");
         ResourcePackClientResponsePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
@@ -212,7 +214,7 @@ public static class ResourcePackClientResponse
                 PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
 
                 server.Network.SendPackets(connection, [startGame]);
-                player.SyncPermissions();
+                player.Permissions.Sync();
                 server.Network.SendSerializedPacket(connection, PacketId.ItemRegistry, itemRegistryPayload);
                 // server.Network.SendPackets(connection, [spawnStatus]);
                 server.Network.SendPackets(connection, [actorIdentifiers, spawnStatus]);

@@ -3,6 +3,7 @@ namespace Basalt.Core.Blocks.Traits;
 using System.Reflection;
 using Basalt.Protocol.Nbt;
 using Basalt.Core.Blocks.Traits.Types;
+using Basalt.Core.Blocks.Types;
 
 
 public abstract class BlockTrait
@@ -17,6 +18,7 @@ public abstract class BlockTrait
     {
         get
         {
+#pragma warning disable IL2075
             if (GetType().GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
                 property.PropertyType == typeof(string) &&
                 property.GetValue(null) is string identifier &&
@@ -26,6 +28,7 @@ public abstract class BlockTrait
             }
 
             return GetType().FullName ?? GetType().Name;
+#pragma warning restore IL2075
         }
     }
 
@@ -56,6 +59,14 @@ public abstract class BlockTrait
 
     public virtual void OnBreak(BlockBreakDetails details)
     {
+    }
+
+    /// <summary>
+    /// An Override 
+    /// </summary>
+    public virtual List<Item.ItemStack>? GetCustomDrops(BlockPermutation permutation)
+    {
+        return null;
     }
 
     public virtual void OnInteract(BlockInteractDetails details)

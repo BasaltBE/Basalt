@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -11,6 +12,7 @@ using Basalt.Protocol.Nbt;
 using Basalt.Core.Worlds;
 using Basalt.Core.Entities.Metadata;
 using Basalt.Core.Item;
+using System.Diagnostics.CodeAnalysis;
 
 using Player = Player.Player;
 using Basalt.Core.Traits;
@@ -33,7 +35,7 @@ public class Entity
         set => Position = value;
     }
     public Vec3f Velocity;
-    public EntityAttributes Attributes { get; } = new();
+    public EntityAttributes Attributes { get; }
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
     public Dimension? Dimension { get; protected set; }
@@ -64,8 +66,15 @@ public class Entity
         }
 
         Type = EntityType.GetOrCreate(identifier);
+        Attributes = new EntityAttributes(this);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
+        InitializeTraits();
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
+    private void InitializeTraits()
+    {
         foreach (Type traitType in Type.Traits.Values)
         {
             if (Activator.CreateInstance(traitType, this) is EntityTrait trait)
@@ -121,6 +130,7 @@ public class Entity
 
     public void Tick(ulong currentTick, uint deltaTick)
     {
+        using var __zone = Profiler.BeginZone($"Entity.Tick({Identifier})");
         TraitOnTickDetails details = new(currentTick, deltaTick);
         for (int i = 0; i < _traits.Count; i++)
         {
@@ -141,13 +151,14 @@ public class Entity
 
         if (AttributesDirty && this is Player player)
         {
-            player.SendAttributes();
+            player.Attributes.Send();
         }
     }
 
 
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options)
     {
+        using var __zone = Profiler.BeginZone("Entity.Spawn");
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
@@ -212,6 +223,7 @@ public class Entity
         Dimension? dimension = Dimension;
         if (!options.Cancel && dimension is not null)
         {
+            ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
             List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
             for (int i = 0; i < drops.Count; i++)
             {
@@ -226,6 +238,7 @@ public class Entity
                     }
                 };
 
+                drop.LockPickupUntil(currentTick + 10);
                 drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
             }
         }
@@ -324,7 +337,7 @@ public class Entity
     //     Attributes.SetAttribute(attribute);
     // }
 
-    public CompoundTag WriteToNbt()
+    public CompoundTag Write()
     {
         CompoundTag root = new();
         root.Set("identifier", new StringTag { Value = Identifier });
@@ -352,7 +365,7 @@ public class Entity
         return root;
     }
 
-    public void FromNBT(CompoundTag root)
+    public void Read(CompoundTag root)
     {
         Position = new Vec3f
         {
@@ -516,14 +529,14 @@ public class Entity
         };
     }
 
-    public virtual void SpawnTo(Player player, ulong tick)
+    public virtual void SpawnTo(Player player, ulong tick, Vec3f? position = null)
     {
         player.Send(new AddActorPacket
         {
             EntityUniqueId = UniqueId,
             EntityRuntimeId = RuntimeId,
             EntityType = Identifier,
-            Position = Position,
+            Position = position ?? Position,
             Velocity = new Vec3f(),
             Pitch = 0,
             Yaw = 0,

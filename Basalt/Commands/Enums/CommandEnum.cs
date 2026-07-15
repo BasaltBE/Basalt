@@ -1,23 +1,29 @@
 namespace Basalt.Core.Commands;
 
+/// <summary>
+/// Base class for command parameter types. Each subclass knows how to parse its tokens
+/// and exposes an identifier and options for the AvailableCommandsPacket.
+/// </summary>
 public abstract class CommandEnum
 {
-    public string Identifier;
+    /// <summary>
+    /// Protocol identifier for this enum type.
+    /// </summary>
+    public string Identifier { get; }
 
-    public string[] Options;
+    /// <summary>
+    /// Enum options shown in autocomplete. Empty for hardcoded types (int, string, position, etc.)
+    /// </summary>
+    public virtual string[] Options { get; protected set; } = [];
 
-    protected CommandEnum(string identifier, params string[] options)
+    protected CommandEnum(string identifier)
     {
         Identifier = identifier;
-        Options = options;
     }
 
-    public abstract bool Parse(CommandExecutionState state, CommandParameter parameter, string[] tokens, ref int tokenIndex);
+    /// <summary>
+    /// Parse tokens starting at tokenIndex. Advance tokenIndex past consumed tokens.
+    /// Returns true on success.
+    /// </summary>
+    public abstract bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex);
 }
-
-
-
-
-
-
-

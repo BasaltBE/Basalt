@@ -2,27 +2,28 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Commands;
+using Basalt.Core.Events;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
-
 public static class CommandRequest
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("CommandRequest.Handle");
         CommandRequestPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (CommandRequestPacket)Protocol.Io.Packet.Deserialize(reader);
 
-
-        CommandResult result = CommandResult.Empty(false);
+        CommandResult result = CommandResult.Fail;
 
         if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
-            result = CommandResult.Message("Command executor was not found.", false);
+            result = CommandResult.Error("Command executor was not found.");
         }
         else
         {
@@ -30,34 +31,38 @@ public static class CommandRequest
             {
                 Logger.Info($"{player.Username} executed command {packet.Command}");
 
-                string[] tokens = packet.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (tokens.Length == 0)
+                // Emit PlayerCommand signal
+                string commandName = packet.Command.Split(' ', 2)[0].TrimStart('/');
+                CommandDefinition? definition = server.Commands.FindCommand(commandName);
+
+                PlayerCommandSignal signal = new(player, packet.Command, definition);
+                server.Emit(signal);
+
+                if (signal.Cancelled)
                 {
-                    result = CommandResult.Empty(false);
+                    result = CommandResult.Fail;
                 }
                 else
                 {
-                    string commandName = tokens[0].TrimStart('/');
-                    Basalt.Core.Commands.Command command = server.Commands.Get(commandName);
-                    if (!CommandRegistry.CanPlayerExecute(command, player))
-                    {
-                        result = CommandResult.Message(CommandRegistry.PermissionDeniedMessage, false);
-                    }
-                    else
-                    {
-                        result = server.Commands.Execute(server, player, packet.Command);
-                    }
+                    result = server.Commands.Execute(server, player, packet.Command);
                 }
-            }
-            catch (KeyNotFoundException)
-            {
-                result = server.Commands.Execute(server, player, packet.Command);
             }
             catch (Exception exception)
             {
-                result = CommandResult.Message(exception.Message, false);
+                result = CommandResult.Error(exception.Message);
                 Logger.Warn($"Command request failed: {exception}");
             }
+        }
+
+        List<CommandOutputMessage> messages = [];
+        if (result.Message is not null)
+        {
+            messages.Add(new CommandOutputMessage
+            {
+                Message = result.Message,
+                Parameters = [],
+                Success = result.Success
+            });
         }
 
         CommandResponsePacket response = new()
@@ -66,24 +71,9 @@ public static class CommandRequest
             OutputType = CommandOutputType.AllOutput,
             DataSet = string.Empty,
             Origin = packet.Origin,
-            OutputMessages = result.Messages.Select(message => new CommandOutputMessage
-            {
-                Message = message,
-                Parameters = [],
-                Success = result.Success
-            }).ToList()
+            OutputMessages = messages
         };
 
         server.Network.SendPacket(connection, response);
     }
 }
-
-
-
-
-
-
-
-
-
-

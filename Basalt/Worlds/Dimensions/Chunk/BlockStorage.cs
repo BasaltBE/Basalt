@@ -112,6 +112,42 @@ public sealed class BlockStorage
         byte paletteAndFlag = reader.ReadUInt8();
         int bitsPerBlock = paletteAndFlag >> 1;
 
+        if (bitsPerBlock > 16)
+        {
+            throw new InvalidOperationException($"Invalid bits per block: {bitsPerBlock}.");
+        }
+
+        if (bitsPerBlock == 0)
+        {
+            int zeroPaletteSize = nbt ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
+            if (zeroPaletteSize <= 0)
+            {
+                throw new InvalidOperationException("Invalid block palette size.");
+            }
+
+            List<int> zeroPalette = new(zeroPaletteSize);
+            for (int i = 0; i < zeroPaletteSize; i++)
+            {
+                if (nbt)
+                {
+                    TagType tagType = (TagType)reader.ReadInt8();
+                    if (tagType != TagType.Compound)
+                    {
+                        throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
+                    }
+
+                    CompoundTag tag = CompoundTag.Read(reader, new TagOptions(Name: true, Type: false, VarInt: false));
+                    zeroPalette.Add(BlockPermutation.FromCompound(tag).NetworkId);
+                }
+                else
+                {
+                    zeroPalette.Add(reader.ReadZigZag());
+                }
+            }
+
+            return new BlockStorage(zeroPalette, new int[MaxSize]);
+        }
+
         int blocksPerWord = 32 / bitsPerBlock;
         int wordCount = (MaxSize + blocksPerWord - 1) / blocksPerWord;
 

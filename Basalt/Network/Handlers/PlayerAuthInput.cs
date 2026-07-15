@@ -10,6 +10,7 @@ using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -20,14 +21,18 @@ public static class PlayerAuthInput
 {
     private const float MaxHorizontalMovePerTick = 2.0f;
     private const ulong DefaultFoodUseTicks = 32UL;
+    private const ulong BreakToleranceTicks = 5;
 
     private static readonly ConcurrentDictionary<ulong, ulong> LastInputTickByRuntimeId = new();
     private static readonly ConcurrentDictionary<ulong, PendingItemUse> PendingItemUses = new();
+    private static readonly ConcurrentDictionary<ulong, BreakState> BreakStates = new();
 
     private readonly record struct PendingItemUse(int Slot, int StackNetworkId, ulong FinishTick);
+    private readonly record struct BreakState(BlockPos Position, ulong StartTick, uint DurationTicks);
 
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
+        using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
         PlayerAuthInputPacket packet = new();
         try
         {
@@ -37,7 +42,7 @@ public static class PlayerAuthInput
         }
         catch (Exception exception)
         {
-            Logger.Warn("PlayerAuthInput deserialize failed: {0}", exception);
+            Logger.Error("PlayerAuthInput deserialize failed: {0}", exception);
             return;
         }
 
@@ -50,7 +55,7 @@ public static class PlayerAuthInput
 
             if (MovedTooFar(player, packet, out ulong tickDelta))
             {
-                Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta={tickDelta}");
+                Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta:{tickDelta}");
 
                 server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket
                 {
@@ -83,8 +88,8 @@ public static class PlayerAuthInput
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
             {
                 mineBlockRequest = GetMineBlockRequest(packet.ItemStackRequest);
-                Logger.Warn(
-                    "PlayerAuthInput item stack request player={0} request={1} actions={2} mineBlock={3}",
+                Logger.Debug(
+                    "PlayerAuthInput item stack request player:{0} request:{1} actions:{2} mineBlock:{3}",
                     player.Username,
                     packet.ItemStackRequest.RequestId,
                     packet.ItemStackRequest.Actions.Count,
@@ -99,14 +104,14 @@ public static class PlayerAuthInput
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
             {
                 // Logger.Warn(
-                //     "PlayerAuthInput block actions player={0} count={1} tick={2}",
+                //     "PlayerAuthInput block actions player:{0} count:{1} tick:{2}",
                 //     player.Username,
                 //     packet.BlockActions.Count,
                 //     packet.Tick);
 
                 foreach (PlayerBlockAction action in packet.BlockActions)
                 {
-                    HandleBlockAction(player, action);
+                    HandleBlockAction(player, action, packet.Tick);
                 }
             }
 
@@ -133,28 +138,6 @@ public static class PlayerAuthInput
             else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSneaking))
             {
                 player.IsSneaking = false;
-            }
-            else if (mineBlockRequest is not null && player.LastActionBlockPosition.HasValue)
-            {
-                BlockPos position = player.LastActionBlockPosition.Value;
-                Logger.Warn(
-                    "PlayerAuthInput mine fallback player={0} pos={1},{2},{3} face={4}",
-                    player.Username,
-                    position.X,
-                    position.Y,
-                    position.Z,
-                    player.LastActionFace);
-
-                DestroyBlock(player, new PlayerBlockAction
-                {
-                    Action = PlayerActionType.PredictDestroyBlock,
-                    BlockPos = position,
-                    Face = player.LastActionFace
-                });
-            }
-            else if (mineBlockRequest is not null)
-            {
-                Logger.Warn("PlayerAuthInput mine request had no block actions and no last PlayerAction target player={0}", player.Username);
             }
 
             LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
@@ -245,7 +228,7 @@ public static class PlayerAuthInput
             }
         }
 
-        player.SendAttributes();
+        player.Attributes.Send();
     }
 
     private static ulong GetCurrentTick(Player.Player player)
@@ -377,42 +360,55 @@ public static class PlayerAuthInput
 
     }
 
-    private static void HandleBlockAction(Player.Player player, PlayerBlockAction action)
+    private static void HandleBlockAction(Player.Player player, PlayerBlockAction action, ulong tick)
     {
-        // Logger.Warn(
-        //     "PlayerAuthInput block action player={0} action={1} pos={2},{3},{4} face={5}",
-        //     player.Username,
-        //     action.Action,
-        //     action.BlockPos.X,
-        //     action.BlockPos.Y,
-        //     action.BlockPos.Z,
-        //     action.Face);
+        Logger.Warn(
+            "BlockAction player:{0} action:{1} pos:{2},{3},{4} face:{5} tick:{6}",
+            player.Username,
+            action.Action,
+            action.BlockPos.X,
+            action.BlockPos.Y,
+            action.BlockPos.Z,
+            action.Face,
+            tick);
 
         switch (action.Action)
         {
             case PlayerActionType.StartDestroyBlock:
-                CrackBlock(player, action.BlockPos);
+                StartBreakBlock(player, action.BlockPos, tick);
+                break;
+
+            case PlayerActionType.ContinueDestroyBlock:
+                ContinueBreakBlock(player, action.BlockPos, tick);
                 break;
 
             case PlayerActionType.CrackBlock:
-            case PlayerActionType.ContinueDestroyBlock:
-                CrackBlock(player, action.BlockPos);
+                CrackBlock(player, action.BlockPos, tick);
                 break;
 
             case PlayerActionType.AbortDestroyBlock:
                 StopCrackBlock(player, player.BreakingBlock ?? action.BlockPos);
+                BreakStates.TryRemove(player.RuntimeId, out _);
                 player.BreakingBlock = null;
                 break;
 
             case PlayerActionType.StopDestroyBlock:
+                StopCrackBlock(player, player.BreakingBlock ?? action.BlockPos);
+                BreakStates.TryRemove(player.RuntimeId, out _);
+                player.BreakingBlock = null;
+                break;
+
             case PlayerActionType.PredictDestroyBlock:
+                ValidateAndDestroyBlock(player, action, tick);
+                break;
+
             case PlayerActionType.CreativeDestroyBlock:
                 DestroyBlock(player, action);
                 break;
         }
     }
 
-    private static void CrackBlock(Player.Player player, BlockPos blockPosition)
+    private static void StartBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick)
     {
         if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition))
         {
@@ -421,13 +417,128 @@ public static class PlayerAuthInput
 
         player.BreakingBlock = blockPosition;
         int breakTimeTicks = GetBreakTimeTicksForAnimation(player, blockPosition);
-        int crackSpeed = Math.Max(1, 65535 / breakTimeTicks);
+
+        Logger.Warn(
+            "StartBreak player:{0} pos:{1},{2},{3} duration:{4} tick:{5}",
+            player.Username,
+            blockPosition.X, blockPosition.Y, blockPosition.Z,
+            breakTimeTicks, tick);
+
+        BreakStates[player.RuntimeId] = new BreakState(blockPosition, tick, (uint)breakTimeTicks);
+
+        int crackSpeed = breakTimeTicks > 0
+            ? Math.Min(65535, 65535 / breakTimeTicks)
+            : 65535;
 
         player.Dimension?.Broadcast(new LevelEventPacket
         {
             Event = LevelEvent.StartBlockCracking,
             Position = CenterOf(blockPosition),
-            Data = crackSpeed
+            Data = Math.Max(1, crackSpeed)
+        });
+    }
+
+    private static void CrackBlock(Player.Player player, BlockPos blockPosition, ulong tick)
+    {
+        if (!player.BreakingBlock.HasValue || !SameBlock(player.BreakingBlock.Value, blockPosition))
+        {
+            StartBreakBlock(player, blockPosition, tick);
+        }
+    }
+
+    private static void ContinueBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick)
+    {
+        if (BreakStates.TryGetValue(player.RuntimeId, out BreakState existing)
+            && SameBlock(existing.Position, blockPosition))
+        {
+            return;
+        }
+
+        if (player.BreakingBlock.HasValue)
+        {
+            StopCrackBlock(player, player.BreakingBlock.Value);
+        }
+
+        StartBreakBlock(player, blockPosition, tick);
+    }
+
+    private static void ValidateAndDestroyBlock(Player.Player player, PlayerBlockAction action, ulong tick)
+    {
+        BlockPos blockPosition = IsZero(action.BlockPos)
+            ? (player.BreakingBlock ?? action.BlockPos)
+            : action.BlockPos;
+
+        bool valid = false;
+
+        if (BreakStates.TryRemove(player.RuntimeId, out BreakState state))
+        {
+            if (SameBlock(state.Position, blockPosition))
+            {
+                ulong elapsed = tick >= state.StartTick ? tick - state.StartTick : 0;
+
+                // Only instant-break blocks (1 tick) pass with zero elapsed time.
+                if (state.DurationTicks <= 1)
+                {
+                    valid = true;
+                }
+                else if (elapsed > 0)
+                {
+                    valid = elapsed + BreakToleranceTicks >= state.DurationTicks;
+                }
+
+                if (!valid)
+                {
+                    Logger.Warn(
+                        "Block break rejected player:{0} pos:{1},{2},{3} elapsed:{4} duration:{5} tick:{6} startTick:{7}",
+                        player.Username,
+                        blockPosition.X, blockPosition.Y, blockPosition.Z,
+                        elapsed, state.DurationTicks, tick, state.StartTick);
+                }
+            }
+            else
+            {
+                Logger.Debug(
+                    "Block break rejected player:{0} reason: position-mismatch state:{1},{2},{3} action:{4},{5},{6}",
+                    player.Username,
+                    state.Position.X, state.Position.Y, state.Position.Z,
+                    blockPosition.X, blockPosition.Y, blockPosition.Z);
+            }
+        }
+        else
+        {
+            Logger.Debug(
+                "Block break rejected player:{0} reason: no-break-state pos:{1},{2},{3}",
+                player.Username, blockPosition.X, blockPosition.Y, blockPosition.Z);
+        }
+
+        player.BreakingBlock = null;
+
+        if (!valid)
+        {
+            StopCrackBlock(player, blockPosition);
+            SendRevertBlock(player, blockPosition);
+            return;
+        }
+
+        StopCrackBlock(player, blockPosition);
+        DestroyBlock(player, action);
+    }
+
+    private static void SendRevertBlock(Player.Player player, BlockPos blockPosition)
+    {
+        if (player.Dimension is null) return;
+
+        Basalt.Core.Blocks.BlockPermutation? perm =
+            player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+
+        if (perm is null) return;
+
+        player.Send(new UpdateBlockPacket
+        {
+            Position = blockPosition,
+            NetworkBlockId = (uint)perm.NetworkId,
+            Flags = UpdateBlockFlagsType.Network,
+            Layer = UpdateBlockLayerType.Normal
         });
     }
 
@@ -435,7 +546,7 @@ public static class PlayerAuthInput
     {
         if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
         {
-            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=zero-position-no-target action={1}", player.Username, action.Action);
+            // Logger.Warn("PlayerAuthInput destroy skipped player:{0} reason=zero-position-no-target action:{1}", player.Username, action.Action);
             return;
         }
 
@@ -448,7 +559,7 @@ public static class PlayerAuthInput
 
         if (player.Dimension is null)
         {
-            // Logger.Warn("PlayerAuthInput destroy skipped player={0} reason=no-dimension", player.Username);
+            // Logger.Warn("PlayerAuthInput destroy skipped player:{0} reason=no-dimension", player.Username);
             return;
         }
 
@@ -458,7 +569,7 @@ public static class PlayerAuthInput
         if (block is null)
         {
             // Logger.Warn(
-            //     "PlayerAuthInput destroy skipped player={0} reason=null-block pos={1},{2},{3}",
+            //     "PlayerAuthInput destroy skipped player:{0} reason=null-block pos:{1},{2},{3}",
             //     player.Username,
             //     blockPosition.X,
             //     blockPosition.Y,
@@ -467,7 +578,7 @@ public static class PlayerAuthInput
         }
 
         // Logger.Warn(
-        //     "PlayerAuthInput destroy attempt player={0} pos={1},{2},{3} before={4} network={5} action={6}",
+        //     "PlayerAuthInput destroy attempt player:{0} pos:{1},{2},{3} before:{4} network:{5} action:{6}",
         //     player.Username,
         //     blockPosition.X,
         //     blockPosition.Y,
@@ -526,11 +637,20 @@ public static class PlayerAuthInput
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
+        if (block.Type.Liquid)
+        {
+            Basalt.Core.Blocks.Traits.FluidKind? fluidKind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(block);
+            if (fluidKind.HasValue)
+            {
+                Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(fluidKind.Value, player.Dimension, blockPosition);
+            }
+        }
+
         Basalt.Core.Blocks.BlockPermutation after =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
         // Logger.Warn(
-        //     "PlayerAuthInput destroy result player={0} pos={1},{2},{3} after={4} network={5}",
+        //     "PlayerAuthInput destroy result player:{0} pos:{1},{2},{3} after:{4} network:{5}",
         //     player.Username,
         //     blockPosition.X,
         //     blockPosition.Y,
@@ -569,6 +689,11 @@ public static class PlayerAuthInput
         });
     }
 
+    private const float Tps = 20f;
+    private const float CompatibleToolMultiplier = 1.5f;
+    private const float IncompatibleToolMultiplier = 5.0f;
+    private const int MaxBreakTicks = 6000;
+
     private static int GetBreakTimeTicksForAnimation(Player.Player player, BlockPos blockPosition)
     {
         Basalt.Core.Blocks.BlockPermutation? block =
@@ -579,10 +704,12 @@ public static class PlayerAuthInput
             return 20;
         }
 
-        float hardness = block.Type.Hardness;
+        Basalt.Core.Blocks.BlockType blockType = block.Type;
+        float hardness = blockType.Hardness;
+
         if (hardness < 0f)
         {
-            return 9999;
+            return MaxBreakTicks;
         }
 
         if (hardness == 0f)
@@ -590,7 +717,116 @@ public static class PlayerAuthInput
             return 1;
         }
 
-        return Math.Max(1, (int)(hardness * 1.5f * 20f));
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        ItemStack? heldItem = inventory?.GetHeldItem();
+
+        ToolCategory requiredCategory = GetBlockToolCategory(blockType);
+        int requiredTierLevel = GetBlockRequiredTierLevel(blockType);
+
+        bool categoryMatch = false;
+        int toolTierLevel = 0;
+
+        if (heldItem is not null)
+        {
+            ToolCategory itemCategory = GetItemToolCategory(heldItem.Type);
+            toolTierLevel = GetItemTierHarvestLevel(heldItem.Type);
+            categoryMatch = requiredCategory != ToolCategory.None && itemCategory == requiredCategory;
+        }
+
+        bool tierOk = requiredTierLevel == 0 || toolTierLevel >= requiredTierLevel;
+        bool compatible = requiredTierLevel == 0 || (categoryMatch && tierOk);
+
+        float efficiency = 1f;
+        if (categoryMatch)
+        {
+            efficiency = GetBaseMiningEfficiency(heldItem!.Type);
+
+            ItemStackEnchantmentTrait? enchantments = heldItem.GetTrait<ItemStackEnchantmentTrait>();
+            if (enchantments is not null)
+            {
+                efficiency += enchantments.GetMiningSpeedBonus();
+            }
+        }
+
+        float multiplier = compatible ? CompatibleToolMultiplier : IncompatibleToolMultiplier;
+        float seconds = (hardness * multiplier) / efficiency;
+        int ticks = (int)MathF.Ceiling(seconds * Tps);
+        return Math.Clamp(ticks, 1, MaxBreakTicks);
+    }
+
+    private enum ToolCategory { None, Axe, Hoe, Pickaxe, Shovel, Sword }
+
+    private static ToolCategory GetBlockToolCategory(Basalt.Core.Blocks.BlockType blockType)
+    {
+        if (blockType.HasTag("minecraft:is_pickaxe_item_destructible")) return ToolCategory.Pickaxe;
+        if (blockType.HasTag("minecraft:is_axe_item_destructible")) return ToolCategory.Axe;
+        if (blockType.HasTag("minecraft:is_shovel_item_destructible")) return ToolCategory.Shovel;
+        if (blockType.HasTag("minecraft:is_hoe_item_destructible")) return ToolCategory.Hoe;
+        if (blockType.HasTag("minecraft:is_sword_item_destructible")) return ToolCategory.Sword;
+        return ToolCategory.None;
+    }
+
+    private static int GetBlockRequiredTierLevel(Basalt.Core.Blocks.BlockType blockType)
+    {
+        if (blockType.HasTag("minecraft:diamond_tier_destructible")) return 5;
+        if (blockType.HasTag("minecraft:iron_tier_destructible")) return 4;
+        if (blockType.HasTag("minecraft:stone_tier_destructible")) return 3;
+        return 0;
+    }
+
+    private static ToolCategory GetItemToolCategory(ItemType itemType)
+    {
+        IReadOnlyList<string> tags = itemType.Tags;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:is_pickaxe": return ToolCategory.Pickaxe;
+                case "minecraft:is_axe": return ToolCategory.Axe;
+                case "minecraft:is_shovel": return ToolCategory.Shovel;
+                case "minecraft:is_hoe": return ToolCategory.Hoe;
+                case "minecraft:is_sword": return ToolCategory.Sword;
+            }
+        }
+        return ToolCategory.None;
+    }
+
+    private static int GetItemTierHarvestLevel(ItemType itemType)
+    {
+        IReadOnlyList<string> tags = itemType.Tags;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:netherite_tier": return 6;
+                case "minecraft:diamond_tier": return 5;
+                case "minecraft:iron_tier": return 4;
+                case "minecraft:stone_tier": return 3;
+                case "minecraft:copper_tier": return 3;
+                case "minecraft:golden_tier": return 2;
+                case "minecraft:wooden_tier": return 1;
+            }
+        }
+        return 0;
+    }
+
+    private static float GetBaseMiningEfficiency(ItemType itemType)
+    {
+        IReadOnlyList<string> tags = itemType.Tags;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:netherite_tier": return 9f;
+                case "minecraft:diamond_tier": return 8f;
+                case "minecraft:iron_tier": return 6f;
+                case "minecraft:copper_tier": return 5f;
+                case "minecraft:stone_tier": return 4f;
+                case "minecraft:golden_tier": return 12f;
+                case "minecraft:wooden_tier": return 2f;
+            }
+        }
+        return 1f;
     }
 
     private static Vec3f CenterOf(BlockPos position)

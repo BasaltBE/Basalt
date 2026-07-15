@@ -1,5 +1,7 @@
 namespace Basalt.Core.Worlds;
 
+using System.Diagnostics.CodeAnalysis;
+using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
@@ -70,7 +72,7 @@ public sealed class World : IDisposable, Tickable
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public DimensionInstance CreateDimension(string identifier, DimensionType type, Type generatorType, params object[] generatorArgs)
+    public DimensionInstance CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
     {
         if (!typeof(Generator).IsAssignableFrom(generatorType))
             throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
@@ -132,7 +134,10 @@ public sealed class World : IDisposable, Tickable
     {
         TickValue++;
         foreach (DimensionInstance dimension in _dimensions.Values)
+        {
+            using var _ = Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})");
             dimension.Tick(TickValue, 1);
+        }
     }
 
     /// <summary>

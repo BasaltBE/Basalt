@@ -40,7 +40,7 @@ public sealed class ItemEntity : Entity
         Dimension?.Broadcast(CreateAddItemActorPacket());
     }
 
-    public override void SpawnTo(Player player, ulong tick)
+    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null)
     {
         player.Send(CreateAddItemActorPacket());
     }
@@ -167,6 +167,13 @@ public sealed class ItemEntity : Entity
             float dx = player.Position.X - Position.X;
             float dz = player.Position.Z - Position.Z;
             if ((dx * dx) + (dz * dz) > pickupRadiusSquared)
+            {
+                continue;
+            }
+
+            var signal = new Basalt.Core.Events.PlayerItemPickupSignal(player, Item, this);
+            server.Emit(signal);
+            if (!signal.Emit())
             {
                 continue;
             }

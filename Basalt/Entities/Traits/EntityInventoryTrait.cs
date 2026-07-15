@@ -4,7 +4,9 @@ using Basalt.Core.Containers;
 using Basalt.Core.Entities.Container;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Events;
 using Basalt.Core.Item;
+using Basalt.Core.Worlds;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
@@ -269,6 +271,115 @@ public sealed class EntityInventoryTrait : EntityTrait
         }
 
         player.Send(packet);
+    }
+
+    public bool DropItem(ItemStack item)
+    {
+        if (Entity is not Player player)
+        {
+            return false;
+        }
+
+        if (Entity.Dimension is null || item.StackSize == 0 || item.Type == ItemType.Air)
+        {
+            return false;
+        }
+
+        if (Entity.Dimension.World?.Server is Server server)
+        {
+            var signal = new Events.PlayerItemDropSignal(player, item);
+            server.Emit(signal);
+            if (!signal.Emit())
+            {
+                return false;
+            }
+        }
+
+        Vec3f feet = Entity.GetPosition();
+        float yaw = MathF.PI / 180f * player.Yaw;
+        float pitch = MathF.PI / 180f * player.Pitch;
+
+        ItemEntity drop = new(item)
+        {
+            Location = new Vec3f
+            {
+                X = feet.X,
+                Y = feet.Y + 1.15f,
+                Z = feet.Z
+            },
+            Velocity = new Vec3f
+            {
+                X = -MathF.Sin(yaw) * MathF.Cos(pitch) / 3f,
+                Y = -MathF.Sin(pitch) / 2f + 0.2f,
+                Z = MathF.Cos(yaw) * MathF.Cos(pitch) / 3f
+            }
+        };
+
+        ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        drop.LockMergeUntil(currentTick + 40);
+        drop.LockPickupUntil(currentTick + 40);
+        drop.Spawn(Entity.Dimension, new EntitySpawnOptions(InitialSpawn: false));
+        return true;
+    }
+
+    public ushort CollectItem(ItemStack item)
+    {
+        if (item.StackSize == 0)
+        {
+            return 0;
+        }
+
+        ushort remaining = item.StackSize;
+        ushort moved = 0;
+
+        for (int i = 0; i < Container.GetSize() && remaining > 0; i++)
+        {
+            ItemStack? existing = Container.GetItem(i);
+            if (existing is null || !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
+            {
+                continue;
+            }
+
+            int space = existing.Type.MaxStackSize - existing.StackSize;
+            int transfer = Math.Min(space, remaining);
+            if (transfer <= 0)
+            {
+                continue;
+            }
+
+            existing.IncrementStack((ushort)transfer);
+            Container.UpdateSlot(i);
+            remaining = (ushort)(remaining - transfer);
+            moved = (ushort)(moved + transfer);
+        }
+
+        for (int i = 0; i < Container.GetSize() && remaining > 0; i++)
+        {
+            if (Container.GetItem(i) is not null)
+            {
+                continue;
+            }
+
+            ushort transfer = (ushort)Math.Min(remaining, item.Type.MaxStackSize);
+            ItemStack stack = item.Clone(transfer);
+            Container.SetItem(i, stack);
+            remaining = (ushort)(remaining - transfer);
+            moved = (ushort)(moved + transfer);
+        }
+
+        if (moved == 0)
+        {
+            return 0;
+        }
+
+        item.SetStackSize(remaining);
+
+        if (Entity is Player player)
+        {
+            SyncToPlayer(player);
+        }
+
+        return moved;
     }
 }
 

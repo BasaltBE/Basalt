@@ -16,6 +16,7 @@ public abstract class PlayerTrait : EntityTrait
         }
 
         Player = player;
+
     }
 }
 

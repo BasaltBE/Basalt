@@ -117558,8 +117558,38 @@
   },
   {
     "identifier": "minecraft:potent_sulfur",
-    "hash": -714919926,
-    "state": {}
+    "hash": -660266133,
+    "state": {
+      "potent_sulfur_state": "dry"
+    }
+  },
+  {
+    "identifier": "minecraft:potent_sulfur",
+    "hash": 211563958,
+    "state": {
+      "potent_sulfur_state": "wet"
+    }
+  },
+  {
+    "identifier": "minecraft:potent_sulfur",
+    "hash": -1539185341,
+    "state": {
+      "potent_sulfur_state": "dormant"
+    }
+  },
+  {
+    "identifier": "minecraft:potent_sulfur",
+    "hash": -1512648217,
+    "state": {
+      "potent_sulfur_state": "erupting"
+    }
+  },
+  {
+    "identifier": "minecraft:potent_sulfur",
+    "hash": 1688575440,
+    "state": {
+      "potent_sulfur_state": "continuous"
+    }
   },
   {
     "identifier": "minecraft:powder_snow",
@@ -141393,6 +141423,86 @@
     "hash": 1957944774,
     "state": {
       "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -278983287,
+    "state": {
+      "dripstone_thickness": "tip",
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -1334289858,
+    "state": {
+      "dripstone_thickness": "tip",
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": 1626242352,
+    "state": {
+      "dripstone_thickness": "frustum",
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -1613418373,
+    "state": {
+      "dripstone_thickness": "frustum",
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -532344746,
+    "state": {
+      "dripstone_thickness": "middle",
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": 522961825,
+    "state": {
+      "dripstone_thickness": "middle",
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": 1160092092,
+    "state": {
+      "dripstone_thickness": "base",
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -2079568633,
+    "state": {
+      "dripstone_thickness": "base",
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": -989533260,
+    "state": {
+      "dripstone_thickness": "merge",
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:sulfur_spike",
+    "hash": 65773311,
+    "state": {
+      "dripstone_thickness": "merge",
+      "hanging": true
     }
   },
   {

@@ -2,6 +2,8 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Blocks.Traits;
+using Basalt.Core.Blocks.Components;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -13,11 +15,15 @@ public sealed class BlockPalette
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
 
+#pragma warning disable CA2255
     [ModuleInitializer]
     public static void Initialize()
+#pragma warning restore CA2255
     {
+#pragma warning disable IL2026
         LoadVanilla();
         BlockTraitRegistry.RegisterFromAssembly(Assembly.GetExecutingAssembly());
+#pragma warning restore IL2026
     }
 
     public IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
@@ -107,9 +113,11 @@ public sealed class BlockPalette
             string root = ResolveDataDirectory(dataDirectory);
             string typesPath = Path.Combine(root, "block_types.json");
             string permutationsPath = Path.Combine(root, "block_permutations.json");
+            string dropsPath = Path.Combine(root, "block_drops.json");
             List<BlockTypeData> types = ReadTypes(typesPath);
             List<BlockPermutationData> permutations = ReadPermutations(permutationsPath);
-            LoadRegistries(types, permutations);
+            List<BlockDropData> drops = ReadDrops(dropsPath);
+            LoadRegistries(types, permutations, drops);
 
             _vanillaLoaded = true;
         }
@@ -129,7 +137,19 @@ public sealed class BlockPalette
         return result ?? [];
     }
 
-    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations)
+    private static List<BlockDropData> ReadDrops(string dropsPath)
+    {
+        if (!File.Exists(dropsPath))
+        {
+            return [];
+        }
+
+        using FileStream stream = File.OpenRead(dropsPath);
+        List<BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockDropData);
+        return result ?? [];
+    }
+
+    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockDropData> drops)
     {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
@@ -156,9 +176,17 @@ public sealed class BlockPalette
             type.Loggable = types[i].Loggable;
             type.MapColor = types[i].MapColor;
 
-            for (int j = 0; j < types[i].Components.Count; j++)
+            foreach (KeyValuePair<string, JsonElement> component in types[i].Components)
             {
-                type.EnsureComponent(types[i].Components[j]);
+                BlockComponent? blockComponent = BlockComponentParser.Parse(component.Key, component.Value);
+                if (blockComponent is not null)
+                {
+                    type.AddComponent(blockComponent);
+                }
+                else
+                {
+                    type.EnsureComponent(component.Key);
+                }
             }
 
             for (int j = 0; j < types[i].Tags.Count; j++)
@@ -188,6 +216,8 @@ public sealed class BlockPalette
             BlockPermutation.Permutations[entry.Hash] = permutation;
             type.RegisterPermutation(permutation);
         }
+
+        BlockDropRegistry.Load(drops);
     }
 
     private static BlockState ParseState(Dictionary<string, object> source)

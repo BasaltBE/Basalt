@@ -921,6 +921,28 @@
     ]
   },
   {
+    "identifier": "minecraft:sixteen_way_rotation",
+    "type": "string",
+    "values": [
+      "down",
+      "up",
+      "north",
+      "south",
+      "west",
+      "east",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down",
+      "down"
+    ]
+  },
+  {
     "identifier": "minecraft:vertical_half",
     "type": "string",
     "values": [
@@ -1194,6 +1216,17 @@
       "unknown",
       "x",
       "z"
+    ]
+  },
+  {
+    "identifier": "potent_sulfur_state",
+    "type": "string",
+    "values": [
+      "dry",
+      "wet",
+      "dormant",
+      "erupting",
+      "continuous"
     ]
   },
   {
