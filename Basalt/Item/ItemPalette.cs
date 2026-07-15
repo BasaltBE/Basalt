@@ -1,5 +1,6 @@
 namespace Basalt.Core.Item;
 
+using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -159,6 +160,8 @@ public sealed class ItemPalette
                 creativeItems[creativeNetworkId] = new ItemStack(type, checked((ushort)type.MaxStackSize), 0, null);
             }
 
+            AppendEnchantedBookEntries(groups, items, creativeItems, groupIndexMap);
+
             CreativeContentPacket packet = new()
             {
                 Groups = groups,
@@ -251,6 +254,7 @@ public sealed class ItemPalette
             }
 
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
+            EnchantmentType.Load(root);
             _vanillaLoaded = true;
         }
     }
@@ -326,6 +330,95 @@ public sealed class ItemPalette
         }
 
         throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
+    }
+
+    private static void AppendEnchantedBookEntries(
+        List<CreativeGroup> groups,
+        List<CreativeItem> items,
+        Dictionary<uint, ItemStack> creativeItems,
+        Dictionary<string, int> groupIndexMap)
+    {
+        ItemType? enchantedBook = ItemType.Get("minecraft:enchanted_book");
+        if (enchantedBook is null) return;
+
+        const int enchantedBookCategory = 4;
+        const string enchantedBookGroupName = "itemGroup.name.enchantedBook";
+        string key = $"{enchantedBookCategory}:{enchantedBookGroupName}";
+
+        int groupIndex;
+        if (groupIndexMap.TryGetValue(key, out int existingIndex))
+        {
+            groupIndex = existingIndex;
+        }
+        else
+        {
+            groupIndex = groups.Count;
+
+            // Group icon is an enchanted book with protection I.
+            CompoundTag iconNbt = Traits.ItemStackEnchantmentTrait.BuildEnchantmentNbt(
+                [new Enchantment.EnchantmentInstance(EnchantmentType.Get(0)!, 1)]);
+
+            groups.Add(new CreativeGroup
+            {
+                Category = enchantedBookCategory,
+                Name = enchantedBookGroupName,
+                Icon = new LegacyNetworkItemStackDescriptor
+                {
+                    NetworkId = enchantedBook.NetworkId,
+                    StackSize = 1,
+                    Metadata = 0,
+                    NetworkBlockId = 0,
+                    ExtraData = new ItemInstanceUserData
+                    {
+                        Nbt = iconNbt,
+                        CanPlaceOn = [],
+                        CanDestroy = [],
+                        Ticking = null
+                    }
+                }
+            });
+            groupIndexMap[key] = groupIndex;
+        }
+
+        foreach ((int _, EnchantmentType enchantment) in EnchantmentType.All)
+        {
+            for (int level = 1; level <= enchantment.MaxLevel; level++)
+            {
+                EnchantmentInstance instance = new(enchantment, level);
+                CompoundTag nbt = Traits.ItemStackEnchantmentTrait.BuildEnchantmentNbt([instance]);
+
+                uint creativeNetworkId = checked((uint)(items.Count + 1));
+
+                items.Add(new CreativeItem
+                {
+                    CreativeItemNetworkId = creativeNetworkId,
+                    ItemInstance = new LegacyNetworkItemStackDescriptor
+                    {
+                        NetworkId = enchantedBook.NetworkId,
+                        StackSize = 1,
+                        Metadata = 0,
+                        NetworkBlockId = 0,
+                        ExtraData = new ItemInstanceUserData
+                        {
+                            Nbt = nbt,
+                            CanPlaceOn = [],
+                            CanDestroy = [],
+                            Ticking = null
+                        }
+                    },
+                    GroupIndex = checked((uint)groupIndex)
+                });
+
+                ItemStack stack = new(enchantedBook, 1, 0, new ItemInstanceUserData
+                {
+                    Nbt = nbt,
+                    CanPlaceOn = [],
+                    CanDestroy = [],
+                    Ticking = null
+                });
+                creativeItems[creativeNetworkId] = stack;
+            }
+        }
     }
 
     private static CompoundTag BuildProperties(JsonElement? payload)
