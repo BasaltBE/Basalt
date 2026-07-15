@@ -13,39 +13,31 @@ public static class ItemStackRequest
 {
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
     {
-        try
+        int offset = 0;
+        Binary.BinaryReader reader = new(packetBuffer, ref offset);
+        ItemStackRequestPacket packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
+
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) || packet.Requests.Count == 0)
         {
-            int offset = 0;
-            Binary.BinaryReader reader = new(packetBuffer, ref offset);
-            ItemStackRequestPacket packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
-
-            if (!server.Players.TryGetValue(connection, out Player.Player? player) || packet.Requests.Count == 0)
-            {
-                return;
-            }
-
-            List<ItemStackResponse> responses = new(packet.Requests.Count);
-
-            foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
-            {
-                try
-                {
-                    responses.Add(ProcessRequest(player, request));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(string.Format("[ItemStackRequest] Exception on request: {0} {1}", request.RequestId, ex));
-                    responses.Add(ErrorResponse(request.RequestId));
-                }
-            }
-
-            server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
+            return;
         }
-        catch (Exception)
+
+        List<ItemStackResponse> responses = new(packet.Requests.Count);
+
+        foreach (Protocol.Types.ItemStackRequest request in packet.Requests)
         {
-            Console.WriteLine(string.Format("[ItemStackRequest] Packet hex dump ({0} bytes): {1}", packetBuffer.Length, Convert.ToHexString(packetBuffer)));
-            throw;
+            try
+            {
+                responses.Add(ProcessRequest(player, request));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(string.Format("[ItemStackRequest] Exception on request: {0} {1}", request.RequestId, ex));
+                responses.Add(ErrorResponse(request.RequestId));
+            }
         }
+
+        server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
     }
 
     /// <summary>
@@ -323,6 +315,11 @@ public static class ItemStackRequest
 
     private static int ResolveSlotIndex(Player.Player player, FullContainerName containerName, Container container, int slot)
     {
+        if (containerName.ContainerId == (byte)ContainerId.CreatedOutput)
+        {
+            return 0;
+        }
+
         if (containerName.ContainerId is (byte)ContainerId.Armor or 12
             or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar
             or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
