@@ -47,10 +47,14 @@ public static class ItemStackRequest
     [ThreadStatic]
     private static int _pendingCreativeStackId;
 
+    [ThreadStatic]
+    private static ItemStack? _pendingCreativeItem;
+
     private static ItemStackResponse ProcessRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changed = [];
         _pendingCreativeStackId = 0;
+        _pendingCreativeItem = null;
 
         foreach (IStackRequestAction action in request.Actions)
         {
@@ -101,6 +105,21 @@ public static class ItemStackRequest
         TransferStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changed)
     {
+        if (action.Source.Container.ContainerId == (byte)ContainerId.CreatedOutput && _pendingCreativeItem is not null)
+        {
+            if (!TryResolveSlot(player, action.Destination, out Container creativeDst, out int creativeDstSlot))
+            {
+                return ItemStackResponseStatus.InvalidSourceContainer;
+            }
+
+            ItemStack item = _pendingCreativeItem;
+            _pendingCreativeItem = null;
+
+            creativeDst.SetItem(creativeDstSlot, item);
+            RecordChange(changed, action.Destination.Container, creativeDst, action.Destination.Slot, creativeDstSlot);
+            return ItemStackResponseStatus.Ok;
+        }
+
         if (!TryResolveSlot(player, action.Source, out Container srcContainer, out int srcSlot) ||
             !TryResolveSlot(player, action.Destination, out Container dstContainer, out int dstSlot))
         {
@@ -251,23 +270,14 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.PlayerNotInCreativeMode;
         }
 
-        Container? cursor = player.GetContainer(new FullContainerName { ContainerId = (byte)ContainerId.Cursor });
-        if (cursor is null)
-        {
-            return ItemStackResponseStatus.MissingCreatedOutputContainer;
-        }
-
         ItemStack? item = ItemPalette.GetCreativeItem(action.CreativeItemNetworkId);
         if (item is null)
         {
             return ItemStackResponseStatus.FailedToCraftCreative;
         }
 
-        cursor.SetItem(0, item);
+        _pendingCreativeItem = item;
         _pendingCreativeStackId = item.NetworkStackId;
-
-        FullContainerName cursorName = new() { ContainerId = (byte)ContainerId.Cursor };
-        RecordChange(changed, cursorName, cursor, 0, 0);
         return ItemStackResponseStatus.Ok;
     }
 
