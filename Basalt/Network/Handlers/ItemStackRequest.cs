@@ -415,6 +415,7 @@ public static class ItemStackRequest
 
         if (containerName.ContainerId == (byte)ContainerId.CraftingInput)
         {
+            if (slot >= 32) return slot - 32;
             return Player.Traits.PlayerCraftingGridTrait.MapSlot(slot);
         }
 

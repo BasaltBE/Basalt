@@ -122,7 +122,8 @@ public sealed class NetworkHandler
 
     private void HandleGamePacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetBuffer)
     {
-        // Logger.Debug($"Received packet {packetId}");
+        // Logger.Info($"Received packet {packetId}");
+
         switch (packetId)
         {
             case PacketId.Login:

@@ -333,6 +333,14 @@ public sealed class Player : Entities.Entity
 
         if (name.ContainerId == (byte)ContainerId.CraftingInput)
         {
+            foreach ((int _, Container candidate) in openedContainers)
+            {
+                if (candidate.Type == ContainerType.Workbench)
+                {
+                    return candidate;
+                }
+            }
+
             Traits.PlayerCraftingGridTrait? grid = GetTrait<Traits.PlayerCraftingGridTrait>();
             return grid?.Container;
         }

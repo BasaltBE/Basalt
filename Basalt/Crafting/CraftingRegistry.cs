@@ -132,6 +132,20 @@ public sealed class CraftingRegistry
 
   private static CraftingDataEntry? BuildEntry(CraftingRecipe recipe, uint networkId)
   {
+    // if(networkId == 248)
+    // {
+    //   Logger.Info("Item {0}", recipe.Identifier);
+    // };
+    
+    // num + 1 // breaks at id 248
+    // if (networkId > 246)
+    // {
+    //   for (int t = 0; t < recipe.Tags.Count; t++)
+    //   {
+    //     if (recipe.Tags[t] == "crafting_table") return null;
+    //   }
+    // }
+
     ItemType? resultType = ResolveItemType(recipe.Result.Item);
     if (resultType is null)
     {
@@ -139,8 +153,7 @@ public sealed class CraftingRegistry
       return null;
     }
 
-    byte[] uuid = new byte[16];
-    BitConverter.TryWriteBytes(uuid, networkId);
+    byte[] uuid = Guid.NewGuid().ToByteArray();
 
     return recipe.Type switch
     {
@@ -196,8 +209,8 @@ public sealed class CraftingRegistry
       Uuid = uuid,
       Block = ResolveBlock(recipe.Tags),
       Priority = recipe.Priority,
-      AssumeSymmetry = false,
-      UnlockRequirement = new RecipeUnlockingRequirement(),
+      AssumeSymmetry = true,
+      UnlockRequirement = new RecipeUnlockingRequirement { Context = RecipeUnlockingRequirement.ContextNone },
       RecipeNetworkId = networkId
     };
 
@@ -230,7 +243,7 @@ public sealed class CraftingRegistry
       Uuid = uuid,
       Block = ResolveBlock(recipe.Tags),
       Priority = recipe.Priority,
-      UnlockRequirement = new RecipeUnlockingRequirement(),
+      UnlockRequirement = new RecipeUnlockingRequirement { Context = RecipeUnlockingRequirement.ContextNone },
       RecipeNetworkId = networkId
     };
 
@@ -247,7 +260,7 @@ public sealed class CraftingRegistry
     {
       return new ItemDescriptorCount
       {
-        DescriptorType = 5,
+        DescriptorType = 3,
         Text = ingredient.Tag,
         Count = ingredient.Count
       };
@@ -262,12 +275,12 @@ public sealed class CraftingRegistry
     {
       DescriptorType = 1,
       NetworkId = checked((short)type.NetworkId),
-      MetadataValue = checked((short)ingredient.Data),
+      MetadataValue = 0x7FFF,
       Count = ingredient.Count
     };
   }
 
-  private static LegacyNetworkItemStackDescriptor BuildResultItem(ItemType type, RecipeResult result)
+  private static RecipeItemStack BuildResultItem(ItemType type, RecipeResult result)
   {
     int blockRuntimeId = 0;
     if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
@@ -275,13 +288,12 @@ public sealed class CraftingRegistry
       blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
     }
 
-    return new LegacyNetworkItemStackDescriptor
+    return new RecipeItemStack
     {
       NetworkId = type.NetworkId,
-      StackSize = checked((ushort)result.Count),
-      Metadata = result.Data,
-      NetworkBlockId = blockRuntimeId,
-      ExtraData = null
+      Count = checked((ushort)result.Count),
+      Metadata = unchecked((uint)result.Data),
+      BlockRuntimeId = blockRuntimeId
     };
   }
 

@@ -9,7 +9,7 @@ public sealed class SmithingTransformRecipeData : DataType
   public ItemDescriptorCount Template = new();
   public ItemDescriptorCount Base = new();
   public ItemDescriptorCount Addition = new();
-  public LegacyNetworkItemStackDescriptor Result = new();
+  public RecipeItemStack Result = new();
   public string Block = "smithing_table";
   public uint RecipeNetworkId;
 

@@ -7,7 +7,7 @@ public sealed class ShapelessRecipeData : DataType
 {
   public string RecipeId = string.Empty;
   public List<ItemDescriptorCount> Input = [];
-  public List<LegacyNetworkItemStackDescriptor> Output = [];
+  public List<RecipeItemStack> Output = [];
   public byte[] Uuid = new byte[16];
   public string Block = "crafting_table";
   public int Priority;
@@ -28,10 +28,10 @@ public sealed class ShapelessRecipeData : DataType
     }
 
     int outputCount = checked((int)reader.ReadVarUInt());
-    Output = new List<LegacyNetworkItemStackDescriptor>(outputCount);
+    Output = new List<RecipeItemStack>(outputCount);
     for (int i = 0; i < outputCount; i++)
     {
-      LegacyNetworkItemStackDescriptor item = new();
+      RecipeItemStack item = new();
       item.Read(reader);
       Output.Add(item);
     }
