@@ -35,6 +35,17 @@ public sealed class ItemPalette
 
     public static IReadOnlyDictionary<string, ItemType> TypesMap => ItemType.Types;
 
+    /// 
+    public static void InvalidateCache()
+    {
+        lock (LoadLock)
+        {
+            _itemRegistryPayload = null;
+            _creativeContentPayload = null;
+            _creativeItems = null;
+        }
+    }
+
     public static List<ItemType> GetAllTypes()
     {
         return ItemType.GetAll();
