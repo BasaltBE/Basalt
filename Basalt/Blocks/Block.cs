@@ -5,6 +5,7 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
@@ -204,23 +205,26 @@ public sealed class Block
     {
         if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension)
         {
-            ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
-            List<ItemStack> drops = GetDrops();
-
-            for (int i = 0; i < drops.Count; i++)
+            if (MeetsToolTierRequirement(details.Player))
             {
-                ItemEntity drop = new(drops[i])
-                {
-                    Position = new Vec3f
-                    {
-                        X = details.BlockPosition.X + 0.5f,
-                        Y = details.BlockPosition.Y + 0.5f,
-                        Z = details.BlockPosition.Z + 0.5f
-                    }
-                };
+                ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
+                List<ItemStack> drops = GetDrops();
 
-                drop.LockPickupUntil(currentTick + 10);
-                drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+                for (int i = 0; i < drops.Count; i++)
+                {
+                    ItemEntity drop = new(drops[i])
+                    {
+                        Position = new Vec3f
+                        {
+                            X = details.BlockPosition.X + 0.5f,
+                            Y = details.BlockPosition.Y + 0.5f,
+                            Z = details.BlockPosition.Z + 0.5f
+                        }
+                    };
+
+                    drop.LockPickupUntil(currentTick + 10);
+                    drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+                }
             }
         }
 
@@ -228,6 +232,73 @@ public sealed class Block
         {
             _traits[i].OnBreak(details);
         }
+    }
+
+    private bool MeetsToolTierRequirement(Player.Player player)
+    {
+        int requiredTier = GetRequiredTierLevel();
+        if (requiredTier == 0) return true;
+
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        Item.ItemStack? heldItem = inventory?.GetHeldItem();
+        if (heldItem is null) return false;
+
+        int toolTier = GetItemTierLevel(heldItem.Type);
+        bool categoryMatch = DoesToolMatchCategory(heldItem.Type);
+
+        return categoryMatch && toolTier >= requiredTier;
+    }
+
+    private int GetRequiredTierLevel()
+    {
+        if (Type.HasTag("minecraft:diamond_tier_destructible")) return 5;
+        if (Type.HasTag("minecraft:iron_tier_destructible")) return 4;
+        if (Type.HasTag("minecraft:stone_tier_destructible")) return 3;
+        return 0;
+    }
+
+    private bool DoesToolMatchCategory(Item.ItemType itemType)
+    {
+        IReadOnlyList<string> tags = itemType.Tags;
+
+        bool blockNeedsPickaxe = Type.HasTag("minecraft:is_pickaxe_item_destructible");
+        bool blockNeedsAxe = Type.HasTag("minecraft:is_axe_item_destructible");
+        bool blockNeedsShovel = Type.HasTag("minecraft:is_shovel_item_destructible");
+        bool blockNeedsHoe = Type.HasTag("minecraft:is_hoe_item_destructible");
+        bool blockNeedsSword = Type.HasTag("minecraft:is_sword_item_destructible");
+
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:is_pickaxe" when blockNeedsPickaxe: return true;
+                case "minecraft:is_axe" when blockNeedsAxe: return true;
+                case "minecraft:is_shovel" when blockNeedsShovel: return true;
+                case "minecraft:is_hoe" when blockNeedsHoe: return true;
+                case "minecraft:is_sword" when blockNeedsSword: return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int GetItemTierLevel(Item.ItemType itemType)
+    {
+        IReadOnlyList<string> tags = itemType.Tags;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            switch (tags[i])
+            {
+                case "minecraft:netherite_tier": return 6;
+                case "minecraft:diamond_tier": return 5;
+                case "minecraft:iron_tier": return 4;
+                case "minecraft:stone_tier": return 3;
+                case "minecraft:copper_tier": return 3;
+                case "minecraft:golden_tier": return 2;
+                case "minecraft:wooden_tier": return 1;
+            }
+        }
+        return 0;
     }
 
     public void OnInteract(BlockInteractDetails details)
