@@ -6,6 +6,7 @@ using Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Network;
 using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
+using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -61,6 +62,7 @@ public sealed class Server
     public PluginManager Plugins { get; }
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
+    public ResourcePackManager ResourcePacks { get; } = new();
     public TaskWorkerPool WorkerPool { get; private set; } = null!;
     public TaskScheduler Scheduler { get; private set; } = null!;
     public IEnumerable<WorldInstance> Worlds => _worlds.Values;
@@ -90,6 +92,8 @@ public sealed class Server
 #pragma warning disable IL2026
         Plugins.LoadAll(Properties.PluginsDirectory);
 #pragma warning restore IL2026
+
+        ResourcePacks.Load(Properties.ResourcePacksPath);
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)

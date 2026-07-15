@@ -66,6 +66,16 @@ public class Properties
     [ServerProperties.PropertyKey("worker-threads")]
     [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
     public int WorkerThreads { get; set; } = 2;
+
+    [ServerProperties.PropertyOrder(14)]
+    [ServerProperties.PropertyKey("resource-packs-path")]
+    [ServerProperties.PropertyComment("Directory containing resource pack folders.")]
+    public string ResourcePacksPath { get; set; } = "resource_packs";
+
+    [ServerProperties.PropertyOrder(15)]
+    [ServerProperties.PropertyKey("force-resource-packs")]
+    [ServerProperties.PropertyComment("If true, clients must accept resource packs to join.")]
+    public bool ForceResourcePacks { get; set; } = false;
 }
 
 

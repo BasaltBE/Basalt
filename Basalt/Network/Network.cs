@@ -138,6 +138,10 @@ public sealed class NetworkHandler
                 ResourcePackClientResponse.Handle(_server, connection, packetBuffer);
                 break;
 
+            case PacketId.ResourcePackChunkRequest:
+                ResourcePackChunkRequest.Handle(_server, connection, packetBuffer);
+                break;
+
             case PacketId.RequestChunkRadius:
                 RequestChunkRadius.Handle(_server, connection, packetBuffer);
                 break;
