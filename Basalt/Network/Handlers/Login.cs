@@ -147,13 +147,25 @@ public static class Login
 
         ResourcePacksInfoPacket resources = new()
         {
-            MustAccept = false,
+            MustAccept = server.Properties.ForceResourcePacks,
             HasAddons = false,
             HasScripts = false,
             ForceDisableVibrantVisuals = false,
             WorldTemplateUuid = Guid.Empty,
             WorldTemplateVersion = "",
-            Packs = []
+            Packs = server.ResourcePacks.Packs.Select(static pack => new Basalt.Protocol.Types.ResourcePackInfo
+            {
+                Uuid = pack.Uuid,
+                Version = pack.VersionString,
+                Size = pack.Size,
+                ContentKey = "",
+                SubPackName = "",
+                ContentIdentity = "",
+                HasScripts = false,
+                HasAddons = false,
+                RtxEnabled = false,
+                DownloadUrl = ""
+            }).ToList()
         };
 
         server.Network.SendPackets(connection, [status, resources]);
