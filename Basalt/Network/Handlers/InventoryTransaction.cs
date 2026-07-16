@@ -344,25 +344,37 @@ public static class InventoryTransaction
         if (transaction.TriggerType == UseItemTriggerRepeat)
         {
             ItemStack? repeatItem = GetHeldItem(inventory, transaction.HotBarSlot);
-            if (repeatItem is not null && repeatItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(repeatItem.Identifier) is null)
+            if (repeatItem is null)
             {
-                if (player.Dimension is not null)
+                return;
+            }
+
+            bool isPlaceableBlock = repeatItem.Type.BlockType is not null
+                || Basalt.Core.Blocks.BlockType.Get(repeatItem.Identifier) is not null;
+
+            // Holding place continuously sends Repeat; server must still commit block placement.
+            if (isPlaceableBlock)
+            {
+                UseItemOnBlock(player, inventory, repeatItem, transaction);
+                return;
+            }
+
+            if (player.Dimension is not null)
+            {
+                BlockPos blockPosition = transaction.BlockPosition;
+
+                if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
                 {
-                    BlockPos blockPosition = transaction.BlockPosition;
-
-                    if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
-                    {
-                        blockPosition = player.LastActionBlockPosition.Value;
-                    }
-
-                    repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
-                        player,
-                        transaction.HotBarSlot,
-                        blockPosition,
-                        transaction.BlockFace,
-                        transaction.Position,
-                        transaction.ClickedPosition));
+                    blockPosition = player.LastActionBlockPosition.Value;
                 }
+
+                repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                    player,
+                    transaction.HotBarSlot,
+                    blockPosition,
+                    transaction.BlockFace,
+                    transaction.Position,
+                    transaction.ClickedPosition));
             }
             return;
         }
