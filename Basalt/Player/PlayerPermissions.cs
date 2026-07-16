@@ -15,6 +15,7 @@ public sealed class PlayerPermissions
     public void Add(string permission, bool syncClient = true)
     {
         _permissions.Add(permission);
+        PersistToStore();
         if (syncClient)
         {
             Sync();
@@ -24,6 +25,7 @@ public sealed class PlayerPermissions
     public void Remove(string permission, bool syncClient = true)
     {
         _permissions.Remove(permission);
+        PersistToStore();
         if (syncClient)
         {
             Sync();
@@ -33,6 +35,11 @@ public sealed class PlayerPermissions
     public bool Has(string permission)
     {
         return _permissions.Contains(permission);
+    }
+
+    public IReadOnlyCollection<string> GetAll()
+    {
+        return _permissions;
     }
 
     public void Sync()
@@ -57,12 +64,14 @@ public sealed class PlayerPermissions
 
         if (isOperator)
         {
-            Add("basalt.op", syncClient: false);
+            _permissions.Add("basalt.op");
         }
         else
         {
-            Remove("basalt.op", syncClient: false);
+            _permissions.Remove("basalt.op");
         }
+
+        PersistToStore();
 
         if (syncClient)
         {
@@ -70,16 +79,30 @@ public sealed class PlayerPermissions
         }
     }
 
-    internal void RestoreOperator(bool isOperator)
+    internal void Restore(bool isOperator, IEnumerable<string> permissions)
     {
+        _player.IsOperator = isOperator;
         _player.Abilities.SetOperator(isOperator);
-        if (isOperator)
+
+        _permissions.Clear();
+        foreach (string permission in permissions)
+        {
+            _permissions.Add(permission);
+        }
+
+        if (isOperator && !_permissions.Contains("basalt.op"))
         {
             _permissions.Add("basalt.op");
         }
-        else
+    }
+
+    private void PersistToStore()
+    {
+        if (_player.Dimension?.World?.Server is not Server server)
         {
-            _permissions.Remove("basalt.op");
+            return;
         }
+
+        server.PermissionStore.Save(_player.Xuid, _player.Username, _player.IsOperator, _permissions);
     }
 }

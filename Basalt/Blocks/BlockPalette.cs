@@ -26,41 +26,41 @@ public sealed class BlockPalette
 #pragma warning restore IL2026
     }
 
-    public IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
-    public IReadOnlyDictionary<int, BlockPermutation> Permutations => BlockPermutation.Permutations;
+    public static IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
+    public static IReadOnlyDictionary<int, BlockPermutation> Permutations => BlockPermutation.Permutations;
 
-    public List<BlockType> GetAllTypes()
+    public static List<BlockType> GetAllTypes()
     {
         return [.. Types.Values];
     }
 
-    public List<BlockPermutation> GetAllPermutations()
+    public static List<BlockPermutation> GetAllPermutations()
     {
         return [.. Permutations.Values];
     }
 
-    public BlockType ResolveType(BlockIdentifier identifier)
+    public static BlockType ResolveType(BlockIdentifier identifier)
     {
         return ResolveType(identifier.ToIdentifier());
     }
 
-    public BlockType ResolveType(string identifier)
+    public static BlockType ResolveType(string identifier)
     {
         return BlockType.GetOrAir(identifier);
     }
 
-    public BlockPermutation ResolvePermutation(BlockIdentifier identifier, BlockState? state = null)
+    public static BlockPermutation ResolvePermutation(BlockIdentifier identifier, BlockState? state = null)
     {
         return ResolvePermutation(identifier.ToIdentifier(), state);
     }
 
-    public BlockPermutation ResolvePermutation(string identifier, BlockState? state = null)
+    public static BlockPermutation ResolvePermutation(string identifier, BlockState? state = null)
     {
         BlockType type = ResolveType(identifier);
         return type.GetPermutation(state);
     }
 
-    public BlockPermutation ResolvePermutation(int networkId, BlockState? state = null)
+    public static BlockPermutation ResolvePermutation(int networkId, BlockState? state = null)
     {
         if (BlockPermutation.Permutations.TryGetValue(networkId, out BlockPermutation? permutation))
         {
@@ -84,7 +84,7 @@ public sealed class BlockPalette
         return this;
     }
 
-    public bool RegisterPermutation(BlockPermutation permutation)
+    public static bool RegisterPermutation(BlockPermutation permutation)
     {
         if (BlockPermutation.Permutations.ContainsKey(permutation.NetworkId))
         {

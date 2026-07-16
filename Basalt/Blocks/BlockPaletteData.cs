@@ -95,7 +95,7 @@ public sealed class BlockDropEntryData
 [JsonSerializable(typeof(List<BlockTypeData>))]
 [JsonSerializable(typeof(List<BlockPermutationData>))]
 [JsonSerializable(typeof(List<BlockDropData>))]
-internal partial class BlockPaletteJsonContext : JsonSerializerContext
+internal sealed partial class BlockPaletteJsonContext : JsonSerializerContext
 {
 }
 

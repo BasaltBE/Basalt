@@ -6,6 +6,7 @@ using Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Network;
 using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
+using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -15,6 +16,7 @@ using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 
+using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
 
@@ -58,9 +60,11 @@ public sealed class Server
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
     public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
+    public PermissionStore PermissionStore { get; }
     public PluginManager Plugins { get; }
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
+    public ResourcePackManager ResourcePacks { get; } = new();
     public TaskWorkerPool WorkerPool { get; private set; } = null!;
     public TaskScheduler Scheduler { get; private set; } = null!;
     public IEnumerable<WorldInstance> Worlds => _worlds.Values;
@@ -77,6 +81,7 @@ public sealed class Server
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
+        PermissionStore = new PermissionStore();
         Plugins = new PluginManager(this);
         WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
         Scheduler = new TaskScheduler(WorkerPool);
@@ -90,6 +95,8 @@ public sealed class Server
 #pragma warning disable IL2026
         Plugins.LoadAll(Properties.PluginsDirectory);
 #pragma warning restore IL2026
+
+        ResourcePacks.Load(Properties.ResourcePacksPath);
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
@@ -105,14 +112,20 @@ public sealed class Server
         {
             defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
         }
-        defaultWorld.ConfigurePersistence(Properties.WorldPath);
+        WorldInstance.ConfigurePersistence(Properties.WorldPath);
 
         DefaultCommands.Register(Commands);
+        Crafting.CraftingLoader.Load();
     }
 
     public void Start()
     {
         Plugins.StartAll();
+
+        _ = Item.ItemPalette.GetItemRegistryPayload();
+        _ = Item.ItemPalette.GetCreativeContentPayload();
+        _ = Crafting.CraftingRegistry.Instance.GetCraftingDataPayload();
+
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 

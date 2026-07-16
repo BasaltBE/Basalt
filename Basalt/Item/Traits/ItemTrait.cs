@@ -9,7 +9,7 @@ public abstract class ItemTrait
 {
     public static readonly string[] Types = [];
     public static readonly string[] Tags = [];
-    public static readonly Type? Component = null;
+    public static readonly Type? Component;
     public static readonly Type[] Components = [];
 
     protected ItemStack ItemStack { get; }

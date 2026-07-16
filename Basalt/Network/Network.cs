@@ -36,7 +36,7 @@ public sealed class NetworkHandler
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
-        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.Write());
+        _server.GetWorld().Provider.SavePlayerData(player.Xuid, player.Write());
         
 
         string leaveMessage = $"§e{player.Username} left the server.";
@@ -122,7 +122,8 @@ public sealed class NetworkHandler
 
     private void HandleGamePacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetBuffer)
     {
-        // Logger.Debug($"Received packet {packetId}");
+        // Logger.Info($"Received packet {packetId}");
+
         switch (packetId)
         {
             case PacketId.Login:
@@ -135,6 +136,10 @@ public sealed class NetworkHandler
 
             case PacketId.ResourcePackClientResponse:
                 ResourcePackClientResponse.Handle(_server, connection, packetBuffer);
+                break;
+
+            case PacketId.ResourcePackChunkRequest:
+                ResourcePackChunkRequest.Handle(_server, connection, packetBuffer);
                 break;
 
             case PacketId.RequestChunkRadius:

@@ -362,15 +362,15 @@ public static class PlayerAuthInput
 
     private static void HandleBlockAction(Player.Player player, PlayerBlockAction action, ulong tick)
     {
-        Logger.Warn(
-            "BlockAction player:{0} action:{1} pos:{2},{3},{4} face:{5} tick:{6}",
-            player.Username,
-            action.Action,
-            action.BlockPos.X,
-            action.BlockPos.Y,
-            action.BlockPos.Z,
-            action.Face,
-            tick);
+        // Logger.Warn(
+        //     "BlockAction player:{0} action:{1} pos:{2},{3},{4} face:{5} tick:{6}",
+        //     player.Username,
+        //     action.Action,
+        //     action.BlockPos.X,
+        //     action.BlockPos.Y,
+        //     action.BlockPos.Z,
+        //     action.Face,
+        //     tick);
 
         switch (action.Action)
         {
@@ -418,11 +418,11 @@ public static class PlayerAuthInput
         player.BreakingBlock = blockPosition;
         int breakTimeTicks = GetBreakTimeTicksForAnimation(player, blockPosition);
 
-        Logger.Warn(
-            "StartBreak player:{0} pos:{1},{2},{3} duration:{4} tick:{5}",
-            player.Username,
-            blockPosition.X, blockPosition.Y, blockPosition.Z,
-            breakTimeTicks, tick);
+        // Logger.Warn(
+        //     "StartBreak player:{0} pos:{1},{2},{3} duration:{4} tick:{5}",
+        //     player.Username,
+        //     blockPosition.X, blockPosition.Y, blockPosition.Z,
+        //     breakTimeTicks, tick);
 
         BreakStates[player.RuntimeId] = new BreakState(blockPosition, tick, (uint)breakTimeTicks);
 
@@ -488,11 +488,11 @@ public static class PlayerAuthInput
 
                 if (!valid)
                 {
-                    Logger.Warn(
-                        "Block break rejected player:{0} pos:{1},{2},{3} elapsed:{4} duration:{5} tick:{6} startTick:{7}",
-                        player.Username,
-                        blockPosition.X, blockPosition.Y, blockPosition.Z,
-                        elapsed, state.DurationTicks, tick, state.StartTick);
+                    // Logger.Warn(
+                    //     "Block break rejected player:{0} pos:{1},{2},{3} elapsed:{4} duration:{5} tick:{6} startTick:{7}",
+                    //     player.Username,
+                    //     blockPosition.X, blockPosition.Y, blockPosition.Z,
+                    //     elapsed, state.DurationTicks, tick, state.StartTick);
                 }
             }
             else
@@ -590,7 +590,14 @@ public static class PlayerAuthInput
         Server? server = player.Dimension.World?.Server;
         if (server is not null)
         {
-            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face);
+            Basalt.Core.Blocks.Block breakBlock =
+                player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
+                new Basalt.Core.Blocks.Block(block);
+
+            EntityInventoryTrait? signalInventory = player.GetTrait<EntityInventoryTrait>();
+            ItemStack? signalHeldItem = signalInventory?.GetHeldItem();
+
+            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face, breakBlock, signalHeldItem);
             server.Emit(signal);
             if (!signal.Emit())
             {

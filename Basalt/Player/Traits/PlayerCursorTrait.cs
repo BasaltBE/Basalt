@@ -33,6 +33,17 @@ public sealed class PlayerCursorTrait : PlayerTrait
 
     public override void OnSpawn(EntitySpawnOptions details)
     {
+        Item.ItemStack? stale = Container.GetItem(0);
+        if (stale is not null && stale.StackSize > 0)
+        {
+            Container.ClearSlot(0);
+            EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
+            if (inventory is null || !inventory.Container.AddItem(stale))
+            {
+                Player.DropItem(stale);
+            }
+        }
+
         Container.Update();
     }
 

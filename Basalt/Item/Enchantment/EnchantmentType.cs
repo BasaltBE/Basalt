@@ -158,6 +158,6 @@ internal sealed class EnchantmentTypeData
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<EnchantmentTypeData>))]
-internal partial class EnchantmentJsonContext : JsonSerializerContext
+internal sealed partial class EnchantmentJsonContext : JsonSerializerContext
 {
 }

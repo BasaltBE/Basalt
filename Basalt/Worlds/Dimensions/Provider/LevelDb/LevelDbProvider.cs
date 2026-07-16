@@ -63,7 +63,7 @@ public sealed class LevelDbProvider : WorldProvider
 
     public override CompoundTag? LoadPlayerDataFromRaw(byte[] data)
     {
-        return _players.LoadFromRaw(data);
+        return PlayerStore.LoadFromRaw(data);
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data)

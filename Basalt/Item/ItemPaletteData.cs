@@ -52,7 +52,7 @@ public sealed class ItemGroupIdentifierData
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<ItemTypeData>))]
 [JsonSerializable(typeof(CreativeContentJson))]
-internal partial class ItemPaletteJsonContext : JsonSerializerContext
+internal sealed partial class ItemPaletteJsonContext : JsonSerializerContext
 {
 }
 
@@ -106,7 +106,7 @@ public sealed class CreativeItemStackJson
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(CreativeContentJson))]
-internal partial class CreativeContentJsonContext : JsonSerializerContext
+internal sealed partial class CreativeContentJsonContext : JsonSerializerContext
 {
 }
 

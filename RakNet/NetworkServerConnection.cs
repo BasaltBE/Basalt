@@ -6,7 +6,7 @@ using Basalt.RakNet.Packets.Enums;
 
 namespace Basalt.RakNet;
 
-internal class NetworkServerConnection : NetworkConnection
+internal sealed class NetworkServerConnection : NetworkConnection
 {
     private const byte EncapsulatedGamePacketId = 0xFE;
 

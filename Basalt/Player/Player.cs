@@ -14,6 +14,7 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.DDUI;
+using Basalt.Core.Scoreboard;
 
 public sealed class Player : Entities.Entity
 {
@@ -26,6 +27,7 @@ public sealed class Player : Entities.Entity
     internal NetworkHandler? Network;
     public PlayerAbilities Abilities { get; } = new();
     public PlayerPermissions Permissions { get; }
+    public Dictionary<DisplaySlotType, Scoreboard> Scoreboards { get; } = [];
     public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
     public bool IsOperator { get; internal set; }
     public bool Spawned { get; internal set; }
@@ -109,6 +111,26 @@ public sealed class Player : Entities.Entity
         return Permissions.Has(permission);
     }
 
+    public Scoreboard GetScoreboard(DisplaySlotType slot, string title = "", ObjectiveSortOrder sortOrder = ObjectiveSortOrder.Descending)
+    {
+        if (Scoreboards.TryGetValue(slot, out Scoreboard? existing))
+        {
+            return existing;
+        }
+
+        Scoreboard scoreboard = new(this, slot, title, sortOrder);
+        Scoreboards[slot] = scoreboard;
+        return scoreboard;
+    }
+
+    public void RemoveScoreboard(DisplaySlotType slot)
+    {
+        if (Scoreboards.Remove(slot, out Scoreboard? scoreboard))
+        {
+            scoreboard.Hide();
+        }
+    }
+
     public new CompoundTag Write()
     {
         CompoundTag root = base.Write();
@@ -116,7 +138,13 @@ public sealed class Player : Entities.Entity
         root.Set("xuid", new StringTag { Value = Xuid });
         root.Set("uuid", new StringTag { Value = Uuid.ToString() });
         root.Set("gamemode", new IntTag { Value = (int)Gamemode });
-        root.Set("isOp", new ByteTag { Value = IsOperator ? (sbyte)1 : (sbyte)0 });
+
+        if (Dimension?.World is not null)
+        {
+            root.Set("world", new StringTag { Value = Dimension.World.Name });
+            root.Set("dimension", new StringTag { Value = Dimension.Identifier });
+        }
+
         return root;
     }
 
@@ -129,9 +157,19 @@ public sealed class Player : Entities.Entity
             RestoreGamemode((Gamemode)gamemodeTag.Value);
         }
 
-        IsOperator = (root.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
-        Permissions.RestoreOperator(IsOperator);
+        SavedWorldName = root.Get<StringTag>("world")?.Value;
+        SavedDimensionIdentifier = root.Get<StringTag>("dimension")?.Value;
     }
+
+    /// <summary>
+    /// The world name this player was in when last saved. Used during login to restore cross-world position.
+    /// </summary>
+    public string? SavedWorldName { get; private set; }
+
+    /// <summary>
+    /// The dimension identifier this player was in when last saved. Used during login to restore cross-world position.
+    /// </summary>
+    public string? SavedDimensionIdentifier { get; private set; }
 
 
 
@@ -256,6 +294,12 @@ public sealed class Player : Entities.Entity
             });
         }
 
+        if (changedDimension)
+        {
+            // Send chunks before the move so the client has terrain ready.
+            GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
+        }
+
         Send(new MovePlayerPacket
         {
             RuntimeId = RuntimeId,
@@ -277,8 +321,11 @@ public sealed class Player : Entities.Entity
             Send(Abilities.CreatePacket(UniqueId, IsOperator));
             targetDimension.AddPlayer(this);
         }
+        else
+        {
+            GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
+        }
 
-        GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
         Attributes.Send();
     }
 
@@ -329,6 +376,20 @@ public sealed class Player : Entities.Entity
         {
             PlayerCursorTrait? cursor = GetTrait<PlayerCursorTrait>();
             return cursor?.Container;
+        }
+
+        if (name.ContainerId == (byte)ContainerId.CraftingInput)
+        {
+            foreach ((int _, Container candidate) in openedContainers)
+            {
+                if (candidate.Type == ContainerType.Workbench)
+                {
+                    return candidate;
+                }
+            }
+
+            Traits.PlayerCraftingGridTrait? grid = GetTrait<Traits.PlayerCraftingGridTrait>();
+            return grid?.Container;
         }
 
         if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? container))

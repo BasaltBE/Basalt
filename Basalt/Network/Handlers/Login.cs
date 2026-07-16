@@ -4,6 +4,7 @@ using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
+using PermissionEntry = Basalt.Core.Player.PermissionEntry;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -118,8 +119,17 @@ public static class Login
             }
         }
 
-        bool isOperator = (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
-        player.SetOperator(isOperator, syncClient: false);
+        bool isOperator = false;
+        PermissionEntry? permEntry = server.PermissionStore.Get(playerXuid);
+        if (permEntry is not null)
+        {
+            player.Permissions.Restore(permEntry.IsOperator, permEntry.Permissions);
+            isOperator = permEntry.IsOperator;
+        }
+        else
+        {
+            player.SetOperator(false, syncClient: false);
+        }
 
         PlayerJoinSignal joinSignal = new(player);
         server.Emit(joinSignal);
@@ -147,13 +157,25 @@ public static class Login
 
         ResourcePacksInfoPacket resources = new()
         {
-            MustAccept = false,
+            MustAccept = server.Properties.ForceResourcePacks,
             HasAddons = false,
             HasScripts = false,
             ForceDisableVibrantVisuals = false,
             WorldTemplateUuid = Guid.Empty,
             WorldTemplateVersion = "",
-            Packs = []
+            Packs = server.ResourcePacks.Packs.Select(static pack => new Basalt.Protocol.Types.ResourcePackInfo
+            {
+                Uuid = pack.Uuid,
+                Version = pack.VersionString,
+                Size = pack.Size,
+                ContentKey = "",
+                SubPackName = "",
+                ContentIdentity = "",
+                HasScripts = false,
+                HasAddons = false,
+                RtxEnabled = false,
+                DownloadUrl = ""
+            }).ToList()
         };
 
         server.Network.SendPackets(connection, [status, resources]);

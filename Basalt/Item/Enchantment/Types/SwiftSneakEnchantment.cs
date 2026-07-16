@@ -5,5 +5,5 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class SwiftSneakEnchantment() : EnchantmentType("swift_sneak", 37, 3)
 {
-  public float GetSneakSpeedMultiplier(int level) => Math.Min(0.15f * level + 0.30f, 0.75f);
+  public static float GetSneakSpeedMultiplier(int level) => Math.Min(0.15f * level + 0.30f, 0.75f);
 }

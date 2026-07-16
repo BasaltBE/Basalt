@@ -5,6 +5,7 @@ using Basalt.Core.Entities;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Profiling;
+using Basalt.Core.Resources;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -27,33 +28,69 @@ public static class ResourcePackClientResponse
         switch (packet.Response)
         {
             case ResourcePackResponse.Refused:
-                DisconnectPacket disconnect = new()
+                if (server.Properties.ForceResourcePacks)
                 {
-                    Reason = DisconnectReason.ResourcePackProblem,
-                    HideDisconnectionScreen = false,
-                    Message = "Required resource packs were refused.",
-                    FilteredMessage = "Required resource packs were refused."
-                };
-                server.Network.SendPacket(connection, disconnect);
+                    DisconnectPacket disconnect = new()
+                    {
+                        Reason = DisconnectReason.ResourcePackProblem,
+                        HideDisconnectionScreen = false,
+                        Message = "Required resource packs were refused.",
+                        FilteredMessage = "Required resource packs were refused."
+                    };
+                    server.Network.SendPacket(connection, disconnect);
+                }
                 return;
 
             case ResourcePackResponse.SendPacks:
-                Console.WriteLine($"Client requested packs ({packet.PacksToDownload.Count}). Pack transfer is not implemented yet.");
+                foreach (string packId in packet.PacksToDownload)
+                {
+                    ResourcePack? pack = server.ResourcePacks.GetByUuid(packId);
+                    if (pack is null)
+                    {
+                        Logger.Warn($"Client requested unknown pack: {packId}");
+                        continue;
+                    }
+
+                    uint chunkSize = server.ResourcePacks.ChunkSize;
+                    ResourcePackDataInfoPacket dataInfo = new()
+                    {
+                        Uuid = pack.Uuid.ToString(),
+                        ChunkSize = chunkSize,
+                        ChunkCount = pack.ChunkCount(chunkSize),
+                        Size = pack.Size,
+                        Hash = pack.Hash,
+                        Premium = false,
+                        PackType = 6
+                    };
+                    server.Network.SendPacket(connection, dataInfo);
+                }
                 return;
 
             case ResourcePackResponse.AllPacksDownloaded:
+                List<ResourcePackStackEntry> stackPacks =
+                [
+                    new ResourcePackStackEntry
+                    {
+                        Uuid = Guid.Parse("0fba4063-dba1-4281-9b89-ff9390653530"),
+                        Version = "1.0.0",
+                        SubPackName = ""
+                    }
+                ];
+
+                foreach (ResourcePack loadedPack in server.ResourcePacks.Packs)
+                {
+                    stackPacks.Add(new ResourcePackStackEntry
+                    {
+                        Uuid = loadedPack.Uuid,
+                        Version = loadedPack.VersionString,
+                        SubPackName = "Education Edition Resource Pack"
+                    });
+                }
+
                 ResourcePackStackPacket stack = new()
                 {
-                    MustAccept = false,
-                    Packs =
-                    [
-                        new ResourcePackStackEntry
-                        {
-                            Uuid = Guid.Parse("0fba4063-dba1-4281-9b89-ff9390653530"),
-                            Version = "1.0.0",
-                            SubPackName = "Education Edition Resource Pack"
-                        }
-                    ],
+                    MustAccept = server.Properties.ForceResourcePacks,
+                    Packs = stackPacks,
                     BaseGameVersion = Constants.MinecraftVersion,
                     Experiments = [],
                     ExperimentsPreviouslyToggled = false,
@@ -180,10 +217,20 @@ public static class ResourcePackClientResponse
                     WorldId = string.Empty,
                     OwnerId = player.Xuid
                 };
-                player.Location = startGame.PlayerPosition;
-                var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
+                var dimension = ResolvePlayerDimension(server, player);
                 if (dimension is not null)
                 {
+                    if (player.SavedWorldName is not null)
+                    {
+                        startGame.PlayerPosition = player.Location;
+                    }
+                    else
+                    {
+                        player.Location = startGame.PlayerPosition;
+                    }
+
+                    startGame.Dimension = (int)dimension.Type;
+
                     EntitySpawnOptions options = new(InitialSpawn: true);
                     PlayerSpawnSignal spawnSignal = new(player, options);
                     server.Emit(spawnSignal);
@@ -219,6 +266,7 @@ public static class ResourcePackClientResponse
                 // server.Network.SendPackets(connection, [spawnStatus]);
                 server.Network.SendPackets(connection, [actorIdentifiers, spawnStatus]);
                 server.Network.SendSerializedPacket(connection, PacketId.CreativeContent, creativeContentPayload);
+                server.Network.SendSerializedPacket(connection, PacketId.CraftingData, Crafting.CraftingRegistry.Instance.GetCraftingDataPayload());
                 return;
 
             default:
@@ -227,6 +275,25 @@ public static class ResourcePackClientResponse
         }
     }
 
+    private static Basalt.Core.Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player)
+    {
+        if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null)
+        {
+            foreach (var world in server.Worlds)
+            {
+                if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var dim = world.GetDimension(player.SavedDimensionIdentifier);
+                    if (dim is not null)
+                    {
+                        return dim;
+                    }
+                }
+            }
+        }
+
+        return server.GetWorld().GetDimension(DimensionType.Overworld);
+    }
 }
 
 

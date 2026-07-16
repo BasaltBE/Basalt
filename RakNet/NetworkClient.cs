@@ -181,7 +181,7 @@ public class NetworkClient : NetworkConnection, IDisposable
             try
             {
                 var endpoint = new SocketAddress(_socket!.AddressFamily);
-                int received = await _socket.ReceiveFromAsync(buffer, SocketFlags.None, endpoint);
+                int received = await _socket.ReceiveFromAsync(buffer, SocketFlags.None, endpoint, cancellationToken);
                 if (received > 0)
                     HandleIncomingPacket(buffer.AsSpan(0, received), endpoint);
             }

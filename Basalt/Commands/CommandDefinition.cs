@@ -12,7 +12,7 @@ public sealed class ParameterDefinition
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
     public required Type Type { get; init; }
 
-    public bool Optional { get; init; } = false;
+    public bool Optional { get; init; }
 }
 
 /// <summary>

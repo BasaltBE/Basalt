@@ -10,7 +10,7 @@ public abstract class BlockTrait
 {
     public static readonly string[] Types = [];
     public static readonly string[] Tags = [];
-    public static readonly Type? Component = null;
+    public static readonly Type? Component;
     public static readonly Type[] Components = [];
 
     protected Basalt.Core.Blocks.Block Block { get; }

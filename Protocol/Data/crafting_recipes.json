@@ -29,13 +29,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 4
+        "item": "minecraft:acacia_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 4
+      "item": "minecraft:acacia_chest_boat"
     }
   },
   {
@@ -120,7 +118,7 @@
         "item": "minecraft:stripped_acacia_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -534,13 +532,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 7
+        "item": "minecraft:cherry_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 7
+      "item": "minecraft:bamboo_chest_raft"
     }
   },
   {
@@ -625,7 +621,7 @@
         "item": "minecraft:stripped_bamboo_block"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -760,8 +756,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:bamboo_planks",
-        "data": 4
+        "item": "minecraft:bamboo_planks"
       }
     },
     "result": {
@@ -888,8 +883,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern",
-      "data": 4
+      "item": "minecraft:field_masoned_banner_pattern"
     }
   },
   {
@@ -903,12 +897,11 @@
         "item": "minecraft:paper"
       },
       {
-        "item": "minecraft:skull",
-        "data": 4
+        "item": "minecraft:skeleton_skull"
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern"
+      "item": "minecraft:creeper_banner_pattern"
     }
   },
   {
@@ -926,8 +919,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern",
-      "data": 2
+      "item": "minecraft:flower_banner_pattern"
     }
   },
   {
@@ -941,13 +933,11 @@
         "item": "minecraft:paper"
       },
       {
-        "item": "minecraft:skull",
-        "data": 1
+        "item": "minecraft:skeleton_skull"
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern",
-      "data": 1
+      "item": "minecraft:skull_banner_pattern"
     }
   },
   {
@@ -961,12 +951,11 @@
         "item": "minecraft:paper"
       },
       {
-        "item": "minecraft:appleenchanted"
+        "item": "minecraft:enchanted_golden_apple"
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern",
-      "data": 3
+      "item": "minecraft:mojang_banner_pattern"
     }
   },
   {
@@ -984,8 +973,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:banner_pattern",
-      "data": 5
+      "item": "minecraft:bordure_indented_banner_pattern"
     }
   },
   {
@@ -1004,7 +992,7 @@
         "item": "minecraft:stick"
       },
       "-": {
-        "item": "minecraft:wooden_slab"
+        "item": "minecraft:oak_slab"
       }
     },
     "result": {
@@ -1139,16 +1127,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:emptymap",
-        "data": 1
+        "item": "minecraft:empty_map"
       },
       {
         "item": "minecraft:compass"
       }
     ],
     "result": {
-      "item": "minecraft:emptymap",
-      "data": 2
+      "item": "minecraft:empty_map"
     }
   },
   {
@@ -1164,7 +1150,7 @@
     ],
     "key": {
       "S": {
-        "item": "minecraft:netherstar"
+        "item": "minecraft:nether_star"
       },
       "G": {
         "item": "minecraft:glass"
@@ -1216,7 +1202,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "honeycomb"
@@ -1240,7 +1226,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "honeycomb"
@@ -1264,7 +1250,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "honeycomb"
@@ -1324,13 +1310,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 2
+        "item": "minecraft:birch_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 2
+      "item": "minecraft:birch_chest_boat"
     }
   },
   {
@@ -1415,7 +1399,7 @@
         "item": "minecraft:stripped_birch_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -1634,8 +1618,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 16
+        "item": "minecraft:black_dye"
       }
     ],
     "result": {
@@ -1653,7 +1636,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       }
     ],
     "result": {
@@ -1793,12 +1776,11 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 16
+      "item": "minecraft:black_dye"
     }
   },
   {
@@ -1813,8 +1795,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 16
+      "item": "minecraft:black_dye"
     }
   },
   {
@@ -2081,8 +2062,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 4
+      "item": "minecraft:banner"
     }
   },
   {
@@ -2096,8 +2076,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       }
     ],
     "result": {
@@ -2115,8 +2094,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       }
     ],
     "result": {
@@ -2259,8 +2237,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 18
+      "item": "minecraft:blue_dye"
     }
   },
   {
@@ -2271,13 +2248,11 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 18
+      "item": "minecraft:blue_dye"
     }
   },
   {
@@ -2528,8 +2503,7 @@
     ],
     "key": {
       "X": {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     },
     "result": {
@@ -2548,8 +2522,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 15,
+      "item": "minecraft:bone_meal",
       "count": 9
     }
   },
@@ -2565,8 +2538,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 15,
+      "item": "minecraft:bone_meal",
       "count": 3
     }
   },
@@ -2607,7 +2579,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "book"
@@ -2631,7 +2603,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "book"
@@ -2655,7 +2627,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "book"
@@ -2725,7 +2697,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -2746,7 +2718,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -2767,7 +2739,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -2964,8 +2936,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 3
+      "item": "minecraft:banner"
     }
   },
   {
@@ -2979,8 +2950,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 17
+        "item": "minecraft:brown_dye"
       }
     ],
     "result": {
@@ -2998,8 +2968,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 3
+        "item": "minecraft:cocoa_beans"
       }
     ],
     "result": {
@@ -3138,13 +3107,11 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 3
+        "item": "minecraft:cocoa_beans"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 17
+      "item": "minecraft:brown_dye"
     }
   },
   {
@@ -3370,8 +3337,7 @@
     ],
     "key": {
       "A": {
-        "item": "minecraft:bucket",
-        "data": 1
+        "item": "minecraft:bucket"
       },
       "B": {
         "item": "minecraft:sugar"
@@ -3458,7 +3424,7 @@
         "item": "minecraft:stick"
       },
       "#": {
-        "item": "minecraft:log"
+        "item": "minecraft:oak_log"
       },
       "C": {
         "item": "minecraft:charcoal"
@@ -3484,7 +3450,7 @@
         "item": "minecraft:stick"
       },
       "#": {
-        "item": "minecraft:log2"
+        "item": "minecraft:acacia_log"
       },
       "C": {
         "item": "minecraft:charcoal"
@@ -3773,7 +3739,7 @@
         "item": "minecraft:stick"
       },
       "#": {
-        "item": "minecraft:wood"
+        "item": "minecraft:oak_wood"
       },
       "C": {
         "item": "minecraft:charcoal"
@@ -3796,7 +3762,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -3806,7 +3772,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 2
   },
@@ -3826,7 +3792,7 @@
         "item": "minecraft:stick"
       },
       "#": {
-        "item": "minecraft:log2"
+        "item": "minecraft:acacia_log"
       },
       "C": {
         "item": "minecraft:coal"
@@ -3850,7 +3816,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -3860,7 +3826,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 2
   },
@@ -3958,7 +3924,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -3968,7 +3934,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 2
   },
@@ -4065,7 +4031,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -4075,7 +4041,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 50
   },
@@ -4146,7 +4112,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -4156,7 +4122,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 2
   },
@@ -4173,7 +4139,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "item": "coal"
@@ -4183,7 +4149,7 @@
       }
     },
     "result": {
-      "item": "campfire"
+      "item": "minecraft:campfire"
     },
     "priority": 2
   },
@@ -4203,7 +4169,7 @@
         "item": "minecraft:stick"
       },
       "#": {
-        "item": "minecraft:wood"
+        "item": "minecraft:oak_wood"
       },
       "C": {
         "item": "minecraft:coal"
@@ -4256,7 +4222,7 @@
       }
     },
     "result": {
-      "item": "minecraft:carrotonastick"
+      "item": "minecraft:carrot_on_a_stick"
     }
   },
   {
@@ -4299,7 +4265,7 @@
         "item": "paper"
       },
       "B": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -4323,7 +4289,7 @@
         "item": "paper"
       },
       "B": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -4347,7 +4313,7 @@
         "item": "paper"
       },
       "B": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -4373,29 +4339,6 @@
     },
     "result": {
       "item": "minecraft:cauldron"
-    }
-  },
-  {
-    "type": "shaped",
-    "identifier": "minecraft:chain",
-    "tags": [
-      "crafting_table"
-    ],
-    "pattern": [
-      "N",
-      "G",
-      "N"
-    ],
-    "key": {
-      "N": {
-        "item": "iron_nugget"
-      },
-      "G": {
-        "item": "iron_ingot"
-      }
-    },
-    "result": {
-      "item": "chain"
     }
   },
   {
@@ -4535,7 +4478,7 @@
         "item": "minecraft:stripped_cherry_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -4793,11 +4736,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat"
+        "item": "minecraft:oak_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat"
+      "item": "minecraft:oak_chest_boat"
     }
   },
   {
@@ -4813,7 +4756,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -4834,7 +4777,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -4855,7 +4798,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -5642,8 +5585,7 @@
         "item": "minecraft:wheat"
       },
       "X": {
-        "item": "minecraft:dye",
-        "data": 3
+        "item": "minecraft:cocoa_beans"
       }
     },
     "result": {
@@ -6132,6 +6074,32 @@
     }
   },
   {
+    "type": "furnace",
+    "identifier": "minecraft:cracked_deepslate_bricks_furnace",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_bricks"
+    },
+    "output": {
+      "item": "minecraft:cracked_deepslate_bricks"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:cracked_deepslate_tiles_furnace",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_tiles"
+    },
+    "output": {
+      "item": "minecraft:cracked_deepslate_tiles"
+    }
+  },
+  {
     "type": "shaped",
     "identifier": "minecraft:crafter",
     "tags": [
@@ -6318,7 +6286,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -6338,7 +6306,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -6358,7 +6326,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -6888,7 +6856,7 @@
         "item": "minecraft:stripped_crimson_stem"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -7164,8 +7132,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 6
+      "item": "minecraft:banner"
     }
   },
   {
@@ -7179,8 +7146,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 6
+        "item": "minecraft:cyan_dye"
       }
     ],
     "result": {
@@ -7278,17 +7244,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 2
+        "item": "minecraft:green_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 6,
+      "item": "minecraft:cyan_dye",
       "count": 2
     }
   },
@@ -7300,17 +7263,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 2
+        "item": "minecraft:green_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 6,
+      "item": "minecraft:cyan_dye",
       "count": 2
     },
     "priority": 1
@@ -7453,13 +7413,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 5
+        "item": "minecraft:dark_oak_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 5
+      "item": "minecraft:dark_oak_chest_boat"
     }
   },
   {
@@ -7544,7 +7502,7 @@
         "item": "minecraft:stripped_dark_oak_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -7967,6 +7925,19 @@
       "count": 4
     },
     "priority": 1
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:deepslate_furnace",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:cobbled_deepslate"
+    },
+    "output": {
+      "item": "minecraft:deepslate"
+    }
   },
   {
     "type": "shaped",
@@ -8421,8 +8392,7 @@
       }
     },
     "result": {
-      "item": "minecraft:dispenser",
-      "data": 3
+      "item": "minecraft:dispenser"
     }
   },
   {
@@ -8547,8 +8517,7 @@
       }
     },
     "result": {
-      "item": "minecraft:dropper",
-      "data": 3
+      "item": "minecraft:dropper"
     }
   },
   {
@@ -8625,15 +8594,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:emptymap"
+        "item": "minecraft:empty_map"
       },
       {
         "item": "minecraft:compass"
       }
     ],
     "result": {
-      "item": "minecraft:emptymap",
-      "data": 2
+      "item": "minecraft:empty_map"
     }
   },
   {
@@ -8761,7 +8729,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:chorus_fruit_popped"
+        "item": "minecraft:popped_chorus_fruit"
       },
       "/": {
         "item": "minecraft:blaze_rod"
@@ -8974,6 +8942,26 @@
     }
   },
   {
+    "type": "shaped",
+    "identifier": "minecraft:filled_map",
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "###",
+      "###",
+      "###"
+    ],
+    "key": {
+      "#": {
+        "item": "minecraft:paper"
+      }
+    },
+    "result": {
+      "item": "minecraft:empty_map"
+    }
+  },
+  {
     "type": "shapeless",
     "identifier": "minecraft:FireCharge_blaze_powder_coal_sulphur_recipeId",
     "tags": [
@@ -9083,7 +9071,7 @@
         "item": "flint"
       },
       "B": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -9107,7 +9095,7 @@
         "item": "flint"
       },
       "B": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -9131,7 +9119,7 @@
         "item": "flint"
       },
       "B": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -9225,6 +9213,668 @@
     "priority": -1
   },
   {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_acacia_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:acacia_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_acacia_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:acacia_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_ancient_debris",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:ancient_debris"
+    },
+    "output": {
+      "item": "minecraft:netherite_scrap"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_azalea_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:azalea_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_beef",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:beef"
+    },
+    "output": {
+      "item": "minecraft:cooked_beef"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_birch_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:birch_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_birch_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:birch_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_cactus",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:cactus"
+    },
+    "output": {
+      "item": "minecraft:green_dye"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chainmail_boots",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:chainmail_boots"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chainmail_chestplate",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:chainmail_chestplate"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chainmail_helmet",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:chainmail_helmet"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chainmail_leggings",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:chainmail_leggings"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_cherry_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:cherry_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chicken",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:chicken"
+    },
+    "output": {
+      "item": "minecraft:cooked_chicken"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_chorus_fruit",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:chorus_fruit"
+    },
+    "output": {
+      "item": "minecraft:popped_chorus_fruit"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_clay",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:clay"
+    },
+    "output": {
+      "item": "minecraft:hardened_clay"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_clay_ball",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:clay_ball"
+    },
+    "output": {
+      "item": "minecraft:brick"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_coal_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:coal_ore"
+    },
+    "output": {
+      "item": "minecraft:coal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_cobblestone",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:cobblestone"
+    },
+    "output": {
+      "item": "minecraft:stone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:raw_copper"
+    },
+    "output": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_axe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_axe"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_boots",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_boots"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_chestplate",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_chestplate"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_helmet",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_helmet"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_hoe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_hoe"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_leggings",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_leggings"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_nautilus_armor",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_nautilus_armor"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_ore"
+    },
+    "output": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_pickaxe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_pickaxe"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_shovel",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_shovel"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_spear",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_spear"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_copper_sword",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_sword"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_cracked_nether_bricks",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:nether_brick"
+    },
+    "output": {
+      "item": "minecraft:cracked_nether_bricks"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_cracked_polished_blackstone_bricks",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:polished_blackstone_bricks"
+    },
+    "output": {
+      "item": "minecraft:cracked_polished_blackstone_bricks"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_dark_oak_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:dark_oak_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_dark_oak_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:dark_oak_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_coal_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_coal_ore"
+    },
+    "output": {
+      "item": "minecraft:coal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_copper_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_copper_ore"
+    },
+    "output": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_diamond_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_diamond_ore"
+    },
+    "output": {
+      "item": "minecraft:diamond"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_emerald_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_emerald_ore"
+    },
+    "output": {
+      "item": "minecraft:emerald"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_gold_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_gold_ore"
+    },
+    "output": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_iron_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_iron_ore"
+    },
+    "output": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_lapis_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_lapis_ore"
+    },
+    "output": {
+      "item": "minecraft:lapis_lazuli"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_deepslate_redstone_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:deepslate_redstone_ore"
+    },
+    "output": {
+      "item": "minecraft:redstone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_diamond_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:diamond_ore"
+    },
+    "output": {
+      "item": "minecraft:diamond"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_emerald_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:emerald_ore"
+    },
+    "output": {
+      "item": "minecraft:emerald"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_fish",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:cod"
+    },
+    "output": {
+      "item": "minecraft:cooked_cod"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_flowering_azalea_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:azalea_leaves_flowered"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
     "type": "shaped",
     "identifier": "minecraft:furnace_from_blackstone",
     "tags": [
@@ -9267,6 +9917,1331 @@
     "priority": 2
   },
   {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_gold",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:raw_gold"
+    },
+    "output": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_gold_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:gold_ore"
+    },
+    "output": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_axe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_axe"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_boots",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_boots"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_chestplate",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_chestplate"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_helmet",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_helmet"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_hoe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_hoe"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_leggings",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_leggings"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_nautilus_armor",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_nautilus_armor"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_pickaxe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_pickaxe"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_shovel",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_shovel"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_spear",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_spear"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_golden_sword",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_sword"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_horse_armor_copper",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:copper_horse_armor"
+    },
+    "output": {
+      "item": "minecraft:copper_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_horse_armor_gold",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:golden_horse_armor"
+    },
+    "output": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_horse_armor_iron",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_horse_armor"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:raw_iron"
+    },
+    "output": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_axe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_axe"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_boots",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_boots"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_chestplate",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_chestplate"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_helmet",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_helmet"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_hoe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_hoe"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_leggings",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_leggings"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_nautilus_armor",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_nautilus_armor"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_ore"
+    },
+    "output": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_pickaxe",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_pickaxe"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_shovel",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_shovel"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_spear",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_spear"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_iron_sword",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:iron_sword"
+    },
+    "output": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_jungle_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:jungle_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_jungle_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:jungle_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_kelp",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:kelp"
+    },
+    "output": {
+      "item": "minecraft:dried_kelp"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_lapis_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:lapis_ore"
+    },
+    "output": {
+      "item": "minecraft:lapis_lazuli"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "tag": "minecraft:logs_that_burn"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log_birch",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:birch_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log_jungle",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:jungle_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log_mangrove",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:mangrove_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log_oak",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:oak_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log_spruce",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:spruce_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log2_acacia",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:acacia_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_log2_dark_oak",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:dark_oak_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_mangrove_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:mangrove_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_mangrove_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:mangrove_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_mutton_raw",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:mutton"
+    },
+    "output": {
+      "item": "minecraft:cooked_mutton"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_nether_gold_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:nether_gold_ore"
+    },
+    "output": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_netherrack",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:netherrack"
+    },
+    "output": {
+      "item": "minecraft:netherbrick"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_oak_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:oak_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_oak_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:oak_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_pale_oak_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:pale_oak_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_porkchop",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:porkchop"
+    },
+    "output": {
+      "item": "minecraft:cooked_porkchop"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_potato",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:potato"
+    },
+    "output": {
+      "item": "minecraft:baked_potato"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_quartz_block",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:quartz_block"
+    },
+    "output": {
+      "item": "minecraft:smooth_quartz"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_quartz_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:quartz_ore"
+    },
+    "output": {
+      "item": "minecraft:quartz"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_rabbit",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:rabbit"
+    },
+    "output": {
+      "item": "minecraft:cooked_rabbit"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_red_sand",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:red_sand"
+    },
+    "output": {
+      "item": "minecraft:glass"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_red_sandstone",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:red_sandstone"
+    },
+    "output": {
+      "item": "minecraft:smooth_red_sandstone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_redstone_ore",
+    "tags": [
+      "furnace",
+      "blast_furnace"
+    ],
+    "input": {
+      "item": "minecraft:redstone_ore"
+    },
+    "output": {
+      "item": "minecraft:redstone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_resin_brick",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:resin_clump"
+    },
+    "output": {
+      "item": "minecraft:resin_brick"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_salmon",
+    "tags": [
+      "furnace",
+      "smoker",
+      "campfire",
+      "soul_campfire"
+    ],
+    "input": {
+      "item": "minecraft:salmon"
+    },
+    "output": {
+      "item": "minecraft:cooked_salmon"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_sand",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:sand"
+    },
+    "output": {
+      "item": "minecraft:glass"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_sandstone",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:sandstone"
+    },
+    "output": {
+      "item": "minecraft:smooth_sandstone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_sea_pickle",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:sea_pickle"
+    },
+    "output": {
+      "item": "minecraft:lime_dye"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_smooth_basalt",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:basalt"
+    },
+    "output": {
+      "item": "minecraft:smooth_basalt"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_sponge",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:wet_sponge"
+    },
+    "output": {
+      "item": "minecraft:sponge"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_spruce_leaves",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:spruce_leaves"
+    },
+    "output": {
+      "item": "minecraft:leaf_litter"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_spruce_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:spruce_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay0",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:white_terracotta"
+    },
+    "output": {
+      "item": "minecraft:white_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay1",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:orange_terracotta"
+    },
+    "output": {
+      "item": "minecraft:orange_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay10",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:purple_terracotta"
+    },
+    "output": {
+      "item": "minecraft:purple_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay11",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:blue_terracotta"
+    },
+    "output": {
+      "item": "minecraft:blue_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay12",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:brown_terracotta"
+    },
+    "output": {
+      "item": "minecraft:brown_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay13",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:green_terracotta"
+    },
+    "output": {
+      "item": "minecraft:green_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay14",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:red_terracotta"
+    },
+    "output": {
+      "item": "minecraft:red_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay15",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:black_terracotta"
+    },
+    "output": {
+      "item": "minecraft:black_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay2",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:magenta_terracotta"
+    },
+    "output": {
+      "item": "minecraft:magenta_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay3",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:light_blue_terracotta"
+    },
+    "output": {
+      "item": "minecraft:light_blue_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay4",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:yellow_terracotta"
+    },
+    "output": {
+      "item": "minecraft:yellow_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay5",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:lime_terracotta"
+    },
+    "output": {
+      "item": "minecraft:lime_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay6",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:pink_terracotta"
+    },
+    "output": {
+      "item": "minecraft:pink_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay7",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:gray_terracotta"
+    },
+    "output": {
+      "item": "minecraft:gray_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay8",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:light_gray_terracotta"
+    },
+    "output": {
+      "item": "minecraft:silver_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stained_hardened_clay9",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:cyan_terracotta"
+    },
+    "output": {
+      "item": "minecraft:cyan_glazed_terracotta"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stone",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stone"
+    },
+    "output": {
+      "item": "minecraft:smooth_stone"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stone_brick",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stone_bricks"
+    },
+    "output": {
+      "item": "minecraft:cracked_stone_bricks"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_acacia_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_acacia_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_acacia_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_acacia_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_birch_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_birch_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_birch_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_birch_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_dark_oak_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_dark_oak_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_dark_oak_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_dark_oak_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_jungle_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_jungle_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_jungle_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_jungle_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_mangrove_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_mangrove_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_mangrove_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_mangrove_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_oak_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_oak_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_oak_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_oak_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_spruce_log",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_spruce_log"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
+    "type": "furnace",
+    "identifier": "minecraft:furnace_stripped_spruce_wood",
+    "tags": [
+      "furnace"
+    ],
+    "input": {
+      "item": "minecraft:stripped_spruce_wood"
+    },
+    "output": {
+      "item": "minecraft:charcoal"
+    }
+  },
+  {
     "type": "shaped",
     "identifier": "minecraft:glass_bottle",
     "tags": [
@@ -9304,6 +11279,29 @@
     "result": {
       "item": "minecraft:glass_pane",
       "count": 16
+    }
+  },
+  {
+    "type": "shaped",
+    "identifier": "minecraft:glistering_melon_slice",
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "###",
+      "#X#",
+      "###"
+    ],
+    "key": {
+      "#": {
+        "item": "minecraft:gold_nugget"
+      },
+      "X": {
+        "item": "minecraft:melon_slice"
+      }
+    },
+    "result": {
+      "item": "minecraft:glistering_melon_slice"
     }
   },
   {
@@ -9812,8 +11810,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 8
+      "item": "minecraft:banner"
     }
   },
   {
@@ -9827,8 +11824,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 8
+        "item": "minecraft:gray_dye"
       }
     ],
     "result": {
@@ -9926,17 +11922,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 16
+        "item": "minecraft:black_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 8,
+      "item": "minecraft:gray_dye",
       "count": 2
     }
   },
@@ -9948,17 +11941,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 16
+        "item": "minecraft:black_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 8,
+      "item": "minecraft:gray_dye",
       "count": 2
     },
     "priority": 1
@@ -9986,16 +11976,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 8,
+      "item": "minecraft:gray_dye",
       "count": 2
     },
     "priority": 3
@@ -10008,16 +11996,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 8,
+      "item": "minecraft:gray_dye",
       "count": 2
     },
     "priority": 2
@@ -10134,8 +12120,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 2
+      "item": "minecraft:banner"
     }
   },
   {
@@ -10149,8 +12134,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 2
+        "item": "minecraft:green_dye"
       }
     ],
     "result": {
@@ -10396,17 +12380,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab2"
+        "item": "minecraft:red_sandstone_slab"
       },
       "C": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10422,17 +12406,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab3"
+        "item": "minecraft:end_stone_brick_slab"
       },
       "C": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10448,17 +12432,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab4"
+        "item": "minecraft:mossy_stone_brick_slab"
       },
       "C": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10500,17 +12484,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab2"
+        "item": "minecraft:red_sandstone_slab"
       },
       "C": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10526,17 +12510,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab3"
+        "item": "minecraft:end_stone_brick_slab"
       },
       "C": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10552,17 +12536,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab4"
+        "item": "minecraft:mossy_stone_brick_slab"
       },
       "C": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10604,17 +12588,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab2"
+        "item": "minecraft:red_sandstone_slab"
       },
       "C": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10630,17 +12614,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab3"
+        "item": "minecraft:end_stone_brick_slab"
       },
       "C": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10656,17 +12640,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "stone_slab4"
+        "item": "minecraft:mossy_stone_brick_slab"
       },
       "C": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
-      "item": "grindstone"
+      "item": "minecraft:grindstone"
     },
     "priority": 2
   },
@@ -10998,6 +12982,29 @@
   },
   {
     "type": "shaped",
+    "identifier": "minecraft:iron_chain",
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "N",
+      "G",
+      "N"
+    ],
+    "key": {
+      "N": {
+        "item": "iron_nugget"
+      },
+      "G": {
+        "item": "iron_ingot"
+      }
+    },
+    "result": {
+      "item": "minecraft:iron_chain"
+    }
+  },
+  {
+    "type": "shaped",
     "identifier": "minecraft:iron_chestplate",
     "tags": [
       "crafting_table"
@@ -11304,7 +13311,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "diamond"
@@ -11328,7 +13335,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "diamond"
@@ -11352,7 +13359,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "diamond"
@@ -11417,13 +13424,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 3
+        "item": "minecraft:jungle_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 3
+      "item": "minecraft:jungle_chest_boat"
     }
   },
   {
@@ -11508,7 +13513,7 @@
         "item": "minecraft:stripped_jungle_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -11750,8 +13755,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       }
     },
     "result": {
@@ -11773,8 +13777,7 @@
       }
     },
     "result": {
-      "item": "minecraft:dye",
-      "data": 4,
+      "item": "minecraft:lapis_lazuli",
       "count": 9
     }
   },
@@ -11893,7 +13896,7 @@
       }
     },
     "result": {
-      "item": "minecraft:horsearmorleather"
+      "item": "minecraft:leather_horse_armor"
     }
   },
   {
@@ -12054,8 +14057,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 12
+      "item": "minecraft:banner"
     }
   },
   {
@@ -12069,8 +14071,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 12
+        "item": "minecraft:light_blue_dye"
       }
     ],
     "result": {
@@ -12168,17 +14169,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 12,
+      "item": "minecraft:light_blue_dye",
       "count": 2
     },
     "priority": 1
@@ -12191,17 +14189,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 12,
+      "item": "minecraft:light_blue_dye",
       "count": 2
     },
     "priority": 2
@@ -12218,8 +14213,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 12
+      "item": "minecraft:light_blue_dye"
     }
   },
   {
@@ -12230,17 +14224,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 12,
+      "item": "minecraft:light_blue_dye",
       "count": 2
     },
     "priority": 4
@@ -12253,17 +14244,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 12,
+      "item": "minecraft:light_blue_dye",
       "count": 2
     },
     "priority": 3
@@ -12404,8 +14392,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 7
+      "item": "minecraft:banner"
     }
   },
   {
@@ -12419,8 +14406,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 7
+        "item": "minecraft:light_gray_dye"
       }
     ],
     "result": {
@@ -12494,21 +14480,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 16
+        "item": "minecraft:black_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 3
     },
     "priority": 3
@@ -12525,8 +14507,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7
+      "item": "minecraft:light_gray_dye"
     },
     "priority": 2
   },
@@ -12538,21 +14519,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 16
+        "item": "minecraft:black_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 3
     },
     "priority": 7
@@ -12565,17 +14542,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 8
+        "item": "minecraft:gray_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 2
     },
     "priority": 6
@@ -12588,17 +14562,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 8
+        "item": "minecraft:gray_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 2
     },
     "priority": 4
@@ -12611,20 +14582,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 3
     },
     "priority": 8
@@ -12637,20 +14605,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7,
+      "item": "minecraft:light_gray_dye",
       "count": 3
     },
     "priority": 5
@@ -12667,8 +14632,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7
+      "item": "minecraft:light_gray_dye"
     },
     "priority": 1
   },
@@ -12684,8 +14648,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 7
+      "item": "minecraft:light_gray_dye"
     }
   },
   {
@@ -12863,8 +14826,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 10
+      "item": "minecraft:banner"
     }
   },
   {
@@ -12878,8 +14840,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 10
+        "item": "minecraft:lime_dye"
       }
     ],
     "result": {
@@ -12953,17 +14914,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 2
+        "item": "minecraft:green_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 10,
+      "item": "minecraft:lime_dye",
       "count": 2
     }
   },
@@ -12975,17 +14933,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 2
+        "item": "minecraft:green_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 10,
+      "item": "minecraft:lime_dye",
       "count": 2
     },
     "priority": 1
@@ -13124,8 +15079,7 @@
       }
     },
     "result": {
-      "item": "minecraft:emptymap",
-      "data": 2
+      "item": "minecraft:empty_map"
     }
   },
   {
@@ -13189,7 +15143,7 @@
         "item": "string"
       },
       "B": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -13212,7 +15166,7 @@
         "item": "string"
       },
       "B": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -13235,7 +15189,7 @@
         "item": "string"
       },
       "B": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -13285,8 +15239,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 13
+      "item": "minecraft:banner"
     }
   },
   {
@@ -13300,8 +15253,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 13
+        "item": "minecraft:magenta_dye"
       }
     ],
     "result": {
@@ -13399,21 +15351,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 9
+        "item": "minecraft:pink_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 3
     },
     "priority": 2
@@ -13430,8 +15378,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13
+      "item": "minecraft:magenta_dye"
     },
     "priority": 1
   },
@@ -13443,25 +15390,20 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 4
     },
     "priority": 6
@@ -13474,25 +15416,20 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 4
     },
     "priority": 4
@@ -13505,25 +15442,20 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 4
     },
     "priority": 8
@@ -13536,25 +15468,20 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 4
     },
     "priority": 7
@@ -13567,21 +15494,17 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 9
+        "item": "minecraft:pink_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 3
     },
     "priority": 5
@@ -13610,17 +15533,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 5
+        "item": "minecraft:purple_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 9
+        "item": "minecraft:pink_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 13,
+      "item": "minecraft:magenta_dye",
       "count": 2
     },
     "priority": 3
@@ -13766,8 +15686,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:mangrove_planks",
-        "data": 4
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -13803,13 +15722,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 6
+        "item": "minecraft:mangrove_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 6
+      "item": "minecraft:mangrove_chest_boat"
     }
   },
   {
@@ -13894,7 +15811,7 @@
         "item": "minecraft:stripped_mangrove_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -14143,26 +16060,6 @@
   },
   {
     "type": "shaped",
-    "identifier": "minecraft:map",
-    "tags": [
-      "crafting_table"
-    ],
-    "pattern": [
-      "###",
-      "###",
-      "###"
-    ],
-    "key": {
-      "#": {
-        "item": "minecraft:paper"
-      }
-    },
-    "result": {
-      "item": "minecraft:emptymap"
-    }
-  },
-  {
-    "type": "shaped",
     "identifier": "minecraft:melon_block",
     "tags": [
       "crafting_table"
@@ -14174,7 +16071,7 @@
     ],
     "key": {
       "M": {
-        "item": "minecraft:melon"
+        "item": "minecraft:melon_slice"
       }
     },
     "result": {
@@ -14192,7 +16089,7 @@
     ],
     "key": {
       "M": {
-        "item": "minecraft:melon"
+        "item": "minecraft:melon_slice"
       }
     },
     "result": {
@@ -14512,6 +16409,27 @@
   },
   {
     "type": "shaped",
+    "identifier": "minecraft:music_disc_5",
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAA",
+      "AAA",
+      "AAA"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:disc_fragment_5"
+      }
+    },
+    "result": {
+      "item": "minecraft:music_disc_5"
+    },
+    "priority": 1
+  },
+  {
+    "type": "shaped",
     "identifier": "minecraft:name_tag",
     "tags": [
       "crafting_table"
@@ -14758,7 +16676,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "redstone"
@@ -14782,7 +16700,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "redstone"
@@ -14806,7 +16724,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "redstone"
@@ -14856,7 +16774,7 @@
         "item": "minecraft:stripped_oak_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -15087,8 +17005,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 14
+      "item": "minecraft:banner"
     }
   },
   {
@@ -15102,8 +17019,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 14
+        "item": "minecraft:orange_dye"
       }
     ],
     "result": {
@@ -15220,8 +17136,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 14
+      "item": "minecraft:orange_dye"
     }
   },
   {
@@ -15232,17 +17147,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 11
+        "item": "minecraft:yellow_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 14,
+      "item": "minecraft:orange_dye",
       "count": 2
     }
   },
@@ -15258,8 +17170,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 14
+      "item": "minecraft:orange_dye"
     }
   },
   {
@@ -15638,7 +17549,7 @@
         "item": "minecraft:stripped_pale_oak_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -15896,7 +17807,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:reeds"
+        "item": "minecraft:sugar_cane"
       }
     },
     "result": {
@@ -15944,8 +17855,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 9
+      "item": "minecraft:banner"
     }
   },
   {
@@ -15959,8 +17869,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 9
+        "item": "minecraft:pink_dye"
       }
     ],
     "result": {
@@ -16058,17 +17967,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 9,
+      "item": "minecraft:pink_dye",
       "count": 2
     }
   },
@@ -16130,8 +18036,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 9
+      "item": "minecraft:pink_dye"
     }
   },
   {
@@ -16142,17 +18047,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 9,
+      "item": "minecraft:pink_dye",
       "count": 2
     }
   },
@@ -16274,8 +18176,7 @@
       }
     },
     "result": {
-      "item": "piston",
-      "data": 1
+      "item": "minecraft:piston"
     },
     "priority": -1
   },
@@ -16292,7 +18193,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "cobblestone"
@@ -16305,8 +18206,7 @@
       }
     },
     "result": {
-      "item": "piston",
-      "data": 1
+      "item": "minecraft:piston"
     },
     "priority": 2
   },
@@ -16323,7 +18223,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "cobblestone"
@@ -16336,8 +18236,7 @@
       }
     },
     "result": {
-      "item": "piston",
-      "data": 1
+      "item": "minecraft:piston"
     },
     "priority": 2
   },
@@ -16354,7 +18253,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "cobblestone"
@@ -16367,8 +18266,7 @@
       }
     },
     "result": {
-      "item": "piston",
-      "data": 1
+      "item": "minecraft:piston"
     },
     "priority": 2
   },
@@ -17239,8 +19137,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 5
+      "item": "minecraft:banner"
     }
   },
   {
@@ -17254,8 +19151,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 5
+        "item": "minecraft:purple_dye"
       }
     ],
     "result": {
@@ -17353,17 +19249,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 18
+        "item": "minecraft:blue_dye"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 5,
+      "item": "minecraft:purple_dye",
       "count": 2
     }
   },
@@ -17375,17 +19268,14 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 4
+        "item": "minecraft:lapis_lazuli"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 5,
+      "item": "minecraft:purple_dye",
       "count": 2
     },
     "priority": 1
@@ -17494,7 +19384,7 @@
     ],
     "key": {
       "F": {
-        "item": "minecraft:chorus_fruit_popped"
+        "item": "minecraft:popped_chorus_fruit"
       }
     },
     "result": {
@@ -17826,27 +19716,6 @@
   },
   {
     "type": "shaped",
-    "identifier": "minecraft:record_5",
-    "tags": [
-      "crafting_table"
-    ],
-    "pattern": [
-      "AAA",
-      "AAA",
-      "AAA"
-    ],
-    "key": {
-      "A": {
-        "item": "minecraft:disc_fragment_5"
-      }
-    },
-    "result": {
-      "item": "minecraft:record_5"
-    },
-    "priority": 1
-  },
-  {
-    "type": "shaped",
     "identifier": "minecraft:recovery_compass",
     "tags": [
       "crafting_table"
@@ -17913,8 +19782,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 1
+      "item": "minecraft:banner"
     }
   },
   {
@@ -17928,8 +19796,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 1
+        "item": "minecraft:red_dye"
       }
     ],
     "result": {
@@ -18031,8 +19898,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 1
+      "item": "minecraft:red_dye"
     }
   },
   {
@@ -18047,8 +19913,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 1
+      "item": "minecraft:red_dye"
     }
   },
   {
@@ -18079,8 +19944,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 1
+      "item": "minecraft:red_dye"
     }
   },
   {
@@ -18767,7 +20631,7 @@
   },
   {
     "type": "shaped",
-    "identifier": "minecraft:sealantern",
+    "identifier": "minecraft:sea_lantern",
     "tags": [
       "crafting_table"
     ],
@@ -18785,7 +20649,7 @@
       }
     },
     "result": {
-      "item": "minecraft:sealantern"
+      "item": "minecraft:sea_lantern"
     }
   },
   {
@@ -18898,7 +20762,7 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
         "item": "iron_ingot"
@@ -18922,7 +20786,7 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
         "item": "iron_ingot"
@@ -18946,7 +20810,7 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
         "item": "iron_ingot"
@@ -19048,7 +20912,7 @@
       }
     },
     "result": {
-      "item": "minecraft:darkoak_sign",
+      "item": "minecraft:dark_oak_sign",
       "count": 3
     }
   },
@@ -19096,7 +20960,7 @@
       }
     },
     "result": {
-      "item": "minecraft:sign",
+      "item": "minecraft:oak_sign",
       "count": 3
     }
   },
@@ -19232,7 +21096,7 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -19256,7 +21120,7 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -19280,7 +21144,7 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -19332,7 +21196,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 2
   },
@@ -19352,7 +21216,7 @@
         "item": "minecraft:furnace"
       },
       "#": {
-        "item": "minecraft:log2"
+        "item": "minecraft:acacia_log"
       }
     },
     "result": {
@@ -19379,7 +21243,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 2
   },
@@ -19403,7 +21267,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 50
   },
@@ -19473,7 +21337,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 2
   },
@@ -19566,7 +21430,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 50
   },
@@ -19636,7 +21500,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 2
   },
@@ -19660,7 +21524,7 @@
       }
     },
     "result": {
-      "item": "smoker"
+      "item": "minecraft:smoker"
     },
     "priority": 2
   },
@@ -19845,7 +21709,7 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
         "tag": "minecraft:soul_fire_base_blocks"
@@ -19855,7 +21719,7 @@
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": -1
   },
@@ -19872,17 +21736,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "crimson_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -19899,17 +21763,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "crimson_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -19926,17 +21790,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "mangrove_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -19953,17 +21817,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "mangrove_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -19980,17 +21844,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "mangrove_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 50
   },
@@ -20007,17 +21871,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "mangrove_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 50
   },
@@ -20034,17 +21898,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
-        "item": "log"
+        "item": "minecraft:oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 1
   },
@@ -20061,17 +21925,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
-        "item": "log2"
+        "item": "minecraft:acacia_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20088,17 +21952,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_acacia_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20115,17 +21979,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_birch_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20142,17 +22006,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_dark_oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20169,17 +22033,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_jungle_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20196,17 +22060,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20223,17 +22087,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_spruce_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20250,17 +22114,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
-        "item": "wood"
+        "item": "minecraft:oak_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20277,17 +22141,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
-        "item": "log"
+        "item": "minecraft:oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 1
   },
@@ -20304,17 +22168,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
-        "item": "log2"
+        "item": "minecraft:acacia_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20331,17 +22195,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_acacia_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20358,17 +22222,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_birch_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20385,17 +22249,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_dark_oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20412,17 +22276,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_jungle_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20439,17 +22303,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_oak_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20466,17 +22330,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_spruce_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20493,17 +22357,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
-        "item": "wood"
+        "item": "minecraft:oak_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20520,17 +22384,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_crimson_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20547,17 +22411,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_crimson_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20574,17 +22438,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_mangrove_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20601,17 +22465,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_mangrove_log"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20628,17 +22492,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_mangrove_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 50
   },
@@ -20655,17 +22519,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_mangrove_wood"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 50
   },
@@ -20682,17 +22546,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "stripped_warped_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20709,17 +22573,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "stripped_warped_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20736,17 +22600,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_soil"
+        "item": "minecraft:soul_soil"
       },
       "C": {
         "item": "warped_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20763,17 +22627,17 @@
     ],
     "key": {
       "A": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "B": {
-        "item": "soul_sand"
+        "item": "minecraft:soul_sand"
       },
       "C": {
         "item": "warped_stem"
       }
     },
     "result": {
-      "item": "soul_campfire"
+      "item": "minecraft:soul_campfire"
     },
     "priority": 2
   },
@@ -20884,29 +22748,6 @@
   },
   {
     "type": "shaped",
-    "identifier": "minecraft:speckled_melon",
-    "tags": [
-      "crafting_table"
-    ],
-    "pattern": [
-      "###",
-      "#X#",
-      "###"
-    ],
-    "key": {
-      "#": {
-        "item": "minecraft:gold_nugget"
-      },
-      "X": {
-        "item": "minecraft:melon"
-      }
-    },
-    "result": {
-      "item": "minecraft:speckled_melon"
-    }
-  },
-  {
-    "type": "shaped",
     "identifier": "minecraft:spire_armor_trim_smithing_template_duplicate",
     "tags": [
       "crafting_table"
@@ -20962,13 +22803,11 @@
         "item": "minecraft:chest"
       },
       {
-        "item": "minecraft:boat",
-        "data": 1
+        "item": "minecraft:spruce_boat"
       }
     ],
     "result": {
-      "item": "minecraft:chest_boat",
-      "data": 1
+      "item": "minecraft:spruce_chest_boat"
     }
   },
   {
@@ -21053,7 +22892,7 @@
         "item": "minecraft:stripped_spruce_log"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -21278,7 +23117,7 @@
       }
     },
     "result": {
-      "item": "stick",
+      "item": "minecraft:stick",
       "count": 4
     },
     "priority": -1
@@ -21295,11 +23134,11 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
-      "item": "stick",
+      "item": "minecraft:stick",
       "count": 4
     },
     "priority": 2
@@ -21316,11 +23155,11 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
-      "item": "stick",
+      "item": "minecraft:stick",
       "count": 4
     },
     "priority": 2
@@ -21337,11 +23176,11 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
-      "item": "stick",
+      "item": "minecraft:stick",
       "count": 4
     },
     "priority": 2
@@ -21365,8 +23204,7 @@
       }
     },
     "result": {
-      "item": "minecraft:sticky_piston",
-      "data": 1
+      "item": "minecraft:sticky_piston"
     }
   },
   {
@@ -21963,7 +23801,7 @@
     ],
     "key": {
       "#": {
-        "item": "minecraft:reeds"
+        "item": "minecraft:sugar_cane"
       }
     },
     "result": {
@@ -22150,8 +23988,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 7
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22175,8 +24012,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 3
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22200,8 +24036,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 6
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22225,8 +24060,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 12
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22250,8 +24084,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 1
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22275,8 +24108,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 5
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22300,8 +24132,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 5
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22325,8 +24156,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 4
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22350,8 +24180,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 11
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22375,8 +24204,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 8
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22424,8 +24252,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 10
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22449,8 +24276,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 2
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22474,8 +24300,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 2
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22499,8 +24324,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 2
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22524,8 +24348,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 2
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22549,8 +24372,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:suspicious_stew",
-      "data": 9
+      "item": "minecraft:suspicious_stew"
     }
   },
   {
@@ -22773,7 +24595,7 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "C": {
         "tag": "minecraft:planks"
@@ -22801,10 +24623,10 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "C": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       }
     },
     "result": {
@@ -22828,10 +24650,10 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "C": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       }
     },
     "result": {
@@ -22855,10 +24677,10 @@
         "item": "iron_ingot"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       },
       "C": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       }
     },
     "result": {
@@ -23022,7 +24844,7 @@
     ],
     "key": {
       "X": {
-        "item": "minecraft:turtle_shell_piece"
+        "item": "minecraft:turtle_scute"
       }
     },
     "result": {
@@ -23205,7 +25027,7 @@
         "item": "minecraft:stripped_warped_stem"
       },
       "|": {
-        "item": "minecraft:chain"
+        "item": "minecraft:iron_chain"
       }
     },
     "result": {
@@ -24949,8 +26771,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 15
+      "item": "minecraft:banner"
     }
   },
   {
@@ -24964,8 +26785,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 19
+        "item": "minecraft:white_dye"
       }
     ],
     "result": {
@@ -24983,8 +26803,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
@@ -25099,13 +26918,11 @@
     ],
     "ingredients": [
       {
-        "item": "minecraft:dye",
-        "data": 15
+        "item": "minecraft:bone_meal"
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 19
+      "item": "minecraft:white_dye"
     }
   },
   {
@@ -25120,8 +26937,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 19
+      "item": "minecraft:white_dye"
     }
   },
   {
@@ -25365,10 +27181,10 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25389,10 +27205,10 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25413,10 +27229,10 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25481,10 +27297,10 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25505,10 +27321,10 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25529,10 +27345,10 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25576,10 +27392,10 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25600,10 +27416,10 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25624,10 +27440,10 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25671,10 +27487,10 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25695,10 +27511,10 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25719,10 +27535,10 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25789,10 +27605,10 @@
     ],
     "key": {
       "A": {
-        "item": "crimson_planks"
+        "item": "minecraft:crimson_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25813,10 +27629,10 @@
     ],
     "key": {
       "A": {
-        "item": "mangrove_planks"
+        "item": "minecraft:mangrove_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25837,10 +27653,10 @@
     ],
     "key": {
       "A": {
-        "item": "warped_planks"
+        "item": "minecraft:warped_planks"
       },
       "B": {
-        "item": "stick"
+        "item": "minecraft:stick"
       }
     },
     "result": {
@@ -25898,7 +27714,7 @@
         "item": "minecraft:book"
       },
       {
-        "item": "minecraft:dye"
+        "item": "minecraft:ink_sac"
       },
       {
         "item": "minecraft:feather"
@@ -25928,8 +27744,7 @@
       }
     },
     "result": {
-      "item": "minecraft:banner",
-      "data": 11
+      "item": "minecraft:banner"
     }
   },
   {
@@ -25943,8 +27758,7 @@
         "item": "minecraft:candle"
       },
       {
-        "item": "minecraft:dye",
-        "data": 11
+        "item": "minecraft:yellow_dye"
       }
     ],
     "result": {
@@ -26046,8 +27860,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 11
+      "item": "minecraft:yellow_dye"
     }
   },
   {
@@ -26062,8 +27875,7 @@
       }
     ],
     "result": {
-      "item": "minecraft:dye",
-      "data": 11
+      "item": "minecraft:yellow_dye"
     }
   },
   {

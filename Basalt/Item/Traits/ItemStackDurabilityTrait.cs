@@ -8,7 +8,7 @@ public sealed class ItemStackDurabilityTrait : ItemTrait
     {
     }
 
-    public void ProcessDamage(Entities.Entity _entity)
+    public static void ProcessDamage(Entities.Entity _entity)
     {
     }
 }

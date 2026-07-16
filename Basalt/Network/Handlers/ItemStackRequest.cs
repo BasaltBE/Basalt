@@ -50,11 +50,15 @@ public static class ItemStackRequest
     [ThreadStatic]
     private static ItemStack? _pendingCreativeItem;
 
+    [ThreadStatic]
+    private static ItemStack? _pendingCraftResult;
+
     private static ItemStackResponse ProcessRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changed = [];
         _pendingCreativeStackId = 0;
         _pendingCreativeItem = null;
+        _pendingCraftResult = null;
 
         foreach (IStackRequestAction action in request.Actions)
         {
@@ -91,6 +95,8 @@ public static class ItemStackRequest
             DropStackRequestAction drop => HandleDrop(player, drop, changed),
             DestroyStackRequestAction destroy => HandleDestroy(player, destroy, changed),
             CraftCreativeStackRequestAction creative => HandleCraftCreative(player, creative, changed),
+            CraftRecipeStackRequestAction craft => HandleCraftRecipe(player, craft, changed),
+            AutoCraftRecipeStackRequestAction autoCraft => HandleCraftRecipe(player, autoCraft.RecipeNetworkId, autoCraft.NumberOfCrafts, changed),
 
             // Actions that don't require server-side processing
             EmptyStackRequestAction => ItemStackResponseStatus.Ok,
@@ -117,6 +123,43 @@ public static class ItemStackRequest
 
             creativeDst.SetItem(creativeDstSlot, item);
             RecordChange(changed, action.Destination.Container, creativeDst, action.Destination.Slot, creativeDstSlot);
+            return ItemStackResponseStatus.Ok;
+        }
+
+        if (action.Source.Container.ContainerId == (byte)ContainerId.CreatedOutput && _pendingCraftResult is not null)
+        {
+            if (!TryResolveSlot(player, action.Destination, out Container craftDst, out int craftDstSlot))
+            {
+                return ItemStackResponseStatus.InvalidSourceContainer;
+            }
+
+            ItemStack item = _pendingCraftResult;
+            _pendingCraftResult = null;
+
+            ItemStack? existing = craftDst.GetItem(craftDstSlot);
+            if (existing is not null)
+            {
+                if (!existing.CanStackWith(item))
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
+
+                int available = existing.Type.MaxStackSize - existing.StackSize;
+                if (available <= 0)
+                {
+                    return ItemStackResponseStatus.CannotPlaceItem;
+                }
+
+                int toAdd = Math.Min(item.StackSize, available);
+                existing.IncrementStack((ushort)toAdd);
+                craftDst.UpdateSlot(craftDstSlot);
+            }
+            else
+            {
+                craftDst.SetItem(craftDstSlot, item);
+            }
+
+            RecordChange(changed, action.Destination.Container, craftDst, action.Destination.Slot, craftDstSlot);
             return ItemStackResponseStatus.Ok;
         }
 
@@ -281,6 +324,46 @@ public static class ItemStackRequest
         return ItemStackResponseStatus.Ok;
     }
 
+    private static ItemStackResponseStatus HandleCraftRecipe(
+        Player.Player player,
+        CraftRecipeStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changed)
+    {
+        return HandleCraftRecipe(player, action.RecipeNetworkId, action.NumberOfCrafts, changed);
+    }
+
+    private static ItemStackResponseStatus HandleCraftRecipe(
+        Player.Player player,
+        uint recipeNetworkId,
+        byte numberOfCrafts,
+        Dictionary<string, StackResponseContainerInfo> changed)
+    {
+        Crafting.CraftingRecipe? recipe = Crafting.CraftingRegistry.Instance.GetByNetworkId(recipeNetworkId);
+        if (recipe is null)
+        {
+            Logger.Warn("Could not Find a Recipe for " + recipeNetworkId);
+            return ItemStackResponseStatus.Error;
+        }
+
+        ItemType? resultType = ItemType.Get(recipe.Result.Item);
+        if (resultType is null && !recipe.Result.Item.Contains(':'))
+        {
+            resultType = ItemType.Get("minecraft:" + recipe.Result.Item);
+        }
+        if (resultType is null)
+        {
+            Logger.Info("Result item for crafting was not found: " + recipe.Result.Item);
+            return ItemStackResponseStatus.Error;
+        }
+
+        int craftCount = Math.Max(1, (int)numberOfCrafts);
+        int totalCount = recipe.Result.Count * craftCount;
+        ushort stackSize = (ushort)Math.Min(totalCount, resultType.MaxStackSize);
+
+        _pendingCraftResult = new ItemStack(resultType, stackSize);
+        return ItemStackResponseStatus.Ok;
+    }
+
     private static bool TryResolveSlot(Player.Player player, StackRequestSlotInfo requestSlot, out Container container, out int slot)
     {
         container = null!;
@@ -320,6 +403,17 @@ public static class ItemStackRequest
             return null;
         }
 
+        if (name.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        {
+            foreach ((_, Container opened) in player.openedContainers)
+            {
+                if (opened.Type is ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker)
+                {
+                    return opened;
+                }
+            }
+        }
+
         return player.GetContainer(name);
     }
 
@@ -330,11 +424,23 @@ public static class ItemStackRequest
             return 0;
         }
 
+        if (containerName.ContainerId == (byte)ContainerId.CraftingInput)
+        {
+            if (slot >= 32) return slot - 32;
+            return Player.Traits.PlayerCraftingGridTrait.MapSlot(slot);
+        }
+
         if (containerName.ContainerId is (byte)ContainerId.Armor or 12
             or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar
             or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
         {
             return NormalizeInventorySlot(slot);
+        }
+
+        // Furnace UI slot IDs pass through directly.
+        if (containerName.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        {
+            return slot;
         }
 
         if (containerName.ContainerId is (byte)ContainerId.DynamicContainer

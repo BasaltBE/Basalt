@@ -35,7 +35,7 @@ public sealed class EntityPropertiesPayloadData
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<EntityTypeData>))]
-internal partial class EntityPaletteJsonContext : JsonSerializerContext
+internal sealed partial class EntityPaletteJsonContext : JsonSerializerContext
 {
 }
 
