@@ -138,6 +138,13 @@ public sealed class Player : Entities.Entity
         root.Set("xuid", new StringTag { Value = Xuid });
         root.Set("uuid", new StringTag { Value = Uuid.ToString() });
         root.Set("gamemode", new IntTag { Value = (int)Gamemode });
+
+        if (Dimension?.World is not null)
+        {
+            root.Set("world", new StringTag { Value = Dimension.World.Name });
+            root.Set("dimension", new StringTag { Value = Dimension.Identifier });
+        }
+
         return root;
     }
 
@@ -149,7 +156,20 @@ public sealed class Player : Entities.Entity
         {
             RestoreGamemode((Gamemode)gamemodeTag.Value);
         }
+
+        SavedWorldName = root.Get<StringTag>("world")?.Value;
+        SavedDimensionIdentifier = root.Get<StringTag>("dimension")?.Value;
     }
+
+    /// <summary>
+    /// The world name this player was in when last saved. Used during login to restore cross-world position.
+    /// </summary>
+    public string? SavedWorldName { get; private set; }
+
+    /// <summary>
+    /// The dimension identifier this player was in when last saved. Used during login to restore cross-world position.
+    /// </summary>
+    public string? SavedDimensionIdentifier { get; private set; }
 
 
 

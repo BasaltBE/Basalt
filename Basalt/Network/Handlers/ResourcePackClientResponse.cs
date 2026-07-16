@@ -217,10 +217,20 @@ public static class ResourcePackClientResponse
                     WorldId = string.Empty,
                     OwnerId = player.Xuid
                 };
-                player.Location = startGame.PlayerPosition;
-                var dimension = server.GetWorld().GetDimension(DimensionType.Overworld);
+                var dimension = ResolvePlayerDimension(server, player);
                 if (dimension is not null)
                 {
+                    if (player.SavedWorldName is not null)
+                    {
+                        startGame.PlayerPosition = player.Location;
+                    }
+                    else
+                    {
+                        player.Location = startGame.PlayerPosition;
+                    }
+
+                    startGame.Dimension = (int)dimension.Type;
+
                     EntitySpawnOptions options = new(InitialSpawn: true);
                     PlayerSpawnSignal spawnSignal = new(player, options);
                     server.Emit(spawnSignal);
@@ -265,6 +275,25 @@ public static class ResourcePackClientResponse
         }
     }
 
+    private static Basalt.Core.Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player)
+    {
+        if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null)
+        {
+            foreach (var world in server.Worlds)
+            {
+                if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var dim = world.GetDimension(player.SavedDimensionIdentifier);
+                    if (dim is not null)
+                    {
+                        return dim;
+                    }
+                }
+            }
+        }
+
+        return server.GetWorld().GetDimension(DimensionType.Overworld);
+    }
 }
 
 

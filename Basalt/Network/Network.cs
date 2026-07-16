@@ -36,7 +36,7 @@ public sealed class NetworkHandler
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
-        (player.Dimension?.World?.Provider ?? _server.GetWorld().Provider).SavePlayerData(player.Xuid, player.Write());
+        _server.GetWorld().Provider.SavePlayerData(player.Xuid, player.Write());
         
 
         string leaveMessage = $"§e{player.Username} left the server.";
