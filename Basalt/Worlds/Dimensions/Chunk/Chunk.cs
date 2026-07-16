@@ -429,18 +429,9 @@ public sealed class Chunk
         using var __zone = Profiler.BeginZone("Chunk.Deserialize");
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
-        int explicitCount = -1;
-        if (nbt && reader.Remaining > 0)
+        if (nbt)
         {
-            byte peek = reader.Buffer[reader.Offset];
-            if (peek != 8 && peek != 9)
-            {
-                explicitCount = reader.ReadUInt8();
-            }
-        }
-
-        if (explicitCount >= 0)
-        {
+            int explicitCount = reader.ReadUInt8();
             for (int index = 0; index < explicitCount && index < MaxSubChunks; index++)
             {
                 if (reader.Remaining <= 0)
