@@ -15,6 +15,7 @@ public sealed class LevelDbProvider : WorldProvider
 
     public LevelDbProvider(string path)
     {
+        Directory.CreateDirectory(path);
         Options options = new() { CreateIfMissing = true };
         _database = new DB(options, path);
         EntityStore entities = new(_database);
