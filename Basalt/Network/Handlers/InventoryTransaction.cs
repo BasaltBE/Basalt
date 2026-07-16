@@ -517,7 +517,7 @@ public static class InventoryTransaction
         Server? server = player.Dimension.World?.Server;
         if (server is not null)
         {
-            PlayerPlaceBlockSignal signal = new(player, placePosition, clickedFace);
+            PlayerPlaceBlockSignal signal = new(player, placePosition, clickedFace, blockType, heldItem);
             server.Emit(signal);
             if (!signal.Emit())
             {

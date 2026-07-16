@@ -590,7 +590,14 @@ public static class PlayerAuthInput
         Server? server = player.Dimension.World?.Server;
         if (server is not null)
         {
-            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face);
+            Basalt.Core.Blocks.Block breakBlock =
+                player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
+                new Basalt.Core.Blocks.Block(block);
+
+            EntityInventoryTrait? signalInventory = player.GetTrait<EntityInventoryTrait>();
+            ItemStack? signalHeldItem = signalInventory?.GetHeldItem();
+
+            PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face, breakBlock, signalHeldItem);
             server.Emit(signal);
             if (!signal.Emit())
             {
