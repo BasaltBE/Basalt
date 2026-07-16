@@ -16,6 +16,7 @@ using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 
+using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
 
@@ -59,6 +60,7 @@ public sealed class Server
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
     public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
+    public PermissionStore PermissionStore { get; }
     public PluginManager Plugins { get; }
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
@@ -79,6 +81,7 @@ public sealed class Server
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
+        PermissionStore = new PermissionStore();
         Plugins = new PluginManager(this);
         WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
         Scheduler = new TaskScheduler(WorkerPool);

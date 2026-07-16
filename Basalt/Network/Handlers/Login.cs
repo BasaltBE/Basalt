@@ -4,6 +4,7 @@ using Basalt.Binary;
 using Basalt.Core;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
+using PermissionEntry = Basalt.Core.Player.PermissionEntry;
 using Basalt.Protocol;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
@@ -118,8 +119,17 @@ public static class Login
             }
         }
 
-        bool isOperator = (savedData?.Get<ByteTag>("isOp")?.Value ?? 0) != 0;
-        player.SetOperator(isOperator, syncClient: false);
+        bool isOperator = false;
+        PermissionEntry? permEntry = server.PermissionStore.Get(playerXuid);
+        if (permEntry is not null)
+        {
+            player.Permissions.Restore(permEntry.IsOperator, permEntry.Permissions);
+            isOperator = permEntry.IsOperator;
+        }
+        else
+        {
+            player.SetOperator(false, syncClient: false);
+        }
 
         PlayerJoinSignal joinSignal = new(player);
         server.Emit(joinSignal);
