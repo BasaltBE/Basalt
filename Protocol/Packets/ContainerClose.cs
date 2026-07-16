@@ -1,5 +1,4 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 
 namespace Basalt.Protocol.Packets;
 
@@ -7,9 +6,9 @@ namespace Basalt.Protocol.Packets;
 public sealed record ContainerClosePacket : DataPacket
 {
     /// <summary>
-    /// Window id of the container.
+    /// Container id of the window being closed.
     /// </summary>
-    public byte WindowId;
+    public ContainerId ContainerId;
 
     /// <summary>
     /// Container type id.
@@ -23,14 +22,14 @@ public sealed record ContainerClosePacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        WindowId = reader.ReadUInt8();
+        ContainerId = (ContainerId)reader.ReadInt8();
         ContainerType = reader.ReadUInt8();
         ServerSide = reader.ReadBool();
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteUInt8(WindowId);
+        writer.WriteInt8((sbyte)ContainerId);
         writer.WriteUInt8(ContainerType);
         writer.WriteBool(ServerSide);
     }

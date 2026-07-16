@@ -262,7 +262,7 @@ public static class PlayerAuthInput
 
             containers.Add(new StackResponseContainerInfo
             {
-                Container = new FullContainerName { ContainerId = 29 },
+                Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
                 SlotInfo =
                 [
                     new StackResponseSlotInfo

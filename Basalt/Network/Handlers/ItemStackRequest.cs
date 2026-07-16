@@ -111,7 +111,7 @@ public static class ItemStackRequest
         TransferStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changed)
     {
-        if (action.Source.Container.ContainerId == (byte)ContainerId.CreatedOutput && _pendingCreativeItem is not null)
+        if (action.Source.Container.ContainerId == (byte)ContainerName.CreatedOutput && _pendingCreativeItem is not null)
         {
             if (!TryResolveSlot(player, action.Destination, out Container creativeDst, out int creativeDstSlot))
             {
@@ -126,7 +126,7 @@ public static class ItemStackRequest
             return ItemStackResponseStatus.Ok;
         }
 
-        if (action.Source.Container.ContainerId == (byte)ContainerId.CreatedOutput && _pendingCraftResult is not null)
+        if (action.Source.Container.ContainerId == (byte)ContainerName.CreatedOutput && _pendingCraftResult is not null)
         {
             if (!TryResolveSlot(player, action.Destination, out Container craftDst, out int craftDstSlot))
             {
@@ -398,12 +398,18 @@ public static class ItemStackRequest
             return player.GetTrait<EntityInventoryTrait>()?.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerId.DynamicContainer)
+        if (name.ContainerId == (byte)ContainerName.DynamicContainer)
         {
             return null;
         }
 
-        if (name.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        if (name.ContainerId is (byte)ContainerName.RecipeEquipment
+            or (byte)ContainerName.RecipeBook
+            or (byte)ContainerName.EnchantingInput
+            or (byte)ContainerName.EnchantingMaterial
+            or (byte)ContainerName.FurnaceFuel
+            or (byte)ContainerName.FurnaceIngredient
+            or (byte)ContainerName.FurnaceResult)
         {
             foreach ((_, Container opened) in player.openedContainers)
             {
@@ -419,32 +425,43 @@ public static class ItemStackRequest
 
     private static int ResolveSlotIndex(Player.Player player, FullContainerName containerName, Container container, int slot)
     {
-        if (containerName.ContainerId == (byte)ContainerId.CreatedOutput)
+        if (containerName.ContainerId == (byte)ContainerName.CreatedOutput)
         {
             return 0;
         }
 
-        if (containerName.ContainerId == (byte)ContainerId.CraftingInput)
+        if (containerName.ContainerId == (byte)ContainerName.CraftingInput)
         {
             if (slot >= 32) return slot - 32;
             return Player.Traits.PlayerCraftingGridTrait.MapSlot(slot);
         }
 
-        if (containerName.ContainerId is (byte)ContainerId.Armor or 12
-            or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar
-            or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
-        {
-            return NormalizeInventorySlot(slot);
-        }
-
-        // Furnace UI slot IDs pass through directly.
-        if (containerName.ContainerId is 20 or 21 or 22 or 23 or 24 or 25 or 26)
+        if (containerName.ContainerId == (byte)ContainerName.Armor)
         {
             return slot;
         }
 
-        if (containerName.ContainerId is (byte)ContainerId.DynamicContainer
-            or (byte)ContainerId.Barrel or (byte)ContainerId.InventoryUi)
+        if (containerName.ContainerId is (byte)ContainerName.CombinedHotbarAndInventory
+            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar
+            or (byte)ContainerName.Offhand)
+        {
+            return NormalizeInventorySlot(slot);
+        }
+
+        // Furnace and crafting UI slot IDs pass through directly.
+        if (containerName.ContainerId is (byte)ContainerName.RecipeEquipment
+            or (byte)ContainerName.RecipeBook
+            or (byte)ContainerName.EnchantingInput
+            or (byte)ContainerName.EnchantingMaterial
+            or (byte)ContainerName.FurnaceFuel
+            or (byte)ContainerName.FurnaceIngredient
+            or (byte)ContainerName.FurnaceResult)
+        {
+            return slot;
+        }
+
+        if (containerName.ContainerId is (byte)ContainerName.DynamicContainer
+            or (byte)ContainerName.Barrel)
         {
             if (container.Type != ContainerType.Inventory)
             {
@@ -513,14 +530,14 @@ public static class ItemStackRequest
     private static bool TryGetOpenedDynamicContainer(Player.Player player, FullContainerName name, out Container container)
     {
         container = null!;
-        if (name.ContainerId != (byte)ContainerId.DynamicContainer)
+        if (name.ContainerId != (byte)ContainerName.DynamicContainer)
         {
             return false;
         }
 
         if (name.DynamicContainerId.HasValue)
         {
-            if (!player.TryGetOpenContainer((int)name.DynamicContainerId.Value, out Container? opened) ||
+            if (!player.TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? opened) ||
                 opened is null || opened.Type == ContainerType.Inventory)
             {
                 return false;

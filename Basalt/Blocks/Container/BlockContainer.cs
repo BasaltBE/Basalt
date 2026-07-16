@@ -1,6 +1,7 @@
 namespace Basalt.Core.Blocks.Container;
 
 using Basalt.Core.Containers;
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions;
 
@@ -36,12 +37,12 @@ public sealed class BlockContainer : Containers.Container
         return Position;
     }
 
-    protected override void OnViewerAdded(Basalt.Core.Player.Player player, int windowId)
+    protected override void OnViewerAdded(Basalt.Core.Player.Player player, ContainerId containerId)
     {
         OnViewerAddedEvent?.Invoke(this, player);
     }
 
-    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, int windowId)
+    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, ContainerId containerId)
     {
         OnViewerRemovedEvent?.Invoke(this, player);
     }

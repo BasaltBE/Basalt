@@ -1,5 +1,4 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 namespace Basalt.Protocol.Packets;
@@ -8,9 +7,9 @@ namespace Basalt.Protocol.Packets;
 public sealed record InventoryContentPacket : DataPacket
 {
     /// <summary>
-    /// Window id of the inventory.
+    /// Container id for this inventory update.
     /// </summary>
-    public uint WindowId;
+    public ContainerId ContainerId;
 
     /// <summary>
     /// Inventory content entries.
@@ -29,7 +28,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        WindowId = reader.ReadVarUInt();
+        ContainerId = (ContainerId)reader.ReadVarInt();
 
         int count = checked((int)reader.ReadVarUInt());
         Content = new List<NetworkItemStackDescriptor>(count);
@@ -46,7 +45,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarUInt(WindowId);
+        writer.WriteVarInt((int)ContainerId);
         writer.WriteVarUInt((uint)Content.Count);
         for (int i = 0; i < Content.Count; i++)
         {

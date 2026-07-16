@@ -274,25 +274,25 @@ public sealed class FurnaceTrait : BlockTrait
   {
     if (_container is null) return;
 
-    foreach ((Player.Player player, int windowId) in _container.GetAllOccupants())
+    foreach ((Player.Player player, ContainerId containerId) in _container.GetAllOccupants())
     {
       if (!player.Spawned) continue;
-      SendProgress(player, (byte)windowId);
+      SendProgress(player, containerId);
     }
   }
 
   private void SendProgressToPlayer(Player.Player player)
   {
     if (_container is null) return;
-    if (!_container.occupants.TryGetValue(player, out int windowId)) return;
-    SendProgress(player, (byte)windowId);
+    if (!_container.occupants.TryGetValue(player, out ContainerId containerId)) return;
+    SendProgress(player, containerId);
   }
 
-  private void SendProgress(Player.Player player, byte windowId)
+  private void SendProgress(Player.Player player, ContainerId containerId)
   {
     player.Send(new ContainerSetDataPacket
     {
-      WindowId = windowId,
+      ContainerId = containerId,
       Property = ContainerSetDataPacket.FurnaceTickCount,
       Value = _cookTime
     });
@@ -303,7 +303,7 @@ public sealed class FurnaceTrait : BlockTrait
 
     player.Send(new ContainerSetDataPacket
     {
-      WindowId = windowId,
+      ContainerId = containerId,
       Property = ContainerSetDataPacket.FurnaceLitTime,
       Value = litTime
     });

@@ -33,16 +33,16 @@ public sealed class EntityContainer : Containers.Container
             return;
         }
 
-        if (Entity is Player.Player player && Identifier == 0 && player.Spawned)
+        if (Entity is Player.Player player && Identifier == ContainerId.Inventory && player.Spawned)
         {
             player.Send(new InventorySlotPacket
             {
-                WindowId = Identifier ?? 0,
+                ContainerId = Identifier ?? ContainerId.None,
                 Slot = slot,
                 Container = new Optional<FullContainerName>
                 {
                     HasValue = true,
-                    Value = new FullContainerName { ContainerId = (byte)ContainerId.Inventory }
+                    Value = new FullContainerName { ContainerId = GetFullContainerId() }
                 },
                 NewItem = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             });
@@ -62,11 +62,11 @@ public sealed class EntityContainer : Containers.Container
         return Entity.UniqueId;
     }
 
-    protected override Basalt.Protocol.Types.BlockPos GetContainerPosition()
+    protected override BlockPos GetContainerPosition()
     {
         if (Entity is Player.Player)
         {
-            return new Basalt.Protocol.Types.BlockPos
+            return new BlockPos
             {
                 X = 0,
                 Y = 0,
@@ -74,7 +74,7 @@ public sealed class EntityContainer : Containers.Container
             };
         }
 
-        return new Basalt.Protocol.Types.BlockPos
+        return new BlockPos
         {
             X = (int)MathF.Floor(Entity.Position.X),
             Y = (int)MathF.Floor(Entity.Position.Y),
@@ -82,26 +82,23 @@ public sealed class EntityContainer : Containers.Container
         };
     }
 
-    // TODO: Add proper checks, e.g container already opened
-    // Or if something is preventing it from opening
-    protected override bool CanOpen(Player.Player player, int windowId)
+    protected override bool CanOpen(Player.Player player, ContainerId containerId)
     {
         return true;
     }
 
-    protected override byte GetFullContainerNameId()
+    protected override byte GetFullContainerId()
     {
-        if (Identifier == 124)
+        if (Identifier == ContainerId.Ui)
         {
-            return 0x3A;
+            return (byte)ContainerName.Barrel;
         }
 
-        return base.GetFullContainerNameId();
+        if (Type == ContainerType.Armor)
+        {
+            return (byte)ContainerName.Armor;
+        }
+
+        return base.GetFullContainerId();
     }
 }
-
-
-
-
-
-

@@ -38,7 +38,7 @@ public sealed class Player : Entities.Entity
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
-    public Dictionary<int, Container> openedContainers = [];
+    public Dictionary<ContainerId, Container> openedContainers = [];
     internal Dictionary<int, PendingForm> PendingForms = [];
     internal Dictionary<string, DataDrivenScreen> Screens = [];
 
@@ -331,14 +331,14 @@ public sealed class Player : Entities.Entity
 
 
 
-    public void RegisterOpenContainer(int windowId, Container container)
+    public void RegisterOpenContainer(ContainerId containerId, Container container)
     {
-        openedContainers[windowId] = container;
+        openedContainers[containerId] = container;
     }
 
-    public bool TryGetOpenContainer(int windowId, out Container? container)
+    public bool TryGetOpenContainer(ContainerId containerId, out Container? container)
     {
-        return openedContainers.TryGetValue(windowId, out container);
+        return openedContainers.TryGetValue(containerId, out container);
     }
 
     public Container? GetContainer(FullContainerName name)
@@ -349,19 +349,33 @@ public sealed class Player : Entities.Entity
             return null;
         }
 
-        if (name.ContainerId is (byte)ContainerId.Armor or 12 or (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory or (byte)ContainerId.Offhand)
+        if (name.ContainerId == (byte)ContainerName.Armor)
+        {
+            EntityEquipmentTrait? equipment = GetTrait<EntityEquipmentTrait>();
+            return equipment?.Armor;
+        }
+
+        if (name.ContainerId == (byte)ContainerName.Offhand)
+        {
+            EntityEquipmentTrait? equipment = GetTrait<EntityEquipmentTrait>();
+            return equipment?.Offhand;
+        }
+
+        if (name.ContainerId is (byte)ContainerName.CombinedHotbarAndInventory
+            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar
+            or (byte)ContainerName.Offhand)
         {
             return inventory.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerId.Barrel || name.ContainerId == (byte)ContainerId.InventoryUi)
+        if (name.ContainerId == (byte)ContainerName.Barrel)
         {
-            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? containerById))
+            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? containerById))
             {
                 return containerById;
             }
 
-            foreach ((int _, Container candidate) in openedContainers)
+            foreach ((ContainerId _, Container candidate) in openedContainers)
             {
                 if (candidate.Type != ContainerType.Inventory)
                 {
@@ -372,15 +386,15 @@ public sealed class Player : Entities.Entity
             return inventory.Container;
         }
 
-        if (name.ContainerId is (byte)ContainerId.Cursor or (byte)ContainerId.CreatedOutput)
+        if (name.ContainerId is (byte)ContainerName.Cursor or (byte)ContainerName.CreatedOutput)
         {
             PlayerCursorTrait? cursor = GetTrait<PlayerCursorTrait>();
             return cursor?.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerId.CraftingInput)
+        if (name.ContainerId == (byte)ContainerName.CraftingInput)
         {
-            foreach ((int _, Container candidate) in openedContainers)
+            foreach ((ContainerId _, Container candidate) in openedContainers)
             {
                 if (candidate.Type == ContainerType.Workbench)
                 {
@@ -392,7 +406,7 @@ public sealed class Player : Entities.Entity
             return grid?.Container;
         }
 
-        if (name.DynamicContainerId.HasValue && TryGetOpenContainer((int)name.DynamicContainerId.Value!, out Container? container))
+        if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? container))
         {
             return container;
         }
@@ -440,6 +454,7 @@ public sealed class Player : Entities.Entity
         Vec3f spawnPosition = position ?? Location;
         ItemInstance heldItem = new();
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
+        
         Item.ItemStack? held = inventory?.GetHeldItem();
         if (held is not null)
         {

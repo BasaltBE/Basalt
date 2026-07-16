@@ -1,6 +1,7 @@
 namespace Basalt.Core.Containers;
 
 using Basalt.Core.Item;
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
@@ -11,11 +12,11 @@ public class Container
 {
 
     // A list of all the players that are vewing the container
-    public Dictionary<Player, int> occupants = [];
-    private static int _nextContainerId = 1;
+    public Dictionary<Player, ContainerId> occupants = [];
+    private static int _nextContainerId = (int)ContainerId.First;
 
     public ContainerType Type { get; }
-    public int? Identifier { get; set; }
+    public ContainerId? Identifier { get; set; }
     public List<ItemStack?> Storage { get; private set; }
 
     public int EmptySlotsCount => Storage.Count(static item => item is null);
@@ -295,7 +296,7 @@ public class Container
             return;
         }
 
-        foreach ((Player player, int windowId) in occupants)
+        foreach ((Player player, ContainerId containerId) in occupants)
         {
             if (!player.Spawned)
             {
@@ -304,12 +305,12 @@ public class Container
 
             InventorySlotPacket packet = new()
             {
-                WindowId = windowId,
+                ContainerId = containerId,
                 Slot = slot,
                 Container = new Optional<FullContainerName>
                 {
                     HasValue = true,
-                    Value = GetFullContainerName(windowId)
+                    Value = GetFullContainerName(containerId)
                 },
                 NewItem = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             };
@@ -323,7 +324,7 @@ public class Container
     /// </summary>
     public virtual void Update()
     {
-        foreach ((Player player, int windowId) in occupants)
+        foreach ((Player player, ContainerId containerId) in occupants)
         {
             if (!player.Spawned)
             {
@@ -332,9 +333,9 @@ public class Container
 
             InventoryContentPacket packet = new()
             {
-                WindowId = checked((uint)windowId),
+                ContainerId = containerId,
                 Content = new List<NetworkItemStackDescriptor>(Storage.Count),
-                Container = GetFullContainerName(windowId),
+                Container = GetFullContainerName(containerId),
                 StorageItem = new NetworkItemStackDescriptor()
             };
 
@@ -353,16 +354,16 @@ public class Container
     /// </summary>
     /// <param name="player"></param>
     /// <returns></returns>
-    public virtual int Show(Player player)
+    public virtual ContainerId Show(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        if (occupants.TryGetValue(player, out int existing))
+        if (occupants.TryGetValue(player, out ContainerId existing))
         {
             if (player.Spawned && CanOpen(player, existing))
             {
                 ContainerOpenPacket openPacket = new()
                 {
-                    WindowId = (byte)existing,
+                    ContainerId = existing,
                     ContainerType = unchecked((byte)(int)Type),
                     ContainerPosition = GetContainerPosition(),
                     ContainerEntityUniqueId = GetContainerEntityUniqueId()
@@ -375,7 +376,12 @@ public class Container
             return existing;
         }
 
-        int id = Identifier ?? _nextContainerId++;
+        ContainerId id = Identifier ?? (ContainerId)_nextContainerId++;
+        if (_nextContainerId > (int)ContainerId.Last)
+        {
+            _nextContainerId = (int)ContainerId.First;
+        }
+
         occupants[player] = id;
         player.RegisterOpenContainer(id, this);
         OnViewerAdded(player, id);
@@ -383,7 +389,7 @@ public class Container
         {
             ContainerOpenPacket openPacket = new()
             {
-                WindowId = (byte)id,
+                ContainerId = id,
                 ContainerType = unchecked((byte)(int)Type),
                 ContainerPosition = GetContainerPosition(),
                 ContainerEntityUniqueId = GetContainerEntityUniqueId()
@@ -409,7 +415,7 @@ public class Container
         _ = RemoveViewer(player, true);
     }
 
-    public IReadOnlyCollection<KeyValuePair<Player, int>> GetAllOccupants()
+    public IReadOnlyCollection<KeyValuePair<Player, ContainerId>> GetAllOccupants()
     {
         return occupants;
     }
@@ -490,7 +496,7 @@ public class Container
         return -1;
     }
 
-    protected virtual bool CanOpen(Player player, int windowId)
+    protected virtual bool CanOpen(Player player, ContainerId containerId)
     {
         return true;
     }
@@ -498,7 +504,7 @@ public class Container
     public bool RemoveViewer(Player player, bool sendClosePacket)
     {
         ArgumentNullException.ThrowIfNull(player);
-        if (!occupants.Remove(player, out int id))
+        if (!occupants.Remove(player, out ContainerId id))
         {
             return false;
         }
@@ -513,7 +519,7 @@ public class Container
 
         ContainerClosePacket packet = new()
         {
-            WindowId = (byte)id,
+            ContainerId = id,
             ContainerType = unchecked((byte)(int)Type),
             ServerSide = true
         };
@@ -535,31 +541,31 @@ public class Container
         };
     }
 
-    protected virtual byte GetFullContainerNameId()
+    protected virtual byte GetFullContainerId()
     {
-        return Type == ContainerType.Inventory ? (byte)0x1B : (byte)7;
+        return Type == ContainerType.Inventory ? (byte)ContainerName.Inventory : (byte)ContainerName.LevelEntity;
     }
 
-    protected FullContainerName GetFullContainerName(int windowId)
+    protected FullContainerName GetFullContainerName(ContainerId containerId)
     {
         FullContainerName name = new()
         {
-            ContainerId = GetFullContainerNameId()
+            ContainerId = GetFullContainerId()
         };
 
         if (Type != ContainerType.Inventory)
         {
-            name.DynamicContainerId = (uint)windowId;
+            name.DynamicContainerId = (uint)(byte)containerId;
         }
 
         return name;
     }
 
-    protected virtual void OnViewerAdded(Player player, int windowId)
+    protected virtual void OnViewerAdded(Player player, ContainerId containerId)
     {
     }
 
-    protected virtual void OnViewerRemoved(Player player, int windowId)
+    protected virtual void OnViewerRemoved(Player player, ContainerId containerId)
     {
     }
 }

@@ -1,5 +1,4 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 namespace Basalt.Protocol.Packets;
@@ -8,9 +7,9 @@ namespace Basalt.Protocol.Packets;
 public sealed record InventorySlotPacket : DataPacket
 {
     /// <summary>
-    /// Window id of the inventory.
+    /// Container id for this inventory update.
     /// </summary>
-    public int WindowId;
+    public ContainerId ContainerId;
 
     /// <summary>
     /// Slot index in the container.
@@ -34,7 +33,7 @@ public sealed record InventorySlotPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        WindowId = reader.ReadVarInt();
+        ContainerId = (ContainerId)reader.ReadVarInt();
         Slot = reader.ReadVarInt();
         Container.Read(reader);
         StorageItem.Read(reader);
@@ -43,7 +42,7 @@ public sealed record InventorySlotPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt(WindowId);
+        writer.WriteVarInt((int)ContainerId);
         writer.WriteVarInt(Slot);
         Container.Write(writer);
         StorageItem.Write(writer);

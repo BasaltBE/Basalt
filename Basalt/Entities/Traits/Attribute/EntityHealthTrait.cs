@@ -89,9 +89,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
         if (equipment is not null)
         {
-            for (int i = 0; i < equipment.Armor.Count; i++)
+            for (int i = 0; i < equipment.Armor.GetSize(); i++)
             {
-                if (equipment.Armor[i] is not { } itemStack)
+                if (equipment.Armor.GetItem(i) is not { } itemStack)
                 {
                     continue;
                 }

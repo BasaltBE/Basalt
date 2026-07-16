@@ -34,7 +34,7 @@ public sealed class EntityInventoryTrait : EntityTrait
             playerInventory ? ContainerType.Inventory : ContainerType.Container,
             playerInventory ? 36 : 27)
         {
-            Identifier = 0
+            Identifier = ContainerId.Inventory
         };
     }
 
@@ -62,9 +62,9 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         InventoryContentPacket packet = new()
         {
-            WindowId = checked((uint)(Container.Identifier ?? 0)),
+            ContainerId = Container.Identifier ?? ContainerId.Inventory,
             Content = Enumerable.Repeat(new NetworkItemStackDescriptor(), Container.GetSize()).ToList(),
-            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
             StorageItem = new NetworkItemStackDescriptor()
         };
 
@@ -259,9 +259,9 @@ public sealed class EntityInventoryTrait : EntityTrait
 
         InventoryContentPacket packet = new()
         {
-            WindowId = checked((uint)(Container.Identifier ?? 0)),
+            ContainerId = Container.Identifier ?? ContainerId.Inventory,
             Content = new List<NetworkItemStackDescriptor>(Container.GetSize()),
-            Container = new FullContainerName { ContainerId = (byte)ContainerId.Inventory },
+            Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
             StorageItem = new NetworkItemStackDescriptor()
         };
 

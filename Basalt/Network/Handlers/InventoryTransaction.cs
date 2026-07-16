@@ -166,11 +166,11 @@ public static class InventoryTransaction
             }
 
             Containers.Container? container = null;
-            if (action.WindowId == (inventory.Container.Identifier ?? 0))
+            if ((ContainerId)action.WindowId == (inventory.Container.Identifier ?? ContainerId.Inventory))
             {
                 container = inventory.Container;
             }
-            else if (player.TryGetOpenContainer(action.WindowId, out Containers.Container? opened))
+            else if (player.TryGetOpenContainer((ContainerId)action.WindowId, out Containers.Container? opened))
             {
                 container = opened;
             }
@@ -218,7 +218,7 @@ public static class InventoryTransaction
                 continue;
             }
 
-            if (legacy.ContainerId is (byte)ContainerId.Inventory or (byte)ContainerId.Hotbar or (byte)ContainerId.FixedInventory)
+            if (legacy.ContainerId is (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar)
             {
                 return legacy.Slots[0];
             }

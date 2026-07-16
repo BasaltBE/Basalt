@@ -1,5 +1,4 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 namespace Basalt.Protocol.Packets;
@@ -8,9 +7,9 @@ namespace Basalt.Protocol.Packets;
 public sealed record ContainerOpenPacket : DataPacket
 {
     /// <summary>
-    /// Window id of the container.
+    /// Container id assigned to this window.
     /// </summary>
-    public byte WindowId;
+    public ContainerId ContainerId;
 
     /// <summary>
     /// Container type id.
@@ -29,7 +28,7 @@ public sealed record ContainerOpenPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        WindowId = reader.ReadUInt8();
+        ContainerId = (ContainerId)reader.ReadInt8();
         ContainerType = reader.ReadUInt8();
 
         BlockPos containerPosition = ContainerPosition;
@@ -41,7 +40,7 @@ public sealed record ContainerOpenPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteUInt8(WindowId);
+        writer.WriteInt8((sbyte)ContainerId);
         writer.WriteUInt8(ContainerType);
         ContainerPosition.Write(writer);
         writer.WriteZigZong(ContainerEntityUniqueId);

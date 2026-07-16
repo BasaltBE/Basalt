@@ -27,7 +27,7 @@ public sealed class PlayerCursorTrait : PlayerTrait
     {
         Container = new EntityContainer(Player, ContainerType.Inventory, 1)
         {
-            Identifier = 124
+            Identifier = ContainerId.Ui
         };
     }
 

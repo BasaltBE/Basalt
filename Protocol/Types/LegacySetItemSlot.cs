@@ -6,7 +6,7 @@ namespace Basalt.Protocol.Types;
 public sealed class LegacySetItemSlot : DataType
 {
     /// <summary>
-    /// Legacy container id.
+    /// Legacy container name identifier.
     /// </summary>
     public byte ContainerId;
     /// <summary>

@@ -6,7 +6,7 @@ namespace Basalt.Protocol.Types;
 public sealed class FullContainerName : DataType
 {
     /// <summary>
-    /// Container id.
+    /// Container name identifying the slot group.
     /// </summary>
     public byte ContainerId;
 

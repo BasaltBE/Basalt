@@ -10,7 +10,7 @@ public sealed record MobEquipmentPacket : DataPacket
     public NetworkItemStackDescriptor NewItem = new();
     public byte InventorySlot;
     public byte HotBarSlot;
-    public byte WindowId;
+    public ContainerId ContainerId;
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
@@ -18,7 +18,7 @@ public sealed record MobEquipmentPacket : DataPacket
         NewItem.Read(reader);
         InventorySlot = reader.ReadUInt8();
         HotBarSlot = reader.ReadUInt8();
-        WindowId = reader.ReadUInt8();
+        ContainerId = (ContainerId)reader.ReadInt8();
     }
 
     public override void Serialize(Binary.BinaryWriter writer)
@@ -27,6 +27,6 @@ public sealed record MobEquipmentPacket : DataPacket
         NewItem.Write(writer);
         writer.WriteUInt8(InventorySlot);
         writer.WriteUInt8(HotBarSlot);
-        writer.WriteUInt8(WindowId);
+        writer.WriteInt8((sbyte)ContainerId);
     }
 }
