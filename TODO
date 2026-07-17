@@ -1,10 +1,6 @@
-Fix chests not relinking
-
 Implement a way to register 
  - Custom Entities
  - Custom Blocks
-
-Fix Entity equipment component, armor wont equip.
 
 Fix changing to diff dimensions sometimes not loading the chunks at first try
 
