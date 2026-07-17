@@ -362,8 +362,7 @@ public sealed class Player : Entities.Entity
         }
 
         if (name.ContainerId is (byte)ContainerName.CombinedHotbarAndInventory
-            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar
-            or (byte)ContainerName.Offhand)
+            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar)
         {
             return inventory.Container;
         }

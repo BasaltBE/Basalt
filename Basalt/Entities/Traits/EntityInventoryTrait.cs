@@ -93,11 +93,18 @@ public sealed class EntityInventoryTrait : EntityTrait
     {
         if (Entity is Player player)
         {
-            Container.Show(player);
-            Container.Update();
+            Show(player);
         }
     }
 
+    public void Show(Player player)
+    {
+        Container.Show(player);
+        Container.Update();
+
+        EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
+        equipment?.SyncToPlayer(player);
+    }
     public override void OnRemove()
     {
         Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)ContainerType.None);

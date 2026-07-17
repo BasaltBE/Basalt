@@ -441,9 +441,13 @@ public static class ItemStackRequest
             return slot;
         }
 
+        if (containerName.ContainerId == (byte)ContainerName.Offhand)
+        {
+            return slot;
+        }
+
         if (containerName.ContainerId is (byte)ContainerName.CombinedHotbarAndInventory
-            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar
-            or (byte)ContainerName.Offhand)
+            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar)
         {
             return NormalizeInventorySlot(slot);
         }

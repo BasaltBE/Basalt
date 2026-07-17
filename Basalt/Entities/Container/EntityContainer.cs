@@ -33,7 +33,7 @@ public sealed class EntityContainer : Containers.Container
             return;
         }
 
-        if (Entity is Player.Player player && Identifier == ContainerId.Inventory && player.Spawned)
+        if (Entity is Player.Player player && Identifier is not null && player.Spawned)
         {
             player.Send(new InventorySlotPacket
             {
@@ -42,7 +42,7 @@ public sealed class EntityContainer : Containers.Container
                 Container = new Optional<FullContainerName>
                 {
                     HasValue = true,
-                    Value = new FullContainerName { ContainerId = GetFullContainerId() }
+                    Value = new FullContainerName { ContainerId = 0 }
                 },
                 NewItem = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             });
@@ -54,6 +54,26 @@ public sealed class EntityContainer : Containers.Container
     public override void Update()
     {
         Entity.OnContainerUpdate(this);
+
+        if (Entity is Player.Player player && Identifier is not null && player.Spawned)
+        {
+            InventoryContentPacket packet = new()
+            {
+                ContainerId = Identifier ?? ContainerId.None,
+                Content = new List<NetworkItemStackDescriptor>(GetSize()),
+                Container = new FullContainerName { ContainerId = 0 },
+                StorageItem = new NetworkItemStackDescriptor()
+            };
+
+            for (int i = 0; i < GetSize(); i++)
+            {
+                packet.Content.Add(GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
+            }
+
+            player.Send(packet);
+            return;
+        }
+
         base.Update();
     }
 

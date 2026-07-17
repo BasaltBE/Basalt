@@ -28,7 +28,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Deserialize(Binary.BinaryReader reader)
     {
-        ContainerId = (ContainerId)reader.ReadVarInt();
+        ContainerId = (ContainerId)reader.ReadVarUInt();
 
         int count = checked((int)reader.ReadVarUInt());
         Content = new List<NetworkItemStackDescriptor>(count);
@@ -45,7 +45,7 @@ public sealed record InventoryContentPacket : DataPacket
 
     public override void Serialize(Binary.BinaryWriter writer)
     {
-        writer.WriteVarInt((int)ContainerId);
+        writer.WriteVarUInt((uint)(byte)ContainerId);
         writer.WriteVarUInt((uint)Content.Count);
         for (int i = 0; i < Content.Count; i++)
         {

@@ -31,7 +31,7 @@ public static class Interact
                 return;
             }
 
-            playerInventory.Container.Show(player);
+            playerInventory.Show(player);
             return;
         }
 

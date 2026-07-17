@@ -52,6 +52,12 @@ public static class SetLocalPlayerAsInitialized
             inventory.Container.Update();
         }
 
+        EntityEquipmentTrait? equipment = player.GetTrait<EntityEquipmentTrait>();
+        if (equipment is not null)
+        {
+            equipment.SyncToPlayer(player);
+        }
+
         string joinMessage = $"§e{player.Username} joined the server.";
         foreach (Player.Player target in server.Players.Values)
         {

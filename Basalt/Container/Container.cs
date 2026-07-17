@@ -232,14 +232,13 @@ public class Container
     /// <param name="otherContainer"></param>
     public void SwapItems(int slot, int otherSlot, Container? otherContainer = null)
     {
+        Container target = otherContainer ?? this;
+
         if (slot < 0 || slot >= Storage.Count
-            || otherSlot < 0 || otherSlot >= Storage.Count
-        )
+            || otherSlot < 0 || otherSlot >= target.Storage.Count)
         {
             return;
         }
-
-        Container target = otherContainer ?? this;
 
         ItemStack? a = GetItem(slot);
         ItemStack? b = target.GetItem(otherSlot);

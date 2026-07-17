@@ -2,9 +2,12 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Containers;
 using Basalt.Core.Entities.Container;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Packets;
+using Basalt.Protocol.Types;
 
 public sealed class EntityEquipmentTrait : EntityTrait
 {
@@ -46,6 +49,40 @@ public sealed class EntityEquipmentTrait : EntityTrait
         }
 
         return clone;
+    }
+
+    public override void OnSpawn(EntitySpawnOptions details)
+    {
+        if (Entity is not Player.Player player)
+        {
+            return;
+        }
+
+        SyncToPlayer(player);
+    }
+
+    public void SyncToPlayer(Player.Player player)
+    {
+        SendContainerContent(player, Armor);
+        SendContainerContent(player, Offhand);
+    }
+
+    private static void SendContainerContent(Player.Player player, EntityContainer container)
+    {
+        InventoryContentPacket packet = new()
+        {
+            ContainerId = container.Identifier ?? ContainerId.None,
+            Content = new List<NetworkItemStackDescriptor>(container.GetSize()),
+            Container = new FullContainerName { ContainerId = 0 },
+            StorageItem = new NetworkItemStackDescriptor()
+        };
+
+        for (int i = 0; i < container.GetSize(); i++)
+        {
+            packet.Content.Add(container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
+        }
+
+        player.Send(packet);
     }
 
     public override void OnRead(CompoundTag tag)
