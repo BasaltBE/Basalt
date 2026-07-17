@@ -81,7 +81,8 @@ public sealed class ItemType
         bool isComponentBased,
         int version,
         CompoundTag? properties = null,
-        ItemCatalog? catalog = null)
+        ItemCatalog? catalog = null,
+        BlockType? blockType = null)
     {
         Identifier = identifier;
         NetworkId = networkId;
@@ -91,7 +92,7 @@ public sealed class ItemType
         Tags = tags is null ? [] : [.. tags];
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
-        BlockType = BlockType.Get(identifier);
+        BlockType = blockType ?? BlockType.Get(identifier);
         Catalog = catalog;
 
         Registry[identifier] = this;

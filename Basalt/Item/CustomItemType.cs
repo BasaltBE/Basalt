@@ -1,5 +1,6 @@
 namespace Basalt.Core.Item;
 
+using Basalt.Core.Blocks;
 using Basalt.Protocol.Nbt;
 
 
@@ -58,6 +59,11 @@ public sealed class CustomItemTypeOptions
     /// Creative inventory group icon identifier.
     /// </summary>
     public string? CreativeGroupIcon { get; init; }
+
+    /// <summary>
+    /// Block placed by this item. Null means this is a regular item.
+    /// </summary>
+    public BlockType? BlockType { get; init; }
 
     /// <summary>
     /// Whether this item can destroy blocks in creative mode.
@@ -121,7 +127,7 @@ public static class CustomItemType
     /// </summary>
     public static ItemType Create(CustomItemTypeOptions options)
     {
-        int networkId = ++_nextNetworkId;
+        int networkId = AllocateNetworkId();
         CompoundTag properties = BuildProperties(options, networkId);
         ItemCatalog? catalog = BuildCatalog(options);
 
@@ -133,10 +139,16 @@ public static class CustomItemType
           isComponentBased: true,
           version: 1,
           properties,
-          catalog);
+          catalog,
+          options.BlockType);
 
         ItemPalette.InvalidateCache();
         return type;
+    }
+
+    internal static int AllocateNetworkId()
+    {
+        return ++_nextNetworkId;
     }
 
     private static CompoundTag BuildProperties(CustomItemTypeOptions options, int networkId)
@@ -178,6 +190,15 @@ public static class CustomItemType
             CompoundTag displayName = new();
             displayName.Set("value", new StringTag { Value = options.DisplayName });
             components.Set("minecraft:display_name", displayName);
+        }
+
+        if (options.BlockType is not null)
+        {
+            CompoundTag blockPlacer = new();
+            blockPlacer.Set("block", new StringTag { Value = options.BlockType.Identifier });
+            blockPlacer.Set("canUseBlockAsIcon", new ByteTag { Value = 1 });
+            blockPlacer.Set("use_on", new ListTag());
+            components.Set("minecraft:block_placer", blockPlacer);
         }
 
         // Durability.
