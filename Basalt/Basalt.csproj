@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Binary\Binary.csproj" />
-    <ProjectReference Include="..\Logger\Logger.csproj" />
     <ProjectReference Include="..\Protocol\Protocol.csproj" />
     <ProjectReference Include="..\RakNet\RakNet.csproj" />
   </ItemGroup>
