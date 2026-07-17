@@ -49,6 +49,7 @@ public sealed class Player : Entities.Entity
         Xuid = xuid;
         Uuid = uuid;
         Permissions = new PlayerPermissions(this);
+        Abilities.SetGamemode(Gamemode);
 
         Flags.SetActorFlag(ActorFlag.HasGravity, true);
         Flags.SetActorFlag(ActorFlag.Breathing, true);

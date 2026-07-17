@@ -221,11 +221,16 @@ public sealed class ItemPalette
                 return;
             }
 
-            string root = ResolveDataRoot(dataDirectory);
-            string typesPath = Path.Combine(root, "item_types.json");
             List<ItemTypeData> types;
-            using (FileStream typesStream = File.OpenRead(typesPath))
+            if (!string.IsNullOrWhiteSpace(dataDirectory))
             {
+                string typesPath = Path.Combine(dataDirectory, "item_types.json");
+                using FileStream typesStream = File.OpenRead(typesPath);
+                types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
+            }
+            else
+            {
+                using Stream typesStream = ProtocolData.Require("item_types.json");
                 types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
             }
 
@@ -265,7 +270,7 @@ public sealed class ItemPalette
             }
 
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
-            EnchantmentType.Load(root);
+            EnchantmentType.Load(dataDirectory);
             _vanillaLoaded = true;
         }
     }
@@ -313,34 +318,6 @@ public sealed class ItemPalette
                 size *= 2;
             }
         }
-    }
-
-    private static string ResolveDataRoot(string? dataDirectory = null)
-    {
-        if (!string.IsNullOrWhiteSpace(dataDirectory))
-        {
-            return dataDirectory;
-        }
-
-        string? current = AppContext.BaseDirectory;
-        while (!string.IsNullOrEmpty(current))
-        {
-            string candidate = Path.Combine(current, "Protocol", "Data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
     }
 
     private static void AppendEnchantedBookEntries(

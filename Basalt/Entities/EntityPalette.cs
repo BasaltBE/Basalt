@@ -84,10 +84,18 @@ public sealed class EntityPalette
                 return;
             }
 
-            string root = ResolveDataDirectory(dataDirectory);
-            string typesPath = Path.Combine(root, "entity_types.json");
-            using FileStream stream = File.OpenRead(typesPath);
-            List<EntityTypeData> types = JsonSerializer.Deserialize(stream, EntityPaletteJsonContext.Default.ListEntityTypeData) ?? [];
+            List<EntityTypeData> types;
+            if (!string.IsNullOrWhiteSpace(dataDirectory))
+            {
+                string typesPath = Path.Combine(dataDirectory, "entity_types.json");
+                using FileStream fileStream = File.OpenRead(typesPath);
+                types = JsonSerializer.Deserialize(fileStream, EntityPaletteJsonContext.Default.ListEntityTypeData) ?? [];
+            }
+            else
+            {
+                using Stream stream = ProtocolData.Require("entity_types.json");
+                types = JsonSerializer.Deserialize(stream, EntityPaletteJsonContext.Default.ListEntityTypeData) ?? [];
+            }
 
             EntityType.EnsureRegistryCapacity(types.Count + 1);
 
@@ -107,38 +115,10 @@ public sealed class EntityPalette
                 _ = new EntityType(PlayerIdentifier, []);
             }
 
-            global::Basalt.Core.Loot.LootTableManager.LoadFromEntities(root, EntityType.GetAll());
             _vanillaLoaded = true;
         }
     }
 
-    private static string ResolveDataDirectory(string? overrideDirectory)
-    {
-        if (!string.IsNullOrWhiteSpace(overrideDirectory))
-        {
-            return overrideDirectory;
-        }
-
-        string? current = AppContext.BaseDirectory;
-        while (!string.IsNullOrEmpty(current))
-        {
-            string candidate = Path.Combine(current, "Protocol", "Data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
-    }
 }
 
 

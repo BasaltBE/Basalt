@@ -90,12 +90,16 @@ public class EnchantmentType
 
             EnchantmentRegistry.RegisterVanilla();
 
-            string root = ResolveDataRoot(dataDirectory);
-            string path = Path.Combine(root, "enchantment_types.json");
-
             List<EnchantmentTypeData> entries;
-            using (FileStream stream = File.OpenRead(path))
+            if (!string.IsNullOrWhiteSpace(dataDirectory))
             {
+                string path = Path.Combine(dataDirectory, "enchantment_types.json");
+                using FileStream fileStream = File.OpenRead(path);
+                entries = JsonSerializer.Deserialize(fileStream, EnchantmentJsonContext.Default.ListEnchantmentTypeData) ?? [];
+            }
+            else
+            {
+                using Stream stream = ProtocolData.Require("enchantment_types.json");
                 entries = JsonSerializer.Deserialize(stream, EnchantmentJsonContext.Default.ListEnchantmentTypeData) ?? [];
             }
 
@@ -118,30 +122,6 @@ public class EnchantmentType
         }
     }
 
-    private static string ResolveDataRoot(string? dataDirectory = null)
-    {
-        if (!string.IsNullOrWhiteSpace(dataDirectory))
-        {
-            return dataDirectory;
-        }
-
-        string? current = AppContext.BaseDirectory;
-        while (!string.IsNullOrEmpty(current))
-        {
-            string candidate = Path.Combine(current, "Protocol", "Data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null) break;
-
-            current = parent.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
-    }
 }
 
 internal sealed class EnchantmentTypeData

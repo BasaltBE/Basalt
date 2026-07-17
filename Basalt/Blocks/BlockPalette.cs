@@ -110,34 +110,68 @@ public sealed class BlockPalette
                 return;
             }
 
-            string root = ResolveDataDirectory(dataDirectory);
-            string typesPath = Path.Combine(root, "block_types.json");
-            string permutationsPath = Path.Combine(root, "block_permutations.json");
-            string dropsPath = Path.Combine(root, "block_drops.json");
-            List<BlockTypeData> types = ReadTypes(typesPath);
-            List<BlockPermutationData> permutations = ReadPermutations(permutationsPath);
-            List<BlockDropData> drops = ReadDrops(dropsPath);
-            LoadRegistries(types, permutations, drops);
+            if (!string.IsNullOrWhiteSpace(dataDirectory))
+            {
+                string typesPath = Path.Combine(dataDirectory, "block_types.json");
+                string permutationsPath = Path.Combine(dataDirectory, "block_permutations.json");
+                string dropsPath = Path.Combine(dataDirectory, "block_drops.json");
+                List<BlockTypeData> types = ReadTypesFromFile(typesPath);
+                List<BlockPermutationData> permutations = ReadPermutationsFromFile(permutationsPath);
+                List<BlockDropData> drops = ReadDropsFromFile(dropsPath);
+                LoadRegistries(types, permutations, drops);
+            }
+            else
+            {
+                List<BlockTypeData> types = ReadTypes("block_types.json");
+                List<BlockPermutationData> permutations = ReadPermutations("block_permutations.json");
+                List<BlockDropData> drops = ReadDrops("block_drops.json");
+                LoadRegistries(types, permutations, drops);
+            }
 
             _vanillaLoaded = true;
         }
     }
 
-    private static List<BlockTypeData> ReadTypes(string typesPath)
+    private static List<BlockTypeData> ReadTypes(string resourceName)
+    {
+        using Stream stream = ProtocolData.Require(resourceName);
+        List<BlockTypeData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockTypeData);
+        return result ?? [];
+    }
+
+    private static List<BlockPermutationData> ReadPermutations(string resourceName)
+    {
+        using Stream stream = ProtocolData.Require(resourceName);
+        List<BlockPermutationData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockPermutationData);
+        return result ?? [];
+    }
+
+    private static List<BlockDropData> ReadDrops(string resourceName)
+    {
+        Stream? stream = ProtocolData.Open(resourceName);
+        if (stream is null) return [];
+        using (stream)
+        {
+            List<BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockDropData);
+            return result ?? [];
+        }
+    }
+
+    private static List<BlockTypeData> ReadTypesFromFile(string typesPath)
     {
         using FileStream stream = File.OpenRead(typesPath);
         List<BlockTypeData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockTypeData);
         return result ?? [];
     }
 
-    private static List<BlockPermutationData> ReadPermutations(string permutationsPath)
+    private static List<BlockPermutationData> ReadPermutationsFromFile(string permutationsPath)
     {
         using FileStream stream = File.OpenRead(permutationsPath);
         List<BlockPermutationData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockPermutationData);
         return result ?? [];
     }
 
-    private static List<BlockDropData> ReadDrops(string dropsPath)
+    private static List<BlockDropData> ReadDropsFromFile(string dropsPath)
     {
         if (!File.Exists(dropsPath))
         {
@@ -259,34 +293,6 @@ public sealed class BlockPalette
         };
     }
 
-
-    private static string ResolveDataDirectory(string? overrideDirectory)
-    {
-        if (!string.IsNullOrWhiteSpace(overrideDirectory))
-        {
-            return overrideDirectory;
-        }
-
-        string? current = AppContext.BaseDirectory;
-        while (!string.IsNullOrEmpty(current))
-        {
-            string candidate = Path.Combine(current, "Protocol", "Data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
-    }
 
 }
 

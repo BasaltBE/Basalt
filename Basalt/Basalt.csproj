@@ -31,11 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Protocol\Data\**\*.json">
+    <EmbeddedResource Include="..\Protocol\Data\**\*.json">
       <Link>Protocol\Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
+      <LogicalName>Protocol.Data.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

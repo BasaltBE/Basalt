@@ -8,58 +8,74 @@ public static class CraftingLoader
     {
         CraftingRegistry.Initialize();
         FurnaceRegistry.Initialize();
-        string root = ResolveDataRoot(dataDirectory);
-        string recipesPath = Path.Combine(root, "crafting_recipes.json");
 
-        if (!File.Exists(recipesPath))
+        Stream? stream;
+        if (!string.IsNullOrWhiteSpace(dataDirectory))
         {
-            Logger.Warn($"Crafting: recipe file not found at '{recipesPath}'.");
-            return;
-        }
-
-        using FileStream stream = File.OpenRead(recipesPath);
-        using JsonDocument document = JsonDocument.Parse(stream);
-
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
-        {
-            Logger.Warn("Crafting: recipe file root is not an array.");
-            return;
-        }
-
-        int loaded = 0;
-        int furnaceLoaded = 0;
-        int skipped = 0;
-
-        foreach (JsonElement element in document.RootElement.EnumerateArray())
-        {
-            string type = ReadString(element, "type");
-
-            if (type == "furnace")
+            string recipesPath = Path.Combine(dataDirectory, "crafting_recipes.json");
+            if (!File.Exists(recipesPath))
             {
-                FurnaceRecipe? furnace = ParseFurnaceRecipe(element);
-                if (furnace is null)
+                Logger.Warn($"Crafting: recipe file not found at '{recipesPath}'.");
+                return;
+            }
+
+            stream = File.OpenRead(recipesPath);
+        }
+        else
+        {
+            stream = ProtocolData.Open("crafting_recipes.json");
+            if (stream is null)
+            {
+                Logger.Warn("Crafting: embedded recipe resource not found.");
+                return;
+            }
+        }
+
+        using (stream)
+        {
+            using JsonDocument document = JsonDocument.Parse(stream);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                Logger.Warn("Crafting: recipe file root is not an array.");
+                return;
+            }
+
+            int loaded = 0;
+            int furnaceLoaded = 0;
+            int skipped = 0;
+
+            foreach (JsonElement element in document.RootElement.EnumerateArray())
+            {
+                string type = ReadString(element, "type");
+
+                if (type == "furnace")
+                {
+                    FurnaceRecipe? furnace = ParseFurnaceRecipe(element);
+                    if (furnace is null)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    FurnaceRegistry.Instance.Register(furnace);
+                    furnaceLoaded++;
+                    continue;
+                }
+
+                CraftingRecipe? recipe = ParseRecipe(element);
+                if (recipe is null)
                 {
                     skipped++;
                     continue;
                 }
 
-                FurnaceRegistry.Instance.Register(furnace);
-                furnaceLoaded++;
-                continue;
+                CraftingRegistry.Instance.AddRecipe(recipe);
+                loaded++;
             }
 
-            CraftingRecipe? recipe = ParseRecipe(element);
-            if (recipe is null)
-            {
-                skipped++;
-                continue;
-            }
-
-            CraftingRegistry.Instance.AddRecipe(recipe);
-            loaded++;
+            Logger.Info($"Crafting: parsed {loaded} crafting, {furnaceLoaded} furnace recipes ({skipped} skipped).");
         }
-
-        Logger.Info($"Crafting: parsed {loaded} crafting, {furnaceLoaded} furnace recipes ({skipped} skipped).");
     }
 
     private static FurnaceRecipe? ParseFurnaceRecipe(JsonElement element)
@@ -245,21 +261,4 @@ public static class CraftingLoader
           : fallback;
     }
 
-    private static string ResolveDataRoot(string? dataDirectory)
-    {
-        if (!string.IsNullOrWhiteSpace(dataDirectory)) return dataDirectory;
-
-        string? current = AppContext.BaseDirectory;
-        while (!string.IsNullOrEmpty(current))
-        {
-            string candidate = Path.Combine(current, "Protocol", "Data");
-            if (Directory.Exists(candidate)) return candidate;
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null) break;
-            current = parent.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate Protocol/Data directory.");
-    }
 }
