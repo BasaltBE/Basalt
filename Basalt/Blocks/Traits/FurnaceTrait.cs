@@ -354,22 +354,23 @@ public sealed class FurnaceTrait : BlockTrait
     {
         if (_container?.Dimension is null) return;
 
-        string currentId = Block.Type.Identifier;
-        string targetId = GetTargetBlockId(shouldBeLit);
-
-        if (string.Equals(currentId, targetId, StringComparison.Ordinal)) return;
-
         Dimension dimension = _container.Dimension;
         BlockPos pos = _container.Position;
-
-        BlockPermutation? target = BlockPermutation.Resolve(targetId, Block.Permutation.State);
-        if (target is null) return;
 
         var chunk = dimension.GetChunk(pos.X >> 4, pos.Z >> 4);
         if (chunk is null) return;
 
         int lx = pos.X & 0xF;
         int lz = pos.Z & 0xF;
+
+        string currentId = chunk.GetPermutation(lx, pos.Y, lz).Type.Identifier;
+        string targetId = GetTargetBlockId(shouldBeLit);
+
+        if (string.Equals(currentId, targetId, StringComparison.Ordinal)) return;
+
+        BlockPermutation? target = BlockPermutation.Resolve(targetId, Block.Permutation.State);
+        if (target is null) return;
+
         chunk.SetPermutation(lx, pos.Y, lz, target, layer: 0, dirty: true);
 
         dimension.Broadcast(new UpdateBlockPacket
