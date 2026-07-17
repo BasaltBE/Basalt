@@ -8,6 +8,11 @@
     <RootNamespace>Basalt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Basalt\Basalt.csproj" />
     <ProjectReference Include="..\Protocol\Protocol.csproj" />
