@@ -74,6 +74,10 @@ jobs:
           --self-contained true
           --output ./publish/${{ matrix.artifact }}
 
+      - name: Remove PDB files
+        shell: bash
+        run: find ./publish/${{ matrix.artifact }} -name "*.pdb" -delete
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
