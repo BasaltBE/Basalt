@@ -1,6 +1,5 @@
 Implement a way to register 
  - Custom Entities
- - Custom Blocks
 
 Fix changing to diff dimensions sometimes not loading the chunks at first try
 

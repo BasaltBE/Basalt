@@ -39,6 +39,11 @@ public sealed class BlockPalette
         return [.. Permutations.Values];
     }
 
+    public static List<Protocol.Types.BlockEntry> GetCustomBlockEntries()
+    {
+        return CustomBlockType.GetEntries();
+    }
+
     public static BlockType ResolveType(BlockIdentifier identifier)
     {
         return ResolveType(identifier.ToIdentifier());

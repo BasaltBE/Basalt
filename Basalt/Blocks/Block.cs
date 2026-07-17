@@ -25,6 +25,21 @@ public sealed class Block
     public BlockType Type { get; }
     public BlockPermutation Permutation { get; private set; }
     public string Identifier => Type.Identifier;
+    public bool Interactable
+    {
+        get
+        {
+            for (int i = 0; i < _traits.Count; i++)
+            {
+                if (_traits[i].Interactable)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
 
     public Block(BlockType type, BlockPermutation permutation)
     {
