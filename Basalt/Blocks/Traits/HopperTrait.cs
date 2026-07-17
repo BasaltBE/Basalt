@@ -264,7 +264,16 @@ public sealed class HopperTrait : BlockTrait
 
   private bool TryPullFromContainer(Dimension dimension, int x, int y, int z)
   {
-    BlockContainer? source = GetContainerAt(dimension, x, y, z);
+    Block? block = dimension.GetBlock(x, y, z);
+    if (block is null) return false;
+
+    FurnaceTrait? furnace = block.GetTrait<FurnaceTrait>();
+    if (furnace?.Container is not null)
+    {
+      return TryPullFromFurnace(furnace.Container);
+    }
+
+    BlockContainer? source = GetBlockContainer(block);
     if (source is null) return false;
 
     for (int slot = 0; slot < source.GetSize(); slot++)
@@ -285,6 +294,39 @@ public sealed class HopperTrait : BlockTrait
     }
 
     return false;
+  }
+
+  private bool TryPullFromFurnace(BlockContainer furnaceContainer)
+  {
+    const int slotResult = 2;
+
+    ItemStack? item = furnaceContainer.GetItem(slotResult);
+    if (item is null || item.StackSize == 0) return false;
+
+    ItemStack? taken = furnaceContainer.TakeItem(slotResult, 1);
+    if (taken is null) return false;
+
+    if (_container!.AddItem(taken))
+    {
+      return true;
+    }
+
+    furnaceContainer.SetItem(slotResult, taken);
+    return false;
+  }
+
+  private static BlockContainer? GetBlockContainer(Block block)
+  {
+    ChestTrait? chest = block.GetTrait<ChestTrait>();
+    if (chest?.Container is not null) return chest.Container;
+
+    BarrelTrait? barrel = block.GetTrait<BarrelTrait>();
+    if (barrel?.Container is not null) return barrel.Container;
+
+    HopperTrait? hopper = block.GetTrait<HopperTrait>();
+    if (hopper?._container is not null) return hopper._container;
+
+    return null;
   }
 
   private bool TryPullFromItemEntities(Dimension dimension, BlockPos hopperPos)
@@ -348,7 +390,17 @@ public sealed class HopperTrait : BlockTrait
     BlockPos pos = _container.Position;
     GetOutputPosition(pos, out int tx, out int ty, out int tz);
 
-    BlockContainer? target = GetContainerAt(dimension, tx, ty, tz);
+    Block? targetBlock = dimension.GetBlock(tx, ty, tz);
+    if (targetBlock is null) return false;
+
+    FurnaceTrait? furnace = targetBlock.GetTrait<FurnaceTrait>();
+    if (furnace?.Container is not null)
+    {
+      bool pushingDown = ty < pos.Y;
+      return TryPushToFurnace(furnace.Container, pushingDown);
+    }
+
+    BlockContainer? target = GetBlockContainer(targetBlock);
     if (target is null) return false;
     if (target.IsFull) return false;
 
@@ -367,6 +419,46 @@ public sealed class HopperTrait : BlockTrait
 
       _container.SetItem(slot, taken);
       break;
+    }
+
+    return false;
+  }
+
+  private bool TryPushToFurnace(BlockContainer furnaceContainer, bool isFromAbove)
+  {
+    // Above → input slot (0), side → fuel slot (1).
+    int targetSlot = isFromAbove ? 0 : 1;
+
+    for (int slot = 0; slot < _container!.GetSize(); slot++)
+    {
+      ItemStack? item = _container.GetItem(slot);
+      if (item is null || item.StackSize == 0) continue;
+
+      // For fuel slot, only push items that are valid fuel.
+      if (targetSlot == 1 && !Crafting.FuelRegistry.IsFuel(item)) continue;
+
+      ItemStack? existing = furnaceContainer.GetItem(targetSlot);
+
+      if (existing is not null && existing.StackSize > 0)
+      {
+        if (!existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
+        {
+          continue;
+        }
+
+        ItemStack? taken = _container.TakeItem(slot, 1);
+        if (taken is null) continue;
+
+        existing.IncrementStack(1);
+        furnaceContainer.UpdateSlot(targetSlot);
+        return true;
+      }
+
+      ItemStack? takenItem = _container.TakeItem(slot, 1);
+      if (takenItem is null) continue;
+
+      furnaceContainer.SetItem(targetSlot, takenItem);
+      return true;
     }
 
     return false;
@@ -423,26 +515,6 @@ public sealed class HopperTrait : BlockTrait
 
     state["facing_direction"] = (int)direction;
     Block.SetPermutation(Block.Type.GetPermutation(state));
-  }
-
-  private static BlockContainer? GetContainerAt(Dimension dimension, int x, int y, int z)
-  {
-    Block? block = dimension.GetBlock(x, y, z);
-    if (block is null) return null;
-
-    ChestTrait? chest = block.GetTrait<ChestTrait>();
-    if (chest?.Container is not null) return chest.Container;
-
-    BarrelTrait? barrel = block.GetTrait<BarrelTrait>();
-    if (barrel?.Container is not null) return barrel.Container;
-
-    HopperTrait? hopper = block.GetTrait<HopperTrait>();
-    if (hopper?._container is not null) return hopper._container;
-
-    FurnaceTrait? furnace = block.GetTrait<FurnaceTrait>();
-    if (furnace?.Container is not null) return furnace.Container;
-
-    return null;
   }
 
   private void EnsureContainer(Dimension? dimension, int x, int y, int z)
