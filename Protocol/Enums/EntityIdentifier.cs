@@ -1,4 +1,5 @@
 namespace Basalt.Protocol.Enums;
+
 public enum EntityIdentifier : byte
 {
     Balloon,

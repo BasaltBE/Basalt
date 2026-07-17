@@ -6,11 +6,11 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class ImpalingEnchantment() : EnchantmentType("impaling", 29, 5)
 {
-  public override float GetAttackBonus(int level) => level * 2.5f;
+    public override float GetAttackBonus(int level) => level * 2.5f;
 
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    // TODO: Check if target is aquatic or in water/rain.
-    ctx.BonusDamage += GetAttackBonus(level);
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        // TODO: Check if target is aquatic or in water/rain.
+        ctx.BonusDamage += GetAttackBonus(level);
+    }
 }

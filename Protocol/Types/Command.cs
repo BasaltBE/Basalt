@@ -86,7 +86,7 @@ public sealed class Command : DataType
         {
             Overloads[i].Write(writer);
         }
-    }   
+    }
 
 
     /// <summary>

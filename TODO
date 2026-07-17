@@ -6,3 +6,5 @@ Fix changing to diff dimensions sometimes not loading the chunks at first try
 
 Implement more item, entity, block components
 
+ocasionally run 
+dotnet format --diagnostics=IDE0001 IDE0005

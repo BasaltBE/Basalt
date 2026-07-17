@@ -5,11 +5,11 @@ using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
-using DimensionInstance = Basalt.Core.Worlds.Dimensions.Dimension;
+using Dimension = Dimensions.Dimension;
 
 public sealed class World : IDisposable, Tickable
 {
-    private readonly Dictionary<string, DimensionInstance> _dimensions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Dimension> _dimensions = new(StringComparer.OrdinalIgnoreCase);
 
 
     /// <summary>
@@ -25,7 +25,7 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// The Server instance.
     /// </summary>
-    public global::Basalt.Core.Server? Server { get; internal set; }
+    public Server? Server { get; internal set; }
 
     /// <summary>
     /// The current tick value.
@@ -45,7 +45,7 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// An enumerable of all dimensions in the world.
     /// </summary>
-    public IEnumerable<DimensionInstance> Dimensions => _dimensions.Values;
+    public IEnumerable<Dimension> Dimensions => _dimensions.Values;
 
     /// <summary>
     /// Creates a new world.
@@ -72,7 +72,7 @@ public sealed class World : IDisposable, Tickable
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public DimensionInstance CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
+    public Dimension CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
     {
         if (!typeof(Generator).IsAssignableFrom(generatorType))
             throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
@@ -80,7 +80,7 @@ public sealed class World : IDisposable, Tickable
         if (Activator.CreateInstance(generatorType, generatorArgs) is not Generator generator)
             throw new InvalidOperationException($"Could not construct generator '{generatorType.FullName}'.");
 
-        DimensionInstance dimension = new(identifier, type, Provider, generator);
+        Dimension dimension = new(identifier, type, Provider, generator);
         AddDimension(dimension);
         return dimension;
     }
@@ -89,7 +89,7 @@ public sealed class World : IDisposable, Tickable
     /// Adds a dimension to the world.
     /// </summary>
     /// <param name="dimension"></param>
-    public void AddDimension(DimensionInstance dimension)
+    public void AddDimension(Dimension dimension)
     {
         dimension.World = this;
         _dimensions[dimension.Identifier] = dimension;
@@ -103,7 +103,7 @@ public sealed class World : IDisposable, Tickable
     /// <returns></returns>
     public bool RemoveDimension(string identifier)
     {
-        if (!_dimensions.Remove(identifier, out DimensionInstance? dimension))
+        if (!_dimensions.Remove(identifier, out Dimension? dimension))
             return false;
 
         dimension.Dispose();
@@ -115,15 +115,15 @@ public sealed class World : IDisposable, Tickable
     /// </summary>
     /// <param name="identifier"></param>
     /// <returns></returns>
-    public DimensionInstance? GetDimension(string identifier) =>
-        _dimensions.TryGetValue(identifier, out DimensionInstance? dimension) ? dimension : null;
+    public Dimension? GetDimension(string identifier) =>
+        _dimensions.TryGetValue(identifier, out Dimension? dimension) ? dimension : null;
 
     /// <summary>
     /// Gets a dimension by its type.
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    public DimensionInstance? GetDimension(DimensionType type) =>
+    public Dimension? GetDimension(DimensionType type) =>
         _dimensions.Values.FirstOrDefault(d => d.Type == type);
 
     /// <summary>
@@ -133,7 +133,7 @@ public sealed class World : IDisposable, Tickable
     public void Tick()
     {
         TickValue++;
-        foreach (DimensionInstance dimension in _dimensions.Values)
+        foreach (Dimension dimension in _dimensions.Values)
         {
             using var _ = Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})");
             dimension.Tick(TickValue, 1);
@@ -145,7 +145,7 @@ public sealed class World : IDisposable, Tickable
     /// </summary>
     public void Save()
     {
-        foreach (DimensionInstance dimension in _dimensions.Values)
+        foreach (Dimension dimension in _dimensions.Values)
         {
             dimension.SaveDirtyChunks();
         }
@@ -156,7 +156,7 @@ public sealed class World : IDisposable, Tickable
     /// </summary>
     public void Dispose()
     {
-        foreach (DimensionInstance dimension in _dimensions.Values)
+        foreach (Dimension dimension in _dimensions.Values)
             dimension.Dispose();
 
         _dimensions.Clear();

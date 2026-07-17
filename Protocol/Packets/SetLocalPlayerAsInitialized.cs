@@ -5,7 +5,7 @@ namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.SetLocalPlayerAsInitialized)]
 public sealed record SetLocalPlayerAsInitializedPacket : DataPacket
-{   
+{
     /// <summary>
     /// The runtime id of the entity
     /// </summary>

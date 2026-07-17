@@ -4,7 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public struct BlockPos : DataType
-{   
+{
     /// <summary>
     /// The X coordinate of the block position.
     /// </summary>

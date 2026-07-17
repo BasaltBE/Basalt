@@ -1,4 +1,5 @@
 namespace Basalt.Core.Entities.Traits.Types;
+
 using Basalt.Protocol.Enums;
 
 public readonly record struct EntityDeathOptions(

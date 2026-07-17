@@ -3,7 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct Vec3f(float x = 0, float y = 0, float z = 0): DataType
+public struct Vec3f(float x = 0, float y = 0, float z = 0) : DataType
 {
     public static readonly Vec3f Zero = new(0, 0, 0);
     /// <summary>

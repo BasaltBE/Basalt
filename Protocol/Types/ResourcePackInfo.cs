@@ -4,7 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public sealed class ResourcePackInfo : DataType
-{   
+{
     /// <summary>
     /// Unique Identifier of a resource pack
     /// </summary>
@@ -14,7 +14,7 @@ public sealed class ResourcePackInfo : DataType
     /// Version of the resource pack
     /// </summary>
     public string Version = "1.0.0";
-    
+
     /// <summary>
     /// Size of the resource pack
     /// </summary>

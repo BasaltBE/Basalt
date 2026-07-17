@@ -30,7 +30,7 @@ internal static class SocketAddressUtils
         public Span<byte> GetScopeIdBytes()
         {
             return address.Buffer.Span[24..28];
-        } 
+        }
         public Span<byte> GetFlowInformationBytes()
         {
             return address.Buffer.Span[4..8];
@@ -101,7 +101,7 @@ internal static class SocketAddressUtils
         }
         public void Write(Span<byte> dest, ref int offset)
         {
-            dest.WriteUInt8(address.Family == AddressFamily.InterNetwork?(byte)4:(byte)6, offset);
+            dest.WriteUInt8(address.Family == AddressFamily.InterNetwork ? (byte)4 : (byte)6, offset);
             offset += 1;
 
             if (address.Family == AddressFamily.InterNetwork)

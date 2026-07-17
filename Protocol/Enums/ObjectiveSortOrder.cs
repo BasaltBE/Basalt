@@ -2,6 +2,6 @@ namespace Basalt.Protocol.Enums;
 
 public enum ObjectiveSortOrder : int
 {
-  Ascending = 0,
-  Descending = 1
+    Ascending = 0,
+    Descending = 1
 }

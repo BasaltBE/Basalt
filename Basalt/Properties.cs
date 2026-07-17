@@ -1,7 +1,7 @@
 namespace Basalt.Core;
 
 public class Properties
-{   
+{
     [ServerProperties.PropertyOrder(1)]
     [ServerProperties.PropertyKey("server-port")]
     [ServerProperties.PropertyComment("IPv4 port the server should listen to.")]
@@ -16,7 +16,7 @@ public class Properties
     [ServerProperties.PropertyKey("max-players")]
     [ServerProperties.PropertyComment("The maximum number of players that can play on the server.")]
     public int MaxPlayers { get; set; } = 10;
-    
+
     [ServerProperties.PropertyOrder(4)]
     [ServerProperties.PropertyKey("online-mode")]
     [ServerProperties.PropertyComment("If true all connected players must be authenticated.")]
@@ -46,7 +46,7 @@ public class Properties
     [ServerProperties.PropertyKey("world-provider")]
     [ServerProperties.PropertyComment("World provider type.")]
     public string WorldProvider { get; set; } = "leveldb";
-    
+
     [ServerProperties.PropertyOrder(10)]
     [ServerProperties.PropertyKey("world-path")]
     [ServerProperties.PropertyComment("Path to world data.")]

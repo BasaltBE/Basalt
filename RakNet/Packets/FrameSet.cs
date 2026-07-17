@@ -4,7 +4,7 @@ using Basalt.RakNet.Packets.Types;
 namespace Basalt.RakNet.Packets;
 
 public struct FrameSet(uint sequence = 0, Frame[]? frames = null)
-{   
+{
     public const byte PacketId = 0x80;
     public uint Sequence = sequence;
     public Frame[] Frames = frames ?? [];

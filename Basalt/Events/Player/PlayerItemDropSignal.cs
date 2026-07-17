@@ -8,22 +8,22 @@ using Basalt.Core.Player;
 /// </summary>
 public sealed class PlayerItemDropSignal : PlayerSignal
 {
-  public override ServerEvent Event => ServerEvent.PlayerItemDrop;
-  public ItemStack Item { get; }
-  public bool Cancelled;
+    public override ServerEvent Event => ServerEvent.PlayerItemDrop;
+    public ItemStack Item { get; }
+    public bool Cancelled;
 
-  public PlayerItemDropSignal(Player player, ItemStack item) : base(player)
-  {
-    Item = item;
-  }
+    public PlayerItemDropSignal(Player player, ItemStack item) : base(player)
+    {
+        Item = item;
+    }
 
-  public bool Emit()
-  {
-    return !Cancelled;
-  }
+    public bool Emit()
+    {
+        return !Cancelled;
+    }
 
-  public void Cancel()
-  {
-    Cancelled = true;
-  }
+    public void Cancel()
+    {
+        Cancelled = true;
+    }
 }

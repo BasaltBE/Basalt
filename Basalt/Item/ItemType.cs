@@ -166,11 +166,11 @@ public sealed class ItemType
         };
     }
 
-    private static readonly float[] SwordDamage =    [4, 5, 5, 6, 4, 7, 8];
-    private static readonly float[] AxeDamage =      [3, 4, 4, 5, 3, 6, 7];
-    private static readonly float[] PickaxeDamage =  [2, 3, 3, 4, 2, 5, 6];
-    private static readonly float[] ShovelDamage =   [1, 2, 2, 3, 1, 4, 5];
-    private static readonly float[] HoeDamage =      [2, 3, 3, 4, 2, 5, 7];
+    private static readonly float[] SwordDamage = [4, 5, 5, 6, 4, 7, 8];
+    private static readonly float[] AxeDamage = [3, 4, 4, 5, 3, 6, 7];
+    private static readonly float[] PickaxeDamage = [2, 3, 3, 4, 2, 5, 6];
+    private static readonly float[] ShovelDamage = [1, 2, 2, 3, 1, 4, 5];
+    private static readonly float[] HoeDamage = [2, 3, 3, 4, 2, 5, 7];
 
     private static float ResolveDamage(IReadOnlyList<string> tags)
     {

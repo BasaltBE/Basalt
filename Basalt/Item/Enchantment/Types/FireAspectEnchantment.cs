@@ -5,8 +5,8 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class FireAspectEnchantment() : EnchantmentType("fire_aspect", 13, 2)
 {
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    ctx.FireTicks += level * 80;
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        ctx.FireTicks += level * 80;
+    }
 }

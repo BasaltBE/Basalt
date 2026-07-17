@@ -1,7 +1,5 @@
 namespace Basalt.Core.Player;
 
-using Basalt.Protocol.Packets;
-
 public sealed class PlayerPermissions
 {
     private readonly HashSet<string> _permissions = new(StringComparer.OrdinalIgnoreCase);

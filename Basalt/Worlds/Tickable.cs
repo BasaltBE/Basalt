@@ -9,7 +9,7 @@ public interface Tickable
     /// The current tick value
     /// </summary>
     ulong TickValue { get; set; }
-    
+
     /// <summary>
     /// The amount of milliseconds the last tick took.
     /// </summary>

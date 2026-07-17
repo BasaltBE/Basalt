@@ -7,7 +7,7 @@ namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ResourcePacksInfo)]
 public sealed record ResourcePacksInfoPacket : DataPacket
-{   
+{
     /// <summary>
     /// Whether the client must accept the resource packs or not. 
     /// If this is true, vanilla forces the client to accept or else it will disconnect

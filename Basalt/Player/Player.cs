@@ -471,7 +471,7 @@ public sealed class Player : Entities.Entity
         Vec3f spawnPosition = position ?? Location;
         ItemInstance heldItem = new();
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
-        
+
         Item.ItemStack? held = inventory?.GetHeldItem();
         if (held is not null)
         {

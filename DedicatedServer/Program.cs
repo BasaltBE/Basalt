@@ -3,6 +3,7 @@ using Basalt.Core;
 using Basalt.Core.Commands;
 
 namespace Basalt.DedicatedServer;
+
 sealed class Program
 {
     static void Main()

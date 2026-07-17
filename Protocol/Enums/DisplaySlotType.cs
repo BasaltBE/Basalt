@@ -6,30 +6,30 @@ namespace Basalt.Protocol.Enums;
 /// </summary>
 public enum DisplaySlotType
 {
-  List,
-  Sidebar,
-  BelowName
+    List,
+    Sidebar,
+    BelowName
 }
 
 public static class DisplaySlotTypeExtensions
 {
-  private const string ListString = "list";
-  private const string SidebarString = "sidebar";
-  private const string BelowNameString = "belowname";
+    private const string ListString = "list";
+    private const string SidebarString = "sidebar";
+    private const string BelowNameString = "belowname";
 
-  public static string ToProtocolString(this DisplaySlotType slot) => slot switch
-  {
-    DisplaySlotType.List => ListString,
-    DisplaySlotType.Sidebar => SidebarString,
-    DisplaySlotType.BelowName => BelowNameString,
-    _ => SidebarString
-  };
+    public static string ToProtocolString(this DisplaySlotType slot) => slot switch
+    {
+        DisplaySlotType.List => ListString,
+        DisplaySlotType.Sidebar => SidebarString,
+        DisplaySlotType.BelowName => BelowNameString,
+        _ => SidebarString
+    };
 
-  public static DisplaySlotType FromProtocolString(string value) => value switch
-  {
-    ListString => DisplaySlotType.List,
-    SidebarString => DisplaySlotType.Sidebar,
-    BelowNameString => DisplaySlotType.BelowName,
-    _ => DisplaySlotType.Sidebar
-  };
+    public static DisplaySlotType FromProtocolString(string value) => value switch
+    {
+        ListString => DisplaySlotType.List,
+        SidebarString => DisplaySlotType.Sidebar,
+        BelowNameString => DisplaySlotType.BelowName,
+        _ => DisplaySlotType.Sidebar
+    };
 }

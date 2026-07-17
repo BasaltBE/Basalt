@@ -5,7 +5,7 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 public abstract class WorldProvider : IDisposable
-{   
+{
     /// <summary>
     /// A unique identifier for the provider, used for saving and loading dimensions.
     /// </summary>

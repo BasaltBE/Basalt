@@ -2,7 +2,7 @@
 
 namespace Basalt.Binary
 {
-    public class BinaryStream: IDisposable
+    public class BinaryStream : IDisposable
     {
         public static BinaryStream Rent(int minBytes) => new(MemoryPool<byte>.Shared.Rent(minBytes));
         public readonly IMemoryOwner<byte>? Owner;

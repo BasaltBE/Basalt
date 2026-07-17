@@ -6,7 +6,8 @@ using Basalt.Protocol.Nbt;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 
-public sealed class ItemStack {
+public sealed class ItemStack
+{
     private static int _nextNetworkStackId;
     private readonly List<Traits.ItemTrait> _traits = [];
 
@@ -37,7 +38,7 @@ public sealed class ItemStack {
             }
         }
     }
-    
+
     public ItemStack(string identifier, ushort stackSize = 1, uint metadata = 0, ItemInstanceUserData? extraData = null)
         : this(ItemType.Get(identifier) ?? throw new InvalidOperationException($"Unknown item type '{identifier}'."), stackSize, metadata, extraData)
     {

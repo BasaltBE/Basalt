@@ -292,7 +292,7 @@ public static class InventoryTransaction
         UseItemInventoryTransactionData transaction,
         List<InventoryAction> actions)
     {
-        
+
         if (transaction.ActionType == UseItemActionClickAir)
         {
             ItemStack? airHeldItem = GetHeldItem(inventory, transaction.HotBarSlot);

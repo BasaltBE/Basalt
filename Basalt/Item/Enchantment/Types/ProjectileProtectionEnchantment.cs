@@ -5,11 +5,11 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class ProjectileProtectionEnchantment() : EnchantmentType("projectile_protection", 4, 4)
 {
-  public override void OnHurt(int level, HurtEnchantmentContext ctx)
-  {
-    if (ctx.Source == DamageSource.Projectile)
+    public override void OnHurt(int level, HurtEnchantmentContext ctx)
     {
-      ctx.DamageReduction += level * 0.08f;
+        if (ctx.Source == DamageSource.Projectile)
+        {
+            ctx.DamageReduction += level * 0.08f;
+        }
     }
-  }
 }

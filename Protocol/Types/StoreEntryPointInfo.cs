@@ -9,7 +9,7 @@ public sealed class StoreEntryPointInfo : DataType
     /// The id of the store
     /// </summary>
     public string StoreId = string.Empty;
-    
+
     /// <summary>
     /// The name of the store
     /// </summary>

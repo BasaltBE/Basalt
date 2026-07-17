@@ -5,7 +5,7 @@ namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.RequestNetworkSettings)]
 public sealed record RequestNetworkSettingsPacket : DataPacket
-{   
+{
     /// <summary>
     /// Protocol version.
     /// This is used to determine if client and server are compatible. 

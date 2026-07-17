@@ -52,7 +52,7 @@ public abstract class NetworkConnection
     public virtual void HandleFrameSet(FrameSet frameSet)
     {
         uint sequence = frameSet.Sequence;
-    
+
         if (!_datagramWindowInitialized)
         {
             _datagramWindowStart = sequence;
@@ -132,7 +132,7 @@ public abstract class NetworkConnection
         {
             HandleIncomingFrame(frame);
         }
-        
+
         // Flush ACKs/NACKs immediately instead of waiting for tick
         lock (_sendLock)
         {
@@ -251,12 +251,12 @@ public abstract class NetworkConnection
             if (payload.Length <= maxPayloadSize)
             {
                 _outgoingFrames.AddLast(CreateFrame(payload, reliability, orderingChannel));
-                
+
                 if (immediate)
                 {
                     FlushOutgoing(Environment.TickCount64);
                 }
-                
+
                 return;
             }
 
@@ -289,7 +289,7 @@ public abstract class NetworkConnection
                     buffer: chunk
                 ));
             }
-            
+
             if (immediate)
             {
                 FlushOutgoing(Environment.TickCount64);

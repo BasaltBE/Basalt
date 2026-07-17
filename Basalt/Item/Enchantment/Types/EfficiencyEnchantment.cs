@@ -5,5 +5,5 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class EfficiencyEnchantment() : EnchantmentType("efficiency", 15, 5)
 {
-  public override float GetMiningSpeedBonus(int level) => (level * level) + 1;
+    public override float GetMiningSpeedBonus(int level) => (level * level) + 1;
 }

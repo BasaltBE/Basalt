@@ -5,8 +5,8 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class BreachEnchantment() : EnchantmentType("breach", 40, 4)
 {
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    // TODO: Reduce target's effective armor by level * 15%.
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        // TODO: Reduce target's effective armor by level * 15%.
+    }
 }

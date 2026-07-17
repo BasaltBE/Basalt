@@ -37,7 +37,7 @@ public sealed class NetworkHandler
         _server.Emit(new PlayerLeaveSignal(player, options));
 
         _server.GetWorld().Provider.SavePlayerData(player.Xuid, player.Write());
-        
+
 
         string leaveMessage = $"§e{player.Username} left the server.";
         foreach (Player.Player target in _server.Players.Values)
@@ -241,7 +241,7 @@ public sealed class NetworkHandler
         foreach (DataPacket packet in packets)
         {
             // if (packet.GetType().Name != "LevelChunkPacket")
-                // Logger.Info("Sending packet {0}", packet.GetType().Name);
+            // Logger.Info("Sending packet {0}", packet.GetType().Name);
 
             packetBufferStream.Offset = 0;
             BinaryWriter packetWriter = packetBufferStream;

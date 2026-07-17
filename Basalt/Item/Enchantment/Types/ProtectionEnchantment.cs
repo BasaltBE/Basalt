@@ -6,10 +6,10 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class ProtectionEnchantment() : EnchantmentType("protection", 0, 4)
 {
-  public override float GetProtectionBonus(int level) => level;
+    public override float GetProtectionBonus(int level) => level;
 
-  public override void OnHurt(int level, HurtEnchantmentContext ctx)
-  {
-    ctx.DamageReduction += level * 0.04f;
-  }
+    public override void OnHurt(int level, HurtEnchantmentContext ctx)
+    {
+        ctx.DamageReduction += level * 0.04f;
+    }
 }

@@ -6,7 +6,7 @@ namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.PlayStatus)]
 public sealed record PlayStatusPacket : DataPacket
-{       
+{
     /// <summary>
     /// Status of the session.
     /// Whether the client is able to log in or not, and if it is able to spawn in

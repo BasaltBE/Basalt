@@ -5,8 +5,8 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class WindBurstEnchantment() : EnchantmentType("wind_burst", 38, 3)
 {
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    // TODO: Apply upward velocity to player after landing a hit.
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        // TODO: Apply upward velocity to player after landing a hit.
+    }
 }

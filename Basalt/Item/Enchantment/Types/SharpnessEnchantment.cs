@@ -5,10 +5,10 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class SharpnessEnchantment() : EnchantmentType("sharpness", 9, 5)
 {
-  public override float GetAttackBonus(int level) => 1.25f + (level - 1) * 0.75f;
+    public override float GetAttackBonus(int level) => 1.25f + (level - 1) * 0.75f;
 
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    ctx.BonusDamage += GetAttackBonus(level);
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        ctx.BonusDamage += GetAttackBonus(level);
+    }
 }

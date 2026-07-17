@@ -5,21 +5,21 @@ namespace Basalt.Protocol.Types;
 
 public sealed class PotionContainerChangeRecipeData : DataType
 {
-  public int InputItemId;
-  public int ReagentItemId;
-  public int OutputItemId;
+    public int InputItemId;
+    public int ReagentItemId;
+    public int OutputItemId;
 
-  public void Read(BinaryReader reader)
-  {
-    InputItemId = reader.ReadZigZag();
-    ReagentItemId = reader.ReadZigZag();
-    OutputItemId = reader.ReadZigZag();
-  }
+    public void Read(BinaryReader reader)
+    {
+        InputItemId = reader.ReadZigZag();
+        ReagentItemId = reader.ReadZigZag();
+        OutputItemId = reader.ReadZigZag();
+    }
 
-  public void Write(BinaryWriter writer)
-  {
-    writer.WriteZigZag(InputItemId);
-    writer.WriteZigZag(ReagentItemId);
-    writer.WriteZigZag(OutputItemId);
-  }
+    public void Write(BinaryWriter writer)
+    {
+        writer.WriteZigZag(InputItemId);
+        writer.WriteZigZag(ReagentItemId);
+        writer.WriteZigZag(OutputItemId);
+    }
 }

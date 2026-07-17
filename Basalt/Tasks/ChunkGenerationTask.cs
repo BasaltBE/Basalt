@@ -4,7 +4,7 @@ using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Protocol.Enums;
-using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+using ChunkColumn = Worlds.Dimensions.Chunk.Chunk;
 
 public sealed class ChunkGenerationTask : ServerTask
 {

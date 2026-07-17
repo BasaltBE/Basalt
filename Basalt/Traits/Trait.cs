@@ -1,5 +1,4 @@
 using Basalt.Protocol.Nbt;
-using Basalt.Core.Traits;
 
 namespace Basalt.Core.Traits;
 

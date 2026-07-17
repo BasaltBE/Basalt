@@ -5,8 +5,8 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class LootingEnchantment() : EnchantmentType("looting", 14, 3)
 {
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    ctx.LootingLevel += level;
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        ctx.LootingLevel += level;
+    }
 }

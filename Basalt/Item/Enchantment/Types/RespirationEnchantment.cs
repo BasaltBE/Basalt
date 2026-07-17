@@ -5,5 +5,5 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class RespirationEnchantment() : EnchantmentType("respiration", 6, 3)
 {
-  public static int GetExtraBreathTicks(int level) => level * 300;
+    public static int GetExtraBreathTicks(int level) => level * 300;
 }

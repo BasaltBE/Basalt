@@ -5,11 +5,11 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class FeatherFallingEnchantment() : EnchantmentType("feather_falling", 2, 4)
 {
-  public override void OnHurt(int level, HurtEnchantmentContext ctx)
-  {
-    if (ctx.Source == DamageSource.Fall)
+    public override void OnHurt(int level, HurtEnchantmentContext ctx)
     {
-      ctx.DamageReduction += level * 0.12f;
+        if (ctx.Source == DamageSource.Fall)
+        {
+            ctx.DamageReduction += level * 0.12f;
+        }
     }
-  }
 }

@@ -10,9 +10,9 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
-using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+using ChunkColumn = Chunk.Chunk;
 
-using Entity = Basalt.Core.Entities.Entity;
+using Entity = Entities.Entity;
 
 public sealed class Dimension : IDisposable
 {
@@ -52,8 +52,8 @@ public sealed class Dimension : IDisposable
     public string Identifier { get; }
     public DimensionType Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
-    public global::Basalt.Core.Worlds.World? World { get; internal set; }
-    public global::Basalt.Core.Worlds.DimensionGameRules Gamerules { get; } = new();
+    public World? World { get; internal set; }
+    public DimensionGameRules Gamerules { get; } = new();
 
     public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null)
     {
@@ -351,10 +351,10 @@ public sealed class Dimension : IDisposable
         BlockPos position = new() { X = x, Y = y, Z = z };
         if (permutation.Type.Traits.Count > 0)
         {
-            global::Basalt.Core.Blocks.Block? block = chunk.GetBlockActor(position);
+            Block? block = chunk.GetBlockActor(position);
             if (block is null)
             {
-                block = new global::Basalt.Core.Blocks.Block(permutation);
+                block = new Block(permutation);
                 chunk.SetBlockActor(position, block);
             }
             else
@@ -396,7 +396,7 @@ public sealed class Dimension : IDisposable
         }
     }
 
-    public global::Basalt.Core.Blocks.Block? GetBlock(int x, int y, int z)
+    public Block? GetBlock(int x, int y, int z)
     {
         ChunkColumn? chunk = GetChunk(x >> 4, z >> 4);
         if (chunk is null)
@@ -405,7 +405,7 @@ public sealed class Dimension : IDisposable
         }
 
         BlockPos position = new() { X = x, Y = y, Z = z };
-        global::Basalt.Core.Blocks.Block? block = chunk.GetBlockActor(position);
+        Block? block = chunk.GetBlockActor(position);
         if (block is not null)
         {
             return block;
@@ -414,7 +414,7 @@ public sealed class Dimension : IDisposable
         BlockPermutation perm = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z));
         if (perm.Type.Traits.Count > 0)
         {
-            block = new global::Basalt.Core.Blocks.Block(perm);
+            block = new Block(perm);
             BlockLevelStorage? storage = chunk.GetBlockStorage(position);
             if (storage is not null)
             {
@@ -428,7 +428,7 @@ public sealed class Dimension : IDisposable
         return null;
     }
 
-    public void SetBlock(int x, int y, int z, global::Basalt.Core.Blocks.Block block)
+    public void SetBlock(int x, int y, int z, Block block)
     {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
         chunk.SetBlockActor(new BlockPos { X = x, Y = y, Z = z }, block);
@@ -494,7 +494,7 @@ public sealed class Dimension : IDisposable
             chunk.Simulated = false;
         }
 
-        if (World?.Server is global::Basalt.Core.Server server)
+        if (World?.Server is Server server)
         {
             int simulationDistance = Math.Clamp(server.Properties.SimulationDistance, 0, 120);
             foreach ((_, var player) in server.Players)
@@ -534,7 +534,7 @@ public sealed class Dimension : IDisposable
                     continue;
                 }
 
-                if (entity is global::Basalt.Core.Player.Player)
+                if (entity is Player.Player)
                 {
                     entity.Tick(currentTick, deltaTick);
                     continue;
@@ -555,7 +555,7 @@ public sealed class Dimension : IDisposable
     public void Broadcast(DataPacket packet, BroadcastOptions? options = null)
     {
         using var __zone = Profiler.BeginZone("Dimension.Broadcast");
-        if (World?.Server is not global::Basalt.Core.Server server)
+        if (World?.Server is not Server server)
         {
             return;
         }
@@ -750,7 +750,7 @@ public sealed class Dimension : IDisposable
 
     private static void SyncBlockActorsToStorages(ChunkColumn chunk)
     {
-        foreach (KeyValuePair<(int X, int Y, int Z), global::Basalt.Core.Blocks.Block> actorEntry in chunk.GetAllBlockActors())
+        foreach (KeyValuePair<(int X, int Y, int Z), Block> actorEntry in chunk.GetAllBlockActors())
         {
             BlockPos position = new()
             {

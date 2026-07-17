@@ -10,12 +10,12 @@ using Basalt.Protocol.Types;
 /// </summary>
 public sealed class BlockBreakEnchantmentContext
 {
-  public required Player Player { get; init; }
-  public required BlockPos Position { get; init; }
-  public required string BlockIdentifier { get; init; }
-  public List<ItemStack> Drops { get; set; } = [];
-  public bool PreventDurabilityLoss { get; set; }
-  public bool SilkTouch { get; set; }
+    public required Player Player { get; init; }
+    public required BlockPos Position { get; init; }
+    public required string BlockIdentifier { get; init; }
+    public List<ItemStack> Drops { get; set; } = [];
+    public bool PreventDurabilityLoss { get; set; }
+    public bool SilkTouch { get; set; }
 }
 
 /// <summary>
@@ -24,12 +24,12 @@ public sealed class BlockBreakEnchantmentContext
 /// </summary>
 public sealed class AttackEntityEnchantmentContext
 {
-  public required Player Player { get; init; }
-  public required Entity Target { get; init; }
-  public float BonusDamage { get; set; }
-  public float KnockbackMultiplier { get; set; } = 1f;
-  public int FireTicks { get; set; }
-  public int LootingLevel { get; set; }
+    public required Player Player { get; init; }
+    public required Entity Target { get; init; }
+    public float BonusDamage { get; set; }
+    public float KnockbackMultiplier { get; set; } = 1f;
+    public int FireTicks { get; set; }
+    public int LootingLevel { get; set; }
 }
 
 /// <summary>
@@ -38,12 +38,12 @@ public sealed class AttackEntityEnchantmentContext
 /// </summary>
 public sealed class HurtEnchantmentContext
 {
-  public required Player Player { get; init; }
-  public Entity? Attacker { get; init; }
-  public required float Damage { get; init; }
-  public required DamageSource Source { get; init; }
-  public float DamageReduction { get; set; }
-  public float ReflectedDamage { get; set; }
+    public required Player Player { get; init; }
+    public Entity? Attacker { get; init; }
+    public required float Damage { get; init; }
+    public required DamageSource Source { get; init; }
+    public float DamageReduction { get; set; }
+    public float ReflectedDamage { get; set; }
 }
 
 /// <summary>
@@ -52,28 +52,28 @@ public sealed class HurtEnchantmentContext
 /// </summary>
 public sealed class TickEnchantmentContext
 {
-  public required Player Player { get; init; }
-  public required EquipmentSlot Slot { get; init; }
+    public required Player Player { get; init; }
+    public required EquipmentSlot Slot { get; init; }
 }
 
 public enum DamageSource
 {
-  Generic,
-  Melee,
-  Projectile,
-  Fire,
-  Explosion,
-  Fall,
-  Magic,
-  Void
+    Generic,
+    Melee,
+    Projectile,
+    Fire,
+    Explosion,
+    Fall,
+    Magic,
+    Void
 }
 
 public enum EquipmentSlot
 {
-  Mainhand,
-  Offhand,
-  Head,
-  Chest,
-  Legs,
-  Feet
+    Mainhand,
+    Offhand,
+    Head,
+    Chest,
+    Legs,
+    Feet
 }

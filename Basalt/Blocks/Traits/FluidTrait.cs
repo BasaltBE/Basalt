@@ -499,7 +499,7 @@ public class FluidTrait : BlockTrait
 
     private static void NotifyNearbyFarmland(Dimension dimension, BlockPos pos)
     {
-        int radius = 4; 
+        int radius = 4;
         string farmlandId = BlockIdentifier.Farmland.ToIdentifier();
 
         for (int dx = -radius; dx <= radius; dx++)

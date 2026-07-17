@@ -9,17 +9,17 @@ using Basalt.Protocol.Nbt;
 /// </summary>
 public sealed class ItemTypeHoverTextColorComponent : ItemTypeComponent
 {
-  public new static string Identifier => "minecraft:hover_text_color";
+    public new static string Identifier => "minecraft:hover_text_color";
 
-  public ItemTypeHoverTextColorComponent(ItemType type, CompoundTag component) : base(type, component)
-  {
-  }
+    public ItemTypeHoverTextColorComponent(ItemType type, CompoundTag component) : base(type, component)
+    {
+    }
 
-  /// <summary>
-  /// Gets the hover text color name (e.g. "minecoin_gold", "red").
-  /// </summary>
-  public string GetColor()
-  {
-    return Component.Get<StringTag>("value")?.Value ?? string.Empty;
-  }
+    /// <summary>
+    /// Gets the hover text color name (e.g. "minecoin_gold", "red").
+    /// </summary>
+    public string GetColor()
+    {
+        return Component.Get<StringTag>("value")?.Value ?? string.Empty;
+    }
 }

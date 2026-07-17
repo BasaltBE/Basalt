@@ -5,16 +5,16 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class UnbreakingEnchantment() : EnchantmentType("unbreaking", 17, 3)
 {
-  public override void OnBlockBreak(int level, BlockBreakEnchantmentContext ctx)
-  {
-    if (ShouldPreventDamage(level))
+    public override void OnBlockBreak(int level, BlockBreakEnchantmentContext ctx)
     {
-      ctx.PreventDurabilityLoss = true;
+        if (ShouldPreventDamage(level))
+        {
+            ctx.PreventDurabilityLoss = true;
+        }
     }
-  }
 
-  private static bool ShouldPreventDamage(int level)
-  {
-    return Random.Shared.Next(level + 1) > 0;
-  }
+    private static bool ShouldPreventDamage(int level)
+    {
+        return Random.Shared.Next(level + 1) > 0;
+    }
 }

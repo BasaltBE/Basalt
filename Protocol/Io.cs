@@ -21,7 +21,7 @@ namespace Basalt.Protocol.Io
         public const string MinecraftVersion = "1.26.30";
         public const int ShieldNetworkId = 387;
     }
- 
+
     /// <summary>
     /// Methods for processing packets
     /// </summary>
@@ -265,7 +265,7 @@ namespace Basalt.Protocol.Io
                 packets.Add(frame.Slice(packetOffset, packetLength));
             }
 
-            return [..packets];
+            return [.. packets];
         }
     }
 }

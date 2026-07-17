@@ -5,9 +5,9 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class FrostWalkerEnchantment() : EnchantmentType("frost_walker", 25, 2)
 {
-  public override void OnTick(int level, TickEnchantmentContext ctx)
-  {
-    if (ctx.Slot != EquipmentSlot.Feet) return;
-    // TODO: Freeze nearby water blocks within radius (level + 2).
-  }
+    public override void OnTick(int level, TickEnchantmentContext ctx)
+    {
+        if (ctx.Slot != EquipmentSlot.Feet) return;
+        // TODO: Freeze nearby water blocks within radius (level + 2).
+    }
 }

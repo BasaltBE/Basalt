@@ -5,8 +5,8 @@ namespace Basalt.Core.Item.Enchantment.Types;
 /// </summary>
 public sealed class DensityEnchantment() : EnchantmentType("density", 39, 5)
 {
-  public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
-  {
-    // TODO: Calculate bonus based on fall distance * level * 0.5.
-  }
+    public override void OnAttackEntity(int level, AttackEntityEnchantmentContext ctx)
+    {
+        // TODO: Calculate bonus based on fall distance * level * 0.5.
+    }
 }

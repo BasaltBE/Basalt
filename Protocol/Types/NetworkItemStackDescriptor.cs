@@ -195,7 +195,7 @@ public sealed class NetworkItemStackDescriptor : DataType
         }
 
         if (NetworkId == Io.Constants.ShieldNetworkId)
-        { 
+        {
             extraWriter.WriteInt64(BlockingTick, true);
         }
 
