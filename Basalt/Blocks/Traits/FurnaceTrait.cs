@@ -119,6 +119,45 @@ public sealed class FurnaceTrait : BlockTrait
     SendProgressToPlayer(details.Player);
   }
 
+  public override void OnRender(Player.Player player, int x, int y, int z)
+  {
+    var dimension = player.Dimension;
+    if (dimension is null) return;
+
+    EnsureContainer(dimension, x, y, z);
+    WriteStorage(dimension, x, y, z);
+
+    BlockPos position = new() { X = x, Y = y, Z = z };
+    BlockLevelStorage? storage = dimension
+      .GetChunk(x >> 4, z >> 4)
+      ?.GetBlockStorage(position);
+
+    if (storage is null) return;
+
+    uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
+
+    player.Send(
+      new BlockActorDataPacket
+      {
+        Position = position,
+        Data = storage
+      },
+      new UpdateBlockPacket
+      {
+        Position = position,
+        NetworkBlockId = 0,
+        Flags = UpdateBlockFlagsType.None,
+        Layer = UpdateBlockLayerType.Normal
+      },
+      new UpdateBlockPacket
+      {
+        Position = position,
+        NetworkBlockId = networkId,
+        Flags = UpdateBlockFlagsType.None,
+        Layer = UpdateBlockLayerType.Normal
+      });
+  }
+
   public override void OnBreak(BlockBreakDetails details)
   {
     if (_container is null) return;
@@ -402,6 +441,10 @@ public sealed class FurnaceTrait : BlockTrait
       {
         _container.Dimension = dimension;
         _container.Position = new BlockPos { X = x, Y = y, Z = z };
+        if (!_ticking && _burnTime > 0)
+        {
+          ScheduleTick(dimension, _container.Position);
+        }
       }
       return;
     }
@@ -439,5 +482,25 @@ public sealed class FurnaceTrait : BlockTrait
     {
       ScheduleTick(container.Dimension, container.Position);
     }
+  }
+
+  private void WriteStorage(Dimension dimension, int x, int y, int z)
+  {
+    var chunk = dimension.GetChunk(x >> 4, z >> 4);
+    if (chunk is null) return;
+
+    BlockPos position = new() { X = x, Y = y, Z = z };
+    BlockLevelStorage? storage = chunk.GetBlockStorage(position);
+
+    if (storage is null)
+    {
+      storage = new BlockLevelStorage(chunk);
+      storage.SetPosition(position);
+      storage.Set("id", new StringTag { Name = "id", Value = "Furnace" });
+      storage.Set("isMovable", new ByteTag { Name = "isMovable", Value = 1 });
+    }
+
+    OnWrite(storage);
+    chunk.SetBlockStorage(position, storage, dirty: true);
   }
 }

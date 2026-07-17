@@ -525,6 +525,10 @@ public sealed class HopperTrait : BlockTrait
       {
         _container.Dimension = dimension;
         _container.Position = new BlockPos { X = x, Y = y, Z = z };
+        if (!_ticking)
+        {
+          ScheduleTick(dimension, _container.Position);
+        }
       }
       return;
     }
