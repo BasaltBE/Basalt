@@ -76,7 +76,7 @@ public struct Nack(AckRecord[]? records = null)
         return offset;
     }
 
-    public static Nack FromSequences(uint[] sequences)
+    public static Nack FromSequences(Span<uint> sequences)
     {
         return new(AckRecord.PackSequences(sequences));
     }

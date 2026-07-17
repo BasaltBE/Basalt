@@ -9,6 +9,23 @@ public struct FrameSet(uint sequence = 0, Frame[]? frames = null)
     public uint Sequence = sequence;
     public Frame[] Frames = frames ?? [];
 
+    public static FrameSetReader CreateReader(ReadOnlySpan<byte> src)
+    {
+        if (src.Length < 4)
+        {
+            throw new InvalidOperationException("Invalid FrameSet length.");
+        }
+
+        byte packetId = src.ReadUInt8(0);
+        if (packetId < 0x80 || packetId > 0x8d)
+        {
+            throw new InvalidOperationException("Invalid FrameSet packet id.");
+        }
+
+        uint sequence = src.ReadUInt24(1, true);
+        return new FrameSetReader(src, sequence, 4);
+    }
+
     public static FrameSet Deserialize(ReadOnlySpan<byte> src)
     {
         if (src.Length < 4)
@@ -39,7 +56,7 @@ public struct FrameSet(uint sequence = 0, Frame[]? frames = null)
             frames.Add(frame);
         }
 
-        FrameSet frameSet = new(sequence, frames.ToArray());
+        FrameSet frameSet = new(sequence, [.. frames]);
         return frameSet;
     }
 
@@ -63,5 +80,39 @@ public struct FrameSet(uint sequence = 0, Frame[]? frames = null)
         }
 
         return offset;
+    }
+}
+
+public ref struct FrameSetReader
+{
+    private readonly ReadOnlySpan<byte> _data;
+    private int _offset;
+
+    public uint Sequence { get; }
+
+    internal FrameSetReader(ReadOnlySpan<byte> data, uint sequence, int startOffset)
+    {
+        _data = data;
+        Sequence = sequence;
+        _offset = startOffset;
+    }
+
+    public bool TryReadNext(out Frame frame)
+    {
+        if (_offset >= _data.Length)
+        {
+            frame = default;
+            return false;
+        }
+
+        frame = Frame.Read(_data, out int bytesRead, _offset);
+        if (bytesRead <= 0)
+        {
+            frame = default;
+            return false;
+        }
+
+        _offset += bytesRead;
+        return true;
     }
 }

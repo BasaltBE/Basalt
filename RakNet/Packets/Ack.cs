@@ -76,7 +76,7 @@ public struct Ack(AckRecord[]? records = null)
         return offset;
     }
 
-    public static Ack FromSequences(uint[] sequences)
+    public static Ack FromSequences(Span<uint> sequences)
     {
         return new(AckRecord.PackSequences(sequences));
     }

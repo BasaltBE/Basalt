@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using Basalt.Binary;
 using Basalt.RakNet.Packets;
 using Basalt.RakNet.Packets.Enums;
 

@@ -132,7 +132,6 @@ public class NetworkClient : NetworkConnection, IDisposable
         {
             var accepted = ConnectionRequestAccepted.Deserialize(buffer);
 
-            /// Here the address count is 20
             var clientAddresses = new SocketAddress[20];
             for (int i = 0; i < clientAddresses.Length; i++)
                 clientAddresses[i] = new SocketAddress(_socket!.AddressFamily);
@@ -242,7 +241,7 @@ public class NetworkClient : NetworkConnection, IDisposable
                     case >= 0x80 and <= 0x8d:
                         try
                         {
-                            HandleFrameSet(FrameSet.Deserialize(message));
+                            HandleFrameSet(message);
                         }
                         catch (Exception) { }
                         break;

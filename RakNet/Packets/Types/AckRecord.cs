@@ -45,27 +45,27 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
         return offset - startOffset;
     }
 
-    public static AckRecord[] PackSequences(uint[] sequences)
+    /// <summary>
+    /// Packs sorted sequences into ACK records. The input span is sorted in-place.
+    /// </summary>
+    public static AckRecord[] PackSequences(Span<uint> sequences)
     {
         if (sequences.Length == 0)
         {
             return [];
         }
 
-        // Sort so we can collapse consecutive values into range records.
-        uint[] sorted = sequences.ToArray();
-        Array.Sort(sorted);
+        sequences.Sort();
 
         List<AckRecord> records = [];
-        uint start = sorted[0];
-        uint last = sorted[0];
+        uint start = sequences[0];
+        uint last = sequences[0];
 
-        for (int i = 1; i < sorted.Length; i++)
+        for (int i = 1; i < sequences.Length; i++)
         {
-            uint current = sorted[i];
+            uint current = sequences[i];
             if (current == last)
             {
-                // Skip duplicates.
                 continue;
             }
 
@@ -81,37 +81,84 @@ public struct AckRecord(uint start = 0, uint end = 0, bool isSingle = true)
         }
 
         records.Add(start == last ? new AckRecord(start, start, true) : new AckRecord(start, last, false));
-        return records.ToArray();
+        return [.. records];
     }
 
-    public static uint[] ExpandRecords(AckRecord[] records)
+    /// <summary>
+    /// Iterates all sequence numbers in the given records without allocating.
+    /// This is called very often so the less allocations it can do is bettre
+    /// </summary>
+    public static ExpandedRecordEnumerator EnumerateRecords(AckRecord[] records)
     {
-        List<uint> sequences = [];
-        for (int i = 0; i < records.Length; i++)
+        return new ExpandedRecordEnumerator(records);
+    }
+
+    public ref struct ExpandedRecordEnumerator
+    {
+        private readonly AckRecord[] _records;
+        private int _recordIndex;
+        private uint _current;
+        private uint _rangeEnd;
+        private bool _inRange;
+        private bool _started;
+
+        public ExpandedRecordEnumerator(AckRecord[] records)
         {
-            AckRecord record = records[i];
-            if (record.IsSingle)
-            {
-                sequences.Add(record.Start);
-                continue;
-            }
-
-            uint end = record.End;
-            if (end < record.Start)
-            {
-                continue;
-            }
-
-            for (uint value = record.Start; value <= end; value++)
-            {
-                sequences.Add(value);
-                if (value == uint.MaxValue)
-                {
-                    break;
-                }
-            }
+            _records = records;
+            _recordIndex = 0;
+            _current = 0;
+            _rangeEnd = 0;
+            _inRange = false;
+            _started = false;
         }
 
-        return sequences.ToArray();
+        public uint Current => _current;
+
+        public ExpandedRecordEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            if (_inRange)
+            {
+                if (_current < _rangeEnd)
+                {
+                    _current++;
+                    return true;
+                }
+
+                _inRange = false;
+                _recordIndex++;
+            }
+            else if (_started)
+            {
+                _recordIndex++;
+            }
+
+            _started = true;
+
+            while (_recordIndex < _records.Length)
+            {
+                AckRecord record = _records[_recordIndex];
+
+                if (record.IsSingle)
+                {
+                    _current = record.Start;
+                    return true;
+                }
+
+                if (record.End < record.Start)
+                {
+                    _recordIndex++;
+                    continue;
+                }
+
+                _current = record.Start;
+                _rangeEnd = record.End;
+                _inRange = _current < _rangeEnd;
+                return true;
+            }
+
+            return false;
+        }
     }
 }
