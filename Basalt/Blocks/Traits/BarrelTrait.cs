@@ -15,6 +15,7 @@ using Basalt.Protocol.Types;
 
 public class BarrelTrait : BlockTrait
 {
+    public override bool Interactable => true;
     public static new readonly string Identifier = "minecraft:barrel";
     public static new readonly string[] Types = ["minecraft:barrel"];
 

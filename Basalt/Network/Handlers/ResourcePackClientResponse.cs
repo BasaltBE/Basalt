@@ -13,6 +13,7 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Protocol.Io;
+using Basalt.Core.Blocks;
 
 
 public static class ResourcePackClientResponse
@@ -201,7 +202,7 @@ public static class ResourcePackClientResponse
                     },
                     Time = 0,
                     EnchantmentSeed = 0,
-                    Blocks = [],
+                    Blocks = BlockPalette.GetCustomBlockEntries(),
                     MultiPlayerCorrelationId = Guid.NewGuid().ToString(),
                     ServerAuthoritativeInventory = true,
                     GameVersion = Constants.MinecraftVersion,

@@ -9,6 +9,7 @@ using Basalt.Protocol.Types;
 
 public sealed class CraftingTableTrait : BlockTrait
 {
+    public override bool Interactable => true;
     public static new readonly string Identifier = "crafting_table";
     public static new readonly string[] Types = ["minecraft:crafting_table"];
 

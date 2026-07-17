@@ -14,6 +14,7 @@ using Basalt.Protocol.Types;
 
 public class ChestTrait : BlockTrait
 {
+    public override bool Interactable => true;
     public static new readonly string Identifier = "minecraft:chest";
     public static new readonly string[] Types = ["minecraft:chest", "minecraft:trapped_chest"];
 

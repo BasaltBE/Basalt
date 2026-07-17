@@ -16,6 +16,7 @@ using Basalt.Protocol.Types;
 
 public sealed class HopperTrait : BlockTrait
 {
+    public override bool Interactable => true;
     public static new readonly string Identifier = "minecraft:hopper";
     public static new readonly string[] Types = ["minecraft:hopper"];
 

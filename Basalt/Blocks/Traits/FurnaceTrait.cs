@@ -15,6 +15,7 @@ using Basalt.Protocol.Types;
 
 public sealed class FurnaceTrait : BlockTrait
 {
+    public override bool Interactable => true;
     public static new readonly string Identifier = "furnace";
     public static new readonly string[] Types =
     [

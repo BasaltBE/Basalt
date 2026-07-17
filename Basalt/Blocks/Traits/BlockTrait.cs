@@ -14,6 +14,7 @@ public abstract class BlockTrait
     public static readonly Type[] Components = [];
 
     protected Basalt.Core.Blocks.Block Block { get; }
+    public virtual bool Interactable => false;
     public virtual string Identifier
     {
         get
