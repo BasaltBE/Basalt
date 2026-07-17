@@ -67,6 +67,13 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
                         Z = velocityZ
                     };
                     _lastKnockbackTick = currentTick;
+
+                    Entity.Dimension.Broadcast(new SetActorMotionPacket
+                    {
+                        EntityRuntimeId = Entity.RuntimeId,
+                        Velocity = Entity.Velocity,
+                        Tick = currentTick
+                    });
                 }
             }
         }
