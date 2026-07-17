@@ -141,6 +141,17 @@ public sealed class World : IDisposable, Tickable
     }
 
     /// <summary>
+    /// Saves all dirty chunks across all dimensions.
+    /// </summary>
+    public void Save()
+    {
+        foreach (DimensionInstance dimension in _dimensions.Values)
+        {
+            dimension.SaveDirtyChunks();
+        }
+    }
+
+    /// <summary>
     /// Disposes of the world and its dimensions.
     /// </summary>
     public void Dispose()

@@ -227,8 +227,14 @@ public sealed class Dimension : IDisposable
         {
             SyncBlockActorsToStorages(chunk);
             chunk.Dirty = false;
-            _chunkSaveQueue.Enqueue(chunk);
-            _chunkSaveSignal.Set();
+            try
+            {
+                _provider.SaveChunk(chunk);
+            }
+            catch (Exception exception)
+            {
+                Logger.Err($"Failed to save chunk {x},{z} on unload: {exception.Message}");
+            }
         }
 
         return _chunks.Remove(hash);

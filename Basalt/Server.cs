@@ -23,6 +23,7 @@ using WorldInstance = Worlds.World;
 public sealed class Server
 {
     private const ulong TpsUpdateIntervalTicks = 20;
+    private const ulong AutoSaveIntervalTicks = 6000; // 5 minutes at 20 TPS
     private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
     private static readonly long SpinThresholdTicks = (long)(2.0 / 1000.0 * Stopwatch.Frequency);
 
@@ -57,6 +58,7 @@ public sealed class Server
     private Task? _tickLoopTask;
     private long _lastTpsTimestamp;
     private ulong _lastTpsTick;
+    private ulong _lastAutoSaveTick;
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
     public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
@@ -263,6 +265,12 @@ public sealed class Server
             cancellation?.Dispose();
             WorkerPool.Dispose();
         }
+
+        foreach (WorldInstance world in _worlds.Values)
+        {
+            world.Dispose();
+        }
+
         Logger.Info("Basalt successfully stopped.");
     }
 
@@ -380,6 +388,14 @@ public sealed class Server
         throw new KeyNotFoundException($"World '{identifier}' was not found.");
     }
 
+    public void SaveAll()
+    {
+        foreach (WorldInstance world in _worlds.Values)
+        {
+            world.Save();
+        }
+    }
+
     public void RegisterProvider<TProvider>(string identifier) where TProvider : WorldProvider
     {
         if (string.IsNullOrWhiteSpace(identifier))
@@ -422,6 +438,13 @@ public sealed class Server
             world.Tick();
             long worldEndTimestamp = Stopwatch.GetTimestamp();
             ((Tickable)world).TickWork = (worldEndTimestamp - worldStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+        }
+
+        ulong currentTick = GetWorld().TickValue;
+        if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks)
+        {
+            _lastAutoSaveTick = currentTick;
+            SaveAll();
         }
 
         long endTimestamp = Stopwatch.GetTimestamp();
