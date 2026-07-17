@@ -19,6 +19,9 @@ public static class BlockComponentParser
             "minecraft:fluid_container" => FluidContainerComponent.FromJson(element),
             "minecraft:map_color" => MapColorComponent.FromJson(element),
             "minecraft:record_player" => new RecordPlayerComponent(),
+            "minecraft:selection_box" => SelectionBoxComponent.FromJson(element),
+            "minecraft:collision_box" => CollisionBoxComponent.FromJson(element),
+            "minecraft:material_instances" => MaterialInstancesComponent.FromJson(element),
             "minecraft:rotation" => new RotationComponent(),
             _ => null
         };
