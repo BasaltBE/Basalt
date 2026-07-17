@@ -391,6 +391,24 @@ public sealed class Player : Entities.Entity
             return cursor?.Container;
         }
 
+        if (name.ContainerId == (byte)ContainerName.LevelEntity)
+        {
+            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? containerById))
+            {
+                return containerById;
+            }
+
+            foreach ((ContainerId _, Container candidate) in openedContainers)
+            {
+                if (candidate.Type != ContainerType.Inventory)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
         if (name.ContainerId == (byte)ContainerName.CraftingInput)
         {
             foreach ((ContainerId _, Container candidate) in openedContainers)

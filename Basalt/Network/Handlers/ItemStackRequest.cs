@@ -465,7 +465,8 @@ public static class ItemStackRequest
         }
 
         if (containerName.ContainerId is (byte)ContainerName.DynamicContainer
-            or (byte)ContainerName.Barrel)
+            or (byte)ContainerName.Barrel
+            or (byte)ContainerName.LevelEntity)
         {
             if (container.Type != ContainerType.Inventory)
             {
