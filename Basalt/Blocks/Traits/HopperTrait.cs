@@ -7,6 +7,7 @@ using Basalt.Core.Containers;
 using Basalt.Core.Entities;
 using Basalt.Core.Item;
 using Basalt.Core.Tasks;
+using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;

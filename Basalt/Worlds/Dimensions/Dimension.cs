@@ -22,7 +22,8 @@ public sealed class Dimension : IDisposable
     {
         ["minecraft:barrel"] = "Barrel",
         ["minecraft:chest"] = "Chest",
-        ["minecraft:trapped_chest"] = "Chest"
+        ["minecraft:trapped_chest"] = "Chest",
+        ["minecraft:hopper"] = "Hopper"
     };
 
     private readonly Dictionary<long, ChunkColumn> _chunks;

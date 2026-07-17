@@ -36,6 +36,8 @@ public sealed class FurnaceTrait : BlockTrait
   private int _cookTime;
   private bool _ticking;
 
+  public BlockContainer? Container => _container;
+
   public FurnaceTrait(Block block) : base(block)
   {
   }

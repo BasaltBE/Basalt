@@ -3,12 +3,14 @@ namespace Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Container;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
+using Basalt.Core.Containers;
+using Basalt.Core.Entities;
 using Basalt.Core.Item;
-using Basalt.Protocol.Nbt;
+using Basalt.Core.Worlds;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
-using Basalt.Core.Containers;
 
 public class ChestTrait : BlockTrait
 {
@@ -242,7 +244,43 @@ public class ChestTrait : BlockTrait
             }
         }
 
+        if (_sharedContainer is not null)
+        {
+            foreach ((Basalt.Core.Player.Player player, _) in _sharedContainer.GetAllOccupants().ToList())
+            {
+                _sharedContainer.Close(player);
+            }
+        }
+
+        DropContainerItems(details);
         Unpair(details.Player.Dimension, details.BlockPosition.X, details.BlockPosition.Y, details.BlockPosition.Z);
+    }
+
+    private void DropContainerItems(BlockBreakDetails details)
+    {
+        var dimension = details.Player.Dimension;
+        if (dimension is null || _container is null) return;
+
+        ulong currentTick = dimension.World is Worlds.Tickable tickable ? tickable.TickValue : 0;
+
+        for (int i = 0; i < _container.GetSize(); i++)
+        {
+            ItemStack? item = _container.GetItem(i);
+            if (item is null || item.StackSize == 0) continue;
+
+            Entities.ItemEntity drop = new(item)
+            {
+                Position = new Protocol.Types.Vec3f
+                {
+                    X = details.BlockPosition.X + 0.5f,
+                    Y = details.BlockPosition.Y + 0.5f,
+                    Z = details.BlockPosition.Z + 0.5f
+                }
+            };
+
+            drop.LockPickupUntil(currentTick + 10);
+            drop.Spawn(dimension, new Entities.Traits.Types.EntitySpawnOptions(InitialSpawn: false));
+        }
     }
 
     public override void OnRender(Player.Player player, int x, int y, int z)

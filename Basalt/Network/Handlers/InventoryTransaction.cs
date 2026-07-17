@@ -416,7 +416,7 @@ public static class InventoryTransaction
             }
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
-            if (block is not null)
+            if (block is not null && !player.IsSneaking)
             {
                 block.OnInteract(new BlockInteractDetails(
                     player,
@@ -489,7 +489,7 @@ public static class InventoryTransaction
         Basalt.Core.Blocks.Block? blockEntity =
             player.Dimension.GetBlock(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
-        if (blockEntity is not null)
+        if (blockEntity is not null && !player.IsSneaking)
         {
             blockEntity.OnInteract(new BlockInteractDetails(
                 player,
