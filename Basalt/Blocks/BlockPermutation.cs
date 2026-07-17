@@ -137,8 +137,15 @@ public sealed class BlockPermutation
     public static int Hash(string identifier, BlockState state)
     {
         uint hash = HashOffset;
-        HashText(ref hash, identifier);
-        HashByte(ref hash, 0x1F);
+        HashByte(ref hash, 10);
+        HashUInt16(ref hash, 0);
+
+        HashByte(ref hash, 8);
+        HashNbtString(ref hash, "name");
+        HashNbtString(ref hash, identifier);
+
+        HashByte(ref hash, 10);
+        HashNbtString(ref hash, "states");
 
         if (state.Count > 0)
         {
@@ -148,12 +155,21 @@ public sealed class BlockPermutation
             for (int i = 0; i < keys.Count; i++)
             {
                 string key = keys[i];
-                HashText(ref hash, key);
-                HashByte(ref hash, 0x1E);
-                HashValue(ref hash, state[key]);
-                HashByte(ref hash, 0x1D);
+                BlockStateValue value = state[key];
+                HashByte(ref hash, value.Kind switch
+                {
+                    0 => 3,
+                    1 => 8,
+                    2 => 1,
+                    _ => throw new InvalidOperationException("Unsupported block state value kind.")
+                });
+                HashNbtString(ref hash, key);
+                HashValue(ref hash, value);
             }
         }
+
+        HashByte(ref hash, 0);
+        HashByte(ref hash, 0);
 
         return unchecked((int)hash);
     }
@@ -209,9 +225,10 @@ public sealed class BlockPermutation
         };
     }
 
-    private static void HashText(ref uint hash, string value)
+    private static void HashNbtString(ref uint hash, string value)
     {
         int byteCount = Encoding.UTF8.GetByteCount(value);
+        HashUInt16(ref hash, checked((ushort)byteCount));
         byte[] rented = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
@@ -229,22 +246,25 @@ public sealed class BlockPermutation
         switch (value.Kind)
         {
             case 0:
-                Span<byte> number = stackalloc byte[8];
-                BinaryPrimitives.WriteInt64LittleEndian(number, value.AsNumber());
-                HashByte(ref hash, 0x00);
+                Span<byte> number = stackalloc byte[4];
+                BinaryPrimitives.WriteInt32LittleEndian(number, checked((int)value.AsNumber()));
                 HashBytes(ref hash, number);
                 return;
             case 1:
-                HashByte(ref hash, 0x01);
-                HashText(ref hash, value.AsString());
+                HashNbtString(ref hash, value.AsString());
                 return;
             case 2:
-                HashByte(ref hash, 0x02);
                 HashByte(ref hash, value.AsBool() ? (byte)1 : (byte)0);
                 return;
             default:
                 throw new InvalidOperationException("Unsupported block state value kind.");
         }
+    }
+
+    private static void HashUInt16(ref uint hash, ushort value)
+    {
+        HashByte(ref hash, (byte)value);
+        HashByte(ref hash, (byte)(value >> 8));
     }
 
     private static void HashBytes(ref uint hash, ReadOnlySpan<byte> bytes)
