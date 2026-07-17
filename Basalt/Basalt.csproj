@@ -16,10 +16,7 @@
     <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <PublishAot>true</PublishAot>
-    <IlcInstructionSet>native</IlcInstructionSet>
-  </PropertyGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\Protocol\Protocol.csproj" />
@@ -28,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="Basalt.Binary" Version="0.1.0" />
     <PackageReference Include="Basalt.RakNet" Version="0.1.0" />
+    <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

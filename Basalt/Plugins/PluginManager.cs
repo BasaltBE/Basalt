@@ -1,8 +1,8 @@
 namespace Basalt.Core.Plugins;
 
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Basalt.Core.Profiling;
+using McMaster.NETCore.Plugins;
 
 public sealed class PluginManager
 {
@@ -16,29 +16,39 @@ public sealed class PluginManager
         _server = server;
     }
 
-    [RequiresUnreferencedCode("Plugin loading uses Assembly.LoadFrom")]
     public void LoadAll(string directory)
     {
         using var __zone = Profiler.BeginZone("Plugins.LoadAll");
-        if (!Directory.Exists(directory))
+
+        string absoluteDirectory = Path.GetFullPath(directory);
+        if (!Directory.Exists(absoluteDirectory))
         {
-            Directory.CreateDirectory(directory);
+            Directory.CreateDirectory(absoluteDirectory);
             return;
         }
 
-        foreach (string assemblyPath in Directory.GetFiles(directory, "*.dll"))
+        foreach (string subDir in Directory.GetDirectories(absoluteDirectory))
         {
-            Load(assemblyPath);
+            string pluginName = Path.GetFileName(subDir);
+            string pluginDll = Path.Combine(subDir, $"{pluginName}.dll");
+            if (File.Exists(pluginDll))
+            {
+                Load(pluginDll);
+            }
         }
     }
 
-    [RequiresUnreferencedCode("Plugin loading uses Assembly.LoadFrom")]
     public void Load(string assemblyPath)
     {
         using var __zone = Profiler.BeginZone($"Plugin.Load({Path.GetFileName(assemblyPath)})");
         try
         {
-            Assembly assembly = Assembly.LoadFrom(assemblyPath);
+            var loader = PluginLoader.CreateFromAssemblyFile(
+                assemblyPath,
+                sharedTypes: [typeof(Plugin), typeof(Server)]
+            );
+
+            Assembly assembly = loader.LoadDefaultAssembly();
             PluginAttribute? attribute = assembly.GetCustomAttribute<PluginAttribute>();
             if (attribute is null)
             {
@@ -63,9 +73,9 @@ public sealed class PluginManager
                 Plugin = plugin,
                 Description = description,
                 AssemblyPath = assemblyPath,
+                Loader = loader,
                 State = PluginState.Loaded
             });
-            // Logger.Info($"Loaded plugin {description.Name} {description.Version}.");
         }
         catch (Exception exception)
         {
@@ -86,7 +96,6 @@ public sealed class PluginManager
             {
                 plugin.Plugin.OnStart();
                 plugin.State = PluginState.Started;
-                // Logger.Info($"Started plugin {plugin.Description.Name}.");
             }
             catch (Exception exception)
             {
@@ -110,7 +119,6 @@ public sealed class PluginManager
             {
                 plugin.Plugin.OnDisable();
                 plugin.State = PluginState.Disabled;
-                // Logger.Info($"Disabled plugin {plugin.Description.Name}.");
             }
             catch (Exception exception)
             {
@@ -120,7 +128,6 @@ public sealed class PluginManager
         }
     }
 
-    [RequiresUnreferencedCode("...")]
     private static Type GetEntry(Assembly assembly)
     {
         Type[] entries = assembly.GetTypes()

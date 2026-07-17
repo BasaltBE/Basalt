@@ -94,9 +94,7 @@ public sealed class Server
         RegisterGenerator<SuperFlatGenerator>("superflat");
 
 
-#pragma warning disable IL2026
         Plugins.LoadAll(Properties.PluginsDirectory);
-#pragma warning restore IL2026
 
         ResourcePacks.Load(Properties.ResourcePacksPath);
 
