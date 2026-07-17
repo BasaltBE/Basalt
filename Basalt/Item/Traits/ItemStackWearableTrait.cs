@@ -8,9 +8,10 @@ public sealed class ItemStackWearableTrait : ItemTrait
 {
     public new static string Identifier => "wearable";
     public new static readonly Type? Component = typeof(ItemTypeWearableComponent);
+    public new static readonly string[] Tags = ["minecraft:is_armor"];
 
     // Wearable slot enum from the protocol.
-    // 0 = head, 1 = chest, 2 = legs, 3 = feet, 4 = offhand
+    // 0 = head, 1 = chest, 2 = legs, 3 = feet
     private const int SlotHead = 0;
     private const int SlotChest = 1;
     private const int SlotLegs = 2;
@@ -28,7 +29,41 @@ public sealed class ItemStackWearableTrait : ItemTrait
         if (component is not null)
         {
             Slot = component.GetSlot();
+            return;
         }
+
+        Slot = InferSlotFromIdentifier(ItemStack.Type.Identifier);
+    }
+
+    private static int InferSlotFromIdentifier(string identifier)
+    {
+        if (identifier.EndsWith("_helmet", StringComparison.Ordinal))
+        {
+            return SlotHead;
+        }
+
+        if (identifier.EndsWith("_chestplate", StringComparison.Ordinal))
+        {
+            return SlotChest;
+        }
+
+        if (identifier.EndsWith("_leggings", StringComparison.Ordinal))
+        {
+            return SlotLegs;
+        }
+
+        if (identifier.EndsWith("_boots", StringComparison.Ordinal))
+        {
+            return SlotFeet;
+        }
+
+        // Elytra goes in the chest slot.
+        if (identifier.Equals("minecraft:elytra", StringComparison.Ordinal))
+        {
+            return SlotChest;
+        }
+
+        return -1;
     }
 
     public override void OnUseOnAir(ItemUseOnAirDetails details)
