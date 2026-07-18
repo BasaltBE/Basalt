@@ -195,6 +195,12 @@ public static class CustomItemType
             itemProperties.Set("hand_equipped", new ByteTag { Value = 1 });
         }
 
+        // Attack damage for client tooltip.
+        if (options.AttackDamage > 0f)
+        {
+            itemProperties.Set("damage", new IntTag { Value = (int)options.AttackDamage });
+        }
+
         if (itemProperties.Values.Count > 0)
         {
             components.Set("item_properties", itemProperties);
@@ -272,9 +278,7 @@ public static class CustomItemType
         // Attack damage tooltip.
         if (options.AttackDamage > 0f)
         {
-            CompoundTag damage = new();
-            damage.Set("value", new IntTag { Value = (int)options.AttackDamage });
-            components.Set("minecraft:damage", damage);
+            components.Set("minecraft:damage", new IntTag { Value = (int)options.AttackDamage });
         }
 
         // Item tags for client-side tool type recognition.
