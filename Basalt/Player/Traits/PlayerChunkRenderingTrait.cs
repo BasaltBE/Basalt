@@ -68,6 +68,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 return;
             }
 
+            Logger.Info($"ChunkDebug ApplyViewDistance for {Player.Username}: {ViewDistance} → {viewDistance}");
             ViewDistance = viewDistance;
             ResetRingScan();
             _requestedChunks.Clear();
@@ -95,7 +96,9 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
             if (Player.Dimension is not null)
             {
+                Logger.Info($"ChunkDebug StartChunkLoad for {Player.Username}: ChunkPos=({ChunkX},{ChunkZ}), ViewDistance={ViewDistance}, Dimension={Player.Dimension.Identifier}");
                 RequestAndSendAvailableChunks(Player.Dimension);
+                Logger.Info($"ChunkDebug After RequestAndSendAvailableChunks: loadedChunks={_loadedChunks.Count}, requestedChunks={_requestedChunks.Count}, readyChunks={_readyChunks.Count}, ringRadius={_ringRadius}");
             }
         }
     }
@@ -167,7 +170,18 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
 
             UpdateChunkPosition(chunkX, chunkZ);
             UnloadChunks(dimension, clearClient: true);
+
+            int readyBefore = _readyChunks.Count;
+            int loadedBefore = _loadedChunks.Count;
             SendChunks(dimension);
+            int loadedAfter = _loadedChunks.Count;
+            int sent = loadedAfter - loadedBefore;
+
+            if (sent > 0)
+            {
+                Logger.Info($"ChunkDebug OnTick sent {sent} chunks to {Player.Username}, total loaded={loadedAfter}, requested={_requestedChunks.Count}, ready={_readyChunks.Count}");
+            }
+
             UpdateVisibleEntities(dimension);
         }
     }
@@ -306,7 +320,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
         Span<(int X, int Z)> deferredRequests = stackalloc (int X, int Z)[ChunksPerTick];
         int deferredCount = 0;
 
-        while (_sendBuffer.Count < ChunksPerTick && NextRingPosition(out int x, out int z))
+        while (_sendBuffer.Count < ChunksPerTick && deferredCount < ChunksPerTick && NextRingPosition(out int x, out int z))
         {
             long hash = HashChunk(x, z);
             if (_loadedChunks.Contains(hash) || _requestedChunks.Contains(hash))
@@ -339,7 +353,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 });
                 _sentChunkBuffer.Add((hash, x, z));
             }
-            else if (deferredCount < ChunksPerTick)
+            else
             {
                 _requestedChunks.Add(hash);
                 deferredRequests[deferredCount++] = (x, z);
