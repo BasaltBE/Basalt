@@ -1,44 +1,76 @@
 namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Worlds;
+using Basalt.Protocol.Types;
+using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
+using Player = Player.Player;
 
 public static class WorldsCommand
 {
     public static readonly CommandDefinition Definition = new()
     {
         Name = "worlds",
-        Description = "Lists all worlds or shows info about a specific world.",
+        Description = "Lists, inspects, or teleports to worlds.",
         Aliases = ["world"],
         Permissions = ["basalt.op"],
         Overloads =
-      [
-        new OverloadDefinition { Parameters = [] },
-      new OverloadDefinition
-      {
-        Parameters = [new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }]
-      }
-      ],
+        [
+            // /worlds
+            new OverloadDefinition { Parameters = [] },
+            // /worlds <name>
+            new OverloadDefinition
+            {
+                Parameters = [new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }]
+            },
+            // /worlds tp <name>
+            new OverloadDefinition
+            {
+                Parameters =
+                [
+                    new ParameterDefinition { Name = "action", Type = typeof(StringEnum) },
+                    new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }
+                ]
+            }
+        ],
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
+    private static CommandResult Execute(CommandContext ctx)
     {
+        string? action = ctx.Get<StringEnum>("action")?.Value;
         string? name = ctx.Get<StringEnum>("name")?.Value;
-        if (string.IsNullOrWhiteSpace(name))
-            return ListWorlds(ctx);
 
-        return ShowWorld(ctx, name);
+        if (string.Equals(action, "tp", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return CommandResult.Error("Usage: /worlds tp <name>");
+            }
+            return TeleportToWorld(ctx, name);
+        }
+
+        if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(action))
+        {
+            return ListWorlds(ctx);
+        }
+
+        string worldName = name ?? action!;
+        return ShowWorld(ctx, worldName);
     }
 
-    static CommandResult ListWorlds(CommandContext ctx)
+    private static CommandResult ListWorlds(CommandContext ctx)
     {
         string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
         if (string.IsNullOrWhiteSpace(worldsDirectory))
+        {
             worldsDirectory = "worlds";
+        }
 
         HashSet<string> loadedNames = new(StringComparer.OrdinalIgnoreCase);
-        foreach (var world in ctx.Server.Worlds)
+        foreach (World world in ctx.Server.Worlds)
+        {
             loadedNames.Add(world.Name);
+        }
 
         HashSet<string> allNames = new(loadedNames, StringComparer.OrdinalIgnoreCase);
 
@@ -48,12 +80,16 @@ public static class WorldsCommand
             {
                 string dirName = Path.GetFileName(dir);
                 if (!string.IsNullOrWhiteSpace(dirName))
+                {
                     allNames.Add(dirName);
+                }
             }
         }
 
         if (allNames.Count == 0)
+        {
             return CommandResult.OkMessage("§7No worlds found.");
+        }
 
         string message = $"§r§7Worlds (§a{allNames.Count}§7)\n";
         foreach (string worldName in allNames)
@@ -66,10 +102,10 @@ public static class WorldsCommand
         return CommandResult.OkMessage(message);
     }
 
-    static CommandResult ShowWorld(CommandContext ctx, string name)
+    private static CommandResult ShowWorld(CommandContext ctx, string name)
     {
         World? world = null;
-        foreach (var w in ctx.Server.Worlds)
+        foreach (World w in ctx.Server.Worlds)
         {
             if (string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase))
             {
@@ -82,11 +118,15 @@ public static class WorldsCommand
         {
             string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
             if (string.IsNullOrWhiteSpace(worldsDirectory))
+            {
                 worldsDirectory = "worlds";
+            }
 
             string worldPath = Path.Combine(worldsDirectory, name);
             if (Directory.Exists(worldPath))
+            {
                 return CommandResult.OkMessage($"§r§7World '§a{name}§7' exists but is §cunloaded§7.");
+            }
 
             return CommandResult.Error($"World '{name}' not found.");
         }
@@ -96,7 +136,7 @@ public static class WorldsCommand
         int chunkCount = 0;
 
         string dimensionList = "";
-        foreach (var dim in world.Dimensions)
+        foreach (Dimension dim in world.Dimensions)
         {
             entityCount += dim.Entities.Count;
             chunkCount += dim.ChunkCount;
@@ -111,5 +151,40 @@ public static class WorldsCommand
                          $"§7` Total Chunks (§a{chunkCount}§7)\n";
 
         return CommandResult.OkMessage(message);
+    }
+
+    private static CommandResult TeleportToWorld(CommandContext ctx, string name)
+    {
+        Player? player = ctx.RequirePlayer(out CommandResult? error);
+        if (player is null)
+        {
+            return error!;
+        }
+
+        World? world = null;
+        foreach (World w in ctx.Server.Worlds)
+        {
+            if (string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                world = w;
+                break;
+            }
+        }
+
+        if (world is null)
+        {
+            return CommandResult.Error($"World '{name}' is not loaded.");
+        }
+
+        Dimension? targetDimension = world.Dimensions.FirstOrDefault();
+        if (targetDimension is null)
+        {
+            return CommandResult.Error($"World '{name}' has no dimensions.");
+        }
+
+        Vec3f spawnPosition = new() { X = 0f, Y = -57f, Z = 0f };
+        player.Teleport(spawnPosition, targetDimension);
+
+        return CommandResult.OkMessage($"§7Teleported to world '§a{world.Name}§7'.");
     }
 }
