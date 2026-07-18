@@ -295,12 +295,6 @@ public sealed class Player : Entities.Entity
             });
         }
 
-        if (changedDimension)
-        {
-            // Send chunks before the move so the client has terrain ready.
-            GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
-        }
-
         Send(new MovePlayerPacket
         {
             RuntimeId = RuntimeId,
@@ -320,6 +314,7 @@ public sealed class Player : Entities.Entity
         {
             Send(CreateActorDataPacket(tick));
             Send(Abilities.CreatePacket(UniqueId, IsOperator));
+            GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
             targetDimension.AddPlayer(this);
         }
         else
