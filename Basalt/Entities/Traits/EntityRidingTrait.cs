@@ -26,6 +26,13 @@ public sealed class EntityRidingTrait : EntityTrait
     Seat = seat;
   }
 
+  // Required for deserialization. Trait will be non-functional until properly re-linked.
+  public EntityRidingTrait(Entity entity) : base(entity)
+  {
+    Vehicle = entity;
+    Seat = new RideableSeat(0, new Vec3f(0f, 0f, 0f), 0f, false, false);
+  }
+
   public Vec3f GetSeatPosition()
   {
     return Seat.Position;

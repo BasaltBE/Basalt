@@ -650,6 +650,8 @@ public static class InventoryTransaction
         switch (transaction.ActionType)
         {
             case 0:
+                target.OnInteract(player, Basalt.Core.Entities.Traits.Enums.EntityInteractMethod.Interact);
+
                 if (heldItem is null)
                 {
                     return;

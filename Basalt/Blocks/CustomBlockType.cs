@@ -1,5 +1,6 @@
 namespace Basalt.Core.Blocks;
 
+using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Types;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
@@ -79,6 +80,8 @@ public static class CustomBlockType
             {
                 type.EnsureTag(options.Tags[i]);
             }
+
+            BlockTraitRegistry.BindTraitsToType(type);
         }
 
         IReadOnlyList<CustomBlockPermutationOptions> permutations = options.Permutations is { Count: > 0 }

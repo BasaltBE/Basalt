@@ -23,6 +23,17 @@ public static class Interact
             return;
         }
 
+        if (packet.ActionType == InteractActionType.LeaveVehicle)
+        {
+            EntityRidingTrait? riding = player.GetTrait<EntityRidingTrait>();
+            if (riding is not null)
+            {
+                EntityRideableTrait? rideable = riding.Vehicle.GetTrait<EntityRideableTrait>();
+                rideable?.RemoveRider(player);
+            }
+            return;
+        }
+
         if (packet.ActionType == InteractActionType.OpenInventory)
         {
             EntityInventoryTrait? playerInventory = player.GetTrait<EntityInventoryTrait>();
