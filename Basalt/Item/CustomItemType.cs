@@ -269,6 +269,14 @@ public static class CustomItemType
             components.Set("minecraft:can_destroy_in_creative", canDestroy);
         }
 
+        // Attack damage tooltip.
+        if (options.AttackDamage > 0f)
+        {
+            CompoundTag damage = new();
+            damage.Set("value", new IntTag { Value = (int)options.AttackDamage });
+            components.Set("minecraft:damage", damage);
+        }
+
         // Item tags for client-side tool type recognition.
         if (options.Tags is { Count: > 0 })
         {
