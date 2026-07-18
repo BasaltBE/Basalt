@@ -90,6 +90,42 @@ public sealed class CustomItemTypeOptions
     /// Base attack damage dealt by this item. Zero means use the default tag-based lookup.
     /// </summary>
     public float AttackDamage { get; init; }
+
+    /// <summary>
+    /// Wearable component options. Null means this item is not wearable armor.
+    /// </summary>
+    public CustomItemWearableOptions? Wearable { get; init; }
+}
+
+/// <summary>
+/// Options for the wearable component of a custom item.
+/// </summary>
+public sealed class CustomItemWearableOptions
+{
+    /// <summary>
+    /// The equipment slot (e.g. "slot.armor.head", "slot.armor.chest").
+    /// </summary>
+    public required string Slot { get; init; }
+
+    /// <summary>
+    /// Armor protection value.
+    /// </summary>
+    public int Protection { get; init; }
+
+    /// <summary>
+    /// Armor toughness value.
+    /// </summary>
+    public int Toughness { get; init; }
+
+    /// <summary>
+    /// Enchantable slot identifier (e.g. "armor_head", "armor_torso", "armor_legs", "armor_feet").
+    /// </summary>
+    public required string EnchantSlot { get; init; }
+
+    /// <summary>
+    /// Enchantability value for the armor piece.
+    /// </summary>
+    public int EnchantValue { get; init; } = 9;
 }
 
 /// <summary>
@@ -273,6 +309,19 @@ public static class CustomItemType
             CompoundTag canDestroy = new();
             canDestroy.Set("value", new ByteTag { Value = 0 });
             components.Set("minecraft:can_destroy_in_creative", canDestroy);
+        }
+
+        // Wearable.
+        if (options.Wearable is not null)
+        {
+            CompoundTag wearable = new();
+            wearable.Set("protection", new IntTag { Value = options.Wearable.Protection });
+            wearable.Set("toughness", new IntTag { Value = options.Wearable.Toughness });
+            wearable.Set("slot", new StringTag { Value = options.Wearable.Slot });
+            components.Set("minecraft:wearable", wearable);
+
+            itemProperties.Set("enchantable_slot", new StringTag { Value = options.Wearable.EnchantSlot });
+            itemProperties.Set("enchantable_value", new IntTag { Value = options.Wearable.EnchantValue });
         }
 
         // Attack damage tooltip.
