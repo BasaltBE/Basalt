@@ -177,7 +177,8 @@ public sealed class CommandRegistry
             {
                 Name = def.Name,
                 Description = def.Description,
-                PermissionLevel = def.Permissions.Length == 0 ? CommandPermissionLevel.Any : CommandPermissionLevel.Admin,
+                Flags = 0x80,
+                PermissionLevel = def.Permissions.Length == 0 ? CommandPermissionLevel.Any : CommandPermissionLevel.GameDirectors,
                 AliasesOffset = GetAliasesOffset(packet, enumValueOffsets, def),
                 Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, def)
             });

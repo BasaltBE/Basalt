@@ -145,7 +145,7 @@ public static class ResourcePackClientResponse
                     Hardcore = false,
                     Difficulty = 1,
                     WorldSpawn = new BlockPos { X = 0, Y = -58, Z = 0 },
-                    AchievementsDisabled = false,
+                    AchievementsDisabled = !server.Properties.AchievementsEnabled,
                     EditorWorldType = EditorWorldType.NotEditor,
                     CreatedInEditor = false,
                     ExportedFromEditor = false,
@@ -160,7 +160,7 @@ public static class ResourcePackClientResponse
                     LanBroadcastEnabled = false,
                     XblBroadcastMode = XblBroadcastMode.Public,
                     PlatformBroadcastMode = (int)XblBroadcastMode.Public,
-                    CommandsEnabled = true,
+                    CommandsEnabled = !server.Properties.AchievementsEnabled,
                     TexturePackRequired = false,
                     GameRules = [],
                     Experiments = [],
@@ -206,7 +206,7 @@ public static class ResourcePackClientResponse
                     MultiPlayerCorrelationId = Guid.NewGuid().ToString(),
                     ServerAuthoritativeInventory = true,
                     GameVersion = Constants.MinecraftVersion,
-                    PropertyData = new Basalt.Protocol.Nbt.CompoundTag(),
+                    PropertyData = new Protocol.Nbt.CompoundTag(),
                     ServerBlockStateChecksum = 0,
                     WorldTemplateId = Guid.Empty,
                     ClientSideGeneration = false,
@@ -276,7 +276,7 @@ public static class ResourcePackClientResponse
         }
     }
 
-    private static Basalt.Core.Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player)
+    private static Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player)
     {
         if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null)
         {

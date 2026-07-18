@@ -64,7 +64,7 @@ public sealed class PlayerAbilities
         {
             EntityUniqueId = entityUniqueId,
             PlayerPermission = isOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
-            CommandPermission = isOperator ? CommandPermissionLevel.Admin : CommandPermissionLevel.Any,
+            CommandPermission = isOperator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,
             Layers = [ToLayer()]
         };
     }

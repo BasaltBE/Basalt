@@ -76,6 +76,11 @@ public class Properties
     [ServerProperties.PropertyKey("force-resource-packs")]
     [ServerProperties.PropertyComment("If true, clients must accept resource packs to join.")]
     public bool ForceResourcePacks { get; set; } = false;
+
+    [ServerProperties.PropertyOrder(16)]
+    [ServerProperties.PropertyKey("achievements-enabled")]
+    [ServerProperties.PropertyComment("If true, achievements are earnable but TAB autocomplete is limited.")]
+    public bool AchievementsEnabled { get; set; } = false;
 }
 
 
