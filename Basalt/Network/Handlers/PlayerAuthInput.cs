@@ -468,6 +468,16 @@ public static class PlayerAuthInput
             ? (player.BreakingBlock ?? action.BlockPos)
             : action.BlockPos;
 
+        // Creative mode players break blocks instantly without timing validation.
+        if (player.Gamemode == Gamemode.Creative)
+        {
+            BreakStates.TryRemove(player.RuntimeId, out _);
+            player.BreakingBlock = null;
+            StopCrackBlock(player, blockPosition);
+            DestroyBlock(player, action);
+            return;
+        }
+
         bool valid = false;
 
         if (BreakStates.TryRemove(player.RuntimeId, out BreakState state))
