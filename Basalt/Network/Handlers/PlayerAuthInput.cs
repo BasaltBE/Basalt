@@ -742,19 +742,47 @@ public static class PlayerAuthInput
 
         bool categoryMatch = false;
         int toolTierLevel = 0;
+        float efficiency = 1f;
+        bool hasDiggerMatch = false;
 
         if (heldItem is not null)
         {
             ToolCategory itemCategory = GetItemToolCategory(heldItem.Type);
             toolTierLevel = GetItemTierHarvestLevel(heldItem.Type);
             categoryMatch = requiredCategory != ToolCategory.None && itemCategory == requiredCategory;
+
+            // Custom items have digger component so we need to properly
+            // calculate the break times
+            float diggerSpeed = GetDiggerDestroySpeed(heldItem.Type, blockType, out bool useEfficiency);
+            if (diggerSpeed > 0f)
+            {
+                hasDiggerMatch = true;
+                efficiency = diggerSpeed;
+
+                // Digger match implies tool category compatibility.
+                if (!categoryMatch)
+                    categoryMatch = true;
+
+                // Digger-based items bypass tier requirements.
+                if (toolTierLevel == 0)
+                    toolTierLevel = requiredTierLevel;
+
+                // Only apply efficiency enchantment if the digger enables it.
+                if (useEfficiency)
+                {
+                    ItemStackEnchantmentTrait? enchantments = heldItem.GetTrait<ItemStackEnchantmentTrait>();
+                    if (enchantments is not null)
+                    {
+                        efficiency += enchantments.GetMiningSpeedBonus();
+                    }
+                }
+            }
         }
 
         bool tierOk = requiredTierLevel == 0 || toolTierLevel >= requiredTierLevel;
         bool compatible = requiredTierLevel == 0 || (categoryMatch && tierOk);
 
-        float efficiency = 1f;
-        if (categoryMatch)
+        if (!hasDiggerMatch && categoryMatch)
         {
             efficiency = GetBaseMiningEfficiency(heldItem!.Type);
 
@@ -765,10 +793,97 @@ public static class PlayerAuthInput
             }
         }
 
+        // hardness * 1.5 / speed * 20.
+        if (hasDiggerMatch)
+        {
+            float seconds = (hardness * CompatibleToolMultiplier) / efficiency;
+            int ticks = (int)MathF.Ceiling(seconds * Tps);
+            return Math.Clamp(ticks, 1, MaxBreakTicks);
+        }
+
         float multiplier = compatible ? CompatibleToolMultiplier : IncompatibleToolMultiplier;
-        float seconds = (hardness * multiplier) / efficiency;
-        int ticks = (int)MathF.Ceiling(seconds * Tps);
-        return Math.Clamp(ticks, 1, MaxBreakTicks);
+        float tagSeconds = (hardness * multiplier) / efficiency;
+        int tagTicks = (int)MathF.Ceiling(tagSeconds * Tps);
+        return Math.Clamp(tagTicks, 1, MaxBreakTicks);
+    }
+
+    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType)
+    {
+        return GetDiggerDestroySpeed(itemType, blockType, out _);
+    }
+
+    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType, out bool useEfficiency)
+    {
+        useEfficiency = false;
+        Item.Components.ItemTypeDiggerComponent? digger =
+            itemType.Components.GetComponent<Item.Components.ItemTypeDiggerComponent>();
+
+        if (digger is null)
+        {
+            return 0f;
+        }
+
+        useEfficiency = digger.UseEfficiency();
+
+        Item.Components.DestroySpeedEntry[] speeds = digger.GetDestroySpeeds();
+        for (int i = 0; i < speeds.Length; i++)
+        {
+            ref readonly Item.Components.DestroySpeedEntry entry = ref speeds[i];
+
+            if (entry.Block is not null)
+            {
+                if (string.Equals(entry.Block, blockType.Identifier, StringComparison.Ordinal))
+                {
+                    return entry.Speed;
+                }
+                continue;
+            }
+
+            if (entry.TagQuery is not null && MatchesTagQuery(entry.TagQuery, blockType))
+            {
+                return entry.Speed;
+            }
+        }
+
+        return 0f;
+    }
+
+    private static bool MatchesTagQuery(string tagQuery, Basalt.Core.Blocks.BlockType blockType)
+    {
+        // Parses "query.any_tag('tag1', 'tag2', ...)" format.
+        ReadOnlySpan<char> query = tagQuery.AsSpan();
+        int start = query.IndexOf('(');
+        if (start < 0)
+        {
+            return false;
+        }
+
+        int end = query.LastIndexOf(')');
+        if (end <= start)
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> args = query[(start + 1)..end];
+        while (args.Length > 0)
+        {
+            int quoteStart = args.IndexOf('\'');
+            if (quoteStart < 0) break;
+
+            args = args[(quoteStart + 1)..];
+            int quoteEnd = args.IndexOf('\'');
+            if (quoteEnd < 0) break;
+
+            string tag = args[..quoteEnd].ToString();
+            if (blockType.HasTag(tag))
+            {
+                return true;
+            }
+
+            args = args[(quoteEnd + 1)..];
+        }
+
+        return false;
     }
 
     private enum ToolCategory { None, Axe, Hoe, Pickaxe, Shovel, Sword }

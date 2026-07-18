@@ -85,6 +85,11 @@ public sealed class CustomItemTypeOptions
     /// Food component options. Null means not edible.
     /// </summary>
     public CustomItemFoodOptions? Food { get; init; }
+
+    /// <summary>
+    /// Base attack damage dealt by this item. Zero means use the default tag-based lookup.
+    /// </summary>
+    public float AttackDamage { get; init; }
 }
 
 /// <summary>
@@ -142,6 +147,11 @@ public static class CustomItemType
           catalog,
           options.BlockType);
 
+        if (options.AttackDamage > 0f)
+        {
+            type.AttackDamage = options.AttackDamage;
+        }
+
         ItemPalette.InvalidateCache();
         return type;
     }
@@ -172,6 +182,12 @@ public static class CustomItemType
 
         // Max stack size.
         itemProperties.Set("max_stack_size", new IntTag { Value = options.MaxStackSize });
+
+        // Mining speed for client-side break time calculation.
+        if (options.Digger is not null)
+        {
+            itemProperties.Set("mining_speed", new IntTag { Value = (int)options.Digger.DestroySpeed });
+        }
 
         // Hand equipped.
         if (options.HandEquipped)
@@ -251,6 +267,21 @@ public static class CustomItemType
             CompoundTag canDestroy = new();
             canDestroy.Set("value", new ByteTag { Value = 0 });
             components.Set("minecraft:can_destroy_in_creative", canDestroy);
+        }
+
+        // Item tags for client-side tool type recognition.
+        if (options.Tags is { Count: > 0 })
+        {
+            ListTag tagList = new();
+            foreach (string tag in options.Tags)
+            {
+                tagList.Values.Add(new StringTag { Value = tag });
+            }
+            components.Set("item_tags", tagList);
+
+            CompoundTag tagsComponent = new();
+            tagsComponent.Set("tags", tagList);
+            components.Set("minecraft:tags", tagsComponent);
         }
 
         properties.Set("components", components);

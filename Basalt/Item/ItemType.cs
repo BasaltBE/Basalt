@@ -65,7 +65,7 @@ public sealed class ItemType
     public BlockType? BlockType { get; }
     public ItemTypeComponentCollection Components { get; }
     public ItemCatalog? Catalog { get; }
-    public float AttackDamage { get; }
+    public float AttackDamage { get; internal set; }
     public IReadOnlyDictionary<string, Type> Traits => _traits;
 
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
