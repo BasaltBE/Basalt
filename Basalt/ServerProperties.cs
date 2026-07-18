@@ -170,7 +170,7 @@ public class ServerProperties
         lines.AddRange(comments);
     }
 
-    public void ApplyMetadata<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] T>()
+    public void ApplyMetadata<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
     {
         ApplyMetadata(typeof(T));
     }
@@ -258,8 +258,9 @@ public class ServerProperties
         return ToBdsKey(member.Name);
     }
 
-    private void ApplyMetadata([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
+    private void ApplyMetadata([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
     {
+        object? defaults = Activator.CreateInstance(type);
         List<(string Key, int Order, string[] Comments)> keys = [];
         foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
         {
@@ -267,6 +268,7 @@ public class ServerProperties
             int order = field.GetCustomAttribute<PropertyOrderAttribute>()?.Order ?? int.MaxValue;
             string[] comments = field.GetCustomAttribute<PropertyCommentAttribute>()?.Comments ?? [];
             keys.Add((key, order, comments));
+            EnsureDefault(key, field.FieldType, defaults is not null ? field.GetValue(defaults) : null);
         }
 
         foreach (PropertyInfo prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
@@ -280,6 +282,7 @@ public class ServerProperties
             int order = prop.GetCustomAttribute<PropertyOrderAttribute>()?.Order ?? int.MaxValue;
             string[] comments = prop.GetCustomAttribute<PropertyCommentAttribute>()?.Comments ?? [];
             keys.Add((key, order, comments));
+            EnsureDefault(key, prop.PropertyType, defaults is not null ? prop.GetValue(defaults) : null);
         }
 
         List<string> metadataOrder = keys
@@ -314,6 +317,31 @@ public class ServerProperties
             {
                 SetComments(item.Key, item.Comments);
             }
+        }
+    }
+
+    private void EnsureDefault(string key, Type type, object? defaultValue)
+    {
+        if (HasProperty(key) || defaultValue is null)
+            return;
+
+        Type targetType = Nullable.GetUnderlyingType(type) ?? type;
+
+        if (targetType == typeof(bool))
+        {
+            BooleanProperties[key] = (bool)defaultValue;
+        }
+        else if (targetType == typeof(string))
+        {
+            StringProperties[key] = (string)defaultValue;
+        }
+        else if (targetType.IsPrimitive || targetType == typeof(decimal))
+        {
+            NumericalProperties[key] = Convert.ToDouble(defaultValue, CultureInfo.InvariantCulture);
+        }
+        else if (targetType.IsEnum)
+        {
+            StringProperties[key] = defaultValue.ToString()?.ToLowerInvariant() ?? string.Empty;
         }
     }
 
