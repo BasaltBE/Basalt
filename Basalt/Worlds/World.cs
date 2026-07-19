@@ -3,6 +3,7 @@ namespace Basalt.Core.Worlds;
 using System.Diagnostics.CodeAnalysis;
 using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Dimension = Dimensions.Dimension;
@@ -74,6 +75,22 @@ public sealed class World : IDisposable, Tickable
     /// <exception cref="InvalidOperationException"></exception>
     public Dimension CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
     {
+        return CreateDimension(identifier, type, new Vec3f(0, 80, 0), generatorType, generatorArgs);
+    }
+
+    /// <summary>
+    /// Creates a new dimension with a spawn position and adds it to the world.
+    /// </summary>
+    /// <param name="identifier"></param>
+    /// <param name="type"></param>
+    /// <param name="spawnPosition"></param>
+    /// <param name="generatorType"></param>
+    /// <param name="generatorArgs"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
+    public Dimension CreateDimension(string identifier, DimensionType type, Vec3f spawnPosition, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
+    {
         if (!typeof(Generator).IsAssignableFrom(generatorType))
             throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
 
@@ -81,6 +98,14 @@ public sealed class World : IDisposable, Tickable
             throw new InvalidOperationException($"Could not construct generator '{generatorType.FullName}'.");
 
         Dimension dimension = new(identifier, type, Provider, generator);
+        dimension.SpawnPosition = spawnPosition;
+
+        Vec3f? stored = Provider.LoadSpawnPosition(type);
+        if (stored.HasValue)
+        {
+            dimension.SpawnPosition = stored.Value;
+        }
+
         AddDimension(dimension);
         return dimension;
     }

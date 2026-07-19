@@ -1,5 +1,7 @@
+using System.Buffers.Binary;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Types;
 using Basalt.Core.Profiling;
 using LevelDB;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
@@ -80,6 +82,31 @@ public sealed class LevelDbProvider : WorldProvider
     public override void Dispose()
     {
         _database.Dispose();
+    }
+
+    public override Vec3f? LoadSpawnPosition(DimensionType dimensionType)
+    {
+        byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
+        byte[]? data = _database.Get(key);
+        if (data is not { Length: 12 })
+        {
+            return null;
+        }
+
+        float x = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(0, 4));
+        float y = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(4, 4));
+        float z = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(8, 4));
+        return new Vec3f(x, y, z);
+    }
+
+    public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position)
+    {
+        byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
+        byte[] data = new byte[12];
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(4, 4), position.Y);
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(8, 4), position.Z);
+        _database.Put(key, data);
     }
 }
 

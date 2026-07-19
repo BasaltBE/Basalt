@@ -1,5 +1,6 @@
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
+using Basalt.Protocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
@@ -22,6 +23,16 @@ public abstract class WorldProvider : IDisposable
     public abstract ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z);
     public abstract void SaveChunk(ChunkColumn chunk);
     public abstract void DeleteChunk(DimensionType dimensionType, int x, int z);
+
+    public virtual Vec3f? LoadSpawnPosition(DimensionType dimensionType)
+    {
+        return null;
+    }
+
+    public virtual void SaveSpawnPosition(DimensionType dimensionType, Vec3f position)
+    {
+    }
+
     public virtual CompoundTag? LoadPlayerData(string xuid)
     {
         return null;

@@ -182,7 +182,7 @@ public static class WorldsCommand
             return CommandResult.Error($"World '{name}' has no dimensions.");
         }
 
-        Vec3f spawnPosition = new() { X = 0f, Y = -57f, Z = 0f };
+        Vec3f spawnPosition = targetDimension.SpawnPosition;
         player.Teleport(spawnPosition, targetDimension);
 
         return CommandResult.OkMessage($"§7Teleported to world '§a{world.Name}§7'.");

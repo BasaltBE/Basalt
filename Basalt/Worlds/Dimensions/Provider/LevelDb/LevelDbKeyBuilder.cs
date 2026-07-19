@@ -13,6 +13,7 @@ internal static class LevelDbKeyBuilder
     private const byte PrefixEntityList = 0x33;
     private const byte PrefixEntityStorage = 0x34;
     private const byte PrefixPlayerStorage = 0x35;
+    private const byte PrefixSpawnPosition = 0x36;
 
     private const byte TagData3D = 0x2B;
     private const byte TagVersion = 0x2C;
@@ -206,6 +207,14 @@ internal static class LevelDbKeyBuilder
     {
         key[0] = PrefixEntityStorage;
         BinaryPrimitives.WriteInt64LittleEndian(key[1..9], uniqueId);
+    }
+
+    public static byte[] BuildSpawnPositionKey(DimensionType dimensionType)
+    {
+        byte[] key = new byte[2];
+        key[0] = PrefixSpawnPosition;
+        key[1] = (byte)dimensionType;
+        return key;
     }
 }
 

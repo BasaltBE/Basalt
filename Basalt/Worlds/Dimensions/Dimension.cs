@@ -52,6 +52,7 @@ public sealed class Dimension : IDisposable
     public string Identifier { get; }
     public DimensionType Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
+    public Vec3f SpawnPosition { get; set; } = new(0, 80, 0);
     public World? World { get; internal set; }
     public DimensionGameRules Gamerules { get; } = new();
 
@@ -176,6 +177,9 @@ public sealed class Dimension : IDisposable
     public void SaveDirtyChunks()
     {
         using var __zone = Profiler.BeginZone("Dimension.SaveDirtyChunks");
+
+        _provider.SaveSpawnPosition(Type, SpawnPosition);
+
         foreach (ChunkColumn loadedChunk in _chunks.Values)
         {
             SyncBlockActorsToStorages(loadedChunk);
