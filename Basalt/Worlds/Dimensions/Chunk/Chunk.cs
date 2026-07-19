@@ -397,6 +397,11 @@ public sealed class Chunk
             (int x, int y, int z) = actorEntry.Key;
             BlockPos position = new() { X = x, Y = y, Z = z };
 
+            if (!actorEntry.Value.Interactable && !actorEntry.Value.Permutation.IsComponentBased)
+            {
+                continue;
+            }
+
             BlockLevelStorage? storage = chunk.GetBlockStorage(position);
             if (storage is null)
             {
