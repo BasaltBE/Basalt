@@ -50,6 +50,10 @@ public static class InventoryTransaction
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (InventoryTransactionPacket)Protocol.Io.Packet.Deserialize(reader);
 
+
+        // Logger.Info($"Data {packetBuffer.ToString()}");
+        // Logger.Info(packet.ToString());
+
         if (!server.Players.TryGetValue(connection, out Player.Player? player))
         {
             return;
@@ -292,6 +296,7 @@ public static class InventoryTransaction
         UseItemInventoryTransactionData transaction,
         List<InventoryAction> actions)
     {
+        // Logger.Info($"HandleUseItem ActionType:{transaction.ActionType} Trigger:{transaction.TriggerType} Prediction:{transaction.ClientPrediction} Pos:({transaction.BlockPosition.X},{transaction.BlockPosition.Y},{transaction.BlockPosition.Z}) Face:{transaction.BlockFace} actions:{actions.Count}");
 
         if (transaction.ActionType == UseItemActionClickAir)
         {
@@ -402,8 +407,8 @@ public static class InventoryTransaction
                         transaction.Position,
                         transaction.ClickedPosition));
                 }
+                return;
             }
-            return;
         }
 
         if (player.Dimension is not null)
@@ -416,7 +421,7 @@ public static class InventoryTransaction
             }
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
-            if (block is not null && !player.IsSneaking)
+            if (block is not null && block.Interactable && !player.IsSneaking)
             {
                 block.OnInteract(new BlockInteractDetails(
                     player,
@@ -447,8 +452,8 @@ public static class InventoryTransaction
                     transaction.BlockFace,
                     transaction.Position,
                     transaction.ClickedPosition));
+                return;
             }
-            return;
         }
 
         UseItemOnBlock(player, inventory, heldItem, transaction);
@@ -467,6 +472,8 @@ public static class InventoryTransaction
 
         BlockPos clickedPosition = transaction.BlockPosition;
         int clickedFace = transaction.BlockFace;
+
+        Logger.Info($"UseItemOnBlock pos:({clickedPosition.X},{clickedPosition.Y},{clickedPosition.Z}) face:{clickedFace} item:{heldItem.Identifier}");
 
         if (IsEmptyPosition(clickedPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
         {
@@ -546,6 +553,7 @@ public static class InventoryTransaction
             }
         }
 
+
         Basalt.Core.Blocks.BlockPermutation placedPermutation = blockType.Permutations.Count > 0
             ? blockType.Permutations[0]
             : blockType.GetPermutation();
@@ -573,7 +581,7 @@ public static class InventoryTransaction
         {
             Position = placePosition,
             NetworkBlockId = (uint)placedPermutation.NetworkId,
-            Flags = UpdateBlockFlagsType.Network,
+            Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
             Layer = UpdateBlockLayerType.Normal
         });
 
@@ -715,7 +723,7 @@ public static class InventoryTransaction
         {
             Position = position,
             NetworkBlockId = (uint)networkId,
-            Flags = UpdateBlockFlagsType.Network,
+            Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
             Layer = UpdateBlockLayerType.Normal
         });
     }

@@ -102,6 +102,10 @@ public sealed class Dimension : IDisposable
         {
             Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
         }
+        else
+        {
+            Logger.Warn($"Chunk {x},{z} in '{Identifier}' NOT in provider, generating fresh!");
+        }
 
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
@@ -366,8 +370,15 @@ public sealed class Dimension : IDisposable
                 block.SetPermutation(permutation);
             }
 
-            BlockLevelStorage storage = GetOrCreateBlockStorage(chunk, position, permutation.Type.Identifier);
-            chunk.SetBlockStorage(position, storage, dirty);
+            if (block.Interactable || permutation.IsComponentBased)
+            {
+                BlockLevelStorage storage = GetOrCreateBlockStorage(chunk, position, permutation.Type.Identifier);
+                chunk.SetBlockStorage(position, storage, dirty);
+            }
+            else
+            {
+                chunk.SetBlockStorage(position, null, dirty);
+            }
         }
         else
         {
@@ -381,7 +392,7 @@ public sealed class Dimension : IDisposable
             {
                 Position = position,
                 NetworkBlockId = (uint)permutation.NetworkId,
-                Flags = UpdateBlockFlagsType.Network,
+                Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
                 Layer = (UpdateBlockLayerType)layer
             },
             new BroadcastOptions
