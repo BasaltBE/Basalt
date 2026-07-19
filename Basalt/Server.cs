@@ -59,6 +59,7 @@ public sealed class Server
     private long _lastTpsTimestamp;
     private ulong _lastTpsTick;
     private ulong _lastAutoSaveTick;
+    private TimeSpan _startupElapsed;
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
     public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
@@ -80,6 +81,7 @@ public sealed class Server
 
     public Server(Properties? properties = null)
     {
+        long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
@@ -116,6 +118,8 @@ public sealed class Server
 
         DefaultCommands.Register(Commands);
         Crafting.CraftingLoader.Load();
+
+        _startupElapsed = Stopwatch.GetElapsedTime(startTimestamp);
     }
 
     public void Start()
@@ -176,7 +180,7 @@ public sealed class Server
         };
 
         Emit(new ServerStartSignal());
-        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port}");
+        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
     }
 
     public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal

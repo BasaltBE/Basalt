@@ -140,7 +140,6 @@ public sealed class CraftingRegistry
         };
 
         _cachedPayload = SerializePacket(packet);
-        Logger.Info("CraftingData: {0} entries ({1} skipped), {2} bytes.", entries.Count, (_recipes.Count - entries.Count + furnaceSkipped), _cachedPayload.Length);
         return _cachedPayload;
     }
 

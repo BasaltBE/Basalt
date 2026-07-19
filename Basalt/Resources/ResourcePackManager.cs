@@ -69,7 +69,6 @@ public sealed class ResourcePackManager
             {
                 ResourcePack pack = LoadPack(packDir, manifestPath);
                 _packs.Add(pack);
-                Logger.Info($"Resource pack {pack.Name} v{pack.VersionString} loaded.");
             }
             catch (Exception ex)
             {
@@ -84,7 +83,8 @@ public sealed class ResourcePackManager
         }
         else
         {
-            Logger.Info($"Loaded {_packs.Count} resource pack(s) from '{folder}'.");
+            string names = string.Join(", ", _packs.Select(p => $"{p.Name} v{p.VersionString}"));
+            Logger.Info($"Loaded {_packs.Count} resource pack(s): {names}");
         }
     }
 

@@ -473,7 +473,7 @@ public static class InventoryTransaction
         BlockPos clickedPosition = transaction.BlockPosition;
         int clickedFace = transaction.BlockFace;
 
-        Logger.Info($"UseItemOnBlock pos:({clickedPosition.X},{clickedPosition.Y},{clickedPosition.Z}) face:{clickedFace} item:{heldItem.Identifier}");
+        // Logger.Info($"UseItemOnBlock pos:({clickedPosition.X},{clickedPosition.Y},{clickedPosition.Z}) face:{clickedFace} item:{heldItem.Identifier}");
 
         if (IsEmptyPosition(clickedPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue)
         {

@@ -68,7 +68,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait
                 return;
             }
 
-            Logger.Info($"ChunkDebug ApplyViewDistance for {Player.Username}: {ViewDistance} → {viewDistance}");
+            // Logger.Info($"ApplyViewDistance for {Player.Username}: {ViewDistance} → {viewDistance}");
             ViewDistance = viewDistance;
             ResetRingScan();
             _requestedChunks.Clear();
