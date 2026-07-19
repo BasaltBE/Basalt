@@ -20,5 +20,6 @@ public static class DefaultCommands
         registry.Register(PluginsCommand.Definition);
         registry.Register(WorldsCommand.Definition);
         registry.Register(SaveCommand.Definition);
+        registry.Register(SetWorldSpawnCommand.Definition);
     }
 }
