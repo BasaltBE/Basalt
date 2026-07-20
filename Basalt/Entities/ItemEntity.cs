@@ -164,9 +164,11 @@ public sealed class ItemEntity : Entity
                 continue;
             }
 
-            float dx = player.Position.X - Position.X;
-            float dz = player.Position.Z - Position.Z;
-            if ((dx * dx) + (dz * dz) > pickupRadiusSquared)
+            Vec3f feetPos = player.GetPosition();
+            float dx = feetPos.X - Position.X;
+            float dy = feetPos.Y - Position.Y;
+            float dz = feetPos.Z - Position.Z;
+            if ((dx * dx) + (dy * dy) + (dz * dz) > pickupRadiusSquared)
             {
                 continue;
             }
