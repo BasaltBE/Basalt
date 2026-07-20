@@ -346,6 +346,18 @@ public static class InventoryTransaction
             return;
         }
 
+        if (player.Dimension is not null && transaction.BlockRuntimeId != 0 && !IsEmptyPosition(transaction.BlockPosition))
+        {
+            Basalt.Core.Blocks.BlockPermutation serverPermutation =
+                player.Dimension.GetPermutation(transaction.BlockPosition.X, transaction.BlockPosition.Y, transaction.BlockPosition.Z);
+
+            if ((uint)serverPermutation.NetworkId != transaction.BlockRuntimeId)
+            {
+                SendBlockUpdate(player, transaction.BlockPosition, serverPermutation.NetworkId);
+                return;
+            }
+        }
+
         if (transaction.TriggerType == UseItemTriggerRepeat)
         {
             ItemStack? repeatItem = GetHeldItem(inventory, transaction.HotBarSlot);
