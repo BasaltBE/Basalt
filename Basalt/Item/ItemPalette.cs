@@ -423,14 +423,12 @@ public sealed class ItemPalette
 
     private static void SerializeComponents(CompoundTag properties)
     {
-        // TODO! Maybe add sum like Serialize inside a component?
         if (properties.Get<ListTag>("components") is not ListTag componentList)
         {
             return;
         }
 
         CompoundTag components = new();
-
         CompoundTag itemProperties = new();
 
         if (properties.Get<CompoundTag>("icon") is CompoundTag iconTag)
@@ -448,14 +446,30 @@ public sealed class ItemPalette
             itemProperties.Set("damage", damage);
         }
 
-        if (properties.Get<IntTag>("useDuration") is IntTag useDuration)
-        {
-            itemProperties.Set("use_duration", useDuration);
-        }
-
         if (itemProperties.Values.Count > 0)
         {
             components.Set("item_properties", itemProperties);
+        }
+
+        // Resolve use_duration as a standalone component (int ticks).
+        int useDurationTicks = 0;
+        if (properties.Get<IntTag>("useDuration") is IntTag useDurationInt)
+        {
+            useDurationTicks = useDurationInt.Value;
+        }
+        else if (properties.Get<FloatTag>("useDuration") is FloatTag useDurationFloat)
+        {
+            useDurationTicks = (int)(useDurationFloat.Value * 20f);
+        }
+
+        bool hasFood = false;
+        for (int i = 0; i < componentList.Values.Count; i++)
+        {
+            if (componentList.Values[i] is StringTag comp && comp.Value == "minecraft:food")
+            {
+                hasFood = true;
+                break;
+            }
         }
 
         for (int i = 0; i < componentList.Values.Count; i++)
@@ -479,6 +493,17 @@ public sealed class ItemPalette
             components.Set(identifier, componentPayload);
         }
 
+        // minecraft:use_duration as a standalone component (just the int value).
+        if (hasFood)
+        {
+            int ticks = useDurationTicks > 0 ? useDurationTicks : 32;
+            components.Set("minecraft:use_duration", new IntTag { Value = ticks });
+        }
+        else if (useDurationTicks > 0)
+        {
+            components.Set("minecraft:use_duration", new IntTag { Value = useDurationTicks });
+        }
+
         properties.Set("components", components);
     }
 
@@ -489,6 +514,16 @@ public sealed class ItemPalette
         normalized.Set("saturation_modifier", new FloatTag { Value = food.Get<FloatTag>("saturationModifier")?.Value ?? 0f });
         normalized.Set("can_always_eat", new ByteTag { Value = food.Get<ByteTag>("canAlwaysEat")?.Value ?? 0 });
         normalized.Set("using_converts_to", new StringTag { Value = food.Get<StringTag>("usingConvertsTo")?.Value ?? string.Empty });
+        normalized.Set("cooldown_time", new IntTag { Value = 0 });
+        normalized.Set("cooldown_type", new StringTag { Value = string.Empty });
+        normalized.Set("on_use_action", new IntTag { Value = -1 });
+
+        ListTag onUseRange = new();
+        onUseRange.Values.Add(new IntTag { Value = 8 });
+        onUseRange.Values.Add(new IntTag { Value = 8 });
+        onUseRange.Values.Add(new IntTag { Value = 8 });
+        normalized.Set("on_use_range", onUseRange);
+
         return normalized;
     }
 

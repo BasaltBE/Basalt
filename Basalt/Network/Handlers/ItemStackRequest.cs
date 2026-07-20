@@ -53,6 +53,14 @@ public static class ItemStackRequest
     [ThreadStatic]
     private static ItemStack? _pendingCraftResult;
 
+    /// <summary>
+    /// Entry point for processing ItemStackRequests embedded in PlayerAuthInput packets.
+    /// </summary>
+    internal static ItemStackResponse ProcessRequestFromAuthInput(Player.Player player, Protocol.Types.ItemStackRequest request)
+    {
+        return ProcessRequest(player, request);
+    }
+
     private static ItemStackResponse ProcessRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
         Dictionary<string, StackResponseContainerInfo> changed = [];
@@ -93,7 +101,9 @@ public static class ItemStackRequest
             TransferStackRequestAction transfer => HandleTransfer(player, transfer, changed),
             SwapStackRequestAction swap => HandleSwap(player, swap, changed),
             DropStackRequestAction drop => HandleDrop(player, drop, changed),
-            DestroyStackRequestAction destroy => HandleDestroy(player, destroy, changed),
+            DestroyStackRequestAction destroy => destroy.ActionType == 5
+                ? HandleConsume(player, destroy, changed)
+                : HandleDestroy(player, destroy, changed),
             CraftCreativeStackRequestAction creative => HandleCraftCreative(player, creative, changed),
             CraftRecipeStackRequestAction craft => HandleCraftRecipe(player, craft, changed),
             AutoCraftRecipeStackRequestAction autoCraft => HandleCraftRecipe(player, autoCraft.RecipeNetworkId, autoCraft.NumberOfCrafts, changed),
@@ -141,18 +151,41 @@ public static class ItemStackRequest
             {
                 if (!existing.CanStackWith(item))
                 {
-                    return ItemStackResponseStatus.CannotPlaceItem;
+                    int altSlot = ResolveDestinationSlot(craftDst, item, craftDstSlot);
+                    if (altSlot < 0)
+                    {
+                        return ItemStackResponseStatus.CannotPlaceItem;
+                    }
+                    craftDstSlot = altSlot;
+                    existing = craftDst.GetItem(craftDstSlot);
                 }
 
-                int available = existing.Type.MaxStackSize - existing.StackSize;
-                if (available <= 0)
+                if (existing is not null)
                 {
-                    return ItemStackResponseStatus.CannotPlaceItem;
+                    int available = existing.Type.MaxStackSize - existing.StackSize;
+                    if (available <= 0)
+                    {
+                        int altSlot = ResolveDestinationSlot(craftDst, item, craftDstSlot);
+                        if (altSlot < 0)
+                        {
+                            return ItemStackResponseStatus.CannotPlaceItem;
+                        }
+                        craftDstSlot = altSlot;
+                        existing = craftDst.GetItem(craftDstSlot);
+                    }
                 }
 
-                int toAdd = Math.Min(item.StackSize, available);
-                existing.IncrementStack((ushort)toAdd);
-                craftDst.UpdateSlot(craftDstSlot);
+                if (existing is not null)
+                {
+                    int available = existing.Type.MaxStackSize - existing.StackSize;
+                    int toAdd = Math.Min(item.StackSize, available);
+                    existing.IncrementStack((ushort)toAdd);
+                    craftDst.UpdateSlot(craftDstSlot);
+                }
+                else
+                {
+                    craftDst.SetItem(craftDstSlot, item);
+                }
             }
             else
             {
@@ -303,6 +336,20 @@ public static class ItemStackRequest
         return ItemStackResponseStatus.Ok;
     }
 
+    private static ItemStackResponseStatus HandleConsume(
+        Player.Player player,
+        DestroyStackRequestAction action,
+        Dictionary<string, StackResponseContainerInfo> changed)
+    {
+        if (!TryResolveSlot(player, action.Source, out Container container, out int slot))
+        {
+            return ItemStackResponseStatus.InvalidSourceContainer;
+        }
+
+        RecordChange(changed, action.Source.Container, container, action.Source.Slot, slot);
+        return ItemStackResponseStatus.Ok;
+    }
+
     private static ItemStackResponseStatus HandleCraftCreative(
         Player.Player player,
         CraftCreativeStackRequestAction action,
@@ -329,7 +376,7 @@ public static class ItemStackRequest
         CraftRecipeStackRequestAction action,
         Dictionary<string, StackResponseContainerInfo> changed)
     {
-        return HandleCraftRecipe(player, action.RecipeNetworkId, action.NumberOfCrafts, changed);
+        return ProduceCraftResult(player, action.RecipeNetworkId, action.NumberOfCrafts, fromInventory: false);
     }
 
     private static ItemStackResponseStatus HandleCraftRecipe(
@@ -337,6 +384,15 @@ public static class ItemStackRequest
         uint recipeNetworkId,
         byte numberOfCrafts,
         Dictionary<string, StackResponseContainerInfo> changed)
+    {
+        return ProduceCraftResult(player, recipeNetworkId, numberOfCrafts, fromInventory: true);
+    }
+
+    private static ItemStackResponseStatus ProduceCraftResult(
+        Player.Player player,
+        uint recipeNetworkId,
+        byte numberOfCrafts,
+        bool fromInventory)
     {
         Crafting.CraftingRecipe? recipe = Crafting.CraftingRegistry.Instance.GetByNetworkId(recipeNetworkId);
         if (recipe is null)
@@ -357,11 +413,183 @@ public static class ItemStackRequest
         }
 
         int craftCount = Math.Max(1, (int)numberOfCrafts);
+
+        List<(string? Item, string? Tag, int Count)> ingredients = GetFlatIngredients(recipe);
+        if (ingredients.Count > 0)
+        {
+            Container? container = fromInventory
+                ? player.GetTrait<EntityInventoryTrait>()?.Container
+                : GetCraftingContainer(player);
+
+            if (container is null)
+            {
+                Logger.Warn("HandleCraftRecipe: container is null");
+                return ItemStackResponseStatus.Error;
+            }
+
+            if (!ConsumeIngredients(container, ingredients, craftCount))
+            {
+                Logger.Warn($"HandleCraftRecipe: cannot consume ingredients for '{recipe.Identifier}' x{craftCount} ({ingredients.Count} ingredient slots)");
+                return ItemStackResponseStatus.Error;
+            }
+        }
+
         int totalCount = recipe.Result.Count * craftCount;
         ushort stackSize = (ushort)Math.Min(totalCount, resultType.MaxStackSize);
 
         _pendingCraftResult = new ItemStack(resultType, stackSize);
         return ItemStackResponseStatus.Ok;
+    }
+
+    private static Container? GetCraftingContainer(Player.Player player)
+    {
+        foreach ((_, Container candidate) in player.openedContainers)
+        {
+            if (candidate.Type == ContainerType.Workbench)
+            {
+                return candidate;
+            }
+        }
+
+        PlayerCraftingGridTrait? grid = player.GetTrait<PlayerCraftingGridTrait>();
+        return grid?.Container;
+    }
+
+    private static List<(string? Item, string? Tag, int Count)> GetFlatIngredients(Crafting.CraftingRecipe recipe)
+    {
+        List<(string? Item, string? Tag, int Count)> result = [];
+
+        if (recipe.Type == Crafting.RecipeType.Shaped)
+        {
+            foreach (string row in recipe.Pattern)
+            {
+                foreach (char symbol in row)
+                {
+                    if (symbol == ' ')
+                    {
+                        continue;
+                    }
+
+                    if (recipe.Key.TryGetValue(symbol, out Crafting.RecipeIngredient? ingredient))
+                    {
+                        result.Add((ingredient.Item, ingredient.Tag, ingredient.Count));
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach (Crafting.RecipeIngredient ingredient in recipe.Ingredients)
+            {
+                result.Add((ingredient.Item, ingredient.Tag, ingredient.Count));
+            }
+        }
+
+        return result;
+    }
+
+    private static bool ConsumeIngredients(Container container, List<(string? Item, string? Tag, int Count)> ingredients, int craftCount)
+    {
+        // Verify all ingredients are available before consuming anything.
+        // Track how much we need from each slot.
+        int containerSize = container.GetSize();
+        int[] slotConsumption = new int[containerSize];
+
+        foreach ((string? item, string? tag, int count) in ingredients)
+        {
+            int totalNeeded = count * craftCount;
+            int remaining = totalNeeded;
+
+            for (int i = 0; i < containerSize && remaining > 0; i++)
+            {
+                ItemStack? slotItem = container.GetItem(i);
+                if (slotItem is null || slotItem.StackSize == 0)
+                {
+                    continue;
+                }
+
+                if (!IngredientMatches(slotItem, item, tag))
+                {
+                    continue;
+                }
+
+                int available = slotItem.StackSize - slotConsumption[i];
+                if (available <= 0)
+                {
+                    continue;
+                }
+
+                int take = Math.Min(available, remaining);
+                slotConsumption[i] += take;
+                remaining -= take;
+            }
+
+            if (remaining > 0)
+            {
+                Logger.Warn($"ConsumeIngredients: missing ingredient item='{item}' tag='{tag}' needed={totalNeeded} remaining={remaining}");
+                return false;
+            }
+        }
+
+        // Actually consume.
+        for (int i = 0; i < containerSize; i++)
+        {
+            if (slotConsumption[i] == 0)
+            {
+                continue;
+            }
+
+            ItemStack? slotItem = container.GetItem(i);
+            if (slotItem is null)
+            {
+                continue;
+            }
+
+            if (slotConsumption[i] >= slotItem.StackSize)
+            {
+                container.ClearSlot(i);
+            }
+            else
+            {
+                slotItem.DecrementStack((ushort)slotConsumption[i]);
+                container.UpdateSlot(i);
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IngredientMatches(ItemStack item, string? ingredientItem, string? ingredientTag)
+    {
+        if (ingredientTag is not null)
+        {
+            IReadOnlyList<string> tags = item.Type.Tags;
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (string.Equals(tags[i], ingredientTag, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (ingredientItem is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(item.Type.Identifier, ingredientItem, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!ingredientItem.Contains(':'))
+        {
+            return string.Equals(item.Type.Identifier, "minecraft:" + ingredientItem, StringComparison.Ordinal);
+        }
+
+        return false;
     }
 
     private static bool TryResolveSlot(Player.Player player, StackRequestSlotInfo requestSlot, out Container container, out int slot)

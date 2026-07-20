@@ -1,6 +1,7 @@
 namespace Basalt.Core.Network;
 
 using System.Buffers;
+using System.Collections.Concurrent;
 using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
@@ -20,15 +21,58 @@ public sealed class NetworkHandler
     private const int MaxPacketSize = 1024 * 1024 * 4;
 
     private readonly Server _server;
+    private readonly ConcurrentQueue<(NetworkConnection Connection, byte[] Payload)> _incomingPackets = new();
+    private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
 
     public NetworkHandler(Server server)
     {
         _server = server;
     }
 
+    /// <summary>
+    /// Enqueues a raw packet received from the network thread for processing on the main thread.
+    /// </summary>
+    public void EnqueuePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
+    {
+        _incomingPackets.Enqueue((connection, payload.ToArray()));
+    }
+
+    /// <summary>
+    /// Enqueues a disconnection event for processing on the main thread.
+    /// </summary>
+    public void EnqueueDisconnection(NetworkConnection connection)
+    {
+        _disconnections.Enqueue(connection);
+    }
+
+    /// <summary>
+    /// Processes all queued packets and disconnections on the main thread.
+    /// </summary>
+    public void ProcessIncoming()
+    {
+        using var __zone = Profiler.BeginZone("Network.ProcessIncoming");
+
+        while (_disconnections.TryDequeue(out NetworkConnection? connection))
+        {
+            try
+            {
+                HandleDisconnected(connection);
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn($"Unhandled disconnect error: {exception}");
+            }
+        }
+
+        while (_incomingPackets.TryDequeue(out var packet))
+        {
+            HandlePacket(packet.Connection, packet.Payload);
+        }
+    }
+
     public void HandleDisconnected(NetworkConnection connection)
     {
-        if (!_server.Players.Remove(connection, out Player.Player? player))
+        if (!_server.Players.TryRemove(connection, out Player.Player? player))
         {
             return;
         }
@@ -66,7 +110,7 @@ public sealed class NetworkHandler
         Logger.Info($"Player {player.Username} disconnected.");
     }
 
-    public void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
+    private void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
     {
         using var __zone = Profiler.BeginZone("Network.HandlePacket");
         ReadOnlySpan<byte> packetData = payload.Span;

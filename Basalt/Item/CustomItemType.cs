@@ -137,6 +137,8 @@ public sealed class CustomItemFoodOptions
     public float SaturationModifier { get; init; }
     public bool CanAlwaysEat { get; init; }
     public string? UsingConvertsTo { get; init; }
+    public bool IsDrink { get; init; }
+    public int UseDurationTicks { get; init; } = 32;
 }
 
 /// <summary>
@@ -235,6 +237,14 @@ public static class CustomItemType
         if (options.AttackDamage > 0f)
         {
             itemProperties.Set("damage", new IntTag { Value = (int)options.AttackDamage });
+        }
+
+        // Food item properties.
+        if (options.Food is not null)
+        {
+            itemProperties.Set("use_duration", new IntTag { Value = options.Food.UseDurationTicks > 0 ? options.Food.UseDurationTicks : 32 });
+            itemProperties.Set("use_animation", new IntTag { Value = options.Food.IsDrink ? 2 : 1 });
+            itemProperties.Set("can_destroy_in_creative", new ByteTag { Value = 1 });
         }
 
         if (itemProperties.Values.Count > 0)

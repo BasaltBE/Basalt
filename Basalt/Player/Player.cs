@@ -35,6 +35,7 @@ public sealed class Player : Entities.Entity
     public float Yaw;
     public float HeadYaw { get; set; }
     public BlockPos? BreakingBlock { get; set; }
+    public ulong LastTeleportTick { get; private set; }
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
@@ -259,6 +260,10 @@ public sealed class Player : Entities.Entity
 
         Location = position;
         Velocity = new Vec3f();
+
+        ulong teleportTick = targetDimension.World is Tickable tp ? tp.TickValue : 0;
+        LastTeleportTick = teleportTick;
+
         OnTeleport(new EntityTeleportOptions(previousPosition, position));
 
         if (changedDimension)

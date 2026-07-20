@@ -1,5 +1,6 @@
 namespace Basalt.Core;
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Basalt.Core.Commands;
 using Basalt.Core.Commands.Vanilla;
@@ -61,7 +62,7 @@ public sealed class Server
     private ulong _lastAutoSaveTick;
     private TimeSpan _startupElapsed;
     private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
-    public readonly Dictionary<NetworkConnection, PlayerInstance> Players = new();
+    public readonly ConcurrentDictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
     public PermissionStore PermissionStore { get; }
     public PluginManager Plugins { get; }
@@ -75,9 +76,14 @@ public sealed class Server
     public string DefaultWorldIdentifier { get; }
 
     /// <summary>
-    /// Ticks per second on average
+    /// Ticks per second on average.
     /// </summary>
     public double Tps { get; private set; } = 20.0;
+
+    /// <summary>
+    /// Milliseconds the last server tick took.
+    /// </summary>
+    public double TickWork { get; private set; }
 
     public Server(Properties? properties = null)
     {
@@ -161,23 +167,21 @@ public sealed class Server
                     Thread.SpinWait(1);
                 }
 
-                Tick();
+                try
+                {
+                    Tick();
+                }
+                catch (Exception exception)
+                {
+                    Logger.Error($"Unhandled tick error: {exception}");
+                }
+
                 nextTick += TickDurationTicks;
             }
         }, _tickCancellation.Token);
 
-        _raknet.OnMessage += Network.HandlePacket;
-        _raknet.OnDisconnected += connection =>
-        {
-            try
-            {
-                Network.HandleDisconnected(connection);
-            }
-            catch (Exception exception)
-            {
-                Logger.Warn($"Unhandled disconnect error: {exception}");
-            }
-        };
+        _raknet.OnMessage += Network.EnqueuePacket;
+        _raknet.OnDisconnected += Network.EnqueueDisconnection;
 
         Emit(new ServerStartSignal());
         Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
@@ -423,6 +427,8 @@ public sealed class Server
         using var _ = Profiler.BeginZone("Server.Tick");
         long startTimestamp = Stopwatch.GetTimestamp();
 
+        Network.ProcessIncoming();
+
         using (Profiler.BeginZone("Raknet.Tick"))
         {
             _raknet.Tick();
@@ -450,6 +456,7 @@ public sealed class Server
         }
 
         long endTimestamp = Stopwatch.GetTimestamp();
+        TickWork = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
         UpdateTps(endTimestamp);
         Profiler.FrameMark();
     }

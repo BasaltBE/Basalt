@@ -86,7 +86,7 @@ public sealed class DebugTrait : PlayerTrait
         try
         {
             double tps = Player.Dimension?.World?.Server?.Tps ?? TargetTps;
-            double mspt = Player.Dimension?.World is Tickable tickable ? tickable.TickWork : 0;
+            double mspt = Player.Dimension?.World?.Server?.TickWork ?? 0;
             _averageMspt = _averageMspt == 0 ? mspt : _averageMspt + ((mspt - _averageMspt) * 0.2);
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
             int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;

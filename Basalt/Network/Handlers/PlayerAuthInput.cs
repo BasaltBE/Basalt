@@ -20,6 +20,7 @@ using Basalt.RakNet;
 public static class PlayerAuthInput
 {
     private const float MaxHorizontalMovePerTick = 2.0f;
+    private const ulong TeleportGraceTicks = 20;
     private const ulong DefaultFoodUseTicks = 32UL;
     private const ulong BreakToleranceTicks = 5;
 
@@ -209,6 +210,7 @@ public static class PlayerAuthInput
             return;
         }
 
+        // Update inventory and notify the client.
         heldItem.DecrementStack();
         if (heldItem.StackSize == 0)
         {
@@ -238,9 +240,11 @@ public static class PlayerAuthInput
 
     private static ulong GetUseDurationTicks(ItemStack item)
     {
-        if (item.Type.TryGetComponentProperties("minecraft:use_duration", out Basalt.Protocol.Nbt.CompoundTag tag))
+        // Check raw components for minecraft:use_duration (stored as IntTag).
+        Basalt.Protocol.Nbt.CompoundTag? components = item.Type.Properties.Get<Basalt.Protocol.Nbt.CompoundTag>("components");
+        if (components?.Get<Basalt.Protocol.Nbt.IntTag>("minecraft:use_duration") is Basalt.Protocol.Nbt.IntTag durationTag)
         {
-            return (ulong)Math.Max(1, tag.Get<Basalt.Protocol.Nbt.IntTag>("value")?.Value ?? (int)DefaultFoodUseTicks);
+            return (ulong)Math.Max(1, durationTag.Value);
         }
 
         return DefaultFoodUseTicks;
@@ -248,6 +252,24 @@ public static class PlayerAuthInput
 
     private static ItemStackResponse ProcessItemStackRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
     {
+        // Check if this request contains only MineBlock actions 
+        bool hasOtherActions = false;
+        for (int i = 0; i < request.Actions.Count; i++)
+        {
+            if (request.Actions[i] is not MineBlockStackRequestAction
+                and not EmptyStackRequestAction
+                and not CraftResultsDeprecatedStackRequestAction)
+            {
+                hasOtherActions = true;
+                break;
+            }
+        }
+
+        if (hasOtherActions)
+        {
+            return ItemStackRequest.ProcessRequestFromAuthInput(player, request);
+        }
+
         List<StackResponseContainerInfo> containers = [];
 
         for (int i = 0; i < request.Actions.Count; i++)
@@ -308,6 +330,11 @@ public static class PlayerAuthInput
 
         ulong previousTick = LastInputTickByRuntimeId.GetOrAdd(player.RuntimeId, packet.Tick);
         rawTickDelta = packet.Tick > previousTick ? packet.Tick - previousTick : 1UL;
+
+        if (packet.Tick <= player.LastTeleportTick + TeleportGraceTicks)
+        {
+            return false;
+        }
 
         float tickDelta = Math.Clamp((float)rawTickDelta, 1f, 20f);
         float allowedDistance = MaxHorizontalMovePerTick * tickDelta;
@@ -661,6 +688,11 @@ public static class PlayerAuthInput
             {
                 Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(fluidKind.Value, player.Dimension, blockPosition);
             }
+        }
+        else
+        {
+            Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Water, player.Dimension, blockPosition);
+            Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Lava, player.Dimension, blockPosition);
         }
 
         Basalt.Core.Blocks.BlockPermutation after =
