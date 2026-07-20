@@ -1,6 +1,8 @@
 namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions.Generation;
+using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
 using Player = Player.Player;
@@ -173,7 +175,25 @@ public static class WorldsCommand
 
         if (world is null)
         {
-            return CommandResult.Error($"World '{name}' is not loaded.");
+            string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
+            if (string.IsNullOrWhiteSpace(worldsDirectory))
+            {
+                worldsDirectory = "worlds";
+            }
+
+            string worldPath = Path.Combine(worldsDirectory, name);
+            if (!Directory.Exists(worldPath))
+            {
+                return CommandResult.Error($"World '{name}' not found.");
+            }
+
+            world = ctx.Server.LoadWorld(name, "leveldb", worldPath)
+                ?? ctx.Server.CreateWorld(name, "leveldb", worldPath);
+        }
+
+        if (world.DimensionCount == 0)
+        {
+            world.CreateDimension("overworld", DimensionType.Overworld, typeof(VoidGenerator));
         }
 
         Dimension? targetDimension = world.Dimensions.FirstOrDefault();
