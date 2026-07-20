@@ -24,6 +24,8 @@ public class FluidTrait : BlockTrait
         BlockIdentifier.FlowingLava.ToIdentifier()
     ];
 
+    private static readonly Dictionary<(int X, int Y, int Z, FluidKind Kind), uint> _fluidGeneration = [];
+
     public FluidTrait(Block block) : base(block)
     {
     }
@@ -59,9 +61,16 @@ public class FluidTrait : BlockTrait
         Server? server = dimension.World?.Server;
         if (server is null) return;
 
+        var key = (pos.X, pos.Y, pos.Z, kind);
+        _fluidGeneration.TryGetValue(key, out uint gen);
+        gen++;
+        _fluidGeneration[key] = gen;
+
         uint delay = TickDelay(kind);
-        server.Scheduler.Schedule(new FluidTickTask(dimension, pos, kind) { DelayTicks = delay, RunOnMainThread = true },
-            dimension.World!.TickValue);
+        ulong schedulerTick = server.GetWorld().TickValue;
+        server.Scheduler.Schedule(
+            new FluidTickTask(dimension, pos, kind, gen) { DelayTicks = delay, RunOnMainThread = true },
+            schedulerTick);
     }
 
     private static uint TickDelay(FluidKind kind) => kind switch
@@ -204,8 +213,6 @@ public class FluidTrait : BlockTrait
         if (depthOpt is null) { Logger.Warn($"[FluidTrait] TickFluid ({x},{y},{z}) no liquid_depth on {perm.Type.Identifier}"); return; }
         int depth = depthOpt.Value;
         bool source = depth == 0;
-
-        // Logger.Warn($"[FluidTrait] TickFluid ({x},{y},{z}) type: {perm.Type.Identifier} depth: {depth} source: {source}");
 
         if (kind == FluidKind.Lava && !source)
         {
@@ -439,22 +446,26 @@ public class FluidTrait : BlockTrait
 
         if (!IsReplaceable(dimension, pos)) return;
 
+        dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
+        dimension.SetPermutation(pos.X, pos.Y, pos.Z, perm);
+
         if (kind == FluidKind.Lava)
         {
             var water = TouchingWater(dimension, pos);
             if (water.HasValue)
             {
-                BlockPermutation? cobble = BlockPermutation.Resolve(BlockIdentifier.Cobblestone.ToIdentifier());
-                if (cobble is not null)
+                bool source = IsSourceBlock(FluidKind.Lava, perm);
+                BlockPermutation? solid = source
+                    ? BlockPermutation.Resolve(BlockIdentifier.Obsidian.ToIdentifier())
+                    : BlockPermutation.Resolve(BlockIdentifier.Cobblestone.ToIdentifier());
+                if (solid is not null)
                 {
-                    FormBlock(dimension, pos, cobble);
+                    FormBlock(dimension, pos, solid);
                     return;
                 }
             }
         }
 
-        dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
-        dimension.SetPermutation(pos.X, pos.Y, pos.Z, perm);
         ScheduleFluidTick(dimension, pos, kind);
 
         if (kind == FluidKind.Water)
@@ -465,8 +476,18 @@ public class FluidTrait : BlockTrait
 
     private static void FormBlock(Dimension dimension, BlockPos pos, BlockPermutation newPermutation)
     {
+        InvalidateFluidTick(pos, FluidKind.Water);
+        InvalidateFluidTick(pos, FluidKind.Lava);
+
         dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, newPermutation);
+    }
+
+    private static void InvalidateFluidTick(BlockPos pos, FluidKind kind)
+    {
+        var key = (pos.X, pos.Y, pos.Z, kind);
+        _fluidGeneration.TryGetValue(key, out uint gen);
+        _fluidGeneration[key] = gen + 1;
     }
 
     public static void NotifyFluidNeighbors(FluidKind kind, Dimension dimension, BlockPos pos)
@@ -532,18 +553,25 @@ public class FluidTrait : BlockTrait
         private readonly Dimension _dimension;
         private readonly BlockPos _pos;
         private readonly FluidKind _kind;
+        private readonly uint _generation;
 
-        public FluidTickTask(Dimension dimension, BlockPos pos, FluidKind kind)
+        public FluidTickTask(Dimension dimension, BlockPos pos, FluidKind kind, uint generation)
         {
             _dimension = dimension;
             _pos = pos;
             _kind = kind;
+            _generation = generation;
             RunOnMainThread = true;
         }
 
         public override void Execute()
         {
-            // Logger.Warn($"[FluidTickTask] Executing at ({_pos.X},{_pos.Y},{_pos.Z}) kind:{_kind}");
+            var key = (_pos.X, _pos.Y, _pos.Z, _kind);
+            _fluidGeneration.TryGetValue(key, out uint currentGen);
+
+            if (_generation != currentGen)
+                return;
+
             TickFluid(_kind, _dimension, _pos.X, _pos.Y, _pos.Z);
         }
     }
