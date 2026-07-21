@@ -2,6 +2,7 @@ namespace Basalt.Core.Blocks.Traits;
 
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
+using Basalt.Core.Events;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
@@ -101,7 +102,7 @@ public class FluidTrait : BlockTrait
         return val.Kind == 0 ? (int)val.AsNumber() : null;
     }
 
-    private static bool IsSourceBlock(FluidKind kind, BlockPermutation perm)
+    public static bool IsSourceBlock(FluidKind kind, BlockPermutation perm)
     {
         if (!perm.Type.Liquid) return false;
         string sid = kind == FluidKind.Water
@@ -478,6 +479,15 @@ public class FluidTrait : BlockTrait
     {
         InvalidateFluidTick(pos, FluidKind.Water);
         InvalidateFluidTick(pos, FluidKind.Lava);
+
+        Server? server = dimension.World?.Server;
+        if (server is not null)
+        {
+            var signal = new BlockFormSignal(dimension, pos, newPermutation);
+            server.Emit(signal);
+            if (signal.Cancelled) return;
+            newPermutation = signal.Permutation;
+        }
 
         dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, newPermutation);

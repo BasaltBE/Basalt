@@ -1,12 +1,18 @@
 namespace Basalt.Core.Forms;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Basalt.Core.Player;
 using Basalt.Protocol.Packets;
 
 public abstract class Form<TResponse>
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private static int NextFormId;
 
     internal readonly int FormId = Interlocked.Increment(ref NextFormId);
@@ -42,7 +48,7 @@ public abstract class Form<TResponse>
     [RequiresDynamicCode("...")]
     public string ToJson()
     {
-        return JsonSerializer.Serialize(CreatePayload());
+        return JsonSerializer.Serialize(CreatePayload(), JsonOptions);
     }
 
     protected abstract object CreatePayload();

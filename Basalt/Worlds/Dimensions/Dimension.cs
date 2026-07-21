@@ -360,7 +360,7 @@ public sealed class Dimension : IDisposable
         if (permutation.Type.Traits.Count > 0)
         {
             Block? block = chunk.GetBlockActor(position);
-            if (block is null)
+            if (block is null || block.Type.Identifier != permutation.Type.Identifier)
             {
                 block = new Block(permutation);
                 chunk.SetBlockActor(position, block);
