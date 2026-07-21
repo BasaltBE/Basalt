@@ -78,9 +78,11 @@ namespace Basalt.Protocol.Enums
         SetScore = 0x6c,
         SetScoreboardIdentity = 0x70,
         ClientboundCloseForm = 0x136,
+        ServerboundSettingsCommand = 0x138,
         ClientboundDataStore = 0x14a,
         ServerboundDataStore = 0x14c,
         ClientboundDataDrivenUIShowScreen = 0x14d,
-        ClientboundDataDrivenUIClose = 0x14e
+        ClientboundDataDrivenUIClose = 0x14e,
+        ServerboundDataDrivenScreenClosed = 0x157
     }
 }

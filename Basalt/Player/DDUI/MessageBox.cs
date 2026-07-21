@@ -30,8 +30,9 @@ public sealed class MessageBox : DataDrivenScreen
         onClick.Listen((player, _) =>
         {
             _selection = 1;
+            Dismiss(player);
             _closeHandler?.Invoke(player, _selection);
-            return true;
+            return false;
         });
 
         Set(btn);
@@ -55,8 +56,9 @@ public sealed class MessageBox : DataDrivenScreen
         onClick.Listen((player, _) =>
         {
             _selection = 2;
+            Dismiss(player);
             _closeHandler?.Invoke(player, _selection);
-            return true;
+            return false;
         });
 
         Set(btn);

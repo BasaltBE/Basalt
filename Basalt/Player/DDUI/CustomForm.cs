@@ -44,14 +44,17 @@ public sealed class CustomForm : DataDrivenScreen
     }
 
     /// <summary>
-    /// Adds a button that closes the form on click.
+    /// Adds a button that runs the callback and closes the form (unless the callback opened a new screen).
     /// </summary>
     public CustomForm Button(string label, Action<Player.Player> click)
     {
+        DataDrivenScreen self = this;
         Add(DduiElement.Button(label, player =>
         {
             click(player);
-            return true;
+            if (player.Screens.ContainsValue(self))
+                self.Close(player);
+            return false;
         }));
         return this;
     }
@@ -66,14 +69,17 @@ public sealed class CustomForm : DataDrivenScreen
     }
 
     /// <summary>
-    /// Adds a button with tooltip that closes on click.
+    /// Adds a button with tooltip that runs the callback and closes the form (unless the callback opened a new screen).
     /// </summary>
     public CustomForm Button(string label, string tooltip, Action<Player.Player> click)
     {
+        DataDrivenScreen self = this;
         Add(DduiElement.Button(label, player =>
         {
             click(player);
-            return true;
+            if (player.Screens.ContainsValue(self))
+                self.Close(player);
+            return false;
         }, tooltip));
         return this;
     }

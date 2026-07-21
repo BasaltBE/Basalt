@@ -245,6 +245,12 @@ public sealed class NetworkHandler
             case PacketId.ServerboundDataStore:
                 ServerboundDataStore.Handle(_server, connection, packetBuffer);
                 break;
+
+            case PacketId.ServerboundDataDrivenScreenClosed:
+                break;
+
+            case PacketId.ServerboundSettingsCommand:
+                break;
         }
     }
 
