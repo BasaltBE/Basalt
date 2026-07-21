@@ -8,8 +8,10 @@ public sealed class DataStorePropertyValue
     public object? Value;
 
     public static DataStorePropertyValue None() => new() { Type = DataStorePropertyValueType.None };
+    public static DataStorePropertyValue Null() => new() { Type = DataStorePropertyValueType.Null };
     public static DataStorePropertyValue Boolean(bool value) => new() { Type = DataStorePropertyValueType.Boolean, Value = value };
     public static DataStorePropertyValue Int64(long value) => new() { Type = DataStorePropertyValueType.Int64, Value = value };
+    public static DataStorePropertyValue Double(double value) => new() { Type = DataStorePropertyValueType.Double, Value = value };
     public static DataStorePropertyValue String(string value) => new() { Type = DataStorePropertyValueType.String, Value = value };
     public static DataStorePropertyValue TypeValue(Dictionary<string, DataStorePropertyValue> value) => new() { Type = DataStorePropertyValueType.Type, Value = value };
 
@@ -19,8 +21,10 @@ public sealed class DataStorePropertyValue
         Value = Type switch
         {
             DataStorePropertyValueType.None => null,
+            DataStorePropertyValueType.Null => null,
             DataStorePropertyValueType.Boolean => reader.ReadBool(),
             DataStorePropertyValueType.Int64 => reader.ReadInt64(true),
+            DataStorePropertyValueType.Double => reader.ReadF64(true),
             DataStorePropertyValueType.String => reader.ReadVarString(),
             DataStorePropertyValueType.Type => ReadObject(reader),
             _ => throw new NotSupportedException($"Unsupported data store value type {Type}.")
@@ -33,12 +37,16 @@ public sealed class DataStorePropertyValue
         switch (Type)
         {
             case DataStorePropertyValueType.None:
+            case DataStorePropertyValueType.Null:
                 break;
             case DataStorePropertyValueType.Boolean:
                 writer.WriteBool((bool)(Value ?? false));
                 break;
             case DataStorePropertyValueType.Int64:
                 writer.WriteInt64(Convert.ToInt64(Value), true);
+                break;
+            case DataStorePropertyValueType.Double:
+                writer.WriteF64(Convert.ToDouble(Value), true);
                 break;
             case DataStorePropertyValueType.String:
                 writer.WriteVarString(Convert.ToString(Value) ?? string.Empty);
