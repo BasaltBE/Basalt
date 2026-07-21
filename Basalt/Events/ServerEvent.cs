@@ -14,6 +14,8 @@ public enum ServerEvent : int
     PlayerItemDrop = 11,
     PlayerItemPickup = 12,
     PlayerRespawn = 13,
+    PacketReceive = 14,
+    PacketSend = 15,
 }
 
 
