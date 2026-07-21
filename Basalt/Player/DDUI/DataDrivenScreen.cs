@@ -79,7 +79,7 @@ public abstract class DataDrivenScreen
         Resolve(path)?.Listen(listener);
     }
 
-    internal string StoreName => "minecraft";
+    internal static string StoreName => "minecraft";
 
     ClientboundDataStorePacket CreateDataPacket()
     {
