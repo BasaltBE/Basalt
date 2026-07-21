@@ -1,5 +1,6 @@
 namespace Basalt.Core.Plugins;
 
+using System.Diagnostics;
 using System.Reflection;
 using Basalt.Core.Profiling;
 using McMaster.NETCore.Plugins;
@@ -19,6 +20,7 @@ public sealed class PluginManager
     public void LoadAll(string directory)
     {
         using var __zone = Profiler.BeginZone("Plugins.LoadAll");
+        long LoadPluginsTimeStamp = Stopwatch.GetTimestamp();
 
         string absoluteDirectory = Path.GetFullPath(directory);
         if (!Directory.Exists(absoluteDirectory))
@@ -27,6 +29,8 @@ public sealed class PluginManager
             return;
         }
 
+        int count = 0;
+
         foreach (string subDir in Directory.GetDirectories(absoluteDirectory))
         {
             string pluginName = Path.GetFileName(subDir);
@@ -34,8 +38,12 @@ public sealed class PluginManager
             if (File.Exists(pluginDll))
             {
                 Load(pluginDll);
+                count += 1;
             }
         }
+
+        TimeSpan LoadPluginsElapsed = Stopwatch.GetElapsedTime(LoadPluginsTimeStamp);
+        Logger.Info($"Loaded {count} plugins in {LoadPluginsElapsed.Milliseconds}ms.");
     }
 
     public void Load(string assemblyPath)

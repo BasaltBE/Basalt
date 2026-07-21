@@ -104,7 +104,10 @@ public sealed class Server
 
         Plugins.LoadAll(Properties.PluginsDirectory);
 
+        // long LoadReourcePacksTimeStamp = Stopwatch.GetTimestamp();
         ResourcePacks.Load(Properties.ResourcePacksPath);
+        // TimeSpan LoadReourcePacksElapsed = Stopwatch.GetElapsedTime(LoadReourcePacksTimeStamp);
+        // Logger.Info($"Loaded ReourcePacks in ({LoadReourcePacksElapsed.Milliseconds}ms)");
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)

@@ -74,7 +74,7 @@ public static class CraftingLoader
                 loaded++;
             }
 
-            Logger.Info($"Crafting: {loaded} recipes, {furnaceLoaded} furnace ({skipped} skipped).");
+            Logger.Debug($"Crafting: {loaded} recipes, {furnaceLoaded} furnace ({skipped} skipped).");
         }
     }
 
