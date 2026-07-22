@@ -81,6 +81,7 @@ namespace Basalt.Protocol.Enums {
         ServerboundDataStore = 0x14c,
         ClientboundDataDrivenUIShowScreen = 0x14d,
         ClientboundDataDrivenUIClose = 0x14e,
-        ServerboundDataDrivenScreenClosed = 0x157
+        ServerboundDataDrivenScreenClosed = 0x157,
+        UpdateSubChunkBlocks = 0xAC
     }
 }
