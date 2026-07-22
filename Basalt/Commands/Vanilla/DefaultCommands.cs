@@ -20,5 +20,6 @@ public static class DefaultCommands {
         registry.Register(SaveCommand.Definition);
         registry.Register(SetWorldSpawnCommand.Definition);
         registry.Register(FillCommand.Definition);
+        registry.Register(SetBlockCommand.Definition);
     }
 }
