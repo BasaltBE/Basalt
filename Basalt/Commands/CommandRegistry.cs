@@ -196,7 +196,7 @@ public sealed class CommandRegistry {
         ParameterDefinition param) {
         Type type = param.Type;
 
-        if (type == typeof(ItemEnum) || type == typeof(EntityEnum) || type == typeof(EnchantmentEnum)) {
+        if (type == typeof(ItemEnum) || type == typeof(EntityEnum) || type == typeof(EnchantmentEnum) || type == typeof(BlockEnum)) {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, type);
             return new ProtocolCommandParameter {
                 Name = param.Name,
