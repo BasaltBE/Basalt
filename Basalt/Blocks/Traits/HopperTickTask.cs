@@ -19,7 +19,11 @@ internal sealed class HopperTickTask : DelayedTask {
         Block? block = _dimension.GetBlock(_position.X, _position.Y, _position.Z);
         HopperTrait? trait = block?.GetTrait<HopperTrait>();
 
-        if (trait is null) return;
+        if (trait is null) {
+            // Chunk was unloaded or block removed. The trait will reschedule
+            // itself when the chunk reloads and EnsureContainer runs.
+            return;
+        }
 
         bool shouldContinue = trait.Tick();
         if (!shouldContinue) {

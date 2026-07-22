@@ -212,7 +212,20 @@ public sealed class HopperTrait : BlockTrait {
 
     private bool HasWork() {
         if (_container is null) return false;
-        return !_container.IsFull || _container.EmptySlotsCount < _container.GetSize();
+
+        // Can push
+        bool hasItems = false;
+        for (int i = 0; i < _container.GetSize(); i++) {
+            if (_container.GetItem(i) is not null) {
+                hasItems = true;
+                break;
+            }
+        }
+
+        // Can pull
+        bool canPull = !_container.IsFull;
+
+        return hasItems || canPull;
     }
 
     private bool TryPullFromAbove() {
@@ -461,9 +474,10 @@ public sealed class HopperTrait : BlockTrait {
             if (dimension is not null && _container.Dimension is null) {
                 _container.Dimension = dimension;
                 _container.Position = new BlockPos { X = x, Y = y, Z = z };
-                if (!_ticking) {
-                    ScheduleTick(dimension, _container.Position);
-                }
+            }
+
+            if (dimension is not null && !_ticking) {
+                ScheduleTick(dimension, _container.Position);
             }
             return;
         }
@@ -475,6 +489,10 @@ public sealed class HopperTrait : BlockTrait {
           HopperSize);
 
         _container.OnContainerUpdated = OnContainerUpdated;
+
+        if (dimension is not null && !_ticking) {
+            ScheduleTick(dimension, _container.Position);
+        }
     }
 
     private void OnContainerUpdated(BlockContainer container) {
