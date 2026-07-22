@@ -76,6 +76,9 @@ public static class InventoryTransaction {
                 break;
 
             case ReleaseItemInventoryTransactionData:
+                PlayerAuthInput.CancelPendingItemUse(player);
+                break;
+
             case MismatchInventoryTransactionData:
                 break;
         }

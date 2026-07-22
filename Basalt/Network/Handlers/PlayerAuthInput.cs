@@ -41,6 +41,15 @@ public static class PlayerAuthInput {
         BreakStates.TryRemove(runtimeId, out _);
     }
 
+    public static void CancelPendingItemUse(Player.Player player) {
+        if (!PendingItemUses.TryRemove(player.RuntimeId, out _)) {
+            return;
+        }
+
+        LastEatSoundTick.TryRemove(player.RuntimeId, out _);
+        player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+    }
+
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
         PlayerAuthInputPacket packet = new();
@@ -77,6 +86,11 @@ public static class PlayerAuthInput {
             }
 
             MovePlayer(player, packet);
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem)) {
+                StartUsingItem(player);
+            }
+
             TickPendingItemUse(player, packet.Tick);
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction)) {
@@ -112,15 +126,6 @@ public static class PlayerAuthInput {
                 foreach (PlayerBlockAction action in packet.BlockActions) {
                     HandleBlockAction(player, action, packet.Tick);
                 }
-            }
-
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem)) {
-                StartUsingItem(player);
-            }
-            else if (PendingItemUses.ContainsKey(player.RuntimeId)) {
-                PendingItemUses.TryRemove(player.RuntimeId, out _);
-                LastEatSoundTick.TryRemove(player.RuntimeId, out _);
-                player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             }
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting)) {
