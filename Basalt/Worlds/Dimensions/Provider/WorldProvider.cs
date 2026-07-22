@@ -52,6 +52,9 @@ public abstract class WorldProvider : IDisposable {
     public virtual void SavePlayerData(string xuid, CompoundTag data) {
     }
 
+    public virtual void WriteLevelDat(World world) {
+    }
+
     public virtual IReadOnlyList<string> ListPlayerXuids() {
         return [];
     }

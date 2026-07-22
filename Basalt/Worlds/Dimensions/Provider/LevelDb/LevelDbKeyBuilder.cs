@@ -6,75 +6,95 @@ using Basalt.Protocol.Types;
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 internal static class LevelDbKeyBuilder {
-    private const byte PrefixChunk = 0x2F;
-    private const byte PrefixBlockList = 0x31;
-    private const byte PrefixBlockStorage = 0x32;
-    private const byte PrefixEntityList = 0x33;
-    private const byte PrefixEntityStorage = 0x34;
-    private const byte PrefixPlayerStorage = 0x35;
-    private const byte PrefixSpawnPosition = 0x36;
-
     private const byte TagData3D = 0x2B;
     private const byte TagVersion = 0x2C;
     private const byte TagData2D = 0x2D;
     private const byte TagSubChunkPrefix = 0x2F;
     private const byte TagBlockEntity = 0x31;
 
-    public static byte[] BuildChunkKey(int x, int z) {
+    private static readonly byte[] ActorPrefixBytes = "actorprefix"u8.ToArray();
+    private static readonly byte[] DigpBytes = "digp"u8.ToArray();
+    private static readonly byte[] LocalPlayerBytes = "~local_player"u8.ToArray();
+    private static readonly byte[] PlayerServerBytes = "player_server_"u8.ToArray();
+
+    private const byte LegacyPrefixChunk = 0x2F;
+    private const byte LegacyPrefixBlockList = 0x31;
+    private const byte LegacyPrefixBlockStorage = 0x32;
+    private const byte LegacyPrefixEntityList = 0x33;
+    private const byte LegacyPrefixEntityStorage = 0x34;
+    private const byte LegacyPrefixPlayerStorage = 0x35;
+    private const byte LegacyPrefixSpawnPosition = 0x36;
+
+    public static byte[] BuildLegacyChunkKey(int x, int z) {
         byte[] key = new byte[9];
-        WriteChunkKey(key, x, z);
+        key[0] = LegacyPrefixChunk;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(1, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(5, 4), z);
         return key;
     }
 
-    public static byte[] BuildChunkKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyChunkKey(DimensionType dimensionType, int x, int z) {
         byte[] key = new byte[10];
-        WriteChunkKey(key, dimensionType, x, z);
+        key[0] = LegacyPrefixChunk;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(2, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(6, 4), z);
         return key;
     }
 
-    public static byte[] BuildBlockStorageListKey(int x, int z) {
+    public static byte[] BuildLegacyBlockStorageListKey(int x, int z) {
         byte[] key = new byte[9];
-        WriteBlockStorageListKey(key, x, z);
+        key[0] = LegacyPrefixBlockList;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(1, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(5, 4), z);
         return key;
     }
 
-    public static byte[] BuildBlockStorageListKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyBlockStorageListKey(DimensionType dimensionType, int x, int z) {
         byte[] key = new byte[10];
-        WriteBlockStorageListKey(key, dimensionType, x, z);
+        key[0] = LegacyPrefixBlockList;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(2, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(6, 4), z);
         return key;
     }
 
-    public static byte[] BuildBlockStorageKey(BlockPos pos) {
-        byte[] key = new byte[13];
-        WriteBlockStorageKey(key, pos);
-        return key;
-    }
-
-    public static byte[] BuildEntityListKey(int x, int z) {
+    public static byte[] BuildLegacyEntityListKey(int x, int z) {
         byte[] key = new byte[9];
-        WriteEntityListKey(key, x, z);
+        key[0] = LegacyPrefixEntityList;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(1, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(5, 4), z);
         return key;
     }
 
-    public static byte[] BuildEntityListKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyEntityListKey(DimensionType dimensionType, int x, int z) {
         byte[] key = new byte[10];
-        WriteEntityListKey(key, dimensionType, x, z);
+        key[0] = LegacyPrefixEntityList;
+        key[1] = (byte)dimensionType;
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(2, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(6, 4), z);
         return key;
     }
 
-    public static byte[] BuildEntityStorageKey(long uniqueId) {
+    public static byte[] BuildLegacyEntityStorageKey(long uniqueId) {
         byte[] key = new byte[9];
-        WriteEntityStorageKey(key, uniqueId);
+        key[0] = LegacyPrefixEntityStorage;
+        BinaryPrimitives.WriteInt64LittleEndian(key.AsSpan(1, 8), uniqueId);
         return key;
     }
 
-    public static byte[] BuildPlayerStorageKey(string xuid) {
+    public static byte[] BuildLegacyPlayerStorageKey(string xuid) {
         byte[] idBytes = Encoding.UTF8.GetBytes(xuid);
         byte[] key = new byte[idBytes.Length + 1];
-        key[0] = PrefixPlayerStorage;
+        key[0] = LegacyPrefixPlayerStorage;
         idBytes.CopyTo(key, 1);
         return key;
     }
+
+    public static byte[] BuildLegacySpawnPositionKey(DimensionType dimensionType) {
+        return [LegacyPrefixSpawnPosition, (byte)dimensionType];
+    }
+
 
     public static byte[] BuildTagKey(DimensionType dimensionType, int x, int z, byte tag) {
         if (dimensionType == DimensionType.Overworld) {
@@ -84,14 +104,13 @@ internal static class LevelDbKeyBuilder {
             key[8] = tag;
             return key;
         }
-        else {
-            byte[] key = new byte[13];
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(0, 4), x);
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), z);
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(8, 4), (int)dimensionType);
-            key[12] = tag;
-            return key;
-        }
+
+        byte[] dimKey = new byte[13];
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(0, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(4, 4), z);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(8, 4), (int)dimensionType);
+        dimKey[12] = tag;
+        return dimKey;
     }
 
     public static byte[] BuildSubChunkKey(DimensionType dimensionType, int x, int z, sbyte index) {
@@ -103,15 +122,14 @@ internal static class LevelDbKeyBuilder {
             key[9] = (byte)index;
             return key;
         }
-        else {
-            byte[] key = new byte[14];
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(0, 4), x);
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), z);
-            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(8, 4), (int)dimensionType);
-            key[12] = TagSubChunkPrefix;
-            key[13] = (byte)index;
-            return key;
-        }
+
+        byte[] dimKey = new byte[14];
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(0, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(4, 4), z);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(8, 4), (int)dimensionType);
+        dimKey[12] = TagSubChunkPrefix;
+        dimKey[13] = (byte)index;
+        return dimKey;
     }
 
     public static byte[] BuildVersionKey(DimensionType dimensionType, int x, int z) {
@@ -130,61 +148,52 @@ internal static class LevelDbKeyBuilder {
         return BuildTagKey(dimensionType, x, z, TagBlockEntity);
     }
 
-    public static void WriteChunkKey(Span<byte> key, DimensionType dimensionType, int x, int z) {
-        key[0] = PrefixChunk;
-        key[1] = (byte)dimensionType;
-        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
+    public static byte[] BuildActorPrefixKey(long uniqueId) {
+        byte[] key = new byte[ActorPrefixBytes.Length + 8];
+        ActorPrefixBytes.CopyTo(key, 0);
+        BinaryPrimitives.WriteInt64LittleEndian(key.AsSpan(ActorPrefixBytes.Length, 8), uniqueId);
+        return key;
     }
 
-    public static void WriteChunkKey(Span<byte> key, int x, int z) {
-        key[0] = PrefixChunk;
-        BinaryPrimitives.WriteInt32LittleEndian(key[1..5], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[5..9], z);
+    public static byte[] BuildDigpKey(DimensionType dimensionType, int x, int z) {
+        if (dimensionType == DimensionType.Overworld) {
+            byte[] key = new byte[12];
+            DigpBytes.CopyTo(key, 0);
+            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), x);
+            BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(8, 4), z);
+            return key;
+        }
+
+        byte[] dimKey = new byte[16];
+        DigpBytes.CopyTo(dimKey, 0);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(4, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(8, 4), z);
+        BinaryPrimitives.WriteInt32LittleEndian(dimKey.AsSpan(12, 4), (int)dimensionType);
+        return dimKey;
     }
 
-    public static void WriteBlockStorageListKey(Span<byte> key, DimensionType dimensionType, int x, int z) {
-        key[0] = PrefixBlockList;
-        key[1] = (byte)dimensionType;
-        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
+    public static int WriteDigpKey(Span<byte> destination, DimensionType dimensionType, int x, int z) {
+        DigpBytes.CopyTo(destination);
+        BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4, 4), x);
+        BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8, 4), z);
+
+        if (dimensionType == DimensionType.Overworld) {
+            return 12;
+        }
+
+        BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12, 4), (int)dimensionType);
+        return 16;
     }
 
-    public static void WriteBlockStorageListKey(Span<byte> key, int x, int z) {
-        key[0] = PrefixBlockList;
-        BinaryPrimitives.WriteInt32LittleEndian(key[1..5], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[5..9], z);
+    public static byte[] BuildLocalPlayerKey() {
+        return LocalPlayerBytes;
     }
 
-    public static void WriteBlockStorageKey(Span<byte> key, BlockPos pos) {
-        key[0] = PrefixBlockStorage;
-        BinaryPrimitives.WriteInt32LittleEndian(key[1..5], pos.X);
-        BinaryPrimitives.WriteInt32LittleEndian(key[5..9], pos.Y);
-        BinaryPrimitives.WriteInt32LittleEndian(key[9..13], pos.Z);
-    }
-
-    public static void WriteEntityListKey(Span<byte> key, DimensionType dimensionType, int x, int z) {
-        key[0] = PrefixEntityList;
-        key[1] = (byte)dimensionType;
-        BinaryPrimitives.WriteInt32LittleEndian(key[2..6], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[6..10], z);
-    }
-
-    public static void WriteEntityListKey(Span<byte> key, int x, int z) {
-        key[0] = PrefixEntityList;
-        BinaryPrimitives.WriteInt32LittleEndian(key[1..5], x);
-        BinaryPrimitives.WriteInt32LittleEndian(key[5..9], z);
-    }
-
-    public static void WriteEntityStorageKey(Span<byte> key, long uniqueId) {
-        key[0] = PrefixEntityStorage;
-        BinaryPrimitives.WriteInt64LittleEndian(key[1..9], uniqueId);
-    }
-
-    public static byte[] BuildSpawnPositionKey(DimensionType dimensionType) {
-        byte[] key = new byte[2];
-        key[0] = PrefixSpawnPosition;
-        key[1] = (byte)dimensionType;
+    public static byte[] BuildPlayerServerKey(string xuid) {
+        byte[] idBytes = Encoding.UTF8.GetBytes(xuid);
+        byte[] key = new byte[PlayerServerBytes.Length + idBytes.Length];
+        PlayerServerBytes.CopyTo(key, 0);
+        idBytes.CopyTo(key, PlayerServerBytes.Length);
         return key;
     }
 }

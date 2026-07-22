@@ -12,9 +12,13 @@ public sealed class LevelDbProvider : WorldProvider {
     private readonly DB _database;
     private readonly ChunkStore _chunks;
     private readonly PlayerStore _players;
+    private readonly string _path;
     public override string Identifier => "leveldb";
 
+    public string DatabasePath => _path;
+
     public LevelDbProvider(string path) {
+        _path = path;
         Directory.CreateDirectory(path);
         Options options = new() { CreateIfMissing = true };
         _database = new DB(options, path);
@@ -73,25 +77,32 @@ public sealed class LevelDbProvider : WorldProvider {
     }
 
     public override Vec3f? LoadSpawnPosition(DimensionType dimensionType) {
-        byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
-        byte[]? data = _database.Get(key);
-        if (data is not { Length: 12 }) {
-            return null;
+        // Try legacy key first (for migration).
+        byte[] legacyKey = LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType);
+        byte[]? data = _database.Get(legacyKey);
+        if (data is { Length: 12 }) {
+            float lx = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(0, 4));
+            float ly = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(4, 4));
+            float lz = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(8, 4));
+            return new Vec3f(lx, ly, lz);
         }
 
-        float x = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(0, 4));
-        float y = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(4, 4));
-        float z = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(8, 4));
-        return new Vec3f(x, y, z);
+        return null;
     }
 
     public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
-        byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
-        byte[] data = new byte[12];
-        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);
-        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(4, 4), position.Y);
-        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(8, 4), position.Z);
-        _database.Put(key, data);
+        // Delete legacy key if it exists.
+        _database.Delete(LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType));
+    }
+
+    public override void WriteLevelDat(World world) {
+        string worldDir = Path.GetDirectoryName(_path) ?? _path;
+        string levelDatPath = Path.Combine(worldDir, "level.dat");
+        LevelDatWriter.Write(levelDatPath, world);
+
+        // Write levelname.txt (vanilla expects this).
+        string levelNamePath = Path.Combine(worldDir, "levelname.txt");
+        File.WriteAllText(levelNamePath, world.Name);
     }
 }
 

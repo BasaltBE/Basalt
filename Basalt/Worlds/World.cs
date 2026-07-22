@@ -172,12 +172,14 @@ public sealed class World : IDisposable, Tickable {
     }
 
     /// <summary>
-    /// Saves all dirty chunks across all dimensions.
+    /// Saves all dirty chunks across all dimensions and writes level.dat.
     /// </summary>
     public void Save() {
         foreach (Dimension dimension in _dimensions.Values) {
             dimension.SaveDirtyChunks();
         }
+
+        Provider.WriteLevelDat(this);
     }
 
     /// <summary>

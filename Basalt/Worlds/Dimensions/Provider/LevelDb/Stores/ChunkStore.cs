@@ -23,30 +23,35 @@ internal sealed class ChunkStore {
     }
 
     public bool Exists(DimensionType dimensionType, int x, int z) {
-        if (ReadBytes(dimensionType, x, z) is not null) {
+        byte[]? version = _database.Get(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
+        if (version is { Length: > 0 }) {
             return true;
         }
 
-        byte[]? legacy = _database.Get(LevelDbKeyBuilder.BuildChunkKey(x, z));
+        byte[]? legacy = _database.Get(LevelDbKeyBuilder.BuildLegacyChunkKey(dimensionType, x, z));
         if (legacy is { Length: > 0 }) {
             return true;
         }
 
-        byte[]? version = _database.Get(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
-        return version is { Length: > 0 };
+        legacy = _database.Get(LevelDbKeyBuilder.BuildLegacyChunkKey(x, z));
+        return legacy is { Length: > 0 };
     }
 
     public ChunkColumn? Load(DimensionType dimensionType, int x, int z) {
         using var __zone = Profiler.BeginZone("ChunkStore.Load");
-        byte[]? terrain = ReadBytes(dimensionType, x, z);
-        bool fromLegacy = false;
-        if (terrain is null) {
-            terrain = _database.Get(LevelDbKeyBuilder.BuildChunkKey(x, z));
-            if (terrain is null || terrain.Length == 0) {
-                return LoadVanilla(dimensionType, x, z);
-            }
 
-            fromLegacy = true;
+        ChunkColumn? vanilla = LoadVanilla(dimensionType, x, z);
+        if (vanilla is not null) {
+            return vanilla;
+        }
+
+        byte[]? terrain = _database.Get(LevelDbKeyBuilder.BuildLegacyChunkKey(dimensionType, x, z));
+        if (terrain is null || terrain.Length == 0) {
+            terrain = _database.Get(LevelDbKeyBuilder.BuildLegacyChunkKey(x, z));
+        }
+
+        if (terrain is null || terrain.Length == 0) {
+            return null;
         }
 
         ChunkColumn? chunk = DecodeChunk(terrain, dimensionType, x, z);
@@ -56,34 +61,83 @@ internal sealed class ChunkStore {
 
         _entities.Load(chunk);
 
-        chunk.Dirty = fromLegacy;
+        chunk.Dirty = true;
         return chunk;
     }
 
     public void Save(WriteBatch batch, ChunkColumn chunk) {
         using var __zone = Profiler.BeginZone("ChunkStore.Save");
-        byte[] terrain = WriteChunkPayload(chunk);
 
-        batch.Put(LevelDbKeyBuilder.BuildChunkKey(chunk.Type, chunk.X, chunk.Z), terrain);
+        batch.Put(LevelDbKeyBuilder.BuildVersionKey(chunk.Type, chunk.X, chunk.Z), [22]);
 
-        batch.Delete(LevelDbKeyBuilder.BuildChunkKey(chunk.X, chunk.Z));
-        DeleteVanillaKeys(batch, chunk.Type, chunk.X, chunk.Z);
+        int offset = chunk.Type == DimensionType.Overworld ? 4 : 0;
+        int minIndex = chunk.Type == DimensionType.Overworld ? -4 : 0;
+        int maxIndex = chunk.Type == DimensionType.Overworld ? 19 : 15;
 
+        for (int i = minIndex; i <= maxIndex; i++) {
+            int arrayIndex = chunk.Type == DimensionType.Overworld ? i + 4 : i;
+            byte[] subChunkKey = LevelDbKeyBuilder.BuildSubChunkKey(chunk.Type, chunk.X, chunk.Z, (sbyte)i);
+
+            if (arrayIndex < 0 || arrayIndex >= ChunkColumn.MaxSubChunks) {
+                batch.Delete(subChunkKey);
+                continue;
+            }
+
+            SubChunk? subChunk = chunk.SubChunks[arrayIndex];
+            if (subChunk is null || subChunk.IsEmpty()) {
+                batch.Delete(subChunkKey);
+                continue;
+            }
+
+            batch.Put(subChunkKey, WriteSubChunkPayload(subChunk));
+        }
+
+        // Write Data3D (biomes).
+        byte[] biomeData = WriteData3D(chunk);
+        if (biomeData.Length > 0) {
+            batch.Put(LevelDbKeyBuilder.BuildData3DKey(chunk.Type, chunk.X, chunk.Z), biomeData);
+        }
+
+        // Write block entities.
+        byte[] blockEntityData = WriteBlockEntities(chunk);
+        if (blockEntityData.Length > 0) {
+            batch.Put(LevelDbKeyBuilder.BuildBlockEntityKey(chunk.Type, chunk.X, chunk.Z), blockEntityData);
+        }
+        else {
+            batch.Delete(LevelDbKeyBuilder.BuildBlockEntityKey(chunk.Type, chunk.X, chunk.Z));
+        }
+
+        // Write entities.
         _entities.WriteChunkEntities(batch, chunk);
+
+        // Delete legacy  keys.
+        DeleteLegacyKeys(batch, chunk.Type, chunk.X, chunk.Z);
     }
 
     public void Delete(WriteBatch batch, DimensionType dimensionType, int x, int z) {
         _entities.DeleteChunkEntities(batch, dimensionType, x, z);
-        batch.Delete(LevelDbKeyBuilder.BuildChunkKey(dimensionType, x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildBlockStorageListKey(dimensionType, x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildChunkKey(x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildBlockStorageListKey(x, z));
-        DeleteVanillaKeys(batch, dimensionType, x, z);
+
+        // Delete vanilla keys.
+        batch.Delete(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildData3DKey(dimensionType, x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildData2DKey(dimensionType, x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildBlockEntityKey(dimensionType, x, z));
+
+        int minIndex = dimensionType == DimensionType.Overworld ? -4 : 0;
+        int maxIndex = dimensionType == DimensionType.Overworld ? 19 : 15;
+        for (int i = minIndex; i <= maxIndex; i++) {
+            batch.Delete(LevelDbKeyBuilder.BuildSubChunkKey(dimensionType, x, z, (sbyte)i));
+        }
+
+        // Delete legacy  keys.
+        DeleteLegacyKeys(batch, dimensionType, x, z);
     }
 
-    private byte[]? ReadBytes(DimensionType dimensionType, int x, int z) {
-        byte[]? data = _database.Get(LevelDbKeyBuilder.BuildChunkKey(dimensionType, x, z));
-        return data is { Length: > 0 } ? data : null;
+    private static void DeleteLegacyKeys(WriteBatch batch, DimensionType dimensionType, int x, int z) {
+        batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(dimensionType, x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildLegacyBlockStorageListKey(dimensionType, x, z));
+        batch.Delete(LevelDbKeyBuilder.BuildLegacyBlockStorageListKey(x, z));
     }
 
     private ChunkColumn? LoadVanilla(DimensionType dimensionType, int x, int z) {
@@ -184,16 +238,117 @@ internal sealed class ChunkStore {
         }
     }
 
-    private static void DeleteVanillaKeys(WriteBatch batch, DimensionType dimensionType, int x, int z) {
-        batch.Delete(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildData3DKey(dimensionType, x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildData2DKey(dimensionType, x, z));
-        batch.Delete(LevelDbKeyBuilder.BuildBlockEntityKey(dimensionType, x, z));
+    private static byte[] WriteSubChunkPayload(SubChunk subChunk) {
+        int size = 64 * 1024;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
 
-        int minIndex = dimensionType == DimensionType.Overworld ? -4 : 0;
-        int maxIndex = dimensionType == DimensionType.Overworld ? 19 : 15;
-        for (int i = minIndex; i <= maxIndex; i++) {
-            batch.Delete(LevelDbKeyBuilder.BuildSubChunkKey(dimensionType, x, z, (sbyte)i));
+        while (true) {
+            int offset = 0;
+            BinaryWriter writer = new(buffer, ref offset);
+
+            try {
+                SubChunk.Serialize(subChunk, writer, nbt: true);
+                byte[] data = writer.GetProcessedBytes().ToArray();
+                ArrayPool<byte>.Shared.Return(buffer);
+                return data;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentOutOfRangeException or IndexOutOfRangeException) {
+                ArrayPool<byte>.Shared.Return(buffer);
+                size <<= 1;
+                if (size > 16 * 1024 * 1024) {
+                    throw;
+                }
+
+                buffer = ArrayPool<byte>.Shared.Rent(size);
+            }
+            catch {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
+            }
+        }
+    }
+
+    private static byte[] WriteData3D(ChunkColumn chunk) {
+        int size = 64 * 1024;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
+
+        while (true) {
+            int offset = 0;
+            BinaryWriter writer = new(buffer, ref offset);
+
+            try {
+                // 512 bytes of heightmap placeholder (vanilla writes this).
+                Span<byte> heightmap = stackalloc byte[512];
+                heightmap.Clear();
+                writer.WriteBytes(heightmap);
+
+                for (int i = 0; i < ChunkColumn.MaxSubChunks; i++) {
+                    SubChunk? subChunk = chunk.SubChunks[i];
+                    if (subChunk is null || subChunk.IsEmpty()) {
+                        continue;
+                    }
+
+                    BiomeStorage.Serialize(subChunk.Biomes, ref writer, disk: true);
+                }
+
+                byte[] data = writer.GetProcessedBytes().ToArray();
+                ArrayPool<byte>.Shared.Return(buffer);
+                return data;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentOutOfRangeException or IndexOutOfRangeException) {
+                ArrayPool<byte>.Shared.Return(buffer);
+                size <<= 1;
+                if (size > 16 * 1024 * 1024) {
+                    throw;
+                }
+
+                buffer = ArrayPool<byte>.Shared.Rent(size);
+            }
+            catch {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
+            }
+        }
+    }
+
+    private static byte[] WriteBlockEntities(ChunkColumn chunk) {
+        List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
+        if (blockEntities.Count == 0) {
+            return [];
+        }
+
+        int size = 16 * 1024;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
+
+        while (true) {
+            int offset = 0;
+            BinaryWriter writer = new(buffer, ref offset);
+
+            try {
+                for (int i = 0; i < blockEntities.Count; i++) {
+                    NBT.WriteTag(writer, blockEntities[i], new TagOptions(Name: true, Type: true, VarInt: false));
+                }
+
+                byte[] data = writer.GetProcessedBytes().ToArray();
+                ArrayPool<byte>.Shared.Return(buffer);
+                return data;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentOutOfRangeException or IndexOutOfRangeException) {
+                ArrayPool<byte>.Shared.Return(buffer);
+                size <<= 1;
+                if (size > 64 * 1024 * 1024) {
+                    throw;
+                }
+
+                buffer = ArrayPool<byte>.Shared.Rent(size);
+            }
+            catch {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
+            }
         }
     }
 

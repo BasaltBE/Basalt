@@ -9,7 +9,6 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 internal sealed class PlayerStore {
-    private const byte PrefixPlayerStorage = 0x35;
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
     private readonly DB _database;
 
@@ -20,16 +19,36 @@ internal sealed class PlayerStore {
     public IReadOnlyList<string> ListXuids() {
         List<string> xuids = [];
         using Iterator iterator = _database.CreateIterator(new ReadOptions());
-        byte[] prefix = [PrefixPlayerStorage];
+
+        // In Vanilla Data the prefix is "player_server_" not a byte
+        byte[] prefix = Encoding.UTF8.GetBytes("player_server_");
         iterator.Seek(prefix);
 
         while (iterator.IsValid()) {
             ReadOnlySpan<byte> key = iterator.Key();
-            if (key.Length == 0 || key[0] != PrefixPlayerStorage) {
+            if (key.Length <= prefix.Length || !key.StartsWith(prefix)) {
                 break;
             }
 
-            xuids.Add(Encoding.UTF8.GetString(key[1..]));
+            xuids.Add(Encoding.UTF8.GetString(key[prefix.Length..]));
+            iterator.Next();
+        }
+
+        // Also scan legacy prefix (0x35) for migration.
+        byte[] legacyPrefix = [0x35];
+        iterator.Seek(legacyPrefix);
+
+        while (iterator.IsValid()) {
+            ReadOnlySpan<byte> key = iterator.Key();
+            if (key.Length == 0 || key[0] != 0x35) {
+                break;
+            }
+
+            string xuid = Encoding.UTF8.GetString(key[1..]);
+            if (!xuids.Contains(xuid)) {
+                xuids.Add(xuid);
+            }
+
             iterator.Next();
         }
 
@@ -52,7 +71,14 @@ internal sealed class PlayerStore {
             return null;
         }
 
-        byte[]? data = _database.Get(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid));
+        // Try vanilla key first.
+        byte[]? data = _database.Get(LevelDbKeyBuilder.BuildPlayerServerKey(xuid));
+        if (data is { Length: > 0 }) {
+            return data;
+        }
+
+        // Fallback to legacy key.
+        data = _database.Get(LevelDbKeyBuilder.BuildLegacyPlayerStorageKey(xuid));
         return data is { Length: > 0 } ? data : null;
     }
 
@@ -67,7 +93,13 @@ internal sealed class PlayerStore {
             throw new ArgumentException("Player xuid cannot be empty.", nameof(xuid));
         }
 
-        _database.Put(LevelDbKeyBuilder.BuildPlayerStorageKey(xuid), WritePlayerPayload(data));
+        byte[] payload = WritePlayerPayload(data);
+
+        // Write vanilla key.
+        _database.Put(LevelDbKeyBuilder.BuildPlayerServerKey(xuid), payload);
+
+        // Delete legacy key.
+        _database.Delete(LevelDbKeyBuilder.BuildLegacyPlayerStorageKey(xuid));
     }
 
     private static CompoundTag ReadPlayerPayload(BinaryReader reader) {
