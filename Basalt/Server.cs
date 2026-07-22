@@ -145,6 +145,7 @@ public sealed class Server {
         CancellationTokenSource tickCancellation = new();
         _tickCancellation = tickCancellation;
         _tickLoopTask = Task.Run(() => {
+            Profiler.SetThreadName("Main");
             CancellationToken token = tickCancellation.Token;
             long nextTick = Stopwatch.GetTimestamp() + TickDurationTicks;
 

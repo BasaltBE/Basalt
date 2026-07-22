@@ -177,6 +177,10 @@ public sealed class ItemStack {
     }
 
     public CompoundTag? GetSerializedNbt() {
+        if (_traits.Count == 0 && ExtraData?.Nbt is null) {
+            return null;
+        }
+
         CompoundTag nbt = ExtraData?.Nbt ?? new CompoundTag();
         WriteTraits(nbt);
         return nbt.Values.Count > 0 ? nbt : null;

@@ -140,17 +140,22 @@ public class Entity {
         IsAlive = true;
         PendingDespawn = false;
         dimension.AddEntity(this);
-        for (int i = 0; i < _traits.Count; i++) {
-            _traits[i].OnSpawn(options);
+
+        using (Profiler.BeginZone($"Spawn.Traits:{GetType().Name}")) {
+            for (int i = 0; i < _traits.Count; i++) {
+                _traits[i].OnSpawn(options);
+            }
         }
 
-        SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
-        if (this is Player player) {
-            Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });
-            return;
-        }
+        using (Profiler.BeginZone("Entity.Spawn.ActorData")) {
+            SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
+            if (this is Player player) {
+                Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });
+                return;
+            }
 
-        Dimension.Broadcast(actorData);
+            Dimension.Broadcast(actorData);
+        }
     }
 
     public void Despawn(EntityDespawnOptions options) {

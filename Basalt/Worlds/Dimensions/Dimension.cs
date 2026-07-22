@@ -32,6 +32,7 @@ public sealed class Dimension : IDisposable {
 
     private readonly Dictionary<long, ChunkColumn> _chunks;
     private readonly Dictionary<long, int> _chunkViewers;
+    private readonly HashSet<long> _pendingUnloads = [];
     private readonly HashSet<Entity> _entities;
     private readonly List<long> _chunkSweepBuffer = [];
     private readonly HashSet<Entity> _pendingEntityAdds = [];
@@ -222,6 +223,7 @@ public sealed class Dimension : IDisposable {
     public void AddChunkViewer(int x, int z) {
         long hash = HashChunk(x, z);
         _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
+        _pendingUnloads.Remove(hash);
     }
 
     public bool RemoveChunkViewer(int x, int z) {
@@ -232,6 +234,7 @@ public sealed class Dimension : IDisposable {
 
         if (count <= 1) {
             _chunkViewers.Remove(hash);
+            _pendingUnloads.Add(hash);
             return true;
         }
 
@@ -414,10 +417,29 @@ public sealed class Dimension : IDisposable {
             FlushCompletedChunkRequests(CompletedChunkLimit);
         }
 
-        if (currentTick % 20 == 0 && _chunks.Count > 0) {
+        if (currentTick % 20 == 0 && _pendingUnloads.Count > 0) {
             using var unloadZone = Profiler.BeginZone("UnloadUnviewedChunks");
-            int unloadLimit = Math.Min(Math.Max(_chunks.Count / 8, 32), 256);
-            UnloadUnviewedChunks(unloadLimit, save: true);
+            int unloadLimit = Math.Min(_pendingUnloads.Count, 256);
+            _chunkSweepBuffer.Clear();
+
+            foreach (long hash in _pendingUnloads) {
+                if (_chunkViewers.ContainsKey(hash)) {
+                    continue;
+                }
+
+                _chunkSweepBuffer.Add(hash);
+                if (_chunkSweepBuffer.Count >= unloadLimit) {
+                    break;
+                }
+            }
+
+            for (int i = 0; i < _chunkSweepBuffer.Count; i++) {
+                long hash = _chunkSweepBuffer[i];
+                _pendingUnloads.Remove(hash);
+                int x = (int)(hash >> 32);
+                int z = (int)hash;
+                UnloadChunk(x, z, save: true);
+            }
         }
 
         if (_entities.Count == 0) {
@@ -702,6 +724,7 @@ public sealed class Dimension : IDisposable {
             if (_chunkViewers.TryGetValue(hash, out int count)) {
                 if (count <= 1) {
                     _chunkViewers.Remove(hash);
+                    _pendingUnloads.Add(hash);
                 }
                 else {
                     _chunkViewers[hash] = count - 1;

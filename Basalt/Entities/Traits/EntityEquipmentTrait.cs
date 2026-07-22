@@ -44,11 +44,6 @@ public sealed class EntityEquipmentTrait : EntityTrait {
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
-        if (Entity is not Player.Player player) {
-            return;
-        }
-
-        SyncToPlayer(player);
     }
 
     public void SyncToPlayer(Player.Player player) {

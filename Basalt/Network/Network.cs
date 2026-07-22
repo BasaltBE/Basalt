@@ -274,6 +274,28 @@ public sealed class NetworkHandler {
         SendFrame(connection, frameWriter.GetProcessedBytes(), compression, immediate);
     }
 
+    public void SendSerializedPackets(
+        NetworkConnection connection,
+        ReadOnlySpan<(PacketId Id, byte[] Payload)> packets,
+        CompressionMethod? compression = null) {
+        using BinaryStream packetBufferStream = BinaryStream.Rent(MaxPacketSize);
+        using BinaryStream frameBufferStream = BinaryStream.Rent(MaxPacketBatchSize);
+        BinaryWriter frameWriter = frameBufferStream;
+
+        foreach ((PacketId id, byte[] payload) in packets) {
+            packetBufferStream.Offset = 0;
+            BinaryWriter packetWriter = packetBufferStream;
+            packetWriter.WriteVarInt((int)id);
+            packetWriter.WriteBytes(payload);
+
+            ReadOnlySpan<byte> packetData = packetWriter.GetProcessedBytes();
+            frameWriter.WriteVarInt(packetData.Length);
+            frameWriter.WriteBytes(packetData);
+        }
+
+        SendFrame(connection, frameWriter.GetProcessedBytes(), compression);
+    }
+
     public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null, bool immediate = false) {
         using BinaryStream packetBufferStream = BinaryStream.Rent(MaxPacketSize);
         using BinaryStream frameBufferStream = BinaryStream.Rent(MaxPacketBatchSize);

@@ -126,8 +126,8 @@ namespace Basalt.Protocol.Io {
         }
 
         public static int Decompress(ReadOnlySpan<byte> input, Span<byte> output) {
-            DeflateCompressor compressor = new();
-            compressor.Decompress(input, output, out int bytesWritten);
+            DeflateCompressor decompressor = new();
+            decompressor.Decompress(input, output, out int bytesWritten);
             return bytesWritten;
         }
 

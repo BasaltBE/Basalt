@@ -78,14 +78,13 @@ public sealed class EntityInventoryTrait : EntityTrait {
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
-        if (Entity is Player player) {
+        if (Entity is Player player && player.Spawned) {
             Show(player);
         }
     }
 
     public void Show(Player player) {
         Container.Show(player);
-        Container.Update();
 
         EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
         equipment?.SyncToPlayer(player);

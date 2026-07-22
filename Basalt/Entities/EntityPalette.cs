@@ -39,6 +39,8 @@ public sealed class EntityPalette {
         EntityTraitRegistry.Register(traitTypes);
     }
 
+    private static byte[]? _actorIdentifiersPayload;
+
     public static CompoundTag BuildAvailableActorIdentifiersTag() {
         LoadVanilla();
 
@@ -60,6 +62,22 @@ public sealed class EntityPalette {
 
         root.Set("idlist", idList);
         return root;
+    }
+
+    public static byte[] GetActorIdentifiersPayload() {
+        if (_actorIdentifiersPayload is not null) {
+            return _actorIdentifiersPayload;
+        }
+
+        CompoundTag data = BuildAvailableActorIdentifiersTag();
+        using Basalt.Binary.BinaryStream stream = Basalt.Binary.BinaryStream.Rent(64 * 1024);
+        Basalt.Binary.BinaryWriter writer = stream;
+
+        Protocol.Packets.AvailableActorIdentifiersPacket packet = new() { Data = data };
+        packet.Serialize(writer);
+
+        _actorIdentifiersPayload = writer.GetProcessedBytes().ToArray();
+        return _actorIdentifiersPayload;
     }
 
     public static void LoadVanilla(string? dataDirectory = null) {

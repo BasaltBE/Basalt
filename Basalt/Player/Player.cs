@@ -193,7 +193,9 @@ public sealed class Player : Entities.Entity {
 
     public override void Spawn(Dimension dimension, EntitySpawnOptions options) {
         base.Spawn(dimension, options);
-        Attributes.Send();
+        if (Spawned) {
+            Attributes.Send();
+        }
     }
 
     public void Respawn() {

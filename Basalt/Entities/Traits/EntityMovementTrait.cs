@@ -200,7 +200,11 @@ public sealed class EntityMovementTrait : EntityTrait {
     public override void OnMove(EntityMoveOptions details) {
         base.OnMove(details);
 
-        var update = new MoveActorDeltaPacket() {
+        if (Entity.Dimension is null) {
+            return;
+        }
+
+        Entity.Dimension.Broadcast(new MoveActorDeltaPacket() {
             EntityRuntimeId = Entity.RuntimeId,
             Flags = (ushort)MoveDeltaFlags.All,
             Position = details.To,
@@ -209,10 +213,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 Y = details.ToRotation.Yaw,
                 Z = details.ToRotation.HeadYaw,
             }
-        };
-
-        if (Entity.Dimension is not null)
-            Entity.Dimension.Broadcast(update);
+        });
     }
 
 
