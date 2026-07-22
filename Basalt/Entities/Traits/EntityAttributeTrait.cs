@@ -5,23 +5,19 @@ using Basalt.Protocol.Enums;
 using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 
 
-public abstract class EntityAttributeTrait : EntityTrait
-{
+public abstract class EntityAttributeTrait : EntityTrait {
     private readonly AttributeProperties? _initialProperties;
 
     public abstract AttributeName Attribute { get; }
 
     public bool Sync { get; set; } = true;
 
-    public float MinimumValue
-    {
+    public float MinimumValue {
         get => GetAttribute().Min;
-        set
-        {
+        set {
             ProtoAttribute attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Min == next)
-            {
+            if (attribute.Min == next) {
                 return;
             }
 
@@ -31,15 +27,12 @@ public abstract class EntityAttributeTrait : EntityTrait
         }
     }
 
-    public float MaximumValue
-    {
+    public float MaximumValue {
         get => GetAttribute().Max;
-        set
-        {
+        set {
             ProtoAttribute attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Max == next)
-            {
+            if (attribute.Max == next) {
                 return;
             }
 
@@ -49,15 +42,12 @@ public abstract class EntityAttributeTrait : EntityTrait
         }
     }
 
-    public float DefaultValue
-    {
+    public float DefaultValue {
         get => GetAttribute().Default;
-        set
-        {
+        set {
             ProtoAttribute attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Default == next)
-            {
+            if (attribute.Default == next) {
                 return;
             }
 
@@ -67,15 +57,12 @@ public abstract class EntityAttributeTrait : EntityTrait
         }
     }
 
-    public float CurrentValue
-    {
+    public float CurrentValue {
         get => GetAttribute().Current;
-        set
-        {
+        set {
             ProtoAttribute attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Current == next)
-            {
+            if (attribute.Current == next) {
                 return;
             }
 
@@ -85,31 +72,25 @@ public abstract class EntityAttributeTrait : EntityTrait
         }
     }
 
-    protected EntityAttributeTrait(Entity entity, AttributeProperties? properties = null) : base(entity)
-    {
+    protected EntityAttributeTrait(Entity entity, AttributeProperties? properties = null) : base(entity) {
         _initialProperties = properties;
     }
 
-    public ProtoAttribute GetAttribute()
-    {
+    public ProtoAttribute GetAttribute() {
         return Entity.Attributes.GetAttribute(Attribute)
             ?? throw new InvalidOperationException($"Attribute {Attribute} is not registered on entity.");
     }
 
-    public void Reset()
-    {
+    public void Reset() {
         CurrentValue = DefaultValue;
     }
 
-    public override void OnAdd()
-    {
+    public override void OnAdd() {
         EnsureAttribute(_initialProperties ?? new AttributeProperties());
     }
 
-    protected void EnsureAttribute(AttributeProperties properties)
-    {
-        if (Entity.Attributes.HasAttribute(Attribute))
-        {
+    protected void EnsureAttribute(AttributeProperties properties) {
+        if (Entity.Attributes.HasAttribute(Attribute)) {
             return;
         }
 
@@ -122,20 +103,16 @@ public abstract class EntityAttributeTrait : EntityTrait
         MarkDirty();
     }
 
-    public override void OnRemove()
-    {
+    public override void OnRemove() {
         _ = Entity.Attributes.RemoveAttribute(Attribute);
     }
 
-    private static float Truncate4(float value)
-    {
+    private static float Truncate4(float value) {
         return MathF.Truncate(value * 10000f) / 10000f;
     }
 
-    private void MarkDirty()
-    {
-        if (Sync)
-        {
+    private void MarkDirty() {
+        if (Sync) {
             Entity.AttributesDirty = true;
         }
     }

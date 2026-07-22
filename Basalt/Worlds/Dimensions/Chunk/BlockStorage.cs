@@ -7,8 +7,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
-public sealed class BlockStorage
-{
+public sealed class BlockStorage {
     public const int MaxX = 16;
     public const int MaxY = 16;
     public const int MaxZ = 16;
@@ -21,33 +20,27 @@ public sealed class BlockStorage
     public List<int> Palette { get; }
     public int[] Blocks { get; }
 
-    public BlockStorage(List<int>? palette = null, int[]? blocks = null)
-    {
+    public BlockStorage(List<int>? palette = null, int[]? blocks = null) {
         Palette = palette ?? [Air];
         Blocks = blocks ?? new int[MaxSize];
 
         _paletteIndices = new Dictionary<int, int>(Palette.Count);
-        for (int i = 0; i < Palette.Count; i++)
-        {
+        for (int i = 0; i < Palette.Count; i++) {
             _paletteIndices[Palette[i]] = i;
         }
     }
 
-    public bool IsEmpty()
-    {
+    public bool IsEmpty() {
         return Palette.Count == 1 && Palette[0] == Air;
     }
 
-    public int GetState(int bx, int by, int bz)
-    {
+    public int GetState(int bx, int by, int bz) {
         int paletteIndex = Blocks[GetIndex(bx, by, bz)];
         return (uint)paletteIndex < (uint)Palette.Count ? Palette[paletteIndex] : Air;
     }
 
-    public void SetState(int bx, int by, int bz, int state)
-    {
-        if (!_paletteIndices.TryGetValue(state, out int paletteIndex))
-        {
+    public void SetState(int bx, int by, int bz, int state) {
+        if (!_paletteIndices.TryGetValue(state, out int paletteIndex)) {
             paletteIndex = Palette.Count;
             Palette.Add(state);
             _paletteIndices[state] = paletteIndex;
@@ -56,22 +49,18 @@ public sealed class BlockStorage
         Blocks[GetIndex(bx, by, bz)] = paletteIndex;
     }
 
-    public static void Serialize(BlockStorage storage, BinaryWriter writer, bool nbt = false)
-    {
+    public static void Serialize(BlockStorage storage, BinaryWriter writer, bool nbt = false) {
         int bitsPerBlock = ResolveBitsPerValue(storage.Palette.Count, false);
 
         writer.WriteUInt8((byte)((bitsPerBlock << 1) | 1));
 
         int blocksPerWord = 32 / bitsPerBlock;
         int wordCount = (MaxSize + blocksPerWord - 1) / blocksPerWord;
-        for (int w = 0; w < wordCount; w++)
-        {
+        for (int w = 0; w < wordCount; w++) {
             int word = 0;
-            for (int block = 0; block < blocksPerWord; block++)
-            {
+            for (int block = 0; block < blocksPerWord; block++) {
                 int index = w * blocksPerWord + block;
-                if (index >= MaxSize)
-                {
+                if (index >= MaxSize) {
                     break;
                 }
 
@@ -82,65 +71,52 @@ public sealed class BlockStorage
             writer.WriteInt32(word, littleEndian: true);
         }
 
-        if (nbt)
-        {
+        if (nbt) {
             writer.WriteInt32(storage.Palette.Count, littleEndian: true);
         }
-        else
-        {
+        else {
             writer.WriteZigZag(storage.Palette.Count);
         }
 
-        for (int i = 0; i < storage.Palette.Count; i++)
-        {
+        for (int i = 0; i < storage.Palette.Count; i++) {
             int state = storage.Palette[i];
-            if (nbt)
-            {
+            if (nbt) {
                 BlockPermutation permutation = BlockPermutation.Resolve(state);
                 CompoundTag tag = BlockPermutation.ToCompound(permutation);
                 Protocol.Io.NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
             }
-            else
-            {
+            else {
                 writer.WriteZigZag(state);
             }
         }
     }
 
-    public static BlockStorage Deserialize(ref BinaryReader reader, bool nbt = false)
-    {
+    public static BlockStorage Deserialize(ref BinaryReader reader, bool nbt = false) {
         byte paletteAndFlag = reader.ReadUInt8();
         int bitsPerBlock = paletteAndFlag >> 1;
 
-        if (bitsPerBlock > 16)
-        {
+        if (bitsPerBlock > 16) {
             throw new InvalidOperationException($"Invalid bits per block: {bitsPerBlock}.");
         }
 
-        if (bitsPerBlock == 0)
-        {
+        if (bitsPerBlock == 0) {
             int zeroPaletteSize = nbt ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
-            if (zeroPaletteSize <= 0)
-            {
+            if (zeroPaletteSize <= 0) {
                 throw new InvalidOperationException("Invalid block palette size.");
             }
 
             List<int> zeroPalette = new(zeroPaletteSize);
-            for (int i = 0; i < zeroPaletteSize; i++)
-            {
-                if (nbt)
-                {
+            for (int i = 0; i < zeroPaletteSize; i++) {
+                if (nbt) {
                     TagType tagType = (TagType)reader.ReadInt8();
-                    if (tagType != TagType.Compound)
-                    {
+                    if (tagType != TagType.Compound) {
                         throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
                     }
 
                     CompoundTag tag = CompoundTag.Read(reader, new TagOptions(Name: true, Type: false, VarInt: false));
                     zeroPalette.Add(BlockPermutation.FromCompound(tag).NetworkId);
                 }
-                else
-                {
+                else {
                     zeroPalette.Add(reader.ReadZigZag());
                 }
             }
@@ -152,33 +128,27 @@ public sealed class BlockStorage
         int wordCount = (MaxSize + blocksPerWord - 1) / blocksPerWord;
 
         int[] words = new int[wordCount];
-        for (int i = 0; i < wordCount; i++)
-        {
+        for (int i = 0; i < wordCount; i++) {
             words[i] = reader.ReadInt32(littleEndian: true);
         }
 
         int paletteSize = nbt ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
-        if (paletteSize <= 0)
-        {
+        if (paletteSize <= 0) {
             throw new InvalidOperationException("Invalid block palette size.");
         }
 
         List<int> palette = new(paletteSize);
-        for (int i = 0; i < paletteSize; i++)
-        {
-            if (nbt)
-            {
+        for (int i = 0; i < paletteSize; i++) {
+            if (nbt) {
                 TagType tagType = (TagType)reader.ReadInt8();
-                if (tagType != TagType.Compound)
-                {
+                if (tagType != TagType.Compound) {
                     throw new InvalidOperationException($"Expected Compound tag, got {tagType}.");
                 }
 
                 CompoundTag tag = CompoundTag.Read(reader, new TagOptions(Name: true, Type: false, VarInt: false));
                 palette.Add(BlockPermutation.FromCompound(tag).NetworkId);
             }
-            else
-            {
+            else {
                 palette.Add(reader.ReadZigZag());
             }
         }
@@ -187,11 +157,9 @@ public sealed class BlockStorage
         int position = 0;
         int mask = (1 << bitsPerBlock) - 1;
 
-        for (int w = 0; w < words.Length && position < MaxSize; w++)
-        {
+        for (int w = 0; w < words.Length && position < MaxSize; w++) {
             int word = words[w];
-            for (int block = 0; block < blocksPerWord && position < MaxSize; block++, position++)
-            {
+            for (int block = 0; block < blocksPerWord && position < MaxSize; block++, position++) {
                 blocks[position] = (word >> (block * bitsPerBlock)) & mask;
             }
         }
@@ -199,17 +167,14 @@ public sealed class BlockStorage
         return new BlockStorage(palette, blocks);
     }
 
-    private static int GetIndex(int bx, int by, int bz)
-    {
+    private static int GetIndex(int bx, int by, int bz) {
         return ((bx & 0xF) << 8) | ((bz & 0xF) << 4) | (by & 0xF);
     }
 
-    private static int ResolveBitsPerValue(int paletteLength, bool allowZero)
-    {
+    private static int ResolveBitsPerValue(int paletteLength, bool allowZero) {
         int bits = (int)Math.Ceiling(Math.Log2(Math.Max(1, paletteLength)));
 
-        switch (bits)
-        {
+        switch (bits) {
             case 0:
                 return allowZero ? 0 : 1;
             case 1:

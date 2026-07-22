@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class DropStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class DropStackRequestAction : IStackRequestAction, DataType {
     /// <summary>
     /// Stack request action id.
     /// </summary>
@@ -24,15 +23,13 @@ public sealed class DropStackRequestAction : IStackRequestAction, DataType
     /// Whether the drop is randomised.
     /// </summary>
     public bool Randomly;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Count = reader.ReadUInt8();
         Source.Read(reader);
         Randomly = reader.ReadBool();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8(Count);
         Source.Write(writer);
         writer.WriteBool(Randomly);

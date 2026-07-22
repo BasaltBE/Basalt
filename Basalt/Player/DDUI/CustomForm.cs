@@ -1,35 +1,29 @@
 namespace Basalt.Core.DDUI;
 
-public sealed class CustomForm : DataDrivenScreen
-{
+public sealed class CustomForm : DataDrivenScreen {
     public override string Identifier => "minecraft:custom_form";
 
-    public CustomForm(string? title = null)
-    {
+    public CustomForm(string? title = null) {
         if (title is not null)
             Title(title);
     }
 
-    public CustomForm Title(string title)
-    {
+    public CustomForm Title(string title) {
         Set(DduiProperty.String("title", title));
         return this;
     }
 
-    public CustomForm Label(string text)
-    {
+    public CustomForm Label(string text) {
         Add(DduiElement.Label(text));
         return this;
     }
 
-    public CustomForm Divider()
-    {
+    public CustomForm Divider() {
         Add(DduiElement.Divider());
         return this;
     }
 
-    public CustomForm Spacer()
-    {
+    public CustomForm Spacer() {
         Add(DduiElement.Spacer());
         return this;
     }
@@ -37,8 +31,7 @@ public sealed class CustomForm : DataDrivenScreen
     /// <summary>
     /// Adds a button. The click callback returns true to close the form, false to keep it open.
     /// </summary>
-    public CustomForm Button(string label, Func<Player.Player, bool> click)
-    {
+    public CustomForm Button(string label, Func<Player.Player, bool> click) {
         Add(DduiElement.Button(label, click));
         return this;
     }
@@ -46,11 +39,9 @@ public sealed class CustomForm : DataDrivenScreen
     /// <summary>
     /// Adds a button that runs the callback and closes the form (unless the callback opened a new screen).
     /// </summary>
-    public CustomForm Button(string label, Action<Player.Player> click)
-    {
+    public CustomForm Button(string label, Action<Player.Player> click) {
         DataDrivenScreen self = this;
-        Add(DduiElement.Button(label, player =>
-        {
+        Add(DduiElement.Button(label, player => {
             click(player);
             if (player.Screens.ContainsValue(self))
                 self.Close(player);
@@ -62,8 +53,7 @@ public sealed class CustomForm : DataDrivenScreen
     /// <summary>
     /// Adds a button with tooltip. The click callback returns true to close the form.
     /// </summary>
-    public CustomForm Button(string label, string tooltip, Func<Player.Player, bool> click)
-    {
+    public CustomForm Button(string label, string tooltip, Func<Player.Player, bool> click) {
         Add(DduiElement.Button(label, click, tooltip));
         return this;
     }
@@ -71,11 +61,9 @@ public sealed class CustomForm : DataDrivenScreen
     /// <summary>
     /// Adds a button with tooltip that runs the callback and closes the form (unless the callback opened a new screen).
     /// </summary>
-    public CustomForm Button(string label, string tooltip, Action<Player.Player> click)
-    {
+    public CustomForm Button(string label, string tooltip, Action<Player.Player> click) {
         DataDrivenScreen self = this;
-        Add(DduiElement.Button(label, player =>
-        {
+        Add(DduiElement.Button(label, player => {
             click(player);
             if (player.Screens.ContainsValue(self))
                 self.Close(player);
@@ -84,34 +72,28 @@ public sealed class CustomForm : DataDrivenScreen
         return this;
     }
 
-    public CustomForm TextField(string label, string defaultValue, Action<Player.Player, string> onChange, string description = "")
-    {
+    public CustomForm TextField(string label, string defaultValue, Action<Player.Player, string> onChange, string description = "") {
         Add(DduiElement.TextField(label, defaultValue, onChange, description));
         return this;
     }
 
-    public CustomForm Toggle(string label, bool defaultValue, Action<Player.Player, bool> onToggle)
-    {
+    public CustomForm Toggle(string label, bool defaultValue, Action<Player.Player, bool> onToggle) {
         Add(DduiElement.Toggle(label, defaultValue, onToggle));
         return this;
     }
 
-    public CustomForm Dropdown(string label, string[] options, int defaultIndex, Action<Player.Player, int> onSelect)
-    {
+    public CustomForm Dropdown(string label, string[] options, int defaultIndex, Action<Player.Player, int> onSelect) {
         Add(DduiElement.Dropdown(label, options, defaultIndex, onSelect));
         return this;
     }
 
-    public CustomForm Slider(string label, double defaultValue, double min, double max, double step, Action<Player.Player, double> onChange, string description = "")
-    {
+    public CustomForm Slider(string label, double defaultValue, double min, double max, double step, Action<Player.Player, double> onChange, string description = "") {
         Add(DduiElement.Slider(label, defaultValue, min, max, step, onChange, description));
         return this;
     }
 
-    public CustomForm CloseButton(string label = "Close")
-    {
-        DduiElement element = DduiElement.CloseButton(label, player =>
-        {
+    public CustomForm CloseButton(string label = "Close") {
+        DduiElement element = DduiElement.CloseButton(label, player => {
             Close(player);
             return false;
         });

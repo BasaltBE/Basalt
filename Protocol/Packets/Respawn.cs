@@ -4,14 +4,12 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.Respawn)]
-public sealed record RespawnPacket : DataPacket
-{
+public sealed record RespawnPacket : DataPacket {
     public Vec3f Position;
     public RespawnState State;
     public ulong EntityRuntimeId;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Vec3f position = Position;
         position.Read(reader);
         Position = position;
@@ -20,8 +18,7 @@ public sealed record RespawnPacket : DataPacket
         EntityRuntimeId = reader.ReadVarULong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Position.Write(writer);
         writer.WriteUInt8((byte)State);
         writer.WriteVarULong(EntityRuntimeId);

@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class RawStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class RawStackRequestAction : IStackRequestAction, DataType {
     /// <summary>
     /// Raw stack action type id.
     /// </summary>

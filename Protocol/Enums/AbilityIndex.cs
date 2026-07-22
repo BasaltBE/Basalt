@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum AbilityIndex : byte
-{
+public enum AbilityIndex : byte {
     Build,
     Mine,
     DoorsAndSwitches,

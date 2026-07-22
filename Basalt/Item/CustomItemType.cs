@@ -7,8 +7,7 @@ using Basalt.Protocol.Nbt;
 /// <summary>
 /// Options for defining a custom item type.
 /// </summary>
-public sealed class CustomItemTypeOptions
-{
+public sealed class CustomItemTypeOptions {
     /// <summary>
     /// The namespaced identifier (e.g. "mynamespace:ruby").
     /// </summary>
@@ -100,8 +99,7 @@ public sealed class CustomItemTypeOptions
 /// <summary>
 /// Options for the wearable component of a custom item.
 /// </summary>
-public sealed class CustomItemWearableOptions
-{
+public sealed class CustomItemWearableOptions {
     /// <summary>
     /// The equipment slot (e.g. "slot.armor.head", "slot.armor.chest").
     /// </summary>
@@ -131,8 +129,7 @@ public sealed class CustomItemWearableOptions
 /// <summary>
 /// Options for the food component of a custom item.
 /// </summary>
-public sealed class CustomItemFoodOptions
-{
+public sealed class CustomItemFoodOptions {
     public int Nutrition { get; init; }
     public float SaturationModifier { get; init; }
     public bool CanAlwaysEat { get; init; }
@@ -144,8 +141,7 @@ public sealed class CustomItemFoodOptions
 /// <summary>
 /// Options for the digger component of a custom item.
 /// </summary>
-public sealed class CustomItemDiggerOptions
-{
+public sealed class CustomItemDiggerOptions {
     /// <summary>
     /// Speed at which targeted blocks are destroyed.
     /// </summary>
@@ -161,15 +157,13 @@ public sealed class CustomItemDiggerOptions
 /// Factory for creating and registering custom item types.
 /// Network IDs start at 20000 to avoid conflicts with vanilla items.
 /// </summary>
-public static class CustomItemType
-{
+public static class CustomItemType {
     private static int _nextNetworkId = 20000;
 
     /// <summary>
     /// Creates and registers a new custom item type.
     /// </summary>
-    public static ItemType Create(CustomItemTypeOptions options)
-    {
+    public static ItemType Create(CustomItemTypeOptions options) {
         int networkId = AllocateNetworkId();
         CompoundTag properties = BuildProperties(options, networkId);
         ItemCatalog? catalog = BuildCatalog(options);
@@ -185,8 +179,7 @@ public static class CustomItemType
           catalog,
           options.BlockType);
 
-        if (options.AttackDamage > 0f)
-        {
+        if (options.AttackDamage > 0f) {
             type.AttackDamage = options.AttackDamage;
         }
 
@@ -194,13 +187,11 @@ public static class CustomItemType
         return type;
     }
 
-    internal static int AllocateNetworkId()
-    {
+    internal static int AllocateNetworkId() {
         return ++_nextNetworkId;
     }
 
-    private static CompoundTag BuildProperties(CustomItemTypeOptions options, int networkId)
-    {
+    private static CompoundTag BuildProperties(CustomItemTypeOptions options, int networkId) {
         CompoundTag properties = new();
         properties.Set("id", new IntTag { Value = networkId });
         properties.Set("name", new StringTag { Value = options.Identifier });
@@ -209,8 +200,7 @@ public static class CustomItemType
         CompoundTag itemProperties = new();
 
         // Icon.
-        if (!string.IsNullOrEmpty(options.Icon))
-        {
+        if (!string.IsNullOrEmpty(options.Icon)) {
             CompoundTag icon = new();
             CompoundTag textures = new();
             textures.Set("default", new StringTag { Value = options.Icon });
@@ -222,46 +212,39 @@ public static class CustomItemType
         itemProperties.Set("max_stack_size", new IntTag { Value = options.MaxStackSize });
 
         // Mining speed for client-side break time calculation.
-        if (options.Digger is not null)
-        {
+        if (options.Digger is not null) {
             itemProperties.Set("mining_speed", new IntTag { Value = (int)options.Digger.DestroySpeed });
         }
 
         // Hand equipped.
-        if (options.HandEquipped)
-        {
+        if (options.HandEquipped) {
             itemProperties.Set("hand_equipped", new ByteTag { Value = 1 });
         }
 
         // Attack damage for client tooltip.
-        if (options.AttackDamage > 0f)
-        {
+        if (options.AttackDamage > 0f) {
             itemProperties.Set("damage", new IntTag { Value = (int)options.AttackDamage });
         }
 
         // Food item properties.
-        if (options.Food is not null)
-        {
+        if (options.Food is not null) {
             itemProperties.Set("use_duration", new IntTag { Value = options.Food.UseDurationTicks > 0 ? options.Food.UseDurationTicks : 32 });
             itemProperties.Set("use_animation", new IntTag { Value = options.Food.IsDrink ? 2 : 1 });
             itemProperties.Set("can_destroy_in_creative", new ByteTag { Value = 1 });
         }
 
-        if (itemProperties.Values.Count > 0)
-        {
+        if (itemProperties.Values.Count > 0) {
             components.Set("item_properties", itemProperties);
         }
 
         // Display name.
-        if (!string.IsNullOrEmpty(options.DisplayName))
-        {
+        if (!string.IsNullOrEmpty(options.DisplayName)) {
             CompoundTag displayName = new();
             displayName.Set("value", new StringTag { Value = options.DisplayName });
             components.Set("minecraft:display_name", displayName);
         }
 
-        if (options.BlockType is not null)
-        {
+        if (options.BlockType is not null) {
             CompoundTag blockPlacer = new();
             blockPlacer.Set("block", new StringTag { Value = options.BlockType.Identifier });
             blockPlacer.Set("canUseBlockAsIcon", new ByteTag { Value = 1 });
@@ -270,8 +253,7 @@ public static class CustomItemType
         }
 
         // Durability.
-        if (options.MaxDurability > 0)
-        {
+        if (options.MaxDurability > 0) {
             CompoundTag durability = new();
             durability.Set("max_durability", new IntTag { Value = options.MaxDurability });
             CompoundTag damageChance = new();
@@ -282,8 +264,7 @@ public static class CustomItemType
         }
 
         // Food.
-        if (options.Food is not null)
-        {
+        if (options.Food is not null) {
             CompoundTag food = new();
             food.Set("nutrition", new IntTag { Value = options.Food.Nutrition });
             food.Set("saturation_modifier", new FloatTag { Value = options.Food.SaturationModifier });
@@ -293,13 +274,11 @@ public static class CustomItemType
         }
 
         // Digger.
-        if (options.Digger is not null)
-        {
+        if (options.Digger is not null) {
             CompoundTag digger = new();
             ListTag destroySpeeds = new();
 
-            foreach (string blockTag in options.Digger.BlockTags)
-            {
+            foreach (string blockTag in options.Digger.BlockTags) {
                 CompoundTag entry = new();
                 CompoundTag block = new();
                 block.Set("tags", new StringTag { Value = $"query.any_tag('{blockTag}')" });
@@ -314,16 +293,14 @@ public static class CustomItemType
         }
 
         // Can destroy in creative.
-        if (!options.CanDestroyInCreative)
-        {
+        if (!options.CanDestroyInCreative) {
             CompoundTag canDestroy = new();
             canDestroy.Set("value", new ByteTag { Value = 0 });
             components.Set("minecraft:can_destroy_in_creative", canDestroy);
         }
 
         // Wearable.
-        if (options.Wearable is not null)
-        {
+        if (options.Wearable is not null) {
             CompoundTag wearable = new();
             wearable.Set("protection", new IntTag { Value = options.Wearable.Protection });
             wearable.Set("toughness", new IntTag { Value = options.Wearable.Toughness });
@@ -335,17 +312,14 @@ public static class CustomItemType
         }
 
         // Attack damage tooltip.
-        if (options.AttackDamage > 0f)
-        {
+        if (options.AttackDamage > 0f) {
             components.Set("minecraft:damage", new IntTag { Value = (int)options.AttackDamage });
         }
 
         // Item tags for client-side tool type recognition.
-        if (options.Tags is { Count: > 0 })
-        {
+        if (options.Tags is { Count: > 0 }) {
             ListTag tagList = new();
-            foreach (string tag in options.Tags)
-            {
+            foreach (string tag in options.Tags) {
                 tagList.Values.Add(new StringTag { Value = tag });
             }
             components.Set("item_tags", tagList);
@@ -359,10 +333,8 @@ public static class CustomItemType
         return properties;
     }
 
-    private static ItemCatalog? BuildCatalog(CustomItemTypeOptions options)
-    {
-        if (string.IsNullOrEmpty(options.CreativeCategory))
-        {
+    private static ItemCatalog? BuildCatalog(CustomItemTypeOptions options) {
+        if (string.IsNullOrEmpty(options.CreativeCategory)) {
             return null;
         }
 

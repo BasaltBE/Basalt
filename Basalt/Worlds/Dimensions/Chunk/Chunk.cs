@@ -10,8 +10,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
-public sealed class Chunk
-{
+public sealed class Chunk {
     public const int MaxSubChunks = 24;
 
     private readonly Dictionary<(int X, int Y, int Z), BlockLevelStorage> _blocks = [];
@@ -28,8 +27,7 @@ public sealed class Chunk
     public bool Dirty;
     public bool Simulated;
 
-    public Chunk(int x, int z, DimensionType type, SubChunk?[]? subChunks = null)
-    {
+    public Chunk(int x, int z, DimensionType type, SubChunk?[]? subChunks = null) {
         X = x;
         Z = z;
         Type = type;
@@ -37,11 +35,9 @@ public sealed class Chunk
         SubChunks = subChunks ?? new SubChunk?[MaxSubChunks];
     }
 
-    public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0)
-    {
+    public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0) {
         SubChunk? subChunk = PeekSubChunk(y >> 4);
-        if (subChunk is null)
-        {
+        if (subChunk is null) {
             return BlockPermutation.Resolve(BlockStorage.Air);
         }
 
@@ -49,44 +45,36 @@ public sealed class Chunk
         return BlockPermutation.Resolve(state);
     }
 
-    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true)
-    {
+    public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true) {
         SubChunk subChunk = GetSubChunk(y >> 4);
         subChunk.SetState(x & 0xF, y & 0xF, z & 0xF, permutation.NetworkId, layer);
 
-        if (dirty)
-        {
+        if (dirty) {
             Dirty = true;
         }
 
         Cache = null;
     }
 
-    public int GetBiome(int x, int y, int z)
-    {
+    public int GetBiome(int x, int y, int z) {
         SubChunk? subChunk = PeekSubChunk(y >> 4);
         return subChunk?.GetBiome(x & 0xF, y & 0xF, z & 0xF) ?? 0;
     }
 
-    public void SetBiome(int x, int y, int z, int biomeId, bool dirty = true)
-    {
+    public void SetBiome(int x, int y, int z, int biomeId, bool dirty = true) {
         SubChunk subChunk = GetSubChunk(y >> 4);
         subChunk.SetBiome(x & 0xF, y & 0xF, z & 0xF, biomeId);
 
-        if (dirty)
-        {
+        if (dirty) {
             Dirty = true;
         }
 
         Cache = null;
     }
 
-    public int GetTopmostLevel(int x, int z, int startY)
-    {
-        for (int y = startY; y >= -64; y--)
-        {
-            if (GetPermutation(x, y, z).Type.Identifier != "minecraft:air")
-            {
+    public int GetTopmostLevel(int x, int z, int startY) {
+        for (int y = startY; y >= -64; y--) {
+            if (GetPermutation(x, y, z).Type.Identifier != "minecraft:air") {
                 return y;
             }
         }
@@ -94,12 +82,9 @@ public sealed class Chunk
         return -64;
     }
 
-    public int GetBottommostLevel(int x, int z, int endY)
-    {
-        for (int y = 0; y <= endY; y++)
-        {
-            if (GetPermutation(x, y, z).Type.Identifier != "minecraft:air")
-            {
+    public int GetBottommostLevel(int x, int z, int endY) {
+        for (int y = 0; y <= endY; y++) {
+            if (GetPermutation(x, y, z).Type.Identifier != "minecraft:air") {
                 return y;
             }
         }
@@ -107,36 +92,29 @@ public sealed class Chunk
         return 0;
     }
 
-    public SubChunk GetSubChunk(int index)
-    {
+    public SubChunk GetSubChunk(int index) {
         int offset = Type == DimensionType.Overworld ? 4 : 0;
 
-        if (index + offset < 0)
-        {
+        if (index + offset < 0) {
             index = 0;
             offset = 0;
         }
-        else if (index + offset >= MaxSubChunks)
-        {
+        else if (index + offset >= MaxSubChunks) {
             index = MaxSubChunks - 1;
             offset = 0;
         }
 
         int resolved = index + offset;
-        if (SubChunks[resolved] is null)
-        {
-            for (int i = 0; i <= resolved; i++)
-            {
-                if (SubChunks[i] is not null)
-                {
+        if (SubChunks[resolved] is null) {
+            for (int i = 0; i <= resolved; i++) {
+                if (SubChunks[i] is not null) {
                     continue;
                 }
 
                 SubChunk subChunk = new() { Index = (sbyte)(i - offset) };
                 SubChunks[i] = subChunk;
 
-                if (i == resolved)
-                {
+                if (i == resolved) {
                     return subChunk;
                 }
             }
@@ -145,17 +123,14 @@ public sealed class Chunk
         return SubChunks[resolved]!;
     }
 
-    public void SetSubChunk(int index, SubChunk subChunk)
-    {
+    public void SetSubChunk(int index, SubChunk subChunk) {
         int offset = Type == DimensionType.Overworld ? 4 : 0;
 
-        if (index + offset < 0)
-        {
+        if (index + offset < 0) {
             index = 0;
             offset = 0;
         }
-        else if (index + offset >= MaxSubChunks)
-        {
+        else if (index + offset >= MaxSubChunks) {
             index = MaxSubChunks - 1;
             offset = 0;
         }
@@ -164,14 +139,11 @@ public sealed class Chunk
         Cache = null;
     }
 
-    public int GetSubChunkSendCount()
-    {
+    public int GetSubChunkSendCount() {
         int emptyTail = 0;
-        for (int index = MaxSubChunks - 1; index >= 0; index--)
-        {
+        for (int index = MaxSubChunks - 1; index >= 0; index--) {
             SubChunk? subChunk = SubChunks[index];
-            if (subChunk is null || subChunk.IsEmpty())
-            {
+            if (subChunk is null || subChunk.IsEmpty()) {
                 emptyTail++;
                 continue;
             }
@@ -182,57 +154,46 @@ public sealed class Chunk
         return MaxSubChunks - emptyTail;
     }
 
-    public List<BlockLevelStorage> GetAllBlockStorages()
-    {
+    public List<BlockLevelStorage> GetAllBlockStorages() {
         return [.. _blocks.Values];
     }
 
-    public bool HasBlockStorage(BlockPos position)
-    {
+    public bool HasBlockStorage(BlockPos position) {
         return _blocks.ContainsKey((position.X, position.Y, position.Z));
     }
 
-    public BlockLevelStorage? GetBlockStorage(BlockPos position)
-    {
+    public BlockLevelStorage? GetBlockStorage(BlockPos position) {
         return _blocks.GetValueOrDefault((position.X, position.Y, position.Z));
     }
 
-    public void SetBlockStorage(BlockPos position, BlockLevelStorage? data, bool dirty = true)
-    {
+    public void SetBlockStorage(BlockPos position, BlockLevelStorage? data, bool dirty = true) {
         var key = (position.X, position.Y, position.Z);
 
-        if (data is null)
-        {
+        if (data is null) {
             _blocks.Remove(key);
         }
-        else
-        {
+        else {
             data.SetPosition(position);
             _blocks[key] = data;
         }
 
-        if (dirty)
-        {
+        if (dirty) {
             Dirty = true;
             Cache = null; // Invalidate cache when block storage changes
         }
     }
 
-    public bool HasBlockActor(BlockPos position)
-    {
+    public bool HasBlockActor(BlockPos position) {
         return _blockActors.ContainsKey((position.X, position.Y, position.Z));
     }
 
-    public Block? GetBlockActor(BlockPos position)
-    {
+    public Block? GetBlockActor(BlockPos position) {
         return _blockActors.GetValueOrDefault((position.X, position.Y, position.Z));
     }
 
-    public void SetBlockActor(BlockPos position, Block? actor)
-    {
+    public void SetBlockActor(BlockPos position, Block? actor) {
         var key = (position.X, position.Y, position.Z);
-        if (actor is null)
-        {
+        if (actor is null) {
             _blockActors.Remove(key);
             return;
         }
@@ -240,50 +201,39 @@ public sealed class Chunk
         _blockActors[key] = actor;
     }
 
-    public List<KeyValuePair<(int X, int Y, int Z), Block>> GetAllBlockActors()
-    {
+    public List<KeyValuePair<(int X, int Y, int Z), Block>> GetAllBlockActors() {
         return [.. _blockActors];
     }
 
-    public List<KeyValuePair<long, CompoundTag>> GetAllEntityStorages()
-    {
+    public List<KeyValuePair<long, CompoundTag>> GetAllEntityStorages() {
         return [.. _entities];
     }
 
-    public bool HasEntityStorage(long uniqueId)
-    {
+    public bool HasEntityStorage(long uniqueId) {
         return _entities.ContainsKey(uniqueId);
     }
 
-    public CompoundTag? GetEntityStorage(long uniqueId)
-    {
+    public CompoundTag? GetEntityStorage(long uniqueId) {
         return _entities.GetValueOrDefault(uniqueId);
     }
 
-    public void SetEntityStorage(long uniqueId, CompoundTag? data, bool dirty = true)
-    {
-        if (data is null)
-        {
+    public void SetEntityStorage(long uniqueId, CompoundTag? data, bool dirty = true) {
+        if (data is null) {
             _entities.Remove(uniqueId);
         }
-        else
-        {
+        else {
             _entities[uniqueId] = data;
         }
 
-        if (dirty)
-        {
+        if (dirty) {
             Dirty = true;
         }
     }
 
-    public bool IsEmpty()
-    {
-        for (int i = 0; i < SubChunks.Length; i++)
-        {
+    public bool IsEmpty() {
+        for (int i = 0; i < SubChunks.Length; i++) {
             SubChunk? subChunk = SubChunks[i];
-            if (subChunk is not null && !subChunk.IsEmpty())
-            {
+            if (subChunk is not null && !subChunk.IsEmpty()) {
                 return false;
             }
         }
@@ -293,8 +243,7 @@ public sealed class Chunk
 
 
     // I know this is bad
-    public void ReleaseMemory()
-    {
+    public void ReleaseMemory() {
         Cache = null;
         _blocks.Clear();
         _blockActors.Clear();
@@ -303,17 +252,13 @@ public sealed class Chunk
         Dirty = false;
     }
 
-    public Chunk Insert(Chunk source)
-    {
-        if (X != source.X || Z != source.Z)
-        {
+    public Chunk Insert(Chunk source) {
+        if (X != source.X || Z != source.Z) {
             throw new InvalidOperationException("Cannot assign chunk with different coordinates.");
         }
 
-        for (int i = 0; i < source.SubChunks.Length; i++)
-        {
-            if (source.SubChunks[i] is not null)
-            {
+        for (int i = 0; i < source.SubChunks.Length; i++) {
+            if (source.SubChunks[i] is not null) {
                 SubChunks[i] = source.SubChunks[i];
             }
         }
@@ -321,29 +266,24 @@ public sealed class Chunk
         Dirty = source.Dirty;
         Cache = source.Cache;
 
-        foreach ((var key, BlockLevelStorage value) in source._blocks)
-        {
+        foreach ((var key, BlockLevelStorage value) in source._blocks) {
             _blocks[key] = value;
         }
 
-        foreach ((var key, Block value) in source._blockActors)
-        {
+        foreach ((var key, Block value) in source._blockActors) {
             _blockActors[key] = value;
         }
 
-        foreach ((long key, CompoundTag value) in source._entities)
-        {
+        foreach ((long key, CompoundTag value) in source._entities) {
             _entities[key] = value;
         }
 
         return this;
     }
 
-    public static byte[] Serialize(Chunk chunk, bool nbt = false)
-    {
+    public static byte[] Serialize(Chunk chunk, bool nbt = false) {
         using var __zone = Profiler.BeginZone("Chunk.Serialize");
-        if (!nbt && chunk.Cache is not null)
-        {
+        if (!nbt && chunk.Cache is not null) {
             return chunk.Cache;
         }
 
@@ -357,33 +297,27 @@ public sealed class Chunk
         return chunk.Cache!;
     }
 
-    public static int Serialize(Chunk chunk, BinaryWriter writer, bool nbt = false)
-    {
+    public static int Serialize(Chunk chunk, BinaryWriter writer, bool nbt = false) {
         int subChunkCount = chunk.GetSubChunkSendCount();
 
-        if (nbt)
-        {
+        if (nbt) {
             writer.WriteUInt8(checked((byte)subChunkCount));
         }
 
-        for (int index = 0; index < subChunkCount; index++)
-        {
+        for (int index = 0; index < subChunkCount; index++) {
             int offset = chunk.Type == DimensionType.Overworld ? 4 : 0;
             SubChunk? subChunk = chunk.SubChunks[index];
 
-            if (subChunk is null)
-            {
+            if (subChunk is null) {
                 subChunk = new SubChunk { Index = (sbyte)(index - offset) };
             }
 
             SubChunk.Serialize(subChunk, writer, nbt);
         }
 
-        for (int index = 0; index < subChunkCount; index++)
-        {
+        for (int index = 0; index < subChunkCount; index++) {
             SubChunk? subChunk = chunk.SubChunks[index];
-            if (subChunk is null || subChunk.IsEmpty())
-            {
+            if (subChunk is null || subChunk.IsEmpty()) {
                 continue;
             }
 
@@ -392,27 +326,23 @@ public sealed class Chunk
 
         writer.WriteUInt8(0);
 
-        foreach (KeyValuePair<(int X, int Y, int Z), Block> actorEntry in chunk._blockActors)
-        {
+        foreach (KeyValuePair<(int X, int Y, int Z), Block> actorEntry in chunk._blockActors) {
             (int x, int y, int z) = actorEntry.Key;
             BlockPos position = new() { X = x, Y = y, Z = z };
 
-            if (!actorEntry.Value.Interactable && !actorEntry.Value.Permutation.IsComponentBased)
-            {
+            if (!actorEntry.Value.Interactable && !actorEntry.Value.Permutation.IsComponentBased) {
                 continue;
             }
 
             BlockLevelStorage? storage = chunk.GetBlockStorage(position);
-            if (storage is null)
-            {
+            if (storage is null) {
                 storage = new BlockLevelStorage(chunk);
                 storage.SetPosition(position);
                 storage.Set("id", new StringTag { Value = Dimension.GetBlockActorId(actorEntry.Value.Type.Identifier) });
                 storage.Set("isMovable", new ByteTag { Value = 1 });
                 chunk.SetBlockStorage(position, storage, dirty: false);
             }
-            else if (storage.Get<StringTag>("id") is not { } idTag || string.IsNullOrWhiteSpace(idTag.Value))
-            {
+            else if (storage.Get<StringTag>("id") is not { } idTag || string.IsNullOrWhiteSpace(idTag.Value)) {
                 storage.Set("id", new StringTag { Value = Dimension.GetBlockActorId(actorEntry.Value.Type.Identifier) });
             }
 
@@ -420,44 +350,35 @@ public sealed class Chunk
         }
 
         List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
-        for (int i = 0; i < blockEntities.Count; i++)
-        {
+        for (int i = 0; i < blockEntities.Count; i++) {
             NBT.WriteTag(writer, blockEntities[i], new TagOptions(Name: true, Type: true, VarInt: false));
         }
 
         return writer.Offset;
     }
 
-    public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null)
-    {
+    public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null) {
         using var __zone = Profiler.BeginZone("Chunk.Deserialize");
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
-        if (nbt)
-        {
+        if (nbt) {
             int explicitCount = reader.ReadUInt8();
-            for (int index = 0; index < explicitCount && index < MaxSubChunks; index++)
-            {
-                if (reader.Remaining <= 0)
-                {
+            for (int index = 0; index < explicitCount && index < MaxSubChunks; index++) {
+                if (reader.Remaining <= 0) {
                     break;
                 }
 
                 subChunks[index] = SubChunk.Deserialize(reader, nbt);
             }
         }
-        else
-        {
-            for (int index = 0; index < MaxSubChunks; index++)
-            {
-                if (reader.Remaining <= 0)
-                {
+        else {
+            for (int index = 0; index < MaxSubChunks; index++) {
+                if (reader.Remaining <= 0) {
                     break;
                 }
 
                 byte header = reader.Buffer[reader.Offset];
-                if (header != 8 && header != 9)
-                {
+                if (header != 8 && header != 9) {
                     break;
                 }
 
@@ -465,28 +386,23 @@ public sealed class Chunk
             }
         }
 
-        for (int i = 0; i < subChunks.Length; i++)
-        {
+        for (int i = 0; i < subChunks.Length; i++) {
             SubChunk? subChunk = subChunks[i];
-            if (subChunk is null || subChunk.IsEmpty())
-            {
+            if (subChunk is null || subChunk.IsEmpty()) {
                 continue;
             }
 
             subChunk.Biomes = BiomeStorage.Deserialize(ref reader, biomeNbt ?? nbt);
         }
 
-        if (reader.Remaining > 0)
-        {
+        if (reader.Remaining > 0) {
             _ = reader.ReadUInt8();
         }
 
         Chunk chunk = new(x, z, type, subChunks);
 
-        while (reader.Remaining > 0)
-        {
-            if ((TagType)reader.Buffer[reader.Offset] != TagType.Compound)
-            {
+        while (reader.Remaining > 0) {
+            if ((TagType)reader.Buffer[reader.Offset] != TagType.Compound) {
                 break;
             }
 
@@ -505,13 +421,11 @@ public sealed class Chunk
         return chunk;
     }
 
-    private SubChunk? PeekSubChunk(int index)
-    {
+    private SubChunk? PeekSubChunk(int index) {
         int offset = Type == DimensionType.Overworld ? 4 : 0;
         int resolved = index + offset;
 
-        if (resolved < 0 || resolved >= MaxSubChunks)
-        {
+        if (resolved < 0 || resolved >= MaxSubChunks) {
             return null;
         }
 

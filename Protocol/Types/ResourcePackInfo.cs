@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ResourcePackInfo : DataType
-{
+public sealed class ResourcePackInfo : DataType {
     /// <summary>
     /// Unique Identifier of a resource pack
     /// </summary>
@@ -55,8 +54,7 @@ public sealed class ResourcePackInfo : DataType
     /// </summary>
     public string DownloadUrl = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Uuid = UUID.Read(reader);
         Version = reader.ReadVarString();
         Size = reader.ReadUInt64(true);
@@ -69,8 +67,7 @@ public sealed class ResourcePackInfo : DataType
         DownloadUrl = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         UUID.Write(writer, Uuid);
         writer.WriteVarString(Version);
         writer.WriteUInt64(Size, true);

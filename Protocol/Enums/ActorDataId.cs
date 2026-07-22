@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ActorDataId : int
-{
+public enum ActorDataId : int {
     Reserved0 = 0,
     StructuralIntegrity = 1,
     Variant = 2,

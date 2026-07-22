@@ -3,8 +3,7 @@ namespace Basalt.Core.Commands;
 /// <summary>
 /// The result of a command execution.
 /// </summary>
-public sealed class CommandResult
-{
+public sealed class CommandResult {
     public bool Success { get; init; }
     public string? Message { get; init; }
 

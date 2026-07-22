@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum PlayerActionType : int
-{
+public enum PlayerActionType : int {
     Unknown = -1,
     StartDestroyBlock = 0,
     AbortDestroyBlock = 1,

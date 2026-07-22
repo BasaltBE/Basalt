@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class FloatEntityProperty : DataType
-{
+public sealed class FloatEntityProperty : DataType {
     /// <summary>
     /// Property index id.
     /// </summary>
@@ -15,14 +14,12 @@ public sealed class FloatEntityProperty : DataType
     /// </summary>
     public float Value;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Index = reader.ReadVarUInt();
         Value = reader.ReadF32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(Index);
         writer.WriteF32(Value, true);
     }

@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class GameRule : DataType
-{
+public sealed class GameRule : DataType {
     /// <summary>
     /// Name of the game rule.
     /// </summary>
@@ -21,14 +20,12 @@ public sealed class GameRule : DataType
     /// </summary>
     public object Value = false;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         CanBeModifiedByPlayer = reader.ReadBool();
         GameRuleValueType type = (GameRuleValueType)reader.ReadVarUInt();
 
-        Value = type switch
-        {
+        Value = type switch {
             GameRuleValueType.Bool => reader.ReadBool(),
             GameRuleValueType.Int => reader.ReadVarUInt(),
             GameRuleValueType.Float => reader.ReadF32(true),
@@ -36,13 +33,11 @@ public sealed class GameRule : DataType
         };
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         writer.WriteBool(CanBeModifiedByPlayer);
 
-        switch (Value)
-        {
+        switch (Value) {
             case bool boolValue:
                 writer.WriteVarUInt((uint)GameRuleValueType.Bool);
                 writer.WriteBool(boolValue);

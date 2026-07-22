@@ -3,8 +3,7 @@ namespace Basalt.Core.DDUI;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-public abstract class DataDrivenScreen
-{
+public abstract class DataDrivenScreen {
     static uint _nextId;
 
     readonly DduiLayout _layout;
@@ -20,8 +19,7 @@ public abstract class DataDrivenScreen
 
     public string Property { get; }
 
-    protected DataDrivenScreen()
-    {
+    protected DataDrivenScreen() {
         _formId = ++_nextId;
         _dataInstanceId = ++_nextId;
         Property = DeriveProperty(Identifier, _dataInstanceId);
@@ -29,23 +27,19 @@ public abstract class DataDrivenScreen
         Root.Set(_layout.Property);
     }
 
-    public void Show(Player.Player player)
-    {
+    public void Show(Player.Player player) {
         DataDrivenScreen? existing = null;
-        foreach ((string key, DataDrivenScreen screen) in player.Screens)
-        {
+        foreach ((string key, DataDrivenScreen screen) in player.Screens) {
             existing = screen;
             break;
         }
 
-        if (existing is not null)
-        {
+        if (existing is not null) {
             existing.Unregister(player);
             player.Screens[existing.Property] = this;
             _viewers.Add(player);
 
-            player.Send(new ClientboundDataStorePacket
-            {
+            player.Send(new ClientboundDataStorePacket {
                 Updates =
                 [
                     new DataStoreChange
@@ -65,16 +59,14 @@ public abstract class DataDrivenScreen
 
         player.Send(
             CreateDataPacket(),
-            new ClientboundDataDrivenUIShowScreenPacket
-            {
+            new ClientboundDataDrivenUIShowScreenPacket {
                 ScreenId = Identifier,
                 FormId = _formId,
                 DataInstanceId = _dataInstanceId
             });
     }
 
-    public void Close(Player.Player player)
-    {
+    public void Close(Player.Player player) {
         player.Screens.Remove(Property);
         _viewers.Remove(player);
     }
@@ -82,15 +74,12 @@ public abstract class DataDrivenScreen
     /// <summary>
     /// Hides the form by updating it to show only a close button, which the client will auto-dismiss.
     /// </summary>
-    internal void Hide(Player.Player player)
-    {
+    internal void Hide(Player.Player player) {
         string? registeredProperty = null;
         uint updateCount = _updateCount;
 
-        foreach ((string key, DataDrivenScreen screen) in player.Screens)
-        {
-            if (screen == this)
-            {
+        foreach ((string key, DataDrivenScreen screen) in player.Screens) {
+            if (screen == this) {
                 registeredProperty = key;
                 break;
             }
@@ -114,8 +103,7 @@ public abstract class DataDrivenScreen
         closeBtn.Set(DduiProperty.Long("onClick", 0));
         emptyRoot.Set(closeBtn);
 
-        player.Send(new ClientboundDataStorePacket
-        {
+        player.Send(new ClientboundDataStorePacket {
             Updates =
             [
                 new DataStoreChange
@@ -132,8 +120,7 @@ public abstract class DataDrivenScreen
     /// <summary>
     /// Unregisters the screen without sending a close packet. Used before opening a replacement screen.
     /// </summary>
-    internal void Unregister(Player.Player player)
-    {
+    internal void Unregister(Player.Player player) {
         player.Screens.Remove(Property);
         _viewers.Remove(player);
     }
@@ -141,13 +128,11 @@ public abstract class DataDrivenScreen
     /// <summary>
     /// Closes the screen visually by sending the close packet to the client.
     /// </summary>
-    public void Dismiss(Player.Player player)
-    {
+    public void Dismiss(Player.Player player) {
         Close(player);
     }
 
-    internal void Handle(Player.Player player, DataStoreUpdate update)
-    {
+    internal void Handle(Player.Player player, DataStoreUpdate update) {
         if (_handled) return;
 
         DduiProperty? target = Resolve(update.Path);
@@ -160,27 +145,22 @@ public abstract class DataDrivenScreen
         target.Trigger(player, update.Value);
     }
 
-    private protected void Set(DduiProperty property)
-    {
+    private protected void Set(DduiProperty property) {
         Root.Set(property);
     }
 
-    private protected void Add(DduiElement element)
-    {
+    private protected void Add(DduiElement element) {
         _layout.Add(element.Property);
     }
 
-    private protected void Listen(string path, Func<Player.Player, object, bool> listener)
-    {
+    private protected void Listen(string path, Func<Player.Player, object, bool> listener) {
         Resolve(path)?.Listen(listener);
     }
 
     internal static string StoreName => "minecraft";
 
-    ClientboundDataStorePacket CreateDataPacket()
-    {
-        return new ClientboundDataStorePacket
-        {
+    ClientboundDataStorePacket CreateDataPacket() {
+        return new ClientboundDataStorePacket {
             Updates =
             [
                 new DataStoreChange
@@ -194,10 +174,8 @@ public abstract class DataDrivenScreen
         };
     }
 
-    ClientboundDataStorePacket CreateCleanupPacket()
-    {
-        return new ClientboundDataStorePacket
-        {
+    ClientboundDataStorePacket CreateCleanupPacket() {
+        return new ClientboundDataStorePacket {
             Updates =
             [
                 new DataStoreChange
@@ -211,17 +189,14 @@ public abstract class DataDrivenScreen
         };
     }
 
-    DduiProperty? Resolve(string path)
-    {
+    DduiProperty? Resolve(string path) {
         DduiProperty? target = Root;
-        foreach (string segment in path.Split('.', StringSplitOptions.RemoveEmptyEntries))
-        {
+        foreach (string segment in path.Split('.', StringSplitOptions.RemoveEmptyEntries)) {
             (string name, string? index) = Parse(segment);
             target = target.Get(name);
             if (target is null) return null;
 
-            if (index is not null)
-            {
+            if (index is not null) {
                 target = target.Get(index);
                 if (target is null) return null;
             }
@@ -230,8 +205,7 @@ public abstract class DataDrivenScreen
         return target;
     }
 
-    static (string Name, string? Index) Parse(string segment)
-    {
+    static (string Name, string? Index) Parse(string segment) {
         int bracket = segment.IndexOf('[');
         if (bracket < 0 || !segment.EndsWith(']'))
             return (segment, null);
@@ -239,8 +213,7 @@ public abstract class DataDrivenScreen
         return (segment[..bracket], segment[(bracket + 1)..^1]);
     }
 
-    static string DeriveProperty(string screenId, uint dataInstanceId)
-    {
+    static string DeriveProperty(string screenId, uint dataInstanceId) {
         string baseName = screenId.StartsWith("minecraft:")
             ? screenId["minecraft:".Length..]
             : screenId;

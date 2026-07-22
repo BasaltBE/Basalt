@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Identifies where a command request came from.
 /// </summary>
-public enum CommandOriginType : uint
-{
+public enum CommandOriginType : uint {
     /// <summary>
     /// Command came from a player.
     /// </summary>

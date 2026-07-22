@@ -3,8 +3,7 @@ using Basalt.Protocol.Enums;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ContainerClose)]
-public sealed record ContainerClosePacket : DataPacket
-{
+public sealed record ContainerClosePacket : DataPacket {
     /// <summary>
     /// Container id of the window being closed.
     /// </summary>
@@ -20,15 +19,13 @@ public sealed record ContainerClosePacket : DataPacket
     /// </summary>
     public bool ServerSide;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ContainerId = (ContainerId)reader.ReadInt8();
         ContainerType = reader.ReadUInt8();
         ServerSide = reader.ReadBool();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteInt8((sbyte)ContainerId);
         writer.WriteUInt8(ContainerType);
         writer.WriteBool(ServerSide);

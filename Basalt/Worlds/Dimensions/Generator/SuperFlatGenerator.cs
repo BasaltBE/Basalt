@@ -4,18 +4,15 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Generation;
 
-public sealed class SuperFlatGenerator : Generator
-{
+public sealed class SuperFlatGenerator : Generator {
     private readonly (int Y, BlockPermutation Permutation)[] _layers;
 
     public override string Identifier => "superflat";
 
-    public SuperFlatGenerator() : this(-64)
-    {
+    public SuperFlatGenerator() : this(-64) {
     }
 
-    public SuperFlatGenerator(int baseY)
-    {
+    public SuperFlatGenerator(int baseY) {
         _layers =
         [
             (baseY, BlockPermutation.Resolve(BlockIdentifier.Bedrock.ToIdentifier())),
@@ -26,16 +23,12 @@ public sealed class SuperFlatGenerator : Generator
         ];
     }
 
-    public override ChunkColumn Generate(DimensionType dimensionType, int x, int z)
-    {
+    public override ChunkColumn Generate(DimensionType dimensionType, int x, int z) {
         ChunkColumn chunk = new(x, z, dimensionType);
 
-        for (int lx = 0; lx < 16; lx++)
-        {
-            for (int lz = 0; lz < 16; lz++)
-            {
-                for (int i = 0; i < _layers.Length; i++)
-                {
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                for (int i = 0; i < _layers.Length; i++) {
                     (int y, BlockPermutation permutation) = _layers[i];
                     chunk.SetPermutation(lx, y, lz, permutation, layer: 0, dirty: false);
                 }

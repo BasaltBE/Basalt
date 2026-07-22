@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Layer type used by ability data.
 /// </summary>
-public enum AbilityLayerType : ushort
-{
+public enum AbilityLayerType : ushort {
     /// <summary>
     /// Custom cache ability layer.
     /// </summary>

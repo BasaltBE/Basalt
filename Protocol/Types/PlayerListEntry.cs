@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PlayerListEntry : DataType
-{
+public sealed class PlayerListEntry : DataType {
     /// <summary>
     /// UUID of the player.
     /// </summary>
@@ -61,8 +60,7 @@ public sealed class PlayerListEntry : DataType
     /// </summary>
     public int PlayerColor;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Uuid = UUID.Read(reader);
         EntityUniqueId = reader.ReadVarLong();
         Username = reader.ReadVarString();
@@ -76,25 +74,21 @@ public sealed class PlayerListEntry : DataType
         PlayerColor = reader.ReadInt32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         Write(writer, default);
     }
 
-    public void Write(BinaryWriter writer, ReadOnlySpan<byte> serializedSkinData)
-    {
+    public void Write(BinaryWriter writer, ReadOnlySpan<byte> serializedSkinData) {
         UUID.Write(writer, Uuid);
         writer.WriteVarLong(EntityUniqueId);
         writer.WriteVarString(Username);
         writer.WriteVarString(Xuid);
         writer.WriteVarString(PlatformChatId);
         writer.WriteInt32((int)DeviceOS, true);
-        if (!serializedSkinData.IsEmpty)
-        {
+        if (!serializedSkinData.IsEmpty) {
             writer.WriteBytes(serializedSkinData);
         }
-        else
-        {
+        else {
             Skin.Write(writer);
         }
         writer.WriteBool(Teacher);

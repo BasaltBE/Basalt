@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct BlockPos : DataType
-{
+public struct BlockPos : DataType {
     /// <summary>
     /// The X coordinate of the block position.
     /// </summary>
@@ -17,15 +16,13 @@ public struct BlockPos : DataType
     /// The Z coordinate of the block position.
     /// </summary>
     public int Z;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         X = reader.ReadZigZag();
         Y = reader.ReadZigZag();
         Z = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(X);
         writer.WriteZigZag(Y);
         writer.WriteZigZag(Z);

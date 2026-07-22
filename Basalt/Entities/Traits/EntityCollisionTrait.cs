@@ -3,8 +3,7 @@ namespace Basalt.Core.Entities.Traits;
 using Basalt.Protocol.Enums;
 using System.Text.Json;
 
-public sealed class EntityCollisionTrait : EntityTrait
-{
+public sealed class EntityCollisionTrait : EntityTrait {
     public new static string Identifier => "collision";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Item];
     public new static readonly string[] Components = ["minecraft:collision_box"];
@@ -20,38 +19,30 @@ public sealed class EntityCollisionTrait : EntityTrait
     public int YAxisCollision;
     public int ZAxisCollision;
 
-    public EntityCollisionTrait(Entity entity) : base(entity)
-    {
+    public EntityCollisionTrait(Entity entity) : base(entity) {
     }
 
-    public override void OnAdd()
-    {
-        if (Entity.Identifier == "minecraft:item")
-        {
+    public override void OnAdd() {
+        if (Entity.Identifier == "minecraft:item") {
             Height = 0.25f;
             Width = 0.25f;
         }
-        else if (Entity.Type.TryGetComponentProperties("minecraft:collision_box", out JsonElement collisionBox))
-        {
+        else if (Entity.Type.TryGetComponentProperties("minecraft:collision_box", out JsonElement collisionBox)) {
             Height = ReadFloat(collisionBox, "height") ?? DefaultHeight;
             Width = ReadFloat(collisionBox, "width") ?? DefaultWidth;
         }
 
-        if (!Entity.Flags.GetActorFlag(ActorFlag.HasCollision))
-        {
+        if (!Entity.Flags.GetActorFlag(ActorFlag.HasCollision)) {
             Entity.Flags.SetActorFlag(ActorFlag.HasCollision, true);
         }
     }
 
-    public override void OnRemove()
-    {
+    public override void OnRemove() {
         Entity.Flags.SetActorFlag(ActorFlag.HasCollision, false);
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
-        return new EntityCollisionTrait(entity)
-        {
+    public override EntityTrait Clone(Entity entity) {
+        return new EntityCollisionTrait(entity) {
             Height = Height,
             Width = Width,
             FrictionForce = FrictionForce,
@@ -62,10 +53,8 @@ public sealed class EntityCollisionTrait : EntityTrait
         };
     }
 
-    private static float? ReadFloat(JsonElement element, string property)
-    {
-        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number)
-        {
+    private static float? ReadFloat(JsonElement element, string property) {
+        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number) {
             return null;
         }
 

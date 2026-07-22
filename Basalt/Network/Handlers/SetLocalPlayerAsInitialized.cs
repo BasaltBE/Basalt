@@ -10,17 +10,14 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds;
 
 
-public static class SetLocalPlayerAsInitialized
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class SetLocalPlayerAsInitialized {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         SetLocalPlayerAsInitializedPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (SetLocalPlayerAsInitializedPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player.Player? player))
-        {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
         }
@@ -30,16 +27,14 @@ public static class SetLocalPlayerAsInitialized
         player.Attributes.Send();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
-        if (chunkRendering is not null)
-        {
+        if (chunkRendering is not null) {
             chunkRendering.StartChunkLoad();
         }
 
         player.Dimension?.AddPlayer(player);
 
         DebugTrait? debugTrait = player.GetTrait<DebugTrait>();
-        if (debugTrait is null)
-        {
+        if (debugTrait is null) {
             debugTrait = player.AddTrait(new DebugTrait(player));
             debugTrait.OnSpawn(new EntitySpawnOptions(InitialSpawn: false));
         }
@@ -47,20 +42,17 @@ public static class SetLocalPlayerAsInitialized
         player.Spawned = true;
 
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
-        if (inventory is not null)
-        {
+        if (inventory is not null) {
             inventory.Container.Update();
         }
 
         EntityEquipmentTrait? equipment = player.GetTrait<EntityEquipmentTrait>();
-        if (equipment is not null)
-        {
+        if (equipment is not null) {
             equipment.SyncToPlayer(player);
         }
 
         string joinMessage = $"§e{player.Username} joined the server.";
-        foreach (Player.Player target in server.Players.Values)
-        {
+        foreach (Player.Player target in server.Players.Values) {
             // target.SendMessage(joinMessage);
         }
 

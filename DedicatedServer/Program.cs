@@ -4,10 +4,8 @@ using Basalt.Core.Commands;
 
 namespace Basalt.DedicatedServer;
 
-sealed class Program
-{
-    static void Main()
-    {
+sealed class Program {
+    static void Main() {
         Logger.Init();
         const string serverPropertiesPath = "server.properties";
         ServerProperties props = ServerProperties.LoadFromPath(serverPropertiesPath);
@@ -22,8 +20,7 @@ sealed class Program
         using ManualResetEventSlim shutdown = new(false);
         using CancellationTokenSource consoleCancellation = new();
 
-        Console.CancelKeyPress += (_, eventArgs) =>
-        {
+        Console.CancelKeyPress += (_, eventArgs) => {
             eventArgs.Cancel = true;
             shutdown.Set();
         };
@@ -35,8 +32,7 @@ sealed class Program
         server.Stop();
     }
 
-    private static void EnsurePropertyDefaults(ServerProperties props)
-    {
+    private static void EnsurePropertyDefaults(ServerProperties props) {
         if (!props.HasProperty("max-players")) props.SetNumericalProperty("max-players", 10);
         if (!props.HasProperty("online-mode")) props.SetBoolProperty("online-mode", true);
         if (!props.HasProperty("server-port")) props.SetNumericalProperty("server-port", 19132);

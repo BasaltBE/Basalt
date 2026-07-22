@@ -8,8 +8,7 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Traits;
 using Entity = Basalt.Core.Entities.Entity;
 
-public sealed class PlayerHungerTrait : EntityAttributeTrait
-{
+public sealed class PlayerHungerTrait : EntityAttributeTrait {
     public new static string Identifier => "hunger";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
 
@@ -37,13 +36,11 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
 
     public PlayerHungerTrait(Entity entity) : base(entity) { }
 
-    public override void OnAdd()
-    {
+    public override void OnAdd() {
         EnsureAttribute(new Basalt.Core.Entities.Traits.Types.AttributeProperties(0, 20, 20, 20));
     }
 
-    public override void OnTick(TraitOnTickDetails details)
-    {
+    public override void OnTick(TraitOnTickDetails details) {
         if (Entity is not Player player)
             return;
 
@@ -59,8 +56,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
         TickHungerEffects(health, player, details.CurrentTick);
     }
 
-    public void OnJump()
-    {
+    public void OnJump() {
         if (!Entity.IsAlive)
             return;
 
@@ -69,8 +65,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
             : JumpCost;
     }
 
-    public bool Eat(int nutrition, float saturationModifier, bool canAlwaysEat)
-    {
+    public bool Eat(int nutrition, float saturationModifier, bool canAlwaysEat) {
         if (!canAlwaysEat && CurrentValue >= MaximumValue)
             return false;
 
@@ -80,8 +75,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
         return true;
     }
 
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
+    public override void OnSpawn(EntitySpawnOptions details) {
         if (details.InitialSpawn)
             return;
 
@@ -92,22 +86,19 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
 
     public override EntityTrait Clone(Entity entity) => new PlayerHungerTrait(entity);
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
         CurrentValue = tag.Get<FloatTag>("current")?.Value ?? CurrentValue;
         Saturation = tag.Get<FloatTag>("saturation")?.Value ?? Saturation;
         Exhaustion = tag.Get<FloatTag>("exhaustion")?.Value ?? Exhaustion;
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("current", new FloatTag { Value = CurrentValue });
         tag.Set("saturation", new FloatTag { Value = Saturation });
         tag.Set("exhaustion", new FloatTag { Value = Exhaustion });
     }
 
-    private static bool CanLoseHunger(Player player)
-    {
+    private static bool CanLoseHunger(Player player) {
         var difficulty = player.Dimension?.Difficulty ?? Difficulty.Normal;
         if (difficulty == Difficulty.Peaceful)
             return false;
@@ -119,14 +110,12 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
         return gamemode is not (Gamemode.Spectator or Gamemode.Creative);
     }
 
-    private void AddExhaustion(Player player)
-    {
+    private void AddExhaustion(Player player) {
         if (player.IsSprinting) Exhaustion += SprintCost;
         if (player.IsSwimming) Exhaustion += SwimCost;
     }
 
-    private void TryDrainExhaustion()
-    {
+    private void TryDrainExhaustion() {
         if (Exhaustion < DrainAt)
             return;
 
@@ -138,8 +127,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait
             CurrentValue = MathF.Max(0f, CurrentValue - HungerDrain);
     }
 
-    private void TickHungerEffects(EntityHealthTrait health, Player player, ulong tick)
-    {
+    private void TickHungerEffects(EntityHealthTrait health, Player player, ulong tick) {
         if (tick % RegenTicks != 0UL)
             return;
 

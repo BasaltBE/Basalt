@@ -2,8 +2,7 @@ using Basalt.Protocol.Enums;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class DataStoreUpdate : DataStoreChangeInfo
-{
+public sealed class DataStoreUpdate : DataStoreChangeInfo {
     public override DataStoreChangeAction Action => DataStoreChangeAction.Update;
     public override string DataStoreName { get; set; } = string.Empty;
     public string Property = string.Empty;
@@ -12,14 +11,12 @@ public sealed class DataStoreUpdate : DataStoreChangeInfo
     public uint PropertyUpdateCount;
     public uint PathUpdateCount;
 
-    public override void Read(Binary.BinaryReader reader)
-    {
+    public override void Read(Binary.BinaryReader reader) {
         DataStoreName = reader.ReadVarString();
         Property = reader.ReadVarString();
         Path = reader.ReadVarString();
         int valueType = reader.ReadVarInt();
-        Value = valueType switch
-        {
+        Value = valueType switch {
             0 => reader.ReadF64(true),
             1 => reader.ReadBool(),
             2 => reader.ReadVarString(),
@@ -29,13 +26,11 @@ public sealed class DataStoreUpdate : DataStoreChangeInfo
         PathUpdateCount = reader.ReadUInt32(true);
     }
 
-    public override void Write(Binary.BinaryWriter writer)
-    {
+    public override void Write(Binary.BinaryWriter writer) {
         writer.WriteVarString(DataStoreName);
         writer.WriteVarString(Property);
         writer.WriteVarString(Path);
-        switch (Value)
-        {
+        switch (Value) {
             case float value:
                 writer.WriteVarInt(0);
                 writer.WriteF64(value, true);

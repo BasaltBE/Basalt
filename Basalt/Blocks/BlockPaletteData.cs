@@ -4,8 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 
-public sealed class BlockTypeData
-{
+public sealed class BlockTypeData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -55,8 +54,7 @@ public sealed class BlockTypeData
     public string? MapColor { get; set; }
 }
 
-public sealed class BlockPermutationData
-{
+public sealed class BlockPermutationData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -67,8 +65,7 @@ public sealed class BlockPermutationData
     public Dictionary<string, object> State { get; set; } = [];
 }
 
-public sealed class BlockDropData
-{
+public sealed class BlockDropData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -76,8 +73,7 @@ public sealed class BlockDropData
     public List<BlockDropEntryData> Drops { get; set; } = [];
 }
 
-public sealed class BlockDropEntryData
-{
+public sealed class BlockDropEntryData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -95,8 +91,7 @@ public sealed class BlockDropEntryData
 [JsonSerializable(typeof(List<BlockTypeData>))]
 [JsonSerializable(typeof(List<BlockPermutationData>))]
 [JsonSerializable(typeof(List<BlockDropData>))]
-internal sealed partial class BlockPaletteJsonContext : JsonSerializerContext
-{
+internal sealed partial class BlockPaletteJsonContext : JsonSerializerContext {
 }
 
 

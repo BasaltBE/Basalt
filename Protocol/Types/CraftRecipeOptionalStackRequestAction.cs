@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction, DataType {
     public byte ActionType => 15;
     /// <summary>
     /// Network id of the optional recipe.
@@ -14,14 +13,12 @@ public sealed class CraftRecipeOptionalStackRequestAction : IStackRequestAction,
     /// Index into request filter strings.
     /// </summary>
     public int FilterStringIndex;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RecipeNetworkId = reader.ReadVarUInt();
         FilterStringIndex = reader.ReadInt32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteInt32(FilterStringIndex, true);
     }

@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.AddItemActor)]
-public sealed record AddItemActorPacket : DataPacket
-{
+public sealed record AddItemActorPacket : DataPacket {
     /// <summary>
     /// Unique id of the item actor.
     /// </summary>
@@ -41,8 +40,7 @@ public sealed record AddItemActorPacket : DataPacket
     /// </summary>
     public bool FromFishing;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EntityUniqueId = reader.ReadVarLong();
         EntityRuntimeId = reader.ReadVarULong();
         Item.Read(reader);
@@ -57,8 +55,7 @@ public sealed record AddItemActorPacket : DataPacket
 
         int metadataCount = reader.ReadVarInt();
         EntityMetadata = new List<ActorMetadataItem>(metadataCount);
-        for (int i = 0; i < metadataCount; i++)
-        {
+        for (int i = 0; i < metadataCount; i++) {
             ActorMetadataItem item = new();
             item.Read(reader);
             EntityMetadata.Add(item);
@@ -67,8 +64,7 @@ public sealed record AddItemActorPacket : DataPacket
         FromFishing = reader.ReadBool();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarLong(EntityUniqueId);
         writer.WriteVarULong(EntityRuntimeId);
         Item.Write(writer);
@@ -76,8 +72,7 @@ public sealed record AddItemActorPacket : DataPacket
         Velocity.Write(writer);
 
         writer.WriteVarInt(EntityMetadata.Count);
-        for (int i = 0; i < EntityMetadata.Count; i++)
-        {
+        for (int i = 0; i < EntityMetadata.Count; i++) {
             EntityMetadata[i].Write(writer);
         }
 

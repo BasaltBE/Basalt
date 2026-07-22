@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PlayerBlockAction : DataType
-{
+public sealed class PlayerBlockAction : DataType {
     /// <summary>
     /// Player action type for this block action.
     /// </summary>
@@ -21,11 +20,9 @@ public sealed class PlayerBlockAction : DataType
     /// </summary>
     public int Face;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Action = (PlayerActionType)reader.ReadZigZag();
-        switch (Action)
-        {
+        switch (Action) {
             case PlayerActionType.StartDestroyBlock:
             case PlayerActionType.AbortDestroyBlock:
             case PlayerActionType.CrackBlock:
@@ -37,11 +34,9 @@ public sealed class PlayerBlockAction : DataType
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag((int)Action);
-        switch (Action)
-        {
+        switch (Action) {
             case PlayerActionType.StartDestroyBlock:
             case PlayerActionType.AbortDestroyBlock:
             case PlayerActionType.CrackBlock:

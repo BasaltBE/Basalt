@@ -6,8 +6,7 @@ using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Protocol.Enums;
 using ChunkColumn = Worlds.Dimensions.Chunk.Chunk;
 
-public sealed class ChunkGenerationTask : ServerTask
-{
+public sealed class ChunkGenerationTask : ServerTask {
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
     private readonly DimensionType _dimensionType;
@@ -18,8 +17,7 @@ public sealed class ChunkGenerationTask : ServerTask
 
     public ChunkColumn? Result { get; private set; }
 
-    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionType dimensionType, int x, int z, long hash, Action<long, ChunkColumn?> onComplete)
-    {
+    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionType dimensionType, int x, int z, long hash, Action<long, ChunkColumn?> onComplete) {
         _provider = provider;
         _generator = generator;
         _dimensionType = dimensionType;
@@ -29,12 +27,10 @@ public sealed class ChunkGenerationTask : ServerTask
         _onComplete = onComplete;
     }
 
-    public override void Execute()
-    {
+    public override void Execute() {
         using var _ = Profiler.BeginZone("ChunkGen.Execute");
         ChunkColumn? loaded = _provider.LoadChunk(_dimensionType, _x, _z);
-        if (loaded is null)
-        {
+        if (loaded is null) {
             loaded = _generator.Generate(_dimensionType, _x, _z);
             _generator.Populate(loaded);
             loaded.Dirty = true;
@@ -43,8 +39,7 @@ public sealed class ChunkGenerationTask : ServerTask
         Result = loaded;
     }
 
-    public override void Complete()
-    {
+    public override void Complete() {
         _onComplete(_hash, Result);
     }
 }

@@ -1,31 +1,27 @@
 namespace Basalt.Core.Blocks.Types;
 
-public readonly struct BlockStateValue
-{
+public readonly struct BlockStateValue {
     private readonly long _number;
     private readonly string? _text;
     private readonly bool _flag;
 
     public byte Kind { get; }
 
-    private BlockStateValue(long number)
-    {
+    private BlockStateValue(long number) {
         Kind = 0;
         _number = number;
         _text = null;
         _flag = default;
     }
 
-    private BlockStateValue(string text)
-    {
+    private BlockStateValue(string text) {
         Kind = 1;
         _number = default;
         _text = text;
         _flag = default;
     }
 
-    private BlockStateValue(bool flag)
-    {
+    private BlockStateValue(bool flag) {
         Kind = 2;
         _number = default;
         _text = null;

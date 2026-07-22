@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ItemEntry : DataType
-{
+public sealed class ItemEntry : DataType {
     private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
 
     /// <summary>
@@ -33,8 +32,7 @@ public sealed class ItemEntry : DataType
     /// </summary>
     public CompoundTag Data = new();
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         RuntimeId = reader.ReadInt16(true);
         ComponentBased = reader.ReadBool();
@@ -42,8 +40,7 @@ public sealed class ItemEntry : DataType
         Data = CompoundTag.Read(reader, NetworkNbtOptions);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         writer.WriteInt16(RuntimeId, true);
         writer.WriteBool(ComponentBased);

@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ItemDescriptorCount : DataType
-{
+public sealed class ItemDescriptorCount : DataType {
     /// <summary>
     /// Descriptor format type id.
     /// </summary>
@@ -29,15 +28,12 @@ public sealed class ItemDescriptorCount : DataType
     /// Item count value.
     /// </summary>
     public int Count;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         DescriptorType = reader.ReadUInt8();
-        switch (DescriptorType)
-        {
+        switch (DescriptorType) {
             case 1:
                 NetworkId = reader.ReadInt16(true);
-                if (NetworkId != 0)
-                {
+                if (NetworkId != 0) {
                     MetadataValue = reader.ReadInt16(true);
                 }
                 break;
@@ -58,15 +54,12 @@ public sealed class ItemDescriptorCount : DataType
         Count = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8(DescriptorType);
-        switch (DescriptorType)
-        {
+        switch (DescriptorType) {
             case 1:
                 writer.WriteInt16(NetworkId, true);
-                if (NetworkId != 0)
-                {
+                if (NetworkId != 0) {
                     writer.WriteInt16(MetadataValue, true);
                 }
                 break;

@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum AttributeName : byte
-{
+public enum AttributeName : byte {
     Unknown = 0,
     Absorption = 1,
     AttackDamage = 2,
@@ -23,10 +22,8 @@ public enum AttributeName : byte
     ZombieSpawnReinforcements = 17,
 }
 
-public static class AttributeNameExtensions
-{
-    public static string ToProtocolString(this AttributeName name) => name switch
-    {
+public static class AttributeNameExtensions {
+    public static string ToProtocolString(this AttributeName name) => name switch {
         AttributeName.Absorption => "minecraft:absorption",
         AttributeName.AttackDamage => "minecraft:attack_damage",
         AttributeName.FallDamage => "minecraft:fall_damage",

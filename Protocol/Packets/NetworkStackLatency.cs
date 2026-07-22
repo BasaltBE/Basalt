@@ -4,8 +4,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.NetworkStackLatency)]
-public sealed record NetworkStackLatencyPacket : DataPacket
-{
+public sealed record NetworkStackLatencyPacket : DataPacket {
     /// <summary>
     /// Timestamp value carried over the network.
     /// </summary>
@@ -16,14 +15,12 @@ public sealed record NetworkStackLatencyPacket : DataPacket
     /// </summary>
     public bool NeedsResponse;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Timestamp = reader.ReadInt64(true);
         NeedsResponse = reader.ReadBool();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteInt64(Timestamp, true);
         writer.WriteBool(NeedsResponse);
     }

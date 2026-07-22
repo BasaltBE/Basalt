@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum PlayMode : uint
-{
+public enum PlayMode : uint {
     Normal = 0,
     Teaser = 1,
     Screen = 2,

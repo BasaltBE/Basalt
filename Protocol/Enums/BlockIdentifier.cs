@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public enum BlockIdentifier
-{
+public enum BlockIdentifier {
     AcaciaButton,
     AcaciaDoor,
     AcaciaDoubleSlab,
@@ -1347,10 +1346,8 @@ public enum BlockIdentifier
     ZombieHead
 }
 
-public static class BlockIdentifierExtensions
-{
-    private static readonly Dictionary<BlockIdentifier, string> ToIdentifierMap = new()
-    {
+public static class BlockIdentifierExtensions {
+    private static readonly Dictionary<BlockIdentifier, string> ToIdentifierMap = new() {
         [BlockIdentifier.AcaciaButton] = "minecraft:acacia_button",
         [BlockIdentifier.AcaciaDoor] = "minecraft:acacia_door",
         [BlockIdentifier.AcaciaDoubleSlab] = "minecraft:acacia_double_slab",
@@ -2695,8 +2692,7 @@ public static class BlockIdentifierExtensions
         [BlockIdentifier.ZombieHead] = "minecraft:zombie_head",
     };
 
-    private static readonly Dictionary<string, BlockIdentifier> FromIdentifierMap = new(StringComparer.Ordinal)
-    {
+    private static readonly Dictionary<string, BlockIdentifier> FromIdentifierMap = new(StringComparer.Ordinal) {
         ["minecraft:acacia_button"] = BlockIdentifier.AcaciaButton,
         ["minecraft:acacia_door"] = BlockIdentifier.AcaciaDoor,
         ["minecraft:acacia_double_slab"] = BlockIdentifier.AcaciaDoubleSlab,

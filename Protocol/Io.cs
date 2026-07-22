@@ -13,10 +13,8 @@ using Basalt.Binary;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace Basalt.Protocol.Io
-{
-    public static class Constants
-    {
+namespace Basalt.Protocol.Io {
+    public static class Constants {
         public const int ProtocolVersion = 1001;
         public const string MinecraftVersion = "1.26.30";
         public const int ShieldNetworkId = 387;
@@ -25,8 +23,7 @@ namespace Basalt.Protocol.Io
     /// <summary>
     /// Methods for processing packets
     /// </summary>
-    public static class Packet
-    {
+    public static class Packet {
         static readonly Dictionary<PacketId, Func<DataPacket>> Pool;
         static readonly Dictionary<Type, PacketId> TypeIds;
 
@@ -35,34 +32,27 @@ namespace Basalt.Protocol.Io
         /// A pool of packets
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        static Packet()
-        {
+        static Packet() {
             Dictionary<PacketId, Func<DataPacket>> pool = [];
             Dictionary<Type, PacketId> typeIds = [];
 
-            foreach (Type type in typeof(DataPacket).Assembly.GetTypes())
-            {
-                if (!typeof(DataPacket).IsAssignableFrom(type) || type.IsAbstract)
-                {
+            foreach (Type type in typeof(DataPacket).Assembly.GetTypes()) {
+                if (!typeof(DataPacket).IsAssignableFrom(type) || type.IsAbstract) {
                     continue;
                 }
 
                 PacketAttribute? attribute = type.GetCustomAttribute<PacketAttribute>();
-                if (attribute is null)
-                {
+                if (attribute is null) {
                     continue;
                 }
 
-                if (pool.ContainsKey(attribute.Id))
-                {
+                if (pool.ContainsKey(attribute.Id)) {
                     throw new InvalidOperationException($"Duplicate packet id mapping for {attribute.Id}.");
                 }
 
-                pool[attribute.Id] = () =>
-                {
+                pool[attribute.Id] = () => {
                     object? instance = Activator.CreateInstance(type);
-                    if (instance is not DataPacket packet)
-                    {
+                    if (instance is not DataPacket packet) {
                         throw new InvalidOperationException($"{type.FullName} could not be created.");
                     }
 
@@ -80,12 +70,10 @@ namespace Basalt.Protocol.Io
         /// each packet class already includes a PacketID, so when you deserialize it
         /// you can just use DataPacket.PacketId to check what packet it is
         /// </summary>
-        public static DataPacket Deserialize(BinaryReader reader)
-        {
+        public static DataPacket Deserialize(BinaryReader reader) {
             PacketId id = (PacketId)reader.ReadVarUInt();
 
-            if (!Pool.TryGetValue(id, out Func<DataPacket>? create))
-            {
+            if (!Pool.TryGetValue(id, out Func<DataPacket>? create)) {
                 throw new NotImplementedException($"Deserialization for packet ID {(byte)id} ({id}) is not implemented.");
             }
 
@@ -94,47 +82,38 @@ namespace Basalt.Protocol.Io
             return packet;
         }
 
-        public static PacketId GetId(DataPacket packet)
-        {
+        public static PacketId GetId(DataPacket packet) {
             Type type = packet.GetType();
-            if (!TypeIds.TryGetValue(type, out PacketId id))
-            {
+            if (!TypeIds.TryGetValue(type, out PacketId id)) {
                 throw new NotImplementedException($"Packet id for {type.FullName} is not implemented.");
             }
 
             return id;
         }
 
-        public static void Serialize(DataPacket packet, BinaryWriter writer)
-        {
+        public static void Serialize(DataPacket packet, BinaryWriter writer) {
             writer.WriteVarUInt((uint)GetId(packet));
             packet.Serialize(writer);
         }
 
-        public static int Compress(ReadOnlySpan<byte> input, Span<byte> output, CompressionMethod compression)
-        {
-            if (compression == CompressionMethod.Snappy)
-            {
+        public static int Compress(ReadOnlySpan<byte> input, Span<byte> output, CompressionMethod compression) {
+            if (compression == CompressionMethod.Snappy) {
                 throw new NotSupportedException("Snappy compression is not supported.");
             }
 
             int headerSize = compression == CompressionMethod.NotPresent ? 0 : 1;
-            if (output.Length < input.Length + headerSize)
-            {
+            if (output.Length < input.Length + headerSize) {
                 throw new ArgumentException("Output buffer is too small.", nameof(output));
             }
 
             int outputOffset = 0;
-            if (compression != CompressionMethod.NotPresent)
-            {
+            if (compression != CompressionMethod.NotPresent) {
                 output[0] = (byte)compression;
                 outputOffset = 1;
             }
 
-            if (compression == CompressionMethod.Zlib)
-            {
-                DeflateCompressor compressor = new()
-                {
+            if (compression == CompressionMethod.Zlib) {
+                DeflateCompressor compressor = new() {
                     CompressionLevel = CompressionLevel.Fastest
                 };
 
@@ -146,17 +125,14 @@ namespace Basalt.Protocol.Io
             return input.Length + outputOffset;
         }
 
-        public static int Decompress(ReadOnlySpan<byte> input, Span<byte> output)
-        {
+        public static int Decompress(ReadOnlySpan<byte> input, Span<byte> output) {
             DeflateCompressor compressor = new();
             compressor.Decompress(input, output, out int bytesWritten);
             return bytesWritten;
         }
 
-        public static int Compress(ReadOnlySpan<byte> input, Span<byte> output)
-        {
-            DeflateCompressor compressor = new()
-            {
+        public static int Compress(ReadOnlySpan<byte> input, Span<byte> output) {
+            DeflateCompressor compressor = new() {
                 CompressionLevel = CompressionLevel.Fastest
             };
 
@@ -164,17 +140,14 @@ namespace Basalt.Protocol.Io
             return bytesWritten;
         }
 
-        public static int Frame(ReadOnlySpan<byte> input, Span<byte> output, CompressionMethod compression, int compressionThreshold)
-        {
+        public static int Frame(ReadOnlySpan<byte> input, Span<byte> output, CompressionMethod compression, int compressionThreshold) {
             CompressionMethod method = compression;
 
-            if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && input.Length < compressionThreshold)
-            {
+            if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && input.Length < compressionThreshold) {
                 method = CompressionMethod.None;
             }
 
-            if (output.Length == 0)
-            {
+            if (output.Length == 0) {
                 throw new ArgumentException("Output buffer is too small.", nameof(output));
             }
 
@@ -183,13 +156,11 @@ namespace Basalt.Protocol.Io
             return bytesWritten + 1;
         }
 
-        public static int Frame(ReadOnlyMemory<byte>[] packets, Span<byte> output)
-        {
+        public static int Frame(ReadOnlyMemory<byte>[] packets, Span<byte> output) {
             int offset = 0;
             BinaryWriter writer = new(output, ref offset);
 
-            foreach (ReadOnlyMemory<byte> packet in packets)
-            {
+            foreach (ReadOnlyMemory<byte> packet in packets) {
                 writer.WriteVarInt(packet.Length);
                 writer.WriteBytes(packet.Span);
             }
@@ -197,28 +168,23 @@ namespace Basalt.Protocol.Io
             return offset;
         }
 
-        public static int Unframe(ReadOnlySpan<byte> input, Span<byte> output, out CompressionMethod compression)
-        {
-            if (input.Length == 0 || input[0] != 0xFE)
-            {
+        public static int Unframe(ReadOnlySpan<byte> input, Span<byte> output, out CompressionMethod compression) {
+            if (input.Length == 0 || input[0] != 0xFE) {
                 compression = CompressionMethod.NotPresent;
                 return 0;
             }
 
             ReadOnlySpan<byte> payload = input[1..];
-            if (payload.Length == 0)
-            {
+            if (payload.Length == 0) {
                 compression = CompressionMethod.NotPresent;
                 return 0;
             }
 
             CompressionMethod header = (CompressionMethod)payload[0];
 
-            switch (header)
-            {
+            switch (header) {
                 case CompressionMethod.Zlib:
-                    compression = CompressionMethod.Zlib;
-                    {
+                    compression = CompressionMethod.Zlib; {
                         DeflateCompressor compressor = new();
                         compressor.Decompress(payload[1..], output, out int bytesWritten);
                         return bytesWritten;
@@ -245,18 +211,15 @@ namespace Basalt.Protocol.Io
         /// </summary>
         /// <param name="frame"></param>
         /// <returns></returns>
-        public static ReadOnlyMemory<byte>[] Unframe(ReadOnlyMemory<byte> frame)
-        {
+        public static ReadOnlyMemory<byte>[] Unframe(ReadOnlyMemory<byte> frame) {
             ReadOnlySpan<byte> span = frame.Span;
             int offset = 0;
             BinaryReader reader = new(span, ref offset);
             List<ReadOnlyMemory<byte>> packets = [];
 
-            while (reader.Remaining > 0)
-            {
+            while (reader.Remaining > 0) {
                 int packetLength = checked((int)reader.ReadVarUInt());
-                if (packetLength <= 0 || packetLength > reader.Remaining)
-                {
+                if (packetLength <= 0 || packetLength > reader.Remaining) {
                     break;
                 }
 

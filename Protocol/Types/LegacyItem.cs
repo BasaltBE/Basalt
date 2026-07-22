@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class LegacyItem : DataType
-{
+public sealed class LegacyItem : DataType {
     /// <summary>
     /// Legacy network item id.
     /// </summary>
@@ -35,11 +34,9 @@ public sealed class LegacyItem : DataType
     /// </summary>
     public ItemInstanceUserData? ExtraData;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         NetworkId = reader.ReadZigZag();
-        if (NetworkId == 0)
-        {
+        if (NetworkId == 0) {
             StackSize = 0;
             Metadata = 0;
             ItemStackId = null;
@@ -55,13 +52,11 @@ public sealed class LegacyItem : DataType
         NetworkBlockId = reader.ReadZigZag();
 
         int extrasLength = reader.ReadVarInt();
-        if (extrasLength < 0)
-        {
+        if (extrasLength < 0) {
             throw new FormatException("Negative extras length in legacy item.");
         }
 
-        if (extrasLength == 0)
-        {
+        if (extrasLength == 0) {
             ExtraData = null;
             return;
         }
@@ -71,17 +66,14 @@ public sealed class LegacyItem : DataType
         extraData.Read(reader, NetworkId);
         ExtraData = extraData;
 
-        if (reader.Offset < extrasEndOffset)
-        {
+        if (reader.Offset < extrasEndOffset) {
             reader.Seek(extrasEndOffset);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(NetworkId);
-        if (NetworkId == 0)
-        {
+        if (NetworkId == 0) {
             return;
         }
 
@@ -89,14 +81,12 @@ public sealed class LegacyItem : DataType
         writer.WriteVarInt(Metadata);
         bool hasStackId = ItemStackId.HasValue && ItemStackId.Value != 0;
         writer.WriteBool(hasStackId);
-        if (hasStackId)
-        {
+        if (hasStackId) {
             writer.WriteZigZag(ItemStackId!.Value);
         }
 
         writer.WriteZigZag(NetworkBlockId);
-        if (ExtraData is null)
-        {
+        if (ExtraData is null) {
             writer.WriteVarInt(0);
             return;
         }

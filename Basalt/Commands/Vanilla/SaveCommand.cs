@@ -1,9 +1,7 @@
 namespace Basalt.Core.Commands.Vanilla;
 
-public static class SaveCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class SaveCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "save",
         Description = "Saves all worlds to disk.",
         Aliases = ["save-all"],
@@ -12,8 +10,7 @@ public static class SaveCommand
         Handler = new CommandHandler(Execute)
     };
 
-    private static CommandResult Execute(CommandContext ctx)
-    {
+    private static CommandResult Execute(CommandContext ctx) {
         ctx.Server.SaveAll();
         return CommandResult.OkMessage("All worlds saved.");
     }

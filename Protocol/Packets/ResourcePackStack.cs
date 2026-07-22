@@ -6,8 +6,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ResourcePackStack)]
-public sealed record ResourcePackStackPacket : DataPacket
-{
+public sealed record ResourcePackStackPacket : DataPacket {
     /// <summary>
     /// Whether the client must accept the resource packs.
     /// </summary>
@@ -38,13 +37,11 @@ public sealed record ResourcePackStackPacket : DataPacket
     /// </summary>
     public bool IncludeEditorPacks;
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         MustAccept = reader.ReadBool();
         int packsLength = checked((int)reader.ReadVarUInt());
         Packs = new List<ResourcePackStackEntry>(packsLength);
-        for (int i = 0; i < packsLength; i++)
-        {
+        for (int i = 0; i < packsLength; i++) {
             ResourcePackStackEntry pack = new();
             pack.Read(reader);
             Packs.Add(pack);
@@ -52,8 +49,7 @@ public sealed record ResourcePackStackPacket : DataPacket
         BaseGameVersion = reader.ReadVarString();
         int experimentsLength = checked((int)reader.ReadUInt32(true));
         Experiments = new List<ExperimentData>(experimentsLength);
-        for (int i = 0; i < experimentsLength; i++)
-        {
+        for (int i = 0; i < experimentsLength; i++) {
             ExperimentData experiment = new();
             experiment.Read(reader);
             Experiments.Add(experiment);
@@ -62,18 +58,15 @@ public sealed record ResourcePackStackPacket : DataPacket
         IncludeEditorPacks = reader.ReadBool();
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteBool(MustAccept);
         writer.WriteVarUInt((uint)Packs.Count);
-        for (int i = 0; i < Packs.Count; i++)
-        {
+        for (int i = 0; i < Packs.Count; i++) {
             Packs[i].Write(writer);
         }
         writer.WriteVarString(BaseGameVersion);
         writer.WriteUInt32((uint)Experiments.Count, true);
-        for (int i = 0; i < Experiments.Count; i++)
-        {
+        for (int i = 0; i < Experiments.Count; i++) {
             Experiments[i].Write(writer);
         }
         writer.WriteBool(ExperimentsPreviouslyToggled);

@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class MineBlockStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class MineBlockStackRequestAction : IStackRequestAction, DataType {
     public byte ActionType => 11;
     /// <summary>
     /// Hotbar slot used while mining.
@@ -18,15 +17,13 @@ public sealed class MineBlockStackRequestAction : IStackRequestAction, DataType
     /// Client stack network id for validation.
     /// </summary>
     public int StackNetworkId;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         HotbarSlot = reader.ReadZigZag();
         PredictedDurability = reader.ReadZigZag();
         StackNetworkId = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(HotbarSlot);
         writer.WriteZigZag(PredictedDurability);
         writer.WriteZigZag(StackNetworkId);

@@ -1,7 +1,6 @@
 namespace Basalt.Core.Plugins;
 
-public enum PluginState
-{
+public enum PluginState {
     Loaded,
     Started,
     Disabled,

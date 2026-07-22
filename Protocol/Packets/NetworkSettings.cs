@@ -4,8 +4,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.NetworkSettings)]
-public sealed record NetworkSettingsPacket : DataPacket
-{
+public sealed record NetworkSettingsPacket : DataPacket {
     /// <summary>
     /// Compression threshold. 
     /// The size of the packet after which it should be compressed.
@@ -37,8 +36,7 @@ public sealed record NetworkSettingsPacket : DataPacket
     public float ClientThrottleScalar;
 
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteUInt16(CompressionThreshold, true);
         writer.WriteUInt16((ushort)CompressionMethod, true);
         writer.WriteBool(ClientThrottle);
@@ -46,8 +44,7 @@ public sealed record NetworkSettingsPacket : DataPacket
         writer.WriteF32(ClientThrottleScalar, true);
     }
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         CompressionThreshold = reader.ReadUInt16(true);
         CompressionMethod = (CompressionMethod)reader.ReadUInt16(true);
         ClientThrottle = reader.ReadBool();

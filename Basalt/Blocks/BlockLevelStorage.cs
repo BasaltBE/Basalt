@@ -11,28 +11,22 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
 [Tag(TagType.Compound)]
-public sealed class BlockLevelStorage : CompoundTag
-{
+public sealed class BlockLevelStorage : CompoundTag {
     private readonly ChunkColumn? _chunk;
 
-    public BlockLevelStorage(ChunkColumn? chunk = null, CompoundTag? source = null)
-    {
+    public BlockLevelStorage(ChunkColumn? chunk = null, CompoundTag? source = null) {
         _chunk = chunk;
-        if (source is null)
-        {
+        if (source is null) {
             return;
         }
 
-        foreach ((string key, BaseTag value) in source.Values)
-        {
+        foreach ((string key, BaseTag value) in source.Values) {
             Values[key] = value;
         }
     }
 
-    public int Size
-    {
-        get
-        {
+    public int Size {
+        get {
             int size = Values.Count;
             if (Values.ContainsKey("x")) size--;
             if (Values.ContainsKey("y")) size--;
@@ -41,17 +35,14 @@ public sealed class BlockLevelStorage : CompoundTag
         }
     }
 
-    public new BlockLevelStorage Set(string key, BaseTag value)
-    {
+    public new BlockLevelStorage Set(string key, BaseTag value) {
         base.Set(key, value);
         MarkDirtyIfNeeded();
         return this;
     }
 
-    public T Add<T>(T tag) where T : BaseTag
-    {
-        if (string.IsNullOrEmpty(tag.Name))
-        {
+    public T Add<T>(T tag) where T : BaseTag {
+        if (string.IsNullOrEmpty(tag.Name)) {
             throw new InvalidOperationException("Tag must have a name to be added to block level storage.");
         }
 
@@ -60,35 +51,28 @@ public sealed class BlockLevelStorage : CompoundTag
         return tag;
     }
 
-    public BlockLevelStorage Push(params BaseTag[] tags)
-    {
-        for (int i = 0; i < tags.Length; i++)
-        {
+    public BlockLevelStorage Push(params BaseTag[] tags) {
+        for (int i = 0; i < tags.Length; i++) {
             Add(tags[i]);
         }
 
         return this;
     }
 
-    public bool Delete(string key)
-    {
+    public bool Delete(string key) {
         bool removed = Values.Remove(key);
-        if (removed)
-        {
+        if (removed) {
             MarkDirtyIfNeeded();
         }
 
         return removed;
     }
 
-    public void ClearStorage()
-    {
+    public void ClearStorage() {
         List<string> keys = [.. Values.Keys];
-        for (int i = 0; i < keys.Count; i++)
-        {
+        for (int i = 0; i < keys.Count; i++) {
             string key = keys[i];
-            if (key == "x" || key == "y" || key == "z")
-            {
+            if (key == "x" || key == "y" || key == "z") {
                 continue;
             }
 
@@ -96,8 +80,7 @@ public sealed class BlockLevelStorage : CompoundTag
         }
     }
 
-    public BlockPos GetPosition()
-    {
+    public BlockPos GetPosition() {
         int x = Get<IntTag>("x")?.Value ?? 0;
         int y = Get<IntTag>("y")?.Value ?? 0;
         int z = Get<IntTag>("z")?.Value ?? 0;
@@ -105,33 +88,27 @@ public sealed class BlockLevelStorage : CompoundTag
         return new BlockPos { X = x, Y = y, Z = z };
     }
 
-    public void SetPosition(BlockPos position)
-    {
+    public void SetPosition(BlockPos position) {
         Set("x", new IntTag { Name = "x", Value = position.X });
         Set("y", new IntTag { Name = "y", Value = position.Y });
         Set("z", new IntTag { Name = "z", Value = position.Z });
     }
 
-    public List<(string Identifier, JsonNode? Value)> GetDynamicProperties()
-    {
+    public List<(string Identifier, JsonNode? Value)> GetDynamicProperties() {
         List<(string Identifier, JsonNode? Value)> properties = [];
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");
-        if (dynamicProperties is null)
-        {
+        if (dynamicProperties is null) {
             return properties;
         }
 
-        for (int i = 0; i < dynamicProperties.Values.Count; i++)
-        {
-            if (dynamicProperties.Values[i] is not CompoundTag property)
-            {
+        for (int i = 0; i < dynamicProperties.Values.Count; i++) {
+            if (dynamicProperties.Values[i] is not CompoundTag property) {
                 continue;
             }
 
             StringTag? identifier = property.Get<StringTag>("identifier");
             StringTag? value = property.Get<StringTag>("value");
-            if (identifier is null || value is null)
-            {
+            if (identifier is null || value is null) {
                 continue;
             }
 
@@ -141,11 +118,9 @@ public sealed class BlockLevelStorage : CompoundTag
         return properties;
     }
 
-    public void SetDynamicProperties(IEnumerable<(string Identifier, JsonNode? Value)> properties)
-    {
+    public void SetDynamicProperties(IEnumerable<(string Identifier, JsonNode? Value)> properties) {
         ListTag dynamicProperties = new() { Name = "dynamic_properties" };
-        foreach ((string identifier, JsonNode? value) in properties)
-        {
+        foreach ((string identifier, JsonNode? value) in properties) {
             CompoundTag propertyTag = new();
             propertyTag.Set("identifier", new StringTag { Name = "identifier", Value = identifier });
             propertyTag.Set("value", new StringTag { Name = "value", Value = value?.ToJsonString() ?? "null" });
@@ -155,24 +130,19 @@ public sealed class BlockLevelStorage : CompoundTag
         Set("dynamic_properties", dynamicProperties);
     }
 
-    public bool HasDynamicProperty(string key)
-    {
+    public bool HasDynamicProperty(string key) {
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");
-        if (dynamicProperties is null)
-        {
+        if (dynamicProperties is null) {
             return false;
         }
 
-        for (int i = 0; i < dynamicProperties.Values.Count; i++)
-        {
-            if (dynamicProperties.Values[i] is not CompoundTag property)
-            {
+        for (int i = 0; i < dynamicProperties.Values.Count; i++) {
+            if (dynamicProperties.Values[i] is not CompoundTag property) {
                 continue;
             }
 
             StringTag? identifier = property.Get<StringTag>("identifier");
-            if (identifier is not null && identifier.Value == key)
-            {
+            if (identifier is not null && identifier.Value == key) {
                 return true;
             }
         }
@@ -182,25 +152,20 @@ public sealed class BlockLevelStorage : CompoundTag
 
     [RequiresUnreferencedCode("...")]
     [RequiresDynamicCode("...")]
-    public T? GetDynamicProperty<T>(string key)
-    {
+    public T? GetDynamicProperty<T>(string key) {
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");
-        if (dynamicProperties is null)
-        {
+        if (dynamicProperties is null) {
             return default;
         }
 
-        for (int i = 0; i < dynamicProperties.Values.Count; i++)
-        {
-            if (dynamicProperties.Values[i] is not CompoundTag property)
-            {
+        for (int i = 0; i < dynamicProperties.Values.Count; i++) {
+            if (dynamicProperties.Values[i] is not CompoundTag property) {
                 continue;
             }
 
             StringTag? identifier = property.Get<StringTag>("identifier");
             StringTag? value = property.Get<StringTag>("value");
-            if (identifier is null || value is null || identifier.Value != key)
-            {
+            if (identifier is null || value is null || identifier.Value != key) {
                 continue;
             }
 
@@ -210,8 +175,7 @@ public sealed class BlockLevelStorage : CompoundTag
         return default;
     }
 
-    public void AddDynamicProperty(string key, JsonNode? value)
-    {
+    public void AddDynamicProperty(string key, JsonNode? value) {
         ListTag dynamicProperties = EnsureDynamicPropertiesList();
 
         CompoundTag propertyTag = new();
@@ -222,24 +186,19 @@ public sealed class BlockLevelStorage : CompoundTag
         MarkDirtyIfNeeded();
     }
 
-    public void RemoveDynamicProperty(string key)
-    {
+    public void RemoveDynamicProperty(string key) {
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");
-        if (dynamicProperties is null)
-        {
+        if (dynamicProperties is null) {
             return;
         }
 
-        for (int i = 0; i < dynamicProperties.Values.Count; i++)
-        {
-            if (dynamicProperties.Values[i] is not CompoundTag property)
-            {
+        for (int i = 0; i < dynamicProperties.Values.Count; i++) {
+            if (dynamicProperties.Values[i] is not CompoundTag property) {
                 continue;
             }
 
             StringTag? identifier = property.Get<StringTag>("identifier");
-            if (identifier is null || identifier.Value != key)
-            {
+            if (identifier is null || identifier.Value != key) {
                 continue;
             }
 
@@ -249,17 +208,14 @@ public sealed class BlockLevelStorage : CompoundTag
         }
     }
 
-    public void SetDynamicProperty(string key, JsonNode? value)
-    {
+    public void SetDynamicProperty(string key, JsonNode? value) {
         RemoveDynamicProperty(key);
         AddDynamicProperty(key, value);
     }
 
-    public static BlockLevelStorage FromStream(ChunkColumn? chunk, BinaryReader reader)
-    {
+    public static BlockLevelStorage FromStream(ChunkColumn? chunk, BinaryReader reader) {
         TagType type = (TagType)reader.ReadInt8();
-        if (type != TagType.Compound)
-        {
+        if (type != TagType.Compound) {
             throw new InvalidOperationException($"Expected Compound tag, got {type}.");
         }
 
@@ -267,17 +223,14 @@ public sealed class BlockLevelStorage : CompoundTag
         return new BlockLevelStorage(chunk, tag);
     }
 
-    public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer)
-    {
+    public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer) {
         Protocol.Io.NBT.WriteTag(writer, storage, new TagOptions(Name: true, Type: true, VarInt: false));
         return writer.GetProcessedBytes();
     }
 
-    private ListTag EnsureDynamicPropertiesList()
-    {
+    private ListTag EnsureDynamicPropertiesList() {
         ListTag? dynamicProperties = Get<ListTag>("dynamic_properties");
-        if (dynamicProperties is not null)
-        {
+        if (dynamicProperties is not null) {
             return dynamicProperties;
         }
 
@@ -286,10 +239,8 @@ public sealed class BlockLevelStorage : CompoundTag
         return list;
     }
 
-    private void MarkDirtyIfNeeded()
-    {
-        if (_chunk is not null && Size > 0)
-        {
+    private void MarkDirtyIfNeeded() {
+        if (_chunk is not null && Size > 0) {
             _chunk.Dirty = true;
         }
     }

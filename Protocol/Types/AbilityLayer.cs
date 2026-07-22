@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class AbilityLayer : DataType
-{
+public sealed class AbilityLayer : DataType {
     /// <summary>
     /// Ability layer this set of abilities belongs to.
     /// </summary>
@@ -36,8 +35,7 @@ public sealed class AbilityLayer : DataType
     /// </summary>
     public float WalkSpeed = 0.1f;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Type = (AbilityLayerType)reader.ReadUInt16(true);
         Abilities = reader.ReadUInt32(true);
         Values = reader.ReadUInt32(true);
@@ -46,8 +44,7 @@ public sealed class AbilityLayer : DataType
         WalkSpeed = reader.ReadF32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt16((ushort)Type, true);
         writer.WriteUInt32(Abilities, true);
         writer.WriteUInt32(Values, true);

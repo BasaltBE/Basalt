@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class StackResponseSlotInfo : DataType
-{
+public sealed class StackResponseSlotInfo : DataType {
     /// <summary>
     /// Slot index in the container.
     /// </summary>
@@ -33,8 +32,7 @@ public sealed class StackResponseSlotInfo : DataType
     /// Durability correction value.
     /// </summary>
     public int DurabilityCorrection;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         byte requestedSlot = reader.ReadUInt8();
         byte slot = reader.ReadUInt8();
         Slot = (byte)(requestedSlot & slot);
@@ -46,8 +44,7 @@ public sealed class StackResponseSlotInfo : DataType
         DurabilityCorrection = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8(Slot);
         writer.WriteUInt8(Slot);
         writer.WriteUInt8(Count);

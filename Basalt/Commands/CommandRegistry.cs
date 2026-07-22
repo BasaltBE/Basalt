@@ -10,19 +10,16 @@ using ProtocolCommandEnum = Protocol.Types.CommandEnum;
 using ProtocolCommandOverload = Protocol.Types.CommandOverload;
 using ProtocolCommandParameter = Protocol.Types.CommandParameter;
 
-public sealed class CommandRegistry
-{
+public sealed class CommandRegistry {
     readonly Dictionary<string, CommandDefinition> _commands = new(StringComparer.OrdinalIgnoreCase);
     readonly List<CommandDefinition> _definitions = [];
 
     public IEnumerable<CommandDefinition> Definitions => _definitions;
 
-    public void Register(CommandDefinition definition)
-    {
+    public void Register(CommandDefinition definition) {
         _definitions.Add(definition);
         _commands[definition.Name] = definition;
-        foreach (string alias in definition.Aliases)
-        {
+        foreach (string alias in definition.Aliases) {
             _commands[alias] = definition;
         }
     }
@@ -30,25 +27,21 @@ public sealed class CommandRegistry
     /// <summary>
     /// Finds a command definition by name or alias. Returns null if not found.
     /// </summary>
-    public CommandDefinition? FindCommand(string name)
-    {
+    public CommandDefinition? FindCommand(string name) {
         string trimmed = name.TrimStart('/');
         _commands.TryGetValue(trimmed, out CommandDefinition? def);
         return def;
     }
 
-    public CommandResult Execute(ServerInstance server, Player player, string commandLine)
-    {
+    public CommandResult Execute(ServerInstance server, Player player, string commandLine) {
         return Execute(server, new CommandSender.PlayerSender(player), commandLine);
     }
 
-    public CommandResult Execute(ServerInstance server, string commandLine)
-    {
+    public CommandResult Execute(ServerInstance server, string commandLine) {
         return Execute(server, new CommandSender.ServerSender(), commandLine);
     }
 
-    CommandResult Execute(ServerInstance server, CommandSender sender, string commandLine)
-    {
+    CommandResult Execute(ServerInstance server, CommandSender sender, string commandLine) {
         string input = commandLine;
         if (input.Length > 0 && input[0] == '/')
             input = input[1..];
@@ -64,8 +57,7 @@ public sealed class CommandRegistry
         if (!HasPermission(sender, definition))
             return CommandResult.Error("§cYou do not have permission to run this command.");
 
-        CommandContext ctx = new()
-        {
+        CommandContext ctx = new() {
             Server = server,
             Sender = sender,
             Raw = tokens.Length > 1 ? input[(name.Length + 1)..] : ""
@@ -73,18 +65,15 @@ public sealed class CommandRegistry
 
         string[] rawArgs = tokens.Length > 1 ? tokens[1..] : [];
         List<CommandArgument>? matched = MatchOverloads(ctx, definition, rawArgs);
-        if (matched is not null)
-        {
+        if (matched is not null) {
             ctx.Arguments.AddRange(matched);
         }
 
         return definition.Handler.Execute(ctx);
     }
 
-    static List<CommandArgument>? MatchOverloads(CommandContext ctx, CommandDefinition definition, string[] rawArgs)
-    {
-        foreach (OverloadDefinition overload in definition.Overloads)
-        {
+    static List<CommandArgument>? MatchOverloads(CommandContext ctx, CommandDefinition definition, string[] rawArgs) {
+        foreach (OverloadDefinition overload in definition.Overloads) {
             List<CommandArgument>? result = TryParseOverload(ctx, overload, rawArgs);
             if (result is not null)
                 return result;
@@ -92,23 +81,19 @@ public sealed class CommandRegistry
         return null;
     }
 
-    static List<CommandArgument>? TryParseOverload(CommandContext ctx, OverloadDefinition overload, string[] rawArgs)
-    {
+    static List<CommandArgument>? TryParseOverload(CommandContext ctx, OverloadDefinition overload, string[] rawArgs) {
         List<CommandArgument> arguments = [];
         int tokenIdx = 0;
 
-        foreach (ParameterDefinition param in overload.Parameters)
-        {
-            if (tokenIdx >= rawArgs.Length)
-            {
+        foreach (ParameterDefinition param in overload.Parameters) {
+            if (tokenIdx >= rawArgs.Length) {
                 if (param.Optional)
                     continue;
                 return null;
             }
 
             CommandEnum? parsed = CreateAndParse(ctx, param.Type, rawArgs, ref tokenIdx);
-            if (parsed is null)
-            {
+            if (parsed is null) {
                 if (param.Optional)
                     continue;
                 return null;
@@ -127,14 +112,12 @@ public sealed class CommandRegistry
         CommandContext ctx,
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type enumType,
         string[] tokens,
-        ref int tokenIndex)
-    {
+        ref int tokenIndex) {
         if (Activator.CreateInstance(enumType) is not CommandEnum instance)
             return null;
 
         int saved = tokenIndex;
-        if (!instance.Parse(ctx, tokens, ref tokenIndex))
-        {
+        if (!instance.Parse(ctx, tokens, ref tokenIndex)) {
             tokenIndex = saved;
             return null;
         }
@@ -142,18 +125,15 @@ public sealed class CommandRegistry
         return instance;
     }
 
-    static bool HasPermission(CommandSender sender, CommandDefinition definition)
-    {
+    static bool HasPermission(CommandSender sender, CommandDefinition definition) {
         if (sender is CommandSender.ServerSender)
             return true;
 
         if (definition.Permissions.Length == 0)
             return true;
 
-        if (sender is CommandSender.PlayerSender ps)
-        {
-            foreach (string perm in definition.Permissions)
-            {
+        if (sender is CommandSender.PlayerSender ps) {
+            foreach (string perm in definition.Permissions) {
                 if (ps.Player.HasPermission(perm))
                     return true;
             }
@@ -162,19 +142,16 @@ public sealed class CommandRegistry
         return false;
     }
 
-    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null)
-    {
+    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null) {
         AvailableCommandsPacket packet = new();
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
         Dictionary<Type, uint> enumOffsets = new();
 
-        foreach (CommandDefinition def in _definitions)
-        {
+        foreach (CommandDefinition def in _definitions) {
             if (player is not null && !HasPermission(new CommandSender.PlayerSender(player), def))
                 continue;
 
-            packet.Commands.Add(new ProtocolCommand
-            {
+            packet.Commands.Add(new ProtocolCommand {
                 Name = def.Name,
                 Description = def.Description,
                 Flags = 0x80,
@@ -187,8 +164,7 @@ public sealed class CommandRegistry
         return packet;
     }
 
-    public void SendAvailableCommands(ServerInstance server, Player player)
-    {
+    public void SendAvailableCommands(ServerInstance server, Player player) {
         if (player.Connection is null)
             return;
 
@@ -199,15 +175,12 @@ public sealed class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
-        CommandDefinition def)
-    {
+        CommandDefinition def) {
         List<ProtocolCommandOverload> overloads = [];
 
-        foreach (OverloadDefinition overload in def.Overloads)
-        {
+        foreach (OverloadDefinition overload in def.Overloads) {
             List<ProtocolCommandParameter> parameters = [];
-            foreach (ParameterDefinition param in overload.Parameters)
-            {
+            foreach (ParameterDefinition param in overload.Parameters) {
                 parameters.Add(BuildParameter(packet, enumValueOffsets, enumOffsets, param));
             }
             overloads.Add(new ProtocolCommandOverload { Parameters = parameters });
@@ -220,42 +193,35 @@ public sealed class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
-        ParameterDefinition param)
-    {
+        ParameterDefinition param) {
         Type type = param.Type;
 
-        if (type == typeof(ItemEnum) || type == typeof(EntityEnum) || type == typeof(EnchantmentEnum))
-        {
+        if (type == typeof(ItemEnum) || type == typeof(EntityEnum) || type == typeof(EnchantmentEnum)) {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, type);
-            return new ProtocolCommandParameter
-            {
+            return new ProtocolCommandParameter {
                 Name = param.Name,
                 Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
                 Optional = param.Optional
             };
         }
 
-        if (typeof(CustomEnum).IsAssignableFrom(type))
-        {
+        if (typeof(CustomEnum).IsAssignableFrom(type)) {
             uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, type);
-            return new ProtocolCommandParameter
-            {
+            return new ProtocolCommandParameter {
                 Name = param.Name,
                 Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
                 Optional = param.Optional
             };
         }
 
-        return new ProtocolCommandParameter
-        {
+        return new ProtocolCommandParameter {
             Name = param.Name,
             Type = (uint)CommandParameterTypeFlag.Valid | (uint)GetParameterType(type),
             Optional = param.Optional
         };
     }
 
-    static CommandParameterType GetParameterType(Type type)
-    {
+    static CommandParameterType GetParameterType(Type type) {
         if (type == typeof(IntEnum)) return CommandParameterType.Int;
         if (type == typeof(TargetEnum)) return CommandParameterType.Target;
         if (type == typeof(StringEnum)) return CommandParameterType.String;
@@ -264,8 +230,7 @@ public sealed class CommandRegistry
         throw new InvalidOperationException($"Unsupported command enum type: {type.FullName}.");
     }
 
-    static uint GetAliasesOffset(AvailableCommandsPacket packet, Dictionary<string, uint> enumValueOffsets, CommandDefinition def)
-    {
+    static uint GetAliasesOffset(AvailableCommandsPacket packet, Dictionary<string, uint> enumValueOffsets, CommandDefinition def) {
         if (def.Aliases.Length == 0)
             return uint.MaxValue;
 
@@ -276,8 +241,7 @@ public sealed class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<Type, uint> enumOffsets,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type)
-    {
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type) {
         if (enumOffsets.TryGetValue(type, out uint offset))
             return offset;
 
@@ -293,11 +257,9 @@ public sealed class CommandRegistry
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         string type,
-        IEnumerable<string> values)
-    {
+        IEnumerable<string> values) {
         ProtocolCommandEnum commandEnum = new() { Type = type };
-        foreach (string value in values)
-        {
+        foreach (string value in values) {
             commandEnum.ValueIndices.Add(GetEnumValueOffset(packet, enumValueOffsets, value));
         }
         uint offset = (uint)packet.Enums.Count;
@@ -308,8 +270,7 @@ public sealed class CommandRegistry
     static uint GetEnumValueOffset(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        string value)
-    {
+        string value) {
         if (enumValueOffsets.TryGetValue(value, out uint offset))
             return offset;
 

@@ -5,13 +5,11 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.ByteList)]
-public sealed class ByteListTag : BaseTag
-{
+public sealed class ByteListTag : BaseTag {
     public List<byte> Values { get; } = [];
     public override object ToJsonValue() => Values;
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
@@ -19,10 +17,8 @@ public sealed class ByteListTag : BaseTag
         writer.WriteBytes(CollectionsMarshal.AsSpan(Values));
     }
 
-    public static ByteListTag Read(BinaryReader reader, TagOptions options = default)
-    {
-        ByteListTag tag = new()
-        {
+    public static ByteListTag Read(BinaryReader reader, TagOptions options = default) {
+        ByteListTag tag = new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null
         };
 

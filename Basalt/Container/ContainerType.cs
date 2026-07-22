@@ -1,7 +1,6 @@
 namespace Basalt.Core.Containers;
 
-public enum ContainerType
-{
+public enum ContainerType {
     None = -9,
     Inventory = -1,
     Container = 0,

@@ -4,8 +4,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.LevelChunk)]
-public sealed record LevelChunkPacket : DataPacket
-{
+public sealed record LevelChunkPacket : DataPacket {
     public const uint SubChunkRequestModeLimitless = 0xFFFFFFFF;
     public const uint SubChunkRequestModeLimited = 0xFFFFFFFE;
 
@@ -49,30 +48,25 @@ public sealed record LevelChunkPacket : DataPacket
     /// </summary>
     public byte[] RawPayload = [];
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ChunkX = reader.ReadZigZag();
         ChunkZ = reader.ReadZigZag();
         Dimension = reader.ReadZigZag();
         SubChunkCount = reader.ReadVarUInt();
 
-        if (SubChunkCount == SubChunkRequestModeLimited)
-        {
+        if (SubChunkCount == SubChunkRequestModeLimited) {
             HighestSubChunk = reader.ReadUInt16(true);
         }
 
         CacheEnabled = reader.ReadBool();
-        if (CacheEnabled)
-        {
+        if (CacheEnabled) {
             int hashCount = checked((int)reader.ReadVarUInt());
             BlobHashes = new List<ulong>(hashCount);
-            for (int i = 0; i < hashCount; i++)
-            {
+            for (int i = 0; i < hashCount; i++) {
                 BlobHashes.Add(reader.ReadUInt64());
             }
         }
-        else
-        {
+        else {
             BlobHashes = [];
         }
 
@@ -80,24 +74,20 @@ public sealed record LevelChunkPacket : DataPacket
         RawPayload = reader.ReadBytes(payloadLength).ToArray();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteZigZag(ChunkX);
         writer.WriteZigZag(ChunkZ);
         writer.WriteZigZag(Dimension);
         writer.WriteVarUInt(SubChunkCount);
 
-        if (SubChunkCount == SubChunkRequestModeLimited)
-        {
+        if (SubChunkCount == SubChunkRequestModeLimited) {
             writer.WriteUInt16(HighestSubChunk, true);
         }
 
         writer.WriteBool(CacheEnabled);
-        if (CacheEnabled)
-        {
+        if (CacheEnabled) {
             writer.WriteVarUInt((uint)BlobHashes.Count);
-            for (int i = 0; i < BlobHashes.Count; i++)
-            {
+            for (int i = 0; i < BlobHashes.Count; i++) {
                 writer.WriteUInt64(BlobHashes[i]);
             }
         }

@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ResourcePackStackEntry : DataType
-{
+public sealed class ResourcePackStackEntry : DataType {
     /// <summary>
     /// The UUID of the resource pack.
     /// Which is used to identify packs.
@@ -22,10 +21,8 @@ public sealed class ResourcePackStackEntry : DataType
     /// </summary>
     public string SubPackName = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
-        if (!Guid.TryParse(reader.ReadVarString(), out Guid uuid))
-        {
+    public void Read(BinaryReader reader) {
+        if (!Guid.TryParse(reader.ReadVarString(), out Guid uuid)) {
             uuid = Guid.Empty;
         }
 
@@ -34,8 +31,7 @@ public sealed class ResourcePackStackEntry : DataType
         SubPackName = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Uuid.ToString());
         writer.WriteVarString(Version);
         writer.WriteVarString(SubPackName);

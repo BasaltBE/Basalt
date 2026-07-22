@@ -2,8 +2,7 @@ using System.Text;
 
 namespace Basalt;
 
-public static class Logger
-{
+public static class Logger {
     private static readonly Lock Sync = new();
     private static bool _isInitialized;
 
@@ -14,12 +13,9 @@ public static class Logger
 
     public static LogLevel MinLevel { get; set; } = LogLevel.Info;
 
-    public static void Init()
-    {
-        lock (Sync)
-        {
-            if (_isInitialized)
-            {
+    public static void Init() {
+        lock (Sync) {
+            if (_isInitialized) {
                 return;
             }
 
@@ -28,10 +24,8 @@ public static class Logger
         }
     }
 
-    public static void Deinit()
-    {
-        lock (Sync)
-        {
+    public static void Deinit() {
+        lock (Sync) {
             _isInitialized = false;
         }
     }
@@ -43,10 +37,8 @@ public static class Logger
     public static void Chat(string format, params object?[] args) => Log(LogLevel.Chat, format, args);
     public static void Error(string format, params object?[] args) => Log(LogLevel.Err, format, args);
 
-    public static void Log(LogLevel level, string format, params object?[] args)
-    {
-        if (level < MinLevel && level != LogLevel.Chat)
-        {
+    public static void Log(LogLevel level, string format, params object?[] args) {
+        if (level < MinLevel && level != LogLevel.Chat) {
             return;
         }
 
@@ -64,12 +56,10 @@ public static class Logger
         sb.Append(Ansi(LogColor.Reset));
         sb.Append(": ");
 
-        if (level == LogLevel.Chat)
-        {
+        if (level == LogLevel.Chat) {
             AppendMinecraftFormatting(sb, message);
         }
-        else
-        {
+        else {
             sb.Append(message);
         }
 
@@ -79,22 +69,18 @@ public static class Logger
         var output = sb.ToString();
         sb.Clear();
 
-        lock (Sync)
-        {
+        lock (Sync) {
             Console.Write(output);
         }
     }
 
-    private static StringBuilder GetBuilder()
-    {
+    private static StringBuilder GetBuilder() {
         _builder ??= new StringBuilder(256);
         return _builder;
     }
 
-    private static string AsText(LogLevel level)
-    {
-        return level switch
-        {
+    private static string AsText(LogLevel level) {
+        return level switch {
             LogLevel.Debug => "debug",
             LogLevel.Info => "info",
             LogLevel.Warn => "warning",
@@ -104,10 +90,8 @@ public static class Logger
         };
     }
 
-    private static LogColor LevelColor(LogLevel level)
-    {
-        return level switch
-        {
+    private static LogColor LevelColor(LogLevel level) {
+        return level switch {
             LogLevel.Debug => LogColor.DarkGray,
             LogLevel.Info => LogColor.Green,
             LogLevel.Warn => LogColor.Yellow,
@@ -117,10 +101,8 @@ public static class Logger
         };
     }
 
-    private static string Ansi(LogColor color)
-    {
-        return color switch
-        {
+    private static string Ansi(LogColor color) {
+        return color switch {
             LogColor.Black => "\x1b[30m",
             LogColor.DarkBlue => "\x1b[34m",
             LogColor.DarkGreen => "\x1b[32m",
@@ -152,25 +134,20 @@ public static class Logger
         };
     }
 
-    private static void AppendMinecraftFormatting(StringBuilder sb, string text)
-    {
+    private static void AppendMinecraftFormatting(StringBuilder sb, string text) {
         var index = 0;
         var spanStart = 0;
 
-        while (index < text.Length)
-        {
+        while (index < text.Length) {
             var markerLength = SectionMarkerLen(text, index);
-            if (markerLength != 0 && index + markerLength < text.Length)
-            {
-                if (index > spanStart)
-                {
+            if (markerLength != 0 && index + markerLength < text.Length) {
+                if (index > spanStart) {
                     sb.Append(text, spanStart, index - spanStart);
                 }
 
                 var code = char.ToLowerInvariant(text[index + markerLength]);
                 var ansiCode = MinecraftAnsiCode(code);
-                if (ansiCode is not null)
-                {
+                if (ansiCode is not null) {
                     sb.Append(ansiCode);
                 }
 
@@ -182,16 +159,14 @@ public static class Logger
             index++;
         }
 
-        if (index > spanStart)
-        {
+        if (index > spanStart) {
             sb.Append(text, spanStart, index - spanStart);
         }
 
         sb.Append(Ansi(LogColor.Reset));
     }
 
-    private static int SectionMarkerLen(string text, int index)
-    {
+    private static int SectionMarkerLen(string text, int index) {
         if (index < text.Length && text[index] == '\u00A7')
             return 1;
 
@@ -212,10 +187,8 @@ public static class Logger
         return 0;
     }
 
-    private static string? MinecraftAnsiCode(char code)
-    {
-        return code switch
-        {
+    private static string? MinecraftAnsiCode(char code) {
+        return code switch {
             '0' => Ansi(LogColor.Black),
             '1' => Ansi(LogColor.DarkBlue),
             '2' => Ansi(LogColor.DarkGreen),

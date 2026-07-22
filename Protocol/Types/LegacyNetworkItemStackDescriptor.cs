@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class LegacyNetworkItemStackDescriptor : DataType
-{
+public sealed class LegacyNetworkItemStackDescriptor : DataType {
     private static readonly byte[] EmptyExtras = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     /// <summary>
@@ -32,11 +31,9 @@ public sealed class LegacyNetworkItemStackDescriptor : DataType
     /// </summary>
     public ItemInstanceUserData? ExtraData;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         NetworkId = reader.ReadZigZag();
-        if (NetworkId == 0)
-        {
+        if (NetworkId == 0) {
             StackSize = 0;
             Metadata = 0;
             NetworkBlockId = 0;
@@ -49,8 +46,7 @@ public sealed class LegacyNetworkItemStackDescriptor : DataType
         NetworkBlockId = reader.ReadZigZag();
 
         int extrasLength = checked((int)reader.ReadVarInt());
-        if (extrasLength <= 0)
-        {
+        if (extrasLength <= 0) {
             ExtraData = null;
             return;
         }
@@ -60,17 +56,14 @@ public sealed class LegacyNetworkItemStackDescriptor : DataType
         extraData.Read(reader, NetworkId);
         ExtraData = extraData;
 
-        if (reader.Offset < extrasEndOffset)
-        {
+        if (reader.Offset < extrasEndOffset) {
             reader.Seek(extrasEndOffset);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(NetworkId);
-        if (NetworkId == 0)
-        {
+        if (NetworkId == 0) {
             return;
         }
 
@@ -78,8 +71,7 @@ public sealed class LegacyNetworkItemStackDescriptor : DataType
         writer.WriteVarInt(Metadata);
         writer.WriteZigZag(NetworkBlockId);
 
-        if (ExtraData is null)
-        {
+        if (ExtraData is null) {
             writer.WriteVarInt(EmptyExtras.Length);
             writer.WriteBytes(EmptyExtras);
             return;

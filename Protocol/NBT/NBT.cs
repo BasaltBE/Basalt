@@ -4,10 +4,8 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Io;
 
-public static class NBT
-{
-    public static T ReadTag<T>(BinaryReader reader, TagOptions options = default) where T : BaseTag
-    {
+public static class NBT {
+    public static T ReadTag<T>(BinaryReader reader, TagOptions options = default) where T : BaseTag {
         BaseTag tag = ReadTag(reader, options);
         if (tag is T typed)
             return typed;
@@ -15,16 +13,13 @@ public static class NBT
         throw new InvalidOperationException($"Unexpected root NBT tag type '{tag.Type}' for requested '{typeof(T).Name}'.");
     }
 
-    public static BaseTag ReadTag(BinaryReader reader, TagOptions options = default)
-    {
+    public static BaseTag ReadTag(BinaryReader reader, TagOptions options = default) {
         TagType type = (TagType)reader.ReadInt8();
         return ReadTag(reader, type, options with { Type = false });
     }
 
-    public static BaseTag ReadTag(BinaryReader reader, TagType type, TagOptions options = default)
-    {
-        return type switch
-        {
+    public static BaseTag ReadTag(BinaryReader reader, TagType type, TagOptions options = default) {
+        return type switch {
             TagType.End => EndTag.Read(reader, options),
             TagType.Byte => ByteTag.Read(reader, options),
             TagType.String => StringTag.Read(reader, options),
@@ -42,8 +37,7 @@ public static class NBT
         };
     }
 
-    public static void WriteTag(BinaryWriter writer, BaseTag tag, TagOptions options = default)
-    {
+    public static void WriteTag(BinaryWriter writer, BaseTag tag, TagOptions options = default) {
         if (options.Type)
             writer.WriteInt8((sbyte)tag.Type);
 

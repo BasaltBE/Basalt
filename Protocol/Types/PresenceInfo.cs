@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PresenceInfo : DataType
-{
+public sealed class PresenceInfo : DataType {
     /// <summary>
     /// Optional experience name.
     /// </summary>
@@ -20,15 +19,13 @@ public sealed class PresenceInfo : DataType
     /// </summary>
     public string RichPresenceId = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ExperienceName.Read(reader, static r => r.ReadVarString());
         WorldName.Read(reader, static r => r.ReadVarString());
         RichPresenceId = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         ExperienceName.Write(writer, static (w, value) => w.WriteVarString(value));
         WorldName.Write(writer, static (w, value) => w.WriteVarString(value));
         writer.WriteVarString(RichPresenceId);

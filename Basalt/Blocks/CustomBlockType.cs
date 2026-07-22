@@ -8,8 +8,7 @@ using Basalt.Protocol.Types;
 /// <summary>
 /// Options for defining a custom block type.
 /// </summary>
-public sealed class CustomBlockTypeOptions
-{
+public sealed class CustomBlockTypeOptions {
     /// <summary>
     /// The namespaced identifier, such as "mynamespace:ruby_block".
     /// </summary>
@@ -51,18 +50,15 @@ public sealed class CustomBlockTypeOptions
 /// <summary>
 /// Factory for creating and registering custom block types.
 /// </summary>
-public static class CustomBlockType
-{
+public static class CustomBlockType {
     private static readonly List<BlockEntry> Entries = [];
     private static int _nextBlockId = 10000;
 
     /// <summary>
     /// Creates and registers a custom block and its permutations.
     /// </summary>
-    public static BlockType Create(CustomBlockTypeOptions options)
-    {
-        BlockType type = new(options.Identifier)
-        {
+    public static BlockType Create(CustomBlockTypeOptions options) {
+        BlockType type = new(options.Identifier) {
             Solid = options.Solid,
             Hardness = options.Hardness,
             BlastResistance = options.BlastResistance,
@@ -74,10 +70,8 @@ public static class CustomBlockType
             MapColor = options.MapColor
         };
 
-        if (options.Tags is not null)
-        {
-            for (int i = 0; i < options.Tags.Count; i++)
-            {
+        if (options.Tags is not null) {
+            for (int i = 0; i < options.Tags.Count; i++) {
                 type.EnsureTag(options.Tags[i]);
             }
 
@@ -90,13 +84,11 @@ public static class CustomBlockType
 
         List<BlockPermutation> registeredPermutations = new(permutations.Count);
 
-        for (int i = 0; i < permutations.Count; i++)
-        {
+        for (int i = 0; i < permutations.Count; i++) {
             registeredPermutations.Add(BlockPermutation.Create(type, permutations[i].State));
         }
 
-        Entries.Add(new BlockEntry
-        {
+        Entries.Add(new BlockEntry {
             Name = options.Identifier,
             Properties = BuildProperties(options, permutations, registeredPermutations, _nextBlockId++)
         });
@@ -104,8 +96,7 @@ public static class CustomBlockType
         return type;
     }
 
-    internal static List<BlockEntry> GetEntries()
-    {
+    internal static List<BlockEntry> GetEntries() {
         return [.. Entries];
     }
 
@@ -113,8 +104,7 @@ public static class CustomBlockType
         CustomBlockTypeOptions options,
         IReadOnlyList<CustomBlockPermutationOptions> permutations,
         IReadOnlyList<BlockPermutation> registeredPermutations,
-        int blockId)
-    {
+        int blockId) {
         CompoundTag properties = new();
         CompoundTag components = BuildComponents(options);
         properties.Set("molangVersion", new IntTag { Value = 10 });
@@ -129,14 +119,12 @@ public static class CustomBlockType
         properties.Set("vanilla_block_data", vanillaBlockData);
 
         ListTag stateProperties = BuildStateProperties(permutations);
-        if (stateProperties.Values.Count > 0)
-        {
+        if (stateProperties.Values.Count > 0) {
             properties.Set("properties", stateProperties);
         }
 
         ListTag permutationEntries = BuildPermutationEntries(permutations, registeredPermutations);
-        if (permutationEntries.Values.Count > 0)
-        {
+        if (permutationEntries.Values.Count > 0) {
             CompoundTag onPlayerPlacing = new();
             onPlayerPlacing.Set("triggerType", new StringTag { Value = "placement_trigger" });
             components.Set("minecraft:on_player_placing", onPlayerPlacing);
@@ -148,16 +136,13 @@ public static class CustomBlockType
         return properties;
     }
 
-    private static CompoundTag BuildComponents(CustomBlockTypeOptions options)
-    {
+    private static CompoundTag BuildComponents(CustomBlockTypeOptions options) {
         CompoundTag components = new();
 
-        if (string.IsNullOrEmpty(options.Geometry))
-        {
+        if (string.IsNullOrEmpty(options.Geometry)) {
             components.Set("minecraft:unit_cube", new CompoundTag());
         }
-        else
-        {
+        else {
             CompoundTag geometry = new();
             geometry.Set("identifier", new StringTag { Value = options.Geometry });
             geometry.Set("bone_visibility", new CompoundTag());
@@ -165,24 +150,19 @@ public static class CustomBlockType
         }
 
         CompoundTag materials = new();
-        if (options.Materials is { Count: > 0 })
-        {
-            foreach ((string face, CustomBlockMaterial material) in options.Materials)
-            {
+        if (options.Materials is { Count: > 0 }) {
+            foreach ((string face, CustomBlockMaterial material) in options.Materials) {
                 materials.Set(face, BuildMaterial(material));
             }
         }
-        else if (!string.IsNullOrEmpty(options.Texture))
-        {
-            materials.Set("*", BuildMaterial(new CustomBlockMaterial
-            {
+        else if (!string.IsNullOrEmpty(options.Texture)) {
+            materials.Set("*", BuildMaterial(new CustomBlockMaterial {
                 Texture = options.Texture,
                 RenderMethod = options.RenderMethod,
                 AmbientOcclusion = options.RenderMethod is not ("alpha_test" or "blend")
             }));
         }
-        else
-        {
+        else {
             throw new InvalidOperationException($"Custom block '{options.Identifier}' requires Texture or Materials.");
         }
 
@@ -191,24 +171,20 @@ public static class CustomBlockType
         materialInstances.Set("materials", materials);
         components.Set("minecraft:material_instances", materialInstances);
 
-        if (options.CollisionBoxes is { Count: > 0 })
-        {
+        if (options.CollisionBoxes is { Count: > 0 }) {
             components.Set("minecraft:collision_box", BuildCollisionBox(options.CollisionBoxes));
         }
-        else if (!options.Solid)
-        {
+        else if (!options.Solid) {
             CompoundTag collisionBox = new();
             collisionBox.Set("enabled", new ByteTag { Value = 0 });
             components.Set("minecraft:collision_box", collisionBox);
         }
 
-        if (options.SelectionBox is CustomBlockBox selection)
-        {
+        if (options.SelectionBox is CustomBlockBox selection) {
             components.Set("minecraft:selection_box", BuildSelectionBox(selection));
         }
 
-        if (!string.IsNullOrEmpty(options.DisplayName))
-        {
+        if (!string.IsNullOrEmpty(options.DisplayName)) {
             CompoundTag displayName = new();
             displayName.Set("value", new StringTag { Value = options.DisplayName });
             components.Set("minecraft:display_name", displayName);
@@ -222,30 +198,26 @@ public static class CustomBlockType
         friction.Set("value", new FloatTag { Value = options.Friction });
         components.Set("minecraft:friction", friction);
 
-        if (options.LightEmission > 0)
-        {
+        if (options.LightEmission > 0) {
             CompoundTag emission = new();
             emission.Set("emission", new FloatTag { Value = Math.Clamp(options.LightEmission, 0, 15) / 15f });
             components.Set("minecraft:block_light_emission", emission);
         }
 
-        if (options.LightFilter != 15)
-        {
+        if (options.LightFilter != 15) {
             CompoundTag filter = new();
             filter.Set("lightLevel", new IntTag { Value = Math.Clamp(options.LightFilter, 0, 15) });
             components.Set("minecraft:block_light_filter", filter);
         }
 
-        if (options.FlameEncouragement > 0 || options.Flammability > 0)
-        {
+        if (options.FlameEncouragement > 0 || options.Flammability > 0) {
             CompoundTag flammable = new();
             flammable.Set("flame_odds", new IntTag { Value = options.FlameEncouragement });
             flammable.Set("burn_odds", new IntTag { Value = options.Flammability });
             components.Set("minecraft:flammable", flammable);
         }
 
-        if (!string.IsNullOrEmpty(options.MapColor))
-        {
+        if (!string.IsNullOrEmpty(options.MapColor)) {
             CompoundTag mapColor = new();
             mapColor.Set("value", new StringTag { Value = options.MapColor });
             components.Set("minecraft:map_color", mapColor);
@@ -254,8 +226,7 @@ public static class CustomBlockType
         return components;
     }
 
-    private static CompoundTag BuildMaterial(CustomBlockMaterial options)
-    {
+    private static CompoundTag BuildMaterial(CustomBlockMaterial options) {
         CompoundTag material = new();
         material.Set("texture", new StringTag { Value = options.Texture });
         material.Set("render_method", new StringTag { Value = options.RenderMethod });
@@ -264,8 +235,7 @@ public static class CustomBlockType
         return material;
     }
 
-    private static ListTag BuildFloatList(float x, float y, float z)
-    {
+    private static ListTag BuildFloatList(float x, float y, float z) {
         ListTag values = new();
         values.Values.Add(new FloatTag { Value = x });
         values.Values.Add(new FloatTag { Value = y });
@@ -273,34 +243,26 @@ public static class CustomBlockType
         return values;
     }
 
-    private static ListTag BuildStateProperties(IReadOnlyList<CustomBlockPermutationOptions> permutations)
-    {
+    private static ListTag BuildStateProperties(IReadOnlyList<CustomBlockPermutationOptions> permutations) {
         Dictionary<string, List<BlockStateValue>> values = new(StringComparer.Ordinal);
-        for (int i = 0; i < permutations.Count; i++)
-        {
-            foreach ((string name, BlockStateValue value) in permutations[i].State)
-            {
-                if (!values.TryGetValue(name, out List<BlockStateValue>? stateValues))
-                {
+        for (int i = 0; i < permutations.Count; i++) {
+            foreach ((string name, BlockStateValue value) in permutations[i].State) {
+                if (!values.TryGetValue(name, out List<BlockStateValue>? stateValues)) {
                     stateValues = [];
                     values[name] = stateValues;
                 }
 
-                if (!stateValues.Contains(value))
-                {
+                if (!stateValues.Contains(value)) {
                     stateValues.Add(value);
                 }
             }
         }
 
         ListTag properties = new();
-        foreach ((string name, List<BlockStateValue> stateValues) in values)
-        {
+        foreach ((string name, List<BlockStateValue> stateValues) in values) {
             ListTag entries = new();
-            for (int i = 0; i < stateValues.Count; i++)
-            {
-                if (i > 0 && stateValues[i].Kind != stateValues[0].Kind)
-                {
+            for (int i = 0; i < stateValues.Count; i++) {
+                if (i > 0 && stateValues[i].Kind != stateValues[0].Kind) {
                     throw new InvalidOperationException($"Block state '{name}' cannot mix value types.");
                 }
 
@@ -318,16 +280,13 @@ public static class CustomBlockType
 
     private static ListTag BuildPermutationEntries(
         IReadOnlyList<CustomBlockPermutationOptions> permutations,
-        IReadOnlyList<BlockPermutation> registeredPermutations)
-    {
+        IReadOnlyList<BlockPermutation> registeredPermutations) {
         ListTag entries = new();
-        for (int i = 0; i < permutations.Count; i++)
-        {
+        for (int i = 0; i < permutations.Count; i++) {
             CustomBlockPermutationOptions options = permutations[i];
             CompoundTag components = new();
 
-            if (options.Transformation is CustomBlockTransformation transformation)
-            {
+            if (options.Transformation is CustomBlockTransformation transformation) {
                 CompoundTag value = new();
                 value.Set("TX", new FloatTag { Value = 0 });
                 value.Set("TY", new FloatTag { Value = 0 });
@@ -347,18 +306,15 @@ public static class CustomBlockType
                 components.Set("minecraft:transformation", value);
             }
 
-            if (options.CollisionBoxes is { Count: > 0 })
-            {
+            if (options.CollisionBoxes is { Count: > 0 }) {
                 components.Set("minecraft:collision_box", BuildCollisionBox(options.CollisionBoxes));
             }
 
-            if (options.SelectionBox is CustomBlockBox selectionBox)
-            {
+            if (options.SelectionBox is CustomBlockBox selectionBox) {
                 components.Set("minecraft:selection_box", BuildSelectionBox(selectionBox));
             }
 
-            if (components.Values.Count == 0)
-            {
+            if (components.Values.Count == 0) {
                 continue;
             }
 
@@ -371,13 +327,11 @@ public static class CustomBlockType
         return entries;
     }
 
-    private static CompoundTag BuildCollisionBox(IReadOnlyList<CustomBlockBox> boxes)
-    {
+    private static CompoundTag BuildCollisionBox(IReadOnlyList<CustomBlockBox> boxes) {
         CompoundTag collisionBox = new();
         collisionBox.Set("enabled", new ByteTag { Value = 1 });
         ListTag values = new();
-        for (int i = 0; i < boxes.Count; i++)
-        {
+        for (int i = 0; i < boxes.Count; i++) {
             CustomBlockBox box = boxes[i];
             CompoundTag entry = new();
             entry.Set("minX", new FloatTag { Value = box.X });
@@ -392,8 +346,7 @@ public static class CustomBlockType
         return collisionBox;
     }
 
-    private static CompoundTag BuildSelectionBox(CustomBlockBox box)
-    {
+    private static CompoundTag BuildSelectionBox(CustomBlockBox box) {
         CompoundTag selectionBox = new();
         selectionBox.Set("enabled", new ByteTag { Value = 1 });
         selectionBox.Set("origin", BuildFloatList(box.X, box.Y, box.Z));
@@ -401,20 +354,16 @@ public static class CustomBlockType
         return selectionBox;
     }
 
-    private static int ToQuarterTurns(int degrees)
-    {
-        if (degrees % 90 != 0)
-        {
+    private static int ToQuarterTurns(int degrees) {
+        if (degrees % 90 != 0) {
             throw new ArgumentOutOfRangeException(nameof(degrees), "Custom block rotations must use 90 degree increments.");
         }
 
         return degrees / 90 % 4;
     }
 
-    private static BaseTag ToTag(BlockStateValue value)
-    {
-        return value.Kind switch
-        {
+    private static BaseTag ToTag(BlockStateValue value) {
+        return value.Kind switch {
             0 => new IntTag { Value = checked((int)value.AsNumber()) },
             1 => new StringTag { Value = value.AsString() },
             2 => new ByteTag { Value = value.AsBool() ? (sbyte)1 : (sbyte)0 },

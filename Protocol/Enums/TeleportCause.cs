@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum TeleportCause : int
-{
+public enum TeleportCause : int {
     Unknown = 0,
     Projectile = 1,
     ChorusFruit = 2,

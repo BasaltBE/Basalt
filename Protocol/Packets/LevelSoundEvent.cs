@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.LevelSoundEvent)]
-public sealed record LevelSoundEventPacket : DataPacket
-{
+public sealed record LevelSoundEventPacket : DataPacket {
     /// <summary>
     /// Level sound event id.
     /// </summary>
@@ -47,8 +46,7 @@ public sealed record LevelSoundEventPacket : DataPacket
     /// </summary>
     public Optional<Vec3f> FireAtPosition = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Event = reader.ReadVarString();
 
         Vec3f position = Position;
@@ -63,8 +61,7 @@ public sealed record LevelSoundEventPacket : DataPacket
         FireAtPosition.Read(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarString(Event);
         Position.Write(writer);
         writer.WriteZigZag(Data);

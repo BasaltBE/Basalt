@@ -8,23 +8,20 @@ using Basalt.Protocol.Types;
 /// Emitted when a block forms naturally (e.g. cobblestone from lava+water).
 /// The permutation can be replaced before it's applied.
 /// </summary>
-public sealed class BlockFormSignal : ISignal
-{
-  public ServerEvent Event => ServerEvent.BlockForm;
-  public Dimension Dimension { get; }
-  public BlockPos Position { get; }
-  public BlockPermutation Permutation { get; set; }
-  public bool Cancelled { get; private set; }
+public sealed class BlockFormSignal : ISignal {
+    public ServerEvent Event => ServerEvent.BlockForm;
+    public Dimension Dimension { get; }
+    public BlockPos Position { get; }
+    public BlockPermutation Permutation { get; set; }
+    public bool Cancelled { get; private set; }
 
-  public BlockFormSignal(Dimension dimension, BlockPos position, BlockPermutation permutation)
-  {
-    Dimension = dimension;
-    Position = position;
-    Permutation = permutation;
-  }
+    public BlockFormSignal(Dimension dimension, BlockPos position, BlockPermutation permutation) {
+        Dimension = dimension;
+        Position = position;
+        Permutation = permutation;
+    }
 
-  public void Cancel()
-  {
-    Cancelled = true;
-  }
+    public void Cancel() {
+        Cancelled = true;
+    }
 }

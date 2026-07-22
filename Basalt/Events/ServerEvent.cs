@@ -1,5 +1,4 @@
-public enum ServerEvent : int
-{
+public enum ServerEvent : int {
     ServerStart = 0,
     EntityHurt = 1,
     EntitySpawn = 2,

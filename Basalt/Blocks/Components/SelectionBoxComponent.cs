@@ -3,8 +3,7 @@ using Basalt.Protocol.Nbt;
 
 namespace Basalt.Core.Blocks.Components;
 
-public sealed class SelectionBoxComponent : BlockComponent
-{
+public sealed class SelectionBoxComponent : BlockComponent {
     public static new string Identifier => "minecraft:selection_box";
     public override string ComponentIdentifier => "minecraft:selection_box";
 
@@ -19,8 +18,7 @@ public sealed class SelectionBoxComponent : BlockComponent
     public SelectionBoxComponent(
       bool enabled = true,
       float originX = -8f, float originY = 0f, float originZ = -8f,
-      float sizeX = 16f, float sizeY = 16f, float sizeZ = 16f)
-    {
+      float sizeX = 16f, float sizeY = 16f, float sizeZ = 16f) {
         Enabled = enabled;
         OriginX = originX;
         OriginY = originY;
@@ -30,8 +28,7 @@ public sealed class SelectionBoxComponent : BlockComponent
         SizeZ = sizeZ;
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("enabled", new ByteTag { Value = (sbyte)(Enabled ? 1 : 0) });
 
         ListTag origin = new() { Name = "origin" };
@@ -47,26 +44,21 @@ public sealed class SelectionBoxComponent : BlockComponent
         tag.Set("size", size);
     }
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
     }
 
-    public static SelectionBoxComponent FromJson(JsonElement element)
-    {
+    public static SelectionBoxComponent FromJson(JsonElement element) {
         bool enabled = true;
         float originX = -8f, originY = 0f, originZ = -8f;
         float sizeX = 16f, sizeY = 16f, sizeZ = 16f;
 
-        if (element.TryGetProperty("enabled", out JsonElement enabledEl))
-        {
+        if (element.TryGetProperty("enabled", out JsonElement enabledEl)) {
             enabled = enabledEl.ValueKind == JsonValueKind.True;
         }
 
-        if (element.TryGetProperty("origin", out JsonElement originEl) && originEl.ValueKind == JsonValueKind.Array)
-        {
+        if (element.TryGetProperty("origin", out JsonElement originEl) && originEl.ValueKind == JsonValueKind.Array) {
             int i = 0;
-            foreach (JsonElement val in originEl.EnumerateArray())
-            {
+            foreach (JsonElement val in originEl.EnumerateArray()) {
                 if (i == 0) { originX = val.GetSingle(); }
                 else if (i == 1) { originY = val.GetSingle(); }
                 else if (i == 2) { originZ = val.GetSingle(); }
@@ -74,11 +66,9 @@ public sealed class SelectionBoxComponent : BlockComponent
             }
         }
 
-        if (element.TryGetProperty("size", out JsonElement sizeEl) && sizeEl.ValueKind == JsonValueKind.Array)
-        {
+        if (element.TryGetProperty("size", out JsonElement sizeEl) && sizeEl.ValueKind == JsonValueKind.Array) {
             int i = 0;
-            foreach (JsonElement val in sizeEl.EnumerateArray())
-            {
+            foreach (JsonElement val in sizeEl.EnumerateArray()) {
                 if (i == 0) { sizeX = val.GetSingle(); }
                 else if (i == 1) { sizeY = val.GetSingle(); }
                 else if (i == 2) { sizeZ = val.GetSingle(); }

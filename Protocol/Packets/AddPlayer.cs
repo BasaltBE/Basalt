@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.AddPlayer)]
-public sealed record AddPlayerPacket : DataPacket
-{
+public sealed record AddPlayerPacket : DataPacket {
     /// <summary>
     /// UUID of the player.
     /// </summary>
@@ -91,8 +90,7 @@ public sealed record AddPlayerPacket : DataPacket
     /// </summary>
     public DeviceOS DeviceOS;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Uuid = UUID.Read(reader);
         Username = reader.ReadVarString();
         EntityRuntimeId = reader.ReadVarULong();
@@ -114,8 +112,7 @@ public sealed record AddPlayerPacket : DataPacket
 
         int metadataCount = reader.ReadVarInt();
         EntityMetadata = new List<ActorMetadataItem>(metadataCount);
-        for (int i = 0; i < metadataCount; i++)
-        {
+        for (int i = 0; i < metadataCount; i++) {
             ActorMetadataItem item = new();
             item.Read(reader);
             EntityMetadata.Add(item);
@@ -126,8 +123,7 @@ public sealed record AddPlayerPacket : DataPacket
 
         int entityLinksCount = reader.ReadVarInt();
         EntityLinks = new List<EntityLink>(entityLinksCount);
-        for (int i = 0; i < entityLinksCount; i++)
-        {
+        for (int i = 0; i < entityLinksCount; i++) {
             EntityLink link = new();
             link.Read(reader);
             EntityLinks.Add(link);
@@ -137,8 +133,7 @@ public sealed record AddPlayerPacket : DataPacket
         DeviceOS = (DeviceOS)reader.ReadInt32(true);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         UUID.Write(writer, Uuid);
         writer.WriteVarString(Username);
         writer.WriteVarULong(EntityRuntimeId);
@@ -152,8 +147,7 @@ public sealed record AddPlayerPacket : DataPacket
         writer.WriteVarInt(GameType);
 
         writer.WriteVarInt(EntityMetadata.Count);
-        for (int i = 0; i < EntityMetadata.Count; i++)
-        {
+        for (int i = 0; i < EntityMetadata.Count; i++) {
             EntityMetadata[i].Write(writer);
         }
 
@@ -161,8 +155,7 @@ public sealed record AddPlayerPacket : DataPacket
         AbilityData.Write(writer);
 
         writer.WriteVarInt(EntityLinks.Count);
-        for (int i = 0; i < EntityLinks.Count; i++)
-        {
+        for (int i = 0; i < EntityLinks.Count; i++) {
             EntityLinks[i].Write(writer);
         }
 

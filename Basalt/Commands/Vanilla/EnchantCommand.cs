@@ -6,10 +6,8 @@ using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using Player = Player.Player;
 
-public static class EnchantCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class EnchantCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "enchant",
         Description = "Enchants the held item of a player.",
         Permissions = ["basalt.op"],
@@ -29,8 +27,7 @@ public static class EnchantCommand
         Handler = new CommandHandler(Execute)
     };
 
-    private static CommandResult Execute(CommandContext ctx)
-    {
+    private static CommandResult Execute(CommandContext ctx) {
         TargetEnum? target = ctx.Get<TargetEnum>("player");
         EnchantmentEnum? enchantArg = ctx.Get<EnchantmentEnum>("enchantment");
         IntEnum? levelArg = ctx.Get<IntEnum>("level");
@@ -49,8 +46,7 @@ public static class EnchantCommand
             return CommandResult.Error("No player found matching the target selector.");
 
         int enchanted = 0;
-        foreach (Player player in players)
-        {
+        foreach (Player player in players) {
             if (EnchantHeldItem(player, enchantment, level))
                 enchanted++;
         }
@@ -64,8 +60,7 @@ public static class EnchantCommand
         return CommandResult.OkMessage($"§7Applied §a{enchantment.Identifier} {level} §7to §a{enchanted} players§7' held items.");
     }
 
-    private static bool EnchantHeldItem(Player player, EnchantmentType enchantment, int level)
-    {
+    private static bool EnchantHeldItem(Player player, EnchantmentType enchantment, int level) {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null) return false;
 
@@ -73,8 +68,7 @@ public static class EnchantCommand
         if (held is null || held.Type.NetworkId == 0) return false;
 
         ItemStackEnchantmentTrait? trait = held.GetTrait<ItemStackEnchantmentTrait>();
-        if (trait is null)
-        {
+        if (trait is null) {
             trait = held.AddTrait(new ItemStackEnchantmentTrait(held));
         }
 

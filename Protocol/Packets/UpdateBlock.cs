@@ -9,8 +9,7 @@ namespace Basalt.Protocol.Packets;
 /// Sent by the server to update a block client side.
 /// </summary>s
 [Packet(PacketId.UpdateBlock)]
-public sealed record UpdateBlockPacket : DataPacket
-{
+public sealed record UpdateBlockPacket : DataPacket {
     /// <summary>
     /// World position of the block being updated.
     /// </summary>
@@ -31,8 +30,7 @@ public sealed record UpdateBlockPacket : DataPacket
     /// </summary>
     public UpdateBlockLayerType Layer;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         BlockPos position = Position;
         position.Read(reader);
         Position = position;
@@ -41,8 +39,7 @@ public sealed record UpdateBlockPacket : DataPacket
         Layer = (UpdateBlockLayerType)reader.ReadVarUInt();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Position.Write(writer);
         writer.WriteVarUInt(NetworkBlockId);
         writer.WriteVarUInt((uint)Flags);

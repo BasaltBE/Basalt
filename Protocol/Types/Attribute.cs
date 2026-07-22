@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class Attribute : DataType
-{
+public sealed class Attribute : DataType {
     /// <summary>
     /// Minimum value.
     /// </summary>
@@ -41,8 +40,7 @@ public sealed class Attribute : DataType
     /// </summary>
     public AttributeName Name;
 
-    public Attribute(float min, float max, float current, float defaultValue, AttributeName name)
-    {
+    public Attribute(float min, float max, float current, float defaultValue, AttributeName name) {
         Min = min;
         Max = max;
         Current = current;
@@ -52,12 +50,10 @@ public sealed class Attribute : DataType
         Name = name;
     }
 
-    public Attribute()
-    {
+    public Attribute() {
     }
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Min = reader.ReadF32(true);
         Max = reader.ReadF32(true);
         Current = reader.ReadF32(true);
@@ -67,8 +63,7 @@ public sealed class Attribute : DataType
         Name = AttributeNameHelper.FromProtocolString(reader.ReadVarString());
 
         int modifiers = reader.ReadVarInt();
-        for (int i = 0; i < modifiers; i++)
-        {
+        for (int i = 0; i < modifiers; i++) {
             _ = reader.ReadVarString();
             _ = reader.ReadVarString();
             _ = reader.ReadVarString();
@@ -78,8 +73,7 @@ public sealed class Attribute : DataType
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteF32(Min, true);
         writer.WriteF32(Max, true);
         writer.WriteF32(Current, true);
@@ -90,12 +84,10 @@ public sealed class Attribute : DataType
         writer.WriteVarInt(0);
     }
 
-    public static List<Attribute> ReadList(BinaryReader reader)
-    {
+    public static List<Attribute> ReadList(BinaryReader reader) {
         int count = reader.ReadVarInt();
         List<Attribute> attributes = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             Attribute attribute = new();
             attribute.Read(reader);
             attributes.Add(attribute);
@@ -104,11 +96,9 @@ public sealed class Attribute : DataType
         return attributes;
     }
 
-    public static void WriteList(BinaryWriter writer, IReadOnlyList<Attribute> attributes)
-    {
+    public static void WriteList(BinaryWriter writer, IReadOnlyList<Attribute> attributes) {
         writer.WriteVarInt(attributes.Count);
-        for (int i = 0; i < attributes.Count; i++)
-        {
+        for (int i = 0; i < attributes.Count; i++) {
             attributes[i].Write(writer);
         }
     }

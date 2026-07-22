@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ExperimentData : DataType
-{
+public sealed class ExperimentData : DataType {
     /// <summary>
     /// The name of the experiment
     /// </summary>
@@ -15,14 +14,12 @@ public sealed class ExperimentData : DataType
     /// </summary>
     public bool Enabled;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         Enabled = reader.ReadBool();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         writer.WriteBool(Enabled);
     }

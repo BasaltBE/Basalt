@@ -5,8 +5,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.Login)]
-public sealed record LoginPacket : DataPacket
-{
+public sealed record LoginPacket : DataPacket {
     /// <summary>
     /// Protocol version.
     /// This is used to determine if client and server are compatible. 
@@ -24,8 +23,7 @@ public sealed record LoginPacket : DataPacket
     /// </summary>
     public string Client = string.Empty;
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteInt32(Protocol, false);
 
         int identityBytes = Encoding.UTF8.GetByteCount(Identity);
@@ -37,8 +35,7 @@ public sealed record LoginPacket : DataPacket
         writer.WriteString32(Client, true);
     }
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Protocol = reader.ReadInt32(false);
 
         int connectionRequestLength = checked((int)reader.ReadVarUInt());

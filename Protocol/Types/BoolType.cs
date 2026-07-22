@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public struct BoolType : DataType
-{
+public struct BoolType : DataType {
     public bool Value;
     public void Read(BinaryReader reader) => Value = reader.ReadBool();
     public void Write(BinaryWriter writer) => writer.WriteBool(Value);

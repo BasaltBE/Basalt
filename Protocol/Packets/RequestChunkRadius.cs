@@ -4,8 +4,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.RequestChunkRadius)]
-public sealed record RequestChunkRadiusPacket : DataPacket
-{
+public sealed record RequestChunkRadiusPacket : DataPacket {
     /// <summary>
     /// The chunk radius to request
     /// </summary>
@@ -15,14 +14,12 @@ public sealed record RequestChunkRadiusPacket : DataPacket
     /// </summary>
     public byte MaxChunkRadius;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ChunkRadius = reader.ReadZigZag();
         MaxChunkRadius = reader.ReadUInt8();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarInt(ChunkRadius);
         writer.WriteUInt8(MaxChunkRadius);
     }

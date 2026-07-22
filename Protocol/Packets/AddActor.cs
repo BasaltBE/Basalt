@@ -5,8 +5,7 @@ using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.AddActor)]
-public sealed record AddActorPacket : DataPacket
-{
+public sealed record AddActorPacket : DataPacket {
     /// <summary>
     /// Unique id of the actor.
     /// </summary>
@@ -72,8 +71,7 @@ public sealed record AddActorPacket : DataPacket
     /// </summary>
     public List<EntityLink> EntityLinks = [];
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EntityUniqueId = reader.ReadVarLong();
         EntityRuntimeId = reader.ReadVarULong();
         EntityType = reader.ReadVarString();
@@ -95,8 +93,7 @@ public sealed record AddActorPacket : DataPacket
 
         int metadataCount = reader.ReadVarInt();
         EntityMetadata = new List<ActorMetadataItem>(metadataCount);
-        for (int i = 0; i < metadataCount; i++)
-        {
+        for (int i = 0; i < metadataCount; i++) {
             ActorMetadataItem item = new();
             item.Read(reader);
             EntityMetadata.Add(item);
@@ -106,16 +103,14 @@ public sealed record AddActorPacket : DataPacket
 
         int entityLinksCount = reader.ReadVarInt();
         EntityLinks = new List<EntityLink>(entityLinksCount);
-        for (int i = 0; i < entityLinksCount; i++)
-        {
+        for (int i = 0; i < entityLinksCount; i++) {
             EntityLink link = new();
             link.Read(reader);
             EntityLinks.Add(link);
         }
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarLong(EntityUniqueId);
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteVarString(EntityType);
@@ -128,16 +123,14 @@ public sealed record AddActorPacket : DataPacket
         ProtoAttribute.WriteList(writer, Attributes);
 
         writer.WriteVarInt(EntityMetadata.Count);
-        for (int i = 0; i < EntityMetadata.Count; i++)
-        {
+        for (int i = 0; i < EntityMetadata.Count; i++) {
             EntityMetadata[i].Write(writer);
         }
 
         EntityProperties.Write(writer);
 
         writer.WriteVarInt(EntityLinks.Count);
-        for (int i = 0; i < EntityLinks.Count; i++)
-        {
+        for (int i = 0; i < EntityLinks.Count; i++) {
             EntityLinks[i].Write(writer);
         }
     }

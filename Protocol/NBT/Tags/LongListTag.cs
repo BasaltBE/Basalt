@@ -5,19 +5,16 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.LongList)]
-public sealed class LongListTag : BaseTag
-{
+public sealed class LongListTag : BaseTag {
     public List<long> Values { get; } = [];
     public override object ToJsonValue() => Values;
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
         WriteLength(writer, Values.Count, options.VarInt);
-        foreach (long value in CollectionsMarshal.AsSpan(Values))
-        {
+        foreach (long value in CollectionsMarshal.AsSpan(Values)) {
             if (options.VarInt)
                 writer.WriteZigZong(value);
             else
@@ -25,10 +22,8 @@ public sealed class LongListTag : BaseTag
         }
     }
 
-    public static LongListTag Read(BinaryReader reader, TagOptions options = default)
-    {
-        LongListTag tag = new()
-        {
+    public static LongListTag Read(BinaryReader reader, TagOptions options = default) {
+        LongListTag tag = new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null
         };
 

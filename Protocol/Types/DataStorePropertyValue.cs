@@ -2,8 +2,7 @@ using Basalt.Protocol.Enums;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class DataStorePropertyValue
-{
+public sealed class DataStorePropertyValue {
     public DataStorePropertyValueType Type;
     public object? Value;
 
@@ -15,11 +14,9 @@ public sealed class DataStorePropertyValue
     public static DataStorePropertyValue String(string value) => new() { Type = DataStorePropertyValueType.String, Value = value };
     public static DataStorePropertyValue TypeValue(Dictionary<string, DataStorePropertyValue> value) => new() { Type = DataStorePropertyValueType.Type, Value = value };
 
-    public void Read(Binary.BinaryReader reader)
-    {
+    public void Read(Binary.BinaryReader reader) {
         Type = (DataStorePropertyValueType)reader.ReadUInt32(true);
-        Value = Type switch
-        {
+        Value = Type switch {
             DataStorePropertyValueType.None => null,
             DataStorePropertyValueType.Null => null,
             DataStorePropertyValueType.Boolean => reader.ReadBool(),
@@ -31,11 +28,9 @@ public sealed class DataStorePropertyValue
         };
     }
 
-    public void Write(Binary.BinaryWriter writer)
-    {
+    public void Write(Binary.BinaryWriter writer) {
         writer.WriteUInt32((uint)Type, true);
-        switch (Type)
-        {
+        switch (Type) {
             case DataStorePropertyValueType.None:
             case DataStorePropertyValueType.Null:
                 break;
@@ -59,12 +54,10 @@ public sealed class DataStorePropertyValue
         }
     }
 
-    static Dictionary<string, DataStorePropertyValue> ReadObject(Binary.BinaryReader reader)
-    {
+    static Dictionary<string, DataStorePropertyValue> ReadObject(Binary.BinaryReader reader) {
         int count = reader.ReadVarInt();
         Dictionary<string, DataStorePropertyValue> value = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             string key = reader.ReadVarString();
             DataStorePropertyValue property = new();
             property.Read(reader);
@@ -74,11 +67,9 @@ public sealed class DataStorePropertyValue
         return value;
     }
 
-    static void WriteObject(Binary.BinaryWriter writer, Dictionary<string, DataStorePropertyValue> value)
-    {
+    static void WriteObject(Binary.BinaryWriter writer, Dictionary<string, DataStorePropertyValue> value) {
         writer.WriteVarInt(value.Count);
-        foreach ((string key, DataStorePropertyValue property) in value)
-        {
+        foreach ((string key, DataStorePropertyValue property) in value) {
             writer.WriteVarString(key);
             property.Write(writer);
         }

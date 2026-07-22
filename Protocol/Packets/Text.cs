@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.Text)]
-public sealed record TextPacket : DataPacket
-{
+public sealed record TextPacket : DataPacket {
     /// <summary>
     /// Whether the client should treat this as a translatable message.
     /// </summary>
@@ -37,8 +36,7 @@ public sealed record TextPacket : DataPacket
     /// </summary>
     public string? FilteredMessage;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         NeedsTranslation = reader.ReadBool();
         VariantType = (TextVariantType)reader.ReadUInt8();
         Variant = new TextVariant();
@@ -49,8 +47,7 @@ public sealed record TextPacket : DataPacket
         FilteredMessage = hasFilteredMessage ? reader.ReadVarString() : null;
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteBool(NeedsTranslation);
         writer.WriteUInt8((byte)VariantType);
         Variant.Write(writer, (int)VariantType);
@@ -58,8 +55,7 @@ public sealed record TextPacket : DataPacket
         writer.WriteVarString(PlatformChatId);
         bool hasFilteredMessage = FilteredMessage is not null;
         writer.WriteBool(hasFilteredMessage);
-        if (hasFilteredMessage)
-        {
+        if (hasFilteredMessage) {
             writer.WriteVarString(FilteredMessage!);
         }
     }

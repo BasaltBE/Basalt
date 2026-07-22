@@ -7,8 +7,7 @@ namespace Basalt.Protocol.Packets;
 /// Requests execution of a server-side command.
 /// </summary>
 [Packet(PacketId.CommandRequest)]
-public sealed record CommandRequestPacket : DataPacket
-{
+public sealed record CommandRequestPacket : DataPacket {
     /// <summary>
     /// Raw command requested by the client.
     /// </summary>
@@ -29,8 +28,7 @@ public sealed record CommandRequestPacket : DataPacket
     /// </summary>
     public string Version = string.Empty;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Command = reader.ReadVarString();
         Origin = new CommandOrigin();
         Origin.Read(reader);
@@ -38,8 +36,7 @@ public sealed record CommandRequestPacket : DataPacket
         Version = reader.ReadVarString();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarString(Command);
         Origin.Write(writer);
         writer.WriteBool(Internal);

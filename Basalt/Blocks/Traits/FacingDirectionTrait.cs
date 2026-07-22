@@ -5,36 +5,30 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 
 
-public sealed class FacingDirectionTrait : DirectionTrait
-{
+public sealed class FacingDirectionTrait : DirectionTrait {
     public static new readonly string Identifier = "facing_direction";
     public static new readonly string State = "facing_direction";
     public static new readonly Type? Component = typeof(RotationComponent);
 
-    public FacingDirectionTrait(Block block) : base(block)
-    {
+    public FacingDirectionTrait(Block block) : base(block) {
     }
 
-    public override void OnPlace(BlockPlaceDetails details)
-    {
+    public override void OnPlace(BlockPlaceDetails details) {
         if (Block.HasTrait<HopperTrait>()) return;
 
         int pitch = (int)MathF.Ceiling(details.Player.Pitch);
-        if (pitch == 90)
-        {
+        if (pitch == 90) {
             SetDirection(FacingDirection.Up);
             return;
         }
 
-        if (pitch == -90)
-        {
+        if (pitch == -90) {
             SetDirection(FacingDirection.Down);
             return;
         }
 
         CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
-        switch (direction)
-        {
+        switch (direction) {
             case CardinalDirection.North:
                 SetDirection(FacingDirection.South);
                 break;
@@ -50,21 +44,17 @@ public sealed class FacingDirectionTrait : DirectionTrait
         }
     }
 
-    public new FacingDirection GetDirection()
-    {
-        if (!Block.Permutation.State.TryGetValue(State, out BlockStateValue value) || value.Kind != 0)
-        {
+    public new FacingDirection GetDirection() {
+        if (!Block.Permutation.State.TryGetValue(State, out BlockStateValue value) || value.Kind != 0) {
             return FacingDirection.South;
         }
 
         return (FacingDirection)(int)value.AsNumber();
     }
 
-    public void SetDirection(FacingDirection direction)
-    {
+    public void SetDirection(FacingDirection direction) {
         BlockState state = [];
-        foreach ((string key, BlockStateValue value) in Block.Permutation.State)
-        {
+        foreach ((string key, BlockStateValue value) in Block.Permutation.State) {
             state[key] = value;
         }
 

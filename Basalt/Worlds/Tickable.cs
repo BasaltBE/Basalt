@@ -3,8 +3,7 @@ namespace Basalt.Core.Worlds;
 /// <summary>
 /// This will be used for measuring tick times and current ticks.
 /// </summary>
-public interface Tickable
-{
+public interface Tickable {
     /// <summary>
     /// The current tick value
     /// </summary>

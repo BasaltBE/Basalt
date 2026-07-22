@@ -6,10 +6,8 @@ using System.Text.Json;
 using Basalt.Core.Player;
 using Basalt.Protocol.Packets;
 
-public abstract class Form<TResponse>
-{
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
+public abstract class Form<TResponse> {
+    private static readonly JsonSerializerOptions JsonOptions = new() {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
@@ -18,36 +16,30 @@ public abstract class Form<TResponse>
     internal readonly int FormId = Interlocked.Increment(ref NextFormId);
     public string Title;
 
-    protected Form(string title)
-    {
+    protected Form(string title) {
         Title = title;
     }
 
     [RequiresUnreferencedCode("...")]
     [RequiresDynamicCode("...")]
-    public void Show(Player player, Action<TResponse> result)
-    {
-        player.PendingForms[FormId] = new PendingForm((data, canceled) =>
-        {
+    public void Show(Player player, Action<TResponse> result) {
+        player.PendingForms[FormId] = new PendingForm((data, canceled) => {
             result(canceled ? default! : ReadResponse(data));
         });
 
-        player.Send(new ModalFormRequestPacket
-        {
+        player.Send(new ModalFormRequestPacket {
             FormId = FormId,
             Payload = ToJson()
         });
     }
 
-    public void Close(Player player)
-    {
+    public void Close(Player player) {
         player.Send(new ClientboundCloseFormPacket());
     }
 
     [RequiresUnreferencedCode("...")]
     [RequiresDynamicCode("...")]
-    public string ToJson()
-    {
+    public string ToJson() {
         return JsonSerializer.Serialize(CreatePayload(), JsonOptions);
     }
 

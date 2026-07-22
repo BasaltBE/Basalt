@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum CraftingDataRecipeType
-{
+public enum CraftingDataRecipeType {
     Shapeless = 0,
     Shaped = 1,
     // 2 is unused.

@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestAction, DataType {
     public byte ActionType => 16;
     /// <summary>
     /// Network id of the grindstone recipe.
@@ -18,15 +17,13 @@ public sealed class CraftGrindstoneRecipeStackRequestAction : IStackRequestActio
     /// Recipe cost value.
     /// </summary>
     public int Cost;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RecipeNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
         Cost = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(RecipeNetworkId);
         writer.WriteUInt8(NumberOfCrafts);
         writer.WriteZigZag(Cost);

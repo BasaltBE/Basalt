@@ -3,8 +3,7 @@ using Basalt.Core.Blocks.Traits.Types;
 
 namespace Basalt.Core.Blocks.Components;
 
-public sealed class MovableComponent : BlockComponent
-{
+public sealed class MovableComponent : BlockComponent {
     public static new string Identifier => "minecraft:movable";
     public override string ComponentIdentifier => "minecraft:movable";
 
@@ -15,31 +14,25 @@ public sealed class MovableComponent : BlockComponent
     public bool CanBePulled => Movement == MovementType.PushPull;
     public bool IsSticky => Sticky != StickyType.None;
 
-    public MovableComponent(MovementType movement = MovementType.PushPull, StickyType sticky = StickyType.None)
-    {
+    public MovableComponent(MovementType movement = MovementType.PushPull, StickyType sticky = StickyType.None) {
         Movement = movement;
         Sticky = sticky;
     }
 
-    public static MovableComponent FromJson(JsonElement element)
-    {
+    public static MovableComponent FromJson(JsonElement element) {
         MovementType movement = MovementType.PushPull;
         StickyType sticky = StickyType.None;
 
-        if (element.TryGetProperty("movementType", out JsonElement movementEl) && movementEl.ValueKind == JsonValueKind.String)
-        {
+        if (element.TryGetProperty("movementType", out JsonElement movementEl) && movementEl.ValueKind == JsonValueKind.String) {
             string? value = movementEl.GetString();
-            if (value is not null && Enum.TryParse(value, out MovementType parsed))
-            {
+            if (value is not null && Enum.TryParse(value, out MovementType parsed)) {
                 movement = parsed;
             }
         }
 
-        if (element.TryGetProperty("stickyType", out JsonElement stickyEl) && stickyEl.ValueKind == JsonValueKind.String)
-        {
+        if (element.TryGetProperty("stickyType", out JsonElement stickyEl) && stickyEl.ValueKind == JsonValueKind.String) {
             string? value = stickyEl.GetString();
-            if (value is not null && Enum.TryParse(value, out StickyType parsed))
-            {
+            if (value is not null && Enum.TryParse(value, out StickyType parsed)) {
                 sticky = parsed;
             }
         }
@@ -48,15 +41,13 @@ public sealed class MovableComponent : BlockComponent
     }
 }
 
-public enum MovementType
-{
+public enum MovementType {
     PushPull,
     PushOnly,
     None
 }
 
-public enum StickyType
-{
+public enum StickyType {
     None,
     Side,
     All

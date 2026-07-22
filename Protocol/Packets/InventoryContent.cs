@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.InventoryContent)]
-public sealed record InventoryContentPacket : DataPacket
-{
+public sealed record InventoryContentPacket : DataPacket {
     /// <summary>
     /// Container id for this inventory update.
     /// </summary>
@@ -26,14 +25,12 @@ public sealed record InventoryContentPacket : DataPacket
     /// </summary>
     public NetworkItemStackDescriptor StorageItem = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ContainerId = (ContainerId)reader.ReadVarUInt();
 
         int count = checked((int)reader.ReadVarUInt());
         Content = new List<NetworkItemStackDescriptor>(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             NetworkItemStackDescriptor item = new();
             item.Read(reader);
             Content.Add(item);
@@ -43,12 +40,10 @@ public sealed record InventoryContentPacket : DataPacket
         StorageItem.Read(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarUInt((uint)(byte)ContainerId);
         writer.WriteVarUInt((uint)Content.Count);
-        for (int i = 0; i < Content.Count; i++)
-        {
+        for (int i = 0; i < Content.Count; i++) {
             Content[i].Write(writer);
         }
 

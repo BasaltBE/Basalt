@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ActorDamageCause : int
-{
+public enum ActorDamageCause : int {
     None = -1,
     Override = 0,
     Contact = 1,

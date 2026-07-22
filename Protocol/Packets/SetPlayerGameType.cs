@@ -5,20 +5,17 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.SetPlayerGameType)]
-public sealed record SetPlayerGameTypePacket : DataPacket
-{
+public sealed record SetPlayerGameTypePacket : DataPacket {
     /// <summary>
     /// Game type to apply to the local player.
     /// </summary>
     public Gamemode GameType;
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         GameType = (Gamemode)reader.ReadZigZag();
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteZigZag((int)GameType);
     }
 }

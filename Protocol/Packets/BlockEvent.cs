@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.BlockEvent)]
-public sealed record BlockEventPacket : DataPacket
-{
+public sealed record BlockEventPacket : DataPacket {
     /// <summary>
     /// Block position for this event.
     /// </summary>
@@ -22,8 +21,7 @@ public sealed record BlockEventPacket : DataPacket
     /// </summary>
     public int Data;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         BlockPos position = Position;
         position.Read(reader);
         Position = position;
@@ -31,8 +29,7 @@ public sealed record BlockEventPacket : DataPacket
         Data = reader.ReadVarInt();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Position.Write(writer);
         writer.WriteZigZag((int)Type);
         writer.WriteZigZag(Data);

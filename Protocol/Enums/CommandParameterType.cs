@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum CommandParameterType : uint
-{
+public enum CommandParameterType : uint {
     Int = 1,
     Float = 3,
     Value = 4,

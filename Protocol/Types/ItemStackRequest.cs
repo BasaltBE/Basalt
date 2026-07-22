@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ItemStackRequest : DataType
-{
+public sealed class ItemStackRequest : DataType {
     /// <summary>
     /// Unique request id from the client.
     /// </summary>
@@ -21,14 +20,12 @@ public sealed class ItemStackRequest : DataType
     /// Cause id for filtering.
     /// </summary>
     public int FilterCause;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RequestId = reader.ReadZigZag();
 
         int actionCount = checked((int)reader.ReadVarUInt());
         Actions = new(actionCount);
-        for (int i = 0; i < actionCount; i++)
-        {
+        for (int i = 0; i < actionCount; i++) {
             byte type = reader.ReadUInt8();
             IStackRequestAction action = StackRequestActions.Create(type);
             action.Read(reader);
@@ -37,27 +34,23 @@ public sealed class ItemStackRequest : DataType
 
         int filterCount = checked((int)reader.ReadVarUInt());
         FilterStrings = new(filterCount);
-        for (int i = 0; i < filterCount; i++)
-        {
+        for (int i = 0; i < filterCount; i++) {
             FilterStrings.Add(reader.ReadVarString());
         }
 
         FilterCause = reader.ReadInt32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(RequestId);
         writer.WriteVarUInt((uint)Actions.Count);
-        for (int i = 0; i < Actions.Count; i++)
-        {
+        for (int i = 0; i < Actions.Count; i++) {
             writer.WriteUInt8(Actions[i].ActionType);
             Actions[i].Write(writer);
         }
 
         writer.WriteVarUInt((uint)FilterStrings.Count);
-        for (int i = 0; i < FilterStrings.Count; i++)
-        {
+        for (int i = 0; i < FilterStrings.Count; i++) {
             writer.WriteVarString(FilterStrings[i]);
         }
 

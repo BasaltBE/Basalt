@@ -8,15 +8,13 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
-public sealed class LevelDbProvider : WorldProvider
-{
+public sealed class LevelDbProvider : WorldProvider {
     private readonly DB _database;
     private readonly ChunkStore _chunks;
     private readonly PlayerStore _players;
     public override string Identifier => "leveldb";
 
-    public LevelDbProvider(string path)
-    {
+    public LevelDbProvider(string path) {
         Directory.CreateDirectory(path);
         Options options = new() { CreateIfMissing = true };
         _database = new DB(options, path);
@@ -25,71 +23,59 @@ public sealed class LevelDbProvider : WorldProvider
         _players = new PlayerStore(_database);
     }
 
-    public override bool HasChunk(DimensionType dimensionType, int x, int z)
-    {
+    public override bool HasChunk(DimensionType dimensionType, int x, int z) {
         return _chunks.Exists(dimensionType, x, z);
     }
 
-    public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z)
-    {
+    public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z) {
         using var __zone = Profiler.BeginZone("LevelDb.LoadChunk");
         return _chunks.Load(dimensionType, x, z);
     }
 
-    public override void SaveChunk(ChunkColumn chunk)
-    {
+    public override void SaveChunk(ChunkColumn chunk) {
         using var __zone = Profiler.BeginZone("LevelDb.SaveChunk");
         using WriteBatch batch = new();
         _chunks.Save(batch, chunk);
         _database.Write(batch);
     }
 
-    public override void DeleteChunk(DimensionType dimensionType, int x, int z)
-    {
+    public override void DeleteChunk(DimensionType dimensionType, int x, int z) {
         using var __zone = Profiler.BeginZone("LevelDb.DeleteChunk");
         using WriteBatch batch = new();
         _chunks.Delete(batch, dimensionType, x, z);
         _database.Write(batch);
     }
 
-    public override CompoundTag? LoadPlayerData(string xuid)
-    {
+    public override CompoundTag? LoadPlayerData(string xuid) {
         using var __zone = Profiler.BeginZone("LevelDb.LoadPlayerData");
         return _players.Load(xuid);
     }
 
-    public override byte[]? GetRawPlayerData(string xuid)
-    {
+    public override byte[]? GetRawPlayerData(string xuid) {
         return _players.GetRaw(xuid);
     }
 
-    public override CompoundTag? LoadPlayerDataFromRaw(byte[] data)
-    {
+    public override CompoundTag? LoadPlayerDataFromRaw(byte[] data) {
         return PlayerStore.LoadFromRaw(data);
     }
 
-    public override void SavePlayerData(string xuid, CompoundTag data)
-    {
+    public override void SavePlayerData(string xuid, CompoundTag data) {
         using var __zone = Profiler.BeginZone("LevelDb.SavePlayerData");
         _players.Save(xuid, data);
     }
 
-    public override IReadOnlyList<string> ListPlayerXuids()
-    {
+    public override IReadOnlyList<string> ListPlayerXuids() {
         return _players.ListXuids();
     }
 
-    public override void Dispose()
-    {
+    public override void Dispose() {
         _database.Dispose();
     }
 
-    public override Vec3f? LoadSpawnPosition(DimensionType dimensionType)
-    {
+    public override Vec3f? LoadSpawnPosition(DimensionType dimensionType) {
         byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
         byte[]? data = _database.Get(key);
-        if (data is not { Length: 12 })
-        {
+        if (data is not { Length: 12 }) {
             return null;
         }
 
@@ -99,8 +85,7 @@ public sealed class LevelDbProvider : WorldProvider
         return new Vec3f(x, y, z);
     }
 
-    public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position)
-    {
+    public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
         byte[] key = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
         byte[] data = new byte[12];
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);

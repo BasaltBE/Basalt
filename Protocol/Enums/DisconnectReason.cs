@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum DisconnectReason : int
-{
+public enum DisconnectReason : int {
     Unknown = 0,
     CantConnectNoInternet = 1,
     NoPermissions = 2,

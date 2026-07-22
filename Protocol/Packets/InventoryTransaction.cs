@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.InventoryTransaction)]
-public sealed record InventoryTransactionPacket : DataPacket
-{
+public sealed record InventoryTransactionPacket : DataPacket {
     /// <summary>
     /// Legacy request id.
     /// </summary>
@@ -27,45 +26,38 @@ public sealed record InventoryTransactionPacket : DataPacket
     /// </summary>
     public List<InventoryAction> Actions = [];
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
         bool hasLegacy = reader.ReadBool();
-        if (hasLegacy)
-        {
+        if (hasLegacy) {
             int legacySetItemSlotCount = checked((int)reader.ReadVarUInt());
             LegacySetItemSlots = new(legacySetItemSlotCount);
-            for (int i = 0; i < legacySetItemSlotCount; i++)
-            {
+            for (int i = 0; i < legacySetItemSlotCount; i++) {
                 LegacySetItemSlot legacySetItemSlot = new();
                 legacySetItemSlot.Read(reader);
                 LegacySetItemSlots.Add(legacySetItemSlot);
             }
         }
 
-        if (!reader.ReadBool())
-        {
+        if (!reader.ReadBool()) {
             throw new FormatException("Inventory transaction type is missing.");
         }
 
         InventoryTransactionType type = (InventoryTransactionType)reader.ReadVarUInt();
         IInventoryTransactionData transactionData = InventoryTransactionDataFactory.Create(type);
 
-        if (!reader.ReadBool())
-        {
+        if (!reader.ReadBool()) {
             throw new FormatException("Inventory transaction actions are missing.");
         }
 
         int actionCount = checked((int)reader.ReadVarUInt());
-        if (actionCount < 0 || actionCount > 4096)
-        {
+        if (actionCount < 0 || actionCount > 4096) {
             throw new InvalidOperationException("Invalid action count.");
         }
 
         Actions = new(actionCount);
-        for (int i = 0; i < actionCount; i++)
-        {
+        for (int i = 0; i < actionCount; i++) {
             InventoryAction action = new();
             action.Read(reader);
             Actions.Add(action);
@@ -75,16 +67,13 @@ public sealed record InventoryTransactionPacket : DataPacket
         TransactionData = transactionData;
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteZigZag(LegacyRequestId);
         bool hasLegacy = LegacyRequestId < -1 && (LegacyRequestId & 1) == 0;
         writer.WriteBool(hasLegacy);
-        if (hasLegacy)
-        {
+        if (hasLegacy) {
             writer.WriteVarUInt((uint)LegacySetItemSlots.Count);
-            for (int i = 0; i < LegacySetItemSlots.Count; i++)
-            {
+            for (int i = 0; i < LegacySetItemSlots.Count; i++) {
                 LegacySetItemSlots[i].Write(writer);
             }
         }
@@ -94,8 +83,7 @@ public sealed record InventoryTransactionPacket : DataPacket
 
         writer.WriteBool(true);
         writer.WriteVarUInt((uint)Actions.Count);
-        for (int i = 0; i < Actions.Count; i++)
-        {
+        for (int i = 0; i < Actions.Count; i++) {
             Actions[i].Write(writer);
         }
 

@@ -17,8 +17,7 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
 
-public static class PlayerAuthInput
-{
+public static class PlayerAuthInput {
     private const float MaxHorizontalMovePerTick = 2.0f;
     private const ulong TeleportGraceTicks = 20;
     private const ulong DefaultFoodUseTicks = 32UL;
@@ -31,35 +30,28 @@ public static class PlayerAuthInput
     private readonly record struct PendingItemUse(int Slot, int StackNetworkId, ulong FinishTick);
     private readonly record struct BreakState(BlockPos Position, ulong StartTick, uint DurationTicks);
 
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
         PlayerAuthInputPacket packet = new();
-        try
-        {
+        try {
             int offset = 0;
             Binary.BinaryReader reader = new(packetBuffer, ref offset);
             packet = (PlayerAuthInputPacket)Protocol.Io.Packet.Deserialize(reader);
         }
-        catch (Exception exception)
-        {
+        catch (Exception exception) {
             Logger.Error("PlayerAuthInput deserialize failed: {0}", exception);
             return;
         }
 
-        try
-        {
-            if (!server.Players.TryGetValue(connection, out Player.Player? player))
-            {
+        try {
+            if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
                 return;
             }
 
-            if (MovedTooFar(player, packet, out ulong tickDelta))
-            {
+            if (MovedTooFar(player, packet, out ulong tickDelta)) {
                 Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta:{tickDelta}");
 
-                server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket
-                {
+                server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket {
                     PredictionType = PredictionType.Player,
                     Position = player.Location,
                     PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
@@ -76,8 +68,7 @@ public static class PlayerAuthInput
             MovePlayer(player, packet);
             TickPendingItemUse(player);
 
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction)) {
                 InventoryTransaction.HandleUseItemFromAuthInput(
                     player,
                     packet.ItemInteractionData,
@@ -86,8 +77,7 @@ public static class PlayerAuthInput
             }
 
             MineBlockStackRequestAction? mineBlockRequest = null;
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest)) {
                 mineBlockRequest = GetMineBlockRequest(packet.ItemStackRequest);
                 Logger.Debug(
                     "PlayerAuthInput item stack request player:{0} request:{1} actions:{2} mineBlock:{3}",
@@ -96,74 +86,62 @@ public static class PlayerAuthInput
                     packet.ItemStackRequest.Actions.Count,
                     mineBlockRequest is not null);
 
-                server.Network.SendPacket(connection, new ItemStackResponsePacket
-                {
+                server.Network.SendPacket(connection, new ItemStackResponsePacket {
                     Responses = [ProcessItemStackRequest(player, packet.ItemStackRequest)]
                 });
             }
 
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions)) {
                 // Logger.Warn(
                 //     "PlayerAuthInput block actions player:{0} count:{1} tick:{2}",
                 //     player.Username,
                 //     packet.BlockActions.Count,
                 //     packet.Tick);
 
-                foreach (PlayerBlockAction action in packet.BlockActions)
-                {
+                foreach (PlayerBlockAction action in packet.BlockActions) {
                     HandleBlockAction(player, action, packet.Tick);
                 }
             }
 
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem)) {
                 StartUsingItem(player);
             }
 
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting)) {
                 player.IsSprinting = true;
             }
 
-            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSprinting))
-            {
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSprinting)) {
                 player.IsSprinting = false;
             }
 
-            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSneaking))
-            {
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSneaking)) {
                 player.IsSneaking = true;
             }
 
-            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSneaking))
-            {
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSneaking)) {
                 player.IsSneaking = false;
             }
 
             LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
         }
-        catch (Exception exception)
-        {
+        catch (Exception exception) {
             Logger.Warn("PlayerAuthInput handler failed: {0}", exception);
         }
     }
 
-    private static void StartUsingItem(Player.Player player)
-    {
+    private static void StartUsingItem(Player.Player player) {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         ItemStack? heldItem = inventory?.GetHeldItem();
         ItemStackFoodTrait? food = heldItem?.GetTrait<ItemStackFoodTrait>();
-        if (inventory is null || heldItem is null || food is null)
-        {
+        if (inventory is null || heldItem is null || food is null) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             return;
         }
 
         PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
-        if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue))
-        {
+        if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue)) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             return;
@@ -179,24 +157,20 @@ public static class PlayerAuthInput
         player.Flags.SetActorFlag(ActorFlag.UsingItem, true);
     }
 
-    private static void TickPendingItemUse(Player.Player player)
-    {
-        if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending))
-        {
+    private static void TickPendingItemUse(Player.Player player) {
+        if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending)) {
             return;
         }
 
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         ItemStack? heldItem = inventory?.Container.GetItem(pending.Slot);
-        if (inventory is null || heldItem is null || heldItem.NetworkStackId != pending.StackNetworkId)
-        {
+        if (inventory is null || heldItem is null || heldItem.NetworkStackId != pending.StackNetworkId) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             return;
         }
 
-        if (GetCurrentTick(player) < pending.FinishTick)
-        {
+        if (GetCurrentTick(player) < pending.FinishTick) {
             return;
         }
 
@@ -205,27 +179,22 @@ public static class PlayerAuthInput
 
         ItemStackFoodTrait? food = heldItem.GetTrait<ItemStackFoodTrait>();
         PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
-        if (food is null || hunger is null || !hunger.Eat(food.Nutrition, food.SaturationModifier, food.CanAlwaysEat))
-        {
+        if (food is null || hunger is null || !hunger.Eat(food.Nutrition, food.SaturationModifier, food.CanAlwaysEat)) {
             return;
         }
 
         // Update inventory and notify the client.
         heldItem.DecrementStack();
-        if (heldItem.StackSize == 0)
-        {
+        if (heldItem.StackSize == 0) {
             inventory.Container.ClearSlot(pending.Slot);
         }
-        else
-        {
+        else {
             inventory.Container.UpdateSlot(pending.Slot);
         }
 
-        if (!string.IsNullOrWhiteSpace(food.UsingConvertsTo) && ItemType.Get(food.UsingConvertsTo) is ItemType convertedType)
-        {
+        if (!string.IsNullOrWhiteSpace(food.UsingConvertsTo) && ItemType.Get(food.UsingConvertsTo) is ItemType convertedType) {
             ItemStack converted = new(convertedType);
-            if (!inventory.Container.AddItem(converted))
-            {
+            if (!inventory.Container.AddItem(converted)) {
                 _ = player.DropItem(converted);
             }
         }
@@ -233,57 +202,47 @@ public static class PlayerAuthInput
         player.Attributes.Send();
     }
 
-    private static ulong GetCurrentTick(Player.Player player)
-    {
+    private static ulong GetCurrentTick(Player.Player player) {
         return player.Dimension?.World is Basalt.Core.Worlds.Tickable tickable ? tickable.TickValue : 0UL;
     }
 
-    private static ulong GetUseDurationTicks(ItemStack item)
-    {
+    private static ulong GetUseDurationTicks(ItemStack item) {
         // Check raw components for minecraft:use_duration (stored as IntTag).
         Basalt.Protocol.Nbt.CompoundTag? components = item.Type.Properties.Get<Basalt.Protocol.Nbt.CompoundTag>("components");
-        if (components?.Get<Basalt.Protocol.Nbt.IntTag>("minecraft:use_duration") is Basalt.Protocol.Nbt.IntTag durationTag)
-        {
+        if (components?.Get<Basalt.Protocol.Nbt.IntTag>("minecraft:use_duration") is Basalt.Protocol.Nbt.IntTag durationTag) {
             return (ulong)Math.Max(1, durationTag.Value);
         }
 
         return DefaultFoodUseTicks;
     }
 
-    private static ItemStackResponse ProcessItemStackRequest(Player.Player player, Protocol.Types.ItemStackRequest request)
-    {
+    private static ItemStackResponse ProcessItemStackRequest(Player.Player player, Protocol.Types.ItemStackRequest request) {
         // Check if this request contains only MineBlock actions 
         bool hasOtherActions = false;
-        for (int i = 0; i < request.Actions.Count; i++)
-        {
+        for (int i = 0; i < request.Actions.Count; i++) {
             if (request.Actions[i] is not MineBlockStackRequestAction
                 and not EmptyStackRequestAction
-                and not CraftResultsDeprecatedStackRequestAction)
-            {
+                and not CraftResultsDeprecatedStackRequestAction) {
                 hasOtherActions = true;
                 break;
             }
         }
 
-        if (hasOtherActions)
-        {
+        if (hasOtherActions) {
             return ItemStackRequest.ProcessRequestFromAuthInput(player, request);
         }
 
         List<StackResponseContainerInfo> containers = [];
 
-        for (int i = 0; i < request.Actions.Count; i++)
-        {
-            if (request.Actions[i] is not MineBlockStackRequestAction mineBlock)
-            {
+        for (int i = 0; i < request.Actions.Count; i++) {
+            if (request.Actions[i] is not MineBlockStackRequestAction mineBlock) {
                 continue;
             }
 
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
             ItemStack? item = inventory?.Container.GetItem(mineBlock.HotbarSlot);
 
-            containers.Add(new StackResponseContainerInfo
-            {
+            containers.Add(new StackResponseContainerInfo {
                 Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
                 SlotInfo =
                 [
@@ -301,20 +260,16 @@ public static class PlayerAuthInput
             });
         }
 
-        return new ItemStackResponse
-        {
+        return new ItemStackResponse {
             Status = ItemStackResponseStatus.Ok,
             RequestId = request.RequestId,
             ContainerInfo = containers
         };
     }
 
-    private static MineBlockStackRequestAction? GetMineBlockRequest(Protocol.Types.ItemStackRequest request)
-    {
-        for (int i = 0; i < request.Actions.Count; i++)
-        {
-            if (request.Actions[i] is MineBlockStackRequestAction mineBlock)
-            {
+    private static MineBlockStackRequestAction? GetMineBlockRequest(Protocol.Types.ItemStackRequest request) {
+        for (int i = 0; i < request.Actions.Count; i++) {
+            if (request.Actions[i] is MineBlockStackRequestAction mineBlock) {
                 return mineBlock;
             }
         }
@@ -322,8 +277,7 @@ public static class PlayerAuthInput
         return null;
     }
 
-    private static bool MovedTooFar(Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta)
-    {
+    private static bool MovedTooFar(Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta) {
         float deltaX = packet.Position.X - player.Location.X;
         float deltaZ = packet.Position.Z - player.Location.Z;
         float movedDistanceSquared = deltaX * deltaX + deltaZ * deltaZ;
@@ -331,8 +285,7 @@ public static class PlayerAuthInput
         ulong previousTick = LastInputTickByRuntimeId.GetOrAdd(player.RuntimeId, packet.Tick);
         rawTickDelta = packet.Tick > previousTick ? packet.Tick - previousTick : 1UL;
 
-        if (packet.Tick <= player.LastTeleportTick + TeleportGraceTicks)
-        {
+        if (packet.Tick <= player.LastTeleportTick + TeleportGraceTicks) {
             return false;
         }
 
@@ -342,19 +295,16 @@ public static class PlayerAuthInput
         return movedDistanceSquared > allowedDistance * allowedDistance;
     }
 
-    private static void MovePlayer(Player.Player player, PlayerAuthInputPacket packet)
-    {
+    private static void MovePlayer(Player.Player player, PlayerAuthInputPacket packet) {
         Vec3f previousPosition = player.Location;
 
-        MovementRotation fromRotation = new MovementRotation()
-        {
+        MovementRotation fromRotation = new MovementRotation() {
             HeadYaw = player.HeadYaw,
             Pitch = player.Pitch,
             Yaw = player.Yaw,
         };
 
-        MovementRotation toRotation = new MovementRotation()
-        {
+        MovementRotation toRotation = new MovementRotation() {
             HeadYaw = packet.Yaw,
             Pitch = packet.Pitch,
             Yaw = packet.Yaw,
@@ -375,8 +325,7 @@ public static class PlayerAuthInput
             packet.Delta.Z != 0f;
 
         player.Location = missingPosition && hasDelta
-            ? new Vec3f
-            {
+            ? new Vec3f {
                 X = previousPosition.X + packet.Delta.X,
                 Y = previousPosition.Y + packet.Delta.Y,
                 Z = previousPosition.Z + packet.Delta.Z
@@ -387,8 +336,7 @@ public static class PlayerAuthInput
 
     }
 
-    private static void HandleBlockAction(Player.Player player, PlayerBlockAction action, ulong tick)
-    {
+    private static void HandleBlockAction(Player.Player player, PlayerBlockAction action, ulong tick) {
         // Logger.Warn(
         //     "BlockAction player:{0} action:{1} pos:{2},{3},{4} face:{5} tick:{6}",
         //     player.Username,
@@ -399,8 +347,7 @@ public static class PlayerAuthInput
         //     action.Face,
         //     tick);
 
-        switch (action.Action)
-        {
+        switch (action.Action) {
             case PlayerActionType.StartDestroyBlock:
                 StartBreakBlock(player, action.BlockPos, tick);
                 break;
@@ -435,10 +382,8 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void StartBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick)
-    {
-        if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition))
-        {
+    private static void StartBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick) {
+        if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition)) {
             StopCrackBlock(player, player.BreakingBlock.Value);
         }
 
@@ -457,47 +402,39 @@ public static class PlayerAuthInput
             ? Math.Min(65535, 65535 / breakTimeTicks)
             : 65535;
 
-        player.Dimension?.Broadcast(new LevelEventPacket
-        {
+        player.Dimension?.Broadcast(new LevelEventPacket {
             Event = LevelEvent.StartBlockCracking,
             Position = CenterOf(blockPosition),
             Data = Math.Max(1, crackSpeed)
         });
     }
 
-    private static void CrackBlock(Player.Player player, BlockPos blockPosition, ulong tick)
-    {
-        if (!player.BreakingBlock.HasValue || !SameBlock(player.BreakingBlock.Value, blockPosition))
-        {
+    private static void CrackBlock(Player.Player player, BlockPos blockPosition, ulong tick) {
+        if (!player.BreakingBlock.HasValue || !SameBlock(player.BreakingBlock.Value, blockPosition)) {
             StartBreakBlock(player, blockPosition, tick);
         }
     }
 
-    private static void ContinueBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick)
-    {
+    private static void ContinueBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick) {
         if (BreakStates.TryGetValue(player.RuntimeId, out BreakState existing)
-            && SameBlock(existing.Position, blockPosition))
-        {
+            && SameBlock(existing.Position, blockPosition)) {
             return;
         }
 
-        if (player.BreakingBlock.HasValue)
-        {
+        if (player.BreakingBlock.HasValue) {
             StopCrackBlock(player, player.BreakingBlock.Value);
         }
 
         StartBreakBlock(player, blockPosition, tick);
     }
 
-    private static void ValidateAndDestroyBlock(Player.Player player, PlayerBlockAction action, ulong tick)
-    {
+    private static void ValidateAndDestroyBlock(Player.Player player, PlayerBlockAction action, ulong tick) {
         BlockPos blockPosition = IsZero(action.BlockPos)
             ? (player.BreakingBlock ?? action.BlockPos)
             : action.BlockPos;
 
         // Creative mode players break blocks instantly without timing validation.
-        if (player.Gamemode == Gamemode.Creative)
-        {
+        if (player.Gamemode == Gamemode.Creative) {
             BreakStates.TryRemove(player.RuntimeId, out _);
             player.BreakingBlock = null;
             StopCrackBlock(player, blockPosition);
@@ -507,24 +444,19 @@ public static class PlayerAuthInput
 
         bool valid = false;
 
-        if (BreakStates.TryRemove(player.RuntimeId, out BreakState state))
-        {
-            if (SameBlock(state.Position, blockPosition))
-            {
+        if (BreakStates.TryRemove(player.RuntimeId, out BreakState state)) {
+            if (SameBlock(state.Position, blockPosition)) {
                 ulong elapsed = tick >= state.StartTick ? tick - state.StartTick : 0;
 
                 // Only instant-break blocks (1 tick) pass with zero elapsed time.
-                if (state.DurationTicks <= 1)
-                {
+                if (state.DurationTicks <= 1) {
                     valid = true;
                 }
-                else if (elapsed > 0)
-                {
+                else if (elapsed > 0) {
                     valid = elapsed + BreakToleranceTicks >= state.DurationTicks;
                 }
 
-                if (!valid)
-                {
+                if (!valid) {
                     // Logger.Warn(
                     //     "Block break rejected player:{0} pos:{1},{2},{3} elapsed:{4} duration:{5} tick:{6} startTick:{7}",
                     //     player.Username,
@@ -532,8 +464,7 @@ public static class PlayerAuthInput
                     //     elapsed, state.DurationTicks, tick, state.StartTick);
                 }
             }
-            else
-            {
+            else {
                 Logger.Debug(
                     "Block break rejected player:{0} reason: position-mismatch state:{1},{2},{3} action:{4},{5},{6}",
                     player.Username,
@@ -541,8 +472,7 @@ public static class PlayerAuthInput
                     blockPosition.X, blockPosition.Y, blockPosition.Z);
             }
         }
-        else
-        {
+        else {
             Logger.Debug(
                 "Block break rejected player:{0} reason: no-break-state pos:{1},{2},{3}",
                 player.Username, blockPosition.X, blockPosition.Y, blockPosition.Z);
@@ -550,8 +480,7 @@ public static class PlayerAuthInput
 
         player.BreakingBlock = null;
 
-        if (!valid)
-        {
+        if (!valid) {
             StopCrackBlock(player, blockPosition);
             SendRevertBlock(player, blockPosition);
             return;
@@ -561,8 +490,7 @@ public static class PlayerAuthInput
         DestroyBlock(player, action);
     }
 
-    private static void SendRevertBlock(Player.Player player, BlockPos blockPosition)
-    {
+    private static void SendRevertBlock(Player.Player player, BlockPos blockPosition) {
         if (player.Dimension is null) return;
 
         Basalt.Core.Blocks.BlockPermutation? perm =
@@ -570,8 +498,7 @@ public static class PlayerAuthInput
 
         if (perm is null) return;
 
-        player.Send(new UpdateBlockPacket
-        {
+        player.Send(new UpdateBlockPacket {
             Position = blockPosition,
             NetworkBlockId = (uint)perm.NetworkId,
             Flags = UpdateBlockFlagsType.Network,
@@ -579,10 +506,8 @@ public static class PlayerAuthInput
         });
     }
 
-    private static void DestroyBlock(Player.Player player, PlayerBlockAction action)
-    {
-        if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue)
-        {
+    private static void DestroyBlock(Player.Player player, PlayerBlockAction action) {
+        if (IsZero(action.BlockPos) && !player.BreakingBlock.HasValue) {
             // Logger.Warn("PlayerAuthInput destroy skipped player:{0} reason=zero-position-no-target action:{1}", player.Username, action.Action);
             return;
         }
@@ -594,8 +519,7 @@ public static class PlayerAuthInput
         StopCrackBlock(player, blockPosition);
         player.BreakingBlock = null;
 
-        if (player.Dimension is null)
-        {
+        if (player.Dimension is null) {
             // Logger.Warn("PlayerAuthInput destroy skipped player:{0} reason=no-dimension", player.Username);
             return;
         }
@@ -603,8 +527,7 @@ public static class PlayerAuthInput
         Basalt.Core.Blocks.BlockPermutation? block =
             player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
-        if (block is null)
-        {
+        if (block is null) {
             // Logger.Warn(
             //     "PlayerAuthInput destroy skipped player:{0} reason=null-block pos:{1},{2},{3}",
             //     player.Username,
@@ -625,8 +548,7 @@ public static class PlayerAuthInput
         //     action.Action);
 
         Server? server = player.Dimension.World?.Server;
-        if (server is not null)
-        {
+        if (server is not null) {
             Basalt.Core.Blocks.Block breakBlock =
                 player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
                 new Basalt.Core.Blocks.Block(block);
@@ -636,10 +558,8 @@ public static class PlayerAuthInput
 
             PlayerBreakBlockSignal signal = new(player, blockPosition, action.Face, breakBlock, signalHeldItem);
             server.Emit(signal);
-            if (!signal.Emit())
-            {
-                player.Send(new UpdateBlockPacket
-                {
+            if (!signal.Emit()) {
+                player.Send(new UpdateBlockPacket {
                     Position = blockPosition,
                     NetworkBlockId = (uint)block.NetworkId,
                     Flags = UpdateBlockFlagsType.Network,
@@ -647,11 +567,9 @@ public static class PlayerAuthInput
                 });
 
                 EntityInventoryTrait? cancelInventory = player.GetTrait<EntityInventoryTrait>();
-                if (cancelInventory is not null)
-                {
+                if (cancelInventory is not null) {
                     ItemStack? rollbackItem = cancelInventory.GetHeldItem();
-                    if (rollbackItem is not null)
-                    {
+                    if (rollbackItem is not null) {
                         cancelInventory.Container.SetItem(cancelInventory.SelectedSlot, rollbackItem.Clone());
                     }
                     cancelInventory.Container.UpdateSlot(cancelInventory.SelectedSlot);
@@ -662,8 +580,7 @@ public static class PlayerAuthInput
             }
         }
 
-        player.Dimension.Broadcast(new LevelEventPacket
-        {
+        player.Dimension.Broadcast(new LevelEventPacket {
             Event = LevelEvent.ParticlesDestroyBlock,
             Position = CenterOf(blockPosition),
             Data = block.NetworkId
@@ -681,16 +598,13 @@ public static class PlayerAuthInput
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
 
-        if (block.Type.Liquid)
-        {
+        if (block.Type.Liquid) {
             Basalt.Core.Blocks.Traits.FluidKind? fluidKind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(block);
-            if (fluidKind.HasValue)
-            {
+            if (fluidKind.HasValue) {
                 Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(fluidKind.Value, player.Dimension, blockPosition);
             }
         }
-        else
-        {
+        else {
             Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Water, player.Dimension, blockPosition);
             Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Lava, player.Dimension, blockPosition);
         }
@@ -707,8 +621,7 @@ public static class PlayerAuthInput
         //     after.Type.Identifier,
         //     after.NetworkId);
 
-        player.Dimension.Broadcast(new UpdateBlockPacket
-        {
+        player.Dimension.Broadcast(new UpdateBlockPacket {
             Position = blockPosition,
             NetworkBlockId = (uint)air.NetworkId,
             Flags = UpdateBlockFlagsType.Network,
@@ -718,8 +631,7 @@ public static class PlayerAuthInput
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         ItemStack? heldItem = inventory?.GetHeldItem();
 
-        if (inventory is not null && heldItem is not null)
-        {
+        if (inventory is not null && heldItem is not null) {
             heldItem.OnBreakBlock(new ItemBreakBlockDetails(
                 player,
                 inventory.SelectedSlot,
@@ -728,10 +640,8 @@ public static class PlayerAuthInput
         }
     }
 
-    private static void StopCrackBlock(Player.Player player, BlockPos blockPosition)
-    {
-        player.Dimension?.Broadcast(new LevelEventPacket
-        {
+    private static void StopCrackBlock(Player.Player player, BlockPos blockPosition) {
+        player.Dimension?.Broadcast(new LevelEventPacket {
             Event = LevelEvent.StopBlockCracking,
             Position = CenterOf(blockPosition),
             Data = 0
@@ -743,26 +653,22 @@ public static class PlayerAuthInput
     private const float IncompatibleToolMultiplier = 5.0f;
     private const int MaxBreakTicks = 6000;
 
-    private static int GetBreakTimeTicksForAnimation(Player.Player player, BlockPos blockPosition)
-    {
+    private static int GetBreakTimeTicksForAnimation(Player.Player player, BlockPos blockPosition) {
         Basalt.Core.Blocks.BlockPermutation? block =
             player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
-        if (block is null)
-        {
+        if (block is null) {
             return 20;
         }
 
         Basalt.Core.Blocks.BlockType blockType = block.Type;
         float hardness = blockType.Hardness;
 
-        if (hardness < 0f)
-        {
+        if (hardness < 0f) {
             return MaxBreakTicks;
         }
 
-        if (hardness == 0f)
-        {
+        if (hardness == 0f) {
             return 1;
         }
 
@@ -777,8 +683,7 @@ public static class PlayerAuthInput
         float efficiency = 1f;
         bool hasDiggerMatch = false;
 
-        if (heldItem is not null)
-        {
+        if (heldItem is not null) {
             ToolCategory itemCategory = GetItemToolCategory(heldItem.Type);
             toolTierLevel = GetItemTierHarvestLevel(heldItem.Type);
             categoryMatch = requiredCategory != ToolCategory.None && itemCategory == requiredCategory;
@@ -786,8 +691,7 @@ public static class PlayerAuthInput
             // Custom items have digger component so we need to properly
             // calculate the break times
             float diggerSpeed = GetDiggerDestroySpeed(heldItem.Type, blockType, out bool useEfficiency);
-            if (diggerSpeed > 0f)
-            {
+            if (diggerSpeed > 0f) {
                 hasDiggerMatch = true;
                 efficiency = diggerSpeed;
 
@@ -800,11 +704,9 @@ public static class PlayerAuthInput
                     toolTierLevel = requiredTierLevel;
 
                 // Only apply efficiency enchantment if the digger enables it.
-                if (useEfficiency)
-                {
+                if (useEfficiency) {
                     ItemStackEnchantmentTrait? enchantments = heldItem.GetTrait<ItemStackEnchantmentTrait>();
-                    if (enchantments is not null)
-                    {
+                    if (enchantments is not null) {
                         efficiency += enchantments.GetMiningSpeedBonus();
                     }
                 }
@@ -814,20 +716,17 @@ public static class PlayerAuthInput
         bool tierOk = requiredTierLevel == 0 || toolTierLevel >= requiredTierLevel;
         bool compatible = requiredTierLevel == 0 || (categoryMatch && tierOk);
 
-        if (!hasDiggerMatch && categoryMatch)
-        {
+        if (!hasDiggerMatch && categoryMatch) {
             efficiency = GetBaseMiningEfficiency(heldItem!.Type);
 
             ItemStackEnchantmentTrait? enchantments = heldItem.GetTrait<ItemStackEnchantmentTrait>();
-            if (enchantments is not null)
-            {
+            if (enchantments is not null) {
                 efficiency += enchantments.GetMiningSpeedBonus();
             }
         }
 
         // hardness * 1.5 / speed * 20.
-        if (hasDiggerMatch)
-        {
+        if (hasDiggerMatch) {
             float seconds = (hardness * CompatibleToolMultiplier) / efficiency;
             int ticks = (int)MathF.Ceiling(seconds * Tps);
             return Math.Clamp(ticks, 1, MaxBreakTicks);
@@ -839,40 +738,33 @@ public static class PlayerAuthInput
         return Math.Clamp(tagTicks, 1, MaxBreakTicks);
     }
 
-    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType)
-    {
+    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType) {
         return GetDiggerDestroySpeed(itemType, blockType, out _);
     }
 
-    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType, out bool useEfficiency)
-    {
+    private static float GetDiggerDestroySpeed(ItemType itemType, Basalt.Core.Blocks.BlockType blockType, out bool useEfficiency) {
         useEfficiency = false;
         Item.Components.ItemTypeDiggerComponent? digger =
             itemType.Components.GetComponent<Item.Components.ItemTypeDiggerComponent>();
 
-        if (digger is null)
-        {
+        if (digger is null) {
             return 0f;
         }
 
         useEfficiency = digger.UseEfficiency();
 
         Item.Components.DestroySpeedEntry[] speeds = digger.GetDestroySpeeds();
-        for (int i = 0; i < speeds.Length; i++)
-        {
+        for (int i = 0; i < speeds.Length; i++) {
             ref readonly Item.Components.DestroySpeedEntry entry = ref speeds[i];
 
-            if (entry.Block is not null)
-            {
-                if (string.Equals(entry.Block, blockType.Identifier, StringComparison.Ordinal))
-                {
+            if (entry.Block is not null) {
+                if (string.Equals(entry.Block, blockType.Identifier, StringComparison.Ordinal)) {
                     return entry.Speed;
                 }
                 continue;
             }
 
-            if (entry.TagQuery is not null && MatchesTagQuery(entry.TagQuery, blockType))
-            {
+            if (entry.TagQuery is not null && MatchesTagQuery(entry.TagQuery, blockType)) {
                 return entry.Speed;
             }
         }
@@ -880,25 +772,21 @@ public static class PlayerAuthInput
         return 0f;
     }
 
-    private static bool MatchesTagQuery(string tagQuery, Basalt.Core.Blocks.BlockType blockType)
-    {
+    private static bool MatchesTagQuery(string tagQuery, Basalt.Core.Blocks.BlockType blockType) {
         // Parses "query.any_tag('tag1', 'tag2', ...)" format.
         ReadOnlySpan<char> query = tagQuery.AsSpan();
         int start = query.IndexOf('(');
-        if (start < 0)
-        {
+        if (start < 0) {
             return false;
         }
 
         int end = query.LastIndexOf(')');
-        if (end <= start)
-        {
+        if (end <= start) {
             return false;
         }
 
         ReadOnlySpan<char> args = query[(start + 1)..end];
-        while (args.Length > 0)
-        {
+        while (args.Length > 0) {
             int quoteStart = args.IndexOf('\'');
             if (quoteStart < 0) break;
 
@@ -907,8 +795,7 @@ public static class PlayerAuthInput
             if (quoteEnd < 0) break;
 
             string tag = args[..quoteEnd].ToString();
-            if (blockType.HasTag(tag))
-            {
+            if (blockType.HasTag(tag)) {
                 return true;
             }
 
@@ -920,8 +807,7 @@ public static class PlayerAuthInput
 
     private enum ToolCategory { None, Axe, Hoe, Pickaxe, Shovel, Sword }
 
-    private static ToolCategory GetBlockToolCategory(Basalt.Core.Blocks.BlockType blockType)
-    {
+    private static ToolCategory GetBlockToolCategory(Basalt.Core.Blocks.BlockType blockType) {
         if (blockType.HasTag("minecraft:is_pickaxe_item_destructible")) return ToolCategory.Pickaxe;
         if (blockType.HasTag("minecraft:is_axe_item_destructible")) return ToolCategory.Axe;
         if (blockType.HasTag("minecraft:is_shovel_item_destructible")) return ToolCategory.Shovel;
@@ -930,21 +816,17 @@ public static class PlayerAuthInput
         return ToolCategory.None;
     }
 
-    private static int GetBlockRequiredTierLevel(Basalt.Core.Blocks.BlockType blockType)
-    {
+    private static int GetBlockRequiredTierLevel(Basalt.Core.Blocks.BlockType blockType) {
         if (blockType.HasTag("minecraft:diamond_tier_destructible")) return 5;
         if (blockType.HasTag("minecraft:iron_tier_destructible")) return 4;
         if (blockType.HasTag("minecraft:stone_tier_destructible")) return 3;
         return 0;
     }
 
-    private static ToolCategory GetItemToolCategory(ItemType itemType)
-    {
+    private static ToolCategory GetItemToolCategory(ItemType itemType) {
         IReadOnlyList<string> tags = itemType.Tags;
-        for (int i = 0; i < tags.Count; i++)
-        {
-            switch (tags[i])
-            {
+        for (int i = 0; i < tags.Count; i++) {
+            switch (tags[i]) {
                 case "minecraft:is_pickaxe": return ToolCategory.Pickaxe;
                 case "minecraft:is_axe": return ToolCategory.Axe;
                 case "minecraft:is_shovel": return ToolCategory.Shovel;
@@ -955,13 +837,10 @@ public static class PlayerAuthInput
         return ToolCategory.None;
     }
 
-    private static int GetItemTierHarvestLevel(ItemType itemType)
-    {
+    private static int GetItemTierHarvestLevel(ItemType itemType) {
         IReadOnlyList<string> tags = itemType.Tags;
-        for (int i = 0; i < tags.Count; i++)
-        {
-            switch (tags[i])
-            {
+        for (int i = 0; i < tags.Count; i++) {
+            switch (tags[i]) {
                 case "minecraft:netherite_tier": return 6;
                 case "minecraft:diamond_tier": return 5;
                 case "minecraft:iron_tier": return 4;
@@ -974,13 +853,10 @@ public static class PlayerAuthInput
         return 0;
     }
 
-    private static float GetBaseMiningEfficiency(ItemType itemType)
-    {
+    private static float GetBaseMiningEfficiency(ItemType itemType) {
         IReadOnlyList<string> tags = itemType.Tags;
-        for (int i = 0; i < tags.Count; i++)
-        {
-            switch (tags[i])
-            {
+        for (int i = 0; i < tags.Count; i++) {
+            switch (tags[i]) {
                 case "minecraft:netherite_tier": return 9f;
                 case "minecraft:diamond_tier": return 8f;
                 case "minecraft:iron_tier": return 6f;
@@ -993,23 +869,19 @@ public static class PlayerAuthInput
         return 1f;
     }
 
-    private static Vec3f CenterOf(BlockPos position)
-    {
-        return new Vec3f
-        {
+    private static Vec3f CenterOf(BlockPos position) {
+        return new Vec3f {
             X = position.X + 0.5f,
             Y = position.Y + 0.5f,
             Z = position.Z + 0.5f
         };
     }
 
-    private static bool SameBlock(BlockPos a, BlockPos b)
-    {
+    private static bool SameBlock(BlockPos a, BlockPos b) {
         return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
     }
 
-    private static bool IsZero(BlockPos position)
-    {
+    private static bool IsZero(BlockPos position) {
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 

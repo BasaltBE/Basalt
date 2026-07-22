@@ -6,8 +6,7 @@ using Basalt.Core.Player;
 /// <summary>
 /// Emitted when a player executes a command. Can be cancelled to prevent execution.
 /// </summary>
-public sealed class PlayerCommandSignal : PlayerSignal
-{
+public sealed class PlayerCommandSignal : PlayerSignal {
     public override ServerEvent Event => ServerEvent.PlayerCommand;
 
     /// <summary>
@@ -25,14 +24,12 @@ public sealed class PlayerCommandSignal : PlayerSignal
     /// </summary>
     public bool Cancelled { get; private set; }
 
-    public PlayerCommandSignal(Player player, string commandLine, CommandDefinition? definition) : base(player)
-    {
+    public PlayerCommandSignal(Player player, string commandLine, CommandDefinition? definition) : base(player) {
         CommandLine = commandLine;
         Definition = definition;
     }
 
-    public void Cancel()
-    {
+    public void Cancel() {
         Cancelled = true;
     }
 }

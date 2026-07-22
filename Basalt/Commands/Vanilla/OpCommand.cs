@@ -2,10 +2,8 @@ namespace Basalt.Core.Commands.Vanilla;
 
 using Player = Player.Player;
 
-public static class OpCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class OpCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "op",
         Description = "Grants operator status to a player.",
         Permissions = ["basalt.op"],
@@ -22,8 +20,7 @@ public static class OpCommand
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
-    {
+    static CommandResult Execute(CommandContext ctx) {
         TargetEnum? target = ctx.Get<TargetEnum>("target");
         if (target is null)
             return CommandResult.Error("Usage: /op <player>");

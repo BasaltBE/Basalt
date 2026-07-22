@@ -1,7 +1,6 @@
 namespace Basalt.Core.Crafting;
 
-public sealed class CraftingRecipe
-{
+public sealed class CraftingRecipe {
     public RecipeType Type { get; }
     public string Identifier { get; }
     public IReadOnlyList<string> Tags { get; }
@@ -24,8 +23,7 @@ public sealed class CraftingRecipe
       IReadOnlyList<string> pattern,
       IReadOnlyDictionary<char, RecipeIngredient> key,
       IReadOnlyList<RecipeIngredient> ingredients,
-      RecipeResult result)
-    {
+      RecipeResult result) {
         Type = type;
         Identifier = identifier;
         Tags = tags;

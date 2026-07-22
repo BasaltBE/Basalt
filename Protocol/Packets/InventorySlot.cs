@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.InventorySlot)]
-public sealed record InventorySlotPacket : DataPacket
-{
+public sealed record InventorySlotPacket : DataPacket {
     /// <summary>
     /// Container id for this inventory update.
     /// </summary>
@@ -31,8 +30,7 @@ public sealed record InventorySlotPacket : DataPacket
     /// </summary>
     public NetworkItemStackDescriptor NewItem = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ContainerId = (ContainerId)reader.ReadVarInt();
         Slot = reader.ReadVarInt();
         Container.Read(reader);
@@ -40,8 +38,7 @@ public sealed record InventorySlotPacket : DataPacket
         NewItem.Read(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarInt((int)ContainerId);
         writer.WriteVarInt(Slot);
         Container.Write(writer);

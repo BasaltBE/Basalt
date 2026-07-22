@@ -4,8 +4,7 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 
-public sealed class ItemStackWearableTrait : ItemTrait
-{
+public sealed class ItemStackWearableTrait : ItemTrait {
     public new static string Identifier => "wearable";
     public new static readonly Type? Component = typeof(ItemTypeWearableComponent);
     public new static readonly string[] Tags = ["minecraft:is_armor"];
@@ -19,15 +18,12 @@ public sealed class ItemStackWearableTrait : ItemTrait
 
     public int Slot { get; set; } = -1;
 
-    public ItemStackWearableTrait(ItemStack itemStack) : base(itemStack)
-    {
+    public ItemStackWearableTrait(ItemStack itemStack) : base(itemStack) {
     }
 
-    public override void OnAdd()
-    {
+    public override void OnAdd() {
         ItemTypeWearableComponent? component = ItemStack.Type.Components.GetComponent<ItemTypeWearableComponent>();
-        if (component is not null)
-        {
+        if (component is not null) {
             Slot = component.GetSlot();
             return;
         }
@@ -35,61 +31,50 @@ public sealed class ItemStackWearableTrait : ItemTrait
         Slot = InferSlotFromIdentifier(ItemStack.Type.Identifier);
     }
 
-    private static int InferSlotFromIdentifier(string identifier)
-    {
-        if (identifier.EndsWith("_helmet", StringComparison.Ordinal))
-        {
+    private static int InferSlotFromIdentifier(string identifier) {
+        if (identifier.EndsWith("_helmet", StringComparison.Ordinal)) {
             return SlotHead;
         }
 
-        if (identifier.EndsWith("_chestplate", StringComparison.Ordinal))
-        {
+        if (identifier.EndsWith("_chestplate", StringComparison.Ordinal)) {
             return SlotChest;
         }
 
-        if (identifier.EndsWith("_leggings", StringComparison.Ordinal))
-        {
+        if (identifier.EndsWith("_leggings", StringComparison.Ordinal)) {
             return SlotLegs;
         }
 
-        if (identifier.EndsWith("_boots", StringComparison.Ordinal))
-        {
+        if (identifier.EndsWith("_boots", StringComparison.Ordinal)) {
             return SlotFeet;
         }
 
         // Elytra goes in the chest slot.
-        if (identifier.Equals("minecraft:elytra", StringComparison.Ordinal))
-        {
+        if (identifier.Equals("minecraft:elytra", StringComparison.Ordinal)) {
             return SlotChest;
         }
 
         return -1;
     }
 
-    public override void OnUseOnAir(ItemUseOnAirDetails details)
-    {
+    public override void OnUseOnAir(ItemUseOnAirDetails details) {
         TryEquip(details.Player, details.HotBarSlot);
     }
 
-    private void TryEquip(Player.Player player, int hotbarSlot)
-    {
-        if (Slot < SlotHead || Slot > SlotFeet)
-        {
+    private void TryEquip(Player.Player player, int hotbarSlot) {
+        if (Slot < SlotHead || Slot > SlotFeet) {
             return;
         }
 
         EntityEquipmentTrait? equipment = player.GetTrait<EntityEquipmentTrait>();
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
-        if (equipment is null || inventory is null)
-        {
+        if (equipment is null || inventory is null) {
             return;
         }
 
         ItemStack? existing = equipment.Armor.GetItem(Slot);
         inventory.Container.ClearSlot(hotbarSlot);
 
-        if (existing is not null)
-        {
+        if (existing is not null) {
             inventory.Container.SetItem(hotbarSlot, existing);
         }
 

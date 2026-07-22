@@ -7,8 +7,7 @@ using System.Buffers.Binary;
 using System.Text;
 
 
-public sealed class BlockPermutation
-{
+public sealed class BlockPermutation {
     public static Dictionary<int, BlockPermutation> Permutations { get; } = [];
     private const string AirIdentifier = "minecraft:air";
 
@@ -26,8 +25,7 @@ public sealed class BlockPermutation
 
     public bool IsComponentBased => Components.Values.Count > 0;
 
-    public BlockPermutation(int networkId, BlockState state, BlockType type, string? query = null)
-    {
+    public BlockPermutation(int networkId, BlockState state, BlockType type, string? query = null) {
         NetworkId = networkId;
         State = state;
         Type = type;
@@ -36,12 +34,9 @@ public sealed class BlockPermutation
         Query = string.IsNullOrEmpty(query) ? BuildQuery(state) : query;
     }
 
-    public bool Matches(BlockState state)
-    {
-        foreach (KeyValuePair<string, BlockStateValue> pair in state)
-        {
-            if (!State.TryGetValue(pair.Key, out BlockStateValue other) || !other.Equals(pair.Value))
-            {
+    public bool Matches(BlockState state) {
+        foreach (KeyValuePair<string, BlockStateValue> pair in state) {
+            if (!State.TryGetValue(pair.Key, out BlockStateValue other) || !other.Equals(pair.Value)) {
                 return false;
             }
         }
@@ -49,35 +44,28 @@ public sealed class BlockPermutation
         return true;
     }
 
-    public static BlockPermutation Resolve(string identifier, BlockState? state = null)
-    {
+    public static BlockPermutation Resolve(string identifier, BlockState? state = null) {
         return BlockType.GetOrAir(identifier).GetPermutation(state);
     }
 
-    public static BlockPermutation Resolve(int networkId, BlockState? state = null)
-    {
-        if (Permutations.TryGetValue(networkId, out BlockPermutation? permutation))
-        {
+    public static BlockPermutation Resolve(int networkId, BlockState? state = null) {
+        if (Permutations.TryGetValue(networkId, out BlockPermutation? permutation)) {
             return state is null ? permutation : permutation.Type.GetPermutation(state);
         }
 
         return Resolve(AirIdentifier, state);
     }
 
-    public static BlockPermutation Resolve(BlockIdentifier identifier, BlockState? state = null)
-    {
+    public static BlockPermutation Resolve(BlockIdentifier identifier, BlockState? state = null) {
         return Resolve(identifier.ToIdentifier(), state);
     }
 
-    public static BlockPermutation Create(BlockType type, BlockState? state = null, string? query = null)
-    {
+    public static BlockPermutation Create(BlockType type, BlockState? state = null, string? query = null) {
         BlockState sorted = [];
-        if (state is not null)
-        {
+        if (state is not null) {
             List<string> keys = [.. state.Keys];
             keys.Sort(StringComparer.Ordinal);
-            for (int i = 0; i < keys.Count; i++)
-            {
+            for (int i = 0; i < keys.Count; i++) {
                 string key = keys[i];
                 sorted[key] = state[key];
                 type.EnsureState(key);
@@ -91,20 +79,17 @@ public sealed class BlockPermutation
         return permutation;
     }
 
-    public static void EnsureRegistryCapacity(int capacity)
-    {
+    public static void EnsureRegistryCapacity(int capacity) {
         Permutations.EnsureCapacity(capacity);
     }
 
-    public static CompoundTag ToCompound(BlockPermutation permutation)
-    {
+    public static CompoundTag ToCompound(BlockPermutation permutation) {
         CompoundTag root = new();
         root.Set("name", new StringTag { Value = permutation.Type.Identifier });
         root.Set("version", new IntTag { Value = BlockStateVersion });
 
         CompoundTag states = new();
-        foreach ((string key, BlockStateValue value) in permutation.State)
-        {
+        foreach ((string key, BlockStateValue value) in permutation.State) {
             states.Set(key, CreateTag(value));
         }
 
@@ -112,21 +97,17 @@ public sealed class BlockPermutation
         return root;
     }
 
-    public static BlockPermutation FromCompound(CompoundTag nbt)
-    {
+    public static BlockPermutation FromCompound(CompoundTag nbt) {
         StringTag? name = nbt.Get<StringTag>("name");
         CompoundTag? states = nbt.Get<CompoundTag>("states");
 
-        if (name is null)
-        {
+        if (name is null) {
             throw new InvalidOperationException("Block permutation is missing the 'name' tag.");
         }
 
         BlockState state = [];
-        if (states is not null)
-        {
-            foreach ((string key, BaseTag tag) in states.Values)
-            {
+        if (states is not null) {
+            foreach ((string key, BaseTag tag) in states.Values) {
                 state[key] = ToBlockStateValue(tag);
             }
         }
@@ -134,8 +115,7 @@ public sealed class BlockPermutation
         return Resolve(name.Value, state);
     }
 
-    public static int Hash(string identifier, BlockState state)
-    {
+    public static int Hash(string identifier, BlockState state) {
         uint hash = HashOffset;
         HashByte(ref hash, 10);
         HashUInt16(ref hash, 0);
@@ -147,17 +127,14 @@ public sealed class BlockPermutation
         HashByte(ref hash, 10);
         HashNbtString(ref hash, "states");
 
-        if (state.Count > 0)
-        {
+        if (state.Count > 0) {
             List<string> keys = [.. state.Keys];
             keys.Sort(StringComparer.Ordinal);
 
-            for (int i = 0; i < keys.Count; i++)
-            {
+            for (int i = 0; i < keys.Count; i++) {
                 string key = keys[i];
                 BlockStateValue value = state[key];
-                HashByte(ref hash, value.Kind switch
-                {
+                HashByte(ref hash, value.Kind switch {
                     0 => 3,
                     1 => 8,
                     2 => 1,
@@ -174,10 +151,8 @@ public sealed class BlockPermutation
         return unchecked((int)hash);
     }
 
-    private static string BuildQuery(BlockState state)
-    {
-        if (state.Count == 0)
-        {
+    private static string BuildQuery(BlockState state) {
+        if (state.Count == 0) {
             return string.Empty;
         }
 
@@ -185,12 +160,10 @@ public sealed class BlockPermutation
         keys.Sort(StringComparer.Ordinal);
         List<string> parts = new(keys.Count);
 
-        for (int i = 0; i < keys.Count; i++)
-        {
+        for (int i = 0; i < keys.Count; i++) {
             string key = keys[i];
             BlockStateValue value = state[key];
-            string valueText = value.Kind switch
-            {
+            string valueText = value.Kind switch {
                 0 => value.AsNumber().ToString(System.Globalization.CultureInfo.InvariantCulture),
                 1 => $"'{value.AsString()}'",
                 2 => value.AsBool() ? "true" : "false",
@@ -203,10 +176,8 @@ public sealed class BlockPermutation
         return string.Join(" && ", parts);
     }
 
-    private static BaseTag CreateTag(BlockStateValue value)
-    {
-        return value.Kind switch
-        {
+    private static BaseTag CreateTag(BlockStateValue value) {
+        return value.Kind switch {
             0 => new IntTag { Value = checked((int)value.AsNumber()) },
             1 => new StringTag { Value = value.AsString() },
             2 => new ByteTag { Value = value.AsBool() ? (sbyte)1 : (sbyte)0 },
@@ -214,10 +185,8 @@ public sealed class BlockPermutation
         };
     }
 
-    private static BlockStateValue ToBlockStateValue(BaseTag tag)
-    {
-        return tag switch
-        {
+    private static BlockStateValue ToBlockStateValue(BaseTag tag) {
+        return tag switch {
             ByteTag byteTag => byteTag.Value != 0,
             IntTag intTag => intTag.Value,
             StringTag stringTag => stringTag.Value,
@@ -225,26 +194,21 @@ public sealed class BlockPermutation
         };
     }
 
-    private static void HashNbtString(ref uint hash, string value)
-    {
+    private static void HashNbtString(ref uint hash, string value) {
         int byteCount = Encoding.UTF8.GetByteCount(value);
         HashUInt16(ref hash, checked((ushort)byteCount));
         byte[] rented = ArrayPool<byte>.Shared.Rent(byteCount);
-        try
-        {
+        try {
             int written = Encoding.UTF8.GetBytes(value, rented);
             HashBytes(ref hash, rented.AsSpan(0, written));
         }
-        finally
-        {
+        finally {
             ArrayPool<byte>.Shared.Return(rented);
         }
     }
 
-    private static void HashValue(ref uint hash, BlockStateValue value)
-    {
-        switch (value.Kind)
-        {
+    private static void HashValue(ref uint hash, BlockStateValue value) {
+        switch (value.Kind) {
             case 0:
                 Span<byte> number = stackalloc byte[4];
                 BinaryPrimitives.WriteInt32LittleEndian(number, checked((int)value.AsNumber()));
@@ -261,22 +225,18 @@ public sealed class BlockPermutation
         }
     }
 
-    private static void HashUInt16(ref uint hash, ushort value)
-    {
+    private static void HashUInt16(ref uint hash, ushort value) {
         HashByte(ref hash, (byte)value);
         HashByte(ref hash, (byte)(value >> 8));
     }
 
-    private static void HashBytes(ref uint hash, ReadOnlySpan<byte> bytes)
-    {
-        for (int i = 0; i < bytes.Length; i++)
-        {
+    private static void HashBytes(ref uint hash, ReadOnlySpan<byte> bytes) {
+        for (int i = 0; i < bytes.Length; i++) {
             HashByte(ref hash, bytes[i]);
         }
     }
 
-    private static void HashByte(ref uint hash, byte value)
-    {
+    private static void HashByte(ref uint hash, byte value) {
         hash ^= value;
         hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
     }

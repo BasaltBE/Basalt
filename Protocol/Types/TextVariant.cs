@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class TextVariant
-{
+public sealed class TextVariant {
     /// <summary>
     /// Text display type (chat, tip, popup, etc).
     /// </summary>
@@ -26,13 +25,11 @@ public sealed class TextVariant
     /// </summary>
     public List<string> Parameters = [];
 
-    public void Read(BinaryReader reader, int parameter = 0)
-    {
+    public void Read(BinaryReader reader, int parameter = 0) {
         TextVariantType variantType = (TextVariantType)parameter;
         Type = (TextType)reader.ReadUInt8();
 
-        switch (variantType)
-        {
+        switch (variantType) {
             case TextVariantType.MessageOnly:
                 Message = reader.ReadVarString();
                 Source = string.Empty;
@@ -47,8 +44,7 @@ public sealed class TextVariant
                 Message = reader.ReadVarString();
                 int count = reader.ReadVarInt();
                 Parameters = new List<string>(Math.Max(count, 0));
-                for (int i = 0; i < count; i++)
-                {
+                for (int i = 0; i < count; i++) {
                     Parameters.Add(reader.ReadVarString());
                 }
 
@@ -59,13 +55,11 @@ public sealed class TextVariant
         }
     }
 
-    public void Write(BinaryWriter writer, int parameter = 0)
-    {
+    public void Write(BinaryWriter writer, int parameter = 0) {
         TextVariantType variantType = (TextVariantType)parameter;
         writer.WriteUInt8((byte)Type);
 
-        switch (variantType)
-        {
+        switch (variantType) {
             case TextVariantType.MessageOnly:
                 writer.WriteVarString(Message);
                 break;
@@ -76,8 +70,7 @@ public sealed class TextVariant
             case TextVariantType.MessageWithParameters:
                 writer.WriteVarString(Message);
                 writer.WriteVarInt(Parameters.Count);
-                for (int i = 0; i < Parameters.Count; i++)
-                {
+                for (int i = 0; i < Parameters.Count; i++) {
                     writer.WriteVarString(Parameters[i]);
                 }
 

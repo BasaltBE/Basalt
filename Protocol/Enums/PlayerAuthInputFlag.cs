@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum PlayerAuthInputFlag : byte
-{
+public enum PlayerAuthInputFlag : byte {
     Ascend = 0,
     Descend = 1,
     NorthJump = 2,

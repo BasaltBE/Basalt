@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ResourcePackResponse : byte
-{
+public enum ResourcePackResponse : byte {
     Refused = 1,
     SendPacks = 2,
     HaveAllPacks = 3,

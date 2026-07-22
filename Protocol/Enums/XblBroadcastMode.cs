@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum XblBroadcastMode : int
-{
+public enum XblBroadcastMode : int {
     NoMultiPlay = 0,
     InviteOnly = 1,
     FriendsOnly = 2,

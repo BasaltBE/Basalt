@@ -1,7 +1,5 @@
-namespace Basalt.Protocol.Enums
-{
-    public enum PacketId
-    {
+namespace Basalt.Protocol.Enums {
+    public enum PacketId {
         Login = 0x01,
         PlayStatus = 0x02,
         ServerToClientHandshake = 0x03,

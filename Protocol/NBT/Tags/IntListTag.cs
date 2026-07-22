@@ -5,19 +5,16 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.IntList)]
-public sealed class IntListTag : BaseTag
-{
+public sealed class IntListTag : BaseTag {
     public List<int> Values { get; } = [];
     public override object ToJsonValue() => Values;
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
         WriteLength(writer, Values.Count, options.VarInt);
-        foreach (int value in CollectionsMarshal.AsSpan(Values))
-        {
+        foreach (int value in CollectionsMarshal.AsSpan(Values)) {
             if (options.VarInt)
                 writer.WriteZigZag(value);
             else
@@ -25,10 +22,8 @@ public sealed class IntListTag : BaseTag
         }
     }
 
-    public static IntListTag Read(BinaryReader reader, TagOptions options = default)
-    {
-        IntListTag tag = new()
-        {
+    public static IntListTag Read(BinaryReader reader, TagOptions options = default) {
+        IntListTag tag = new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null
         };
 

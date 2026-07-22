@@ -2,21 +2,18 @@ namespace Basalt.Core.Commands;
 
 using Basalt.Core.Item;
 
-public sealed class ItemEnum : CommandEnum
-{
+public sealed class ItemEnum : CommandEnum {
     const string VanillaPrefix = "minecraft:";
 
     public string Raw { get; private set; } = string.Empty;
     public ItemType Type { get; private set; } = ItemType.Air;
 
-    public ItemEnum() : base("Item")
-    {
+    public ItemEnum() : base("Item") {
         ItemPalette.LoadVanilla();
         Options = [.. ItemType.Types.Keys.Select(TrimPrefix)];
     }
 
-    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex)
-    {
+    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex) {
         if (tokenIndex >= tokens.Length)
             return false;
 
@@ -31,8 +28,7 @@ public sealed class ItemEnum : CommandEnum
         return true;
     }
 
-    static string TrimPrefix(string identifier)
-    {
+    static string TrimPrefix(string identifier) {
         return identifier.StartsWith(VanillaPrefix, StringComparison.Ordinal)
             ? identifier[VanillaPrefix.Length..]
             : identifier;

@@ -3,8 +3,7 @@ using Basalt.Protocol.Enums;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ActorPickRequest)]
-public sealed record ActorPickRequestPacket : DataPacket
-{
+public sealed record ActorPickRequestPacket : DataPacket {
     /// <summary>
     /// Unique id of the picked actor.
     /// </summary>
@@ -20,15 +19,13 @@ public sealed record ActorPickRequestPacket : DataPacket
     /// </summary>
     public bool WithData;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EntityUniqueId = reader.ReadInt64(true);
         HotBarSlot = reader.ReadUInt8();
         WithData = reader.ReadBool();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteInt64(EntityUniqueId, true);
         writer.WriteUInt8(HotBarSlot);
         writer.WriteBool(WithData);

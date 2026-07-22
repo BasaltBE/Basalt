@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public static class LevelSoundEvent
-{
+public static class LevelSoundEvent {
     public const string ItemUseOn = "item.use.on";
     public const string Hit = "hit";
     public const string Step = "step";

@@ -9,8 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 
-public sealed class BlockPalette
-{
+public sealed class BlockPalette {
     private const string AirIdentifier = "minecraft:air";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
@@ -29,59 +28,47 @@ public sealed class BlockPalette
     public static IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
     public static IReadOnlyDictionary<int, BlockPermutation> Permutations => BlockPermutation.Permutations;
 
-    public static List<BlockType> GetAllTypes()
-    {
+    public static List<BlockType> GetAllTypes() {
         return [.. Types.Values];
     }
 
-    public static List<BlockPermutation> GetAllPermutations()
-    {
+    public static List<BlockPermutation> GetAllPermutations() {
         return [.. Permutations.Values];
     }
 
-    public static List<Protocol.Types.BlockEntry> GetCustomBlockEntries()
-    {
+    public static List<Protocol.Types.BlockEntry> GetCustomBlockEntries() {
         return CustomBlockType.GetEntries();
     }
 
-    public static BlockType ResolveType(BlockIdentifier identifier)
-    {
+    public static BlockType ResolveType(BlockIdentifier identifier) {
         return ResolveType(identifier.ToIdentifier());
     }
 
-    public static BlockType ResolveType(string identifier)
-    {
+    public static BlockType ResolveType(string identifier) {
         return BlockType.GetOrAir(identifier);
     }
 
-    public static BlockPermutation ResolvePermutation(BlockIdentifier identifier, BlockState? state = null)
-    {
+    public static BlockPermutation ResolvePermutation(BlockIdentifier identifier, BlockState? state = null) {
         return ResolvePermutation(identifier.ToIdentifier(), state);
     }
 
-    public static BlockPermutation ResolvePermutation(string identifier, BlockState? state = null)
-    {
+    public static BlockPermutation ResolvePermutation(string identifier, BlockState? state = null) {
         BlockType type = ResolveType(identifier);
         return type.GetPermutation(state);
     }
 
-    public static BlockPermutation ResolvePermutation(int networkId, BlockState? state = null)
-    {
-        if (BlockPermutation.Permutations.TryGetValue(networkId, out BlockPermutation? permutation))
-        {
+    public static BlockPermutation ResolvePermutation(int networkId, BlockState? state = null) {
+        if (BlockPermutation.Permutations.TryGetValue(networkId, out BlockPermutation? permutation)) {
             return state is null ? permutation : permutation.Type.GetPermutation(state);
         }
 
         return ResolvePermutation(AirIdentifier, state);
     }
 
-    public BlockPalette RegisterType(params BlockType[] types)
-    {
-        for (int i = 0; i < types.Length; i++)
-        {
+    public BlockPalette RegisterType(params BlockType[] types) {
+        for (int i = 0; i < types.Length; i++) {
             BlockType type = types[i];
-            for (int j = 0; j < type.Permutations.Count; j++)
-            {
+            for (int j = 0; j < type.Permutations.Count; j++) {
                 RegisterPermutation(type.Permutations[j]);
             }
         }
@@ -89,10 +76,8 @@ public sealed class BlockPalette
         return this;
     }
 
-    public static bool RegisterPermutation(BlockPermutation permutation)
-    {
-        if (BlockPermutation.Permutations.ContainsKey(permutation.NetworkId))
-        {
+    public static bool RegisterPermutation(BlockPermutation permutation) {
+        if (BlockPermutation.Permutations.ContainsKey(permutation.NetworkId)) {
             return false;
         }
 
@@ -100,23 +85,18 @@ public sealed class BlockPalette
         return true;
     }
 
-    public static void LoadVanilla(string? dataDirectory = null)
-    {
-        if (_vanillaLoaded)
-        {
+    public static void LoadVanilla(string? dataDirectory = null) {
+        if (_vanillaLoaded) {
             return;
         }
 
-        lock (LoadLock)
-        {
+        lock (LoadLock) {
             // TODO: Make this multi threaded when multi threading is in place.
-            if (_vanillaLoaded)
-            {
+            if (_vanillaLoaded) {
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(dataDirectory))
-            {
+            if (!string.IsNullOrWhiteSpace(dataDirectory)) {
                 string typesPath = Path.Combine(dataDirectory, "block_types.json");
                 string permutationsPath = Path.Combine(dataDirectory, "block_permutations.json");
                 string dropsPath = Path.Combine(dataDirectory, "block_drops.json");
@@ -125,8 +105,7 @@ public sealed class BlockPalette
                 List<BlockDropData> drops = ReadDropsFromFile(dropsPath);
                 LoadRegistries(types, permutations, drops);
             }
-            else
-            {
+            else {
                 List<BlockTypeData> types = ReadTypes("block_types.json");
                 List<BlockPermutationData> permutations = ReadPermutations("block_permutations.json");
                 List<BlockDropData> drops = ReadDrops("block_drops.json");
@@ -137,49 +116,41 @@ public sealed class BlockPalette
         }
     }
 
-    private static List<BlockTypeData> ReadTypes(string resourceName)
-    {
+    private static List<BlockTypeData> ReadTypes(string resourceName) {
         using Stream stream = ProtocolData.Require(resourceName);
         List<BlockTypeData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockTypeData);
         return result ?? [];
     }
 
-    private static List<BlockPermutationData> ReadPermutations(string resourceName)
-    {
+    private static List<BlockPermutationData> ReadPermutations(string resourceName) {
         using Stream stream = ProtocolData.Require(resourceName);
         List<BlockPermutationData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockPermutationData);
         return result ?? [];
     }
 
-    private static List<BlockDropData> ReadDrops(string resourceName)
-    {
+    private static List<BlockDropData> ReadDrops(string resourceName) {
         Stream? stream = ProtocolData.Open(resourceName);
         if (stream is null) return [];
-        using (stream)
-        {
+        using (stream) {
             List<BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockDropData);
             return result ?? [];
         }
     }
 
-    private static List<BlockTypeData> ReadTypesFromFile(string typesPath)
-    {
+    private static List<BlockTypeData> ReadTypesFromFile(string typesPath) {
         using FileStream stream = File.OpenRead(typesPath);
         List<BlockTypeData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockTypeData);
         return result ?? [];
     }
 
-    private static List<BlockPermutationData> ReadPermutationsFromFile(string permutationsPath)
-    {
+    private static List<BlockPermutationData> ReadPermutationsFromFile(string permutationsPath) {
         using FileStream stream = File.OpenRead(permutationsPath);
         List<BlockPermutationData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockPermutationData);
         return result ?? [];
     }
 
-    private static List<BlockDropData> ReadDropsFromFile(string dropsPath)
-    {
-        if (!File.Exists(dropsPath))
-        {
+    private static List<BlockDropData> ReadDropsFromFile(string dropsPath) {
+        if (!File.Exists(dropsPath)) {
             return [];
         }
 
@@ -188,16 +159,13 @@ public sealed class BlockPalette
         return result ?? [];
     }
 
-    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockDropData> drops)
-    {
+    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockDropData> drops) {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
 
-        for (int i = 0; i < types.Count; i++)
-        {
+        for (int i = 0; i < types.Count; i++) {
             string identifier = types[i].Identifier;
-            if (string.IsNullOrEmpty(identifier))
-            {
+            if (string.IsNullOrEmpty(identifier)) {
                 continue;
             }
 
@@ -215,37 +183,30 @@ public sealed class BlockPalette
             type.Loggable = types[i].Loggable;
             type.MapColor = types[i].MapColor;
 
-            foreach (KeyValuePair<string, JsonElement> component in types[i].Components)
-            {
+            foreach (KeyValuePair<string, JsonElement> component in types[i].Components) {
                 BlockComponent? blockComponent = BlockComponentParser.Parse(component.Key, component.Value);
-                if (blockComponent is not null)
-                {
+                if (blockComponent is not null) {
                     type.AddComponent(blockComponent);
                 }
-                else
-                {
+                else {
                     type.EnsureComponent(component.Key);
                 }
             }
 
-            for (int j = 0; j < types[i].Tags.Count; j++)
-            {
+            for (int j = 0; j < types[i].Tags.Count; j++) {
                 type.EnsureTag(types[i].Tags[j]);
             }
 
-            for (int j = 0; j < types[i].States.Count; j++)
-            {
+            for (int j = 0; j < types[i].States.Count; j++) {
                 type.EnsureState(types[i].States[j]);
             }
         }
 
         _ = BlockType.Get(AirIdentifier) ?? new BlockType(AirIdentifier);
 
-        for (int i = 0; i < permutations.Count; i++)
-        {
+        for (int i = 0; i < permutations.Count; i++) {
             BlockPermutationData entry = permutations[i];
-            if (string.IsNullOrEmpty(entry.Identifier) || BlockPermutation.Permutations.ContainsKey(entry.Hash))
-            {
+            if (string.IsNullOrEmpty(entry.Identifier) || BlockPermutation.Permutations.ContainsKey(entry.Hash)) {
                 continue;
             }
 
@@ -259,23 +220,18 @@ public sealed class BlockPalette
         BlockDropRegistry.Load(drops);
     }
 
-    private static BlockState ParseState(Dictionary<string, object> source)
-    {
+    private static BlockState ParseState(Dictionary<string, object> source) {
         BlockState state = [];
-        foreach ((string key, object value) in source)
-        {
+        foreach ((string key, object value) in source) {
             state[key] = ToStateValue(key, value);
         }
 
         return state;
     }
 
-    private static BlockStateValue ToStateValue(string key, object raw)
-    {
-        if (raw is JsonElement element)
-        {
-            return element.ValueKind switch
-            {
+    private static BlockStateValue ToStateValue(string key, object raw) {
+        if (raw is JsonElement element) {
+            return element.ValueKind switch {
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.String => element.GetString() ?? string.Empty,
@@ -286,8 +242,7 @@ public sealed class BlockPalette
             };
         }
 
-        return raw switch
-        {
+        return raw switch {
             bool flag => flag,
             string text => text,
             byte number => number,

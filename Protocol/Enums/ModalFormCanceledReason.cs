@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ModalFormCanceledReason : byte
-{
+public enum ModalFormCanceledReason : byte {
     Closed,
     Busy
 }

@@ -3,31 +3,25 @@ namespace Basalt.Core.Forms;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
-public sealed class ActionForm : Form<int?>
-{
+public sealed class ActionForm : Form<int?> {
     private readonly List<ActionFormButton> _buttons = [];
     public string Content;
 
-    public ActionForm(string title, string content = "") : base(title)
-    {
+    public ActionForm(string title, string content = "") : base(title) {
         Content = content;
     }
 
-    public ActionForm Button(string text, FormImage? image = null)
-    {
+    public ActionForm Button(string text, FormImage? image = null) {
         _buttons.Add(new ActionFormButton(text, image));
         return this;
     }
 
-    public void ClearButtons()
-    {
+    public void ClearButtons() {
         _buttons.Clear();
     }
 
-    protected override object CreatePayload()
-    {
-        return new
-        {
+    protected override object CreatePayload() {
+        return new {
             type = "form",
             title = Title,
             content = Content,
@@ -37,22 +31,17 @@ public sealed class ActionForm : Form<int?>
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "...")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "...")]
-    protected override int? ReadResponse(string? data)
-    {
+    protected override int? ReadResponse(string? data) {
         return data is null ? null : JsonSerializer.Deserialize<int?>(data);
     }
 
-    private readonly record struct ActionFormButton(string Text, FormImage? Image)
-    {
-        public object ToPayload()
-        {
-            if (Image is null)
-            {
+    private readonly record struct ActionFormButton(string Text, FormImage? Image) {
+        public object ToPayload() {
+            if (Image is null) {
                 return new { text = Text };
             }
 
-            return new
-            {
+            return new {
                 text = Text,
                 image = Image.Value.ToPayload()
             };

@@ -4,12 +4,10 @@ using Basalt.Core.Item;
 using Basalt.Protocol.Enums;
 
 // For now fuel is hard coded as we have no way of dumping them
-public static class FuelRegistry
-{
+public static class FuelRegistry {
     private static readonly Dictionary<string, int> BurnTimes = new(StringComparer.Ordinal);
 
-    static FuelRegistry()
-    {
+    static FuelRegistry() {
         // Coal and charcoal.
         Register(ItemIdentifier.Coal, 1600);
         Register(ItemIdentifier.Charcoal, 1600);
@@ -76,24 +74,20 @@ public static class FuelRegistry
         Register(ItemIdentifier.Chest, 300);
     }
 
-    private static void Register(ItemIdentifier item, int burnTicks)
-    {
+    private static void Register(ItemIdentifier item, int burnTicks) {
         string identifier = item.ToIdentifier();
         BurnTimes[identifier] = burnTicks;
     }
 
-    public static int GetBurnTime(ItemStack item)
-    {
+    public static int GetBurnTime(ItemStack item) {
         return BurnTimes.TryGetValue(item.Type.Identifier, out int ticks) ? ticks : 0;
     }
 
-    public static int GetBurnTime(string identifier)
-    {
+    public static int GetBurnTime(string identifier) {
         return BurnTimes.TryGetValue(identifier, out int ticks) ? ticks : 0;
     }
 
-    public static bool IsFuel(ItemStack item)
-    {
+    public static bool IsFuel(ItemStack item) {
         return BurnTimes.ContainsKey(item.Type.Identifier);
     }
 }

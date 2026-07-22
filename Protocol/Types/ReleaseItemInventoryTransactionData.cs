@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionData
-{
+public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionData {
     public InventoryTransactionType Type => InventoryTransactionType.ReleaseItem;
 
     /// <summary>
@@ -24,16 +23,14 @@ public sealed class ReleaseItemInventoryTransactionData : IInventoryTransactionD
     /// Head position at release time.
     /// </summary>
     public Vec3f HeadPosition;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ActionType = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
         HeldItem.Read(reader);
         HeadPosition.Read(reader);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(ActionType);
         writer.WriteZigZag(HotBarSlot);
         HeldItem.Write(writer);

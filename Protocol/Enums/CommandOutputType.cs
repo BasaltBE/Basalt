@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Controls how command output is delivered.
 /// </summary>
-public enum CommandOutputType : byte
-{
+public enum CommandOutputType : byte {
     /// <summary>
     /// No command output is sent.
     /// </summary>

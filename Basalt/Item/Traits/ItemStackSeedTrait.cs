@@ -11,8 +11,7 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 
-public sealed class ItemStackSeedTrait : ItemTrait
-{
+public sealed class ItemStackSeedTrait : ItemTrait {
     public new static string Identifier => "seed_plant";
     public new static readonly Type Component = typeof(ItemTypeSeedComponent);
 
@@ -21,12 +20,10 @@ public sealed class ItemStackSeedTrait : ItemTrait
         BlockIdentifier.Farmland.ToIdentifier()
     };
 
-    public ItemStackSeedTrait(ItemStack itemStack) : base(itemStack)
-    {
+    public ItemStackSeedTrait(ItemStack itemStack) : base(itemStack) {
     }
 
-    public override void OnUseOnBlock(ItemUseOnBlockDetails details)
-    {
+    public override void OnUseOnBlock(ItemUseOnBlockDetails details) {
         if (details.Player.Dimension is null) return;
 
         Dimension dimension = details.Player.Dimension;
@@ -54,11 +51,9 @@ public sealed class ItemStackSeedTrait : ItemTrait
 
         CropTrait.ScheduleCropTick(dimension, cropPos);
 
-        dimension.Broadcast(new LevelSoundEventPacket
-        {
+        dimension.Broadcast(new LevelSoundEventPacket {
             Event = LevelSoundEvent.Place,
-            Position = new Vec3f
-            {
+            Position = new Vec3f {
                 X = cropPos.X + 0.5f,
                 Y = cropPos.Y + 0.5f,
                 Z = cropPos.Z + 0.5f
@@ -71,30 +66,24 @@ public sealed class ItemStackSeedTrait : ItemTrait
             FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
         });
 
-        if (details.Player.Gamemode == Gamemode.Survival)
-        {
+        if (details.Player.Gamemode == Gamemode.Survival) {
             ItemStack.DecrementStack();
 
             var inventory = details.Player.GetTrait<Basalt.Core.Entities.Traits.EntityInventoryTrait>();
-            if (inventory is not null)
-            {
-                if (ItemStack.StackSize == 0)
-                {
+            if (inventory is not null) {
+                if (ItemStack.StackSize == 0) {
                     inventory.Container.ClearSlot(details.HotBarSlot);
                 }
-                else
-                {
+                else {
                     inventory.Container.UpdateSlot(details.HotBarSlot);
                 }
             }
         }
     }
 
-    private string GetCropIdentifier()
-    {
+    private string GetCropIdentifier() {
         ItemTypeSeedComponent? seedComponent = ItemStack.Type.Components.GetComponent<ItemTypeSeedComponent>();
-        if (seedComponent is not null)
-        {
+        if (seedComponent is not null) {
             string crop = seedComponent.GetCropResult();
             if (!string.IsNullOrEmpty(crop)) return crop;
         }
@@ -102,16 +91,12 @@ public sealed class ItemStackSeedTrait : ItemTrait
         return string.Empty;
     }
 
-    private bool IsPlantableBlock(BlockPermutation perm)
-    {
+    private bool IsPlantableBlock(BlockPermutation perm) {
         ItemTypeSeedComponent? seedComponent = ItemStack.Type.Components.GetComponent<ItemTypeSeedComponent>();
-        if (seedComponent is not null)
-        {
+        if (seedComponent is not null) {
             string[] plantAt = seedComponent.GetPlantAt();
-            if (plantAt.Length > 0)
-            {
-                foreach (string block in plantAt)
-                {
+            if (plantAt.Length > 0) {
+                foreach (string block in plantAt) {
                     if (string.Equals(perm.Type.Identifier, block, StringComparison.Ordinal))
                         return true;
                 }

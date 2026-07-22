@@ -6,8 +6,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ResourcePacksInfo)]
-public sealed record ResourcePacksInfoPacket : DataPacket
-{
+public sealed record ResourcePacksInfoPacket : DataPacket {
     /// <summary>
     /// Whether the client must accept the resource packs or not. 
     /// If this is true, vanilla forces the client to accept or else it will disconnect
@@ -44,8 +43,7 @@ public sealed record ResourcePacksInfoPacket : DataPacket
     /// </summary>
     public List<ResourcePackInfo> Packs = [];
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         MustAccept = reader.ReadBool();
         HasAddons = reader.ReadBool();
         HasScripts = reader.ReadBool();
@@ -54,16 +52,14 @@ public sealed record ResourcePacksInfoPacket : DataPacket
         WorldTemplateVersion = reader.ReadVarString();
         int packsLength = reader.ReadUInt16(true);
         Packs = new List<ResourcePackInfo>(packsLength);
-        for (int i = 0; i < packsLength; i++)
-        {
+        for (int i = 0; i < packsLength; i++) {
             ResourcePackInfo pack = new();
             pack.Read(reader);
             Packs.Add(pack);
         }
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteBool(MustAccept);
         writer.WriteBool(HasAddons);
         writer.WriteBool(HasScripts);
@@ -71,8 +67,7 @@ public sealed record ResourcePacksInfoPacket : DataPacket
         UUID.Write(writer, WorldTemplateUuid);
         writer.WriteVarString(WorldTemplateVersion);
         writer.WriteUInt16((ushort)Packs.Count, true);
-        for (int i = 0; i < Packs.Count; i++)
-        {
+        for (int i = 0; i < Packs.Count; i++) {
             Packs[i].Write(writer);
         }
     }

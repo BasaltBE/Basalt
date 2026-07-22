@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PotionRecipeData : DataType
-{
+public sealed class PotionRecipeData : DataType {
     public int InputPotionId;
     public int InputPotionMetadata;
     public int ReagentItemId;
@@ -12,8 +11,7 @@ public sealed class PotionRecipeData : DataType
     public int OutputPotionId;
     public int OutputPotionMetadata;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         InputPotionId = reader.ReadZigZag();
         InputPotionMetadata = reader.ReadZigZag();
         ReagentItemId = reader.ReadZigZag();
@@ -22,8 +20,7 @@ public sealed class PotionRecipeData : DataType
         OutputPotionMetadata = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(InputPotionId);
         writer.WriteZigZag(InputPotionMetadata);
         writer.WriteZigZag(ReagentItemId);

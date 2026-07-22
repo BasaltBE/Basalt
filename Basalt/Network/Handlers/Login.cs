@@ -18,24 +18,20 @@ using System.Security.Cryptography;
 using System.Text;
 
 
-public static class Login
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class Login {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("Login.Handle");
         LoginPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (LoginPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (packet.Protocol != Constants.ProtocolVersion)
-        {
+        if (packet.Protocol != Constants.ProtocolVersion) {
             DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
                 ? DisconnectReason.OutdatedClient
                 : DisconnectReason.OutdatedServer;
 
-            DisconnectPacket disconnect = new()
-            {
+            DisconnectPacket disconnect = new() {
                 Reason = reason,
                 HideDisconnectionScreen = true,
                 Message = "",
@@ -47,22 +43,18 @@ public static class Login
         }
 
         VerifiedIdentity identity;
-        try
-        {
+        try {
             identity = VerifyIdentity(server, packet);
         }
-        catch (Exception exception)
-        {
+        catch (Exception exception) {
             Logger.Info($"Login rejected: {exception.Message}");
-            string message = exception.Message switch
-            {
+            string message = exception.Message switch {
                 "Offline authentication is disabled." =>
                     "Offline mode is not supported. Please connect to Xbox services.",
                 _ => "Authentication failed."
             };
 
-            DisconnectPacket disconnect = new()
-            {
+            DisconnectPacket disconnect = new() {
                 Reason = DisconnectReason.Disconnected,
                 HideDisconnectionScreen = false,
                 Message = message,
@@ -76,14 +68,12 @@ public static class Login
         ClientData clientData = LoginPayload.Parse(packet.Client);
 
         KeyValuePair<NetworkConnection, Player.Player>? existingPlayerSession = null;
-        foreach ((NetworkConnection existingConnection, Player.Player existingPlayer) in server.Players)
-        {
+        foreach ((NetworkConnection existingConnection, Player.Player existingPlayer) in server.Players) {
             bool sameXuid = !string.IsNullOrWhiteSpace(identity.Xuid) &&
                 string.Equals(existingPlayer.Xuid, identity.Xuid, StringComparison.Ordinal);
             bool sameUsername = string.Equals(existingPlayer.Username, identity.Username, StringComparison.OrdinalIgnoreCase);
 
-            if (!sameXuid && !sameUsername)
-            {
+            if (!sameXuid && !sameUsername) {
                 continue;
             }
 
@@ -91,10 +81,8 @@ public static class Login
             break;
         }
 
-        if (existingPlayerSession.HasValue)
-        {
-            DisconnectPacket duplicateDisconnect = new()
-            {
+        if (existingPlayerSession.HasValue) {
+            DisconnectPacket duplicateDisconnect = new() {
                 Reason = DisconnectReason.Disconnected,
                 HideDisconnectionScreen = false,
                 Message = "Logged in from another location.",
@@ -110,33 +98,27 @@ public static class Login
         var player = new Player.Player(identity.Username, playerXuid, playerUuid);
         var world = server.GetWorld();
         var savedData = LoadPlayerDataCompat(world, playerXuid, identity.Xuid, identity.Username, playerUuid);
-        if (savedData is not null)
-        {
+        if (savedData is not null) {
             player.Read(savedData);
-            if (!string.Equals(playerXuid, identity.Xuid, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(playerXuid))
-            {
+            if (!string.Equals(playerXuid, identity.Xuid, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(playerXuid)) {
                 world.Provider.SavePlayerData(playerXuid, savedData);
             }
         }
 
         bool isOperator = false;
         PermissionEntry? permEntry = server.PermissionStore.Get(playerXuid);
-        if (permEntry is not null)
-        {
+        if (permEntry is not null) {
             player.Permissions.Restore(permEntry.IsOperator, permEntry.Permissions);
             isOperator = permEntry.IsOperator;
         }
-        else
-        {
+        else {
             player.SetOperator(false, syncClient: false);
         }
 
         PlayerJoinSignal joinSignal = new(player);
         server.Emit(joinSignal);
-        if (!joinSignal.Emit())
-        {
-            DisconnectPacket disconnect = new()
-            {
+        if (!joinSignal.Emit()) {
+            DisconnectPacket disconnect = new() {
                 Reason = DisconnectReason.Disconnected,
                 HideDisconnectionScreen = false,
                 Message = "Server force closed the connection.",
@@ -155,16 +137,14 @@ public static class Login
 
         PlayStatusPacket status = new(PlayStatus.LoginSuccess);
 
-        ResourcePacksInfoPacket resources = new()
-        {
+        ResourcePacksInfoPacket resources = new() {
             MustAccept = server.Properties.ForceResourcePacks,
             HasAddons = false,
             HasScripts = false,
             ForceDisableVibrantVisuals = false,
             WorldTemplateUuid = Guid.Empty,
             WorldTemplateVersion = "",
-            Packs = server.ResourcePacks.Packs.Select(static pack => new Basalt.Protocol.Types.ResourcePackInfo
-            {
+            Packs = server.ResourcePacks.Packs.Select(static pack => new Basalt.Protocol.Types.ResourcePackInfo {
                 Uuid = pack.Uuid,
                 Version = pack.VersionString,
                 Size = pack.Size,
@@ -183,16 +163,13 @@ public static class Login
         Logger.Info($"Player {identity.Username} has logged in!");
     }
 
-    private static VerifiedIdentity VerifyIdentity(Server server, LoginPacket packet)
-    {
+    private static VerifiedIdentity VerifyIdentity(Server server, LoginPacket packet) {
         LoginEnvelope envelope = LoginEnvelope.Parse(packet.Identity);
         bool offlineLogin = OfflineIdentity.IsOfflineLogin(envelope)
             || envelope.AuthenticationType == 2;
 
-        if (offlineLogin)
-        {
-            if (server.Properties.OnlineMode)
-            {
+        if (offlineLogin) {
+            if (server.Properties.OnlineMode) {
                 throw new InvalidOperationException("Offline authentication is disabled.");
             }
 
@@ -202,38 +179,31 @@ public static class Login
         return LoginIdentity.Verify(packet.Identity);
     }
 
-    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId, string username, bool onlineMode)
-    {
-        if (Guid.TryParse(identityUuid, out Guid parsedIdentity))
-        {
+    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId, string username, bool onlineMode) {
+        if (Guid.TryParse(identityUuid, out Guid parsedIdentity)) {
             return parsedIdentity;
         }
 
-        if (Guid.TryParse(selfSignedId, out Guid parsedSelfSigned))
-        {
+        if (Guid.TryParse(selfSignedId, out Guid parsedSelfSigned)) {
             return parsedSelfSigned;
         }
 
-        if (!onlineMode)
-        {
+        if (!onlineMode) {
             return CreateOfflineGuid(username);
         }
 
         return Guid.NewGuid();
     }
 
-    private static string ResolvePlayerXuid(string identityXuid, Guid uuid, bool onlineMode)
-    {
-        if (onlineMode && !string.IsNullOrWhiteSpace(identityXuid))
-        {
+    private static string ResolvePlayerXuid(string identityXuid, Guid uuid, bool onlineMode) {
+        if (onlineMode && !string.IsNullOrWhiteSpace(identityXuid)) {
             return identityXuid;
         }
 
         return uuid.ToString("N");
     }
 
-    private static Guid CreateOfflineGuid(string username)
-    {
+    private static Guid CreateOfflineGuid(string username) {
         string normalized = username.Trim().ToLowerInvariant();
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes("basalt:offline:" + normalized));
         Span<byte> guidBytes = stackalloc byte[16];
@@ -246,8 +216,7 @@ public static class Login
         string primaryXuid,
         string identityXuid,
         string username,
-        Guid uuid)
-    {
+        Guid uuid) {
         var provider = world.Provider;
 
         // Try each candidate key with a raw byte lookup (no NBT deserialization).
@@ -264,23 +233,19 @@ public static class Login
         string? previous1 = null;
         string? previous2 = null;
 
-        foreach (string candidate in candidates)
-        {
-            if (string.IsNullOrWhiteSpace(candidate))
-            {
+        foreach (string candidate in candidates) {
+            if (string.IsNullOrWhiteSpace(candidate)) {
                 continue;
             }
 
             // Skip duplicates
             if (string.Equals(candidate, previous1, StringComparison.Ordinal) ||
-                string.Equals(candidate, previous2, StringComparison.Ordinal))
-            {
+                string.Equals(candidate, previous2, StringComparison.Ordinal)) {
                 continue;
             }
 
             byte[]? raw = provider.GetRawPlayerData(candidate);
-            if (raw is not null)
-            {
+            if (raw is not null) {
                 return provider.LoadPlayerDataFromRaw(raw);
             }
 

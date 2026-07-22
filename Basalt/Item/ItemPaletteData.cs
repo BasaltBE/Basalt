@@ -4,8 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 
-public sealed class ItemTypeData
-{
+public sealed class ItemTypeData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -31,8 +30,7 @@ public sealed class ItemTypeData
     public ItemCatalogData? Catalog { get; set; }
 }
 
-public sealed class ItemCatalogData
-{
+public sealed class ItemCatalogData {
     [JsonPropertyName("categoryName")]
     public string CategoryName { get; set; } = string.Empty;
 
@@ -40,8 +38,7 @@ public sealed class ItemCatalogData
     public ItemGroupIdentifierData? GroupIdentifier { get; set; }
 }
 
-public sealed class ItemGroupIdentifierData
-{
+public sealed class ItemGroupIdentifierData {
     [JsonPropertyName("icon")]
     public string Icon { get; set; } = string.Empty;
 
@@ -52,12 +49,10 @@ public sealed class ItemGroupIdentifierData
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<ItemTypeData>))]
 [JsonSerializable(typeof(CreativeContentJson))]
-internal sealed partial class ItemPaletteJsonContext : JsonSerializerContext
-{
+internal sealed partial class ItemPaletteJsonContext : JsonSerializerContext {
 }
 
-public sealed class CreativeContentJson
-{
+public sealed class CreativeContentJson {
     [JsonPropertyName("Groups")]
     public List<CreativeGroupJson> Groups { get; set; } = [];
 
@@ -65,8 +60,7 @@ public sealed class CreativeContentJson
     public List<CreativeItemJson> Items { get; set; } = [];
 }
 
-public sealed class CreativeGroupJson
-{
+public sealed class CreativeGroupJson {
     [JsonPropertyName("Category")]
     public int Category { get; set; }
 
@@ -77,8 +71,7 @@ public sealed class CreativeGroupJson
     public CreativeItemStackJson Icon { get; set; } = new();
 }
 
-public sealed class CreativeItemJson
-{
+public sealed class CreativeItemJson {
     [JsonPropertyName("CreativeItemNetworkID")]
     public int CreativeItemNetworkID { get; set; }
 
@@ -89,8 +82,7 @@ public sealed class CreativeItemJson
     public int GroupIndex { get; set; }
 }
 
-public sealed class CreativeItemStackJson
-{
+public sealed class CreativeItemStackJson {
     [JsonPropertyName("NetworkID")]
     public int NetworkID { get; set; }
 
@@ -106,8 +98,7 @@ public sealed class CreativeItemStackJson
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(CreativeContentJson))]
-internal sealed partial class CreativeContentJsonContext : JsonSerializerContext
-{
+internal sealed partial class CreativeContentJsonContext : JsonSerializerContext {
 }
 
 

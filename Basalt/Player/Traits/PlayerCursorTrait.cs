@@ -16,30 +16,24 @@ using Basalt.Core.Entities.Traits;
 /// This is a container where when u click on an item in an inventory and the item
 /// is on your mouse cursor
 /// </summary>
-public sealed class PlayerCursorTrait : PlayerTrait
-{
+public sealed class PlayerCursorTrait : PlayerTrait {
     public new static string Identifier => "cursor";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
 
     public EntityContainer Container { get; }
 
-    public PlayerCursorTrait(Entity entity) : base(entity)
-    {
-        Container = new EntityContainer(Player, ContainerType.Inventory, 1)
-        {
+    public PlayerCursorTrait(Entity entity) : base(entity) {
+        Container = new EntityContainer(Player, ContainerType.Inventory, 1) {
             Identifier = ContainerId.Ui
         };
     }
 
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
+    public override void OnSpawn(EntitySpawnOptions details) {
         Item.ItemStack? stale = Container.GetItem(0);
-        if (stale is not null && stale.StackSize > 0)
-        {
+        if (stale is not null && stale.StackSize > 0) {
             Container.ClearSlot(0);
             EntityInventoryTrait? inventory = Player.GetTrait<EntityInventoryTrait>();
-            if (inventory is null || !inventory.Container.AddItem(stale))
-            {
+            if (inventory is null || !inventory.Container.AddItem(stale)) {
                 Player.DropItem(stale);
             }
         }
@@ -47,30 +41,25 @@ public sealed class PlayerCursorTrait : PlayerTrait
         Container.Update();
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
+    public override EntityTrait Clone(Entity entity) {
         PlayerCursorTrait clone = new(entity);
-        if (Container.GetItem(0) is { } item)
-        {
+        if (Container.GetItem(0) is { } item) {
             clone.Container.SetItem(0, item);
         }
 
         return clone;
     }
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
         CompoundTag? containerTag = tag.Get<CompoundTag>("container");
-        if (containerTag is null)
-        {
+        if (containerTag is null) {
             return;
         }
 
         Container.Deserialize(containerTag);
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("container", Container.Serialize());
     }
 }

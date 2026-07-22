@@ -11,8 +11,7 @@ namespace Basalt.Protocol.Packets;
 /// StartGamePacket is sent by the server to client when the client finishes its login sequence and is done loading resource packs
 /// </summary>
 [Packet(PacketId.StartGame)]
-public sealed record StartGamePacket : DataPacket
-{
+public sealed record StartGamePacket : DataPacket {
     private static readonly TagOptions TagOptions = new(Name: true, Type: true, VarInt: true);
 
     /// <summary>
@@ -426,8 +425,7 @@ public sealed record StartGamePacket : DataPacket
     public string OwnerId = string.Empty;
 
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         EntityUniqueId = reader.ReadZigZong();
         EntityRuntimeId = reader.ReadVarULong();
         PlayerGameMode = reader.ReadZigZag();
@@ -463,8 +461,7 @@ public sealed record StartGamePacket : DataPacket
 
         int gameRuleCount = checked((int)reader.ReadVarUInt());
         GameRules = new List<GameRule>(gameRuleCount);
-        for (int i = 0; i < gameRuleCount; i++)
-        {
+        for (int i = 0; i < gameRuleCount; i++) {
             GameRule gameRule = new();
             gameRule.Read(reader);
             GameRules.Add(gameRule);
@@ -472,8 +469,7 @@ public sealed record StartGamePacket : DataPacket
 
         int experimentCount = checked((int)reader.ReadUInt32(true));
         Experiments = new List<ExperimentData>(experimentCount);
-        for (int i = 0; i < experimentCount; i++)
-        {
+        for (int i = 0; i < experimentCount; i++) {
             ExperimentData experiment = new();
             experiment.Read(reader);
             Experiments.Add(experiment);
@@ -514,8 +510,7 @@ public sealed record StartGamePacket : DataPacket
 
         int blocksCount = checked((int)reader.ReadVarUInt());
         Blocks = new List<BlockEntry>(blocksCount);
-        for (int i = 0; i < blocksCount; i++)
-        {
+        for (int i = 0; i < blocksCount; i++) {
             BlockEntry block = new();
             block.Read(reader);
             Blocks.Add(block);
@@ -531,8 +526,7 @@ public sealed record StartGamePacket : DataPacket
         UseBlockNetworkIdHashes = reader.ReadBool();
         ServerAuthoritativeSound = reader.ReadBool();
         IsLoggingChat = reader.ReadBool();
-        ServerJoinInformation.Read(reader, static (BinaryReader r) =>
-        {
+        ServerJoinInformation.Read(reader, static (BinaryReader r) => {
             ServerJoinInformation value = new();
             value.Read(r);
             return value;
@@ -543,8 +537,7 @@ public sealed record StartGamePacket : DataPacket
         OwnerId = reader.ReadVarString();
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteZigZong(EntityUniqueId);
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteZigZag(PlayerGameMode);
@@ -579,14 +572,12 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteBool(TexturePackRequired);
 
         writer.WriteVarUInt((uint)GameRules.Count);
-        for (int i = 0; i < GameRules.Count; i++)
-        {
+        for (int i = 0; i < GameRules.Count; i++) {
             GameRules[i].Write(writer);
         }
 
         writer.WriteUInt32((uint)Experiments.Count, true);
-        for (int i = 0; i < Experiments.Count; i++)
-        {
+        for (int i = 0; i < Experiments.Count; i++) {
             Experiments[i].Write(writer);
         }
 
@@ -624,8 +615,7 @@ public sealed record StartGamePacket : DataPacket
         writer.WriteZigZag(EnchantmentSeed);
 
         writer.WriteVarUInt((uint)Blocks.Count);
-        for (int i = 0; i < Blocks.Count; i++)
-        {
+        for (int i = 0; i < Blocks.Count; i++) {
             Blocks[i].Write(writer);
         }
 

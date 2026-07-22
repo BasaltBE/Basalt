@@ -2,13 +2,10 @@ using Basalt.Protocol.Enums;
 
 namespace Basalt.Protocol.Types;
 
-public static class DataStoreChangeInfoEntry
-{
-    public static DataStoreChangeInfo Read(Binary.BinaryReader reader)
-    {
+public static class DataStoreChangeInfoEntry {
+    public static DataStoreChangeInfo Read(Binary.BinaryReader reader) {
         DataStoreChangeAction action = (DataStoreChangeAction)reader.ReadVarInt();
-        DataStoreChangeInfo entry = action switch
-        {
+        DataStoreChangeInfo entry = action switch {
             DataStoreChangeAction.Update => new DataStoreUpdate(),
             DataStoreChangeAction.Change => new DataStoreChange(),
             DataStoreChangeAction.Removal => new DataStoreRemoval(),
@@ -19,8 +16,7 @@ public static class DataStoreChangeInfoEntry
         return entry;
     }
 
-    public static void Write(Binary.BinaryWriter writer, DataStoreChangeInfo entry)
-    {
+    public static void Write(Binary.BinaryWriter writer, DataStoreChangeInfo entry) {
         writer.WriteVarInt((int)entry.Action);
         entry.Write(writer);
     }

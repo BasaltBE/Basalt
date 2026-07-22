@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class EntityLink : DataType
-{
+public sealed class EntityLink : DataType {
     /// <summary>
     /// Unique id of the ridden actor.
     /// </summary>
@@ -35,8 +34,7 @@ public sealed class EntityLink : DataType
     /// </summary>
     public float VehicleAngularVelocity;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RiddenEntityUniqueId = reader.ReadVarLong();
         RiderEntityUniqueId = reader.ReadVarLong();
         Type = reader.ReadUInt8();
@@ -45,8 +43,7 @@ public sealed class EntityLink : DataType
         VehicleAngularVelocity = reader.ReadF32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarLong(RiddenEntityUniqueId);
         writer.WriteVarLong(RiderEntityUniqueId);
         writer.WriteUInt8(Type);

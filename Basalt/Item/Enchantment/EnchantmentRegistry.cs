@@ -5,12 +5,10 @@ using Basalt.Core.Item.Enchantment.Types;
 /// <summary>
 /// Registy all vanilla enchantments.
 /// </summary>
-internal static class EnchantmentRegistry
-{
+internal static class EnchantmentRegistry {
     private static bool _registered;
 
-    public static void RegisterVanilla()
-    {
+    public static void RegisterVanilla() {
         if (_registered) return;
         _registered = true;
 

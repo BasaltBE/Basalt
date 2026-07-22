@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Permission level advertised for an available command.
 /// </summary>
-public enum CommandPermissionLevel : byte
-{
+public enum CommandPermissionLevel : byte {
     /// <summary>
     /// Command is available to any permission level.
     /// </summary>

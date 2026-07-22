@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class StoreEntryPointInfo : DataType
-{
+public sealed class StoreEntryPointInfo : DataType {
     /// <summary>
     /// The id of the store
     /// </summary>
@@ -15,14 +14,12 @@ public sealed class StoreEntryPointInfo : DataType
     /// </summary>
     public string StoreName = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         StoreId = reader.ReadVarString();
         StoreName = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(StoreId);
         writer.WriteVarString(StoreName);
     }

@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Identifies the slot group within a container window (used in FullContainerName).
 /// </summary>
-public enum ContainerName : byte
-{
+public enum ContainerName : byte {
     AnvilInput = 0,
     AnvilMaterial = 1,
     AnvilResultPreview = 2,

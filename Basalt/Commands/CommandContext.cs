@@ -8,10 +8,8 @@ using ServerInstance = Server;
 /// <summary>
 /// Identifies who sent the command.
 /// </summary>
-public abstract class CommandSender
-{
-    public sealed class PlayerSender(Player player) : CommandSender
-    {
+public abstract class CommandSender {
+    public sealed class PlayerSender(Player player) : CommandSender {
         public Player Player { get; } = player;
     }
 
@@ -25,8 +23,7 @@ public abstract class CommandSender
 /// Context passed to command handlers during execution.
 /// Contains the server, sender, and parsed arguments.
 /// </summary>
-public sealed class CommandContext
-{
+public sealed class CommandContext {
     public required ServerInstance Server { get; init; }
     public required CommandSender Sender { get; init; }
     public required string Raw { get; init; }
@@ -39,10 +36,8 @@ public sealed class CommandContext
     /// <summary>
     /// Gets a typed argument by name.
     /// </summary>
-    public T? Get<T>(string name) where T : CommandEnum
-    {
-        for (int i = 0; i < Arguments.Count; i++)
-        {
+    public T? Get<T>(string name) where T : CommandEnum {
+        for (int i = 0; i < Arguments.Count; i++) {
             if (string.Equals(Arguments[i].Name, name, StringComparison.Ordinal) && Arguments[i].Value is T value)
                 return value;
         }
@@ -52,8 +47,7 @@ public sealed class CommandContext
     /// <summary>
     /// Resolves a target selector string into entities.
     /// </summary>
-    public EntityInstance[] ResolveTargets(string selector)
-    {
+    public EntityInstance[] ResolveTargets(string selector) {
         Player? context = Sender.AsPlayer();
 
         if (selector == "@s")
@@ -62,8 +56,7 @@ public sealed class CommandContext
         if (selector == "@a")
             return Server.Players.Values.ToArray<EntityInstance>();
 
-        if (selector == "@e")
-        {
+        if (selector == "@e") {
             if (context?.Dimension is not null)
                 return context.Dimension.Entities.ToArray();
             return Server.Worlds
@@ -72,12 +65,10 @@ public sealed class CommandContext
                 .ToArray();
         }
 
-        if (selector == "@p")
-        {
+        if (selector == "@p") {
             Player? nearest = null;
             float nearestDist = float.MaxValue;
-            foreach (Player candidate in Server.Players.Values)
-            {
+            foreach (Player candidate in Server.Players.Values) {
                 if (context is not null && candidate.Dimension != context.Dimension)
                     continue;
 
@@ -85,8 +76,7 @@ public sealed class CommandContext
                 float dy = candidate.Location.Y - (context?.Location.Y ?? candidate.Location.Y);
                 float dz = candidate.Location.Z - (context?.Location.Z ?? candidate.Location.Z);
                 float dist = dx * dx + dy * dy + dz * dz;
-                if (dist < nearestDist)
-                {
+                if (dist < nearestDist) {
                     nearest = candidate;
                     nearestDist = dist;
                 }
@@ -94,16 +84,14 @@ public sealed class CommandContext
             return nearest is null ? [] : [nearest];
         }
 
-        if (selector == "@r")
-        {
+        if (selector == "@r") {
             Player[] all = Server.Players.Values.ToArray();
             if (all.Length == 0) return [];
             return [all[Random.Shared.Next(all.Length)]];
         }
 
         // Try by username
-        foreach (Player candidate in Server.Players.Values)
-        {
+        foreach (Player candidate in Server.Players.Values) {
             if (string.Equals(candidate.Username, selector, StringComparison.OrdinalIgnoreCase))
                 return [candidate];
         }
@@ -114,11 +102,9 @@ public sealed class CommandContext
     /// <summary>
     /// Gets the player who sent the command, or returns an error if it was the server.
     /// </summary>
-    public Player? RequirePlayer(out CommandResult? error)
-    {
+    public Player? RequirePlayer(out CommandResult? error) {
         Player? player = Sender.AsPlayer();
-        if (player is null)
-        {
+        if (player is null) {
             error = CommandResult.Error("This command must be run by a player.");
             return null;
         }
@@ -130,13 +116,11 @@ public sealed class CommandContext
 /// <summary>
 /// A named argument: parameter name paired with its parsed enum value.
 /// </summary>
-internal sealed class CommandArgument
-{
+internal sealed class CommandArgument {
     public string Name { get; }
     public CommandEnum Value { get; }
 
-    public CommandArgument(string name, CommandEnum value)
-    {
+    public CommandArgument(string name, CommandEnum value) {
         Name = name;
         Value = value;
     }

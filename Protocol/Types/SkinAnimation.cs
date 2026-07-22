@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class SkinAnimation : DataType
-{
+public sealed class SkinAnimation : DataType {
     /// <summary>
     /// Animation image width.
     /// </summary>
@@ -35,8 +34,7 @@ public sealed class SkinAnimation : DataType
     /// </summary>
     public uint ExpressionType;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ImageWidth = reader.ReadUInt32(true);
         ImageHeight = reader.ReadUInt32(true);
         ImageData = ReadByteArray(reader);
@@ -45,8 +43,7 @@ public sealed class SkinAnimation : DataType
         ExpressionType = reader.ReadUInt32(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt32(ImageWidth, true);
         writer.WriteUInt32(ImageHeight, true);
         WriteByteArray(writer, ImageData);
@@ -55,14 +52,12 @@ public sealed class SkinAnimation : DataType
         writer.WriteUInt32(ExpressionType, true);
     }
 
-    internal static byte[] ReadByteArray(BinaryReader reader)
-    {
+    internal static byte[] ReadByteArray(BinaryReader reader) {
         int length = checked((int)reader.ReadVarUInt());
         return reader.ReadBytes(length).ToArray();
     }
 
-    internal static void WriteByteArray(BinaryWriter writer, byte[] value)
-    {
+    internal static void WriteByteArray(BinaryWriter writer, byte[] value) {
         writer.WriteVarUInt((uint)value.Length);
         writer.WriteBytes(value);
     }

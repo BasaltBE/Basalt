@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ActorMetadataItem : DataType
-{
+public sealed class ActorMetadataItem : DataType {
     /// <summary>
     /// Metadata key id.
     /// </summary>
@@ -21,20 +20,17 @@ public sealed class ActorMetadataItem : DataType
     /// </summary>
     public object Value = 0;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Id = (ActorDataId)reader.ReadVarInt();
         Type = (ActorDataType)reader.ReadVarInt();
-        Value = Type switch
-        {
+        Value = Type switch {
             ActorDataType.Byte => reader.ReadInt8(),
             ActorDataType.Short => reader.ReadInt16(true),
             ActorDataType.Int => reader.ReadZigZag(),
             ActorDataType.Float => reader.ReadF32(true),
             ActorDataType.String => reader.ReadVarString(),
             ActorDataType.Long => reader.ReadZigZong(),
-            ActorDataType.Vec3 => new Vec3f
-            {
+            ActorDataType.Vec3 => new Vec3f {
                 X = reader.ReadF32(true),
                 Y = reader.ReadF32(true),
                 Z = reader.ReadF32(true)
@@ -43,13 +39,11 @@ public sealed class ActorMetadataItem : DataType
         };
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarInt((int)Id);
         writer.WriteVarInt((int)Type);
 
-        switch (Type)
-        {
+        switch (Type) {
             case ActorDataType.Byte:
                 writer.WriteInt8(Convert.ToSByte(Value));
                 break;
@@ -69,8 +63,7 @@ public sealed class ActorMetadataItem : DataType
                 writer.WriteZigZong(Convert.ToInt64(Value));
                 break;
             case ActorDataType.Vec3:
-                if (Value is not Vec3f vec3)
-                {
+                if (Value is not Vec3f vec3) {
                     throw new InvalidOperationException("Actor metadata Vec3 value must be Vec3f.");
                 }
 

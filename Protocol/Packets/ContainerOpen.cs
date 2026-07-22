@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ContainerOpen)]
-public sealed record ContainerOpenPacket : DataPacket
-{
+public sealed record ContainerOpenPacket : DataPacket {
     /// <summary>
     /// Container id assigned to this window.
     /// </summary>
@@ -26,8 +25,7 @@ public sealed record ContainerOpenPacket : DataPacket
     /// </summary>
     public long ContainerEntityUniqueId;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ContainerId = (ContainerId)reader.ReadInt8();
         ContainerType = reader.ReadUInt8();
 
@@ -38,8 +36,7 @@ public sealed record ContainerOpenPacket : DataPacket
         ContainerEntityUniqueId = reader.ReadZigZong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteInt8((sbyte)ContainerId);
         writer.WriteUInt8(ContainerType);
         ContainerPosition.Write(writer);

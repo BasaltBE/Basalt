@@ -3,8 +3,7 @@ using Basalt.Protocol.Enums;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.TakeItemActor)]
-public sealed record TakeItemActorPacket : DataPacket
-{
+public sealed record TakeItemActorPacket : DataPacket {
     /// <summary>
     /// Runtime id of the item actor.
     /// </summary>
@@ -15,14 +14,12 @@ public sealed record TakeItemActorPacket : DataPacket
     /// </summary>
     public ulong TakerEntityRuntimeId;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         ItemEntityRuntimeId = reader.ReadVarULong();
         TakerEntityRuntimeId = reader.ReadVarULong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarULong(ItemEntityRuntimeId);
         writer.WriteVarULong(TakerEntityRuntimeId);
     }

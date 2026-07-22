@@ -3,8 +3,7 @@ namespace Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits;
 using System.Text.Json;
 
-public sealed class EntityType
-{
+public sealed class EntityType {
     private static readonly Dictionary<string, EntityType> Registry = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
     private readonly Dictionary<string, JsonElement> _componentProperties;
@@ -18,8 +17,7 @@ public sealed class EntityType
     public IReadOnlyDictionary<string, Type> Traits => _traits;
     public static IReadOnlyDictionary<string, EntityType> Types => Registry;
 
-    public EntityType(string identifier, IEnumerable<string>? components, EntityPropertiesPayloadData? propertiesPayload = null, string? lootTablePath = null)
-    {
+    public EntityType(string identifier, IEnumerable<string>? components, EntityPropertiesPayloadData? propertiesPayload = null, string? lootTablePath = null) {
         Identifier = identifier;
         Components = components is null ? [] : [.. components];
         LootTablePath = string.IsNullOrWhiteSpace(lootTablePath) ? null : lootTablePath;
@@ -33,33 +31,27 @@ public sealed class EntityType
         EntityTraitRegistry.BindTraitsToType(this);
     }
 
-    public static EntityType? Get(string identifier)
-    {
+    public static EntityType? Get(string identifier) {
         return Registry.TryGetValue(identifier, out EntityType? type) ? type : null;
     }
 
-    public static EntityType GetOrCreate(string identifier)
-    {
+    public static EntityType GetOrCreate(string identifier) {
         return Get(identifier) ?? new EntityType(identifier, []);
     }
 
-    public static List<EntityType> GetAll()
-    {
+    public static List<EntityType> GetAll() {
         return [.. Registry.Values];
     }
 
-    public static void EnsureRegistryCapacity(int capacity)
-    {
+    public static void EnsureRegistryCapacity(int capacity) {
         Registry.EnsureCapacity(capacity);
     }
 
-    public void RegisterTrait(Type traitType, string identifier)
-    {
+    public void RegisterTrait(Type traitType, string identifier) {
         _traits.TryAdd(identifier, traitType);
     }
 
-    public bool TryGetComponentProperties(string component, out JsonElement properties)
-    {
+    public bool TryGetComponentProperties(string component, out JsonElement properties) {
         return _componentProperties.TryGetValue(component, out properties);
     }
 }

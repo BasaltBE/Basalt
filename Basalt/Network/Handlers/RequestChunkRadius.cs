@@ -6,10 +6,8 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
 
-public static class RequestChunkRadius
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class RequestChunkRadius {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         RequestChunkRadiusPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
@@ -27,14 +25,12 @@ public static class RequestChunkRadius
         /// PLEASE KEEP IT COMMENTED OUT!
         // server.Network.SendPacket(connection, response);
 
-        if (!server.Players.TryGetValue(connection, out Player.Player? player))
-        {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
-        if (chunkRendering is null)
-        {
+        if (chunkRendering is null) {
             return;
         }
 

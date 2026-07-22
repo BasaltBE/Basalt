@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CraftingDataEntry : DataType
-{
+public sealed class CraftingDataEntry : DataType {
     public CraftingDataRecipeType RecipeType;
     public ShapedRecipeData? Shaped;
     public ShapelessRecipeData? Shapeless;
@@ -13,11 +12,9 @@ public sealed class CraftingDataEntry : DataType
     public SmithingTransformRecipeData? SmithingTransform;
     public SmithingTrimRecipeData? SmithingTrim;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RecipeType = (CraftingDataRecipeType)reader.ReadZigZag();
-        switch (RecipeType)
-        {
+        switch (RecipeType) {
             case CraftingDataRecipeType.Shapeless:
             case CraftingDataRecipeType.ShulkerBox:
             case CraftingDataRecipeType.ShapelessChemistry:
@@ -48,11 +45,9 @@ public sealed class CraftingDataEntry : DataType
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag((int)RecipeType);
-        switch (RecipeType)
-        {
+        switch (RecipeType) {
             case CraftingDataRecipeType.Shapeless:
             case CraftingDataRecipeType.ShulkerBox:
             case CraftingDataRecipeType.ShapelessChemistry:

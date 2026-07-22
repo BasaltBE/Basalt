@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
-public sealed class BiomeStorage
-{
+public sealed class BiomeStorage {
     public const int MaxX = 16;
     public const int MaxY = 16;
     public const int MaxZ = 16;
@@ -15,33 +14,27 @@ public sealed class BiomeStorage
     public List<int> Palette { get; }
     public int[] Biomes { get; }
 
-    public BiomeStorage(List<int>? palette = null, int[]? biomes = null)
-    {
+    public BiomeStorage(List<int>? palette = null, int[]? biomes = null) {
         Palette = palette ?? [0];
         Biomes = biomes ?? new int[MaxSize];
 
         _paletteIndices = new Dictionary<int, int>(Palette.Count);
-        for (int i = 0; i < Palette.Count; i++)
-        {
+        for (int i = 0; i < Palette.Count; i++) {
             _paletteIndices[Palette[i]] = i;
         }
     }
 
-    public bool IsEmpty()
-    {
+    public bool IsEmpty() {
         return Palette.Count == 1 && Palette[0] == 0;
     }
 
-    public int GetBiome(int bx, int by, int bz)
-    {
+    public int GetBiome(int bx, int by, int bz) {
         int paletteIndex = Biomes[GetIndex(bx, by, bz)];
         return (uint)paletteIndex < (uint)Palette.Count ? Palette[paletteIndex] : 0;
     }
 
-    public void SetBiome(int bx, int by, int bz, int biome)
-    {
-        if (!_paletteIndices.TryGetValue(biome, out int paletteIndex))
-        {
+    public void SetBiome(int bx, int by, int bz, int biome) {
+        if (!_paletteIndices.TryGetValue(biome, out int paletteIndex)) {
             paletteIndex = Palette.Count;
             Palette.Add(biome);
             _paletteIndices[biome] = paletteIndex;
@@ -50,21 +43,17 @@ public sealed class BiomeStorage
         Biomes[GetIndex(bx, by, bz)] = paletteIndex;
     }
 
-    public static void Serialize(BiomeStorage storage, ref BinaryWriter writer, bool disk = false)
-    {
+    public static void Serialize(BiomeStorage storage, ref BinaryWriter writer, bool disk = false) {
         int bitsPerBiome = ResolveBitsPerValue(storage.Palette.Count, true);
 
         writer.WriteUInt8((byte)(bitsPerBiome << 1));
 
-        if (bitsPerBiome == 0)
-        {
+        if (bitsPerBiome == 0) {
             int value = storage.Palette[0];
-            if (disk)
-            {
+            if (disk) {
                 writer.WriteInt32(value, littleEndian: true);
             }
-            else
-            {
+            else {
                 writer.WriteZigZag(value);
             }
 
@@ -74,14 +63,11 @@ public sealed class BiomeStorage
         int biomesPerWord = 32 / bitsPerBiome;
         int wordCount = (MaxSize + biomesPerWord - 1) / biomesPerWord;
 
-        for (int w = 0; w < wordCount; w++)
-        {
+        for (int w = 0; w < wordCount; w++) {
             int word = 0;
-            for (int biome = 0; biome < biomesPerWord; biome++)
-            {
+            for (int biome = 0; biome < biomesPerWord; biome++) {
                 int index = w * biomesPerWord + biome;
-                if (index >= MaxSize)
-                {
+                if (index >= MaxSize) {
                     break;
                 }
 
@@ -92,46 +78,37 @@ public sealed class BiomeStorage
             writer.WriteInt32(word, littleEndian: true);
         }
 
-        if (disk)
-        {
+        if (disk) {
             writer.WriteInt32(storage.Palette.Count, littleEndian: true);
         }
-        else
-        {
+        else {
             writer.WriteZigZag(storage.Palette.Count);
         }
 
-        for (int i = 0; i < storage.Palette.Count; i++)
-        {
+        for (int i = 0; i < storage.Palette.Count; i++) {
             int state = storage.Palette[i];
-            if (disk)
-            {
+            if (disk) {
                 writer.WriteInt32(state, littleEndian: true);
             }
-            else
-            {
+            else {
                 writer.WriteZigZag(state);
             }
         }
     }
 
-    public static BiomeStorage Deserialize(ref BinaryReader reader, bool disk = false)
-    {
+    public static BiomeStorage Deserialize(ref BinaryReader reader, bool disk = false) {
         byte paletteAndFlag = reader.ReadUInt8();
         int bitsPerBiome = paletteAndFlag >> 1;
 
-        if (bitsPerBiome == 0x7F)
-        {
+        if (bitsPerBiome == 0x7F) {
             return new BiomeStorage();
         }
 
-        if (bitsPerBiome > 16)
-        {
+        if (bitsPerBiome > 16) {
             throw new InvalidOperationException($"Invalid bits per biome: {bitsPerBiome}.");
         }
 
-        if (bitsPerBiome == 0)
-        {
+        if (bitsPerBiome == 0) {
             int value = disk ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
             return new BiomeStorage([value], new int[MaxSize]);
         }
@@ -140,20 +117,17 @@ public sealed class BiomeStorage
         int wordCount = (MaxSize + biomesPerWord - 1) / biomesPerWord;
 
         int[] words = new int[wordCount];
-        for (int i = 0; i < wordCount; i++)
-        {
+        for (int i = 0; i < wordCount; i++) {
             words[i] = reader.ReadInt32(littleEndian: true);
         }
 
         int paletteSize = disk ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
-        if (paletteSize <= 0)
-        {
+        if (paletteSize <= 0) {
             throw new InvalidOperationException("Invalid biome palette size.");
         }
 
         List<int> palette = new(paletteSize);
-        for (int i = 0; i < paletteSize; i++)
-        {
+        for (int i = 0; i < paletteSize; i++) {
             palette.Add(disk ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag());
         }
 
@@ -161,11 +135,9 @@ public sealed class BiomeStorage
         int position = 0;
         int mask = (1 << bitsPerBiome) - 1;
 
-        for (int w = 0; w < words.Length && position < MaxSize; w++)
-        {
+        for (int w = 0; w < words.Length && position < MaxSize; w++) {
             int word = words[w];
-            for (int biome = 0; biome < biomesPerWord && position < MaxSize; biome++, position++)
-            {
+            for (int biome = 0; biome < biomesPerWord && position < MaxSize; biome++, position++) {
                 biomes[position] = (word >> (biome * bitsPerBiome)) & mask;
             }
         }
@@ -173,17 +145,14 @@ public sealed class BiomeStorage
         return new BiomeStorage(palette, biomes);
     }
 
-    private static int GetIndex(int bx, int by, int bz)
-    {
+    private static int GetIndex(int bx, int by, int bz) {
         return ((bx & 0xF) << 8) | ((bz & 0xF) << 4) | (by & 0xF);
     }
 
-    private static int ResolveBitsPerValue(int paletteLength, bool allowZero)
-    {
+    private static int ResolveBitsPerValue(int paletteLength, bool allowZero) {
         int bits = (int)Math.Ceiling(Math.Log2(Math.Max(1, paletteLength)));
 
-        switch (bits)
-        {
+        switch (bits) {
             case 0:
                 return allowZero ? 0 : 1;
             case 1:

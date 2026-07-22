@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.MovePlayer)]
-public sealed record MovePlayerPacket : DataPacket
-{
+public sealed record MovePlayerPacket : DataPacket {
     /// <summary>
     /// Runtime id of the moving actor.
     /// </summary>
@@ -62,8 +61,7 @@ public sealed record MovePlayerPacket : DataPacket
     /// </summary>
     public ulong Tick;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         RuntimeId = reader.ReadVarULong();
 
         Vec3f position = Position;
@@ -77,8 +75,7 @@ public sealed record MovePlayerPacket : DataPacket
         OnGround = reader.ReadBool();
         RiddenRuntimeId = reader.ReadVarULong();
 
-        if (Mode == MoveMode.Teleport)
-        {
+        if (Mode == MoveMode.Teleport) {
             TeleportCause = (TeleportCause)reader.ReadInt32(true);
             TeleportSourceEntityType = reader.ReadInt32(true);
         }
@@ -86,8 +83,7 @@ public sealed record MovePlayerPacket : DataPacket
         Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarULong(RuntimeId);
         Position.Write(writer);
         writer.WriteF32(Pitch, true);
@@ -97,8 +93,7 @@ public sealed record MovePlayerPacket : DataPacket
         writer.WriteBool(OnGround);
         writer.WriteVarULong(RiddenRuntimeId);
 
-        if (Mode == MoveMode.Teleport)
-        {
+        if (Mode == MoveMode.Teleport) {
             writer.WriteInt32((int)TeleportCause, true);
             writer.WriteInt32(TeleportSourceEntityType, true);
         }

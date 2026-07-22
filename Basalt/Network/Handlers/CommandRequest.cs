@@ -9,10 +9,8 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
-public static class CommandRequest
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class CommandRequest {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("CommandRequest.Handle");
         CommandRequestPacket packet = new();
         int offset = 0;
@@ -21,14 +19,11 @@ public static class CommandRequest
 
         CommandResult result = CommandResult.Fail;
 
-        if (!server.Players.TryGetValue(connection, out Player.Player? player))
-        {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             result = CommandResult.Error("Command executor was not found.");
         }
-        else
-        {
-            try
-            {
+        else {
+            try {
                 Logger.Info($"{player.Username} executed command {packet.Command}");
 
                 // Emit PlayerCommand signal
@@ -38,35 +33,29 @@ public static class CommandRequest
                 PlayerCommandSignal signal = new(player, packet.Command, definition);
                 server.Emit(signal);
 
-                if (signal.Cancelled)
-                {
+                if (signal.Cancelled) {
                     result = CommandResult.Fail;
                 }
-                else
-                {
+                else {
                     result = server.Commands.Execute(server, player, packet.Command);
                 }
             }
-            catch (Exception exception)
-            {
+            catch (Exception exception) {
                 result = CommandResult.Error(exception.Message);
                 Logger.Warn($"Command request failed: {exception}");
             }
         }
 
         List<CommandOutputMessage> messages = [];
-        if (result.Message is not null)
-        {
-            messages.Add(new CommandOutputMessage
-            {
+        if (result.Message is not null) {
+            messages.Add(new CommandOutputMessage {
                 Message = result.Message,
                 Parameters = [],
                 Success = result.Success
             });
         }
 
-        CommandResponsePacket response = new()
-        {
+        CommandResponsePacket response = new() {
             SuccessCount = result.Success ? 1U : 0U,
             OutputType = CommandOutputType.AllOutput,
             DataSet = string.Empty,

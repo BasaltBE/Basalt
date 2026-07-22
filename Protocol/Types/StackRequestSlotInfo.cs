@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class StackRequestSlotInfo : DataType
-{
+public sealed class StackRequestSlotInfo : DataType {
     /// <summary>
     /// Container this slot belongs to.
     /// </summary>
@@ -17,15 +16,13 @@ public sealed class StackRequestSlotInfo : DataType
     /// Client stack network id for validation.
     /// </summary>
     public int StackNetworkId;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Container.Read(reader);
         Slot = reader.ReadUInt8();
         StackNetworkId = reader.ReadZigZag();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         Container.Write(writer);
         writer.WriteUInt8(Slot);
         writer.WriteZigZag(StackNetworkId);

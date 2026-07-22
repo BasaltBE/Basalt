@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Nbt;
 
-public enum TagType : byte
-{
+public enum TagType : byte {
     End = 0x00,
     Byte = 0x01,
     Short = 0x02,

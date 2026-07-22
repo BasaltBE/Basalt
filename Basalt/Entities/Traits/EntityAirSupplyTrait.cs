@@ -7,8 +7,7 @@ using Basalt.Protocol.Types;
 using Basalt.Core.Traits;
 
 
-public sealed class EntityAirSupplyTrait : EntityTrait
-{
+public sealed class EntityAirSupplyTrait : EntityTrait {
     private const int MaxAirTicks = 300;
 
     public new static string Identifier => "air_supply";
@@ -16,37 +15,29 @@ public sealed class EntityAirSupplyTrait : EntityTrait
 
     private int _airTicks = MaxAirTicks;
 
-    public EntityAirSupplyTrait(Entity entity) : base(entity)
-    {
+    public EntityAirSupplyTrait(Entity entity) : base(entity) {
     }
 
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
+    public override void OnSpawn(EntitySpawnOptions details) {
         Entity.Flags.SetActorFlag(ActorFlag.Breathing, true);
         _airTicks = MaxAirTicks;
     }
 
-    public override void OnTick(TraitOnTickDetails details)
-    {
-        if (!Entity.IsAlive || !Entity.Flags.GetActorFlag(ActorFlag.Breathing))
-        {
+    public override void OnTick(TraitOnTickDetails details) {
+        if (!Entity.IsAlive || !Entity.Flags.GetActorFlag(ActorFlag.Breathing)) {
             return;
         }
 
         if (Entity is Player.Player player &&
-            player.GetGamemode() is not (Gamemode.Survival or Gamemode.Adventure))
-        {
+            player.GetGamemode() is not (Gamemode.Survival or Gamemode.Adventure)) {
             return;
         }
 
-        if (CanBreathe())
-        {
-            if (_airTicks < MaxAirTicks)
-            {
+        if (CanBreathe()) {
+            if (_airTicks < MaxAirTicks) {
                 _airTicks += 5;
 
-                if (_airTicks > MaxAirTicks)
-                {
+                if (_airTicks > MaxAirTicks) {
                     _airTicks = MaxAirTicks;
                 }
             }
@@ -56,15 +47,13 @@ public sealed class EntityAirSupplyTrait : EntityTrait
 
         _airTicks--;
 
-        if (_airTicks > -20)
-        {
+        if (_airTicks > -20) {
             return;
         }
 
         _airTicks = 0;
 
-        if (Entity.Dimension?.Gamerules.DrowningDamage == false)
-        {
+        if (Entity.Dimension?.Gamerules.DrowningDamage == false) {
             return;
         }
 
@@ -75,25 +64,20 @@ public sealed class EntityAirSupplyTrait : EntityTrait
         );
     }
 
-    public int GetAirSupplyTicks()
-    {
+    public int GetAirSupplyTicks() {
         return _airTicks;
     }
 
-    public void SetAirSupplyTicks(int ticks)
-    {
+    public void SetAirSupplyTicks(int ticks) {
         _airTicks = ticks;
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
+    public override EntityTrait Clone(Entity entity) {
         return new EntityAirSupplyTrait(entity);
     }
 
-    private bool CanBreathe()
-    {
-        if (Entity.Dimension is null || Entity.HasEffect(EffectType.WaterBreathing))
-        {
+    private bool CanBreathe() {
+        if (Entity.Dimension is null || Entity.HasEffect(EffectType.WaterBreathing)) {
             return true;
         }
 
@@ -108,8 +92,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait
             .Identifier;
 
         if (block.Contains("water", StringComparison.Ordinal) ||
-            block.Contains("lava", StringComparison.Ordinal))
-        {
+            block.Contains("lava", StringComparison.Ordinal)) {
             return false;
         }
 

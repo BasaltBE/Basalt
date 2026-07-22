@@ -7,8 +7,7 @@ namespace Basalt.Protocol.Types;
 /// <summary>
 /// Command definition sent to the client for help and autocomplete.
 /// </summary>
-public sealed class Command : DataType
-{
+public sealed class Command : DataType {
     /// <summary>
     /// Command name shown and executed by the client.
     /// </summary>
@@ -44,8 +43,7 @@ public sealed class Command : DataType
     /// </summary>
     public List<CommandOverload> Overloads = [];
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         Description = reader.ReadVarString();
         Flags = reader.ReadUInt16(true);
@@ -53,37 +51,32 @@ public sealed class Command : DataType
         AliasesOffset = reader.ReadUInt32(true);
         int chainedSubcommandCount = checked((int)reader.ReadVarUInt());
         ChainedSubcommandOffsets = new(chainedSubcommandCount);
-        for (int i = 0; i < chainedSubcommandCount; i++)
-        {
+        for (int i = 0; i < chainedSubcommandCount; i++) {
             ChainedSubcommandOffsets.Add(reader.ReadUInt16(true));
         }
 
         int overloadCount = checked((int)reader.ReadVarUInt());
         Overloads = new(overloadCount);
-        for (int i = 0; i < overloadCount; i++)
-        {
+        for (int i = 0; i < overloadCount; i++) {
             CommandOverload overload = new();
             overload.Read(reader);
             Overloads.Add(overload);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         writer.WriteVarString(Description);
         writer.WriteUInt16(Flags, true);
         writer.WriteVarString(PermissionToString(PermissionLevel));
         writer.WriteUInt32(AliasesOffset, true);
         writer.WriteVarUInt((uint)ChainedSubcommandOffsets.Count);
-        for (int i = 0; i < ChainedSubcommandOffsets.Count; i++)
-        {
+        for (int i = 0; i < ChainedSubcommandOffsets.Count; i++) {
             writer.WriteUInt16(ChainedSubcommandOffsets[i], true);
         }
 
         writer.WriteVarUInt((uint)Overloads.Count);
-        for (int i = 0; i < Overloads.Count; i++)
-        {
+        for (int i = 0; i < Overloads.Count; i++) {
             Overloads[i].Write(writer);
         }
     }
@@ -94,8 +87,7 @@ public sealed class Command : DataType
     /// </summary>
     /// <param name="permissionLevel"></param>
     /// <returns></returns>
-    static string PermissionToString(CommandPermissionLevel permissionLevel) => permissionLevel switch
-    {
+    static string PermissionToString(CommandPermissionLevel permissionLevel) => permissionLevel switch {
         CommandPermissionLevel.Any => "any",
         CommandPermissionLevel.GameDirectors => "gamedirectors",
         CommandPermissionLevel.Admin => "admin",
@@ -105,8 +97,7 @@ public sealed class Command : DataType
         _ => "unknown"
     };
 
-    static CommandPermissionLevel PermissionFromString(string permissionLevel) => permissionLevel switch
-    {
+    static CommandPermissionLevel PermissionFromString(string permissionLevel) => permissionLevel switch {
         "any" => CommandPermissionLevel.Any,
         "gamedirectors" => CommandPermissionLevel.GameDirectors,
         "admin" => CommandPermissionLevel.Admin,

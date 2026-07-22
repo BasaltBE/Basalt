@@ -4,13 +4,11 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.Byte)]
-public sealed class ByteTag : BaseTag
-{
+public sealed class ByteTag : BaseTag {
     public sbyte Value { get; set; }
     public override object ToJsonValue() => Value;
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
@@ -18,8 +16,7 @@ public sealed class ByteTag : BaseTag
     }
 
     public static ByteTag Read(BinaryReader reader, TagOptions options = default) =>
-        new()
-        {
+        new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null,
             Value = reader.ReadInt8()
         };

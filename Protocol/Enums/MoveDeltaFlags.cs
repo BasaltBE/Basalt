@@ -1,6 +1,4 @@
-public enum MoveDeltaFlags : ushort
-
-{
+public enum MoveDeltaFlags : ushort {
     HasX = 0x01,
     HasY = 0x02,
     HasZ = 0x04,

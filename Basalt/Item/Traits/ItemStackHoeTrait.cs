@@ -7,27 +7,22 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 
-public sealed class ItemStackHoeTrait : ItemTrait
-{
+public sealed class ItemStackHoeTrait : ItemTrait {
     public new static string Identifier => "hoe_till";
     public new static readonly string[] Tags = ["minecraft:is_hoe"];
 
-    private static readonly Dictionary<string, string> TillableBlocks = new(StringComparer.Ordinal)
-    {
+    private static readonly Dictionary<string, string> TillableBlocks = new(StringComparer.Ordinal) {
         [BlockIdentifier.GrassBlock.ToIdentifier()] = BlockIdentifier.Farmland.ToIdentifier(),
         [BlockIdentifier.GrassPath.ToIdentifier()] = BlockIdentifier.Farmland.ToIdentifier(),
         [BlockIdentifier.Dirt.ToIdentifier()] = BlockIdentifier.Farmland.ToIdentifier(),
         [BlockIdentifier.CoarseDirt.ToIdentifier()] = BlockIdentifier.Dirt.ToIdentifier()
     };
 
-    public ItemStackHoeTrait(ItemStack itemStack) : base(itemStack)
-    {
+    public ItemStackHoeTrait(ItemStack itemStack) : base(itemStack) {
     }
 
-    public override void OnUseOnBlock(ItemUseOnBlockDetails details)
-    {
-        if (details.Player.Dimension is null)
-        {
+    public override void OnUseOnBlock(ItemUseOnBlockDetails details) {
+        if (details.Player.Dimension is null) {
             return;
         }
 
@@ -36,14 +31,12 @@ public sealed class ItemStackHoeTrait : ItemTrait
 
         BlockPermutation current = dimension.GetPermutation(pos.X, pos.Y, pos.Z);
 
-        if (!TillableBlocks.TryGetValue(current.Type.Identifier, out string? resultIdentifier))
-        {
+        if (!TillableBlocks.TryGetValue(current.Type.Identifier, out string? resultIdentifier)) {
             return;
         }
 
         BlockType? resultType = BlockType.Get(resultIdentifier);
-        if (resultType is null)
-        {
+        if (resultType is null) {
             return;
         }
 
@@ -51,24 +44,20 @@ public sealed class ItemStackHoeTrait : ItemTrait
 
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, resultPermutation);
 
-        if (string.Equals(resultIdentifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
-        {
+        if (string.Equals(resultIdentifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal)) {
             Basalt.Core.Blocks.Traits.FarmlandTrait.ScheduleFarmlandTick(dimension, pos);
         }
 
-        dimension.Broadcast(new UpdateBlockPacket
-        {
+        dimension.Broadcast(new UpdateBlockPacket {
             Position = pos,
             NetworkBlockId = (uint)resultPermutation.NetworkId,
             Flags = UpdateBlockFlagsType.Network,
             Layer = UpdateBlockLayerType.Normal
         });
 
-        dimension.Broadcast(new LevelSoundEventPacket
-        {
+        dimension.Broadcast(new LevelSoundEventPacket {
             Event = LevelSoundEvent.ItemUseOn,
-            Position = new Vec3f
-            {
+            Position = new Vec3f {
                 X = pos.X + 0.5f,
                 Y = pos.Y + 0.5f,
                 Z = pos.Z + 0.5f

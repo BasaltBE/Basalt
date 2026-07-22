@@ -6,8 +6,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Registered enchantment definition loaded from protocol data.
 /// </summary>
-public class EnchantmentType
-{
+public class EnchantmentType {
     private static readonly Dictionary<int, EnchantmentType> ById = [];
     private static readonly Dictionary<string, EnchantmentType> ByIdentifier = new(StringComparer.Ordinal);
     private static bool _loaded;
@@ -17,8 +16,7 @@ public class EnchantmentType
     public int Id { get; }
     public int MaxLevel { get; }
 
-    public EnchantmentType(string identifier, int id, int maxLevel)
-    {
+    public EnchantmentType(string identifier, int id, int maxLevel) {
         Identifier = identifier;
         Id = id;
         MaxLevel = maxLevel;
@@ -26,21 +24,18 @@ public class EnchantmentType
 
     public static IReadOnlyDictionary<int, EnchantmentType> All => ById;
 
-    public static EnchantmentType? Get(int id)
-    {
+    public static EnchantmentType? Get(int id) {
         return ById.TryGetValue(id, out EnchantmentType? type) ? type : null;
     }
 
-    public static EnchantmentType? Get(string identifier)
-    {
+    public static EnchantmentType? Get(string identifier) {
         return ByIdentifier.TryGetValue(identifier, out EnchantmentType? type) ? type : null;
     }
 
     /// <summary>
     /// Registers a custom enchantment type
     /// </summary>
-    public static void Register(EnchantmentType type)
-    {
+    public static void Register(EnchantmentType type) {
         ById[type.Id] = type;
         ByIdentifier[type.Identifier] = type;
     }
@@ -80,25 +75,21 @@ public class EnchantmentType
     /// </summary>
     public virtual void OnTick(int level, TickEnchantmentContext ctx) { }
 
-    public static void Load(string? dataDirectory = null)
-    {
+    public static void Load(string? dataDirectory = null) {
         if (_loaded) return;
 
-        lock (LoadLock)
-        {
+        lock (LoadLock) {
             if (_loaded) return;
 
             EnchantmentRegistry.RegisterVanilla();
 
             List<EnchantmentTypeData> entries;
-            if (!string.IsNullOrWhiteSpace(dataDirectory))
-            {
+            if (!string.IsNullOrWhiteSpace(dataDirectory)) {
                 string path = Path.Combine(dataDirectory, "enchantment_types.json");
                 using FileStream fileStream = File.OpenRead(path);
                 entries = JsonSerializer.Deserialize(fileStream, EnchantmentJsonContext.Default.ListEnchantmentTypeData) ?? [];
             }
-            else
-            {
+            else {
                 using Stream stream = ProtocolData.Require("enchantment_types.json");
                 entries = JsonSerializer.Deserialize(stream, EnchantmentJsonContext.Default.ListEnchantmentTypeData) ?? [];
             }
@@ -106,8 +97,7 @@ public class EnchantmentType
             ById.EnsureCapacity(entries.Count);
             ByIdentifier.EnsureCapacity(entries.Count);
 
-            for (int i = 0; i < entries.Count; i++)
-            {
+            for (int i = 0; i < entries.Count; i++) {
                 EnchantmentTypeData entry = entries[i];
                 if (string.IsNullOrEmpty(entry.Identifier)) continue;
 
@@ -124,8 +114,7 @@ public class EnchantmentType
 
 }
 
-internal sealed class EnchantmentTypeData
-{
+internal sealed class EnchantmentTypeData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
@@ -138,6 +127,5 @@ internal sealed class EnchantmentTypeData
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<EnchantmentTypeData>))]
-internal sealed partial class EnchantmentJsonContext : JsonSerializerContext
-{
+internal sealed partial class EnchantmentJsonContext : JsonSerializerContext {
 }

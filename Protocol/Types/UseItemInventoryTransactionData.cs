@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
-{
+public sealed class UseItemInventoryTransactionData : IInventoryTransactionData {
     public InventoryTransactionType Type => InventoryTransactionType.UseItem;
 
     /// <summary>
@@ -52,8 +51,7 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
     /// Client cooldown state value.
     /// </summary>
     public byte ClientCooldownState;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ActionType = unchecked((uint)reader.ReadZigZag());
         TriggerType = reader.ReadUInt8();
         BlockPos blockPosition = BlockPosition;
@@ -69,8 +67,7 @@ public sealed class UseItemInventoryTransactionData : IInventoryTransactionData
         ClientCooldownState = reader.ReadUInt8();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(unchecked((int)ActionType));
         writer.WriteUInt8(unchecked((byte)TriggerType));
         BlockPosition.Write(writer);

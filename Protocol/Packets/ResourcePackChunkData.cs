@@ -5,15 +5,13 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ResourcePackChunkData)]
-public sealed record ResourcePackChunkDataPacket : DataPacket
-{
+public sealed record ResourcePackChunkDataPacket : DataPacket {
     public string Uuid = string.Empty;
     public uint ChunkIndex;
     public ulong DataOffset;
     public byte[] Data = [];
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         Uuid = reader.ReadVarString();
         ChunkIndex = reader.ReadUInt32(true);
         DataOffset = reader.ReadUInt64(true);
@@ -21,8 +19,7 @@ public sealed record ResourcePackChunkDataPacket : DataPacket
         Data = reader.ReadBytes(length).ToArray();
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteVarString(Uuid);
         writer.WriteUInt32(ChunkIndex, true);
         writer.WriteUInt64(DataOffset, true);

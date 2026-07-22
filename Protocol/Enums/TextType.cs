@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum TextType : byte
-{
+public enum TextType : byte {
     Raw = 0,
     Chat = 1,
     Translation = 2,

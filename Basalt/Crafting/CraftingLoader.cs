@@ -2,41 +2,33 @@ namespace Basalt.Core.Crafting;
 
 using System.Text.Json;
 
-public static class CraftingLoader
-{
-    public static void Load(string? dataDirectory = null)
-    {
+public static class CraftingLoader {
+    public static void Load(string? dataDirectory = null) {
         CraftingRegistry.Initialize();
         FurnaceRegistry.Initialize();
 
         Stream? stream;
-        if (!string.IsNullOrWhiteSpace(dataDirectory))
-        {
+        if (!string.IsNullOrWhiteSpace(dataDirectory)) {
             string recipesPath = Path.Combine(dataDirectory, "crafting_recipes.json");
-            if (!File.Exists(recipesPath))
-            {
+            if (!File.Exists(recipesPath)) {
                 Logger.Warn($"Crafting: recipe file not found at '{recipesPath}'.");
                 return;
             }
 
             stream = File.OpenRead(recipesPath);
         }
-        else
-        {
+        else {
             stream = ProtocolData.Open("crafting_recipes.json");
-            if (stream is null)
-            {
+            if (stream is null) {
                 Logger.Warn("Crafting: embedded recipe resource not found.");
                 return;
             }
         }
 
-        using (stream)
-        {
+        using (stream) {
             using JsonDocument document = JsonDocument.Parse(stream);
 
-            if (document.RootElement.ValueKind != JsonValueKind.Array)
-            {
+            if (document.RootElement.ValueKind != JsonValueKind.Array) {
                 Logger.Warn("Crafting: recipe file root is not an array.");
                 return;
             }
@@ -45,15 +37,12 @@ public static class CraftingLoader
             int furnaceLoaded = 0;
             int skipped = 0;
 
-            foreach (JsonElement element in document.RootElement.EnumerateArray())
-            {
+            foreach (JsonElement element in document.RootElement.EnumerateArray()) {
                 string type = ReadString(element, "type");
 
-                if (type == "furnace")
-                {
+                if (type == "furnace") {
                     FurnaceRecipe? furnace = ParseFurnaceRecipe(element);
-                    if (furnace is null)
-                    {
+                    if (furnace is null) {
                         skipped++;
                         continue;
                     }
@@ -64,8 +53,7 @@ public static class CraftingLoader
                 }
 
                 CraftingRecipe? recipe = ParseRecipe(element);
-                if (recipe is null)
-                {
+                if (recipe is null) {
                     skipped++;
                     continue;
                 }
@@ -78,24 +66,21 @@ public static class CraftingLoader
         }
     }
 
-    private static FurnaceRecipe? ParseFurnaceRecipe(JsonElement element)
-    {
+    private static FurnaceRecipe? ParseFurnaceRecipe(JsonElement element) {
         string identifier = ReadString(element, "identifier");
         if (string.IsNullOrEmpty(identifier)) return null;
 
         List<string> tags = ParseStringArray(element, "tags");
         if (tags.Count == 0) return null;
 
-        if (!element.TryGetProperty("input", out JsonElement inputEl) || inputEl.ValueKind != JsonValueKind.Object)
-        {
+        if (!element.TryGetProperty("input", out JsonElement inputEl) || inputEl.ValueKind != JsonValueKind.Object) {
             return null;
         }
 
         string inputItem = ReadString(inputEl, "item");
         if (string.IsNullOrEmpty(inputItem)) return null;
 
-        if (!element.TryGetProperty("output", out JsonElement outputEl) || outputEl.ValueKind != JsonValueKind.Object)
-        {
+        if (!element.TryGetProperty("output", out JsonElement outputEl) || outputEl.ValueKind != JsonValueKind.Object) {
             return null;
         }
 
@@ -105,11 +90,9 @@ public static class CraftingLoader
         return new FurnaceRecipe(identifier, tags, inputItem, outputItem);
     }
 
-    private static CraftingRecipe? ParseRecipe(JsonElement element)
-    {
+    private static CraftingRecipe? ParseRecipe(JsonElement element) {
         string typeStr = ReadString(element, "type");
-        RecipeType type = typeStr switch
-        {
+        RecipeType type = typeStr switch {
             "shaped" => RecipeType.Shaped,
             "shapeless" => RecipeType.Shapeless,
             _ => (RecipeType)(-1)
@@ -127,8 +110,7 @@ public static class CraftingLoader
         Dictionary<char, RecipeIngredient> key = [];
         List<RecipeIngredient> ingredients = [];
 
-        switch (type)
-        {
+        switch (type) {
             case RecipeType.Shaped:
                 pattern = ParseStringArray(element, "pattern");
                 key = ParseKey(element);
@@ -144,21 +126,17 @@ public static class CraftingLoader
         return new CraftingRecipe(type, identifier, tags, priority, pattern, key, ingredients, result);
     }
 
-    private static Dictionary<char, RecipeIngredient> ParseKey(JsonElement element)
-    {
+    private static Dictionary<char, RecipeIngredient> ParseKey(JsonElement element) {
         Dictionary<char, RecipeIngredient> key = [];
-        if (!element.TryGetProperty("key", out JsonElement keyElement) || keyElement.ValueKind != JsonValueKind.Object)
-        {
+        if (!element.TryGetProperty("key", out JsonElement keyElement) || keyElement.ValueKind != JsonValueKind.Object) {
             return key;
         }
 
-        foreach (JsonProperty property in keyElement.EnumerateObject())
-        {
+        foreach (JsonProperty property in keyElement.EnumerateObject()) {
             if (property.Name.Length != 1) continue;
             char symbol = property.Name[0];
             RecipeIngredient? ingredient = ParseIngredient(property.Value);
-            if (ingredient is not null)
-            {
+            if (ingredient is not null) {
                 key[symbol] = ingredient;
             }
         }
@@ -166,19 +144,15 @@ public static class CraftingLoader
         return key;
     }
 
-    private static List<RecipeIngredient> ParseIngredients(JsonElement element)
-    {
+    private static List<RecipeIngredient> ParseIngredients(JsonElement element) {
         List<RecipeIngredient> ingredients = [];
-        if (!element.TryGetProperty("ingredients", out JsonElement array) || array.ValueKind != JsonValueKind.Array)
-        {
+        if (!element.TryGetProperty("ingredients", out JsonElement array) || array.ValueKind != JsonValueKind.Array) {
             return ingredients;
         }
 
-        foreach (JsonElement item in array.EnumerateArray())
-        {
+        foreach (JsonElement item in array.EnumerateArray()) {
             RecipeIngredient? ingredient = ParseIngredient(item);
-            if (ingredient is not null)
-            {
+            if (ingredient is not null) {
                 ingredients.Add(ingredient);
             }
         }
@@ -186,8 +160,7 @@ public static class CraftingLoader
         return ingredients;
     }
 
-    private static RecipeIngredient? ParseIngredient(JsonElement element)
-    {
+    private static RecipeIngredient? ParseIngredient(JsonElement element) {
         if (element.ValueKind != JsonValueKind.Object) return null;
 
         string? item = element.TryGetProperty("item", out JsonElement itemEl) && itemEl.ValueKind == JsonValueKind.String
@@ -206,13 +179,11 @@ public static class CraftingLoader
         return new RecipeIngredient(item, tag, data, count);
     }
 
-    private static RecipeResult? ParseResult(JsonElement element)
-    {
+    private static RecipeResult? ParseResult(JsonElement element) {
         if (!element.TryGetProperty("result", out JsonElement resultEl)) return null;
 
         JsonElement target = resultEl;
-        if (resultEl.ValueKind == JsonValueKind.Array)
-        {
+        if (resultEl.ValueKind == JsonValueKind.Array) {
             if (resultEl.GetArrayLength() == 0) return null;
             target = resultEl[0];
         }
@@ -228,18 +199,14 @@ public static class CraftingLoader
         return new RecipeResult(item, count, data);
     }
 
-    private static List<string> ParseStringArray(JsonElement element, string property)
-    {
+    private static List<string> ParseStringArray(JsonElement element, string property) {
         List<string> result = [];
-        if (!element.TryGetProperty(property, out JsonElement array) || array.ValueKind != JsonValueKind.Array)
-        {
+        if (!element.TryGetProperty(property, out JsonElement array) || array.ValueKind != JsonValueKind.Array) {
             return result;
         }
 
-        foreach (JsonElement item in array.EnumerateArray())
-        {
-            if (item.ValueKind == JsonValueKind.String)
-            {
+        foreach (JsonElement item in array.EnumerateArray()) {
+            if (item.ValueKind == JsonValueKind.String) {
                 result.Add(item.GetString() ?? string.Empty);
             }
         }
@@ -247,15 +214,13 @@ public static class CraftingLoader
         return result;
     }
 
-    private static string ReadString(JsonElement element, string property)
-    {
+    private static string ReadString(JsonElement element, string property) {
         return element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.String
           ? value.GetString() ?? string.Empty
           : string.Empty;
     }
 
-    private static int ReadInt(JsonElement element, string property, int fallback)
-    {
+    private static int ReadInt(JsonElement element, string property, int fallback) {
         return element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int result)
           ? result
           : fallback;

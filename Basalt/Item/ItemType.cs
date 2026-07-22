@@ -10,10 +10,8 @@ using Basalt.Protocol.Types;
 /// <summary>
 /// Catalog metadata for an item's creative menu placement.
 /// </summary>
-public sealed class ItemCatalog
-{
-    private static readonly Dictionary<string, int> CategoryMap = new(StringComparer.OrdinalIgnoreCase)
-    {
+public sealed class ItemCatalog {
+    private static readonly Dictionary<string, int> CategoryMap = new(StringComparer.OrdinalIgnoreCase) {
         ["construction"] = 1,
         ["nature"] = 2,
         ["equipment"] = 3,
@@ -35,23 +33,20 @@ public sealed class ItemCatalog
     /// </summary>
     public string? GroupIcon { get; }
 
-    public ItemCatalog(string categoryName, string? groupName, string? groupIcon)
-    {
+    public ItemCatalog(string categoryName, string? groupName, string? groupIcon) {
         Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 0;
         GroupName = string.IsNullOrEmpty(groupName) ? null : StripMinecraftPrefix(groupName);
         GroupIcon = string.IsNullOrEmpty(groupIcon) ? null : groupIcon;
     }
 
-    private static string StripMinecraftPrefix(string value)
-    {
+    private static string StripMinecraftPrefix(string value) {
         return value.StartsWith("minecraft:", StringComparison.Ordinal)
             ? value["minecraft:".Length..]
             : value;
     }
 }
 
-public sealed class ItemType
-{
+public sealed class ItemType {
     private static readonly Dictionary<string, ItemType> Registry = new(StringComparer.Ordinal);
     private static readonly Dictionary<int, ItemType> NetworkRegistry = [];
 
@@ -82,8 +77,7 @@ public sealed class ItemType
         int version,
         CompoundTag? properties = null,
         ItemCatalog? catalog = null,
-        BlockType? blockType = null)
-    {
+        BlockType? blockType = null) {
         Identifier = identifier;
         NetworkId = networkId;
         MaxStackSize = maxStackSize;
@@ -101,64 +95,52 @@ public sealed class ItemType
         AttackDamage = ResolveDamage(Tags);
     }
 
-    public static ItemType? Get(string identifier)
-    {
+    public static ItemType? Get(string identifier) {
         return Registry.TryGetValue(identifier, out ItemType? type) ? type : null;
     }
 
-    public static ItemType GetOrAir(string identifier)
-    {
+    public static ItemType GetOrAir(string identifier) {
         return Get(identifier) ?? Get("minecraft:air") ?? new ItemType("minecraft:air", 0, 64, [], true, 1);
     }
 
-    public static ItemType? GetByNetwork(int networkId)
-    {
+    public static ItemType? GetByNetwork(int networkId) {
         return NetworkRegistry.TryGetValue(networkId, out ItemType? type) ? type : null;
     }
 
-    public static List<ItemType> GetAll()
-    {
+    public static List<ItemType> GetAll() {
         return [.. Registry.Values];
     }
 
-    public void RegisterTrait(Type traitType, string identifier)
-    {
-        if (!typeof(ItemTrait).IsAssignableFrom(traitType) || traitType.IsAbstract)
-        {
+    public void RegisterTrait(Type traitType, string identifier) {
+        if (!typeof(ItemTrait).IsAssignableFrom(traitType) || traitType.IsAbstract) {
             return;
         }
 
         _traits.TryAdd(identifier, traitType);
     }
 
-    public bool TryGetComponentProperties(string component, out CompoundTag properties)
-    {
+    public bool TryGetComponentProperties(string component, out CompoundTag properties) {
         return Components.TryGetComponentProperties(component, out properties);
     }
 
-    public static void EnsureRegistryCapacity(int capacity)
-    {
+    public static void EnsureRegistryCapacity(int capacity) {
         Registry.EnsureCapacity(capacity);
         NetworkRegistry.EnsureCapacity(capacity);
     }
 
-    public static LegacyItem ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0)
-    {
+    public static LegacyItem ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0) {
         int networkBlockId = 0;
-        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0)
-        {
+        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0) {
             networkBlockId = type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new LegacyItem
-        {
+        return new LegacyItem {
             NetworkId = type.NetworkId,
             StackSize = stackSize,
             Metadata = unchecked((int)metadata),
             ItemStackId = null,
             NetworkBlockId = networkBlockId,
-            ExtraData = new ItemInstanceUserData
-            {
+            ExtraData = new ItemInstanceUserData {
                 Nbt = null,
                 CanPlaceOn = [],
                 CanDestroy = [],
@@ -173,15 +155,12 @@ public sealed class ItemType
     private static readonly float[] ShovelDamage = [1, 2, 2, 3, 1, 4, 5];
     private static readonly float[] HoeDamage = [2, 3, 3, 4, 2, 5, 7];
 
-    private static float ResolveDamage(IReadOnlyList<string> tags)
-    {
+    private static float ResolveDamage(IReadOnlyList<string> tags) {
         float[]? table = null;
         int tier = -1;
 
-        for (int i = 0; i < tags.Count; i++)
-        {
-            switch (tags[i])
-            {
+        for (int i = 0; i < tags.Count; i++) {
+            switch (tags[i]) {
                 case "minecraft:is_sword": table = SwordDamage; break;
                 case "minecraft:is_axe": table = AxeDamage; break;
                 case "minecraft:is_pickaxe": table = PickaxeDamage; break;

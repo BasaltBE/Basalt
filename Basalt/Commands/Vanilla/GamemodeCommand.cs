@@ -3,8 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Protocol.Enums;
 using Player = Player.Player;
 
-public sealed class GamemodeEnum : CustomEnum
-{
+public sealed class GamemodeEnum : CustomEnum {
     public static readonly string[] Values =
     [
         "survival", "s", "0",
@@ -15,8 +14,7 @@ public sealed class GamemodeEnum : CustomEnum
 
     public GamemodeEnum() : base("GameMode", Values) { }
 
-    public Gamemode ToGamemode() => Value?.ToLowerInvariant() switch
-    {
+    public Gamemode ToGamemode() => Value?.ToLowerInvariant() switch {
         "survival" or "s" or "0" => Gamemode.Survival,
         "creative" or "c" or "1" => Gamemode.Creative,
         "adventure" or "a" or "2" => Gamemode.Adventure,
@@ -25,10 +23,8 @@ public sealed class GamemodeEnum : CustomEnum
     };
 }
 
-public static class GamemodeCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class GamemodeCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "gamemode",
         Description = "Changes the game mode for a player.",
         Aliases = ["gm"],
@@ -54,8 +50,7 @@ public static class GamemodeCommand
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
-    {
+    static CommandResult Execute(CommandContext ctx) {
         GamemodeEnum? gamemode = ctx.Get<GamemodeEnum>("gameMode");
         if (gamemode is null)
             return CommandResult.Error("Usage: /gamemode <survival|creative|adventure|spectator> [player]");
@@ -63,8 +58,7 @@ public static class GamemodeCommand
         Gamemode mode = gamemode.ToGamemode();
 
         TargetEnum? target = ctx.Get<TargetEnum>("player");
-        if (target is not null)
-        {
+        if (target is not null) {
             Player? player = target.GetSinglePlayer(out CommandResult? error);
             if (player is null) return error!;
 

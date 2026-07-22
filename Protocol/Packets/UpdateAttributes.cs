@@ -5,8 +5,7 @@ using ProtoAttribute = Basalt.Protocol.Types.Attribute;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.UpdateAttributes)]
-public sealed record UpdateAttributesPacket : DataPacket
-{
+public sealed record UpdateAttributesPacket : DataPacket {
     /// <summary>
     /// Runtime id of the actor.
     /// </summary>
@@ -22,15 +21,13 @@ public sealed record UpdateAttributesPacket : DataPacket
     /// </summary>
     public ulong Tick;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         RuntimeId = reader.ReadVarULong();
         Attributes = ProtoAttribute.ReadList(reader);
         Tick = reader.ReadVarULong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarULong(RuntimeId);
         ProtoAttribute.WriteList(writer, Attributes);
         writer.WriteVarULong(Tick);

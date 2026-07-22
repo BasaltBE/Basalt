@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum InventoryTransactionType : uint
-{
+public enum InventoryTransactionType : uint {
     Normal = 0,
     Mismatch = 1,
     UseItem = 2,

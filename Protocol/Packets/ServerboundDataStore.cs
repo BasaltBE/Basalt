@@ -4,17 +4,14 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ServerboundDataStore)]
-public sealed record ServerboundDataStorePacket : DataPacket
-{
+public sealed record ServerboundDataStorePacket : DataPacket {
     public DataStoreUpdate Update = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Update.Read(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Update.Write(writer);
     }
 }

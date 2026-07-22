@@ -5,8 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <summary>
 /// Defines a single parameter in a command overload.
 /// </summary>
-public sealed class ParameterDefinition
-{
+public sealed class ParameterDefinition {
     public required string Name { get; init; }
 
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -18,16 +17,14 @@ public sealed class ParameterDefinition
 /// <summary>
 /// Defines one overload (signature) of a command.
 /// </summary>
-public sealed class OverloadDefinition
-{
+public sealed class OverloadDefinition {
     public ParameterDefinition[] Parameters { get; init; } = [];
 }
 
 /// <summary>
 /// Command definities for mc protocol
 /// </summary>
-public sealed class CommandDefinition
-{
+public sealed class CommandDefinition {
     public required string Name { get; init; }
     public required string Description { get; init; }
     public string[] Aliases { get; init; } = [];

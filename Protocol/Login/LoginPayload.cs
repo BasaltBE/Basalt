@@ -6,10 +6,8 @@ using Basalt.Protocol.Enums;
 namespace Basalt.Protocol.Login;
 
 
-public static class LoginPayload
-{
-    public static ClientData Parse(string clientJwt)
-    {
+public static class LoginPayload {
+    public static ClientData Parse(string clientJwt) {
         TokenParts parts = ParseTokenParts(clientJwt);
 
         byte[] payloadBytes = JsonValue.DecodeBase64Url(clientJwt.AsSpan(parts.PayloadStart, parts.PayloadLength));
@@ -101,16 +99,14 @@ public static class LoginPayload
             .Select(item => new TintPiece(JsonValue.GetString(item, "PieceType"), GetColors(item)))
             .ToArray();
 
-    private static TokenParts ParseTokenParts(string token)
-    {
+    private static TokenParts ParseTokenParts(string token) {
         int firstDot = token.IndexOf('.');
         int secondDot = firstDot > 0 ? token.IndexOf('.', firstDot + 1) : -1;
 
         if (firstDot <= 0
             || secondDot <= firstDot + 1
             || secondDot == token.Length - 1
-            || token.IndexOf('.', secondDot + 1) >= 0)
-        {
+            || token.IndexOf('.', secondDot + 1) >= 0) {
             throw new InvalidOperationException("Malformed client token.");
         }
 

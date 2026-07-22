@@ -2,8 +2,7 @@ using Basalt.Protocol.Enums;
 
 namespace Basalt.Protocol.Types;
 
-public abstract class DataStoreChangeInfo
-{
+public abstract class DataStoreChangeInfo {
     public abstract DataStoreChangeAction Action { get; }
     public abstract string DataStoreName { get; set; }
 

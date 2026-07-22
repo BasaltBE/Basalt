@@ -6,8 +6,7 @@ namespace Basalt.Protocol.Types;
 /// <summary>
 /// One supported argument layout for a command.
 /// </summary>
-public sealed class CommandOverload : DataType
-{
+public sealed class CommandOverload : DataType {
     /// <summary>
     /// Whether this overload uses chained subcommands.
     /// </summary>
@@ -18,25 +17,21 @@ public sealed class CommandOverload : DataType
     /// </summary>
     public List<CommandParameter> Parameters = [];
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Chaining = reader.ReadBool();
         int count = checked((int)reader.ReadVarUInt());
         Parameters = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             CommandParameter parameter = new();
             parameter.Read(reader);
             Parameters.Add(parameter);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteBool(Chaining);
         writer.WriteVarUInt((uint)Parameters.Count);
-        for (int i = 0; i < Parameters.Count; i++)
-        {
+        for (int i = 0; i < Parameters.Count; i++) {
             Parameters[i].Write(writer);
         }
     }

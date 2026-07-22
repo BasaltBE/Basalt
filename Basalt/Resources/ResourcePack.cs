@@ -5,8 +5,7 @@ using System.Security.Cryptography;
 /// <summary>
 /// Represents a loaded resource pack with its manifest metadata and compressed data.
 /// </summary>
-public sealed class ResourcePack
-{
+public sealed class ResourcePack {
     public required string FolderName { get; init; }
     public required Guid Uuid { get; init; }
     public required string Name { get; init; }
@@ -19,17 +18,14 @@ public sealed class ResourcePack
 
     public ulong Size => (ulong)Data.Length;
 
-    public uint ChunkCount(uint chunkSize)
-    {
+    public uint ChunkCount(uint chunkSize) {
         if (chunkSize == 0) return 0;
         return (uint)((Data.Length + chunkSize - 1) / chunkSize);
     }
 
-    public static ResourcePack Create(string folderName, Guid uuid, string name, string description, int[] version, byte[] data)
-    {
+    public static ResourcePack Create(string folderName, Guid uuid, string name, string description, int[] version, byte[] data) {
         byte[] hash = SHA256.HashData(data);
-        return new ResourcePack
-        {
+        return new ResourcePack {
             FolderName = folderName,
             Uuid = uuid,
             Name = name,

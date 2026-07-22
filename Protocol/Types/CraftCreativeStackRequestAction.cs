@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataType
-{
+public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataType {
     public byte ActionType => 14;
     /// <summary>
     /// Creative item network id to create.
@@ -14,14 +13,12 @@ public sealed class CraftCreativeStackRequestAction : IStackRequestAction, DataT
     /// Requested craft count value.
     /// </summary>
     public byte NumberOfCrafts;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         CreativeItemNetworkId = reader.ReadVarUInt();
         NumberOfCrafts = reader.ReadUInt8();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(CreativeItemNetworkId);
         writer.WriteUInt8(NumberOfCrafts);
     }

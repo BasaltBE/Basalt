@@ -15,8 +15,7 @@ using Basalt.Core.Traits;
 // using Player = Player.Player;
 
 
-public sealed class DebugTrait : PlayerTrait
-{
+public sealed class DebugTrait : PlayerTrait {
     private const double TargetTps = 20.0;
     private const ulong SendIntervalTicks = 20;
 
@@ -27,12 +26,10 @@ public sealed class DebugTrait : PlayerTrait
     private double _averageMspt;
     // private bool _gaveDebugItems;
 
-    public DebugTrait(Entity entity) : base(entity)
-    {
+    public DebugTrait(Entity entity) : base(entity) {
     }
 
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
+    public override void OnSpawn(EntitySpawnOptions details) {
         _lastSentTick = Player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
         _averageMspt = 0;
         // if (!_gaveDebugItems)
@@ -76,27 +73,22 @@ public sealed class DebugTrait : PlayerTrait
         // }
     }
 
-    public override void OnTick(TraitOnTickDetails details)
-    {
-        if (!Player.IsAlive || details.CurrentTick - _lastSentTick < SendIntervalTicks)
-        {
+    public override void OnTick(TraitOnTickDetails details) {
+        if (!Player.IsAlive || details.CurrentTick - _lastSentTick < SendIntervalTicks) {
             return;
         }
 
-        try
-        {
+        try {
             double tps = Player.Dimension?.World?.Server?.Tps ?? TargetTps;
             double mspt = Player.Dimension?.World?.Server?.TickWork ?? 0;
             _averageMspt = _averageMspt == 0 ? mspt : _averageMspt + ((mspt - _averageMspt) * 0.2);
             double workingSetMb = Environment.WorkingSet / (1024.0 * 1024.0);
             int chunksLoaded = Player.Dimension?.ChunkCount ?? 0;
 
-            TextPacket packet = new()
-            {
+            TextPacket packet = new() {
                 NeedsTranslation = false,
                 VariantType = TextVariantType.MessageOnly,
-                Variant = new TextVariant
-                {
+                Variant = new TextVariant {
                     Type = TextType.Tip,
                     Message = $"§aTPS: §f{tps:0.0}§8/§f{TargetTps:0.0} §8| §aMSPT: §f{mspt:0.00} §8| §aA/MSPT: §f{_averageMspt:0.00} §8| §aRAM: §f{workingSetMb:0.0}MB §8| §aChunks: §f{chunksLoaded}"
                 },
@@ -108,14 +100,12 @@ public sealed class DebugTrait : PlayerTrait
             Player.Send(packet);
             _lastSentTick = details.CurrentTick;
         }
-        catch (Exception exception)
-        {
+        catch (Exception exception) {
             Logger.Warn($"[{Player.Username}] DebugTrait exception: {exception}");
         }
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
+    public override EntityTrait Clone(Entity entity) {
         return new DebugTrait(entity);
     }
 }

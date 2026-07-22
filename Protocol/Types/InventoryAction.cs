@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class InventoryAction : DataType
-{
+public sealed class InventoryAction : DataType {
     /// <summary>
     /// Source type of this action.
     /// </summary>
@@ -30,20 +29,17 @@ public sealed class InventoryAction : DataType
     /// </summary>
     public NetworkItemStackDescriptor NewItem = new();
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         SourceType = reader.ReadVarUInt();
         _ = reader.ReadBool();
         bool hasContainerId = reader.ReadBool();
-        if (hasContainerId)
-        {
+        if (hasContainerId) {
             WindowId = reader.ReadInt8();
         }
 
         _ = reader.ReadBool();
         bool hasFlags = reader.ReadBool();
-        if (hasFlags)
-        {
+        if (hasFlags) {
             SourceFlags = reader.ReadVarUInt();
         }
 
@@ -52,22 +48,19 @@ public sealed class InventoryAction : DataType
         NewItem.Read(reader);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(SourceType);
         writer.WriteBool(true);
         bool hasContainerId = SourceType == 0 || SourceType == 99999;
         writer.WriteBool(hasContainerId);
-        if (hasContainerId)
-        {
+        if (hasContainerId) {
             writer.WriteInt8(WindowId);
         }
 
         writer.WriteBool(true);
         bool hasFlags = SourceType == 2;
         writer.WriteBool(hasFlags);
-        if (hasFlags)
-        {
+        if (hasFlags) {
             writer.WriteVarUInt(SourceFlags);
         }
 

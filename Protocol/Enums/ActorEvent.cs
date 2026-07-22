@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ActorEvent : byte
-{
+public enum ActorEvent : byte {
     None = 0,
     Jump = 1,
     Hurt = 2,

@@ -9,36 +9,29 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
 
-public static class Interact
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class Interact {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         InteractPacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (InteractPacket)Protocol.Io.Packet.Deserialize(reader);
 
-        if (!server.Players.TryGetValue(connection, out Player.Player? player))
-        {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }
 
-        if (packet.ActionType == InteractActionType.LeaveVehicle)
-        {
+        if (packet.ActionType == InteractActionType.LeaveVehicle) {
             EntityRidingTrait? riding = player.GetTrait<EntityRidingTrait>();
-            if (riding is not null)
-            {
+            if (riding is not null) {
                 EntityRideableTrait? rideable = riding.Vehicle.GetTrait<EntityRideableTrait>();
                 rideable?.RemoveRider(player);
             }
             return;
         }
 
-        if (packet.ActionType == InteractActionType.OpenInventory)
-        {
+        if (packet.ActionType == InteractActionType.OpenInventory) {
             EntityInventoryTrait? playerInventory = player.GetTrait<EntityInventoryTrait>();
-            if (playerInventory is null)
-            {
+            if (playerInventory is null) {
                 return;
             }
 
@@ -46,24 +39,19 @@ public static class Interact
             return;
         }
 
-        if (packet.ActionType == InteractActionType.MouseOverEntity)
-        {
+        if (packet.ActionType == InteractActionType.MouseOverEntity) {
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
-            if (inventory is null)
-            {
+            if (inventory is null) {
                 return;
             }
 
             var heldItem = inventory.GetHeldItem();
-            if (heldItem is null || player.Dimension is null)
-            {
+            if (heldItem is null || player.Dimension is null) {
                 return;
             }
 
-            foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities)
-            {
-                if (entity.RuntimeId != packet.TargetEntityRuntimeId)
-                {
+            foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities) {
+                if (entity.RuntimeId != packet.TargetEntityRuntimeId) {
                     continue;
                 }
 

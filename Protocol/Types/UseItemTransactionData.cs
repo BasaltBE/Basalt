@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class UseItemTransactionData : DataType
-{
+public sealed class UseItemTransactionData : DataType {
     /// <summary>
     /// Legacy request id from older inventory flow.
     /// </summary>
@@ -61,16 +60,13 @@ public sealed class UseItemTransactionData : DataType
     /// Client cooldown state value.
     /// </summary>
     public byte ClientCooldownState;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         LegacyRequestId = reader.ReadZigZag();
         LegacySetItemSlots = [];
-        if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0)
-        {
+        if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0) {
             int legacyCount = checked((int)reader.ReadVarUInt());
             LegacySetItemSlots = new List<LegacySetItemSlot>(legacyCount);
-            for (int i = 0; i < legacyCount; i++)
-            {
+            for (int i = 0; i < legacyCount; i++) {
                 LegacySetItemSlot slot = new();
                 slot.Read(reader);
                 LegacySetItemSlots.Add(slot);
@@ -79,8 +75,7 @@ public sealed class UseItemTransactionData : DataType
 
         int actionCount = checked((int)reader.ReadVarUInt());
         Actions = new List<InventoryAction>(actionCount);
-        for (int i = 0; i < actionCount; i++)
-        {
+        for (int i = 0; i < actionCount; i++) {
             InventoryAction action = new();
             action.Read(reader);
             Actions.Add(action);
@@ -102,21 +97,17 @@ public sealed class UseItemTransactionData : DataType
 
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteZigZag(LegacyRequestId);
-        if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0)
-        {
+        if (LegacyRequestId < -1 && (LegacyRequestId & 1) == 0) {
             writer.WriteVarUInt((uint)LegacySetItemSlots.Count);
-            for (int i = 0; i < LegacySetItemSlots.Count; i++)
-            {
+            for (int i = 0; i < LegacySetItemSlots.Count; i++) {
                 LegacySetItemSlots[i].Write(writer);
             }
         }
 
         writer.WriteVarUInt((uint)Actions.Count);
-        for (int i = 0; i < Actions.Count; i++)
-        {
+        for (int i = 0; i < Actions.Count; i++) {
             Actions[i].Write(writer);
         }
 

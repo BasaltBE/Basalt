@@ -3,8 +3,7 @@ using Basalt.Protocol.Packets;
 
 namespace Basalt.Core.Scoreboard;
 
-public sealed class Scoreboard
-{
+public sealed class Scoreboard {
     private static long _nextEntryId;
 
     private readonly Player.Player _player;
@@ -16,8 +15,7 @@ public sealed class Scoreboard
     public ObjectiveSortOrder SortOrder { get; }
     public bool Visible { get; private set; }
 
-    internal Scoreboard(Player.Player player, DisplaySlotType slot, string title, ObjectiveSortOrder sortOrder)
-    {
+    internal Scoreboard(Player.Player player, DisplaySlotType slot, string title, ObjectiveSortOrder sortOrder) {
         _player = player;
         Slot = slot;
         Title = title;
@@ -25,14 +23,12 @@ public sealed class Scoreboard
         _objectiveName = $"basalt_{slot}_{player.RuntimeId}";
     }
 
-    public void Show()
-    {
+    public void Show() {
         if (Visible)
             return;
 
         Visible = true;
-        _player.Send(new SetDisplayObjectivePacket
-        {
+        _player.Send(new SetDisplayObjectivePacket {
             DisplaySlot = Slot,
             ObjectiveName = _objectiveName,
             DisplayName = Title,
@@ -44,32 +40,27 @@ public sealed class Scoreboard
             SendAllEntries();
     }
 
-    public void Hide()
-    {
+    public void Hide() {
         if (!Visible)
             return;
 
         Visible = false;
-        _player.Send(new RemoveObjectivePacket
-        {
+        _player.Send(new RemoveObjectivePacket {
             ObjectiveName = _objectiveName
         });
     }
 
-    public void SetTitle(string title)
-    {
+    public void SetTitle(string title) {
         Title = title;
 
         if (!Visible)
             return;
 
-        _player.Send(new RemoveObjectivePacket
-        {
+        _player.Send(new RemoveObjectivePacket {
             ObjectiveName = _objectiveName
         });
 
-        _player.Send(new SetDisplayObjectivePacket
-        {
+        _player.Send(new SetDisplayObjectivePacket {
             DisplaySlot = Slot,
             ObjectiveName = _objectiveName,
             DisplayName = title,
@@ -81,10 +72,8 @@ public sealed class Scoreboard
             SendAllEntries();
     }
 
-    public void SetLine(string text, int score)
-    {
-        if (_lines.TryGetValue(text, out ScoreboardLine existing))
-        {
+    public void SetLine(string text, int score) {
+        if (_lines.TryGetValue(text, out ScoreboardLine existing)) {
             if (existing.Score == score)
                 return;
 
@@ -103,8 +92,7 @@ public sealed class Scoreboard
             SendChangeEntry(id, text, score);
     }
 
-    public bool RemoveLine(string text)
-    {
+    public bool RemoveLine(string text) {
         if (!_lines.Remove(text, out ScoreboardLine line))
             return false;
 
@@ -114,18 +102,14 @@ public sealed class Scoreboard
         return true;
     }
 
-    public void ClearLines()
-    {
+    public void ClearLines() {
         if (_lines.Count == 0)
             return;
 
-        if (Visible)
-        {
+        if (Visible) {
             List<ScoreEntry> entries = new(_lines.Count);
-            foreach ((string text, ScoreboardLine line) in _lines)
-            {
-                entries.Add(new ScoreEntry
-                {
+            foreach ((string text, ScoreboardLine line) in _lines) {
+                entries.Add(new ScoreEntry {
                     ScoreboardId = line.Id,
                     ObjectiveName = _objectiveName,
                     Score = 0,
@@ -135,8 +119,7 @@ public sealed class Scoreboard
                 });
             }
 
-            _player.Send(new SetScorePacket
-            {
+            _player.Send(new SetScorePacket {
                 ActionType = ScoreboardActionType.Remove,
                 Entries = entries
             });
@@ -145,10 +128,8 @@ public sealed class Scoreboard
         _lines.Clear();
     }
 
-    private void SendChangeEntry(long id, string text, int score)
-    {
-        _player.Send(new SetScorePacket
-        {
+    private void SendChangeEntry(long id, string text, int score) {
+        _player.Send(new SetScorePacket {
             ActionType = ScoreboardActionType.Change,
             Entries =
           [
@@ -165,10 +146,8 @@ public sealed class Scoreboard
         });
     }
 
-    private void SendRemoveEntry(long id)
-    {
-        _player.Send(new SetScorePacket
-        {
+    private void SendRemoveEntry(long id) {
+        _player.Send(new SetScorePacket {
             ActionType = ScoreboardActionType.Remove,
             Entries =
           [
@@ -185,13 +164,10 @@ public sealed class Scoreboard
         });
     }
 
-    private void SendAllEntries()
-    {
+    private void SendAllEntries() {
         List<ScoreEntry> entries = new(_lines.Count);
-        foreach ((string text, ScoreboardLine line) in _lines)
-        {
-            entries.Add(new ScoreEntry
-            {
+        foreach ((string text, ScoreboardLine line) in _lines) {
+            entries.Add(new ScoreEntry {
                 ScoreboardId = line.Id,
                 ObjectiveName = _objectiveName,
                 Score = line.Score,
@@ -201,8 +177,7 @@ public sealed class Scoreboard
             });
         }
 
-        _player.Send(new SetScorePacket
-        {
+        _player.Send(new SetScorePacket {
             ActionType = ScoreboardActionType.Change,
             Entries = entries
         });

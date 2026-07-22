@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ActorFlag : int
-{
+public enum ActorFlag : int {
     Unknown = -1,
     OnFire = 0,
     Sneaking = 1,

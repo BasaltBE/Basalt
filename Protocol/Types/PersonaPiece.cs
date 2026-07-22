@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class PersonaPiece : DataType
-{
+public sealed class PersonaPiece : DataType {
     /// <summary>
     /// Unique id of the persona piece.
     /// </summary>
@@ -30,8 +29,7 @@ public sealed class PersonaPiece : DataType
     /// </summary>
     public string ProductId = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         PieceId = reader.ReadVarString();
         PieceType = reader.ReadVarString();
         PackId = reader.ReadVarString();
@@ -39,8 +37,7 @@ public sealed class PersonaPiece : DataType
         ProductId = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(PieceId);
         writer.WriteVarString(PieceType);
         writer.WriteVarString(PackId);

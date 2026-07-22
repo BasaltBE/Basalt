@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ActorDataType : int
-{
+public enum ActorDataType : int {
     Byte = 0,
     Short = 1,
     Int = 2,

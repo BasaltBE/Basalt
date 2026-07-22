@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum DeviceOS : int
-{
+public enum DeviceOS : int {
     Undefined,
     Android,
     Ios,

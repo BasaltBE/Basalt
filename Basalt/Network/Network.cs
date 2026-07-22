@@ -15,8 +15,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
 
-public sealed class NetworkHandler
-{
+public sealed class NetworkHandler {
     private const int MaxPacketBatchSize = 1024 * 1024 * 8;
     private const int MaxPacketSize = 1024 * 1024 * 4;
 
@@ -24,56 +23,46 @@ public sealed class NetworkHandler
     private readonly ConcurrentQueue<(NetworkConnection Connection, byte[] Payload)> _incomingPackets = new();
     private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
 
-    public NetworkHandler(Server server)
-    {
+    public NetworkHandler(Server server) {
         _server = server;
     }
 
     /// <summary>
     /// Enqueues a raw packet received from the network thread for processing on the main thread.
     /// </summary>
-    public void EnqueuePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
-    {
+    public void EnqueuePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload) {
         _incomingPackets.Enqueue((connection, payload.ToArray()));
     }
 
     /// <summary>
     /// Enqueues a disconnection event for processing on the main thread.
     /// </summary>
-    public void EnqueueDisconnection(NetworkConnection connection)
-    {
+    public void EnqueueDisconnection(NetworkConnection connection) {
         _disconnections.Enqueue(connection);
     }
 
     /// <summary>
     /// Processes all queued packets and disconnections on the main thread.
     /// </summary>
-    public void ProcessIncoming()
-    {
+    public void ProcessIncoming() {
         using var __zone = Profiler.BeginZone("Network.ProcessIncoming");
 
-        while (_disconnections.TryDequeue(out NetworkConnection? connection))
-        {
-            try
-            {
+        while (_disconnections.TryDequeue(out NetworkConnection? connection)) {
+            try {
                 HandleDisconnected(connection);
             }
-            catch (Exception exception)
-            {
+            catch (Exception exception) {
                 Logger.Warn($"Unhandled disconnect error: {exception}");
             }
         }
 
-        while (_incomingPackets.TryDequeue(out var packet))
-        {
+        while (_incomingPackets.TryDequeue(out var packet)) {
             HandlePacket(packet.Connection, packet.Payload);
         }
     }
 
-    public void HandleDisconnected(NetworkConnection connection)
-    {
-        if (!_server.Players.TryRemove(connection, out Player.Player? player))
-        {
+    public void HandleDisconnected(NetworkConnection connection) {
+        if (!_server.Players.TryRemove(connection, out Player.Player? player)) {
             return;
         }
 
@@ -84,18 +73,15 @@ public sealed class NetworkHandler
 
 
         string leaveMessage = $"§e{player.Username} left the server.";
-        foreach (Player.Player target in _server.Players.Values)
-        {
+        foreach (Player.Player target in _server.Players.Values) {
             target.SendMessage(leaveMessage);
         }
 
-        if (player.IsAlive && player.Dimension is not null)
-        {
+        if (player.IsAlive && player.Dimension is not null) {
             player.Despawn(options);
         }
 
-        PlayerListPacket removePlayer = new()
-        {
+        PlayerListPacket removePlayer = new() {
             ActionType = PlayerListActionType.Remove,
             Entries =
             [
@@ -110,14 +96,12 @@ public sealed class NetworkHandler
         Logger.Info($"Player {player.Username} disconnected.");
     }
 
-    private void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload)
-    {
+    private void HandlePacket(NetworkConnection connection, ReadOnlyMemory<byte> payload) {
         using var __zone = Profiler.BeginZone("Network.HandlePacket");
         ReadOnlySpan<byte> packetData = payload.Span;
         byte[]? decompressedBuffer = null;
 
-        try
-        {
+        try {
             decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
             int decompressedLength = Protocol.Io.Packet.Unframe(packetData, decompressedBuffer, out _);
             if (decompressedLength == 0) return;
@@ -127,8 +111,7 @@ public sealed class NetworkHandler
             int offset = 0;
             BinaryReader frameReader = new(frame, ref offset);
 
-            while (frameReader.Remaining > 0)
-            {
+            while (frameReader.Remaining > 0) {
                 int packetLength = checked((int)frameReader.ReadVarUInt());
                 if (packetLength <= 0 || packetLength > frameReader.Remaining) break;
 
@@ -136,8 +119,7 @@ public sealed class NetworkHandler
                 if (packetBuffer.Length == 0) continue;
 
 
-                try
-                {
+                try {
                     int offset2 = 0;
                     BinaryReader packetReader = new(packetBuffer, ref offset2);
                     uint header = packetReader.ReadVarUInt();
@@ -145,37 +127,30 @@ public sealed class NetworkHandler
 
                     HandleGamePacket(connection, packetId, packetBuffer);
                 }
-                catch (Exception exception)
-                {
+                catch (Exception exception) {
                     Console.WriteLine($"Packet decode/handle error ({packetBuffer.Length} bytes): {exception}");
                 }
             }
         }
-        catch (Exception exception)
-        {
+        catch (Exception exception) {
             Console.WriteLine($"Network error: {exception}");
         }
-        finally
-        {
-            if (decompressedBuffer is not null)
-            {
+        finally {
+            if (decompressedBuffer is not null) {
                 ArrayPool<byte>.Shared.Return(decompressedBuffer);
             }
         }
     }
 
-    private void HandleGamePacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetBuffer)
-    {
+    private void HandleGamePacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetBuffer) {
         _server.Players.TryGetValue(connection, out Player.Player? packetPlayer);
         PacketReceiveSignal receiveSignal = new(connection, packetPlayer, packetId, packetBuffer.ToArray());
         _server.Emit(receiveSignal);
-        if (receiveSignal.Cancelled)
-        {
+        if (receiveSignal.Cancelled) {
             return;
         }
 
-        switch (packetId)
-        {
+        switch (packetId) {
             case PacketId.Login:
                 Login.Handle(_server, connection, packetBuffer);
                 break;
@@ -260,13 +235,11 @@ public sealed class NetworkHandler
         }
     }
 
-    public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? compression = null, bool immediate = false)
-    {
+    public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? compression = null, bool immediate = false) {
         _server.Players.TryGetValue(connection, out Player.Player? player);
         PacketSendSignal sendSignal = new(connection, player, packet);
         _server.Emit(sendSignal);
-        if (sendSignal.Cancelled)
-        {
+        if (sendSignal.Cancelled) {
             return;
         }
 
@@ -278,8 +251,7 @@ public sealed class NetworkHandler
         PacketId packetId,
         ReadOnlySpan<byte> packetPayload,
         CompressionMethod? compression = null,
-        bool immediate = false)
-    {
+        bool immediate = false) {
         using BinaryStream packetBufferStream = BinaryStream.Rent(packetPayload.Length + 16);
         using BinaryStream frameBufferStream = BinaryStream.Rent(packetPayload.Length + 32);
 
@@ -296,14 +268,12 @@ public sealed class NetworkHandler
         SendFrame(connection, frameWriter.GetProcessedBytes(), compression, immediate);
     }
 
-    public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null, bool immediate = false)
-    {
+    public void SendPackets(NetworkConnection connection, IEnumerable<DataPacket> packets, CompressionMethod? compression = null, bool immediate = false) {
         using BinaryStream packetBufferStream = BinaryStream.Rent(MaxPacketSize);
         using BinaryStream frameBufferStream = BinaryStream.Rent(MaxPacketBatchSize);
         BinaryWriter frameWriter = frameBufferStream;
 
-        foreach (DataPacket packet in packets)
-        {
+        foreach (DataPacket packet in packets) {
             // if (packet.GetType().Name != "LevelChunkPacket")
             // Logger.Info("Sending packet {0}", packet.GetType().Name);
 
@@ -319,16 +289,13 @@ public sealed class NetworkHandler
         SendFrame(connection, frameWriter.GetProcessedBytes(), compression, immediate);
     }
 
-    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate = false)
-    {
+    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate = false) {
         CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
-        if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && frame.Length < _server.Properties.CompressionThreshold)
-        {
+        if (method != CompressionMethod.None && method != CompressionMethod.NotPresent && frame.Length < _server.Properties.CompressionThreshold) {
             method = CompressionMethod.None;
         }
 
-        if (method == CompressionMethod.Snappy)
-        {
+        if (method == CompressionMethod.Snappy) {
             throw new NotSupportedException("Snappy compression is not supported.");
         }
 
@@ -336,40 +303,33 @@ public sealed class NetworkHandler
         int headerSize = method == CompressionMethod.NotPresent ? 1 : 2;
         byte[] compressedBuffer = ArrayPool<byte>.Shared.Rent(frame.Length + reserve + headerSize);
 
-        try
-        {
+        try {
             compressedBuffer[0] = 0xFE;
 
             int payloadOffset = 1;
-            if (method != CompressionMethod.NotPresent)
-            {
+            if (method != CompressionMethod.NotPresent) {
                 compressedBuffer[1] = (byte)method;
                 payloadOffset = 2;
             }
 
             int payloadLength;
-            if (method == CompressionMethod.Zlib)
-            {
+            if (method == CompressionMethod.Zlib) {
                 payloadLength = Protocol.Io.Packet.Compress(frame, compressedBuffer.AsSpan(payloadOffset));
             }
-            else
-            {
+            else {
                 frame.CopyTo(compressedBuffer.AsSpan(payloadOffset));
                 payloadLength = frame.Length;
             }
 
             connection.SendPacket(compressedBuffer.AsSpan(0, payloadOffset + payloadLength), Reliability.ReliableOrdered, immediate);
         }
-        finally
-        {
+        finally {
             ArrayPool<byte>.Shared.Return(compressedBuffer);
         }
     }
 
-    private static CompressionMethod GetCompressionMethod(string? value)
-    {
-        if (value is not null && value.Equals("snappy", StringComparison.OrdinalIgnoreCase))
-        {
+    private static CompressionMethod GetCompressionMethod(string? value) {
+        if (value is not null && value.Equals("snappy", StringComparison.OrdinalIgnoreCase)) {
             return CompressionMethod.Snappy;
         }
 

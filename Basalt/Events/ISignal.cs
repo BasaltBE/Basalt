@@ -1,7 +1,6 @@
 namespace Basalt.Core.Events;
 
-public interface ISignal
-{
+public interface ISignal {
     ServerEvent Event { get; }
 }
 

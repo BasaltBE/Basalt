@@ -1,7 +1,6 @@
 namespace Basalt;
 
-public enum LogLevel
-{
+public enum LogLevel {
     Debug,
     Info,
     Warn,

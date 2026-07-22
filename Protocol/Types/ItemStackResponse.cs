@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ItemStackResponse : DataType
-{
+public sealed class ItemStackResponse : DataType {
     /// <summary>
     /// Response status for the request.
     /// </summary>
@@ -19,40 +18,34 @@ public sealed class ItemStackResponse : DataType
     /// </summary>
     public List<StackResponseContainerInfo> ContainerInfo = [];
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Status = (ItemStackResponseStatus)reader.ReadUInt8();
         RequestId = reader.ReadZigZag();
 
-        if (Status != ItemStackResponseStatus.Ok)
-        {
+        if (Status != ItemStackResponseStatus.Ok) {
             ContainerInfo = [];
             return;
         }
 
         int count = reader.ReadVarInt();
         ContainerInfo = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             StackResponseContainerInfo info = new();
             info.Read(reader);
             ContainerInfo.Add(info);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8((byte)Status);
         writer.WriteZigZag(RequestId);
 
-        if (Status != ItemStackResponseStatus.Ok)
-        {
+        if (Status != ItemStackResponseStatus.Ok) {
             return;
         }
 
         writer.WriteVarInt(ContainerInfo.Count);
-        for (int i = 0; i < ContainerInfo.Count; i++)
-        {
+        for (int i = 0; i < ContainerInfo.Count; i++) {
             ContainerInfo[i].Write(writer);
         }
     }

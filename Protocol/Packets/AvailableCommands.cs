@@ -7,8 +7,7 @@ namespace Basalt.Protocol.Packets;
 /// Sends all commands available to the client.
 /// </summary>
 [Packet(PacketId.AvailableCommands)]
-public sealed record AvailableCommandsPacket : DataPacket
-{
+public sealed record AvailableCommandsPacket : DataPacket {
     /// <summary>
     /// Shared enum values referenced by command enums.
     /// </summary>
@@ -49,8 +48,7 @@ public sealed record AvailableCommandsPacket : DataPacket
     /// </summary>
     public List<CommandEnumConstraint> Constraints = [];
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EnumValues = ReadStringList(reader);
         ChainedSubcommandValues = ReadStringList(reader);
         Suffixes = ReadStringList(reader);
@@ -61,8 +59,7 @@ public sealed record AvailableCommandsPacket : DataPacket
         Constraints = ReadList<CommandEnumConstraint>(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         WriteStringList(writer, EnumValues);
         WriteStringList(writer, ChainedSubcommandValues);
         WriteStringList(writer, Suffixes);
@@ -73,24 +70,20 @@ public sealed record AvailableCommandsPacket : DataPacket
         WriteList(writer, Constraints);
     }
 
-    static List<string> ReadStringList(Binary.BinaryReader reader)
-    {
+    static List<string> ReadStringList(Binary.BinaryReader reader) {
         int count = checked((int)reader.ReadVarUInt());
         List<string> values = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             values.Add(reader.ReadVarString());
         }
 
         return values;
     }
 
-    static List<T> ReadList<T>(Binary.BinaryReader reader) where T : DataType, new()
-    {
+    static List<T> ReadList<T>(Binary.BinaryReader reader) where T : DataType, new() {
         int count = checked((int)reader.ReadVarUInt());
         List<T> values = new(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             T value = new();
             value.Read(reader);
             values.Add(value);
@@ -99,20 +92,16 @@ public sealed record AvailableCommandsPacket : DataPacket
         return values;
     }
 
-    static void WriteStringList(Binary.BinaryWriter writer, List<string> values)
-    {
+    static void WriteStringList(Binary.BinaryWriter writer, List<string> values) {
         writer.WriteVarUInt((uint)values.Count);
-        for (int i = 0; i < values.Count; i++)
-        {
+        for (int i = 0; i < values.Count; i++) {
             writer.WriteVarString(values[i]);
         }
     }
 
-    static void WriteList<T>(Binary.BinaryWriter writer, List<T> values) where T : DataType
-    {
+    static void WriteList<T>(Binary.BinaryWriter writer, List<T> values) where T : DataType {
         writer.WriteVarUInt((uint)values.Count);
-        for (int i = 0; i < values.Count; i++)
-        {
+        for (int i = 0; i < values.Count; i++) {
             values[i].Write(writer);
         }
     }

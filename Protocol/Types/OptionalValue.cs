@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public class OptionalValue<T>
-{
+public class OptionalValue<T> {
     public delegate T ReaderDelegate(BinaryReader reader);
     public delegate T ReaderDelegate<TParameter>(BinaryReader reader, TParameter parameter);
     public delegate void WriterDelegate(BinaryWriter writer, T value);
@@ -22,11 +21,9 @@ public class OptionalValue<T>
     /// </summary>
     public T? Value;
 
-    public void Read(BinaryReader reader, ReaderDelegate read)
-    {
+    public void Read(BinaryReader reader, ReaderDelegate read) {
         HasValue = reader.ReadBool();
-        if (!HasValue)
-        {
+        if (!HasValue) {
             Value = default;
             return;
         }
@@ -34,27 +31,22 @@ public class OptionalValue<T>
         Value = read(reader);
     }
 
-    public void Write(BinaryWriter writer, WriterDelegate write)
-    {
+    public void Write(BinaryWriter writer, WriterDelegate write) {
         writer.WriteBool(HasValue);
-        if (!HasValue)
-        {
+        if (!HasValue) {
             return;
         }
 
-        if (Value is null)
-        {
+        if (Value is null) {
             throw new InvalidOperationException("Optional value is marked as present but Value is null.");
         }
 
         write(writer, Value);
     }
 
-    public void Read<TParameter>(BinaryReader reader, TParameter parameter, ReaderDelegate<TParameter> read)
-    {
+    public void Read<TParameter>(BinaryReader reader, TParameter parameter, ReaderDelegate<TParameter> read) {
         HasValue = reader.ReadBool();
-        if (!HasValue)
-        {
+        if (!HasValue) {
             Value = default;
             return;
         }
@@ -62,16 +54,13 @@ public class OptionalValue<T>
         Value = read(reader, parameter);
     }
 
-    public void Write<TParameter>(BinaryWriter writer, TParameter parameter, WriterDelegate<TParameter> write)
-    {
+    public void Write<TParameter>(BinaryWriter writer, TParameter parameter, WriterDelegate<TParameter> write) {
         writer.WriteBool(HasValue);
-        if (!HasValue)
-        {
+        if (!HasValue) {
             return;
         }
 
-        if (Value is null)
-        {
+        if (Value is null) {
             throw new InvalidOperationException("Optional value is marked as present but Value is null.");
         }
 

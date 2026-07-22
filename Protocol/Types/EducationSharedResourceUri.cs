@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class EducationSharedResourceUri : DataType
-{
+public sealed class EducationSharedResourceUri : DataType {
     /// <summary>
     /// The name of the button
     /// </summary>
@@ -16,14 +15,12 @@ public sealed class EducationSharedResourceUri : DataType
     /// </summary>
     public string LinkUri = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ButtonName = reader.ReadVarString();
         LinkUri = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(ButtonName);
         writer.WriteVarString(LinkUri);
     }

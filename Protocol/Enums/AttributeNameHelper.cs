@@ -1,9 +1,7 @@
 namespace Basalt.Protocol.Enums;
 
-public static class AttributeNameHelper
-{
-    public static AttributeName FromProtocolString(string value) => value switch
-    {
+public static class AttributeNameHelper {
+    public static AttributeName FromProtocolString(string value) => value switch {
         "minecraft:absorption" => AttributeName.Absorption,
         "minecraft:attack_damage" => AttributeName.AttackDamage,
         "minecraft:fall_damage" => AttributeName.FallDamage,

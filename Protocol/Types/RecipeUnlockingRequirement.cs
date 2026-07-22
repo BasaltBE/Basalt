@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class RecipeUnlockingRequirement : DataType
-{
+public sealed class RecipeUnlockingRequirement : DataType {
     public const byte ContextNone = 0;
     public const byte ContextAlwaysUnlocked = 1;
     public const byte ContextPlayerInWater = 2;
@@ -13,15 +12,12 @@ public sealed class RecipeUnlockingRequirement : DataType
     public byte Context = ContextAlwaysUnlocked;
     public List<ItemDescriptorCount> Ingredients = [];
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Context = reader.ReadUInt8();
-        if (Context == ContextNone)
-        {
+        if (Context == ContextNone) {
             int count = checked((int)reader.ReadVarUInt());
             Ingredients = new List<ItemDescriptorCount>(count);
-            for (int i = 0; i < count; i++)
-            {
+            for (int i = 0; i < count; i++) {
                 ItemDescriptorCount descriptor = new();
                 descriptor.Read(reader);
                 Ingredients.Add(descriptor);
@@ -29,14 +25,11 @@ public sealed class RecipeUnlockingRequirement : DataType
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8(Context);
-        if (Context == ContextNone)
-        {
+        if (Context == ContextNone) {
             writer.WriteVarUInt((uint)Ingredients.Count);
-            for (int i = 0; i < Ingredients.Count; i++)
-            {
+            for (int i = 0; i < Ingredients.Count; i++) {
                 Ingredients[i].Write(writer);
             }
         }

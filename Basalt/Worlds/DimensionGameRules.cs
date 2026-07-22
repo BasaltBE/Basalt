@@ -5,8 +5,7 @@ namespace Basalt.Core.Worlds;
 /// 
 /// TODO: Add more
 /// </summary>
-public sealed class DimensionGameRules
-{
+public sealed class DimensionGameRules {
     /// <summary>
     /// Whether or not players can drown in this dimension.
     /// </summary>

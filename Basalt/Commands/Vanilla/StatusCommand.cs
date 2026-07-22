@@ -1,9 +1,7 @@
 namespace Basalt.Core.Commands.Vanilla;
 
-public static class StatusCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class StatusCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "status",
         Description = "Get the status of the server.",
         Permissions = ["basalt.op"],
@@ -11,8 +9,7 @@ public static class StatusCommand
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
-    {
+    static CommandResult Execute(CommandContext ctx) {
         double tps = ctx.Server.Tps;
         string color = tps < 10 ? "§c" : tps < 15 ? "§6" : "§a";
 

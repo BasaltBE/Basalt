@@ -6,36 +6,29 @@ using Basalt.Protocol.Nbt;
 /// <summary>
 /// Represents the "minecraft:digger" component that defines block destroy speeds.
 /// </summary>
-public sealed class ItemTypeDiggerComponent : ItemTypeComponent
-{
+public sealed class ItemTypeDiggerComponent : ItemTypeComponent {
     public new static string Identifier => "minecraft:digger";
 
-    public ItemTypeDiggerComponent(ItemType type, CompoundTag component) : base(type, component)
-    {
+    public ItemTypeDiggerComponent(ItemType type, CompoundTag component) : base(type, component) {
     }
 
-    public bool UseEfficiency()
-    {
+    public bool UseEfficiency() {
         return (Component.Get<ByteTag>("use_efficiency")?.Value
                 ?? Component.Get<ByteTag>("useEfficiency")?.Value
                 ?? 0) != 0;
     }
 
-    public DestroySpeedEntry[] GetDestroySpeeds()
-    {
+    public DestroySpeedEntry[] GetDestroySpeeds() {
         ListTag? speedsList = Component.Get<ListTag>("destroy_speeds")
                               ?? Component.Get<ListTag>("destroySpeeds");
 
-        if (speedsList is null)
-        {
+        if (speedsList is null) {
             return [];
         }
 
         List<DestroySpeedEntry> entries = new(speedsList.Values.Count);
-        foreach (BaseTag tag in speedsList.Values)
-        {
-            if (tag is not CompoundTag entry)
-            {
+        foreach (BaseTag tag in speedsList.Values) {
+            if (tag is not CompoundTag entry) {
                 continue;
             }
 
@@ -46,12 +39,10 @@ public sealed class ItemTypeDiggerComponent : ItemTypeComponent
             string? blockId = null;
             string? tagQuery = null;
 
-            if (entry.Get<StringTag>("block") is StringTag blockTag)
-            {
+            if (entry.Get<StringTag>("block") is StringTag blockTag) {
                 blockId = blockTag.Value;
             }
-            else if (entry.Get<CompoundTag>("block") is CompoundTag blockCompound)
-            {
+            else if (entry.Get<CompoundTag>("block") is CompoundTag blockCompound) {
                 tagQuery = blockCompound.Get<StringTag>("tags")?.Value;
             }
 
@@ -65,8 +56,7 @@ public sealed class ItemTypeDiggerComponent : ItemTypeComponent
 /// <summary>
 /// A single entry in the digger's destroy speeds list.
 /// </summary>
-public readonly struct DestroySpeedEntry
-{
+public readonly struct DestroySpeedEntry {
     /// <summary>
     /// The specific block identifier, or null if using a tag query.
     /// </summary>
@@ -82,8 +72,7 @@ public readonly struct DestroySpeedEntry
     /// </summary>
     public float Speed { get; }
 
-    public DestroySpeedEntry(string? block, string? tagQuery, float speed)
-    {
+    public DestroySpeedEntry(string? block, string? tagQuery, float speed) {
         Block = block;
         TagQuery = tagQuery;
         Speed = speed;

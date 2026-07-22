@@ -4,36 +4,28 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class Skin : DataType
-{
-    public static Skin FromClientData(ClientData clientData)
-    {
-        static byte[] DecodeBase64(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-            {
+public sealed class Skin : DataType {
+    public static Skin FromClientData(ClientData clientData) {
+        static byte[] DecodeBase64(string value) {
+            if (string.IsNullOrEmpty(value)) {
                 return [];
             }
 
             string normalized = value.Replace('-', '+').Replace('_', '/');
             int padding = normalized.Length % 4;
-            if (padding != 0)
-            {
+            if (padding != 0) {
                 normalized = normalized.PadRight(normalized.Length + (4 - padding), '=');
             }
 
-            try
-            {
+            try {
                 return Convert.FromBase64String(normalized);
             }
-            catch (FormatException)
-            {
+            catch (FormatException) {
                 return [];
             }
         }
 
-        static (uint W, uint H, byte[] Data) ReadImage(string value, uint w, uint h)
-        {
+        static (uint W, uint H, byte[] Data) ReadImage(string value, uint w, uint h) {
             byte[] data = DecodeBase64(value);
             return (ulong)w * h * 4 == (ulong)data.Length ? (w, h, data) : (0, 0, []);
         }
@@ -41,11 +33,9 @@ public sealed class Skin : DataType
         var (skinW, skinH, skinData) = ReadImage(clientData.SkinData, clientData.SkinImageWidth, clientData.SkinImageHeight);
         var (capeW, capeH, capeData) = ReadImage(clientData.CapeData, clientData.CapeImageWidth, clientData.CapeImageHeight);
 
-        List<SkinAnimation> animations = clientData.AnimatedImageData.Select(a =>
-        {
+        List<SkinAnimation> animations = clientData.AnimatedImageData.Select(a => {
             var (w, h, data) = ReadImage(a.Image, a.ImageWidth, a.ImageHeight);
-            return new SkinAnimation
-            {
+            return new SkinAnimation {
                 ImageWidth = w,
                 ImageHeight = h,
                 ImageData = data,
@@ -55,8 +45,7 @@ public sealed class Skin : DataType
             };
         }).ToList();
 
-        List<PersonaPiece> pieces = clientData.PersonaPieces.Select(p => new PersonaPiece
-        {
+        List<PersonaPiece> pieces = clientData.PersonaPieces.Select(p => new PersonaPiece {
             PieceId = p.PieceId,
             PieceType = p.PieceType,
             PackId = p.PackId,
@@ -64,14 +53,12 @@ public sealed class Skin : DataType
             ProductId = p.ProductId
         }).ToList();
 
-        List<PersonaPieceTintColor> tintColors = clientData.PieceTintColors.Select(t => new PersonaPieceTintColor
-        {
+        List<PersonaPieceTintColor> tintColors = clientData.PieceTintColors.Select(t => new PersonaPieceTintColor {
             PieceType = t.PieceType,
             Colors = [.. t.Colors]
         }).ToList();
 
-        return new Skin
-        {
+        return new Skin {
             SkinId = clientData.SkinId,
             PlayFabId = clientData.PlayFabId,
             SkinResourcePatch = DecodeBase64(clientData.SkinResourcePatch),
@@ -225,8 +212,7 @@ public sealed class Skin : DataType
     /// </summary>
     public bool Trusted;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         SkinId = reader.ReadVarString();
         PlayFabId = reader.ReadVarString();
         SkinResourcePatch = SkinAnimation.ReadByteArray(reader);
@@ -236,8 +222,7 @@ public sealed class Skin : DataType
 
         int animationCount = checked((int)reader.ReadUInt32(true));
         Animations = new List<SkinAnimation>(animationCount);
-        for (int i = 0; i < animationCount; i++)
-        {
+        for (int i = 0; i < animationCount; i++) {
             SkinAnimation animation = new();
             animation.Read(reader);
             Animations.Add(animation);
@@ -256,8 +241,7 @@ public sealed class Skin : DataType
 
         int pieceCount = checked((int)reader.ReadUInt32(true));
         PersonaPieces = new List<PersonaPiece>(pieceCount);
-        for (int i = 0; i < pieceCount; i++)
-        {
+        for (int i = 0; i < pieceCount; i++) {
             PersonaPiece piece = new();
             piece.Read(reader);
             PersonaPieces.Add(piece);
@@ -265,8 +249,7 @@ public sealed class Skin : DataType
 
         int tintCount = checked((int)reader.ReadUInt32(true));
         PieceTintColors = new List<PersonaPieceTintColor>(tintCount);
-        for (int i = 0; i < tintCount; i++)
-        {
+        for (int i = 0; i < tintCount; i++) {
             PersonaPieceTintColor tint = new();
             tint.Read(reader);
             PieceTintColors.Add(tint);
@@ -279,8 +262,7 @@ public sealed class Skin : DataType
         OverrideAppearance = reader.ReadBool();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(SkinId);
         writer.WriteVarString(PlayFabId);
         SkinAnimation.WriteByteArray(writer, SkinResourcePatch);
@@ -289,8 +271,7 @@ public sealed class Skin : DataType
         SkinAnimation.WriteByteArray(writer, SkinData);
 
         writer.WriteUInt32((uint)Animations.Count, true);
-        for (int i = 0; i < Animations.Count; i++)
-        {
+        for (int i = 0; i < Animations.Count; i++) {
             Animations[i].Write(writer);
         }
 
@@ -306,14 +287,12 @@ public sealed class Skin : DataType
         writer.WriteVarString(SkinColor);
 
         writer.WriteUInt32((uint)PersonaPieces.Count, true);
-        for (int i = 0; i < PersonaPieces.Count; i++)
-        {
+        for (int i = 0; i < PersonaPieces.Count; i++) {
             PersonaPieces[i].Write(writer);
         }
 
         writer.WriteUInt32((uint)PieceTintColors.Count, true);
-        for (int i = 0; i < PieceTintColors.Count; i++)
-        {
+        for (int i = 0; i < PieceTintColors.Count; i++) {
             PieceTintColors[i].Write(writer);
         }
 

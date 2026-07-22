@@ -5,14 +5,12 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.List)]
-public sealed class ListTag : BaseTag
-{
+public sealed class ListTag : BaseTag {
     public List<BaseTag> Values { get; } = [];
 
     public override object ToJsonValue() => Values.Select(v => v.ToJsonValue()).ToList();
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
@@ -22,8 +20,7 @@ public sealed class ListTag : BaseTag
         writer.WriteInt8((sbyte)elementType);
         WriteLength(writer, Values.Count, options.VarInt);
 
-        foreach (BaseTag value in Values)
-        {
+        foreach (BaseTag value in Values) {
             if (value.Type != elementType)
                 throw new InvalidOperationException("NBT list elements must share a single type.");
 
@@ -31,10 +28,8 @@ public sealed class ListTag : BaseTag
         }
     }
 
-    public static ListTag Read(BinaryReader reader, TagOptions options = default)
-    {
-        ListTag tag = new()
-        {
+    public static ListTag Read(BinaryReader reader, TagOptions options = default) {
+        ListTag tag = new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null
         };
 

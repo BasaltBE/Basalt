@@ -5,52 +5,40 @@ using Basalt.Protocol.Nbt;
 using System.Reflection;
 
 
-public sealed class ItemTypeComponentCollection
-{
+public sealed class ItemTypeComponentCollection {
     private readonly Dictionary<string, CompoundTag> _components;
     private readonly ItemType _itemType;
 
-    public ItemTypeComponentCollection(ItemType itemType, CompoundTag properties)
-    {
+    public ItemTypeComponentCollection(ItemType itemType, CompoundTag properties) {
         _itemType = itemType;
         _components = new Dictionary<string, CompoundTag>(StringComparer.Ordinal);
-        if (properties.Get<CompoundTag>("components") is CompoundTag componentsTag)
-        {
-            foreach ((string key, BaseTag value) in componentsTag.Values)
-            {
-                if (value is CompoundTag compound)
-                {
+        if (properties.Get<CompoundTag>("components") is CompoundTag componentsTag) {
+            foreach ((string key, BaseTag value) in componentsTag.Values) {
+                if (value is CompoundTag compound) {
                     _components[key] = compound;
                 }
             }
 
-            if (componentsTag.Get<CompoundTag>("item_properties") is CompoundTag itemProps)
-            {
-                foreach ((string key, BaseTag value) in itemProps.Values)
-                {
-                    if (value is CompoundTag compound && key.StartsWith("minecraft:", StringComparison.Ordinal))
-                    {
+            if (componentsTag.Get<CompoundTag>("item_properties") is CompoundTag itemProps) {
+                foreach ((string key, BaseTag value) in itemProps.Values) {
+                    if (value is CompoundTag compound && key.StartsWith("minecraft:", StringComparison.Ordinal)) {
                         _components.TryAdd(key, compound);
                     }
                 }
             }
         }
 
-        if (properties.Get<ListTag>("components") is not ListTag componentsList)
-        {
+        if (properties.Get<ListTag>("components") is not ListTag componentsList) {
             return;
         }
 
-        for (int i = 0; i < componentsList.Values.Count; i++)
-        {
-            if (componentsList.Values[i] is not StringTag component)
-            {
+        for (int i = 0; i < componentsList.Values.Count; i++) {
+            if (componentsList.Values[i] is not StringTag component) {
                 continue;
             }
 
             string key = component.Value;
-            if (string.IsNullOrWhiteSpace(key) || _components.ContainsKey(key))
-            {
+            if (string.IsNullOrWhiteSpace(key) || _components.ContainsKey(key)) {
                 continue;
             }
 
@@ -62,39 +50,32 @@ public sealed class ItemTypeComponentCollection
         }
     }
 
-    public bool HasComponent(string identifier)
-    {
+    public bool HasComponent(string identifier) {
         return _components.ContainsKey(identifier);
     }
 
-    public bool TryGetComponentProperties(string identifier, out CompoundTag properties)
-    {
+    public bool TryGetComponentProperties(string identifier, out CompoundTag properties) {
         return _components.TryGetValue(identifier, out properties!);
     }
 
-    public bool HasComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent
-    {
+    public bool HasComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent {
         return HasComponent(GetIdentifier(typeof(T)));
     }
 
-    public T? GetComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent
-    {
+    public T? GetComponent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : ItemTypeComponent {
         string identifier = GetIdentifier(typeof(T));
-        if (!_components.TryGetValue(identifier, out CompoundTag? component))
-        {
+        if (!_components.TryGetValue(identifier, out CompoundTag? component)) {
             return null;
         }
 
         return (T?)Activator.CreateInstance(typeof(T), _itemType, component);
     }
 
-    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
-    {
+    private static string GetIdentifier([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type) {
         if (type.GetProperty("Identifier", BindingFlags.Public | BindingFlags.Static) is PropertyInfo property &&
             property.PropertyType == typeof(string) &&
             property.GetValue(null) is string identifier &&
-            !string.IsNullOrWhiteSpace(identifier))
-        {
+            !string.IsNullOrWhiteSpace(identifier)) {
             return identifier;
         }
 

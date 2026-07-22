@@ -4,8 +4,7 @@ namespace Basalt.Protocol.Enums;
 /// Window-level container identifier used in inventory packets.
 /// Dynamic containers are assigned IDs from First through Last.
 /// </summary>
-public enum ContainerId : sbyte
-{
+public enum ContainerId : sbyte {
     None = -1,
     Inventory = 0,
     First = 1,

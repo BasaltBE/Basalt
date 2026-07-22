@@ -2,8 +2,7 @@ namespace Basalt.Core.Entities.Traits.Types;
 
 using Basalt.Protocol.Types;
 
-public class MovementRotation
-{
+public class MovementRotation {
     public float Yaw { get; set; }
     public float Pitch { get; set; }
     public float HeadYaw { get; set; }

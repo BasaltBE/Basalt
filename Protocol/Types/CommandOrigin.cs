@@ -7,8 +7,7 @@ namespace Basalt.Protocol.Types;
 /// <summary>
 /// Origin information for a command request or response.
 /// </summary>
-public sealed class CommandOrigin : DataType
-{
+public sealed class CommandOrigin : DataType {
     /// <summary>
     /// Source type that requested the command.
     /// </summary>
@@ -29,24 +28,21 @@ public sealed class CommandOrigin : DataType
     /// </summary>
     public long PlayerUniqueId;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Origin = OriginFromString(reader.ReadVarString());
         UUID = Basalt.Protocol.Types.UUID.Read(reader);
         RequestId = reader.ReadVarString();
         PlayerUniqueId = reader.ReadInt64(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(OriginToString(Origin));
         Basalt.Protocol.Types.UUID.Write(writer, UUID);
         writer.WriteVarString(RequestId);
         writer.WriteInt64(PlayerUniqueId, true);
     }
 
-    static string OriginToString(CommandOriginType origin) => origin switch
-    {
+    static string OriginToString(CommandOriginType origin) => origin switch {
         CommandOriginType.Player => "player",
         CommandOriginType.CommandBlock => "commandblock",
         CommandOriginType.MinecartCommandBlock => "minecartcommandblock",
@@ -66,8 +62,7 @@ public sealed class CommandOrigin : DataType
         _ => "unknown"
     };
 
-    static CommandOriginType OriginFromString(string origin) => origin switch
-    {
+    static CommandOriginType OriginFromString(string origin) => origin switch {
         "player" => CommandOriginType.Player,
         "commandblock" => CommandOriginType.CommandBlock,
         "minecartcommandblock" => CommandOriginType.MinecartCommandBlock,

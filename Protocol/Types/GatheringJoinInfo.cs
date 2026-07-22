@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class GatheringJoinInfo : DataType
-{
+public sealed class GatheringJoinInfo : DataType {
     /// <summary>
     /// The UUID of the experience
     /// </summary>
@@ -45,8 +44,7 @@ public sealed class GatheringJoinInfo : DataType
     /// </summary>
     public string ServerId = string.Empty;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         ExperienceId = UUID.Read(reader);
         ExperienceName = reader.ReadVarString();
         ExperienceWorldId = UUID.Read(reader);
@@ -57,8 +55,7 @@ public sealed class GatheringJoinInfo : DataType
         ServerId = reader.ReadVarString();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         UUID.Write(writer, ExperienceId);
         writer.WriteVarString(ExperienceName);
         UUID.Write(writer, ExperienceWorldId);

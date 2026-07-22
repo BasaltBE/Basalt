@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.PlayerAction)]
-public sealed record PlayerActionPacket : DataPacket
-{
+public sealed record PlayerActionPacket : DataPacket {
     /// <summary>
     /// Runtime id of the actor performing the action.
     /// </summary>
@@ -32,8 +31,7 @@ public sealed record PlayerActionPacket : DataPacket
     /// </summary>
     public int BlockFace;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EntityRuntimeId = reader.ReadVarULong();
         ActionType = (PlayerActionType)reader.ReadVarInt();
 
@@ -48,8 +46,7 @@ public sealed record PlayerActionPacket : DataPacket
         BlockFace = reader.ReadVarInt();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteVarInt((int)ActionType);
         BlockPosition.Write(writer);

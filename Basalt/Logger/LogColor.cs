@@ -1,7 +1,6 @@
 namespace Basalt;
 
-public enum LogColor
-{
+public enum LogColor {
     Black,
     DarkBlue,
     DarkGreen,

@@ -5,22 +5,18 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 
 
-public sealed class CardinalDirectionTrait : DirectionTrait
-{
+public sealed class CardinalDirectionTrait : DirectionTrait {
     public static new readonly string Identifier = "minecraft:cardinal_direction";
     public static new readonly string State = "minecraft:cardinal_direction";
     public static new readonly Type? Component = typeof(RotationComponent);
 
-    public CardinalDirectionTrait(Block block) : base(block)
-    {
+    public CardinalDirectionTrait(Block block) : base(block) {
     }
 
-    public override void OnPlace(BlockPlaceDetails details)
-    {
+    public override void OnPlace(BlockPlaceDetails details) {
         CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
 
-        switch (direction)
-        {
+        switch (direction) {
             case CardinalDirection.North:
                 SetDirection(CardinalDirection.South);
                 break;
@@ -36,15 +32,12 @@ public sealed class CardinalDirectionTrait : DirectionTrait
         }
     }
 
-    public new CardinalDirection GetDirection()
-    {
-        if (!Block.Permutation.State.TryGetValue(State, out BlockStateValue value) || value.Kind != 1)
-        {
+    public new CardinalDirection GetDirection() {
+        if (!Block.Permutation.State.TryGetValue(State, out BlockStateValue value) || value.Kind != 1) {
             return CardinalDirection.South;
         }
 
-        return value.AsString() switch
-        {
+        return value.AsString() switch {
             "north" => CardinalDirection.North,
             "south" => CardinalDirection.South,
             "east" => CardinalDirection.East,
@@ -53,10 +46,8 @@ public sealed class CardinalDirectionTrait : DirectionTrait
         };
     }
 
-    public void SetDirection(CardinalDirection direction)
-    {
-        string value = direction switch
-        {
+    public void SetDirection(CardinalDirection direction) {
+        string value = direction switch {
             CardinalDirection.North => "north",
             CardinalDirection.South => "south",
             CardinalDirection.East => "east",
@@ -65,8 +56,7 @@ public sealed class CardinalDirectionTrait : DirectionTrait
         };
 
         BlockState state = [];
-        foreach ((string key, BlockStateValue current) in Block.Permutation.State)
-        {
+        foreach ((string key, BlockStateValue current) in Block.Permutation.State) {
             state[key] = current;
         }
 

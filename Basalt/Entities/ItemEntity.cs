@@ -6,54 +6,43 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
 using Player = Basalt.Core.Player.Player;
 
-public sealed class ItemEntity : Entity
-{
+public sealed class ItemEntity : Entity {
     public ItemStack Item { get; }
     private ulong _nextMergeTick;
     public ulong MergeLockedUntilTick { get; private set; }
     public ulong PickupLockedUntilTick { get; private set; }
 
-    public ItemEntity(ItemStack item) : base("minecraft:item")
-    {
+    public ItemEntity(ItemStack item) : base("minecraft:item") {
         Item = item;
     }
 
-    public void LockMergeUntil(ulong tick)
-    {
-        if (tick > MergeLockedUntilTick)
-        {
+    public void LockMergeUntil(ulong tick) {
+        if (tick > MergeLockedUntilTick) {
             MergeLockedUntilTick = tick;
         }
     }
 
-    public void LockPickupUntil(ulong tick)
-    {
-        if (tick > PickupLockedUntilTick)
-        {
+    public void LockPickupUntil(ulong tick) {
+        if (tick > PickupLockedUntilTick) {
             PickupLockedUntilTick = tick;
         }
     }
 
-    public override void Spawn(Basalt.Core.Worlds.Dimensions.Dimension dimension, EntitySpawnOptions options)
-    {
+    public override void Spawn(Basalt.Core.Worlds.Dimensions.Dimension dimension, EntitySpawnOptions options) {
         base.Spawn(dimension, options);
         Dimension?.Broadcast(CreateAddItemActorPacket());
     }
 
-    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null)
-    {
+    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
         player.Send(CreateAddItemActorPacket());
     }
 
-    private AddItemActorPacket CreateAddItemActorPacket()
-    {
+    private AddItemActorPacket CreateAddItemActorPacket() {
         LegacyItem stack = Item.ToNetworkStack();
-        return new AddItemActorPacket
-        {
+        return new AddItemActorPacket {
             EntityUniqueId = UniqueId,
             EntityRuntimeId = RuntimeId,
-            Item = new ItemInstance
-            {
+            Item = new ItemInstance {
                 Stack = stack,
                 StackNetworkId = stack.ItemStackId ?? 0
             },
@@ -64,62 +53,51 @@ public sealed class ItemEntity : Entity
         };
     }
 
-    public void TryMergeNearby(ulong currentTick)
-    {
-        if (Dimension is null || PendingDespawn || !IsAlive || currentTick < _nextMergeTick || Item.StackSize == 0 || currentTick < MergeLockedUntilTick)
-        {
+    public void TryMergeNearby(ulong currentTick) {
+        if (Dimension is null || PendingDespawn || !IsAlive || currentTick < _nextMergeTick || Item.StackSize == 0 || currentTick < MergeLockedUntilTick) {
             return;
         }
 
         _nextMergeTick = currentTick + 15;
         int maxStack = Item.Type.MaxStackSize;
-        if (Item.StackSize >= maxStack)
-        {
+        if (Item.StackSize >= maxStack) {
             return;
         }
 
         bool merged = false;
         const float mergeRadiusSquared = 1.5f * 1.5f;
 
-        foreach (Entity entity in Dimension.Entities)
-        {
-            if (entity is not ItemEntity other || ReferenceEquals(other, this) || !other.IsAlive || other.PendingDespawn)
-            {
+        foreach (Entity entity in Dimension.Entities) {
+            if (entity is not ItemEntity other || ReferenceEquals(other, this) || !other.IsAlive || other.PendingDespawn) {
                 continue;
             }
 
-            if (currentTick < other.MergeLockedUntilTick)
-            {
+            if (currentTick < other.MergeLockedUntilTick) {
                 continue;
             }
 
-            if (!IsGrounded(other.Position))
-            {
+            if (!IsGrounded(other.Position)) {
                 continue;
             }
 
             float dx = other.Position.X - Position.X;
             float dy = other.Position.Y - Position.Y;
             float dz = other.Position.Z - Position.Z;
-            if ((dx * dx) + (dy * dy) + (dz * dz) > mergeRadiusSquared)
-            {
+            if ((dx * dx) + (dy * dy) + (dz * dz) > mergeRadiusSquared) {
                 continue;
             }
 
-            if (!CanMergeWith(other))
-            {
+            if (!CanMergeWith(other)) {
                 continue;
             }
 
             int space = maxStack - Item.StackSize;
-            if (space <= 0)
-            {
+            if (space <= 0) {
                 break;
             }
 
             int moved = Math.Min(space, other.Item.StackSize);
-            if (moved <= 0)
-            {
+            if (moved <= 0) {
                 continue;
             }
 
@@ -127,40 +105,32 @@ public sealed class ItemEntity : Entity
             other.Item.SetStackSize((ushort)(other.Item.StackSize - moved));
             merged = true;
 
-            if (other.Item.StackSize == 0)
-            {
+            if (other.Item.StackSize == 0) {
                 other.Despawn(new EntityDespawnOptions());
             }
-            else
-            {
+            else {
                 other.Resend();
             }
         }
 
-        if (merged)
-        {
+        if (merged) {
             Resend();
         }
     }
 
-    public void TryPickupNearby(ulong currentTick)
-    {
-        if (Dimension is null || PendingDespawn || !IsAlive || Item.StackSize == 0 || currentTick < PickupLockedUntilTick)
-        {
+    public void TryPickupNearby(ulong currentTick) {
+        if (Dimension is null || PendingDespawn || !IsAlive || Item.StackSize == 0 || currentTick < PickupLockedUntilTick) {
             return;
         }
 
-        if (Dimension.World?.Server is not Basalt.Core.Server server)
-        {
+        if (Dimension.World?.Server is not Basalt.Core.Server server) {
             return;
         }
 
         const float pickupRadiusSquared = 1.5f * 1.5f;
 
-        foreach ((_, var player) in server.Players)
-        {
-            if (player.Dimension != Dimension || !player.IsAlive || !player.Spawned)
-            {
+        foreach ((_, var player) in server.Players) {
+            if (player.Dimension != Dimension || !player.IsAlive || !player.Spawned) {
                 continue;
             }
 
@@ -168,34 +138,29 @@ public sealed class ItemEntity : Entity
             float dx = feetPos.X - Position.X;
             float dy = feetPos.Y - Position.Y;
             float dz = feetPos.Z - Position.Z;
-            if ((dx * dx) + (dy * dy) + (dz * dz) > pickupRadiusSquared)
-            {
+            if ((dx * dx) + (dy * dy) + (dz * dz) > pickupRadiusSquared) {
                 continue;
             }
 
             var signal = new Basalt.Core.Events.PlayerItemPickupSignal(player, Item, this);
             server.Emit(signal);
-            if (!signal.Emit())
-            {
+            if (!signal.Emit()) {
                 continue;
             }
 
             ushort moved = player.CollectItem(Item);
-            if (moved == 0)
-            {
+            if (moved == 0) {
                 continue;
             }
 
             ushort after = Item.StackSize;
 
-            Dimension.Broadcast(new TakeItemActorPacket
-            {
+            Dimension.Broadcast(new TakeItemActorPacket {
                 ItemEntityRuntimeId = RuntimeId,
                 TakerEntityRuntimeId = player.RuntimeId
             });
 
-            if (after == 0)
-            {
+            if (after == 0) {
                 Despawn(new EntityDespawnOptions());
                 return;
             }
@@ -205,10 +170,8 @@ public sealed class ItemEntity : Entity
         }
     }
 
-    private bool CanMergeWith(ItemEntity other)
-    {
-        if (Item.Type != other.Item.Type || Item.Metadata != other.Item.Metadata || !Item.CanStackWith(other.Item))
-        {
+    private bool CanMergeWith(ItemEntity other) {
+        if (Item.Type != other.Item.Type || Item.Metadata != other.Item.Metadata || !Item.CanStackWith(other.Item)) {
             return false;
         }
 
@@ -217,10 +180,8 @@ public sealed class ItemEntity : Entity
         return string.Equals(thisNbt, otherNbt, StringComparison.Ordinal);
     }
 
-    private bool IsGrounded(Vec3f position)
-    {
-        if (Dimension is null)
-        {
+    private bool IsGrounded(Vec3f position) {
+        if (Dimension is null) {
             return false;
         }
 
@@ -230,38 +191,31 @@ public sealed class ItemEntity : Entity
             (int)MathF.Floor(position.Z)
         ).Type.Identifier;
 
-        if (string.Equals(identifier, "minecraft:air", StringComparison.Ordinal))
-        {
+        if (string.Equals(identifier, "minecraft:air", StringComparison.Ordinal)) {
             return false;
         }
 
-        if (identifier.Contains("water", StringComparison.Ordinal) || identifier.Contains("lava", StringComparison.Ordinal))
-        {
+        if (identifier.Contains("water", StringComparison.Ordinal) || identifier.Contains("lava", StringComparison.Ordinal)) {
             return false;
         }
 
         return true;
     }
 
-    private void Resend()
-    {
-        if (Dimension is null || PendingDespawn || !IsAlive)
-        {
+    private void Resend() {
+        if (Dimension is null || PendingDespawn || !IsAlive) {
             return;
         }
 
-        Dimension.Broadcast(new RemoveActorPacket
-        {
+        Dimension.Broadcast(new RemoveActorPacket {
             EntityUniqueId = UniqueId
         });
         Dimension.Broadcast(CreateAddItemActorPacket());
     }
 
-    public override void OnPhysicsTick(ulong currentTick, bool grounded)
-    {
+    public override void OnPhysicsTick(ulong currentTick, bool grounded) {
         TryPickupNearby(currentTick);
-        if (grounded)
-        {
+        if (grounded) {
             TryMergeNearby(currentTick);
         }
     }

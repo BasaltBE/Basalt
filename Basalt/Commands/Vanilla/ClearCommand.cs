@@ -4,10 +4,8 @@ using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits;
 using Player = Player.Player;
 
-public static class ClearCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class ClearCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "clear",
         Description = "Clear a player's inventory.",
         Permissions = ["basalt.op"],
@@ -27,19 +25,16 @@ public static class ClearCommand
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
-    {
+    static CommandResult Execute(CommandContext ctx) {
         TargetEnum? target = ctx.Get<TargetEnum>("target");
 
         Entity entity;
-        if (target is not null)
-        {
+        if (target is not null) {
             if (target.Entities.Length == 0)
                 return CommandResult.Error("No entities matched the target selector.");
             entity = target.Entities[0];
         }
-        else
-        {
+        else {
             Player? self = ctx.RequirePlayer(out CommandResult? error);
             if (self is null) return error!;
             entity = self;

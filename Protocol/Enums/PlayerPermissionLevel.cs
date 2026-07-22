@@ -3,8 +3,7 @@ namespace Basalt.Protocol.Enums;
 /// <summary>
 /// Player permission level shown to the client.
 /// </summary>
-public enum PlayerPermissionLevel : byte
-{
+public enum PlayerPermissionLevel : byte {
     /// <summary>
     /// Player has visitor permissions.
     /// </summary>

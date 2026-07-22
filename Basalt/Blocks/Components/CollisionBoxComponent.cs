@@ -3,27 +3,23 @@ using Basalt.Protocol.Nbt;
 
 namespace Basalt.Core.Blocks.Components;
 
-public sealed class CollisionBoxComponent : BlockComponent
-{
+public sealed class CollisionBoxComponent : BlockComponent {
     public static new string Identifier => "minecraft:collision_box";
     public override string ComponentIdentifier => "minecraft:collision_box";
 
     public bool Enabled { get; }
     public CollisionBox[] Boxes { get; }
 
-    public CollisionBoxComponent(bool enabled = true, CollisionBox[]? boxes = null)
-    {
+    public CollisionBoxComponent(bool enabled = true, CollisionBox[]? boxes = null) {
         Enabled = enabled;
         Boxes = boxes ?? [new CollisionBox(-8f, 0f, -8f, 16f, 16f, 16f)];
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("enabled", new ByteTag { Value = (sbyte)(Enabled ? 1 : 0) });
 
         ListTag boxesTag = new() { Name = "boxes" };
-        for (int i = 0; i < Boxes.Length; i++)
-        {
+        for (int i = 0; i < Boxes.Length; i++) {
             CollisionBox box = Boxes[i];
             CompoundTag boxTag = new();
             boxTag.Set("minX", new FloatTag { Value = box.OriginX });
@@ -38,32 +34,25 @@ public sealed class CollisionBoxComponent : BlockComponent
         tag.Set("boxes", boxesTag);
     }
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
     }
 
-    public static CollisionBoxComponent FromJson(JsonElement element)
-    {
+    public static CollisionBoxComponent FromJson(JsonElement element) {
         bool enabled = true;
         List<CollisionBox> boxes = [];
 
-        if (element.TryGetProperty("enabled", out JsonElement enabledEl))
-        {
+        if (element.TryGetProperty("enabled", out JsonElement enabledEl)) {
             enabled = enabledEl.ValueKind == JsonValueKind.True;
         }
 
-        if (element.TryGetProperty("boxes", out JsonElement boxesEl) && boxesEl.ValueKind == JsonValueKind.Array)
-        {
-            foreach (JsonElement boxEl in boxesEl.EnumerateArray())
-            {
+        if (element.TryGetProperty("boxes", out JsonElement boxesEl) && boxesEl.ValueKind == JsonValueKind.Array) {
+            foreach (JsonElement boxEl in boxesEl.EnumerateArray()) {
                 float originX = -8f, originY = 0f, originZ = -8f;
                 float sizeX = 16f, sizeY = 16f, sizeZ = 16f;
 
-                if (boxEl.TryGetProperty("origin", out JsonElement originEl) && originEl.ValueKind == JsonValueKind.Array)
-                {
+                if (boxEl.TryGetProperty("origin", out JsonElement originEl) && originEl.ValueKind == JsonValueKind.Array) {
                     int i = 0;
-                    foreach (JsonElement val in originEl.EnumerateArray())
-                    {
+                    foreach (JsonElement val in originEl.EnumerateArray()) {
                         if (i == 0) { originX = val.GetSingle(); }
                         else if (i == 1) { originY = val.GetSingle(); }
                         else if (i == 2) { originZ = val.GetSingle(); }
@@ -71,11 +60,9 @@ public sealed class CollisionBoxComponent : BlockComponent
                     }
                 }
 
-                if (boxEl.TryGetProperty("size", out JsonElement sizeEl) && sizeEl.ValueKind == JsonValueKind.Array)
-                {
+                if (boxEl.TryGetProperty("size", out JsonElement sizeEl) && sizeEl.ValueKind == JsonValueKind.Array) {
                     int i = 0;
-                    foreach (JsonElement val in sizeEl.EnumerateArray())
-                    {
+                    foreach (JsonElement val in sizeEl.EnumerateArray()) {
                         if (i == 0) { sizeX = val.GetSingle(); }
                         else if (i == 1) { sizeY = val.GetSingle(); }
                         else if (i == 2) { sizeZ = val.GetSingle(); }
@@ -87,8 +74,7 @@ public sealed class CollisionBoxComponent : BlockComponent
             }
         }
 
-        if (boxes.Count == 0)
-        {
+        if (boxes.Count == 0) {
             boxes.Add(new CollisionBox(-8f, 0f, -8f, 16f, 16f, 16f));
         }
 
@@ -98,8 +84,7 @@ public sealed class CollisionBoxComponent : BlockComponent
 
 public readonly struct CollisionBox(
   float originX, float originY, float originZ,
-  float sizeX, float sizeY, float sizeZ)
-{
+  float sizeX, float sizeY, float sizeZ) {
     public float OriginX { get; } = originX;
     public float OriginY { get; } = originY;
     public float OriginZ { get; } = originZ;

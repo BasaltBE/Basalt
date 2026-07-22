@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum LevelEvent : int
-{
+public enum LevelEvent : int {
     Undefined = 0,
     ParticlesDestroyBlock = 2001,
     StartBlockCracking = 3600,

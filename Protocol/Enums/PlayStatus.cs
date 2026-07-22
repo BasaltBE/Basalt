@@ -1,7 +1,5 @@
-namespace Basalt.Protocol.Enums
-{
-    public enum PlayStatus
-    {
+namespace Basalt.Protocol.Enums {
+    public enum PlayStatus {
         LoginSuccess = 0,
         LoginFailedClientOld = 1,
         LoginFailedServerOld = 2,

@@ -3,8 +3,7 @@ using System;
 namespace Basalt.Protocol.Enums;
 
 [Flags]
-public enum UpdateBlockFlagsType : uint
-{
+public enum UpdateBlockFlagsType : uint {
     None = 0,
     Neighbors = 1,
     Network = 2,

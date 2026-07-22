@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class BlockEntry : DataType
-{
+public sealed class BlockEntry : DataType {
     private static readonly TagOptions TagOptions = new(Name: true, Type: true, VarInt: true);
 
     /// <summary>
@@ -18,14 +17,12 @@ public sealed class BlockEntry : DataType
     /// </summary>
     public CompoundTag Properties = new();
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         Properties = CompoundTag.Read(reader, TagOptions);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         Io.NBT.WriteTag(writer, Properties, TagOptions);
     }

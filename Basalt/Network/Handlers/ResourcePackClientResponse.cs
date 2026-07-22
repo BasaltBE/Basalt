@@ -16,23 +16,18 @@ using Basalt.Protocol.Io;
 using Basalt.Core.Blocks;
 
 
-public static class ResourcePackClientResponse
-{
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer)
-    {
+public static class ResourcePackClientResponse {
+    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("ResourcePackResponse.Handle");
         ResourcePackClientResponsePacket packet = new();
         int offset = 0;
         Binary.BinaryReader reader = new(packetBuffer, ref offset);
         packet = (ResourcePackClientResponsePacket)Protocol.Io.Packet.Deserialize(reader);
 
-        switch (packet.Response)
-        {
+        switch (packet.Response) {
             case ResourcePackResponse.Refused:
-                if (server.Properties.ForceResourcePacks)
-                {
-                    DisconnectPacket disconnect = new()
-                    {
+                if (server.Properties.ForceResourcePacks) {
+                    DisconnectPacket disconnect = new() {
                         Reason = DisconnectReason.ResourcePackProblem,
                         HideDisconnectionScreen = false,
                         Message = "Required resource packs were refused.",
@@ -43,18 +38,15 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.SendPacks:
-                foreach (string packId in packet.PacksToDownload)
-                {
+                foreach (string packId in packet.PacksToDownload) {
                     ResourcePack? pack = server.ResourcePacks.GetByUuid(packId);
-                    if (pack is null)
-                    {
+                    if (pack is null) {
                         Logger.Warn($"Client requested unknown pack: {packId}");
                         continue;
                     }
 
                     uint chunkSize = server.ResourcePacks.ChunkSize;
-                    ResourcePackDataInfoPacket dataInfo = new()
-                    {
+                    ResourcePackDataInfoPacket dataInfo = new() {
                         Uuid = pack.Uuid.ToString(),
                         ChunkSize = chunkSize,
                         ChunkCount = pack.ChunkCount(chunkSize),
@@ -78,18 +70,15 @@ public static class ResourcePackClientResponse
                     }
                 ];
 
-                foreach (ResourcePack loadedPack in server.ResourcePacks.Packs)
-                {
-                    stackPacks.Add(new ResourcePackStackEntry
-                    {
+                foreach (ResourcePack loadedPack in server.ResourcePacks.Packs) {
+                    stackPacks.Add(new ResourcePackStackEntry {
                         Uuid = loadedPack.Uuid,
                         Version = loadedPack.VersionString,
                         SubPackName = "Education Edition Resource Pack"
                     });
                 }
 
-                ResourcePackStackPacket stack = new()
-                {
+                ResourcePackStackPacket stack = new() {
                     MustAccept = server.Properties.ForceResourcePacks,
                     Packs = stackPacks,
                     BaseGameVersion = Constants.MinecraftVersion,
@@ -101,11 +90,9 @@ public static class ResourcePackClientResponse
                 return;
 
             case ResourcePackResponse.Completed:
-                if (!server.Players.TryGetValue(connection, out Player.Player? player))
-                {
+                if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
-                    DisconnectPacket missingSessionDisconnect = new()
-                    {
+                    DisconnectPacket missingSessionDisconnect = new() {
                         Reason = DisconnectReason.Disconnected,
                         HideDisconnectionScreen = false,
                         Message = "Server force closed the connection.",
@@ -116,20 +103,17 @@ public static class ResourcePackClientResponse
                     return;
                 }
 
-                PlayerListPacket playerList = new()
-                {
+                PlayerListPacket playerList = new() {
                     ActionType = PlayerListActionType.Add,
                     Entries = server.Players.Values.Select(static online => online.CreatePlayerListEntry()).ToList()
                 };
                 server.Network.SendPacket(connection, playerList);
-                server.Broadcast(new PlayerListPacket
-                {
+                server.Broadcast(new PlayerListPacket {
                     ActionType = PlayerListActionType.Add,
                     Entries = [player.CreatePlayerListEntry()]
                 }, player);
 
-                StartGamePacket startGame = new()
-                {
+                StartGamePacket startGame = new() {
                     EntityUniqueId = player.UniqueId,
                     EntityRuntimeId = player.RuntimeId,
                     PlayerGameMode = (int)player.GetGamemode(),
@@ -183,8 +167,7 @@ public static class ResourcePackClientResponse
                     LimitedWorldWidth = 0,
                     LimitedWorldDepth = 0,
                     NewNether = true,
-                    EducationSharedResourceUri = new EducationSharedResourceUri
-                    {
+                    EducationSharedResourceUri = new EducationSharedResourceUri {
                         ButtonName = string.Empty,
                         LinkUri = string.Empty
                     },
@@ -195,8 +178,7 @@ public static class ResourcePackClientResponse
                     WorldName = "Basalt",
                     TemplateContentIdentity = string.Empty,
                     Trial = false,
-                    PlayerMovementSettings = new PlayerMovementSettings
-                    {
+                    PlayerMovementSettings = new PlayerMovementSettings {
                         RewindHistorySize = 0,
                         ServerAuthoritativeBlockBreaking = true
                     },
@@ -219,14 +201,11 @@ public static class ResourcePackClientResponse
                     OwnerId = player.Xuid
                 };
                 var dimension = ResolvePlayerDimension(server, player);
-                if (dimension is not null)
-                {
-                    if (player.SavedWorldName is not null)
-                    {
+                if (dimension is not null) {
+                    if (player.SavedWorldName is not null) {
                         startGame.PlayerPosition = player.Location;
                     }
-                    else
-                    {
+                    else {
                         player.Location = startGame.PlayerPosition;
                     }
 
@@ -235,10 +214,8 @@ public static class ResourcePackClientResponse
                     EntitySpawnOptions options = new(InitialSpawn: true);
                     PlayerSpawnSignal spawnSignal = new(player, options);
                     server.Emit(spawnSignal);
-                    if (!spawnSignal.Emit())
-                    {
-                        DisconnectPacket forcedDisconnect = new()
-                        {
+                    if (!spawnSignal.Emit()) {
+                        DisconnectPacket forcedDisconnect = new() {
                             Reason = DisconnectReason.Disconnected,
                             HideDisconnectionScreen = false,
                             Message = "Server force closed the connection.",
@@ -254,8 +231,7 @@ public static class ResourcePackClientResponse
 
                 byte[] itemRegistryPayload = ItemPalette.GetItemRegistryPayload();
                 byte[] creativeContentPayload = ItemPalette.GetCreativeContentPayload();
-                AvailableActorIdentifiersPacket actorIdentifiers = new()
-                {
+                AvailableActorIdentifiersPacket actorIdentifiers = new() {
                     Data = EntityPalette.BuildAvailableActorIdentifiersTag()
                 };
 
@@ -276,17 +252,12 @@ public static class ResourcePackClientResponse
         }
     }
 
-    private static Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player)
-    {
-        if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null)
-        {
-            foreach (var world in server.Worlds)
-            {
-                if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase))
-                {
+    private static Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
+        if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null) {
+            foreach (var world in server.Worlds) {
+                if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase)) {
                     var dim = world.GetDimension(player.SavedDimensionIdentifier);
-                    if (dim is not null)
-                    {
+                    if (dim is not null) {
                         return dim;
                     }
                 }

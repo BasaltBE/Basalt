@@ -4,8 +4,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.RequestNetworkSettings)]
-public sealed record RequestNetworkSettingsPacket : DataPacket
-{
+public sealed record RequestNetworkSettingsPacket : DataPacket {
     /// <summary>
     /// Protocol version.
     /// This is used to determine if client and server are compatible. 
@@ -13,22 +12,18 @@ public sealed record RequestNetworkSettingsPacket : DataPacket
     /// </summary>
     public int Protocol;
 
-    public RequestNetworkSettingsPacket() : this(Io.Constants.ProtocolVersion)
-    {
+    public RequestNetworkSettingsPacket() : this(Io.Constants.ProtocolVersion) {
     }
 
-    public RequestNetworkSettingsPacket(int protocol)
-    {
+    public RequestNetworkSettingsPacket(int protocol) {
         Protocol = protocol;
     }
 
-    public override void Deserialize(Basalt.Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Basalt.Binary.BinaryReader reader) {
         Protocol = reader.ReadInt32(false);
     }
 
-    public override void Serialize(Basalt.Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Basalt.Binary.BinaryWriter writer) {
         writer.WriteInt32(Protocol, false);
     }
 };

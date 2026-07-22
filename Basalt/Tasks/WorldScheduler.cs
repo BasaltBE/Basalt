@@ -5,256 +5,256 @@ using Basalt.Core.Profiling;
 using Basalt.Core.Worlds;
 
 public sealed class WorldScheduler {
-  private const int WheelSize = 1200;
+    private const int WheelSize = 1200;
 
-  private readonly World _world;
-  private readonly TaskWorkerPool _workerPool;
-  private readonly ConcurrentQueue<ServerTask> _incoming = new();
-  private readonly TickWheelSlot[] _wheel = new TickWheelSlot[WheelSize];
-  private RepeatingTask[] _repeating = new RepeatingTask[16];
-  private int _repeatingCount;
-  private readonly List<ServerTask> _workerBatch = new(64);
-  private readonly CountdownEvent _barrier = new(0);
-  private volatile bool _stopped;
+    private readonly World _world;
+    private readonly TaskWorkerPool _workerPool;
+    private readonly ConcurrentQueue<ServerTask> _incoming = new();
+    private readonly TickWheelSlot[] _wheel = new TickWheelSlot[WheelSize];
+    private RepeatingTask[] _repeating = new RepeatingTask[16];
+    private int _repeatingCount;
+    private readonly List<ServerTask> _workerBatch = new(64);
+    private readonly CountdownEvent _barrier = new(0);
+    private volatile bool _stopped;
 
-  public bool IsStopped => _stopped;
+    public bool IsStopped => _stopped;
 
-  public WorldScheduler(World world, TaskWorkerPool workerPool) {
-    _world = world;
-    _workerPool = workerPool;
-  }
-
-  public void Schedule(ServerTask task) {
-    if (_stopped) {
-      task.Cancel();
-      return;
+    public WorldScheduler(World world, TaskWorkerPool workerPool) {
+        _world = world;
+        _workerPool = workerPool;
     }
 
-    task.OwnerThreadId = Environment.CurrentManagedThreadId;
-    _incoming.Enqueue(task);
-  }
-
-  public void Schedule(DelayedTask task) {
-    if (_stopped) {
-      task.Cancel();
-      return;
-    }
-
-    task.OwnerThreadId = Environment.CurrentManagedThreadId;
-    task.ExecutionTick = _world.TickValue + task.DelayTicks;
-    _incoming.Enqueue(task);
-  }
-
-  public void Schedule(RepeatingTask task) {
-    if (_stopped) {
-      task.Cancel();
-      return;
-    }
-
-    task.OwnerThreadId = Environment.CurrentManagedThreadId;
-    task.NextExecutionTick = _world.TickValue + task.IntervalTicks;
-
-    if (_repeatingCount == _repeating.Length)
-      Array.Resize(ref _repeating, _repeatingCount * 2);
-
-    _repeating[_repeatingCount++] = task;
-  }
-
-  public void Tick() {
-    if (_stopped) return;
-
-    using var _ = Profiler.BeginZone("WorldScheduler.Tick");
-    ulong currentTick = _world.TickValue;
-
-    DrainIncoming(currentTick);
-    DispatchReadyTasks(currentTick);
-    ProcessRepeatingTasks(currentTick);
-  }
-
-  public void Stop() {
-    _stopped = true;
-
-    for (int i = 0; i < WheelSize; i++) {
-      ServerTask? task = _wheel[i].Head;
-      _wheel[i].Head = null;
-      while (task is not null) {
-        ServerTask? next = task.NextInSlot;
-        task.NextInSlot = null;
-        task.OnStop();
-        task.Cancel();
-        task = next;
-      }
-    }
-
-    for (int i = _repeatingCount - 1; i >= 0; i--) {
-      _repeating[i].OnStop();
-      _repeating[i].Cancel();
-      _repeating[i] = null!;
-    }
-    _repeatingCount = 0;
-
-    while (_incoming.TryDequeue(out ServerTask? task)) {
-      task.OnStop();
-      task.Cancel();
-    }
-  }
-
-  private void DrainIncoming(ulong currentTick) {
-    while (_incoming.TryDequeue(out ServerTask? task)) {
-      if (task.IsCancelled) continue;
-
-      if (task is DelayedTask delayed) {
-        if (delayed.ExecutionTick == 0)
-          delayed.ExecutionTick = currentTick + delayed.DelayTicks;
-        InsertIntoWheel(delayed);
-      }
-      else {
-        // Immediate task: dispatch right away.
-        if (task.RunOnMainThread)
-          ExecuteMainThread(task);
-        else
-          _workerPool.Enqueue(task);
-      }
-    }
-  }
-
-  private void InsertIntoWheel(DelayedTask task) {
-    int slot = (int)(task.ExecutionTick % (ulong)WheelSize);
-    task.NextInSlot = _wheel[slot].Head;
-    _wheel[slot].Head = task;
-  }
-
-  private void DispatchReadyTasks(ulong currentTick) {
-    int slot = (int)(currentTick % (ulong)WheelSize);
-    ServerTask? task = _wheel[slot].Head;
-    _wheel[slot].Head = null;
-
-    ServerTask? mainHead = null;
-    _workerBatch.Clear();
-
-    while (task is not null) {
-      ServerTask? next = task.NextInSlot;
-      task.NextInSlot = null;
-
-      if (task.IsCancelled) {
-        task = next;
-        continue;
-      }
-
-      if (task is DelayedTask delayed && delayed.ExecutionTick > currentTick) {
-        InsertIntoWheel(delayed);
-        task = next;
-        continue;
-      }
-
-      if (task.RunOnMainThread) {
-        task.NextInSlot = mainHead;
-        mainHead = task;
-      }
-      else {
-        _workerBatch.Add(task);
-      }
-
-      task = next;
-    }
-
-    // Sort worker batch by priority for fairness.
-    if (_workerBatch.Count > 1)
-      _workerBatch.Sort(static (a, b) => a.Priority.CompareTo(b.Priority));
-
-    int workerCount = _workerBatch.Count;
-    if (workerCount > 0) {
-      using (Profiler.BeginZone("WorkerDispatch")) {
-        _barrier.Reset(workerCount);
-        for (int i = 0; i < workerCount; i++)
-          _workerPool.Enqueue(_workerBatch[i], _barrier);
-      }
-
-      using (Profiler.BeginZone("Barrier")) {
-        _barrier.Wait();
-      }
-
-      using (Profiler.BeginZone("ApplyResults")) {
-        for (int i = 0; i < workerCount; i++) {
-          ServerTask completed = _workerBatch[i];
-          if (completed.IsCancelled) continue;
-
-          try {
-            completed.Complete();
-          }
-          catch (Exception ex) {
-            Logger.Warn($"Task Complete() failed: {ex}");
-          }
-          completed.IsCompleted = true;
+    public void Schedule(ServerTask task) {
+        if (_stopped) {
+            task.Cancel();
+            return;
         }
-      }
-      _workerBatch.Clear();
+
+        task.OwnerThreadId = Environment.CurrentManagedThreadId;
+        _incoming.Enqueue(task);
     }
 
-    // Run main-thread tasks after worker results are applied 
-    using (Profiler.BeginZone("MainThreadTasks")) {
-      while (mainHead is not null) {
-        ServerTask? next = mainHead.NextInSlot;
-        mainHead.NextInSlot = null;
+    public void Schedule(DelayedTask task) {
+        if (_stopped) {
+            task.Cancel();
+            return;
+        }
 
-        if (!mainHead.IsCancelled)
-          ExecuteMainThread(mainHead);
-
-        mainHead = next;
-      }
-    }
-  }
-
-  private void ProcessRepeatingTasks(ulong currentTick) {
-    for (int i = _repeatingCount - 1; i >= 0; i--) {
-      RepeatingTask rt = _repeating[i];
-      if (rt.IsCancelled) {
-        RemoveRepeatingAt(i);
-        continue;
-      }
-
-      if (currentTick < rt.NextExecutionTick) continue;
-
-      rt.NextExecutionTick = currentTick + rt.IntervalTicks;
-
-      if (rt.RunOnMainThread) {
-        ExecuteMainThread(rt);
-      }
-      else {
-        _workerPool.Enqueue(rt);
-      }
-    }
-  }
-
-  private void RemoveRepeatingAt(int index) {
-    _repeatingCount--;
-    _repeating[index] = _repeating[_repeatingCount];
-    _repeating[_repeatingCount] = null!;
-  }
-
-  private static void ExecuteMainThread(ServerTask task) {
-    using (Profiler.BeginZone($"MainThread:{task.GetType().Name}")) {
-      try {
-        task.Execute();
-      }
-      catch (Exception ex) {
-        Logger.Warn($"Main thread task execution failed: {ex}");
-      }
+        task.OwnerThreadId = Environment.CurrentManagedThreadId;
+        task.ExecutionTick = _world.TickValue + task.DelayTicks;
+        _incoming.Enqueue(task);
     }
 
-    task.IsExecuted = true;
+    public void Schedule(RepeatingTask task) {
+        if (_stopped) {
+            task.Cancel();
+            return;
+        }
 
-    try {
-      task.Complete();
+        task.OwnerThreadId = Environment.CurrentManagedThreadId;
+        task.NextExecutionTick = _world.TickValue + task.IntervalTicks;
+
+        if (_repeatingCount == _repeating.Length)
+            Array.Resize(ref _repeating, _repeatingCount * 2);
+
+        _repeating[_repeatingCount++] = task;
     }
-    catch (Exception ex) {
-      Logger.Warn($"Main thread task Complete() failed: {ex}");
+
+    public void Tick() {
+        if (_stopped) return;
+
+        using var _ = Profiler.BeginZone("WorldScheduler.Tick");
+        ulong currentTick = _world.TickValue;
+
+        DrainIncoming(currentTick);
+        DispatchReadyTasks(currentTick);
+        ProcessRepeatingTasks(currentTick);
     }
 
-    task.IsCompleted = true;
-  }
+    public void Stop() {
+        _stopped = true;
 
-  internal struct TickWheelSlot {
-    public ServerTask? Head;
-  }
+        for (int i = 0; i < WheelSize; i++) {
+            ServerTask? task = _wheel[i].Head;
+            _wheel[i].Head = null;
+            while (task is not null) {
+                ServerTask? next = task.NextInSlot;
+                task.NextInSlot = null;
+                task.OnStop();
+                task.Cancel();
+                task = next;
+            }
+        }
+
+        for (int i = _repeatingCount - 1; i >= 0; i--) {
+            _repeating[i].OnStop();
+            _repeating[i].Cancel();
+            _repeating[i] = null!;
+        }
+        _repeatingCount = 0;
+
+        while (_incoming.TryDequeue(out ServerTask? task)) {
+            task.OnStop();
+            task.Cancel();
+        }
+    }
+
+    private void DrainIncoming(ulong currentTick) {
+        while (_incoming.TryDequeue(out ServerTask? task)) {
+            if (task.IsCancelled) continue;
+
+            if (task is DelayedTask delayed) {
+                if (delayed.ExecutionTick == 0)
+                    delayed.ExecutionTick = currentTick + delayed.DelayTicks;
+                InsertIntoWheel(delayed);
+            }
+            else {
+                // Immediate task: dispatch right away.
+                if (task.RunOnMainThread)
+                    ExecuteMainThread(task);
+                else
+                    _workerPool.Enqueue(task);
+            }
+        }
+    }
+
+    private void InsertIntoWheel(DelayedTask task) {
+        int slot = (int)(task.ExecutionTick % (ulong)WheelSize);
+        task.NextInSlot = _wheel[slot].Head;
+        _wheel[slot].Head = task;
+    }
+
+    private void DispatchReadyTasks(ulong currentTick) {
+        int slot = (int)(currentTick % (ulong)WheelSize);
+        ServerTask? task = _wheel[slot].Head;
+        _wheel[slot].Head = null;
+
+        ServerTask? mainHead = null;
+        _workerBatch.Clear();
+
+        while (task is not null) {
+            ServerTask? next = task.NextInSlot;
+            task.NextInSlot = null;
+
+            if (task.IsCancelled) {
+                task = next;
+                continue;
+            }
+
+            if (task is DelayedTask delayed && delayed.ExecutionTick > currentTick) {
+                InsertIntoWheel(delayed);
+                task = next;
+                continue;
+            }
+
+            if (task.RunOnMainThread) {
+                task.NextInSlot = mainHead;
+                mainHead = task;
+            }
+            else {
+                _workerBatch.Add(task);
+            }
+
+            task = next;
+        }
+
+        // Sort worker batch by priority for fairness.
+        if (_workerBatch.Count > 1)
+            _workerBatch.Sort(static (a, b) => a.Priority.CompareTo(b.Priority));
+
+        int workerCount = _workerBatch.Count;
+        if (workerCount > 0) {
+            using (Profiler.BeginZone("WorkerDispatch")) {
+                _barrier.Reset(workerCount);
+                for (int i = 0; i < workerCount; i++)
+                    _workerPool.Enqueue(_workerBatch[i], _barrier);
+            }
+
+            using (Profiler.BeginZone("Barrier")) {
+                _barrier.Wait();
+            }
+
+            using (Profiler.BeginZone("ApplyResults")) {
+                for (int i = 0; i < workerCount; i++) {
+                    ServerTask completed = _workerBatch[i];
+                    if (completed.IsCancelled) continue;
+
+                    try {
+                        completed.Complete();
+                    }
+                    catch (Exception ex) {
+                        Logger.Warn($"Task Complete() failed: {ex}");
+                    }
+                    completed.IsCompleted = true;
+                }
+            }
+            _workerBatch.Clear();
+        }
+
+        // Run main-thread tasks after worker results are applied 
+        using (Profiler.BeginZone("MainThreadTasks")) {
+            while (mainHead is not null) {
+                ServerTask? next = mainHead.NextInSlot;
+                mainHead.NextInSlot = null;
+
+                if (!mainHead.IsCancelled)
+                    ExecuteMainThread(mainHead);
+
+                mainHead = next;
+            }
+        }
+    }
+
+    private void ProcessRepeatingTasks(ulong currentTick) {
+        for (int i = _repeatingCount - 1; i >= 0; i--) {
+            RepeatingTask rt = _repeating[i];
+            if (rt.IsCancelled) {
+                RemoveRepeatingAt(i);
+                continue;
+            }
+
+            if (currentTick < rt.NextExecutionTick) continue;
+
+            rt.NextExecutionTick = currentTick + rt.IntervalTicks;
+
+            if (rt.RunOnMainThread) {
+                ExecuteMainThread(rt);
+            }
+            else {
+                _workerPool.Enqueue(rt);
+            }
+        }
+    }
+
+    private void RemoveRepeatingAt(int index) {
+        _repeatingCount--;
+        _repeating[index] = _repeating[_repeatingCount];
+        _repeating[_repeatingCount] = null!;
+    }
+
+    private static void ExecuteMainThread(ServerTask task) {
+        using (Profiler.BeginZone($"MainThread:{task.GetType().Name}")) {
+            try {
+                task.Execute();
+            }
+            catch (Exception ex) {
+                Logger.Warn($"Main thread task execution failed: {ex}");
+            }
+        }
+
+        task.IsExecuted = true;
+
+        try {
+            task.Complete();
+        }
+        catch (Exception ex) {
+            Logger.Warn($"Main thread task Complete() failed: {ex}");
+        }
+
+        task.IsCompleted = true;
+    }
+
+    internal struct TickWheelSlot {
+        public ServerTask? Head;
+    }
 }

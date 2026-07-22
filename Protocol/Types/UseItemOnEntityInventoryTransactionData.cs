@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransactionData
-{
+public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransactionData {
     public InventoryTransactionType Type => InventoryTransactionType.UseItemOnEntity;
 
     /// <summary>
@@ -32,8 +31,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
     /// Clicked position relative to entity.
     /// </summary>
     public Vec3f ClickedPosition;
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         TargetEntityRuntimeId = reader.ReadVarULong();
         ActionType = reader.ReadZigZag();
         HotBarSlot = reader.ReadZigZag();
@@ -42,8 +40,7 @@ public sealed class UseItemOnEntityInventoryTransactionData : IInventoryTransact
         ClickedPosition.Read(reader);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarULong(TargetEntityRuntimeId);
         writer.WriteZigZag(ActionType);
         writer.WriteZigZag(HotBarSlot);

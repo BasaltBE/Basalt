@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.LevelEvent)]
-public sealed record LevelEventPacket : DataPacket
-{
+public sealed record LevelEventPacket : DataPacket {
     /// <summary>
     /// Level event id.
     /// </summary>
@@ -22,8 +21,7 @@ public sealed record LevelEventPacket : DataPacket
     /// </summary>
     public int Data;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Event = (LevelEvent)reader.ReadZigZag();
 
         Vec3f position = Position;
@@ -33,8 +31,7 @@ public sealed record LevelEventPacket : DataPacket
         Data = reader.ReadZigZag();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteZigZag((int)Event);
         Position.Write(writer);
         writer.WriteZigZag(Data);

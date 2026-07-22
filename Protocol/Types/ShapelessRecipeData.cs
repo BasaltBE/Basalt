@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class ShapelessRecipeData : DataType
-{
+public sealed class ShapelessRecipeData : DataType {
     public string RecipeId = string.Empty;
     public List<ItemDescriptorCount> Input = [];
     public List<RecipeItemStack> Output = [];
@@ -14,14 +13,12 @@ public sealed class ShapelessRecipeData : DataType
     public RecipeUnlockingRequirement UnlockRequirement = new();
     public uint RecipeNetworkId;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         RecipeId = reader.ReadVarString();
 
         int inputCount = checked((int)reader.ReadVarUInt());
         Input = new List<ItemDescriptorCount>(inputCount);
-        for (int i = 0; i < inputCount; i++)
-        {
+        for (int i = 0; i < inputCount; i++) {
             ItemDescriptorCount descriptor = new();
             descriptor.Read(reader);
             Input.Add(descriptor);
@@ -29,8 +26,7 @@ public sealed class ShapelessRecipeData : DataType
 
         int outputCount = checked((int)reader.ReadVarUInt());
         Output = new List<RecipeItemStack>(outputCount);
-        for (int i = 0; i < outputCount; i++)
-        {
+        for (int i = 0; i < outputCount; i++) {
             RecipeItemStack item = new();
             item.Read(reader);
             Output.Add(item);
@@ -43,19 +39,16 @@ public sealed class ShapelessRecipeData : DataType
         RecipeNetworkId = reader.ReadVarUInt();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(RecipeId);
 
         writer.WriteVarUInt((uint)Input.Count);
-        for (int i = 0; i < Input.Count; i++)
-        {
+        for (int i = 0; i < Input.Count; i++) {
             Input[i].Write(writer);
         }
 
         writer.WriteVarUInt((uint)Output.Count);
-        for (int i = 0; i < Output.Count; i++)
-        {
+        for (int i = 0; i < Output.Count; i++) {
             Output[i].Write(writer);
         }
 

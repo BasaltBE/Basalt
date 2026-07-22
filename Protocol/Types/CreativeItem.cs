@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CreativeItem : DataType
-{
+public sealed class CreativeItem : DataType {
     /// <summary>
     /// Creative item network id.
     /// </summary>
@@ -20,15 +19,13 @@ public sealed class CreativeItem : DataType
     /// </summary>
     public uint GroupIndex;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         CreativeItemNetworkId = reader.ReadVarUInt();
         ItemInstance.Read(reader);
         GroupIndex = reader.ReadVarUInt();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarUInt(CreativeItemNetworkId);
         ItemInstance.Write(writer);
         writer.WriteVarUInt(GroupIndex);

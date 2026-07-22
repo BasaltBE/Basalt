@@ -1,9 +1,7 @@
 namespace Basalt.Protocol.Types;
 
-public static class StackRequestActions
-{
-    public static IStackRequestAction Create(byte type) => type switch
-    {
+public static class StackRequestActions {
+    public static IStackRequestAction Create(byte type) => type switch {
         0 => new TransferStackRequestAction(type),
         1 => new TransferStackRequestAction(type),
         2 => new SwapStackRequestAction(),

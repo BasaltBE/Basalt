@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public interface IStackRequestAction
-{
+public interface IStackRequestAction {
     byte ActionType { get; }
     void Read(BinaryReader reader);
     void Write(BinaryWriter writer);

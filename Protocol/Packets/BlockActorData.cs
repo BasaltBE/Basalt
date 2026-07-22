@@ -6,8 +6,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.BlockActorData)]
-public sealed record BlockActorDataPacket : DataPacket
-{
+public sealed record BlockActorDataPacket : DataPacket {
     private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
 
     /// <summary>
@@ -20,16 +19,14 @@ public sealed record BlockActorDataPacket : DataPacket
     /// </summary>
     public CompoundTag Data = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         BlockPos position = Position;
         position.Read(reader);
         Position = position;
         Data = Io.NBT.ReadTag<CompoundTag>(reader, NetworkNbtOptions);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Position.Write(writer);
         Io.NBT.WriteTag(writer, Data, NetworkNbtOptions);
     }

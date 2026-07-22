@@ -4,13 +4,11 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 [Tag(TagType.Long)]
-public sealed class LongTag : BaseTag
-{
+public sealed class LongTag : BaseTag {
     public long Value { get; set; }
     public override object ToJsonValue() => Value;
 
-    public override void Write(BinaryWriter writer, TagOptions options)
-    {
+    public override void Write(BinaryWriter writer, TagOptions options) {
         if (options.Name)
             WriteString(writer, Name ?? string.Empty, options.VarInt);
 
@@ -21,8 +19,7 @@ public sealed class LongTag : BaseTag
     }
 
     public static LongTag Read(BinaryReader reader, TagOptions options = default) =>
-        new()
-        {
+        new() {
             Name = options.Name ? ReadString(reader, options.VarInt) : null,
             Value = options.VarInt ? reader.ReadZigZong() : reader.ReadInt64(true)
         };

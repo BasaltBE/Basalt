@@ -5,8 +5,7 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
-public abstract class WorldProvider : IDisposable
-{
+public abstract class WorldProvider : IDisposable {
     /// <summary>
     /// A unique identifier for the provider, used for saving and loading dimensions.
     /// </summary>
@@ -24,17 +23,14 @@ public abstract class WorldProvider : IDisposable
     public abstract void SaveChunk(ChunkColumn chunk);
     public abstract void DeleteChunk(DimensionType dimensionType, int x, int z);
 
-    public virtual Vec3f? LoadSpawnPosition(DimensionType dimensionType)
-    {
+    public virtual Vec3f? LoadSpawnPosition(DimensionType dimensionType) {
         return null;
     }
 
-    public virtual void SaveSpawnPosition(DimensionType dimensionType, Vec3f position)
-    {
+    public virtual void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
     }
 
-    public virtual CompoundTag? LoadPlayerData(string xuid)
-    {
+    public virtual CompoundTag? LoadPlayerData(string xuid) {
         return null;
     }
 
@@ -42,32 +38,27 @@ public abstract class WorldProvider : IDisposable
     /// Gets the raw byte data for a player without deserializing.
     /// Useful for checking existence across multiple keys before committing to deserialization.
     /// </summary>
-    public virtual byte[]? GetRawPlayerData(string xuid)
-    {
+    public virtual byte[]? GetRawPlayerData(string xuid) {
         return null;
     }
 
     /// <summary>
     /// Deserializes player data from raw bytes previously obtained via <see cref="GetRawPlayerData"/>.
     /// </summary>
-    public virtual CompoundTag? LoadPlayerDataFromRaw(byte[] data)
-    {
+    public virtual CompoundTag? LoadPlayerDataFromRaw(byte[] data) {
         return null;
     }
 
-    public virtual void SavePlayerData(string xuid, CompoundTag data)
-    {
+    public virtual void SavePlayerData(string xuid, CompoundTag data) {
     }
 
-    public virtual IReadOnlyList<string> ListPlayerXuids()
-    {
+    public virtual IReadOnlyList<string> ListPlayerXuids() {
         return [];
     }
 
     public abstract void Dispose();
 
-    protected static long HashChunk(int x, int z)
-    {
+    protected static long HashChunk(int x, int z) {
         return ((long)x << 32) | (uint)z;
     }
 }

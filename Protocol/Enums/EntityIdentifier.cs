@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum EntityIdentifier : byte
-{
+public enum EntityIdentifier : byte {
     Balloon,
     FallingBlock,
     Vindicator,
@@ -130,10 +129,8 @@ public enum EntityIdentifier : byte
     Unknown = 255,
 }
 
-public static class EntityIdentifierExtensions
-{
-    public static EntityIdentifier FromString(string value) => value switch
-    {
+public static class EntityIdentifierExtensions {
+    public static EntityIdentifier FromString(string value) => value switch {
         "minecraft:balloon" => EntityIdentifier.Balloon,
         "minecraft:falling_block" => EntityIdentifier.FallingBlock,
         "minecraft:vindicator" => EntityIdentifier.Vindicator,
@@ -262,8 +259,7 @@ public static class EntityIdentifierExtensions
         _ => EntityIdentifier.Unknown,
     };
 
-    public static string ToIdentifierString(this EntityIdentifier identifier) => identifier switch
-    {
+    public static string ToIdentifierString(this EntityIdentifier identifier) => identifier switch {
         EntityIdentifier.Balloon => "minecraft:balloon",
         EntityIdentifier.FallingBlock => "minecraft:falling_block",
         EntityIdentifier.Vindicator => "minecraft:vindicator",

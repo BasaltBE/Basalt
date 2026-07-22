@@ -6,8 +6,7 @@ namespace Basalt.Protocol.Types;
 /// <summary>
 /// Parameter definition for a command overload.
 /// </summary>
-public sealed class CommandParameter : DataType
-{
+public sealed class CommandParameter : DataType {
     /// <summary>
     /// Name shown for this command parameter.
     /// </summary>
@@ -28,16 +27,14 @@ public sealed class CommandParameter : DataType
     /// </summary>
     public byte Options;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Name = reader.ReadVarString();
         Type = reader.ReadUInt32(true);
         Optional = reader.ReadBool();
         Options = reader.ReadUInt8();
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteVarString(Name);
         writer.WriteUInt32(Type, true);
         writer.WriteBool(Optional);

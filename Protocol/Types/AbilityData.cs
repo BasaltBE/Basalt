@@ -4,8 +4,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class AbilityData : DataType
-{
+public sealed class AbilityData : DataType {
     /// <summary>
     /// Unique entity id bound to this ability payload.
     /// </summary>
@@ -26,30 +25,26 @@ public sealed class AbilityData : DataType
     /// </summary>
     public List<AbilityLayer> Layers = [];
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         EntityUniqueId = reader.ReadInt64(true);
         PlayerPermission = (PlayerPermissionLevel)reader.ReadUInt8();
         CommandPermission = (CommandPermissionLevel)reader.ReadUInt8();
 
         int count = reader.ReadUInt8();
         Layers = new List<AbilityLayer>(count);
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             AbilityLayer layer = new();
             layer.Read(reader);
             Layers.Add(layer);
         }
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteInt64(EntityUniqueId, true);
         writer.WriteUInt8((byte)PlayerPermission);
         writer.WriteUInt8((byte)CommandPermission);
         writer.WriteUInt8((byte)Layers.Count);
-        for (int i = 0; i < Layers.Count; i++)
-        {
+        for (int i = 0; i < Layers.Count; i++) {
             Layers[i].Write(writer);
         }
     }

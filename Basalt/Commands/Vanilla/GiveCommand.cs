@@ -4,10 +4,8 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
 using Player = Player.Player;
 
-public static class GiveCommand
-{
-    public static readonly CommandDefinition Definition = new()
-    {
+public static class GiveCommand {
+    public static readonly CommandDefinition Definition = new() {
         Name = "give",
         Description = "Gives an item to a player.",
         Permissions = ["basalt.op"],
@@ -36,8 +34,7 @@ public static class GiveCommand
         Handler = new CommandHandler(Execute)
     };
 
-    static CommandResult Execute(CommandContext ctx)
-    {
+    static CommandResult Execute(CommandContext ctx) {
         TargetEnum? target = ctx.Get<TargetEnum>("player");
         ItemEnum? item = ctx.Get<ItemEnum>("item");
         IntEnum? amountArg = ctx.Get<IntEnum>("amount");
@@ -54,8 +51,7 @@ public static class GiveCommand
             return CommandResult.Error("No player found matching the target selector.");
 
         int totalGiven = 0;
-        foreach (Player player in players)
-        {
+        foreach (Player player in players) {
             totalGiven += GiveToPlayer(player, item.Type, amount);
         }
 
@@ -68,16 +64,14 @@ public static class GiveCommand
         return CommandResult.OkMessage($"§7Given §a{totalGiven} §7of §a{item.Raw} §7to §a{players.Count} players§7.");
     }
 
-    static int GiveToPlayer(Player player, ItemType type, int amount)
-    {
+    static int GiveToPlayer(Player player, ItemType type, int amount) {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null)
             return 0;
 
         int given = 0;
         int remaining = amount;
-        while (remaining > 0)
-        {
+        while (remaining > 0) {
             int toGive = Math.Min(type.MaxStackSize, remaining);
             ItemStack stack = new(type, (ushort)toGive);
             if (!inventory.Container.AddItem(stack))

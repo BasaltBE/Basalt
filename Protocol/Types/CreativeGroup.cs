@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class CreativeGroup : DataType
-{
+public sealed class CreativeGroup : DataType {
     /// <summary>
     /// Creative category id.
     /// </summary>
@@ -20,15 +19,13 @@ public sealed class CreativeGroup : DataType
     /// </summary>
     public LegacyNetworkItemStackDescriptor Icon = new();
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Category = reader.ReadInt32(true);
         Name = reader.ReadVarString();
         Icon.Read(reader);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteInt32(Category, true);
         writer.WriteVarString(Name);
         Icon.Write(writer);

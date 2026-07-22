@@ -3,8 +3,7 @@ namespace Basalt.Core.Tasks;
 using System.Collections.Concurrent;
 using Basalt.Core.Profiling;
 
-public sealed class TaskScheduler
-{
+public sealed class TaskScheduler {
     private readonly TaskWorkerPool _workerPool;
     private readonly ConcurrentQueue<ServerTask> _mainThreadQueue = new();
     private readonly ConcurrentQueue<ServerTask> _mainThreadCompletionQueue = new();
@@ -12,96 +11,76 @@ public sealed class TaskScheduler
     private readonly List<RepeatingTask> _repeatingTasks = [];
     private readonly object _scheduleLock = new();
 
-    public TaskScheduler(TaskWorkerPool workerPool)
-    {
+    public TaskScheduler(TaskWorkerPool workerPool) {
         _workerPool = workerPool;
     }
 
-    public void Schedule(ServerTask task)
-    {
+    public void Schedule(ServerTask task) {
         task.OwnerThreadId = Environment.CurrentManagedThreadId;
 
-        if (task.RunOnMainThread)
-        {
+        if (task.RunOnMainThread) {
             _mainThreadQueue.Enqueue(task);
         }
-        else
-        {
+        else {
             _workerPool.Enqueue(task);
         }
     }
 
-    public void Schedule(DelayedTask task, ulong currentTick)
-    {
+    public void Schedule(DelayedTask task, ulong currentTick) {
         task.OwnerThreadId = Environment.CurrentManagedThreadId;
         task.ExecutionTick = currentTick + task.DelayTicks;
 
-        lock (_scheduleLock)
-        {
+        lock (_scheduleLock) {
             _delayedTasks.Add(task);
         }
     }
 
-    public void Schedule(RepeatingTask task, ulong currentTick)
-    {
+    public void Schedule(RepeatingTask task, ulong currentTick) {
         task.OwnerThreadId = Environment.CurrentManagedThreadId;
         task.NextExecutionTick = currentTick + task.IntervalTicks;
 
-        lock (_scheduleLock)
-        {
+        lock (_scheduleLock) {
             _repeatingTasks.Add(task);
         }
     }
 
-    public void Tick(ulong currentTick)
-    {
-        lock (_scheduleLock)
-        {
-            for (int i = _delayedTasks.Count - 1; i >= 0; i--)
-            {
+    public void Tick(ulong currentTick) {
+        lock (_scheduleLock) {
+            for (int i = _delayedTasks.Count - 1; i >= 0; i--) {
                 DelayedTask task = _delayedTasks[i];
-                if (task.IsCancelled)
-                {
+                if (task.IsCancelled) {
                     _delayedTasks.RemoveAt(i);
                     continue;
                 }
 
-                if (currentTick >= task.ExecutionTick)
-                {
+                if (currentTick >= task.ExecutionTick) {
                     _delayedTasks.RemoveAt(i);
                     DispatchTask(task);
                 }
             }
 
-            for (int i = _repeatingTasks.Count - 1; i >= 0; i--)
-            {
+            for (int i = _repeatingTasks.Count - 1; i >= 0; i--) {
                 RepeatingTask task = _repeatingTasks[i];
-                if (task.IsCancelled)
-                {
+                if (task.IsCancelled) {
                     _repeatingTasks.RemoveAt(i);
                     continue;
                 }
 
-                if (currentTick >= task.NextExecutionTick)
-                {
+                if (currentTick >= task.NextExecutionTick) {
                     task.NextExecutionTick = currentTick + task.IntervalTicks;
                     DispatchTask(task);
                 }
             }
         }
 
-        while (_mainThreadQueue.TryDequeue(out ServerTask? task))
-        {
+        while (_mainThreadQueue.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
 
-            using (Profiler.BeginZone($"MainThread:{task.GetType().Name}"))
-            {
-                try
-                {
+            using (Profiler.BeginZone($"MainThread:{task.GetType().Name}")) {
+                try {
                     task.Execute();
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     Logger.Warn($"Main thread task execution failed: {ex}");
                 }
             }
@@ -110,8 +89,7 @@ public sealed class TaskScheduler
             _mainThreadCompletionQueue.Enqueue(task);
         }
 
-        while (_mainThreadCompletionQueue.TryDequeue(out ServerTask? task))
-        {
+        while (_mainThreadCompletionQueue.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
             task.Complete();
             task.IsCompleted = true;
@@ -120,14 +98,11 @@ public sealed class TaskScheduler
         _workerPool.DrainCompletions();
     }
 
-    private void DispatchTask(ServerTask task)
-    {
-        if (task.RunOnMainThread)
-        {
+    private void DispatchTask(ServerTask task) {
+        if (task.RunOnMainThread) {
             _mainThreadQueue.Enqueue(task);
         }
-        else
-        {
+        else {
             _workerPool.Enqueue(task);
         }
     }

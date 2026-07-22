@@ -7,8 +7,7 @@ using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
 
-public sealed class ItemStackShovelTrait : ItemTrait
-{
+public sealed class ItemStackShovelTrait : ItemTrait {
     public new static string Identifier => "shovel_flatten";
     public new static readonly string[] Tags = ["minecraft:is_shovel"];
 
@@ -20,14 +19,11 @@ public sealed class ItemStackShovelTrait : ItemTrait
         BlockIdentifier.Farmland.ToIdentifier()
     };
 
-    public ItemStackShovelTrait(ItemStack itemStack) : base(itemStack)
-    {
+    public ItemStackShovelTrait(ItemStack itemStack) : base(itemStack) {
     }
 
-    public override void OnUseOnBlock(ItemUseOnBlockDetails details)
-    {
-        if (details.Player.Dimension is null)
-        {
+    public override void OnUseOnBlock(ItemUseOnBlockDetails details) {
+        if (details.Player.Dimension is null) {
             return;
         }
 
@@ -36,14 +32,12 @@ public sealed class ItemStackShovelTrait : ItemTrait
 
         BlockPermutation current = dimension.GetPermutation(pos.X, pos.Y, pos.Z);
 
-        if (!FlattenableBlocks.Contains(current.Type.Identifier))
-        {
+        if (!FlattenableBlocks.Contains(current.Type.Identifier)) {
             return;
         }
 
         BlockType? grassPath = BlockType.Get(BlockIdentifier.GrassPath.ToIdentifier());
-        if (grassPath is null)
-        {
+        if (grassPath is null) {
             return;
         }
 
@@ -51,19 +45,16 @@ public sealed class ItemStackShovelTrait : ItemTrait
 
         dimension.SetPermutation(pos.X, pos.Y, pos.Z, resultPermutation);
 
-        dimension.Broadcast(new UpdateBlockPacket
-        {
+        dimension.Broadcast(new UpdateBlockPacket {
             Position = pos,
             NetworkBlockId = (uint)resultPermutation.NetworkId,
             Flags = UpdateBlockFlagsType.Network,
             Layer = UpdateBlockLayerType.Normal
         });
 
-        dimension.Broadcast(new LevelSoundEventPacket
-        {
+        dimension.Broadcast(new LevelSoundEventPacket {
             Event = LevelSoundEvent.ItemUseOn,
-            Position = new Vec3f
-            {
+            Position = new Vec3f {
                 X = pos.X + 0.5f,
                 Y = pos.Y + 0.5f,
                 Z = pos.Z + 0.5f

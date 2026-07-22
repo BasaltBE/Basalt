@@ -4,8 +4,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.MoveActorDelta)]
-public sealed record MoveActorDeltaPacket : DataPacket
-{
+public sealed record MoveActorDeltaPacket : DataPacket {
     /// <summary>
     /// Runtime id of the actor.
     /// </summary>
@@ -26,8 +25,7 @@ public sealed record MoveActorDeltaPacket : DataPacket
     /// </summary>
     public Vec3f Rotation;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         EntityRuntimeId = reader.ReadVarULong();
         Flags = reader.ReadUInt16(true);
 
@@ -44,8 +42,7 @@ public sealed record MoveActorDeltaPacket : DataPacket
         Rotation = rotation;
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteVarULong(EntityRuntimeId);
         writer.WriteUInt16(Flags, true);
 
@@ -57,13 +54,11 @@ public sealed record MoveActorDeltaPacket : DataPacket
         if ((Flags & 32) != 0) WriteByteAngle(writer, Rotation.Z);
     }
 
-    private static float ReadByteAngle(Binary.BinaryReader reader)
-    {
+    private static float ReadByteAngle(Binary.BinaryReader reader) {
         return reader.ReadUInt8() * (360f / 256f);
     }
 
-    private static void WriteByteAngle(Binary.BinaryWriter writer, float value)
-    {
+    private static void WriteByteAngle(Binary.BinaryWriter writer, float value) {
         writer.WriteUInt8((byte)(value * (256f / 360f)));
     }
 }

@@ -5,8 +5,7 @@ using Basalt.Protocol.Packets;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.AvailableActorIdentifiers)]
-public sealed record AvailableActorIdentifiersPacket : DataPacket
-{
+public sealed record AvailableActorIdentifiersPacket : DataPacket {
     private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
 
     /// <summary>
@@ -14,13 +13,11 @@ public sealed record AvailableActorIdentifiersPacket : DataPacket
     /// </summary>
     public CompoundTag Data = new();
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Data = Io.NBT.ReadTag<CompoundTag>(reader, NetworkNbtOptions);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         Io.NBT.WriteTag(writer, Data, NetworkNbtOptions);
     }
 }

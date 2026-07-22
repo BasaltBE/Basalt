@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.CorrectPlayerMovePrediction)]
-public sealed record CorrectPlayerMovePredictionPacket : DataPacket
-{
+public sealed record CorrectPlayerMovePredictionPacket : DataPacket {
     /// <summary>
     /// Prediction correction type.
     /// </summary>
@@ -42,8 +41,7 @@ public sealed record CorrectPlayerMovePredictionPacket : DataPacket
     /// </summary>
     public ulong InputTick;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         PredictionType = (PredictionType)reader.ReadUInt8();
 
         Vec3f position = Position;
@@ -63,8 +61,7 @@ public sealed record CorrectPlayerMovePredictionPacket : DataPacket
         InputTick = reader.ReadVarULong();
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteUInt8((byte)PredictionType);
         Position.Write(writer);
         PositionDelta.Write(writer);

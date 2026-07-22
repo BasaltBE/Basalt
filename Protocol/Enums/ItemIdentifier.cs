@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ItemIdentifier
-{
+public enum ItemIdentifier {
     OrangeCandle,
     ColoredTorchBp,
     TropicalFishBucket,
@@ -1394,12 +1393,9 @@ public enum ItemIdentifier
     PaleOakButton,
 }
 
-public static class ItemIdentifierExtensions
-{
-    public static string ToIdentifier(this ItemIdentifier self)
-    {
-        return self switch
-        {
+public static class ItemIdentifierExtensions {
+    public static string ToIdentifier(this ItemIdentifier self) {
+        return self switch {
             ItemIdentifier.OrangeCandle => "minecraft:orange_candle",
             ItemIdentifier.ColoredTorchBp => "minecraft:colored_torch_bp",
             ItemIdentifier.TropicalFishBucket => "minecraft:tropical_fish_bucket",
@@ -2794,10 +2790,8 @@ public static class ItemIdentifierExtensions
         };
     }
 
-    public static ItemIdentifier FromIdentifier(string identifier)
-    {
-        return identifier switch
-        {
+    public static ItemIdentifier FromIdentifier(string identifier) {
+        return identifier switch {
             "minecraft:orange_candle" => ItemIdentifier.OrangeCandle,
             "minecraft:colored_torch_bp" => ItemIdentifier.ColoredTorchBp,
             "minecraft:tropical_fish_bucket" => ItemIdentifier.TropicalFishBucket,
@@ -4192,10 +4186,8 @@ public static class ItemIdentifierExtensions
         };
     }
 
-    public static bool TryFromIdentifier(string identifier, out ItemIdentifier item)
-    {
-        switch (identifier)
-        {
+    public static bool TryFromIdentifier(string identifier, out ItemIdentifier item) {
+        switch (identifier) {
             case "minecraft:orange_candle": item = ItemIdentifier.OrangeCandle; return true;
             case "minecraft:colored_torch_bp": item = ItemIdentifier.ColoredTorchBp; return true;
             case "minecraft:tropical_fish_bucket": item = ItemIdentifier.TropicalFishBucket; return true;

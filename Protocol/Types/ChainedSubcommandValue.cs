@@ -6,8 +6,7 @@ namespace Basalt.Protocol.Types;
 /// <summary>
 /// Value entry used by a chained command subcommand.
 /// </summary>
-public sealed class ChainedSubcommandValue : DataType
-{
+public sealed class ChainedSubcommandValue : DataType {
     /// <summary>
     /// Index into the AvailableCommands chained subcommand value table.
     /// </summary>
@@ -18,14 +17,12 @@ public sealed class ChainedSubcommandValue : DataType
     /// </summary>
     public ushort Value;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Index = reader.ReadUInt16(true);
         Value = reader.ReadUInt16(true);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt16(Index, true);
         writer.WriteUInt16(Value, true);
     }

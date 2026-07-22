@@ -12,8 +12,7 @@ using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds;
 using System.Text.Json;
 
-public sealed class EntityHealthTrait : EntityAttributeTrait
-{
+public sealed class EntityHealthTrait : EntityAttributeTrait {
     public new static string Identifier => "health";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
     public new static readonly string[] Components = ["minecraft:health"];
@@ -25,29 +24,23 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
 
     public override AttributeName Attribute => AttributeName.Health;
 
-    public EntityHealthTrait(Entity entity) : base(entity)
-    {
+    public EntityHealthTrait(Entity entity) : base(entity) {
     }
 
-    public void ApplyDamage(float amount, Entity? damager = null, ActorDamageCause? cause = null)
-    {
+    public void ApplyDamage(float amount, Entity? damager = null, ActorDamageCause? cause = null) {
         EntityHurtSignal signal = new(Entity, amount, cause, damager);
-        if (!signal.Emit())
-        {
+        if (!signal.Emit()) {
             return;
         }
 
         CurrentValue -= signal.Amount;
-        if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension)
-        {
+        if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension) {
             ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-            if (currentTick >= _lastKnockbackTick && currentTick - _lastKnockbackTick >= KnockbackCooldownTicks)
-            {
+            if (currentTick >= _lastKnockbackTick && currentTick - _lastKnockbackTick >= KnockbackCooldownTicks) {
                 float x = Entity.Position.X - damager.Position.X;
                 float z = Entity.Position.Z - damager.Position.Z;
                 float length = MathF.Sqrt((x * x) + (z * z));
-                if (length > 0.0001f)
-                {
+                if (length > 0.0001f) {
                     float invLength = 1f / length;
                     float velocityX = Entity.Velocity.X * 0.5f;
                     float velocityY = Entity.Velocity.Y * 0.5f;
@@ -55,21 +48,18 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
                     velocityX += x * invLength * KnockbackHorizontalForce;
                     velocityY += KnockbackVerticalForce;
                     velocityZ += z * invLength * KnockbackHorizontalForce;
-                    if (velocityY > KnockbackVerticalLimit)
-                    {
+                    if (velocityY > KnockbackVerticalLimit) {
                         velocityY = KnockbackVerticalLimit;
                     }
 
-                    Entity.Velocity = new Vec3f
-                    {
+                    Entity.Velocity = new Vec3f {
                         X = velocityX,
                         Y = velocityY,
                         Z = velocityZ
                     };
                     _lastKnockbackTick = currentTick;
 
-                    Entity.Dimension.Broadcast(new SetActorMotionPacket
-                    {
+                    Entity.Dimension.Broadcast(new SetActorMotionPacket {
                         EntityRuntimeId = Entity.RuntimeId,
                         Velocity = Entity.Velocity,
                         Tick = currentTick
@@ -77,15 +67,12 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
                 }
             }
         }
-        if (Entity.Dimension is not null)
-        {
-            ActorEventPacket packet = new()
-            {
+        if (Entity.Dimension is not null) {
+            ActorEventPacket packet = new() {
                 ActorRuntimeId = Entity.RuntimeId,
                 Event = ActorEvent.Hurt,
                 Data = (int)(signal.Cause ?? ActorDamageCause.None),
-                FiredAt = new Optional<Vec3f>
-                {
+                FiredAt = new Optional<Vec3f> {
                     HasValue = true,
                     Value = Entity.Position
                 }
@@ -94,65 +81,52 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         }
 
         EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
-        if (equipment is not null)
-        {
-            for (int i = 0; i < equipment.Armor.GetSize(); i++)
-            {
-                if (equipment.Armor.GetItem(i) is not { } itemStack)
-                {
+        if (equipment is not null) {
+            for (int i = 0; i < equipment.Armor.GetSize(); i++) {
+                if (equipment.Armor.GetItem(i) is not { } itemStack) {
                     continue;
                 }
 
-                if (itemStack.GetTrait<ItemStackDurabilityTrait>() is not null)
-                {
+                if (itemStack.GetTrait<ItemStackDurabilityTrait>() is not null) {
                     ItemStackDurabilityTrait.ProcessDamage(Entity);
                 }
             }
         }
 
         PlayerHungerTrait? hungerTrait = Entity.GetTrait<PlayerHungerTrait>();
-        if (hungerTrait is not null)
-        {
+        if (hungerTrait is not null) {
             hungerTrait.Exhaustion += 0.1f;
         }
 
-        if (CurrentValue <= 0)
-        {
-            if (Entity is Player.Player player)
-            {
+        if (CurrentValue <= 0) {
+            if (Entity is Player.Player player) {
                 Entity.OnDeath(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
 
-                player.Send(new RespawnPacket
-                {
+                player.Send(new RespawnPacket {
                     Position = player.Location,
                     State = RespawnState.SearchingForSpawn,
                     EntityRuntimeId = player.RuntimeId
                 });
 
-                player.Send(new RespawnPacket
-                {
+                player.Send(new RespawnPacket {
                     Position = player.Location,
                     State = RespawnState.ReadyToSpawn,
                     EntityRuntimeId = player.RuntimeId
                 });
             }
-            else
-            {
+            else {
                 Entity.Kill(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
             }
         }
     }
 
-    public override void OnAdd()
-    {
+    public override void OnAdd() {
         EnsureAttribute(GetHealthProperties());
     }
 
-    private AttributeProperties GetHealthProperties()
-    {
+    private AttributeProperties GetHealthProperties() {
         const float DefaultHealth = 20f;
-        if (!Entity.Type.TryGetComponentProperties("minecraft:health", out JsonElement health))
-        {
+        if (!Entity.Type.TryGetComponentProperties("minecraft:health", out JsonElement health)) {
             return new AttributeProperties(0, DefaultHealth, DefaultHealth, DefaultHealth);
         }
 
@@ -161,38 +135,30 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         return new AttributeProperties(0, max, max, current);
     }
 
-    private static float? ReadFloat(JsonElement element, string property)
-    {
-        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number)
-        {
+    private static float? ReadFloat(JsonElement element, string property) {
+        if (!element.TryGetProperty(property, out JsonElement value) || value.ValueKind != JsonValueKind.Number) {
             return null;
         }
 
         return value.TryGetSingle(out float result) ? result : null;
     }
 
-    public override void OnSpawn(EntitySpawnOptions details)
-    {
-        if (details.InitialSpawn)
-        {
+    public override void OnSpawn(EntitySpawnOptions details) {
+        if (details.InitialSpawn) {
             return;
         }
 
         CurrentValue = DefaultValue;
     }
 
-    public override void OnDespawn(EntityDespawnOptions details)
-    {
-        if (details.Disconnected && CurrentValue <= MinimumValue)
-        {
+    public override void OnDespawn(EntityDespawnOptions details) {
+        if (details.Disconnected && CurrentValue <= MinimumValue) {
             CurrentValue = MaximumValue;
         }
     }
 
-    public override void OnDeath(EntityDeathOptions details)
-    {
-        if (details.Cancel)
-        {
+    public override void OnDeath(EntityDeathOptions details) {
+        if (details.Cancel) {
             CurrentValue = MaximumValue;
             return;
         }
@@ -200,18 +166,15 @@ public sealed class EntityHealthTrait : EntityAttributeTrait
         CurrentValue = MinimumValue;
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
+    public override EntityTrait Clone(Entity entity) {
         return new EntityHealthTrait(entity);
     }
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
         CurrentValue = tag.Get<FloatTag>("current")?.Value ?? CurrentValue;
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("current", new FloatTag { Value = CurrentValue });
     }
 }

@@ -9,8 +9,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-public sealed class ItemStackBucketTrait : ItemTrait
-{
+public sealed class ItemStackBucketTrait : ItemTrait {
     public new static string Identifier => "bucket_place";
     public new static readonly string[] Types =
     [
@@ -18,12 +17,10 @@ public sealed class ItemStackBucketTrait : ItemTrait
         ItemIdentifier.LavaBucket.ToIdentifier()
     ];
 
-    public ItemStackBucketTrait(ItemStack itemStack) : base(itemStack)
-    {
+    public ItemStackBucketTrait(ItemStack itemStack) : base(itemStack) {
     }
 
-    public override void OnUseOnBlock(ItemUseOnBlockDetails details)
-    {
+    public override void OnUseOnBlock(ItemUseOnBlockDetails details) {
         if (details.Player.Dimension is null) return;
 
         Dimension dimension = details.Player.Dimension;
@@ -33,8 +30,7 @@ public sealed class ItemStackBucketTrait : ItemTrait
         BlockPos placePos = GetPlacedPosition(clickedPos, face);
 
         BlockPermutation existing = dimension.GetPermutation(placePos.X, placePos.Y, placePos.Z);
-        if (!existing.Type.Air && !existing.Type.Liquid)
-        {
+        if (!existing.Type.Air && !existing.Type.Liquid) {
             return;
         }
 
@@ -51,11 +47,9 @@ public sealed class ItemStackBucketTrait : ItemTrait
             ? LevelSoundEvent.BucketEmptyWater
             : LevelSoundEvent.BucketEmptyLava;
 
-        dimension.Broadcast(new LevelSoundEventPacket
-        {
+        dimension.Broadcast(new LevelSoundEventPacket {
             Event = soundEvent,
-            Position = new Vec3f
-            {
+            Position = new Vec3f {
                 X = placePos.X + 0.5f,
                 Y = placePos.Y + 0.5f,
                 Z = placePos.Z + 0.5f
@@ -68,31 +62,25 @@ public sealed class ItemStackBucketTrait : ItemTrait
             FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
         });
 
-        if (details.Player.Gamemode == Gamemode.Survival)
-        {
+        if (details.Player.Gamemode == Gamemode.Survival) {
             var inventory = details.Player.GetTrait<Basalt.Core.Entities.Traits.EntityInventoryTrait>();
-            if (inventory is not null)
-            {
+            if (inventory is not null) {
                 ItemType? emptyBucket = ItemType.Get(ItemIdentifier.Bucket.ToIdentifier());
-                if (emptyBucket is not null)
-                {
+                if (emptyBucket is not null) {
                     inventory.Container.SetItem(details.HotBarSlot, new ItemStack(emptyBucket, 1));
                 }
             }
         }
     }
 
-    private FluidKind GetFluidKind()
-    {
+    private FluidKind GetFluidKind() {
         if (string.Equals(ItemStack.Identifier, ItemIdentifier.LavaBucket.ToIdentifier(), StringComparison.Ordinal))
             return FluidKind.Lava;
         return FluidKind.Water;
     }
 
-    private static BlockPos GetPlacedPosition(BlockPos clicked, int face)
-    {
-        return face switch
-        {
+    private static BlockPos GetPlacedPosition(BlockPos clicked, int face) {
+        return face switch {
             0 => new BlockPos { X = clicked.X, Y = clicked.Y - 1, Z = clicked.Z }, // Down
             1 => new BlockPos { X = clicked.X, Y = clicked.Y + 1, Z = clicked.Z }, // Up
             2 => new BlockPos { X = clicked.X, Y = clicked.Y, Z = clicked.Z - 1 }, // North

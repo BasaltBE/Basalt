@@ -1,7 +1,6 @@
 namespace Basalt.Core;
 
-public class Properties
-{
+public class Properties {
     [ServerProperties.PropertyOrder(1)]
     [ServerProperties.PropertyKey("server-port")]
     [ServerProperties.PropertyComment("IPv4 port the server should listen to.")]

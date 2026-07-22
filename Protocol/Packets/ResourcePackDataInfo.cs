@@ -5,8 +5,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.ResourcePackDataInfo)]
-public sealed record ResourcePackDataInfoPacket : DataPacket
-{
+public sealed record ResourcePackDataInfoPacket : DataPacket {
     public string Uuid = string.Empty;
     public uint ChunkSize;
     public uint ChunkCount;
@@ -15,8 +14,7 @@ public sealed record ResourcePackDataInfoPacket : DataPacket
     public bool Premium;
     public byte PackType;
 
-    public override void Deserialize(BinaryReader reader)
-    {
+    public override void Deserialize(BinaryReader reader) {
         Uuid = reader.ReadVarString();
         ChunkSize = reader.ReadUInt32(true);
         ChunkCount = reader.ReadUInt32(true);
@@ -27,8 +25,7 @@ public sealed record ResourcePackDataInfoPacket : DataPacket
         PackType = reader.ReadUInt8();
     }
 
-    public override void Serialize(BinaryWriter writer)
-    {
+    public override void Serialize(BinaryWriter writer) {
         writer.WriteVarString(Uuid);
         writer.WriteUInt32(ChunkSize, true);
         writer.WriteUInt32(ChunkCount, true);

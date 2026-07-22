@@ -3,26 +3,22 @@ using Basalt.Protocol.Nbt;
 
 namespace Basalt.Core.Blocks.Components;
 
-public sealed class MaterialInstancesComponent : BlockComponent
-{
+public sealed class MaterialInstancesComponent : BlockComponent {
     public static new string Identifier => "minecraft:material_instances";
     public override string ComponentIdentifier => "minecraft:material_instances";
 
     public MaterialInstance[] Instances { get; }
 
-    public MaterialInstancesComponent(MaterialInstance[]? instances = null)
-    {
+    public MaterialInstancesComponent(MaterialInstance[]? instances = null) {
         Instances = instances ?? [];
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         CompoundTag mappings = new() { Name = "mappings" };
         tag.Set("mappings", mappings);
 
         CompoundTag materials = new() { Name = "materials" };
-        for (int i = 0; i < Instances.Length; i++)
-        {
+        for (int i = 0; i < Instances.Length; i++) {
             MaterialInstance instance = Instances[i];
             CompoundTag instanceTag = new() { Name = instance.Key };
             instanceTag.Set("texture", new StringTag { Value = instance.Texture });
@@ -35,18 +31,14 @@ public sealed class MaterialInstancesComponent : BlockComponent
         tag.Set("materials", materials);
     }
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
     }
 
-    public static MaterialInstancesComponent FromJson(JsonElement element)
-    {
+    public static MaterialInstancesComponent FromJson(JsonElement element) {
         List<MaterialInstance> instances = [];
 
-        if (element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (JsonProperty prop in element.EnumerateObject())
-            {
+        if (element.ValueKind == JsonValueKind.Object) {
+            foreach (JsonProperty prop in element.EnumerateObject()) {
                 string key = prop.Name;
                 JsonElement val = prop.Value;
 
@@ -55,23 +47,19 @@ public sealed class MaterialInstancesComponent : BlockComponent
                 bool faceDimming = true;
                 bool ambientOcclusion = true;
 
-                if (val.TryGetProperty("texture", out JsonElement texEl) && texEl.ValueKind == JsonValueKind.String)
-                {
+                if (val.TryGetProperty("texture", out JsonElement texEl) && texEl.ValueKind == JsonValueKind.String) {
                     texture = texEl.GetString() ?? "";
                 }
 
-                if (val.TryGetProperty("render_method", out JsonElement rmEl) && rmEl.ValueKind == JsonValueKind.String)
-                {
+                if (val.TryGetProperty("render_method", out JsonElement rmEl) && rmEl.ValueKind == JsonValueKind.String) {
                     renderMethod = rmEl.GetString() ?? "alpha_test";
                 }
 
-                if (val.TryGetProperty("face_dimming", out JsonElement fdEl))
-                {
+                if (val.TryGetProperty("face_dimming", out JsonElement fdEl)) {
                     faceDimming = fdEl.ValueKind == JsonValueKind.True;
                 }
 
-                if (val.TryGetProperty("ambient_occlusion", out JsonElement aoEl))
-                {
+                if (val.TryGetProperty("ambient_occlusion", out JsonElement aoEl)) {
                     ambientOcclusion = aoEl.ValueKind == JsonValueKind.True;
                 }
 
@@ -85,8 +73,7 @@ public sealed class MaterialInstancesComponent : BlockComponent
 
 public readonly struct MaterialInstance(
   string key, string texture, string renderMethod,
-  bool faceDimming, bool ambientOcclusion)
-{
+  bool faceDimming, bool ambientOcclusion) {
     public string Key { get; } = key;
     public string Texture { get; } = texture;
     public string RenderMethod { get; } = renderMethod;

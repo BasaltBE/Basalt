@@ -2,14 +2,12 @@ namespace Basalt.Core.Commands;
 
 using Basalt.Protocol.Types;
 
-public sealed class PositionEnum : CommandEnum
-{
+public sealed class PositionEnum : CommandEnum {
     public Vec3f Value { get; private set; }
 
     public PositionEnum() : base("position") { }
 
-    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex)
-    {
+    public override bool Parse(CommandContext ctx, string[] tokens, ref int tokenIndex) {
         if (tokenIndex + 2 >= tokens.Length)
             return false;
 
@@ -25,18 +23,14 @@ public sealed class PositionEnum : CommandEnum
         return true;
     }
 
-    public static bool ParseComponent(string token, float origin, out float value)
-    {
+    public static bool ParseComponent(string token, float origin, out float value) {
         value = 0f;
-        if (token == "~")
-        {
+        if (token == "~") {
             value = origin;
             return true;
         }
-        if (token.StartsWith('~'))
-        {
-            if (token.Length == 1)
-            {
+        if (token.StartsWith('~')) {
+            if (token.Length == 1) {
                 value = origin;
                 return true;
             }

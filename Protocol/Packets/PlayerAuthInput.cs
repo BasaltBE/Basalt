@@ -5,8 +5,7 @@ using Basalt.Protocol.Types;
 namespace Basalt.Protocol.Packets;
 
 [Packet(PacketId.PlayerAuthInput)]
-public sealed record PlayerAuthInputPacket : DataPacket
-{
+public sealed record PlayerAuthInputPacket : DataPacket {
     /// <summary>
     /// Player camera pitch.
     /// </summary>
@@ -113,8 +112,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
     /// </summary>
     public Vec2f RawMoveVector;
 
-    public override void Deserialize(Binary.BinaryReader reader)
-    {
+    public override void Deserialize(Binary.BinaryReader reader) {
         Pitch = reader.ReadF32(true);
         Yaw = reader.ReadF32(true);
         Position.Read(reader);
@@ -130,30 +128,25 @@ public sealed record PlayerAuthInputPacket : DataPacket
         Tick = reader.ReadVarULong();
         Delta.Read(reader);
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction)) {
             ItemInteractionData.Read(reader);
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest)) {
             ItemStackRequest.Read(reader);
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions)) {
             int count = checked((int)reader.ReadZigZag());
             BlockActions = new(count);
-            for (int i = 0; i < count; i++)
-            {
+            for (int i = 0; i < count; i++) {
                 PlayerBlockAction action = new();
                 action.Read(reader);
                 BlockActions.Add(action);
             }
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle)) {
             VehicleRotation.Read(reader);
             ClientPredictedVehicle = reader.ReadZigZong();
         }
@@ -163,8 +156,7 @@ public sealed record PlayerAuthInputPacket : DataPacket
         RawMoveVector.Read(reader);
     }
 
-    public override void Serialize(Binary.BinaryWriter writer)
-    {
+    public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteF32(Pitch, true);
         writer.WriteF32(Yaw, true);
         Position.Write(writer);
@@ -180,27 +172,22 @@ public sealed record PlayerAuthInputPacket : DataPacket
         writer.WriteVarULong(Tick);
         Delta.Write(writer);
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction)) {
             ItemInteractionData.Write(writer);
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformItemStackRequest)) {
             ItemStackRequest.Write(writer);
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.PerformBlockActions)) {
             writer.WriteZigZag(BlockActions.Count);
-            for (int i = 0; i < BlockActions.Count; i++)
-            {
+            for (int i = 0; i < BlockActions.Count; i++) {
                 BlockActions[i].Write(writer);
             }
         }
 
-        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle))
-        {
+        if (InputData.HasFlag(PlayerAuthInputFlag.ClientPredictedVehicle)) {
             VehicleRotation.Write(writer);
             writer.WriteZigZong(ClientPredictedVehicle);
         }

@@ -2,8 +2,7 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Protocol.Enums;
 
-public sealed class EntityGravityTrait : EntityTrait
-{
+public sealed class EntityGravityTrait : EntityTrait {
     public new static string Identifier => "gravity";
     public new static readonly string[] Components = [
         "minecraft:movement.basic", "minecraft:movement.jump", "minecraft:movement"
@@ -14,12 +13,10 @@ public sealed class EntityGravityTrait : EntityTrait
         EntityIdentifier.Item,
     ];
 
-    public EntityGravityTrait(Entity entity) : base(entity)
-    {
+    public EntityGravityTrait(Entity entity) : base(entity) {
     }
 
-    public override EntityTrait Clone(Entity entity)
-    {
+    public override EntityTrait Clone(Entity entity) {
         return new EntityGravityTrait(entity);
     }
 }

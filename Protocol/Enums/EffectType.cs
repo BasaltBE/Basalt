@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum EffectType : int
-{
+public enum EffectType : int {
     Speed = 1,
     Slowness,
     Haste,

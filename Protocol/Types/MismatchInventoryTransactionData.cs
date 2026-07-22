@@ -4,15 +4,12 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class MismatchInventoryTransactionData : IInventoryTransactionData
-{
+public sealed class MismatchInventoryTransactionData : IInventoryTransactionData {
     public InventoryTransactionType Type => InventoryTransactionType.Mismatch;
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
     }
 }

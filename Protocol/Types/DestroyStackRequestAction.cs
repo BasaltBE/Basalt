@@ -3,8 +3,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace Basalt.Protocol.Types;
 
-public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, DataType
-{
+public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, DataType {
     /// <summary>
     /// Stack request action id.
     /// </summary>
@@ -20,14 +19,12 @@ public sealed class DestroyStackRequestAction(byte type) : IStackRequestAction, 
     /// </summary>
     public StackRequestSlotInfo Source = new();
 
-    public void Read(BinaryReader reader)
-    {
+    public void Read(BinaryReader reader) {
         Count = reader.ReadUInt8();
         Source.Read(reader);
     }
 
-    public void Write(BinaryWriter writer)
-    {
+    public void Write(BinaryWriter writer) {
         writer.WriteUInt8(Count);
         Source.Write(writer);
     }

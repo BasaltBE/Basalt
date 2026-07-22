@@ -1,7 +1,6 @@
 namespace Basalt.Protocol.Enums;
 
-public enum ItemStackResponseStatus : byte
-{
+public enum ItemStackResponseStatus : byte {
     Ok = 0,
     Error = 1,
     InvalidRequestActionType = 2,

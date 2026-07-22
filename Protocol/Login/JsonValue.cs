@@ -3,8 +3,7 @@ using System.Text.Json;
 
 namespace Basalt.Protocol.Login;
 
-public static class JsonValue
-{
+public static class JsonValue {
     public static string GetString(JsonElement element, string name) =>
         element.TryGetProperty(name, out JsonElement value)
             ? value.GetString() ?? string.Empty
@@ -32,15 +31,13 @@ public static class JsonValue
             ? value.EnumerateArray()
             : [];
 
-    public static byte[] DecodeBase64Url(ReadOnlySpan<char> value)
-    {
+    public static byte[] DecodeBase64Url(ReadOnlySpan<char> value) {
         int padding = (4 - (value.Length & 3)) & 3;
         int charCount = value.Length + padding;
 
         char[] rentedChars = ArrayPool<char>.Shared.Rent(charCount);
         byte[] rentedBytes = ArrayPool<byte>.Shared.Rent((charCount >> 2) * 3);
-        try
-        {
+        try {
             value.CopyTo(rentedChars);
             rentedChars.AsSpan(0, value.Length).Replace('-', '+');
             rentedChars.AsSpan(0, value.Length).Replace('_', '/');
@@ -51,8 +48,7 @@ public static class JsonValue
 
             return rentedBytes.AsSpan(0, written).ToArray();
         }
-        finally
-        {
+        finally {
             ArrayPool<char>.Shared.Return(rentedChars, clearArray: true);
             ArrayPool<byte>.Shared.Return(rentedBytes, clearArray: true);
         }

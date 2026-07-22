@@ -3,10 +3,8 @@ namespace Basalt.Core.Commands.Vanilla;
 /// <summary>
 /// Registers all default (vanilla) commands with the registry.
 /// </summary>
-public static class DefaultCommands
-{
-    public static void Register(CommandRegistry registry)
-    {
+public static class DefaultCommands {
+    public static void Register(CommandRegistry registry) {
         registry.Register(StatusCommand.Definition);
         registry.Register(ClearCommand.Definition);
         registry.Register(EnchantCommand.Definition);

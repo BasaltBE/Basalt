@@ -21,8 +21,7 @@ using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
 
-public sealed class Server
-{
+public sealed class Server {
     private const ulong TpsUpdateIntervalTicks = 20;
     private const ulong AutoSaveIntervalTicks = 6000; // 5 minutes at 20 TPS
     private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
@@ -85,8 +84,7 @@ public sealed class Server
     /// </summary>
     public double TickWork { get; private set; }
 
-    public Server(Properties? properties = null)
-    {
+    public Server(Properties? properties = null) {
         long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
@@ -114,13 +112,11 @@ public sealed class Server
             ? LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
             : LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath);
 
-        if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType))
-        {
+        if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType)) {
             throw new KeyNotFoundException("No generator registered with identifier 'superflat'.");
         }
 
-        if (defaultWorld.GetDimension("overworld") is null)
-        {
+        if (defaultWorld.GetDimension("overworld") is null) {
             defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
         }
         WorldInstance.ConfigurePersistence(Properties.WorldPath);
@@ -131,8 +127,7 @@ public sealed class Server
         _startupElapsed = Stopwatch.GetElapsedTime(startTimestamp);
     }
 
-    public void Start()
-    {
+    public void Start() {
         Plugins.StartAll();
 
         _ = Item.ItemPalette.GetItemRegistryPayload();
@@ -143,39 +138,32 @@ public sealed class Server
         _lastTpsTick = GetWorld().TickValue;
 
         _runCancellation = new CancellationTokenSource();
-        _networkLoopTask = Task.Run(async () =>
-        {
+        _networkLoopTask = Task.Run(async () => {
             await _raknet.Start();
         }, _runCancellation.Token);
 
         CancellationTokenSource tickCancellation = new();
         _tickCancellation = tickCancellation;
-        _tickLoopTask = Task.Run(() =>
-        {
+        _tickLoopTask = Task.Run(() => {
             CancellationToken token = tickCancellation.Token;
             long nextTick = Stopwatch.GetTimestamp() + TickDurationTicks;
 
-            while (!token.IsCancellationRequested)
-            {
+            while (!token.IsCancellationRequested) {
                 long remaining = nextTick - Stopwatch.GetTimestamp();
 
-                if (remaining > SpinThresholdTicks)
-                {
+                if (remaining > SpinThresholdTicks) {
                     long sleepTicks = remaining - SpinThresholdTicks;
                     Thread.Sleep(TimeSpan.FromSeconds((double)sleepTicks / Stopwatch.Frequency));
                 }
 
-                while (Stopwatch.GetTimestamp() < nextTick)
-                {
+                while (Stopwatch.GetTimestamp() < nextTick) {
                     Thread.SpinWait(1);
                 }
 
-                try
-                {
+                try {
                     Tick();
                 }
-                catch (Exception exception)
-                {
+                catch (Exception exception) {
                     Logger.Error($"Unhandled tick error: {exception}");
                 }
 
@@ -190,11 +178,9 @@ public sealed class Server
         Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
     }
 
-    public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal
-    {
+    public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal {
         ArgumentNullException.ThrowIfNull(handler);
-        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers))
-        {
+        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers)) {
             handlers = [];
             _signalHandlers[@event] = handlers;
         }
@@ -202,20 +188,16 @@ public sealed class Server
         handlers.Add(handler);
     }
 
-    public void Emit(ServerEvent @event, ISignal signal)
-    {
+    public void Emit(ServerEvent @event, ISignal signal) {
         ArgumentNullException.ThrowIfNull(signal);
-        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers))
-        {
+        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers)) {
             return;
         }
 
-        for (int i = 0; i < handlers.Count; i++)
-        {
+        for (int i = 0; i < handlers.Count; i++) {
             Delegate handler = handlers[i];
             Type? signalType = handler.Method.GetParameters().FirstOrDefault()?.ParameterType;
-            if (signalType is null || !signalType.IsInstanceOfType(signal))
-            {
+            if (signalType is null || !signalType.IsInstanceOfType(signal)) {
                 continue;
             }
 
@@ -223,13 +205,11 @@ public sealed class Server
         }
     }
 
-    public void Emit(ISignal signal)
-    {
+    public void Emit(ISignal signal) {
         Emit(signal.Event, signal);
     }
 
-    public void Stop()
-    {
+    public void Stop() {
         Plugins.DisableAll();
         CancellationTokenSource? runCancellation = _runCancellation;
         Task? networkLoopTask = _networkLoopTask;
@@ -241,19 +221,15 @@ public sealed class Server
         _tickCancellation = null;
         _tickLoopTask = null;
 
-        if (runCancellation is null && cancellation is null)
-        {
+        if (runCancellation is null && cancellation is null) {
             return;
         }
 
-        foreach (PlayerInstance player in Players.Values.ToArray())
-        {
-            try
-            {
+        foreach (PlayerInstance player in Players.Values.ToArray()) {
+            try {
                 player.Disconnect("Server closed.");
             }
-            catch (Exception exception)
-            {
+            catch (Exception exception) {
                 Logger.Warn($"Unhandled disconnect error during shutdown: {exception}");
             }
         }
@@ -261,53 +237,43 @@ public sealed class Server
         runCancellation?.Cancel();
         cancellation?.Cancel();
 
-        try
-        {
+        try {
             networkLoopTask?.Wait(250);
             tickLoopTask?.Wait();
         }
-        catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException))
-        { }
-        finally
-        {
+        catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException)) { }
+        finally {
             runCancellation?.Dispose();
             cancellation?.Dispose();
             WorkerPool.Dispose();
         }
 
-        foreach (WorldInstance world in _worlds.Values)
-        {
+        foreach (WorldInstance world in _worlds.Values) {
             world.Dispose();
         }
 
         Logger.Info("Basalt successfully stopped.");
     }
 
-    public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs)
-    {
-        if (_worlds.ContainsKey(name))
-        {
+    public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs) {
+        if (_worlds.ContainsKey(name)) {
             throw new InvalidOperationException($"World '{name}' already exists.");
         }
 
-        if (string.IsNullOrWhiteSpace(providerIdentifier))
-        {
+        if (string.IsNullOrWhiteSpace(providerIdentifier)) {
             throw new ArgumentException("Provider identifier cannot be empty.", nameof(providerIdentifier));
         }
 
-        if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType))
-        {
+        if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType)) {
             throw new KeyNotFoundException($"Unknown provider identifier '{providerIdentifier}'.");
         }
 
-        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
-        {
+        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase)) {
             providerArgs = [Path.Combine("worlds", name)];
         }
 
         object? providerInstance = Activator.CreateInstance(providerType, providerArgs);
-        if (providerInstance is not WorldProvider provider)
-        {
+        if (providerInstance is not WorldProvider provider) {
             throw new InvalidOperationException($"Could not construct provider '{providerType.FullName}'.");
         }
 
@@ -317,40 +283,32 @@ public sealed class Server
         return world;
     }
 
-    public WorldInstance? LoadWorld(string name, string providerIdentifier, params object[] providerArgs)
-    {
-        if (string.IsNullOrWhiteSpace(providerIdentifier))
-        {
+    public WorldInstance? LoadWorld(string name, string providerIdentifier, params object[] providerArgs) {
+        if (string.IsNullOrWhiteSpace(providerIdentifier)) {
             throw new ArgumentException("Provider identifier cannot be empty.", nameof(providerIdentifier));
         }
 
-        if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType))
-        {
+        if (!_providerRegistry.TryGetValue(providerIdentifier, out Type? providerType)) {
             throw new KeyNotFoundException($"Unknown provider identifier '{providerIdentifier}'.");
         }
 
-        if (providerIdentifier.Equals("memory", StringComparison.OrdinalIgnoreCase))
-        {
+        if (providerIdentifier.Equals("memory", StringComparison.OrdinalIgnoreCase)) {
             return null;
         }
 
-        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
-        {
+        if (providerArgs.Length == 0 && providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase)) {
             providerArgs = [Path.Combine("worlds", name)];
         }
 
-        if (providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase))
-        {
+        if (providerIdentifier.Equals("leveldb", StringComparison.OrdinalIgnoreCase)) {
             string path = providerArgs.Length > 0 ? providerArgs[0] as string ?? string.Empty : string.Empty;
-            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path) || !Directory.EnumerateFileSystemEntries(path).Any())
-            {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path) || !Directory.EnumerateFileSystemEntries(path).Any()) {
                 return null;
             }
         }
 
         object? providerInstance = Activator.CreateInstance(providerType, providerArgs);
-        if (providerInstance is not WorldProvider provider)
-        {
+        if (providerInstance is not WorldProvider provider) {
             throw new InvalidOperationException($"Could not construct provider '{providerType.FullName}'.");
         }
 
@@ -360,20 +318,16 @@ public sealed class Server
         return world;
     }
 
-    public bool UnloadWorld(string identifier)
-    {
-        if (string.IsNullOrWhiteSpace(identifier))
-        {
+    public bool UnloadWorld(string identifier) {
+        if (string.IsNullOrWhiteSpace(identifier)) {
             throw new ArgumentException("World identifier cannot be empty.", nameof(identifier));
         }
 
-        if (identifier.Equals(DefaultWorldIdentifier, StringComparison.OrdinalIgnoreCase))
-        {
+        if (identifier.Equals(DefaultWorldIdentifier, StringComparison.OrdinalIgnoreCase)) {
             throw new InvalidOperationException("Cannot unload the default world.");
         }
 
-        if (!_worlds.Remove(identifier, out WorldInstance? world))
-        {
+        if (!_worlds.Remove(identifier, out WorldInstance? world)) {
             return false;
         }
 
@@ -382,68 +336,55 @@ public sealed class Server
         return true;
     }
 
-    public WorldInstance GetWorld()
-    {
+    public WorldInstance GetWorld() {
         return GetWorld(DefaultWorldIdentifier);
     }
 
-    public WorldInstance GetWorld(string identifier)
-    {
-        if (_worlds.TryGetValue(identifier, out WorldInstance? world))
-        {
+    public WorldInstance GetWorld(string identifier) {
+        if (_worlds.TryGetValue(identifier, out WorldInstance? world)) {
             return world;
         }
 
         throw new KeyNotFoundException($"World '{identifier}' was not found.");
     }
 
-    public void SaveAll()
-    {
-        foreach (WorldInstance world in _worlds.Values)
-        {
+    public void SaveAll() {
+        foreach (WorldInstance world in _worlds.Values) {
             world.Save();
         }
     }
 
-    public void RegisterProvider<TProvider>(string identifier) where TProvider : WorldProvider
-    {
-        if (string.IsNullOrWhiteSpace(identifier))
-        {
+    public void RegisterProvider<TProvider>(string identifier) where TProvider : WorldProvider {
+        if (string.IsNullOrWhiteSpace(identifier)) {
             throw new ArgumentException("Provider identifier cannot be empty.", nameof(identifier));
         }
 
         _providerRegistry[identifier] = typeof(TProvider);
     }
 
-    public void RegisterGenerator<TGenerator>(string identifier) where TGenerator : Generator
-    {
-        if (string.IsNullOrWhiteSpace(identifier))
-        {
+    public void RegisterGenerator<TGenerator>(string identifier) where TGenerator : Generator {
+        if (string.IsNullOrWhiteSpace(identifier)) {
             throw new ArgumentException("Generator identifier cannot be empty.", nameof(identifier));
         }
 
         _generatorRegistry[identifier] = typeof(TGenerator);
     }
 
-    public void Tick()
-    {
+    public void Tick() {
         using var _ = Profiler.BeginZone("Server.Tick");
         long startTimestamp = Stopwatch.GetTimestamp();
 
         Network.ProcessIncoming();
 
-        using (Profiler.BeginZone("Raknet.Tick"))
-        {
+        using (Profiler.BeginZone("Raknet.Tick")) {
             _raknet.Tick();
         }
 
-        using (Profiler.BeginZone("TaskScheduler.Tick"))
-        {
+        using (Profiler.BeginZone("TaskScheduler.Tick")) {
             Scheduler.Tick(GetWorld().TickValue);
         }
 
-        foreach (WorldInstance world in _worlds.Values.ToArray())
-        {
+        foreach (WorldInstance world in _worlds.Values.ToArray()) {
             using var worldZone = Profiler.BeginZone($"World.Tick({world.Name})");
             long worldStartTimestamp = Stopwatch.GetTimestamp();
             world.Tick();
@@ -452,8 +393,7 @@ public sealed class Server
         }
 
         ulong currentTick = GetWorld().TickValue;
-        if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks)
-        {
+        if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks) {
             _lastAutoSaveTick = currentTick;
             SaveAll();
         }
@@ -464,24 +404,20 @@ public sealed class Server
         Profiler.FrameMark();
     }
 
-    public void UpdateTps(long timestamp)
-    {
-        if (_lastTpsTimestamp == 0)
-        {
+    public void UpdateTps(long timestamp) {
+        if (_lastTpsTimestamp == 0) {
             _lastTpsTimestamp = timestamp;
             _lastTpsTick = GetWorld().TickValue;
             return;
         }
 
         ulong tickDelta = GetWorld().TickValue - _lastTpsTick;
-        if (tickDelta < TpsUpdateIntervalTicks)
-        {
+        if (tickDelta < TpsUpdateIntervalTicks) {
             return;
         }
 
         long timestampDelta = timestamp - _lastTpsTimestamp;
-        if (tickDelta == 0 || timestampDelta <= 0)
-        {
+        if (tickDelta == 0 || timestampDelta <= 0) {
             return;
         }
 
@@ -493,24 +429,18 @@ public sealed class Server
     }
 
 
-    public void Broadcast(DataPacket packet, params PlayerInstance[]? exclude)
-    {
-        foreach ((NetworkConnection connection, PlayerInstance player) in Players)
-        {
-            if (exclude is not null)
-            {
+    public void Broadcast(DataPacket packet, params PlayerInstance[]? exclude) {
+        foreach ((NetworkConnection connection, PlayerInstance player) in Players) {
+            if (exclude is not null) {
                 bool skipped = false;
-                for (int i = 0; i < exclude.Length; i++)
-                {
-                    if (ReferenceEquals(exclude[i], player))
-                    {
+                for (int i = 0; i < exclude.Length; i++) {
+                    if (ReferenceEquals(exclude[i], player)) {
                         skipped = true;
                         break;
                     }
                 }
 
-                if (skipped)
-                {
+                if (skipped) {
                     continue;
                 }
             }

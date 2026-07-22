@@ -1,7 +1,6 @@
 namespace Basalt.Core.Crafting;
 
-public enum RecipeType
-{
+public enum RecipeType {
     Shaped,
     Shapeless
 }
