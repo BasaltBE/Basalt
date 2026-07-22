@@ -1,0 +1,138 @@
+namespace Basalt.Core.Entities.Traits;
+
+using Basalt.Core.Entities.Traits.Attribute;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Item;
+using Basalt.Core.Item.Enchantment;
+using Basalt.Core.Item.Traits;
+using Basalt.Protocol.Enums;
+using Basalt.Protocol.Types;
+
+public sealed class EntityFallDamageTrait : EntityTrait {
+  public new static string Identifier => "fall_damage";
+  public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
+  public new static readonly string[] Components = ["minecraft:health"];
+
+  private const float SafeDistance = 3f;
+  private const float HayBaleReduction = 0.8f;
+  private const int GraceTicks = 10;
+
+  private float _fallDistance;
+  private int _teleportGraceTicks;
+
+  public EntityFallDamageTrait(Entity entity) : base(entity) { }
+
+  public override void OnSpawn(EntitySpawnOptions details) {
+    _fallDistance = 0f;
+  }
+
+  public override void OnTeleport(EntityTeleportOptions details) {
+    _fallDistance = 0f;
+    _teleportGraceTicks = GraceTicks;
+  }
+
+  public override void OnMove(EntityMoveOptions details) {
+    if (!Entity.IsPlayer()) return;
+
+    if (_teleportGraceTicks > 0) {
+      _teleportGraceTicks--;
+      return;
+    }
+
+    float deltaY = details.To.Y - details.From.Y;
+
+    if (deltaY < -0.001f) {
+      _fallDistance += -deltaY;
+    }
+    else if (_fallDistance > 0f) {
+      ApplyFallDamage(details.To);
+      _fallDistance = 0f;
+    }
+  }
+
+  public override void OnFallOnBlock(EntityFallOnBlockTraitEvent @event) {
+    _fallDistance = @event.Distance;
+    ApplyFallDamage(@event.Position);
+    _fallDistance = 0f;
+  }
+
+  public override EntityTrait Clone(Entity entity) => new EntityFallDamageTrait(entity);
+
+  private void ApplyFallDamage(Vec3f landingPosition) {
+    if (!Entity.IsAlive) return;
+
+    if (Entity is Player.Player player) {
+      if (player.GetGamemode() is Gamemode.Creative or Gamemode.Spectator) return;
+      if (player.Abilities.GetAbility(AbilityIndex.Flying)) return;
+    }
+
+    if (Entity.Dimension?.Gamerules.FallDamage == false) return;
+
+    float effectiveDistance = _fallDistance;
+    if (effectiveDistance <= SafeDistance) return;
+
+    int blockX = (int)MathF.Floor(landingPosition.X);
+    int blockY = (int)MathF.Floor(landingPosition.Y) - 1;
+    int blockZ = (int)MathF.Floor(landingPosition.Z);
+
+    if (Entity.Dimension is not null) {
+      string landedBlock = Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type.Identifier;
+      float blockModifier = GetBlockDamageModifier(landedBlock);
+
+      if (blockModifier <= 0f) return;
+      effectiveDistance *= blockModifier;
+    }
+
+    if (effectiveDistance <= SafeDistance) return;
+
+    float rawDamage = effectiveDistance - SafeDistance;
+
+    float reduction = GetEnchantmentReduction(rawDamage);
+    float finalDamage = rawDamage * (1f - Math.Clamp(reduction, 0f, 1f));
+
+    if (finalDamage <= 0f) return;
+
+    EntityHealthTrait? health = Entity.GetTrait<EntityHealthTrait>();
+    health?.ApplyDamage(finalDamage, null, ActorDamageCause.Fall);
+  }
+
+  private static float GetBlockDamageModifier(string blockIdentifier) {
+    if (string.Equals(blockIdentifier, BlockIdentifier.Slime.ToIdentifier(), StringComparison.Ordinal))
+      return 0f;
+
+    if (string.Equals(blockIdentifier, BlockIdentifier.HayBlock.ToIdentifier(), StringComparison.Ordinal))
+      return 1f - HayBaleReduction;
+
+    if (string.Equals(blockIdentifier, BlockIdentifier.PowderSnow.ToIdentifier(), StringComparison.Ordinal))
+      return 0f;
+
+    if (blockIdentifier.Contains("water", StringComparison.Ordinal))
+      return 0f;
+
+    if (blockIdentifier.Contains("bed", StringComparison.Ordinal))
+      return 0.5f;
+
+    return 1f;
+  }
+
+  private float GetEnchantmentReduction(float rawDamage) {
+    EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
+    if (equipment is null || Entity is not Player.Player player) return 0f;
+
+    HurtEnchantmentContext ctx = new() {
+      Player = player,
+      Damage = rawDamage,
+      Source = DamageSource.Fall
+    };
+
+    for (int i = 0; i < equipment.Armor.GetSize(); i++) {
+      ItemStack? item = equipment.Armor.GetItem(i);
+      if (item is null) continue;
+
+      ItemStackEnchantmentTrait? enchantments = item.GetTrait<ItemStackEnchantmentTrait>();
+      enchantments?.OnHurt(ctx);
+    }
+
+    return ctx.DamageReduction;
+  }
+}

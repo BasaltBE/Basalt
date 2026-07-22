@@ -126,7 +126,8 @@ public sealed class EntityMovementTrait : EntityTrait {
                     collision.YAxisCollision = -1;
                 }
 
-                int groundY = (int)MathF.Floor(nextY - 0.001f);
+                float landingY = FindGroundSurface(nextX, Entity.Position.Y, nextY, nextZ);
+
                 float groundedVelocityX = velocityX * GroundFriction;
                 float groundedVelocityZ = velocityZ * GroundFriction;
                 if (MathF.Abs(groundedVelocityX) < MinHorizontalVelocity) {
@@ -138,7 +139,7 @@ public sealed class EntityMovementTrait : EntityTrait {
 
                 Entity.Position = new Vec3f {
                     X = nextX,
-                    Y = groundY + 1f,
+                    Y = landingY,
                     Z = nextZ
                 };
 
@@ -318,6 +319,35 @@ public sealed class EntityMovementTrait : EntityTrait {
 
     private float CollisionHeight() {
         return Entity.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
+    }
+
+    private float FindGroundSurface(float x, float fromY, float toY, float z) {
+        int startBlockY = (int)MathF.Floor(fromY - CollisionEpsilon);
+        int endBlockY = (int)MathF.Floor(toY - CollisionEpsilon);
+
+        float halfWidth = CollisionWidth() * 0.5f;
+        int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
+        int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
+        int minZ = (int)MathF.Floor(z - halfWidth + CollisionEpsilon);
+        int maxZ = (int)MathF.Floor(z + halfWidth - CollisionEpsilon);
+
+        for (int blockY = startBlockY; blockY >= endBlockY; blockY--) {
+            bool solid = false;
+            for (int bx = minX; bx <= maxX && !solid; bx++) {
+                for (int bz = minZ; bz <= maxZ && !solid; bz++) {
+                    if (IsSolid(bx, blockY, bz)) {
+                        solid = true;
+                    }
+                }
+            }
+
+            if (solid) {
+                return blockY + 1f;
+            }
+        }
+
+        int groundY = (int)MathF.Floor(toY - CollisionEpsilon);
+        return groundY + 1f;
     }
 }
 
