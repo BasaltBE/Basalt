@@ -14,8 +14,7 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
 
-public sealed class HopperTrait : BlockTrait
-{
+public sealed class HopperTrait : BlockTrait {
     public override bool Interactable => true;
     public static new readonly string Identifier = "minecraft:hopper";
     public static new readonly string[] Types = ["minecraft:hopper"];
@@ -27,14 +26,12 @@ public sealed class HopperTrait : BlockTrait
     private int _transferCooldown;
     private bool _ticking;
 
-    public HopperTrait(Block block) : base(block)
-    {
+    public HopperTrait(Block block) : base(block) {
     }
 
     public BlockContainer? Container => _container;
 
-    public override void OnRead(CompoundTag tag)
-    {
+    public override void OnRead(CompoundTag tag) {
         _transferCooldown = tag.Get<IntTag>("TransferCooldown")?.Value ?? 0;
 
         if (tag.Get<ListTag>("Items") is not { } items) return;
@@ -42,29 +39,25 @@ public sealed class HopperTrait : BlockTrait
         EnsureContainer(null, 0, 0, 0);
         if (_container is null) return;
 
-        foreach (BaseTag entry in items.Values)
-        {
+        foreach (BaseTag entry in items.Values) {
             if (entry is not CompoundTag itemTag) continue;
             int slot = itemTag.Get<ByteTag>("Slot")?.Value ?? -1;
             if (slot < 0 || slot >= _container.GetSize()) continue;
 
             ItemStack? item = ItemStack.Deserialize(itemTag);
-            if (item is not null)
-            {
+            if (item is not null) {
                 _container.SetItem(slot, item);
             }
         }
     }
 
-    public override void OnWrite(CompoundTag tag)
-    {
+    public override void OnWrite(CompoundTag tag) {
         tag.Set("TransferCooldown", new IntTag { Value = _transferCooldown });
 
         if (_container is null) return;
 
         ListTag items = new() { Name = "Items" };
-        for (int slot = 0; slot < _container.GetSize(); slot++)
-        {
+        for (int slot = 0; slot < _container.GetSize(); slot++) {
             ItemStack? item = _container.GetItem(slot);
             if (item is null || item.StackSize == 0) continue;
 
@@ -73,19 +66,16 @@ public sealed class HopperTrait : BlockTrait
             items.Values.Add(itemTag);
         }
 
-        if (items.Values.Count > 0)
-        {
+        if (items.Values.Count > 0) {
             tag.Set("Items", items);
         }
     }
 
-    public override void OnPlace(BlockPlaceDetails details)
-    {
+    public override void OnPlace(BlockPlaceDetails details) {
         var dimension = details.Player.Dimension;
         if (dimension is null) return;
 
-        FacingDirection facing = details.BlockFace switch
-        {
+        FacingDirection facing = details.BlockFace switch {
             0 => FacingDirection.Down,
             1 => FacingDirection.Down,
             2 => FacingDirection.South,
@@ -106,8 +96,7 @@ public sealed class HopperTrait : BlockTrait
         ScheduleTick(dimension, details.BlockPosition);
     }
 
-    public override void OnInteract(BlockInteractDetails details)
-    {
+    public override void OnInteract(BlockInteractDetails details) {
         var dimension = details.Player.Dimension;
         if (dimension is null) return;
 
@@ -120,29 +109,23 @@ public sealed class HopperTrait : BlockTrait
         _container?.Show(details.Player);
     }
 
-    public override void OnBreak(BlockBreakDetails details)
-    {
+    public override void OnBreak(BlockBreakDetails details) {
         if (_container is null) return;
 
-        foreach ((Player.Player player, _) in _container.GetAllOccupants().ToList())
-        {
+        foreach ((Player.Player player, _) in _container.GetAllOccupants().ToList()) {
             _container.Close(player);
         }
 
         var dimension = details.Player.Dimension;
-        if (dimension is not null)
-        {
+        if (dimension is not null) {
             ulong currentTick = dimension.World is Worlds.Tickable tickable ? tickable.TickValue : 0;
 
-            for (int i = 0; i < _container.GetSize(); i++)
-            {
+            for (int i = 0; i < _container.GetSize(); i++) {
                 ItemStack? item = _container.GetItem(i);
                 if (item is null || item.StackSize == 0) continue;
 
-                ItemEntity drop = new(item)
-                {
-                    Position = new Vec3f
-                    {
+                ItemEntity drop = new(item) {
+                    Position = new Vec3f {
                         X = details.BlockPosition.X + 0.5f,
                         Y = details.BlockPosition.Y + 0.5f,
                         Z = details.BlockPosition.Z + 0.5f
@@ -157,8 +140,7 @@ public sealed class HopperTrait : BlockTrait
         _container = null;
     }
 
-    public override void OnRender(Player.Player player, int x, int y, int z)
-    {
+    public override void OnRender(Player.Player player, int x, int y, int z) {
         var dimension = player.Dimension;
         if (dimension is null) return;
 
@@ -176,20 +158,17 @@ public sealed class HopperTrait : BlockTrait
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
         player.Send(
-          new BlockActorDataPacket
-          {
+          new BlockActorDataPacket {
               Position = position,
               Data = storage
           },
-          new UpdateBlockPacket
-          {
+          new UpdateBlockPacket {
               Position = position,
               NetworkBlockId = 0,
               Flags = UpdateBlockFlagsType.None,
               Layer = UpdateBlockLayerType.Normal
           },
-          new UpdateBlockPacket
-          {
+          new UpdateBlockPacket {
               Position = position,
               NetworkBlockId = networkId,
               Flags = UpdateBlockFlagsType.None,
@@ -200,12 +179,10 @@ public sealed class HopperTrait : BlockTrait
     /// <summary>
     /// Called each hopper tick. Returns true if the hopper should keep ticking.
     /// </summary>
-    public bool Tick()
-    {
+    public bool Tick() {
         if (_container?.Dimension is null) return false;
 
-        if (_transferCooldown > 0)
-        {
+        if (_transferCooldown > 0) {
             _transferCooldown--;
             return true;
         }
@@ -215,78 +192,63 @@ public sealed class HopperTrait : BlockTrait
         didWork |= TryPullFromAbove();
         didWork |= TryPushToTarget();
 
-        if (didWork)
-        {
+        if (didWork) {
             _transferCooldown = TransferCooldown;
         }
 
         return HasWork();
     }
 
-    public void ScheduleTick(Dimension dimension, BlockPos pos)
-    {
+    public void ScheduleTick(Dimension dimension, BlockPos pos) {
         if (_ticking) return;
         _ticking = true;
 
-        Server? server = dimension.World?.Server;
-        if (server is null) return;
-
-        server.Scheduler.Schedule(
-          new HopperTickTask(dimension, pos) { DelayTicks = 1, RunOnMainThread = true },
-          dimension.World!.TickValue);
+        dimension.World?.Scheduler?.Schedule(new HopperTickTask(dimension, pos));
     }
 
-    public void MarkTickingStopped()
-    {
+    public void MarkTickingStopped() {
         _ticking = false;
     }
 
-    private bool HasWork()
-    {
+    private bool HasWork() {
         if (_container is null) return false;
         return !_container.IsFull || _container.EmptySlotsCount < _container.GetSize();
     }
 
-    private bool TryPullFromAbove()
-    {
+    private bool TryPullFromAbove() {
         if (_container?.Dimension is null) return false;
         if (_container.IsFull) return false;
 
         BlockPos pos = _container.Position;
         Dimension dimension = _container.Dimension;
 
-        if (TryPullFromContainer(dimension, pos.X, pos.Y + 1, pos.Z))
-        {
+        if (TryPullFromContainer(dimension, pos.X, pos.Y + 1, pos.Z)) {
             return true;
         }
 
         return TryPullFromItemEntities(dimension, pos);
     }
 
-    private bool TryPullFromContainer(Dimension dimension, int x, int y, int z)
-    {
+    private bool TryPullFromContainer(Dimension dimension, int x, int y, int z) {
         Block? block = dimension.GetBlock(x, y, z);
         if (block is null) return false;
 
         FurnaceTrait? furnace = block.GetTrait<FurnaceTrait>();
-        if (furnace?.Container is not null)
-        {
+        if (furnace?.Container is not null) {
             return TryPullFromFurnace(furnace.Container);
         }
 
         BlockContainer? source = GetBlockContainer(block);
         if (source is null) return false;
 
-        for (int slot = 0; slot < source.GetSize(); slot++)
-        {
+        for (int slot = 0; slot < source.GetSize(); slot++) {
             ItemStack? item = source.GetItem(slot);
             if (item is null || item.StackSize == 0) continue;
 
             ItemStack? taken = source.TakeItem(slot, 1);
             if (taken is null) continue;
 
-            if (_container!.AddItem(taken))
-            {
+            if (_container!.AddItem(taken)) {
                 return true;
             }
 
@@ -297,8 +259,7 @@ public sealed class HopperTrait : BlockTrait
         return false;
     }
 
-    private bool TryPullFromFurnace(BlockContainer furnaceContainer)
-    {
+    private bool TryPullFromFurnace(BlockContainer furnaceContainer) {
         const int slotResult = 2;
 
         ItemStack? item = furnaceContainer.GetItem(slotResult);
@@ -307,8 +268,7 @@ public sealed class HopperTrait : BlockTrait
         ItemStack? taken = furnaceContainer.TakeItem(slotResult, 1);
         if (taken is null) return false;
 
-        if (_container!.AddItem(taken))
-        {
+        if (_container!.AddItem(taken)) {
             return true;
         }
 
@@ -316,8 +276,7 @@ public sealed class HopperTrait : BlockTrait
         return false;
     }
 
-    private static BlockContainer? GetBlockContainer(Block block)
-    {
+    private static BlockContainer? GetBlockContainer(Block block) {
         ChestTrait? chest = block.GetTrait<ChestTrait>();
         if (chest?.Container is not null) return chest.Container;
 
@@ -330,8 +289,7 @@ public sealed class HopperTrait : BlockTrait
         return null;
     }
 
-    private bool TryPullFromItemEntities(Dimension dimension, BlockPos hopperPos)
-    {
+    private bool TryPullFromItemEntities(Dimension dimension, BlockPos hopperPos) {
         float minX = hopperPos.X;
         float maxX = hopperPos.X + 1.0f;
         float minZ = hopperPos.Z;
@@ -339,10 +297,8 @@ public sealed class HopperTrait : BlockTrait
         float minY = hopperPos.Y + 0.5f;
         float maxY = hopperPos.Y + 2.0f;
 
-        foreach (Entity entity in dimension.Entities)
-        {
-            if (entity is not ItemEntity itemEntity || !itemEntity.IsAlive || itemEntity.PendingDespawn)
-            {
+        foreach (Entity entity in dimension.Entities) {
+            if (entity is not ItemEntity itemEntity || !itemEntity.IsAlive || itemEntity.PendingDespawn) {
                 continue;
             }
 
@@ -351,8 +307,7 @@ public sealed class HopperTrait : BlockTrait
             Vec3f ePos = itemEntity.Position;
             if (ePos.X < minX || ePos.X > maxX ||
                 ePos.Z < minZ || ePos.Z > maxZ ||
-                ePos.Y < minY || ePos.Y > maxY)
-            {
+                ePos.Y < minY || ePos.Y > maxY) {
                 continue;
             }
 
@@ -360,8 +315,7 @@ public sealed class HopperTrait : BlockTrait
             if (!_container!.AddItem(clone)) continue;
 
             itemEntity.Item.SetStackSize((ushort)(itemEntity.Item.StackSize - 1));
-            if (itemEntity.Item.StackSize == 0)
-            {
+            if (itemEntity.Item.StackSize == 0) {
                 itemEntity.Despawn(new Entities.Traits.Types.EntityDespawnOptions());
             }
 
@@ -371,15 +325,12 @@ public sealed class HopperTrait : BlockTrait
         return false;
     }
 
-    private bool TryPushToTarget()
-    {
+    private bool TryPushToTarget() {
         if (_container?.Dimension is null) return false;
 
         bool allEmpty = true;
-        for (int i = 0; i < _container.GetSize(); i++)
-        {
-            if (_container.GetItem(i) is not null)
-            {
+        for (int i = 0; i < _container.GetSize(); i++) {
+            if (_container.GetItem(i) is not null) {
                 allEmpty = false;
                 break;
             }
@@ -395,8 +346,7 @@ public sealed class HopperTrait : BlockTrait
         if (targetBlock is null) return false;
 
         FurnaceTrait? furnace = targetBlock.GetTrait<FurnaceTrait>();
-        if (furnace?.Container is not null)
-        {
+        if (furnace?.Container is not null) {
             bool pushingDown = ty < pos.Y;
             return TryPushToFurnace(furnace.Container, pushingDown);
         }
@@ -405,16 +355,14 @@ public sealed class HopperTrait : BlockTrait
         if (target is null) return false;
         if (target.IsFull) return false;
 
-        for (int slot = 0; slot < _container.GetSize(); slot++)
-        {
+        for (int slot = 0; slot < _container.GetSize(); slot++) {
             ItemStack? item = _container.GetItem(slot);
             if (item is null || item.StackSize == 0) continue;
 
             ItemStack? taken = _container.TakeItem(slot, 1);
             if (taken is null) continue;
 
-            if (target.AddItem(taken))
-            {
+            if (target.AddItem(taken)) {
                 return true;
             }
 
@@ -425,13 +373,11 @@ public sealed class HopperTrait : BlockTrait
         return false;
     }
 
-    private bool TryPushToFurnace(BlockContainer furnaceContainer, bool isFromAbove)
-    {
+    private bool TryPushToFurnace(BlockContainer furnaceContainer, bool isFromAbove) {
         // Above → input slot (0), side → fuel slot (1).
         int targetSlot = isFromAbove ? 0 : 1;
 
-        for (int slot = 0; slot < _container!.GetSize(); slot++)
-        {
+        for (int slot = 0; slot < _container!.GetSize(); slot++) {
             ItemStack? item = _container.GetItem(slot);
             if (item is null || item.StackSize == 0) continue;
 
@@ -440,10 +386,8 @@ public sealed class HopperTrait : BlockTrait
 
             ItemStack? existing = furnaceContainer.GetItem(targetSlot);
 
-            if (existing is not null && existing.StackSize > 0)
-            {
-                if (!existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize)
-                {
+            if (existing is not null && existing.StackSize > 0) {
+                if (!existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxStackSize) {
                     continue;
                 }
 
@@ -465,16 +409,14 @@ public sealed class HopperTrait : BlockTrait
         return false;
     }
 
-    private void GetOutputPosition(BlockPos pos, out int x, out int y, out int z)
-    {
+    private void GetOutputPosition(BlockPos pos, out int x, out int y, out int z) {
         x = pos.X;
         y = pos.Y;
         z = pos.Z;
 
         FacingDirection direction = GetFacingDirection();
 
-        switch (direction)
-        {
+        switch (direction) {
             case FacingDirection.Down:
                 y--;
                 break;
@@ -496,21 +438,17 @@ public sealed class HopperTrait : BlockTrait
         }
     }
 
-    private FacingDirection GetFacingDirection()
-    {
-        if (!Block.Permutation.State.TryGetValue("facing_direction", out BlockStateValue value) || value.Kind != 0)
-        {
+    private FacingDirection GetFacingDirection() {
+        if (!Block.Permutation.State.TryGetValue("facing_direction", out BlockStateValue value) || value.Kind != 0) {
             return FacingDirection.Down;
         }
 
         return (FacingDirection)(int)value.AsNumber();
     }
 
-    private void SetFacingDirection(FacingDirection direction)
-    {
+    private void SetFacingDirection(FacingDirection direction) {
         BlockState state = [];
-        foreach ((string key, BlockStateValue value) in Block.Permutation.State)
-        {
+        foreach ((string key, BlockStateValue value) in Block.Permutation.State) {
             state[key] = value;
         }
 
@@ -518,16 +456,12 @@ public sealed class HopperTrait : BlockTrait
         Block.SetPermutation(Block.Type.GetPermutation(state));
     }
 
-    private void EnsureContainer(Dimension? dimension, int x, int y, int z)
-    {
-        if (_container is not null)
-        {
-            if (dimension is not null && _container.Dimension is null)
-            {
+    private void EnsureContainer(Dimension? dimension, int x, int y, int z) {
+        if (_container is not null) {
+            if (dimension is not null && _container.Dimension is null) {
                 _container.Dimension = dimension;
                 _container.Position = new BlockPos { X = x, Y = y, Z = z };
-                if (!_ticking)
-                {
+                if (!_ticking) {
                     ScheduleTick(dimension, _container.Position);
                 }
             }
@@ -543,32 +477,27 @@ public sealed class HopperTrait : BlockTrait
         _container.OnContainerUpdated = OnContainerUpdated;
     }
 
-    private void OnContainerUpdated(BlockContainer container)
-    {
+    private void OnContainerUpdated(BlockContainer container) {
         if (container.Dimension is null) return;
 
         var chunk = container.Dimension.GetChunk(container.Position.X >> 4, container.Position.Z >> 4);
-        if (chunk is not null)
-        {
+        if (chunk is not null) {
             chunk.Dirty = true;
         }
 
-        if (!_ticking)
-        {
+        if (!_ticking) {
             ScheduleTick(container.Dimension, container.Position);
         }
     }
 
-    private void WriteStorage(Dimension dimension, int x, int y, int z)
-    {
+    private void WriteStorage(Dimension dimension, int x, int y, int z) {
         var chunk = dimension.GetChunk(x >> 4, z >> 4);
         if (chunk is null) return;
 
         BlockPos position = new() { X = x, Y = y, Z = z };
         BlockLevelStorage? storage = chunk.GetBlockStorage(position);
 
-        if (storage is null)
-        {
+        if (storage is null) {
             storage = new BlockLevelStorage(chunk);
             storage.SetPosition(position);
             storage.Set("id", new StringTag { Name = "id", Value = "Hopper" });

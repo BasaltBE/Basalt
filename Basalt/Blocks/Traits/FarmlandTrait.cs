@@ -8,8 +8,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
-public class FarmlandTrait : BlockTrait
-{
+public class FarmlandTrait : BlockTrait {
     public static new readonly string Identifier = "minecraft:farmland";
     public static new readonly string[] Types = [BlockIdentifier.Farmland.ToIdentifier()];
 
@@ -24,43 +23,33 @@ public class FarmlandTrait : BlockTrait
     private int _dryTicks;
     private readonly int _dryChecksNeeded;
 
-    public FarmlandTrait(Block block) : base(block)
-    {
+    public FarmlandTrait(Block block) : base(block) {
         _dryChecksNeeded = Random.Shared.Next(DryChecksToDecay, DryChecksToDecay + 4);
     }
 
-    public override void OnPlace(BlockPlaceDetails details)
-    {
+    public override void OnPlace(BlockPlaceDetails details) {
         if (details.Player.Dimension is { } dimension)
             ScheduleFarmlandTick(dimension, details.BlockPosition);
     }
 
-    public override void OnTick(BlockTickDetails details)
-    {
+    public override void OnTick(BlockTickDetails details) {
     }
 
-    public override void OnLandOn(BlockLandOnDetails details)
-    {
+    public override void OnLandOn(BlockLandOnDetails details) {
         base.OnLandOn(details);
         // TODO! Implement farmland decay on landing (1 in 2 chance iirc)
     }
 
-    public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = 0)
-    {
-        Server? server = dimension.World?.Server;
-        if (server is null)
-            return;
+    public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = 0) {
+        if (dimension.World?.Scheduler is null) return;
 
         uint delay = offset > 0 ? offset : (uint)Random.Shared.Next((int)CheckIntervalMin, (int)CheckIntervalMax + 1);
-        server.Scheduler.Schedule(
-            new FarmlandTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true },
-            dimension.World!.TickValue);
+        dimension.World.Scheduler.Schedule(
+            new FarmlandTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true });
     }
 
-    private static (int Water, int FlowingWater) GetWaterHashes()
-    {
-        if (_waterHash is null)
-        {
+    private static (int Water, int FlowingWater) GetWaterHashes() {
+        if (_waterHash is null) {
             BlockPermutation? waterPerm = BlockPermutation.Resolve(BlockIdentifier.Water.ToIdentifier());
             BlockPermutation? flowingPerm = BlockPermutation.Resolve(BlockIdentifier.FlowingWater.ToIdentifier());
             _waterHash = waterPerm?.NetworkId ?? 0;
@@ -69,15 +58,13 @@ public class FarmlandTrait : BlockTrait
         return (_waterHash!.Value, _flowingWaterHash!.Value);
     }
 
-    private static int MoistureLevel(BlockPermutation perm)
-    {
+    private static int MoistureLevel(BlockPermutation perm) {
         if (!perm.State.TryGetValue("moisturized_amount", out BlockStateValue val))
             return 0;
         return val.Kind == 0 ? (int)val.AsNumber() : 0;
     }
 
-    private static BlockPermutation? FindFarmlandPermutation(int moisture)
-    {
+    private static BlockPermutation? FindFarmlandPermutation(int moisture) {
         BlockType? bt = BlockType.Get(BlockIdentifier.Farmland.ToIdentifier());
         if (bt is null) return null;
 
@@ -86,8 +73,7 @@ public class FarmlandTrait : BlockTrait
         return bt.GetPermutation(state);
     }
 
-    private static bool SearchForWater(Dimension dimension, int cx, int cy, int cz)
-    {
+    private static bool SearchForWater(Dimension dimension, int cx, int cy, int cz) {
         (int wh, int fwh) = GetWaterHashes();
         int r = WaterSearchRadius;
 
@@ -95,17 +81,14 @@ public class FarmlandTrait : BlockTrait
         int lastChunkZ = int.MinValue;
         ChunkColumn? lastChunk = null;
 
-        for (int dx = -r; dx <= r; dx++)
-        {
-            for (int dz = -r; dz <= r; dz++)
-            {
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
                 int bx = cx + dx;
                 int bz = cz + dz;
                 int cpx = bx >> 4;
                 int cpz = bz >> 4;
 
-                if (cpx != lastChunkX || cpz != lastChunkZ)
-                {
+                if (cpx != lastChunkX || cpz != lastChunkZ) {
                     lastChunkX = cpx;
                     lastChunkZ = cpz;
                     lastChunk = dimension.GetChunk(cpx, cpz);
@@ -113,8 +96,7 @@ public class FarmlandTrait : BlockTrait
 
                 if (lastChunk is null) continue;
 
-                for (int dy = 0; dy <= 1; dy++)
-                {
+                for (int dy = 0; dy <= 1; dy++) {
                     int localX = bx - (cpx * 16);
                     if (localX < 0) localX += 16;
                     int localZ = bz - (cpz * 16);
@@ -130,8 +112,7 @@ public class FarmlandTrait : BlockTrait
         return false;
     }
 
-    private static void TickFarmland(Dimension dimension, BlockPos pos)
-    {
+    private static void TickFarmland(Dimension dimension, BlockPos pos) {
         BlockPermutation? perm;
         try { perm = dimension.GetPermutation(pos.X, pos.Y, pos.Z, 0); }
         catch { return; }
@@ -142,47 +123,39 @@ public class FarmlandTrait : BlockTrait
         Block? block = dimension.GetBlock(pos.X, pos.Y, pos.Z);
         FarmlandTrait? trait = block?.GetTrait<FarmlandTrait>();
 
-        if (SearchForWater(dimension, pos.X, pos.Y, pos.Z))
-        {
+        if (SearchForWater(dimension, pos.X, pos.Y, pos.Z)) {
             if (trait is not null) trait._dryTicks = 0;
 
             int currentMoisture = MoistureLevel(perm);
-            if (currentMoisture != 7)
-            {
+            if (currentMoisture != 7) {
                 BlockPermutation? moistPerm = FindFarmlandPermutation(7);
                 if (moistPerm is not null)
                     dimension.SetPermutation(pos.X, pos.Y, pos.Z, moistPerm, 0, true);
             }
         }
-        else
-        {
+        else {
             int dryCount = (trait?._dryTicks ?? 0) + 1;
             int threshold = trait?._dryChecksNeeded ?? DryChecksToDecay;
 
-            if (dryCount >= threshold)
-            {
+            if (dryCount >= threshold) {
                 if (trait is not null) trait._dryTicks = 0;
 
                 int currentMoisture = MoistureLevel(perm);
-                if (currentMoisture > 0)
-                {
+                if (currentMoisture > 0) {
                     BlockPermutation? dryPerm = FindFarmlandPermutation(0);
                     if (dryPerm is not null)
                         dimension.SetPermutation(pos.X, pos.Y, pos.Z, dryPerm, 0, true);
                 }
-                else
-                {
+                else {
                     BlockPermutation? dirtPerm = BlockPermutation.Resolve(BlockIdentifier.Dirt.ToIdentifier());
-                    if (dirtPerm is not null)
-                    {
+                    if (dirtPerm is not null) {
                         dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
                         dimension.SetPermutation(pos.X, pos.Y, pos.Z, dirtPerm, 0, true);
                     }
                     return;
                 }
             }
-            else
-            {
+            else {
                 if (trait is not null) trait._dryTicks = dryCount;
             }
         }
@@ -190,20 +163,17 @@ public class FarmlandTrait : BlockTrait
         ScheduleFarmlandTick(dimension, pos);
     }
 
-    private sealed class FarmlandTickTask : DelayedTask
-    {
+    private sealed class FarmlandTickTask : DelayedTask {
         private readonly Dimension _dimension;
         private readonly BlockPos _pos;
 
-        public FarmlandTickTask(Dimension dimension, BlockPos pos)
-        {
+        public FarmlandTickTask(Dimension dimension, BlockPos pos) {
             _dimension = dimension;
             _pos = pos;
             RunOnMainThread = true;
         }
 
-        public override void Execute()
-        {
+        public override void Execute() {
             TickFarmland(_dimension, _pos);
         }
     }

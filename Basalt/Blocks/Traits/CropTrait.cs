@@ -8,8 +8,7 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 
 
-public class CropTrait : BlockTrait
-{
+public class CropTrait : BlockTrait {
     public static new readonly string Identifier = "minecraft:crop";
     public static readonly string State = "growth";
 
@@ -18,30 +17,24 @@ public class CropTrait : BlockTrait
 
     private const int MaxGrowth = 7;
 
-    public CropTrait(Block block) : base(block)
-    {
+    public CropTrait(Block block) : base(block) {
     }
 
-    public override void OnPlace(BlockPlaceDetails details)
-    {
-        if (details.Player.Dimension is { } dimension)
-        {
+    public override void OnPlace(BlockPlaceDetails details) {
+        if (details.Player.Dimension is { } dimension) {
             ScheduleCropTick(dimension, details.BlockPosition);
         }
     }
 
-    public override void OnRandomTick(BlockRandomTickDetails details)
-    {
+    public override void OnRandomTick(BlockRandomTickDetails details) {
         TryGrow(details.BlockPosition);
     }
 
-    public override void OnBreak(BlockBreakDetails details)
-    {
+    public override void OnBreak(BlockBreakDetails details) {
 
     }
 
-    public override List<Item.ItemStack>? GetCustomDrops(BlockPermutation permutation)
-    {
+    public override List<Item.ItemStack>? GetCustomDrops(BlockPermutation permutation) {
         if (!permutation.State.TryGetValue("growth", out BlockStateValue growthVal))
             return null;
 
@@ -60,8 +53,7 @@ public class CropTrait : BlockTrait
         return [new Item.ItemStack(seedType, 1)];
     }
 
-    private static string? GetSeedForCrop(string cropIdentifier)
-    {
+    private static string? GetSeedForCrop(string cropIdentifier) {
         if (string.Equals(cropIdentifier, BlockIdentifier.Wheat.ToIdentifier(), StringComparison.Ordinal))
             return "minecraft:wheat_seeds";
         if (string.Equals(cropIdentifier, BlockIdentifier.Beetroot.ToIdentifier(), StringComparison.Ordinal))
@@ -75,24 +67,19 @@ public class CropTrait : BlockTrait
         return null;
     }
 
-    public static void ScheduleCropTick(Dimension dimension, BlockPos pos, uint? customDelay = null)
-    {
-        Server? server = dimension.World?.Server;
-        if (server is null) return;
+    public static void ScheduleCropTick(Dimension dimension, BlockPos pos, uint? customDelay = null) {
+        if (dimension.World?.Scheduler is null) return;
 
         uint delay = customDelay ?? (uint)Random.Shared.Next((int)MinTickInterval, (int)MaxTickInterval + 1);
 
-        server.Scheduler.Schedule(
-            new CropTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true },
-            dimension.World!.TickValue);
+        dimension.World.Scheduler.Schedule(
+            new CropTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true });
     }
 
-    private static void TryGrow(BlockPos pos)
-    {
+    private static void TryGrow(BlockPos pos) {
     }
 
-    private static void TickCrop(Dimension dimension, BlockPos pos)
-    {
+    private static void TickCrop(Dimension dimension, BlockPos pos) {
         BlockPermutation perm;
         try { perm = dimension.GetPermutation(pos.X, pos.Y, pos.Z, 0); }
         catch { return; }
@@ -106,8 +93,7 @@ public class CropTrait : BlockTrait
         try { below = dimension.GetPermutation(pos.X, pos.Y - 1, pos.Z, 0); }
         catch { return; }
 
-        if (!string.Equals(below.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
-        {
+        if (!string.Equals(below.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal)) {
             BlockPermutation air = BlockPermutation.Resolve("minecraft:air");
             dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
             dimension.SetPermutation(pos.X, pos.Y, pos.Z, air);
@@ -116,56 +102,46 @@ public class CropTrait : BlockTrait
 
         int maxGrowth = GetMaxGrowth(perm.Type.Identifier);
 
-        if (currentGrowth >= maxGrowth)
-        {
+        if (currentGrowth >= maxGrowth) {
             return;
         }
 
         int newGrowth = currentGrowth + 1;
         BlockState state = [];
-        foreach ((string key, BlockStateValue value) in perm.State)
-        {
-            if (string.Equals(key, "growth", StringComparison.Ordinal))
-            {
+        foreach ((string key, BlockStateValue value) in perm.State) {
+            if (string.Equals(key, "growth", StringComparison.Ordinal)) {
                 state[key] = newGrowth;
             }
-            else
-            {
+            else {
                 state[key] = value;
             }
         }
 
         BlockPermutation? newPerm = perm.Type.GetPermutation(state);
-        if (newPerm is not null)
-        {
+        if (newPerm is not null) {
             dimension.SetPermutation(pos.X, pos.Y, pos.Z, newPerm, 0, true);
         }
 
-        if (newGrowth < maxGrowth)
-        {
+        if (newGrowth < maxGrowth) {
             ScheduleCropTick(dimension, pos);
         }
     }
 
-    private static int GetMaxGrowth(string blockIdentifier)
-    {
+    private static int GetMaxGrowth(string blockIdentifier) {
         return MaxGrowth;
     }
 
-    private sealed class CropTickTask : DelayedTask
-    {
+    private sealed class CropTickTask : DelayedTask {
         private readonly Dimension _dimension;
         private readonly BlockPos _pos;
 
-        public CropTickTask(Dimension dimension, BlockPos pos)
-        {
+        public CropTickTask(Dimension dimension, BlockPos pos) {
             _dimension = dimension;
             _pos = pos;
             RunOnMainThread = true;
         }
 
-        public override void Execute()
-        {
+        public override void Execute() {
             TickCrop(_dimension, _pos);
         }
     }

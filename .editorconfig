@@ -7,6 +7,9 @@ indent_size = 4
 end_of_line = crlf
 insert_final_newline = true
 
+# Braces on same line (K&R style)
+csharp_new_line_before_open_brace = none
+
 # Prefer modern C#
 csharp_style_namespace_declarations = file_scoped:suggestion
 csharp_style_prefer_primary_constructors = false:silent

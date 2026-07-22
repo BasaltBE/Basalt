@@ -2,14 +2,14 @@ namespace Basalt.Core.Worlds;
 
 using System.Diagnostics.CodeAnalysis;
 using Basalt.Core.Profiling;
+using Basalt.Core.Tasks;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Dimension = Dimensions.Dimension;
 
-public sealed class World : IDisposable, Tickable
-{
+public sealed class World : IDisposable, Tickable {
     private readonly Dictionary<string, Dimension> _dimensions = new(StringComparer.OrdinalIgnoreCase);
 
 
@@ -26,7 +26,21 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// The Server instance.
     /// </summary>
-    public Server? Server { get; internal set; }
+    public Server? Server {
+        get => _server;
+        internal set {
+            _server = value;
+            if (value is not null && Scheduler is null)
+                Scheduler = new WorldScheduler(this, value.WorkerPool);
+        }
+    }
+
+    private Server? _server;
+
+    /// <summary>
+    /// The per-world task scheduler.
+    /// </summary>
+    public WorldScheduler? Scheduler { get; private set; }
 
     /// <summary>
     /// The current tick value.
@@ -53,14 +67,12 @@ public sealed class World : IDisposable, Tickable
     /// </summary>
     /// <param name="name"></param>
     /// <param name="provider"></param>
-    public World(string name, WorldProvider? provider = null)
-    {
+    public World(string name, WorldProvider? provider = null) {
         Name = name;
         Provider = provider ?? new InMemoryProvider();
     }
 
-    public static void ConfigurePersistence(string dataPath)
-    {
+    public static void ConfigurePersistence(string dataPath) {
     }
 
     /// <summary>
@@ -73,8 +85,7 @@ public sealed class World : IDisposable, Tickable
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public Dimension CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
-    {
+    public Dimension CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
         return CreateDimension(identifier, type, new Vec3f(0, 80, 0), generatorType, generatorArgs);
     }
 
@@ -89,8 +100,7 @@ public sealed class World : IDisposable, Tickable
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public Dimension CreateDimension(string identifier, DimensionType type, Vec3f spawnPosition, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs)
-    {
+    public Dimension CreateDimension(string identifier, DimensionType type, Vec3f spawnPosition, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
         if (!typeof(Generator).IsAssignableFrom(generatorType))
             throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
 
@@ -101,8 +111,7 @@ public sealed class World : IDisposable, Tickable
         dimension.SpawnPosition = spawnPosition;
 
         Vec3f? stored = Provider.LoadSpawnPosition(type);
-        if (stored.HasValue)
-        {
+        if (stored.HasValue) {
             dimension.SpawnPosition = stored.Value;
         }
 
@@ -114,8 +123,7 @@ public sealed class World : IDisposable, Tickable
     /// Adds a dimension to the world.
     /// </summary>
     /// <param name="dimension"></param>
-    public void AddDimension(Dimension dimension)
-    {
+    public void AddDimension(Dimension dimension) {
         dimension.World = this;
         _dimensions[dimension.Identifier] = dimension;
     }
@@ -126,8 +134,7 @@ public sealed class World : IDisposable, Tickable
     /// </summary>
     /// <param name="identifier"></param>
     /// <returns></returns>
-    public bool RemoveDimension(string identifier)
-    {
+    public bool RemoveDimension(string identifier) {
         if (!_dimensions.Remove(identifier, out Dimension? dimension))
             return false;
 
@@ -155,11 +162,10 @@ public sealed class World : IDisposable, Tickable
     /// Ticks the world and all its dimensions.
     /// Please dont tick manually unless you know what you are doing, we aint gonna be at fault if u do.
     /// </summary>
-    public void Tick()
-    {
+    public void Tick() {
         TickValue++;
-        foreach (Dimension dimension in _dimensions.Values)
-        {
+        Scheduler?.Tick();
+        foreach (Dimension dimension in _dimensions.Values) {
             using var _ = Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})");
             dimension.Tick(TickValue, 1);
         }
@@ -168,10 +174,8 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// Saves all dirty chunks across all dimensions.
     /// </summary>
-    public void Save()
-    {
-        foreach (Dimension dimension in _dimensions.Values)
-        {
+    public void Save() {
+        foreach (Dimension dimension in _dimensions.Values) {
             dimension.SaveDirtyChunks();
         }
     }
@@ -179,8 +183,9 @@ public sealed class World : IDisposable, Tickable
     /// <summary>
     /// Disposes of the world and its dimensions.
     /// </summary>
-    public void Dispose()
-    {
+    public void Dispose() {
+        Scheduler?.Stop();
+
         foreach (Dimension dimension in _dimensions.Values)
             dimension.Dispose();
 
