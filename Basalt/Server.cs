@@ -60,7 +60,7 @@ public sealed class Server {
     private ulong _lastTpsTick;
     private ulong _lastAutoSaveTick;
     private TimeSpan _startupElapsed;
-    private readonly Dictionary<ServerEvent, List<Delegate>> _signalHandlers = [];
+    private readonly Dictionary<ServerEvent, List<SignalHandler>> _signalHandlers = new(ServerEventComparer.Instance);
     public readonly ConcurrentDictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
     public PermissionStore PermissionStore { get; }
@@ -180,28 +180,22 @@ public sealed class Server {
 
     public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal {
         ArgumentNullException.ThrowIfNull(handler);
-        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers)) {
+        if (!_signalHandlers.TryGetValue(@event, out List<SignalHandler>? handlers)) {
             handlers = [];
             _signalHandlers[@event] = handlers;
         }
 
-        handlers.Add(handler);
+        handlers.Add(new SignalHandler<TSignal>(handler));
     }
 
     public void Emit(ServerEvent @event, ISignal signal) {
         ArgumentNullException.ThrowIfNull(signal);
-        if (!_signalHandlers.TryGetValue(@event, out List<Delegate>? handlers)) {
+        if (!_signalHandlers.TryGetValue(@event, out List<SignalHandler>? handlers)) {
             return;
         }
 
         for (int i = 0; i < handlers.Count; i++) {
-            Delegate handler = handlers[i];
-            Type? signalType = handler.Method.GetParameters().FirstOrDefault()?.ParameterType;
-            if (signalType is null || !signalType.IsInstanceOfType(signal)) {
-                continue;
-            }
-
-            handler.DynamicInvoke(signal);
+            handlers[i].TryInvoke(signal);
         }
     }
 
@@ -446,6 +440,30 @@ public sealed class Server {
             }
 
             Network.SendPacket(connection, packet);
+        }
+    }
+}
+
+internal sealed class ServerEventComparer : IEqualityComparer<ServerEvent> {
+    public static readonly ServerEventComparer Instance = new();
+    public bool Equals(ServerEvent x, ServerEvent y) => x == y;
+    public int GetHashCode(ServerEvent obj) => (int)obj;
+}
+
+internal abstract class SignalHandler {
+    public abstract void TryInvoke(ISignal signal);
+}
+
+internal sealed class SignalHandler<TSignal> : SignalHandler where TSignal : ISignal {
+    private readonly Action<TSignal> _handler;
+
+    public SignalHandler(Action<TSignal> handler) {
+        _handler = handler;
+    }
+
+    public override void TryInvoke(ISignal signal) {
+        if (signal is TSignal typed) {
+            _handler(typed);
         }
     }
 }
