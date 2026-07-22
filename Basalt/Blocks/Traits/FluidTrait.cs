@@ -434,8 +434,7 @@ public class FluidTrait : BlockTrait {
 
     private static void InvalidateFluidTick(BlockPos pos, FluidKind kind) {
         var key = (pos.X, pos.Y, pos.Z, kind);
-        _fluidGeneration.TryGetValue(key, out uint gen);
-        _fluidGeneration[key] = gen + 1;
+        _fluidGeneration.Remove(key);
     }
 
     public static void NotifyFluidNeighbors(FluidKind kind, Dimension dimension, BlockPos pos) {
@@ -508,6 +507,7 @@ public class FluidTrait : BlockTrait {
             if (_generation != currentGen)
                 return;
 
+            _fluidGeneration.Remove(key);
             TickFluid(_kind, _dimension, _pos.X, _pos.Y, _pos.Z);
         }
     }

@@ -233,7 +233,7 @@ public sealed class WorldScheduler {
     }
 
     private static void ExecuteMainThread(ServerTask task) {
-        using (Profiler.BeginZone($"MainThread:{task.GetType().Name}")) {
+        using (Profiler.Enabled ? Profiler.BeginZone($"MainThread:{task.GetType().Name}") : default) {
             try {
                 task.Execute();
             }

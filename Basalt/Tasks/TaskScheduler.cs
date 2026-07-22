@@ -76,7 +76,7 @@ public sealed class TaskScheduler {
         while (_mainThreadQueue.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
 
-            using (Profiler.BeginZone($"MainThread:{task.GetType().Name}")) {
+            using (Profiler.Enabled ? Profiler.BeginZone($"MainThread:{task.GetType().Name}") : default) {
                 try {
                     task.Execute();
                 }

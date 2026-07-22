@@ -41,7 +41,7 @@ public sealed class PluginManager {
     }
 
     public void Load(string assemblyPath) {
-        using var __zone = Profiler.BeginZone($"Plugin.Load({Path.GetFileName(assemblyPath)})");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Plugin.Load({Path.GetFileName(assemblyPath)})") : default;
         try {
             var loader = PluginLoader.CreateFromAssemblyFile(
                 assemblyPath,

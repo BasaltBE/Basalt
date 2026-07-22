@@ -25,10 +25,21 @@ public static class PlayerAuthInput {
 
     private static readonly ConcurrentDictionary<ulong, ulong> LastInputTickByRuntimeId = new();
     private static readonly ConcurrentDictionary<ulong, PendingItemUse> PendingItemUses = new();
+    private static readonly ConcurrentDictionary<ulong, ulong> LastEatSoundTick = new();
     private static readonly ConcurrentDictionary<ulong, BreakState> BreakStates = new();
 
     private readonly record struct PendingItemUse(int Slot, int StackNetworkId, ulong FinishTick);
     private readonly record struct BreakState(BlockPos Position, ulong StartTick, uint DurationTicks);
+
+    /// <summary>
+    /// Removes all tracked state for a player. Call on disconnect.
+    /// </summary>
+    public static void Cleanup(ulong runtimeId) {
+        LastInputTickByRuntimeId.TryRemove(runtimeId, out _);
+        PendingItemUses.TryRemove(runtimeId, out _);
+        LastEatSoundTick.TryRemove(runtimeId, out _);
+        BreakStates.TryRemove(runtimeId, out _);
+    }
 
     public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
         using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
@@ -66,7 +77,7 @@ public static class PlayerAuthInput {
             }
 
             MovePlayer(player, packet);
-            TickPendingItemUse(player);
+            TickPendingItemUse(player, packet.Tick);
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.PerformItemInteraction)) {
                 InventoryTransaction.HandleUseItemFromAuthInput(
@@ -106,6 +117,11 @@ public static class PlayerAuthInput {
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartUsingItem)) {
                 StartUsingItem(player);
             }
+            else if (PendingItemUses.ContainsKey(player.RuntimeId)) {
+                PendingItemUses.TryRemove(player.RuntimeId, out _);
+                LastEatSoundTick.TryRemove(player.RuntimeId, out _);
+                player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            }
 
             if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSprinting)) {
                 player.IsSprinting = true;
@@ -136,6 +152,7 @@ public static class PlayerAuthInput {
         ItemStackFoodTrait? food = heldItem?.GetTrait<ItemStackFoodTrait>();
         if (inventory is null || heldItem is null || food is null) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
+            LastEatSoundTick.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             return;
         }
@@ -143,7 +160,12 @@ public static class PlayerAuthInput {
         PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
         if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue)) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
+            LastEatSoundTick.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
+        if (PendingItemUses.ContainsKey(player.RuntimeId)) {
             return;
         }
 
@@ -157,7 +179,7 @@ public static class PlayerAuthInput {
         player.Flags.SetActorFlag(ActorFlag.UsingItem, true);
     }
 
-    private static void TickPendingItemUse(Player.Player player) {
+    private static void TickPendingItemUse(Player.Player player, ulong clientTick) {
         if (!PendingItemUses.TryGetValue(player.RuntimeId, out PendingItemUse pending)) {
             return;
         }
@@ -166,13 +188,31 @@ public static class PlayerAuthInput {
         ItemStack? heldItem = inventory?.Container.GetItem(pending.Slot);
         if (inventory is null || heldItem is null || heldItem.NetworkStackId != pending.StackNetworkId) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
+            LastEatSoundTick.TryRemove(player.RuntimeId, out _);
             player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
             return;
         }
 
-        if (GetCurrentTick(player) < pending.FinishTick) {
+        ulong currentTick = GetCurrentTick(player);
+        if (currentTick < pending.FinishTick) {
+            LastEatSoundTick.TryGetValue(player.RuntimeId, out ulong lastSound);
+            if (clientTick - lastSound >= 4) {
+                player.Dimension?.Broadcast(new LevelSoundEventPacket {
+                    Event = LevelSoundEvent.Eat,
+                    Position = player.Position,
+                    Data = 0,
+                    ActorIdentifier = EntityIdentifier.Player.ToIdentifierString(),
+                    BabyMob = false,
+                    DisableRelativeVolume = false,
+                    UniqueActorId = 0,
+                    FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
+                });
+                LastEatSoundTick[player.RuntimeId] = clientTick;
+            }
             return;
         }
+
+        LastEatSoundTick.TryRemove(player.RuntimeId, out _);
 
         PendingItemUses.TryRemove(player.RuntimeId, out _);
         player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
@@ -182,6 +222,17 @@ public static class PlayerAuthInput {
         if (food is null || hunger is null || !hunger.Eat(food.Nutrition, food.SaturationModifier, food.CanAlwaysEat)) {
             return;
         }
+
+        player.Dimension.Broadcast(new LevelSoundEventPacket {
+            Event = LevelSoundEvent.Burp,
+            Position = player.Position,
+            Data = 0,
+            ActorIdentifier = string.Empty,
+            BabyMob = false,
+            DisableRelativeVolume = false,
+            UniqueActorId = 0,
+            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
+        });
 
         // Update inventory and notify the client.
         heldItem.DecrementStack();

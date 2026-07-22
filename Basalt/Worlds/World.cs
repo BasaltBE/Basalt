@@ -166,7 +166,7 @@ public sealed class World : IDisposable, Tickable {
         TickValue++;
         Scheduler?.Tick();
         foreach (Dimension dimension in _dimensions.Values) {
-            using var _ = Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})");
+            using var _ = Profiler.Enabled ? Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})") : default;
             dimension.Tick(TickValue, 1);
         }
     }

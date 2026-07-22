@@ -383,7 +383,7 @@ public sealed class Server {
         }
 
         foreach (WorldInstance world in _worlds.Values) {
-            using var worldZone = Profiler.BeginZone($"World.Tick({world.Name})");
+            using var worldZone = Profiler.Enabled ? Profiler.BeginZone($"World.Tick({world.Name})") : default;
             long worldStartTimestamp = Stopwatch.GetTimestamp();
             world.Tick();
             long worldEndTimestamp = Stopwatch.GetTimestamp();

@@ -1,11 +1,14 @@
 namespace Basalt.Core.Profiling;
 
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using bottlenoselabs.C2CS.Runtime;
 using static Tracy.PInvoke;
 
 public static class Profiler {
-    public const bool Enabled = true;
+    public static bool Enabled;
+
+    private static readonly ConcurrentDictionary<string, CString> CStringCache = new(StringComparer.Ordinal);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ProfilerZone BeginZone(
@@ -14,13 +17,11 @@ public static class Profiler {
         [CallerLineNumber] uint lineNumber = 0,
         [CallerFilePath] string? filePath = null,
         [CallerMemberName] string? memberName = null) {
-#pragma warning disable CS0162
         if (!Enabled) return default;
-#pragma warning restore CS0162
 
-        CString fileStr = GetCString(filePath, out ulong fileLn);
-        CString memberStr = GetCString(memberName, out ulong memberLn);
-        CString nameStr = GetCString(zoneName, out ulong nameLn);
+        CString fileStr = GetCachedCString(filePath, out ulong fileLn);
+        CString memberStr = GetCachedCString(memberName, out ulong memberLn);
+        CString nameStr = GetCachedCString(zoneName, out ulong nameLn);
 
         ulong srcLocId = TracyAllocSrclocName(lineNumber, fileStr, fileLn, memberStr, memberLn, nameStr, nameLn, color);
         TracyCZoneCtx context = TracyEmitZoneBeginAlloc(srcLocId, 1);
@@ -29,27 +30,27 @@ public static class Profiler {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void FrameMark() {
-#pragma warning disable CS0162
         if (!Enabled) return;
-#pragma warning restore CS0162
         TracyEmitFrameMark(default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetThreadName(string name) {
-#pragma warning disable CS0162
         if (!Enabled) return;
-#pragma warning restore CS0162
-        TracySetThreadName(CString.FromString(name));
+        TracySetThreadName(GetOrCreateCString(name));
     }
 
-    internal static CString GetCString(string? value, out ulong length) {
+    private static CString GetCachedCString(string? value, out ulong length) {
         if (value is null) {
             length = 0;
             return new CString(0);
         }
 
         length = (ulong)value.Length;
-        return CString.FromString(value);
+        return GetOrCreateCString(value);
+    }
+
+    private static CString GetOrCreateCString(string value) {
+        return CStringCache.GetOrAdd(value, static v => CString.FromString(v));
     }
 }

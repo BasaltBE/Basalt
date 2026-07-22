@@ -1,11 +1,14 @@
 ﻿
 using Basalt.Core;
 using Basalt.Core.Commands;
+using Basalt.Core.Profiling;
 
 namespace Basalt.DedicatedServer;
 
 sealed class Program {
     static void Main() {
+        Profiler.Enabled = true;
+
         Logger.Init();
         const string serverPropertiesPath = "server.properties";
         ServerProperties props = ServerProperties.LoadFromPath(serverPropertiesPath);

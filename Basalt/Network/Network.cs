@@ -66,6 +66,8 @@ public sealed class NetworkHandler {
             return;
         }
 
+        PlayerAuthInput.Cleanup(player.RuntimeId);
+
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 

@@ -112,7 +112,7 @@ public class Entity {
     }
 
     public void Tick(ulong currentTick, uint deltaTick) {
-        using var __zone = Profiler.BeginZone($"Entity.Tick({Identifier})");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Entity.Tick({Identifier})") : default;
         TraitOnTickDetails details = new(currentTick, deltaTick);
         for (int i = 0; i < _traits.Count; i++) {
             EntityTrait trait = _traits[i];
