@@ -293,6 +293,11 @@ public static class PlayerAuthInput {
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
             ItemStack? item = inventory?.Container.GetItem(mineBlock.HotbarSlot);
 
+            int durability = 0;
+            if (item?.GetTrait<Basalt.Core.Item.Traits.ItemStackDurabilityTrait>() is { } durabilityTrait) {
+                durability = durabilityTrait.GetCurrentDamage();
+            }
+
             containers.Add(new StackResponseContainerInfo {
                 Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
                 SlotInfo =
@@ -305,7 +310,7 @@ public static class PlayerAuthInput {
                         StackNetworkId = item?.NetworkStackId ?? 0,
                         CustomName = string.Empty,
                         FilteredCustomName = string.Empty,
-                        DurabilityCorrection = 0
+                        DurabilityCorrection = durability
                     }
                 ]
             });

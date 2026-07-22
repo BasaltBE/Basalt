@@ -720,6 +720,11 @@ public static class ItemStackRequest {
 
         ItemStack? item = container.GetItem(storageSlot);
 
+        int durability = 0;
+        if (item?.GetTrait<Basalt.Core.Item.Traits.ItemStackDurabilityTrait>() is { } durabilityTrait) {
+            durability = durabilityTrait.GetCurrentDamage();
+        }
+
         info.SlotInfo.RemoveAll(s => s.Slot == responseSlot);
         info.SlotInfo.Add(new StackResponseSlotInfo {
             Slot = (byte)responseSlot,
@@ -728,7 +733,7 @@ public static class ItemStackRequest {
             StackNetworkId = item?.NetworkStackId ?? 0,
             CustomName = string.Empty,
             FilteredCustomName = string.Empty,
-            DurabilityCorrection = 0
+            DurabilityCorrection = durability
         });
     }
 

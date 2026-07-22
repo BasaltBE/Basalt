@@ -10,17 +10,21 @@ public sealed class ItemTypeDurabilityComponent : ItemTypeComponent {
     }
 
     public int GetMaxDurability() {
-        return Component.Get<IntTag>("max_durability")?.Value ?? 0;
+        return Component.Get<IntTag>("maxDurability")?.Value
+            ?? Component.Get<IntTag>("max_durability")?.Value
+            ?? 0;
     }
 
     public (int Min, int Max) GetDamageChance() {
-        CompoundTag? chance = Component.Get<CompoundTag>("damage_chance");
+        CompoundTag? chance = Component.Get<CompoundTag>("damageChanceRange")
+            ?? Component.Get<CompoundTag>("damage_chance");
+
         if (chance is null) {
-            return (0, 0);
+            return (100, 100);
         }
 
-        int min = chance.Get<IntTag>("min")?.Value ?? 0;
-        int max = chance.Get<IntTag>("max")?.Value ?? 0;
+        int min = chance.Get<IntTag>("min")?.Value ?? 100;
+        int max = chance.Get<IntTag>("max")?.Value ?? 100;
         return (min, max);
     }
 }

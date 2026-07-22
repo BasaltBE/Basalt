@@ -87,9 +87,8 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                     continue;
                 }
 
-                if (itemStack.GetTrait<ItemStackDurabilityTrait>() is not null) {
-                    ItemStackDurabilityTrait.ProcessDamage(Entity);
-                }
+                ItemStackDurabilityTrait? durability = itemStack.GetTrait<ItemStackDurabilityTrait>();
+                durability?.ApplyArmorDamage(equipment.Armor, i);
             }
         }
 
