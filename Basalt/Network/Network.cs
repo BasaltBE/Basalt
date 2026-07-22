@@ -143,11 +143,13 @@ public sealed class NetworkHandler {
     }
 
     private void HandleGamePacket(NetworkConnection connection, PacketId packetId, ReadOnlySpan<byte> packetBuffer) {
-        _server.Players.TryGetValue(connection, out Player.Player? packetPlayer);
-        PacketReceiveSignal receiveSignal = new(connection, packetPlayer, packetId, packetBuffer.ToArray());
-        _server.Emit(receiveSignal);
-        if (receiveSignal.Cancelled) {
-            return;
+        if (_server.HasListeners(ServerEvent.PacketReceive)) {
+            _server.Players.TryGetValue(connection, out Player.Player? packetPlayer);
+            PacketReceiveSignal receiveSignal = new(connection, packetPlayer, packetId, packetBuffer.ToArray());
+            _server.Emit(receiveSignal);
+            if (receiveSignal.Cancelled) {
+                return;
+            }
         }
 
         switch (packetId) {
@@ -236,11 +238,13 @@ public sealed class NetworkHandler {
     }
 
     public void SendPacket(NetworkConnection connection, DataPacket packet, CompressionMethod? compression = null, bool immediate = false) {
-        _server.Players.TryGetValue(connection, out Player.Player? player);
-        PacketSendSignal sendSignal = new(connection, player, packet);
-        _server.Emit(sendSignal);
-        if (sendSignal.Cancelled) {
-            return;
+        if (_server.HasListeners(ServerEvent.PacketSend)) {
+            _server.Players.TryGetValue(connection, out Player.Player? player);
+            PacketSendSignal sendSignal = new(connection, player, packet);
+            _server.Emit(sendSignal);
+            if (sendSignal.Cancelled) {
+                return;
+            }
         }
 
         SendPackets(connection, [packet], compression, immediate);

@@ -203,6 +203,10 @@ public sealed class Server {
         Emit(signal.Event, signal);
     }
 
+    public bool HasListeners(ServerEvent @event) {
+        return _signalHandlers.TryGetValue(@event, out List<SignalHandler>? handlers) && handlers.Count > 0;
+    }
+
     public void Stop() {
         Plugins.DisableAll();
         CancellationTokenSource? runCancellation = _runCancellation;
@@ -378,7 +382,7 @@ public sealed class Server {
             Scheduler.Tick(GetWorld().TickValue);
         }
 
-        foreach (WorldInstance world in _worlds.Values.ToArray()) {
+        foreach (WorldInstance world in _worlds.Values) {
             using var worldZone = Profiler.BeginZone($"World.Tick({world.Name})");
             long worldStartTimestamp = Stopwatch.GetTimestamp();
             world.Tick();
