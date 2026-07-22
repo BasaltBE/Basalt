@@ -3,8 +3,6 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Blocks;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
 using Player = Player.Player;
 
@@ -71,7 +69,7 @@ public static class FillCommand {
     BlockPermutation permutation = block.Type.GetPermutation();
 
     if (volume <= BlocksPerTick) {
-      int filled = FillRegion(dimension, minX, minY, minZ, maxX, maxY, maxZ, permutation);
+      int filled = dimension.Fill(minX, minY, minZ, maxX, maxY, maxZ, permutation);
       return CommandResult.OkMessage($"§7Filled §a{filled}§7 blocks.");
     }
 
@@ -80,71 +78,12 @@ public static class FillCommand {
     return CommandResult.OkMessage($"§7Filling §a{volume}§7 blocks in background...");
   }
 
-  internal static int FillRegion(
-    Dimension dimension, int minX, int minY, int minZ, int maxX, int maxY, int maxZ,
-    BlockPermutation permutation) {
-    int filled = 0;
-
-    // Group by sub-chunk for batch updates.
-    Dictionary<(int cx, int cy, int cz), List<BlockChangeEntry>> subChunkEntries = [];
-
-    for (int x = minX; x <= maxX; x++) {
-      for (int z = minZ; z <= maxZ; z++) {
-        for (int y = minY; y <= maxY; y++) {
-          dimension.SetPermutation(x, y, z, permutation, broadcast: false);
-          filled++;
-
-          int cx = x >> 4;
-          int cy = y >> 4;
-          int cz = z >> 4;
-          var key = (cx, cy, cz);
-
-          if (!subChunkEntries.TryGetValue(key, out List<BlockChangeEntry>? entries)) {
-            entries = [];
-            subChunkEntries[key] = entries;
-          }
-
-          entries.Add(new BlockChangeEntry {
-            Position = new BlockPos { X = x, Y = y, Z = z },
-            BlockRuntimeId = (uint)permutation.NetworkId,
-            Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
-            SyncedUpdateEntityUniqueId = 0,
-            SyncedUpdateType = 0
-          });
-        }
-      }
-    }
-
-    foreach (((int scx, int scy, int scz), List<BlockChangeEntry> entries) in subChunkEntries) {
-      UpdateSubChunkBlocksPacket packet = new() {
-        SubChunkX = scx,
-        SubChunkY = scy,
-        SubChunkZ = scz,
-        Blocks = entries
-      };
-
-      Vec3f center = new() {
-        X = (scx << 4) + 8,
-        Y = (scy << 4) + 8,
-        Z = (scz << 4) + 8
-      };
-
-      dimension.Broadcast(packet, new BroadcastOptions {
-        Radius = dimension.World?.Server?.Properties.MaxViewDistance * 16 ?? 256,
-        Center = center
-      });
-    }
-
-    return filled;
-  }
-
   sealed class FillTask : ServerTask {
     private readonly Dimension _dimension;
     private readonly int _minX, _minY, _minZ;
     private readonly int _maxX, _maxY, _maxZ;
     private readonly BlockPermutation _permutation;
     private int _currentX, _currentY, _currentZ;
-    private int _totalFilled;
 
     public FillTask(
       Dimension dimension,
@@ -160,44 +99,34 @@ public static class FillCommand {
     }
 
     public override void Execute() {
+      int batchMinX = _currentX, batchMinY = _currentY, batchMinZ = _currentZ;
+      int batchMaxX = _currentX, batchMaxY = _currentY, batchMaxZ = _currentZ;
       int count = 0;
-      Dictionary<(int cx, int cy, int cz), List<BlockChangeEntry>> subChunkEntries = [];
 
+      // Compute the end position for this batch.
       while (count < BlocksPerTick) {
-        _dimension.SetPermutation(_currentX, _currentY, _currentZ, _permutation, broadcast: false);
+        batchMaxX = _currentX;
+        batchMaxY = _currentY;
+        batchMaxZ = _currentZ;
         count++;
-        _totalFilled++;
-
-        int cx = _currentX >> 4;
-        int cy = _currentY >> 4;
-        int cz = _currentZ >> 4;
-        var key = (cx, cy, cz);
-
-        if (!subChunkEntries.TryGetValue(key, out List<BlockChangeEntry>? entries)) {
-          entries = [];
-          subChunkEntries[key] = entries;
-        }
-
-        entries.Add(new BlockChangeEntry {
-          Position = new BlockPos { X = _currentX, Y = _currentY, Z = _currentZ },
-          BlockRuntimeId = (uint)_permutation.NetworkId,
-          Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
-          SyncedUpdateEntityUniqueId = 0,
-          SyncedUpdateType = 0
-        });
 
         if (!Advance()) {
-          BroadcastSubChunks(subChunkEntries);
+          _dimension.Fill(batchMinX, batchMinY, batchMinZ, _maxX, _maxY, _maxZ, _permutation);
           return;
         }
       }
 
-      BroadcastSubChunks(subChunkEntries);
+      _dimension.Fill(batchMinX, _minY, _minZ, batchMaxX, _maxY, _maxZ, _permutation);
+
+      // Re-schedule for the next batch.
+      _currentX = batchMaxX;
+      _currentY = batchMaxY;
+      _currentZ = batchMaxZ;
+      Advance();
       _dimension.World?.Scheduler?.Schedule(this);
     }
 
     public override void Complete() {
-      // Reset for potential reuse by scheduler.
       IsExecuted = false;
       IsCompleted = false;
     }
@@ -216,28 +145,6 @@ public static class FillCommand {
         }
       }
       return true;
-    }
-
-    private void BroadcastSubChunks(Dictionary<(int cx, int cy, int cz), List<BlockChangeEntry>> subChunkEntries) {
-      foreach (((int scx, int scy, int scz), List<BlockChangeEntry> entries) in subChunkEntries) {
-        UpdateSubChunkBlocksPacket packet = new() {
-          SubChunkX = scx,
-          SubChunkY = scy,
-          SubChunkZ = scz,
-          Blocks = entries
-        };
-
-        Vec3f center = new() {
-          X = (scx << 4) + 8,
-          Y = (scy << 4) + 8,
-          Z = (scz << 4) + 8
-        };
-
-        _dimension.Broadcast(packet, new BroadcastOptions {
-          Radius = _dimension.World?.Server?.Properties.MaxViewDistance * 16 ?? 256,
-          Center = center
-        });
-      }
     }
   }
 }

@@ -400,6 +400,61 @@ public sealed class Dimension : IDisposable {
         chunk.SetBiome(GetChunkLocal(x), y, GetChunkLocal(z), biomeId, dirty);
     }
 
+    /// <summary>
+    /// Fills a region with the given permutations.
+    /// All of the updates are sent via UpdateSubChunkBlocks packet rather than UpdateBlockPacket
+    /// </summary>
+    public int Fill(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, BlockPermutation permutation) {
+        int filled = 0;
+        Dictionary<(int cx, int cy, int cz), List<BlockChangeEntry>> subChunkEntries = [];
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                for (int y = minY; y <= maxY; y++) {
+                    SetPermutation(x, y, z, permutation, broadcast: false);
+                    filled++;
+
+                    int cx = x >> 4;
+                    int cy = y >> 4;
+                    int cz = z >> 4;
+                    var key = (cx, cy, cz);
+
+                    if (!subChunkEntries.TryGetValue(key, out List<BlockChangeEntry>? entries)) {
+                        entries = [];
+                        subChunkEntries[key] = entries;
+                    }
+
+                    entries.Add(new BlockChangeEntry {
+                        Position = new BlockPos { X = x, Y = y, Z = z },
+                        BlockRuntimeId = (uint)permutation.NetworkId,
+                        Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
+                        SyncedUpdateEntityUniqueId = 0,
+                        SyncedUpdateType = 0
+                    });
+                }
+            }
+        }
+
+        float broadcastRadius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256;
+        foreach (((int scx, int scy, int scz), List<BlockChangeEntry> entries) in subChunkEntries) {
+            Broadcast(new UpdateSubChunkBlocksPacket {
+                SubChunkX = scx,
+                SubChunkY = scy,
+                SubChunkZ = scz,
+                Blocks = entries
+            }, new BroadcastOptions {
+                Radius = broadcastRadius,
+                Center = new Vec3f {
+                    X = (scx << 4) + 8,
+                    Y = (scy << 4) + 8,
+                    Z = (scz << 4) + 8
+                }
+            });
+        }
+
+        return filled;
+    }
+
     public void Dispose() {
         _disposed = true;
         _chunkSaveSignal.Set();
