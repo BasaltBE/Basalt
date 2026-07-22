@@ -223,7 +223,7 @@ public static class PlayerAuthInput {
             return;
         }
 
-        player.Dimension.Broadcast(new LevelSoundEventPacket {
+        player.Dimension?.Broadcast(new LevelSoundEventPacket {
             Event = LevelSoundEvent.Burp,
             Position = player.Position,
             Data = 0,
