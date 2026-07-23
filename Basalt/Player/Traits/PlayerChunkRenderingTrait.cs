@@ -100,18 +100,30 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
     public override void OnTeleport(EntityTeleportOptions details) {
         lock (_lock) {
-            HideAllVisibleEntities();
-
-            if (Player.Dimension is not null) {
-                UnloadChunks(Player.Dimension, clearClient: true, force: true);
+            if (Player.Dimension is null) {
+                return;
             }
 
-            _loadedChunks.Clear();
-            _requestedChunks.Clear();
-            _readyChunks.Clear();
-            VisibleActorIds.Clear();
-            UpdateTrackedChunkPosition();
-            ResetRingScan();
+            if (details.ChangedDimension) {
+                HideAllVisibleEntities();
+                UnloadChunks(Player.Dimension, clearClient: true, force: true);
+                _loadedChunks.Clear();
+                _requestedChunks.Clear();
+                _readyChunks.Clear();
+                VisibleActorIds.Clear();
+                UpdateTrackedChunkPosition();
+                ResetRingScan();
+                return;
+            }
+
+            int chunkX = WorldToChunk(details.To.X);
+            int chunkZ = WorldToChunk(details.To.Z);
+            if (!UpdateChunkPosition(chunkX, chunkZ)) {
+                return;
+            }
+
+            UnloadChunks(Player.Dimension, clearClient: true);
+            SendPublisherUpdate(includeSavedChunks: true);
         }
     }
 

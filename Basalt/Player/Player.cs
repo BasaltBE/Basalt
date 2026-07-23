@@ -234,7 +234,7 @@ public sealed class Player : Entities.Entity {
         ulong teleportTick = targetDimension.World is Tickable tp ? tp.TickValue : 0;
         LastTeleportTick = teleportTick;
 
-        OnTeleport(new EntityTeleportOptions(previousPosition, position));
+        OnTeleport(new EntityTeleportOptions(previousPosition, position, changedDimension));
 
         if (changedDimension) {
             if (previousDimension?.World?.Server is Server dimServer) {
@@ -283,9 +283,6 @@ public sealed class Player : Entities.Entity {
             Send(Abilities.CreatePacket(UniqueId, IsOperator));
             GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
             targetDimension.AddPlayer(this);
-        }
-        else {
-            GetTrait<PlayerChunkRenderingTrait>()?.StartChunkLoad();
         }
 
         Attributes.Send();
