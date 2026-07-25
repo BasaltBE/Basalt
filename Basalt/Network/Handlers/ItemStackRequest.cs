@@ -535,6 +535,8 @@ public static class ItemStackRequest {
             or (byte)ContainerName.EnchantingMaterial
             or (byte)ContainerName.FurnaceFuel
             or (byte)ContainerName.FurnaceIngredient
+            or (byte)ContainerName.BlastFurnaceIngredient
+            or (byte)ContainerName.SmokerIngredient
             or (byte)ContainerName.FurnaceResult) {
             foreach ((_, Container opened) in player.openedContainers) {
                 if (opened.Type is ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker) {
@@ -576,6 +578,8 @@ public static class ItemStackRequest {
             or (byte)ContainerName.EnchantingMaterial
             or (byte)ContainerName.FurnaceFuel
             or (byte)ContainerName.FurnaceIngredient
+            or (byte)ContainerName.BlastFurnaceIngredient
+            or (byte)ContainerName.SmokerIngredient
             or (byte)ContainerName.FurnaceResult) {
             return slot;
         }
