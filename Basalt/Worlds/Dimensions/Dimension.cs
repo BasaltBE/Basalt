@@ -27,7 +27,8 @@ public sealed class Dimension : IDisposable {
         ["minecraft:blast_furnace"] = "BlastFurnace",
         ["minecraft:lit_blast_furnace"] = "BlastFurnace",
         ["minecraft:smoker"] = "Smoker",
-        ["minecraft:lit_smoker"] = "Smoker"
+        ["minecraft:lit_smoker"] = "Smoker",
+        ["minecraft:mob_spawner"] = "MobSpawner"
     };
 
     private readonly Dictionary<long, ChunkColumn> _chunks;
@@ -73,6 +74,10 @@ public sealed class Dimension : IDisposable {
     public int ChunkCount => _chunks.Count;
     public int ChunkViewerCount => _chunkViewers.Count;
     public IReadOnlyCollection<Entity> Entities => _entities;
+
+    internal bool ChunkLoaded(int x, int z) {
+        return _chunks.ContainsKey(HashChunk(x, z));
+    }
 
     public bool HasChunk(int x, int z) {
         long hash = HashChunk(x, z);
