@@ -4,6 +4,7 @@ using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
@@ -11,12 +12,7 @@ using Basalt.Protocol.Types;
 
 public sealed class ItemStackSpawnEggTrait : ItemTrait {
     public new static string Identifier => "spawn_egg";
-    public new static readonly string[] Tags = ["minecraft:spawn_egg"];
-
-    private static readonly Dictionary<string, string> EntityAliases = new(StringComparer.Ordinal) {
-        ["minecraft:tropical_fish"] = "minecraft:tropicalfish",
-        ["minecraft:evoker"] = "minecraft:evocation_illager"
-    };
+    public new static readonly Type Component = typeof(ItemTypeEntityPlacerComponent);
 
     public ItemStackSpawnEggTrait(ItemStack itemStack) : base(itemStack) {
     }
@@ -57,17 +53,13 @@ public sealed class ItemStackSpawnEggTrait : ItemTrait {
     }
 
     private string? ResolveEntityIdentifier() {
-        const string suffix = "_spawn_egg";
-        string itemIdentifier = ItemStack.Identifier;
-        if (!itemIdentifier.EndsWith(suffix, StringComparison.Ordinal)) {
+        ItemTypeEntityPlacerComponent? entityPlacer =
+            ItemStack.Type.Components.GetComponent<ItemTypeEntityPlacerComponent>();
+        if (entityPlacer is null) {
             return null;
         }
 
-        string entityIdentifier = itemIdentifier[..^suffix.Length];
-        if (EntityAliases.TryGetValue(entityIdentifier, out string? alias)) {
-            entityIdentifier = alias;
-        }
-
+        string entityIdentifier = entityPlacer.GetEntity();
         return EntityType.Get(entityIdentifier) is null ? null : entityIdentifier;
     }
 

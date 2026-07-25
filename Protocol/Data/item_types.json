@@ -10836,9 +10836,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:chicken"
+      }
     },
     "networkId": 468,
     "itemVersion": 2,
@@ -10859,9 +10864,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:cow"
+      }
     },
     "networkId": 469,
     "itemVersion": 2,
@@ -10882,9 +10892,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:pig"
+      }
     },
     "networkId": 470,
     "itemVersion": 2,
@@ -10905,9 +10920,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:sheep"
+      }
     },
     "networkId": 471,
     "itemVersion": 2,
@@ -10928,9 +10948,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:wolf"
+      }
     },
     "networkId": 472,
     "itemVersion": 2,
@@ -10951,9 +10976,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:polar_bear"
+      }
     },
     "networkId": 506,
     "itemVersion": 2,
@@ -10974,9 +11004,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:ocelot"
+      }
     },
     "networkId": 484,
     "itemVersion": 2,
@@ -10997,9 +11032,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:cat"
+      }
     },
     "networkId": 522,
     "itemVersion": 2,
@@ -11020,9 +11060,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:mooshroom"
+      }
     },
     "networkId": 473,
     "itemVersion": 2,
@@ -11043,9 +11088,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:bat"
+      }
     },
     "networkId": 486,
     "itemVersion": 2,
@@ -11066,9 +11116,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:parrot"
+      }
     },
     "networkId": 512,
     "itemVersion": 2,
@@ -11089,9 +11144,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:rabbit"
+      }
     },
     "networkId": 492,
     "itemVersion": 2,
@@ -11112,9 +11172,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:llama"
+      }
     },
     "networkId": 507,
     "itemVersion": 2,
@@ -11135,9 +11200,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:horse"
+      }
     },
     "networkId": 491,
     "itemVersion": 2,
@@ -11158,9 +11228,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:donkey"
+      }
     },
     "networkId": 499,
     "itemVersion": 2,
@@ -11181,9 +11256,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:mule"
+      }
     },
     "networkId": 500,
     "itemVersion": 2,
@@ -11204,9 +11284,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:skeleton_horse"
+      }
     },
     "networkId": 501,
     "itemVersion": 2,
@@ -11227,9 +11312,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zombie_horse"
+      }
     },
     "networkId": 502,
     "itemVersion": 2,
@@ -11250,9 +11340,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:tropicalfish"
+      }
     },
     "networkId": 513,
     "itemVersion": 2,
@@ -11273,9 +11368,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:cod"
+      }
     },
     "networkId": 514,
     "itemVersion": 2,
@@ -11296,9 +11396,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:pufferfish"
+      }
     },
     "networkId": 515,
     "itemVersion": 2,
@@ -11319,9 +11424,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:salmon"
+      }
     },
     "networkId": 516,
     "itemVersion": 2,
@@ -11342,9 +11452,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:dolphin"
+      }
     },
     "networkId": 518,
     "itemVersion": 2,
@@ -11365,9 +11480,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:turtle"
+      }
     },
     "networkId": 519,
     "itemVersion": 2,
@@ -11388,9 +11508,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:panda"
+      }
     },
     "networkId": 523,
     "itemVersion": 2,
@@ -11411,9 +11536,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:fox"
+      }
     },
     "networkId": 524,
     "itemVersion": 2,
@@ -11434,9 +11564,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:creeper"
+      }
     },
     "networkId": 474,
     "itemVersion": 2,
@@ -11457,9 +11592,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:enderman"
+      }
     },
     "networkId": 475,
     "itemVersion": 2,
@@ -11480,9 +11620,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:silverfish"
+      }
     },
     "networkId": 476,
     "itemVersion": 2,
@@ -11503,9 +11648,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:skeleton"
+      }
     },
     "networkId": 477,
     "itemVersion": 2,
@@ -11526,9 +11676,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:wither_skeleton"
+      }
     },
     "networkId": 498,
     "itemVersion": 2,
@@ -11549,9 +11704,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:stray"
+      }
     },
     "networkId": 495,
     "itemVersion": 2,
@@ -11572,9 +11732,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:slime"
+      }
     },
     "networkId": 478,
     "itemVersion": 2,
@@ -11595,9 +11760,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:spider"
+      }
     },
     "networkId": 479,
     "itemVersion": 2,
@@ -11618,9 +11788,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zombie"
+      }
     },
     "networkId": 480,
     "itemVersion": 2,
@@ -11641,9 +11816,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zombie_pigman"
+      }
     },
     "networkId": 481,
     "itemVersion": 2,
@@ -11664,9 +11844,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:husk"
+      }
     },
     "networkId": 497,
     "itemVersion": 2,
@@ -11687,9 +11872,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:drowned"
+      }
     },
     "networkId": 517,
     "itemVersion": 2,
@@ -11710,9 +11900,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:squid"
+      }
     },
     "networkId": 483,
     "itemVersion": 2,
@@ -11733,9 +11928,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:cave_spider"
+      }
     },
     "networkId": 490,
     "itemVersion": 2,
@@ -11756,9 +11956,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:witch"
+      }
     },
     "networkId": 485,
     "itemVersion": 2,
@@ -11779,9 +11984,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:guardian"
+      }
     },
     "networkId": 494,
     "itemVersion": 2,
@@ -11802,9 +12012,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:elder_guardian"
+      }
     },
     "networkId": 505,
     "itemVersion": 2,
@@ -11825,9 +12040,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:endermite"
+      }
     },
     "networkId": 493,
     "itemVersion": 2,
@@ -11848,9 +12068,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:magma_cube"
+      }
     },
     "networkId": 488,
     "itemVersion": 2,
@@ -11871,9 +12096,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:ghast"
+      }
     },
     "networkId": 487,
     "itemVersion": 2,
@@ -11894,9 +12124,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:blaze"
+      }
     },
     "networkId": 489,
     "itemVersion": 2,
@@ -11917,9 +12152,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:shulker"
+      }
     },
     "networkId": 503,
     "itemVersion": 2,
@@ -11940,9 +12180,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:vindicator"
+      }
     },
     "networkId": 508,
     "itemVersion": 2,
@@ -11963,9 +12208,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:evocation_illager"
+      }
     },
     "networkId": 509,
     "itemVersion": 2,
@@ -11986,9 +12236,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:vex"
+      }
     },
     "networkId": 510,
     "itemVersion": 2,
@@ -12009,9 +12264,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:villager"
+      }
     },
     "networkId": 482,
     "itemVersion": 2,
@@ -12032,9 +12292,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:wandering_trader"
+      }
     },
     "networkId": 526,
     "itemVersion": 2,
@@ -12055,9 +12320,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zombie_villager"
+      }
     },
     "networkId": 511,
     "itemVersion": 2,
@@ -12078,9 +12348,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:phantom"
+      }
     },
     "networkId": 520,
     "itemVersion": 2,
@@ -12101,9 +12376,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:pillager"
+      }
     },
     "networkId": 525,
     "itemVersion": 2,
@@ -12124,9 +12404,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:ravager"
+      }
     },
     "networkId": 527,
     "itemVersion": 2,
@@ -12147,9 +12432,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:iron_golem"
+      }
     },
     "networkId": 539,
     "itemVersion": 2,
@@ -12170,9 +12460,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:snow_golem"
+      }
     },
     "networkId": 540,
     "itemVersion": 2,
@@ -19252,9 +19547,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:bee"
+      }
     },
     "networkId": 528,
     "itemVersion": 2,
@@ -20628,9 +20928,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:strider"
+      }
     },
     "networkId": 529,
     "itemVersion": 2,
@@ -20651,9 +20956,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:hoglin"
+      }
     },
     "networkId": 530,
     "itemVersion": 2,
@@ -20674,9 +20984,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:piglin"
+      }
     },
     "networkId": 531,
     "itemVersion": 2,
@@ -20697,9 +21012,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zoglin"
+      }
     },
     "networkId": 532,
     "itemVersion": 2,
@@ -20720,9 +21040,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:piglin_brute"
+      }
     },
     "networkId": 533,
     "itemVersion": 2,
@@ -23407,9 +23732,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:glow_squid"
+      }
     },
     "networkId": 538,
     "itemVersion": 2,
@@ -23430,9 +23760,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:goat"
+      }
     },
     "networkId": 537,
     "itemVersion": 2,
@@ -23453,9 +23788,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:axolotl"
+      }
     },
     "networkId": 536,
     "itemVersion": 2,
@@ -24605,9 +24945,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:warden"
+      }
     },
     "networkId": 674,
     "itemVersion": 2,
@@ -24628,9 +24973,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:allay"
+      }
     },
     "networkId": 673,
     "itemVersion": 2,
@@ -24651,9 +25001,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:frog"
+      }
     },
     "networkId": 670,
     "itemVersion": 2,
@@ -24674,9 +25029,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:tadpole"
+      }
     },
     "networkId": 671,
     "itemVersion": 2,
@@ -25207,9 +25567,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:trader_llama"
+      }
     },
     "networkId": 690,
     "itemVersion": 2,
@@ -25949,9 +26314,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:camel"
+      }
     },
     "networkId": 697,
     "itemVersion": 2,
@@ -25972,9 +26342,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:sniffer"
+      }
     },
     "networkId": 534,
     "itemVersion": 2,
@@ -27501,9 +27876,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:armadillo"
+      }
     },
     "networkId": 745,
     "itemVersion": 2,
@@ -28779,9 +29159,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:breeze"
+      }
     },
     "networkId": 535,
     "itemVersion": 2,
@@ -28802,9 +29187,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:bogged"
+      }
     },
     "networkId": 496,
     "itemVersion": 2,
@@ -30006,9 +30396,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:creaking"
+      }
     },
     "networkId": 751,
     "itemVersion": 2,
@@ -30029,9 +30424,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:happy_ghast"
+      }
     },
     "networkId": 755,
     "itemVersion": 2,
@@ -31301,9 +31701,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:copper_golem"
+      }
     },
     "networkId": 772,
     "itemVersion": 2,
@@ -32810,9 +33215,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:nautilus"
+      }
     },
     "networkId": 784,
     "itemVersion": 2,
@@ -32833,9 +33243,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:camel_husk"
+      }
     },
     "networkId": 698,
     "itemVersion": 2,
@@ -32856,9 +33271,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:parched"
+      }
     },
     "networkId": 786,
     "itemVersion": 2,
@@ -32879,9 +33299,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:zombie_nautilus"
+      }
     },
     "networkId": 785,
     "itemVersion": 2,
@@ -34009,9 +34434,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:sulfur_cube"
+      }
     },
     "networkId": 793,
     "itemVersion": 2,
@@ -37711,9 +38141,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "editor:map_marker"
+      }
     },
     "networkId": -1,
     "itemVersion": 2
@@ -37861,9 +38296,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:ender_dragon"
+      }
     },
     "networkId": 541,
     "itemVersion": 2
@@ -38243,9 +38683,14 @@
     "maxAmount": 64,
     "componentBased": false,
     "propertiesPayload": {
-      "components": [],
+      "components": [
+        "minecraft:entity_placer"
+      ],
       "stackable": true,
-      "maxAmount": 64
+      "maxAmount": 64,
+      "entityPlacer": {
+        "entity": "minecraft:wither"
+      }
     },
     "networkId": 542,
     "itemVersion": 2

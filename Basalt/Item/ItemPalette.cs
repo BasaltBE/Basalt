@@ -412,7 +412,10 @@ public sealed class ItemPalette {
                 ? identifier["minecraft:".Length..]
                 : identifier;
 
-            CompoundTag componentPayload = properties.Get<CompoundTag>(payloadKey) ?? new CompoundTag();
+            CompoundTag componentPayload =
+                properties.Get<CompoundTag>(payloadKey) ??
+                properties.Get<CompoundTag>(ToCamelCase(payloadKey)) ??
+                new CompoundTag();
             if (identifier == "minecraft:food") {
                 componentPayload = NormalizeFoodComponent(componentPayload);
             }
@@ -430,6 +433,21 @@ public sealed class ItemPalette {
         }
 
         properties.Set("components", components);
+    }
+
+    private static string ToCamelCase(string value) {
+        int separator = value.IndexOf('_');
+        if (separator < 0) {
+            return value;
+        }
+
+        string[] parts = value.Split('_', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) {
+            return value;
+        }
+
+        return parts[0] + string.Concat(parts.Skip(1).Select(static part =>
+            char.ToUpperInvariant(part[0]) + part[1..]));
     }
 
     private static CompoundTag NormalizeFoodComponent(CompoundTag food) {
