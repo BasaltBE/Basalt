@@ -40,6 +40,7 @@ public sealed class NetworkHandler {
         On<SetLocalPlayerAsInitializedPacket>((connection, packet) => SetLocalPlayerAsInitialized.Handle(_server, connection, packet));
         On<PlayerAuthInputPacket>((connection, packet) => PlayerAuthInput.Handle(_server, connection, packet));
         On<InteractPacket>((connection, packet) => Interact.Handle(_server, connection, packet));
+        On<AnimatePacket>((connection, packet) => Animate.Handle(_server, connection, packet));
         On<ContainerClosePacket>((connection, packet) => ContainerClose.Handle(_server, connection, packet));
         On<InventoryTransactionPacket>((connection, packet) => InventoryTransaction.Handle(_server, connection, packet));
         On<MobEquipmentPacket>((connection, packet) => MobEquipment.Handle(_server, connection, packet));
