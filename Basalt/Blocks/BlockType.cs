@@ -15,6 +15,7 @@ public sealed class BlockType {
     private readonly HashSet<string> _booleanStates = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BlockComponent> _components = new(StringComparer.Ordinal);
     private List<BlockDrop>? _drops;
+    internal readonly Lock PermutationLock = new();
 
     public string Identifier { get; }
     public bool Air { get; internal set; }
@@ -56,14 +57,16 @@ public sealed class BlockType {
     }
 
     public void RegisterPermutation(BlockPermutation permutation) {
-        Permutations.Add(permutation);
-        foreach ((string key, BlockStateValue value) in permutation.State) {
-            if (value.Kind == 2) {
-                _booleanStates.Add(key);
+        lock (PermutationLock) {
+            Permutations.Add(permutation);
+            foreach ((string key, BlockStateValue value) in permutation.State) {
+                if (value.Kind == 2) {
+                    _booleanStates.Add(key);
+                }
             }
-        }
 
-        _permutationStateIndex[GetPermutationStateKey(permutation.State)] = permutation;
+            _permutationStateIndex[GetPermutationStateKey(permutation.State)] = permutation;
+        }
     }
 
     public void RegisterTrait(Type traitType, string identifier) {
@@ -160,27 +163,29 @@ public sealed class BlockType {
     }
 
     public BlockPermutation GetPermutation(BlockState? state = null) {
-        if (state is null || state.Count == 0) {
-            if (Permutations.Count > 0) {
-                return Permutations[0];
+        lock (PermutationLock) {
+            if (state is null || state.Count == 0) {
+                if (Permutations.Count > 0) {
+                    return Permutations[0];
+                }
+
+                return BlockPermutation.Create(this, new BlockState());
             }
 
-            return BlockPermutation.Create(this, new BlockState());
-        }
-
-        string key = GetPermutationStateKey(state);
-        if (_permutationStateIndex.TryGetValue(key, out BlockPermutation? cached)) {
-            return cached;
-        }
-
-        for (int i = 0; i < Permutations.Count; i++) {
-            if (Permutations[i].Matches(state)) {
-                _permutationStateIndex[key] = Permutations[i];
-                return Permutations[i];
+            string key = GetPermutationStateKey(state);
+            if (_permutationStateIndex.TryGetValue(key, out BlockPermutation? cached)) {
+                return cached;
             }
-        }
 
-        return BlockPermutation.Create(this, state);
+            for (int i = 0; i < Permutations.Count; i++) {
+                if (Permutations[i].Matches(state)) {
+                    _permutationStateIndex[key] = Permutations[i];
+                    return Permutations[i];
+                }
+            }
+
+            return BlockPermutation.Create(this, state);
+        }
     }
 
     private string GetPermutationStateKey(BlockState state) {

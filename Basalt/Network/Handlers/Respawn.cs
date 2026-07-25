@@ -7,12 +7,7 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
 public static class Respawn {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        RespawnPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (RespawnPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, RespawnPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }

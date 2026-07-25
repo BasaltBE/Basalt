@@ -7,22 +7,16 @@ using Basalt.RakNet;
 
 
 public static class RequestChunkRadius {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        RequestChunkRadiusPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (RequestChunkRadiusPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, RequestChunkRadiusPacket packet) {
         int requestedRadius = packet.ChunkRadius;
         int maxViewDistance = Math.Clamp(server.Properties.MaxViewDistance, 4, 120);
         int radius = Math.Clamp(requestedRadius, 4, maxViewDistance);
-        // UpdateChunkRadiusPacket response = new()
-        // {
+        // UpdateChunkRadiusPacket response = new() {
         //     ChunkRadius = radius
-        // };  
+        // };
 
         // THIS STUPID PACKET CRASHES MOBILE DEVICES!!!
-        /// PLEASE KEEP IT COMMENTED OUT!
+        // / PLEASE KEEP IT COMMENTED OUT!
         // server.Network.SendPacket(connection, response);
 
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {

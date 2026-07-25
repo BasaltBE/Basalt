@@ -2,6 +2,7 @@ namespace Basalt.Core.Events;
 
 using Basalt.Core.Player;
 using Basalt.Protocol.Enums;
+using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
 /// <summary>
@@ -13,13 +14,20 @@ public sealed class PacketReceiveSignal : ISignal {
     public Player? Player { get; }
     public PacketId PacketId { get; }
     public ReadOnlyMemory<byte> PacketBuffer { get; }
+    public DataPacket Packet { get; }
     public bool Cancelled { get; private set; }
 
-    public PacketReceiveSignal(NetworkConnection connection, Player? player, PacketId packetId, ReadOnlyMemory<byte> packetBuffer) {
+    public PacketReceiveSignal(
+        NetworkConnection connection,
+        Player? player,
+        PacketId packetId,
+        ReadOnlyMemory<byte> packetBuffer,
+        DataPacket packet) {
         Connection = connection;
         Player = player;
         PacketId = packetId;
         PacketBuffer = packetBuffer;
+        Packet = packet;
     }
 
     public void Cancel() {

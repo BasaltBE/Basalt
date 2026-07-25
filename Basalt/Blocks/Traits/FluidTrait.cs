@@ -4,6 +4,7 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Tasks;
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
@@ -501,6 +502,7 @@ public class FluidTrait : BlockTrait {
         }
 
         public override void Execute() {
+            using var _ = Profiler.Enabled ? Profiler.BeginZone("Fluid.Tick") : default;
             var key = (_pos.X, _pos.Y, _pos.Z, _kind);
             _fluidGeneration.TryGetValue(key, out uint currentGen);
 

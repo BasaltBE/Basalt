@@ -6,11 +6,7 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
 public static class MobEquipment {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        MobEquipmentPacket packet = (MobEquipmentPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, MobEquipmentPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }

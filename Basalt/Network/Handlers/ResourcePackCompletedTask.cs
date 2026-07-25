@@ -22,7 +22,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
     private readonly Player.Player _player;
 
     // Built on worker thread.
-    private PlayerListPacket? _playerList;
+    private List<PlayerListPacket> _playerListPackets = [];
     private PlayerListPacket? _broadcastEntry;
     private byte[]? _startGamePayload;
     private byte[]? _spawnStatusPayload;
@@ -36,14 +36,14 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
     }
 
     public override void Execute() {
-        using var _ = Profiler.BeginZone("ResourcePackCompleted.Execute");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("ResourcePackCompleted.Execute") : default;
 
         _dimension = ResolvePlayerDimension(_server, _player);
 
-        _playerList = new PlayerListPacket {
+        _playerListPackets = _server.Players.Values.Select(static online => new PlayerListPacket {
             ActionType = PlayerListActionType.Add,
-            Entries = _server.Players.Values.Select(static online => online.CreatePlayerListEntry()).ToList()
-        };
+            Entries = [online.CreatePlayerListEntry()]
+        }).ToList();
 
         _broadcastEntry = new PlayerListPacket {
             ActionType = PlayerListActionType.Add,
@@ -162,7 +162,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
     }
 
     public override void Complete() {
-        using var _ = Profiler.BeginZone("ResourcePackCompleted.Complete");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("ResourcePackCompleted.Complete") : default;
 
         if (_dimension is not null) {
             if (_player.SavedWorldName is null) {
@@ -179,7 +179,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
                     Message = "Server force closed the connection.",
                     FilteredMessage = "Server force closed the connection."
                 };
-                _server.Network.SendPacket(_connection, forcedDisconnect);
+                _server.Network.QueuePacket(_connection, forcedDisconnect);
                 _connection.Disconnect();
                 return;
             }
@@ -187,7 +187,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             _player.Spawn(_dimension, spawnSignal.Options);
         }
 
-        _server.Network.SendPacket(_connection, _playerList!);
+        _server.Network.QueuePackets(_connection, _playerListPackets);
         _server.Broadcast(_broadcastEntry!, _player);
 
         _server.Network.SendSerializedPackets(_connection, [

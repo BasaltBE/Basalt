@@ -11,7 +11,8 @@ using Dimension = Dimensions.Dimension;
 
 public sealed class World : IDisposable, Tickable {
     private readonly Dictionary<string, Dimension> _dimensions = new(StringComparer.OrdinalIgnoreCase);
-
+    private Dimension[]? _autoSaveDimensions;
+    private int _autoSaveDimensionIndex;
 
     /// <summary>
     /// The name of the world.
@@ -22,6 +23,7 @@ public sealed class World : IDisposable, Tickable {
     /// The world provider, used for storing and loading dimensions.
     /// </summary>
     public WorldProvider Provider { get; }
+    internal WorldPersistence Persistence { get; }
 
     /// <summary>
     /// The Server instance.
@@ -70,6 +72,7 @@ public sealed class World : IDisposable, Tickable {
     public World(string name, WorldProvider? provider = null) {
         Name = name;
         Provider = provider ?? new InMemoryProvider();
+        Persistence = new WorldPersistence(Provider);
     }
 
     public static void ConfigurePersistence(string dataPath) {
@@ -163,6 +166,7 @@ public sealed class World : IDisposable, Tickable {
     /// Please dont tick manually unless you know what you are doing, we aint gonna be at fault if u do.
     /// </summary>
     public void Tick() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("World.Tick") : default;
         TickValue++;
         Scheduler?.Tick();
         foreach (Dimension dimension in _dimensions.Values) {
@@ -175,6 +179,9 @@ public sealed class World : IDisposable, Tickable {
     /// Saves all dirty chunks across all dimensions and writes level.dat.
     /// </summary>
     public void Save() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("World.Save") : default;
+        _autoSaveDimensions = null;
+        Persistence.Flush();
         foreach (Dimension dimension in _dimensions.Values) {
             dimension.SaveDirtyChunks();
         }
@@ -182,16 +189,51 @@ public sealed class World : IDisposable, Tickable {
         Provider.WriteLevelDat(this);
     }
 
+    internal void BeginAutoSave() {
+        _autoSaveDimensions = [.. _dimensions.Values];
+        _autoSaveDimensionIndex = 0;
+        for (int i = 0; i < _autoSaveDimensions.Length; i++) {
+            _autoSaveDimensions[i].BeginAutoSave();
+        }
+    }
+
+    internal int AutoSave(int limit) {
+        if (_autoSaveDimensions is null || limit <= 0) {
+            return 0;
+        }
+
+        int saved = 0;
+        while (saved < limit && _autoSaveDimensionIndex < _autoSaveDimensions.Length) {
+            Dimension dimension = _autoSaveDimensions[_autoSaveDimensionIndex];
+            saved += dimension.AutoSave(limit - saved);
+            if (dimension.AutoSaving) {
+                break;
+            }
+            _autoSaveDimensionIndex++;
+        }
+
+        if (_autoSaveDimensionIndex >= _autoSaveDimensions.Length) {
+            Provider.WriteLevelDat(this);
+            _autoSaveDimensions = null;
+        }
+
+        return saved;
+    }
+
+    internal bool AutoSaving => _autoSaveDimensions is not null;
+
     /// <summary>
     /// Disposes of the world and its dimensions.
     /// </summary>
     public void Dispose() {
         Scheduler?.Stop();
+        _autoSaveDimensions = null;
 
         foreach (Dimension dimension in _dimensions.Values)
             dimension.Dispose();
 
         _dimensions.Clear();
+        Persistence.Dispose();
         Provider.Dispose();
     }
 }

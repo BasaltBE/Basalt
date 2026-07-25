@@ -6,12 +6,8 @@ using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
 public static class ResourcePackChunkRequest {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        using var __zone = Profiler.BeginZone("ResourcePackChunkRequest.Handle");
-        ResourcePackChunkRequestPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (ResourcePackChunkRequestPacket)Protocol.Io.Packet.Deserialize(reader);
+    public static void Handle(Server server, NetworkConnection connection, ResourcePackChunkRequestPacket packet) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ResourcePackChunkRequest.Handle") : default;
 
         ResourcePack? pack = server.ResourcePacks.GetByUuid(packet.Uuid);
         if (pack is null) {
@@ -37,6 +33,6 @@ public static class ResourcePackChunkRequest {
             Data = pack.Data.AsSpan((int)dataOffset, length).ToArray()
         };
 
-        server.Network.SendPacket(connection, response);
+        server.Network.QueuePacket(connection, response);
     }
 }

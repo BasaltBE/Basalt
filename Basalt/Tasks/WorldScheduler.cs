@@ -14,7 +14,6 @@ public sealed class WorldScheduler {
     private RepeatingTask[] _repeating = new RepeatingTask[16];
     private int _repeatingCount;
     private readonly List<ServerTask> _workerBatch = new(64);
-    private readonly CountdownEvent _barrier = new(0);
     private volatile bool _stopped;
 
     public bool IsStopped => _stopped;
@@ -53,17 +52,13 @@ public sealed class WorldScheduler {
 
         task.OwnerThreadId = Environment.CurrentManagedThreadId;
         task.NextExecutionTick = _world.TickValue + task.IntervalTicks;
-
-        if (_repeatingCount == _repeating.Length)
-            Array.Resize(ref _repeating, _repeatingCount * 2);
-
-        _repeating[_repeatingCount++] = task;
+        _incoming.Enqueue(task);
     }
 
     public void Tick() {
         if (_stopped) return;
 
-        using var _ = Profiler.BeginZone("WorldScheduler.Tick");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("WorldScheduler.Tick") : default;
         ulong currentTick = _world.TickValue;
 
         DrainIncoming(currentTick);
@@ -103,7 +98,13 @@ public sealed class WorldScheduler {
         while (_incoming.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
 
-            if (task is DelayedTask delayed) {
+            if (task is RepeatingTask repeating) {
+                if (_repeatingCount == _repeating.Length)
+                    Array.Resize(ref _repeating, _repeatingCount * 2);
+
+                _repeating[_repeatingCount++] = repeating;
+            }
+            else if (task is DelayedTask delayed) {
                 if (delayed.ExecutionTick == 0)
                     delayed.ExecutionTick = currentTick + delayed.DelayTicks;
                 InsertIntoWheel(delayed);
@@ -164,35 +165,14 @@ public sealed class WorldScheduler {
 
         int workerCount = _workerBatch.Count;
         if (workerCount > 0) {
-            using (Profiler.BeginZone("WorkerDispatch")) {
-                _barrier.Reset(workerCount);
+            using (Profiler.Enabled ? Profiler.BeginZone("WorkerDispatch") : default) {
                 for (int i = 0; i < workerCount; i++)
-                    _workerPool.Enqueue(_workerBatch[i], _barrier);
-            }
-
-            using (Profiler.BeginZone("Barrier")) {
-                _barrier.Wait();
-            }
-
-            using (Profiler.BeginZone("ApplyResults")) {
-                for (int i = 0; i < workerCount; i++) {
-                    ServerTask completed = _workerBatch[i];
-                    if (completed.IsCancelled) continue;
-
-                    try {
-                        completed.Complete();
-                    }
-                    catch (Exception ex) {
-                        Logger.Warn($"Task Complete() failed: {ex}");
-                    }
-                    completed.IsCompleted = true;
-                }
+                    _workerPool.Enqueue(_workerBatch[i]);
             }
             _workerBatch.Clear();
         }
 
-        // Run main-thread tasks after worker results are applied 
-        using (Profiler.BeginZone("MainThreadTasks")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("MainThreadTasks") : default) {
             while (mainHead is not null) {
                 ServerTask? next = mainHead.NextInSlot;
                 mainHead.NextInSlot = null;

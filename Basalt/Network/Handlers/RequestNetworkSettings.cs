@@ -9,12 +9,7 @@ using Basalt.RakNet;
 
 
 public static class RequestNetworkSettings {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        RequestNetworkSettingsPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (RequestNetworkSettingsPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, RequestNetworkSettingsPacket packet) {
         if (packet.Protocol != Constants.ProtocolVersion) {
             DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
                 ? DisconnectReason.OutdatedClient
@@ -27,7 +22,7 @@ public static class RequestNetworkSettings {
                 FilteredMessage = ""
             };
 
-            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            server.Network.QueuePacket(connection, disconnect, CompressionMethod.NotPresent);
             return;
         }
 
@@ -41,7 +36,7 @@ public static class RequestNetworkSettings {
             ClientThrottleScalar = 0f
         };
 
-        server.Network.SendPacket(connection, response, CompressionMethod.NotPresent);
+        server.Network.QueuePacket(connection, response, CompressionMethod.NotPresent);
     }
 }
 

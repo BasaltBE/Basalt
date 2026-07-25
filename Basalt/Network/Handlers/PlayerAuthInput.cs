@@ -50,18 +50,8 @@ public static class PlayerAuthInput {
         player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
     }
 
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        using var __zone = Profiler.BeginZone("PlayerAuthInput.Handle");
-        PlayerAuthInputPacket packet = new();
-        try {
-            int offset = 0;
-            Binary.BinaryReader reader = new(packetBuffer, ref offset);
-            packet = (PlayerAuthInputPacket)Protocol.Io.Packet.Deserialize(reader);
-        }
-        catch (Exception exception) {
-            Logger.Error("PlayerAuthInput deserialize failed: {0}", exception);
-            return;
-        }
+    public static void Handle(Server server, NetworkConnection connection, PlayerAuthInputPacket packet) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerAuthInput.Handle") : default;
 
         try {
             if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
@@ -71,7 +61,7 @@ public static class PlayerAuthInput {
             if (MovedTooFar(player, packet, out ulong tickDelta)) {
                 Logger.Warn($"Player {player.Username} moved too fast ({packet.Position.X}, {packet.Position.Y}, {packet.Position.Z}) tickDelta:{tickDelta}");
 
-                server.Network.SendPacket(connection, new CorrectPlayerMovePredictionPacket {
+                server.Network.QueuePacket(connection, new CorrectPlayerMovePredictionPacket {
                     PredictionType = PredictionType.Player,
                     Position = player.Location,
                     PositionDelta = new Vec3f { X = 0f, Y = 0f, Z = 0f },
@@ -111,7 +101,7 @@ public static class PlayerAuthInput {
                     packet.ItemStackRequest.Actions.Count,
                     mineBlockRequest is not null);
 
-                server.Network.SendPacket(connection, new ItemStackResponsePacket {
+                server.Network.QueuePacket(connection, new ItemStackResponsePacket {
                     Responses = [ProcessItemStackRequest(player, packet.ItemStackRequest)]
                 });
             }

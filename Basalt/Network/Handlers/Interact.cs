@@ -10,12 +10,7 @@ using Basalt.RakNet;
 
 
 public static class Interact {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        InteractPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (InteractPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, InteractPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }

@@ -5,6 +5,7 @@ public abstract class ServerTask {
     public TaskPriority Priority { get; init; } = TaskPriority.Normal;
     internal bool IsExecuted { get; set; }
     internal bool IsCompleted { get; set; }
+    internal bool MainThreadCompletion = true;
     public bool IsCancelled { get; private set; }
     internal int OwnerThreadId { get; set; }
     internal ServerTask? NextInSlot { get; set; }

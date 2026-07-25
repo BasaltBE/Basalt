@@ -16,7 +16,7 @@ public sealed class PluginManager {
     }
 
     public void LoadAll(string directory) {
-        using var __zone = Profiler.BeginZone("Plugins.LoadAll");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Plugins.LoadAll") : default;
         long LoadPluginsTimeStamp = Stopwatch.GetTimestamp();
 
         string absoluteDirectory = Path.GetFullPath(directory);

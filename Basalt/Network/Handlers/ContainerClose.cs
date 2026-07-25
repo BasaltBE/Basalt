@@ -7,11 +7,7 @@ using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 
 public static class ContainerClose {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        ContainerClosePacket packet = (ContainerClosePacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, ContainerClosePacket packet) {
         if (server.Players.TryGetValue(connection, out Player.Player? player)) {
             ArgumentNullException.ThrowIfNull(player);
 
@@ -29,6 +25,6 @@ public static class ContainerClose {
             ContainerType = packet.ContainerType,
             ServerSide = false
         };
-        server.Network.SendPacket(connection, response);
+        server.Network.QueuePacket(connection, response);
     }
 }

@@ -37,14 +37,19 @@ public sealed class Dimension : IDisposable {
     private readonly List<long> _chunkSweepBuffer = [];
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
+    private readonly Dictionary<Player.Player, long> _simulationPlayerChunks = [];
+    private readonly HashSet<Player.Player> _simulationPlayerBuffer = [];
+    private readonly List<Player.Player> _simulationPlayerRemovalBuffer = [];
+    private readonly HashSet<long> _simulatedChunks = [];
+    private readonly HashSet<long> _simulationChunkBuffer = [];
     private readonly Lock _chunkRequestLock = new();
     private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
-    private readonly ConcurrentQueue<ChunkColumn> _chunkSaveQueue = new();
-    private readonly Thread _chunkSaveThread;
-    private readonly ManualResetEventSlim _chunkSaveSignal = new(false);
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
+    private ChunkColumn[]? _autoSaveChunks;
+    private int _autoSaveIndex;
+    private int _simulationDistance = -1;
     private bool _tickingEntities;
     private bool _disposed;
 
@@ -63,11 +68,6 @@ public sealed class Dimension : IDisposable {
         _entities = [];
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
-        _chunkSaveThread = new Thread(ChunkSaveLoop) {
-            Name = $"ChunkSave-{identifier}",
-            IsBackground = true
-        };
-        _chunkSaveThread.Start();
     }
 
     public int ChunkCount => _chunks.Count;
@@ -76,7 +76,9 @@ public sealed class Dimension : IDisposable {
 
     public bool HasChunk(int x, int z) {
         long hash = HashChunk(x, z);
-        return _chunks.ContainsKey(hash) || _provider.HasChunk(Type, x, z);
+        return _chunks.ContainsKey(hash) ||
+            World?.Persistence.ChunkPending(Type, x, z) == true ||
+            _provider.HasChunk(Type, x, z);
     }
 
     public ChunkColumn? GetChunk(int x, int z) {
@@ -101,12 +103,16 @@ public sealed class Dimension : IDisposable {
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
         chunk.Dirty = true;
+        chunk.Simulated = _simulatedChunks.Contains(hash);
         _chunks[hash] = chunk;
         return chunk;
     }
 
     public void SetChunk(ChunkColumn chunk) {
-        _chunks[HashChunk(chunk.X, chunk.Z)] = chunk;
+        long hash = HashChunk(chunk.X, chunk.Z);
+        World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
+        chunk.Simulated = _simulatedChunks.Contains(hash);
+        _chunks[hash] = chunk;
         _provider.SaveChunk(chunk);
     }
 
@@ -125,6 +131,8 @@ public sealed class Dimension : IDisposable {
                 _chunkRequestCallbacks.Enqueue(new ChunkRequestCallback(chunk, ready));
                 continue;
             }
+
+            World?.Persistence.WaitForChunk(Type, x, z);
 
             lock (_chunkRequestLock) {
                 if (_pendingChunkRequests.TryGetValue(hash, out PendingChunkRequest? request)) {
@@ -153,13 +161,14 @@ public sealed class Dimension : IDisposable {
     }
 
     public bool RemoveChunk(int x, int z) {
+        World?.Persistence.WaitForChunk(Type, x, z);
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
         return _chunks.Remove(hash);
     }
 
     public void SaveDirtyChunks() {
-        using var __zone = Profiler.BeginZone("Dimension.SaveDirtyChunks");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.SaveDirtyChunks") : default;
 
         _provider.SaveSpawnPosition(Type, SpawnPosition);
 
@@ -209,12 +218,19 @@ public sealed class Dimension : IDisposable {
         if (save && chunk.Dirty) {
             SyncBlockActorsToStorages(chunk);
             chunk.Dirty = false;
-            try {
-                _provider.SaveChunk(chunk);
+            _chunks.Remove(hash);
+            if (World is { } world) {
+                world.Persistence.SaveChunk(chunk);
             }
-            catch (Exception exception) {
-                Logger.Err($"Failed to save chunk {x},{z} on unload: {exception.Message}");
+            else {
+                try {
+                    _provider.SaveChunk(chunk);
+                }
+                catch (Exception exception) {
+                    Logger.Err($"Failed to save chunk {x},{z} on unload: {exception.Message}");
+                }
             }
+            return true;
         }
 
         return _chunks.Remove(hash);
@@ -457,23 +473,36 @@ public sealed class Dimension : IDisposable {
 
     public void Dispose() {
         _disposed = true;
-        _chunkSaveSignal.Set();
-        _chunkSaveThread.Join();
-        FlushChunkSaveQueue();
         FlushCompletedChunkRequests(int.MaxValue);
-        SaveDirtyChunks();
-        _chunkSaveSignal.Dispose();
+        _provider.SaveSpawnPosition(Type, SpawnPosition);
+
+        foreach (ChunkColumn chunk in _chunks.Values) {
+            SyncBlockActorsToStorages(chunk);
+            if (!chunk.Dirty) {
+                continue;
+            }
+
+            chunk.Dirty = false;
+            if (World is { } world) {
+                world.Persistence.SaveChunk(chunk);
+            }
+            else {
+                _provider.SaveChunk(chunk);
+            }
+        }
+
+        _chunks.Clear();
     }
 
     public void Tick(ulong currentTick, uint deltaTick) {
-        using var __tick = Profiler.BeginZone("Dimension.Tick");
+        using var __tick = Profiler.Enabled ? Profiler.BeginZone("Dimension.Tick") : default;
 
-        using (Profiler.BeginZone("FlushCompletedChunks")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("FlushCompletedChunks") : default) {
             FlushCompletedChunkRequests(CompletedChunkLimit);
         }
 
         if (currentTick % 20 == 0 && _pendingUnloads.Count > 0) {
-            using var unloadZone = Profiler.BeginZone("UnloadUnviewedChunks");
+            using var unloadZone = Profiler.Enabled ? Profiler.BeginZone("UnloadUnviewedChunks") : default;
             int unloadLimit = Math.Min(_pendingUnloads.Count, 256);
             _chunkSweepBuffer.Clear();
 
@@ -501,35 +530,86 @@ public sealed class Dimension : IDisposable {
             return;
         }
 
-        foreach (ChunkColumn chunk in _chunks.Values) {
-            chunk.Simulated = false;
-        }
+        bool simulationChanged = false;
+        int simulationDistance = 0;
+        _simulationPlayerBuffer.Clear();
 
         if (World?.Server is Server server) {
-            int simulationDistance = Math.Clamp(server.Properties.SimulationDistance, 0, 120);
+            simulationDistance = Math.Clamp(server.Properties.SimulationDistance, 0, 120);
+
             foreach ((_, var player) in server.Players) {
                 if (player.Dimension != this) {
                     continue;
                 }
 
-                int currentChunkX = WorldToChunk(player.Position.X);
-                int currentChunkZ = WorldToChunk(player.Position.Z);
+                _simulationPlayerBuffer.Add(player);
+                long hash = HashChunk(
+                    WorldToChunk(player.Position.X),
+                    WorldToChunk(player.Position.Z)
+                );
 
-                for (int dx = -simulationDistance; dx <= simulationDistance; dx++) {
-                    for (int dz = -simulationDistance; dz <= simulationDistance; dz++) {
-                        int x = currentChunkX + dx;
-                        int z = currentChunkZ + dz;
-                        ChunkColumn? chunk = GetChunk(x, z);
-                        if (chunk is not null) {
-                            chunk.Simulated = true;
-                        }
-                    }
+                if (!_simulationPlayerChunks.TryGetValue(player, out long previous) || previous != hash) {
+                    _simulationPlayerChunks[player] = hash;
+                    simulationChanged = true;
                 }
             }
         }
 
+        if (_simulationPlayerChunks.Count != _simulationPlayerBuffer.Count) {
+            _simulationPlayerRemovalBuffer.Clear();
+            foreach (Player.Player player in _simulationPlayerChunks.Keys) {
+                if (!_simulationPlayerBuffer.Contains(player)) {
+                    _simulationPlayerRemovalBuffer.Add(player);
+                }
+            }
+
+            for (int i = 0; i < _simulationPlayerRemovalBuffer.Count; i++) {
+                _simulationPlayerChunks.Remove(_simulationPlayerRemovalBuffer[i]);
+            }
+
+            simulationChanged = true;
+        }
+
+        if (_simulationDistance != simulationDistance) {
+            _simulationDistance = simulationDistance;
+            simulationChanged = true;
+        }
+
+        if (simulationChanged) {
+            using var simulationZone = Profiler.Enabled ? Profiler.BeginZone("Dimension.UpdateSimulation") : default;
+            _simulationChunkBuffer.Clear();
+
+            foreach (long playerChunk in _simulationPlayerChunks.Values) {
+                int currentChunkX = (int)(playerChunk >> 32);
+                int currentChunkZ = (int)playerChunk;
+
+                for (int dx = -simulationDistance; dx <= simulationDistance; dx++) {
+                    for (int dz = -simulationDistance; dz <= simulationDistance; dz++) {
+                        _simulationChunkBuffer.Add(HashChunk(currentChunkX + dx, currentChunkZ + dz));
+                    }
+                }
+            }
+
+            foreach (long hash in _simulatedChunks) {
+                if (!_simulationChunkBuffer.Contains(hash) &&
+                    _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+                    chunk.Simulated = false;
+                }
+            }
+
+            foreach (long hash in _simulationChunkBuffer) {
+                if (!_simulatedChunks.Contains(hash) &&
+                    _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+                    chunk.Simulated = true;
+                }
+            }
+
+            _simulatedChunks.Clear();
+            _simulatedChunks.UnionWith(_simulationChunkBuffer);
+        }
+
         _tickingEntities = true;
-        using (Profiler.BeginZone("Dimension.TickEntities")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Dimension.TickEntities") : default) {
             foreach (Entity entity in _entities) {
                 if (entity.PendingDespawn || entity.Dimension != this) {
                     _pendingEntityRemoves.Add(entity);
@@ -553,7 +633,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public void Broadcast(DataPacket packet, BroadcastOptions? options = null) {
-        using var __zone = Profiler.BeginZone("Dimension.Broadcast");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.Broadcast") : default;
         if (World?.Server is not Server server) {
             return;
         }
@@ -583,7 +663,7 @@ public sealed class Dimension : IDisposable {
                 }
             }
 
-            server.Network.SendPacket(connection, packet);
+            server.Network.QueuePacket(connection, packet);
         }
     }
 
@@ -668,8 +748,10 @@ public sealed class Dimension : IDisposable {
             return chunk;
         }
 
+        World?.Persistence.WaitForChunk(Type, x, z);
         chunk = _provider.LoadChunk(Type, x, z);
         if (chunk is not null) {
+            chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
         }
 
@@ -797,6 +879,7 @@ public sealed class Dimension : IDisposable {
             }
         }
         else {
+            chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
 
             foreach (Action<ChunkColumn> callback in request.Callbacks) {
@@ -815,23 +898,57 @@ public sealed class Dimension : IDisposable {
 
     private readonly record struct ChunkRequestCallback(ChunkColumn Chunk, Action<ChunkColumn> Callback);
 
-    private void ChunkSaveLoop() {
-        while (!_disposed) {
-            _chunkSaveSignal.Wait();
-            _chunkSaveSignal.Reset();
-            FlushChunkSaveQueue();
+    internal bool AutoSaving => _autoSaveChunks is not null;
+
+    internal void BeginAutoSave() {
+        if (World is { } world) {
+            world.Persistence.SaveSpawnPosition(Type, SpawnPosition);
         }
+        else {
+            _provider.SaveSpawnPosition(Type, SpawnPosition);
+        }
+        _autoSaveChunks = [.. _chunks.Values];
+        _autoSaveIndex = 0;
     }
 
-    private void FlushChunkSaveQueue() {
-        while (_chunkSaveQueue.TryDequeue(out ChunkColumn? chunk)) {
+    internal int AutoSave(int limit) {
+        if (_autoSaveChunks is null || limit <= 0) {
+            return 0;
+        }
+
+        int processed = 0;
+        while (processed < limit && _autoSaveIndex < _autoSaveChunks.Length) {
+            ChunkColumn chunk = _autoSaveChunks[_autoSaveIndex++];
+            processed++;
+            if (!_chunks.TryGetValue(chunk.Hash, out ChunkColumn? loaded) || !ReferenceEquals(chunk, loaded)) {
+                continue;
+            }
+
+            SyncBlockActorsToStorages(chunk);
+            if (!chunk.Dirty) {
+                continue;
+            }
+
             try {
-                _provider.SaveChunk(chunk);
+                ChunkColumn snapshot = chunk.CreatePersistenceSnapshot();
+                chunk.Dirty = false;
+                if (World is { } world) {
+                    world.Persistence.SaveChunk(snapshot);
+                }
+                else {
+                    _provider.SaveChunk(snapshot);
+                }
             }
             catch (Exception exception) {
                 Logger.Err($"Failed to save chunk {chunk.X},{chunk.Z}: {exception.Message}");
             }
         }
+
+        if (_autoSaveIndex >= _autoSaveChunks.Length) {
+            _autoSaveChunks = null;
+        }
+
+        return processed;
     }
 }
 

@@ -37,7 +37,7 @@ public sealed class PlayerPermissions {
             return;
         }
 
-        _player.Network.SendPacket(_player.Connection, _player.Abilities.CreatePacket(_player.UniqueId, _player.IsOperator));
+        _player.Network.QueuePacket(_player.Connection, _player.Abilities.CreatePacket(_player.UniqueId, _player.IsOperator));
 
         if (_player.Dimension?.World?.Server is Server server) {
             server.Commands.SendAvailableCommands(server, _player);

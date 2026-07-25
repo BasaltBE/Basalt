@@ -22,7 +22,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private readonly Lock _lock = new();
     private readonly HashSet<long> _loadedChunks = [];
     private readonly HashSet<long> _requestedChunks = [];
-    private readonly Queue<ChunkColumn> _readyChunks = [];
+    private readonly Queue<(Dimension Dimension, ChunkColumn Chunk)> _readyChunks = [];
     private readonly List<long> _unloadBuffer = [];
     private readonly List<DataPacket> _sendBuffer = [];
     private readonly List<(long Hash, int X, int Z)> _sentChunkBuffer = [];
@@ -42,6 +42,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
     private int _ringRadius;
     private int _ringIndex;
+    private int _chunkRequestVersion;
 
     private bool _started;
 
@@ -65,8 +66,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             // Logger.Info($"ApplyViewDistance for {Player.Username}: {ViewDistance} → {viewDistance}");
             ViewDistance = viewDistance;
             ResetRingScan();
-            _requestedChunks.Clear();
-            _readyChunks.Clear();
+            ResetChunkRequests();
 
             if (!_started || Player.Dimension is null) {
                 return;
@@ -82,14 +82,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         lock (_lock) {
             _started = true;
             _loadedChunks.Clear();
-            _requestedChunks.Clear();
-            _readyChunks.Clear();
+            ResetChunkRequests();
             UpdateTrackedChunkPosition();
             ResetRingScan();
             SendPublisherUpdate(includeSavedChunks: true);
 
             if (Player.Dimension is not null) {
-                RequestAndSendAvailableChunks(Player.Dimension);
+                SendChunks(Player.Dimension);
             }
         }
     }
@@ -108,8 +107,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                 HideAllVisibleEntities();
                 UnloadChunks(Player.Dimension, clearClient: true, force: true);
                 _loadedChunks.Clear();
-                _requestedChunks.Clear();
-                _readyChunks.Clear();
+                ResetChunkRequests();
                 VisibleActorIds.Clear();
                 UpdateTrackedChunkPosition();
                 ResetRingScan();
@@ -153,7 +151,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             return;
         }
 
-        using var __zone = Profiler.BeginZone("PlayerChunkRendering.OnTick");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.OnTick") : default;
         lock (_lock) {
             Dimension dimension = Player.Dimension;
             int chunkX = WorldToChunk(Player.Location.X);
@@ -181,38 +179,47 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     }
 
     private void SendChunks(Dimension dimension) {
-        using var __zone = Profiler.BeginZone("PlayerChunkRendering.SendChunks");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.SendChunks") : default;
         _sendBuffer.Clear();
         _sentChunkBuffer.Clear();
 
-        SendReadyChunks();
+        SendReadyChunks(dimension);
 
-        while (_sendBuffer.Count < ChunksPerTick && NextRingPosition(out int x, out int z)) {
-            long hash = HashChunk(x, z);
-            if (_loadedChunks.Contains(hash) || _requestedChunks.Contains(hash)) {
-                continue;
+        int requestLimit = ChunksPerTick - _requestedChunks.Count;
+        if (requestLimit > 0) {
+            Span<(int X, int Z)> requests = stackalloc (int X, int Z)[ChunksPerTick];
+            int requestCount = 0;
+
+            while (requestCount < requestLimit && NextRingPosition(out int x, out int z)) {
+                long hash = HashChunk(x, z);
+                if (_loadedChunks.Contains(hash) || !_requestedChunks.Add(hash)) {
+                    continue;
+                }
+
+                requests[requestCount++] = (x, z);
             }
 
-            ChunkColumn chunk = dimension.GetOrCreateChunk(x, z);
+            if (requestCount > 0) {
+                int requestVersion = _chunkRequestVersion;
+                dimension.RequestChunks(requests[..requestCount], chunk => {
+                    lock (_lock) {
+                        if (!_started ||
+                            requestVersion != _chunkRequestVersion ||
+                            !ReferenceEquals(Player.Dimension, dimension) ||
+                            !_requestedChunks.Contains(chunk.Hash)) {
+                            return;
+                        }
 
-            byte[] payload;
-            try {
-                payload = ChunkColumn.Serialize(chunk);
-            }
-            catch (Exception exception) {
-                Logger.Err($"Failed to serialize chunk {x}, {z}: {exception.Message}");
-                continue;
-            }
+                        if (!ChunkInRange(chunk.X, chunk.Z)) {
+                            _requestedChunks.Remove(chunk.Hash);
+                            return;
+                        }
 
-            _sendBuffer.Add(new LevelChunkPacket {
-                ChunkX = chunk.X,
-                ChunkZ = chunk.Z,
-                Dimension = (int)chunk.Type,
-                SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
-                CacheEnabled = false,
-                RawPayload = payload
-            });
-            _sentChunkBuffer.Add((hash, x, z));
+                        dimension.AddChunkViewer(chunk.X, chunk.Z);
+                        _readyChunks.Enqueue((dimension, chunk));
+                    }
+                });
+            }
         }
 
         if (_sendBuffer.Count == 0) {
@@ -226,17 +233,19 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                 continue;
             }
 
-            dimension.AddChunkViewer(x, z);
             SendChunkChestVisualUpdates(dimension, x, z);
         }
     }
 
-    private void SendReadyChunks() {
+    private void SendReadyChunks(Dimension dimension) {
         while (_sendBuffer.Count < ChunksPerTick && _readyChunks.Count > 0) {
-            ChunkColumn chunk = _readyChunks.Dequeue();
+            (Dimension requestedDimension, ChunkColumn chunk) = _readyChunks.Dequeue();
             _requestedChunks.Remove(chunk.Hash);
 
-            if (_loadedChunks.Contains(chunk.Hash) || !ChunkInRange(chunk.X, chunk.Z)) {
+            if (!ReferenceEquals(requestedDimension, dimension) ||
+                _loadedChunks.Contains(chunk.Hash) ||
+                !ChunkInRange(chunk.X, chunk.Z)) {
+                requestedDimension.RemoveChunkViewer(chunk.X, chunk.Z);
                 continue;
             }
 
@@ -246,6 +255,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                 payload = ChunkColumn.Serialize(chunk);
             }
             catch (Exception exception) {
+                requestedDimension.RemoveChunkViewer(chunk.X, chunk.Z);
                 Logger.Err($"Failed to serialize chunk {chunk.X}, {chunk.Z}: {exception.Message}");
                 continue;
             }
@@ -260,54 +270,6 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             });
 
             _sentChunkBuffer.Add((chunk.Hash, chunk.X, chunk.Z));
-        }
-    }
-
-    private void RequestAndSendAvailableChunks(Dimension dimension) {
-        _sendBuffer.Clear();
-        _sentChunkBuffer.Clear();
-
-        while (_sendBuffer.Count < ChunksPerTick && NextRingPosition(out int x, out int z)) {
-            long hash = HashChunk(x, z);
-            if (_loadedChunks.Contains(hash) || _requestedChunks.Contains(hash)) {
-                continue;
-            }
-
-            ChunkColumn chunk = dimension.GetOrCreateChunk(x, z);
-
-            byte[] payload;
-            try {
-                payload = ChunkColumn.Serialize(chunk);
-            }
-            catch (Exception exception) {
-                Logger.Err($"Failed to serialize chunk {x}, {z}: {exception.Message}");
-                continue;
-            }
-
-            _sendBuffer.Add(new LevelChunkPacket {
-                ChunkX = chunk.X,
-                ChunkZ = chunk.Z,
-                Dimension = (int)chunk.Type,
-                SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
-                CacheEnabled = false,
-                RawPayload = payload
-            });
-            _sentChunkBuffer.Add((hash, x, z));
-        }
-
-        if (_sendBuffer.Count == 0) {
-            return;
-        }
-
-        Player.Send([.. _sendBuffer]);
-
-        foreach ((long hash, int x, int z) in _sentChunkBuffer) {
-            if (!_loadedChunks.Add(hash)) {
-                continue;
-            }
-
-            dimension.AddChunkViewer(x, z);
-            SendChunkChestVisualUpdates(dimension, x, z);
         }
     }
 
@@ -364,6 +326,15 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private void ResetRingScan() {
         _ringRadius = 0;
         _ringIndex = 0;
+    }
+
+    private void ResetChunkRequests() {
+        _chunkRequestVersion++;
+        _requestedChunks.Clear();
+
+        while (_readyChunks.TryDequeue(out (Dimension Dimension, ChunkColumn Chunk) ready)) {
+            ready.Dimension.RemoveChunkViewer(ready.Chunk.X, ready.Chunk.Z);
+        }
     }
 
 
@@ -430,8 +401,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             }
 
             _loadedChunks.Clear();
-            _requestedChunks.Clear();
-            _readyChunks.Clear();
+            ResetChunkRequests();
             VisibleActorIds.Clear();
             _started = false;
             ChunkX = int.MinValue;
@@ -502,7 +472,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     }
 
     private void UpdateVisibleEntities(Dimension dimension) {
-        using var __zone = Profiler.BeginZone("PlayerChunkRendering.UpdateVisibleEntities");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.UpdateVisibleEntities") : default;
         ulong tick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
         _visibleThisTick.Clear();
 

@@ -24,7 +24,9 @@ using WorldInstance = Worlds.World;
 public sealed class Server {
     private const ulong TpsUpdateIntervalTicks = 20;
     private const ulong AutoSaveIntervalTicks = 6000; // 5 minutes at 20 TPS
+    private const int AutoSaveChunksPerTick = 2;
     private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
+    private static readonly long RakNetTickDurationTicks = TickDurationTicks;
     private static readonly long SpinThresholdTicks = (long)(2.0 / 1000.0 * Stopwatch.Frequency);
 
     /// <summary>
@@ -40,6 +42,7 @@ public sealed class Server {
     /// </summary>
     private readonly Dictionary<string, Type> _providerRegistry = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, WorldInstance> _worlds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Queue<WorldInstance> _autoSaveWorlds = [];
     /// <summary>
     /// Cancellation source for the main network loop
     /// </summary>
@@ -48,6 +51,7 @@ public sealed class Server {
     /// Task for the main network loop
     /// </summary>
     private Task? _networkLoopTask;
+    private Thread? _raknetThread;
     /// <summary>
     /// Cancellation source for the tick loop
     /// </summary>
@@ -137,10 +141,47 @@ public sealed class Server {
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 
-        _runCancellation = new CancellationTokenSource();
+        CancellationTokenSource runCancellation = new();
+        _runCancellation = runCancellation;
+
+        _raknet.OnMessage += Network.EnqueueFrame;
+        _raknet.OnDisconnected += Network.EnqueueDisconnection;
+
         _networkLoopTask = Task.Run(async () => {
             await _raknet.Start();
-        }, _runCancellation.Token);
+        }, runCancellation.Token);
+
+        Thread raknetThread = new(() => {
+            Profiler.SetThreadName("RakNet");
+            CancellationToken token = runCancellation.Token;
+            long nextTick = Stopwatch.GetTimestamp();
+
+            while (!token.IsCancellationRequested) {
+                try {
+                    Network.Tick();
+                    using (Profiler.Enabled ? Profiler.BeginZone("Raknet.Tick") : default) {
+                        _raknet.Tick();
+                    }
+                }
+                catch (Exception exception) {
+                    Logger.Error($"Unhandled RakNet tick error: {exception}");
+                }
+
+                nextTick += RakNetTickDurationTicks;
+                long remaining = nextTick - Stopwatch.GetTimestamp();
+                if (remaining <= 0) {
+                    nextTick = Stopwatch.GetTimestamp();
+                    continue;
+                }
+
+                token.WaitHandle.WaitOne(TimeSpan.FromSeconds((double)remaining / Stopwatch.Frequency));
+            }
+        }) {
+            Name = "RakNet",
+            IsBackground = true
+        };
+        _raknetThread = raknetThread;
+        raknetThread.Start();
 
         CancellationTokenSource tickCancellation = new();
         _tickCancellation = tickCancellation;
@@ -171,9 +212,6 @@ public sealed class Server {
                 nextTick += TickDurationTicks;
             }
         }, _tickCancellation.Token);
-
-        _raknet.OnMessage += Network.EnqueuePacket;
-        _raknet.OnDisconnected += Network.EnqueueDisconnection;
 
         Emit(new ServerStartSignal());
         Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
@@ -212,8 +250,10 @@ public sealed class Server {
         Plugins.DisableAll();
         CancellationTokenSource? runCancellation = _runCancellation;
         Task? networkLoopTask = _networkLoopTask;
+        Thread? raknetThread = _raknetThread;
         _runCancellation = null;
         _networkLoopTask = null;
+        _raknetThread = null;
 
         CancellationTokenSource? cancellation = _tickCancellation;
         Task? tickLoopTask = _tickLoopTask;
@@ -237,6 +277,7 @@ public sealed class Server {
         cancellation?.Cancel();
 
         try {
+            raknetThread?.Join(1000);
             networkLoopTask?.Wait(250);
             tickLoopTask?.Wait();
         }
@@ -370,31 +411,54 @@ public sealed class Server {
     }
 
     public void Tick() {
-        using var _ = Profiler.BeginZone("Server.Tick");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("Server.Tick") : default;
         long startTimestamp = Stopwatch.GetTimestamp();
 
-        Network.ProcessIncoming();
-
-        using (Profiler.BeginZone("Raknet.Tick")) {
-            _raknet.Tick();
+        using (Profiler.Enabled ? Profiler.BeginZone("Server.Network") : default) {
+            Network.ProcessIncoming();
         }
 
-        using (Profiler.BeginZone("TaskScheduler.Tick")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("TaskScheduler.Tick") : default) {
             Scheduler.Tick(GetWorld().TickValue);
         }
 
-        foreach (WorldInstance world in _worlds.Values) {
-            using var worldZone = Profiler.Enabled ? Profiler.BeginZone($"World.Tick({world.Name})") : default;
-            long worldStartTimestamp = Stopwatch.GetTimestamp();
-            world.Tick();
-            long worldEndTimestamp = Stopwatch.GetTimestamp();
-            ((Tickable)world).TickWork = (worldEndTimestamp - worldStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+        using (Profiler.Enabled ? Profiler.BeginZone("Server.Worlds") : default) {
+            foreach (WorldInstance world in _worlds.Values) {
+                using var worldZone = Profiler.Enabled ? Profiler.BeginZone($"World.Tick({world.Name})") : default;
+                long worldStartTimestamp = Stopwatch.GetTimestamp();
+                world.Tick();
+                long worldEndTimestamp = Stopwatch.GetTimestamp();
+                ((Tickable)world).TickWork = (worldEndTimestamp - worldStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+            }
         }
 
         ulong currentTick = GetWorld().TickValue;
         if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks) {
             _lastAutoSaveTick = currentTick;
-            SaveAll();
+            foreach (WorldInstance world in _worlds.Values) {
+                if (world.AutoSaving) {
+                    continue;
+                }
+
+                world.BeginAutoSave();
+                _autoSaveWorlds.Enqueue(world);
+            }
+        }
+
+        using (Profiler.Enabled ? Profiler.BeginZone("Server.AutoSave") : default) {
+            int remaining = AutoSaveChunksPerTick;
+            while (remaining > 0 && _autoSaveWorlds.TryPeek(out WorldInstance? world)) {
+                int processed = world.AutoSave(remaining);
+                remaining -= processed;
+                if (world.AutoSaving) {
+                    break;
+                }
+
+                _autoSaveWorlds.Dequeue();
+                if (processed == 0) {
+                    remaining--;
+                }
+            }
         }
 
         long endTimestamp = Stopwatch.GetTimestamp();
@@ -444,7 +508,7 @@ public sealed class Server {
                 }
             }
 
-            Network.SendPacket(connection, packet);
+            Network.QueuePacket(connection, packet);
         }
     }
 }

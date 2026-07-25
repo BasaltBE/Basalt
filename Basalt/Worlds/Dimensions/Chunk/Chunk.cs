@@ -281,8 +281,40 @@ public sealed class Chunk {
         return this;
     }
 
+    internal Chunk CreatePersistenceSnapshot() {
+        SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
+        for (int i = 0; i < SubChunks.Length; i++) {
+            SubChunk? source = SubChunks[i];
+            if (source is null) {
+                continue;
+            }
+
+            List<BlockStorage> layers = new(source.Layers.Count);
+            for (int layer = 0; layer < source.Layers.Count; layer++) {
+                BlockStorage storage = source.Layers[layer];
+                layers.Add(new BlockStorage([.. storage.Palette], [.. storage.Blocks]));
+            }
+
+            BiomeStorage biomes = new([.. source.Biomes.Palette], [.. source.Biomes.Biomes]);
+            subChunks[i] = new SubChunk(source.Version, layers, biomes) {
+                Index = source.Index
+            };
+        }
+
+        Chunk snapshot = new(X, Z, Type, subChunks);
+        foreach (((int X, int Y, int Z) key, BlockLevelStorage storage) in _blocks) {
+            snapshot._blocks[key] = new BlockLevelStorage(snapshot, CloneTag(storage));
+        }
+
+        foreach ((long uniqueId, CompoundTag data) in _entities) {
+            snapshot._entities[uniqueId] = CloneTag(data);
+        }
+
+        return snapshot;
+    }
+
     public static byte[] Serialize(Chunk chunk, bool nbt = false) {
-        using var __zone = Profiler.BeginZone("Chunk.Serialize");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Chunk.Serialize") : default;
         if (!nbt && chunk.Cache is not null) {
             return chunk.Cache;
         }
@@ -358,7 +390,7 @@ public sealed class Chunk {
     }
 
     public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null) {
-        using var __zone = Profiler.BeginZone("Chunk.Deserialize");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Chunk.Deserialize") : default;
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
         if (nbt) {
@@ -419,6 +451,17 @@ public sealed class Chunk {
         chunk.Cache = nbt ? null : reader.GetProcessedBytes().ToArray();
 
         return chunk;
+    }
+
+    private static CompoundTag CloneTag(CompoundTag tag) {
+        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+        BinaryWriter writer = stream;
+        NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
+        int offset = 0;
+        BinaryReader reader = new(stream.GetProcessedBytes().Span, ref offset);
+        return NBT.ReadTag<CompoundTag>(
+            reader,
+            new TagOptions(Name: true, Type: true, VarInt: false));
     }
 
     private SubChunk? PeekSubChunk(int index) {

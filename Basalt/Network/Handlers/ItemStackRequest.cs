@@ -10,11 +10,7 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
 public static class ItemStackRequest {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        ItemStackRequestPacket packet = (ItemStackRequestPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, ItemStackRequestPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player) || packet.Requests.Count == 0) {
             return;
         }
@@ -31,7 +27,7 @@ public static class ItemStackRequest {
             }
         }
 
-        server.Network.SendPacket(connection, new ItemStackResponsePacket { Responses = responses });
+        server.Network.QueuePacket(connection, new ItemStackResponsePacket { Responses = responses });
     }
 
     /// <summary>

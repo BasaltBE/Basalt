@@ -134,20 +134,20 @@ public class Entity {
 
 
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options) {
-        using var __zone = Profiler.BeginZone("Entity.Spawn");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn") : default;
         ArgumentNullException.ThrowIfNull(dimension);
         Dimension = dimension;
         IsAlive = true;
         PendingDespawn = false;
         dimension.AddEntity(this);
 
-        using (Profiler.BeginZone($"Spawn.Traits:{GetType().Name}")) {
+        using (Profiler.Enabled ? Profiler.BeginZone($"Spawn.Traits:{GetType().Name}") : default) {
             for (int i = 0; i < _traits.Count; i++) {
                 _traits[i].OnSpawn(options);
             }
         }
 
-        using (Profiler.BeginZone("Entity.Spawn.ActorData")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn.ActorData") : default) {
             SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
             if (this is Player player) {
                 Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });

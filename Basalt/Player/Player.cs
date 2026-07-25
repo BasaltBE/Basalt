@@ -77,8 +77,8 @@ public sealed class Player : Entities.Entity {
         if (Dimension?.World?.Server is Server server) {
             foreach ((NetworkConnection connection, Player player) in server.Players) {
                 if (ReferenceEquals(player, this)) {
-                    server.Network.SendPacket(connection, new SetPlayerGameTypePacket { GameType = gamemode });
-                    server.Network.SendPacket(connection, abilitiesPacket);
+                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { GameType = gamemode });
+                    server.Network.QueuePacket(connection, abilitiesPacket);
                     break;
                 }
             }
@@ -160,7 +160,7 @@ public sealed class Player : Entities.Entity {
             return;
         }
 
-        Network.SendPackets(Connection, packets);
+        Network.QueuePackets(Connection, packets);
     }
 
     public bool DropItem(Item.ItemStack item) {
@@ -185,7 +185,7 @@ public sealed class Player : Entities.Entity {
             FilteredMessage = string.Empty
         };
 
-        Network.SendPacket(Connection, disconnect, immediate: true);
+        Network.QueuePacket(Connection, disconnect);
         Connection.Disconnect();
     }
 
@@ -264,7 +264,7 @@ public sealed class Player : Entities.Entity {
             });
         }
 
-        Send(new MovePlayerPacket {
+        MovePlayerPacket movePlayer = new() {
             RuntimeId = RuntimeId,
             Position = position,
             Pitch = Pitch,
@@ -276,7 +276,15 @@ public sealed class Player : Entities.Entity {
             TeleportCause = TeleportCause.Command,
             TeleportSourceEntityType = 0,
             Tick = tick
-        });
+        };
+        Send(movePlayer);
+
+        if (!changedDimension) {
+            targetDimension.Broadcast(movePlayer, new BroadcastOptions {
+                Radius = float.PositiveInfinity,
+                Except = [this]
+            });
+        }
 
         if (changedDimension) {
             Send(CreateActorDataPacket(tick));

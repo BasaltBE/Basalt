@@ -2,6 +2,7 @@ namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Tasks;
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Types;
 using Player = Player.Player;
@@ -99,6 +100,7 @@ public static class FillCommand {
     }
 
     public override void Execute() {
+      using var _ = Profiler.Enabled ? Profiler.BeginZone("FillCommand.Execute") : default;
       int batchMinX = _currentX, batchMinY = _currentY, batchMinZ = _currentZ;
       int batchMaxX = _currentX, batchMaxY = _currentY, batchMaxZ = _currentZ;
       int count = 0;

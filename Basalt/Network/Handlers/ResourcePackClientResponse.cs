@@ -17,12 +17,8 @@ using Basalt.Core.Blocks;
 
 
 public static class ResourcePackClientResponse {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        using var __zone = Profiler.BeginZone("ResourcePackResponse.Handle");
-        ResourcePackClientResponsePacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (ResourcePackClientResponsePacket)Protocol.Io.Packet.Deserialize(reader);
+    public static void Handle(Server server, NetworkConnection connection, ResourcePackClientResponsePacket packet) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ResourcePackResponse.Handle") : default;
 
         switch (packet.Response) {
             case ResourcePackResponse.Refused:
@@ -33,7 +29,7 @@ public static class ResourcePackClientResponse {
                         Message = "Required resource packs were refused.",
                         FilteredMessage = "Required resource packs were refused."
                     };
-                    server.Network.SendPacket(connection, disconnect);
+                    server.Network.QueuePacket(connection, disconnect);
                 }
                 return;
 
@@ -55,7 +51,7 @@ public static class ResourcePackClientResponse {
                         Premium = false,
                         PackType = 6
                     };
-                    server.Network.SendPacket(connection, dataInfo);
+                    server.Network.QueuePacket(connection, dataInfo);
                 }
                 return;
 
@@ -86,7 +82,7 @@ public static class ResourcePackClientResponse {
                     ExperimentsPreviouslyToggled = false,
                     IncludeEditorPacks = true
                 };
-                server.Network.SendPacket(connection, stack);
+                server.Network.QueuePacket(connection, stack);
                 return;
 
             case ResourcePackResponse.Completed:
@@ -98,7 +94,7 @@ public static class ResourcePackClientResponse {
                         Message = "Server force closed the connection.",
                         FilteredMessage = "Server force closed the connection."
                     };
-                    server.Network.SendPacket(connection, missingSessionDisconnect);
+                    server.Network.QueuePacket(connection, missingSessionDisconnect);
                     connection.Disconnect();
                     return;
                 }

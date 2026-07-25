@@ -57,7 +57,7 @@ public sealed class EntityAttributes {
         };
 
         if (packet.Attributes.Count > 0) {
-            player.Network.SendPacket(player.Connection, packet);
+            player.Network.QueuePacket(player.Connection, packet);
         }
 
         player.AttributesDirty = false;

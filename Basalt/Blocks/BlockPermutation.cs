@@ -4,11 +4,12 @@ using Basalt.Core.Blocks.Types;
 using Basalt.Protocol.Nbt;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Text;
 
 
 public sealed class BlockPermutation {
-    public static Dictionary<int, BlockPermutation> Permutations { get; } = [];
+    public static ConcurrentDictionary<int, BlockPermutation> Permutations { get; } = [];
     private const string AirIdentifier = "minecraft:air";
 
     public const uint HashOffset = 0x811C9DC5;
@@ -61,26 +62,32 @@ public sealed class BlockPermutation {
     }
 
     public static BlockPermutation Create(BlockType type, BlockState? state = null, string? query = null) {
-        BlockState sorted = [];
-        if (state is not null) {
-            List<string> keys = [.. state.Keys];
-            keys.Sort(StringComparer.Ordinal);
-            for (int i = 0; i < keys.Count; i++) {
-                string key = keys[i];
-                sorted[key] = state[key];
-                type.EnsureState(key);
+        lock (type.PermutationLock) {
+            BlockState sorted = [];
+            if (state is not null) {
+                List<string> keys = [.. state.Keys];
+                keys.Sort(StringComparer.Ordinal);
+                for (int i = 0; i < keys.Count; i++) {
+                    string key = keys[i];
+                    sorted[key] = state[key];
+                    type.EnsureState(key);
+                }
             }
-        }
 
-        int network = Hash(type.Identifier, sorted);
-        BlockPermutation permutation = new(network, sorted, type, query);
-        Permutations[network] = permutation;
-        type.RegisterPermutation(permutation);
-        return permutation;
+            int network = Hash(type.Identifier, sorted);
+            if (Permutations.TryGetValue(network, out BlockPermutation? existing)) {
+                return existing;
+            }
+
+            BlockPermutation permutation = new(network, sorted, type, query);
+            Permutations[network] = permutation;
+            type.RegisterPermutation(permutation);
+            return permutation;
+        }
     }
 
     public static void EnsureRegistryCapacity(int capacity) {
-        Permutations.EnsureCapacity(capacity);
+        ArgumentOutOfRangeException.ThrowIfNegative(capacity);
     }
 
     public static CompoundTag ToCompound(BlockPermutation permutation) {

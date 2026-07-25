@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -7,7 +8,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Nbt;
 
 public abstract class BaseTag {
-    private static readonly Dictionary<Type, TagType> TypeCache = [];
+    private static readonly ConcurrentDictionary<Type, TagType> TypeCache = [];
 
     public TagType Type {
         get {
@@ -19,8 +20,7 @@ public abstract class BaseTag {
             if (attribute is null)
                 throw new InvalidOperationException($"{type.FullName} is missing TagAttribute.");
 
-            TypeCache[type] = attribute.Type;
-            return attribute.Type;
+            return TypeCache.GetOrAdd(type, attribute.Type);
         }
     }
 

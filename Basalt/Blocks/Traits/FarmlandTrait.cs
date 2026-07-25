@@ -3,6 +3,7 @@ namespace Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Tasks;
+using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
@@ -174,6 +175,7 @@ public class FarmlandTrait : BlockTrait {
         }
 
         public override void Execute() {
+            using var _ = Profiler.Enabled ? Profiler.BeginZone("Farmland.Tick") : default;
             TickFarmland(_dimension, _pos);
         }
     }

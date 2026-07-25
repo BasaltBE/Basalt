@@ -156,7 +156,19 @@ namespace Basalt.Protocol.Io {
             return bytesWritten + 1;
         }
 
+        public static int GetFrameCapacity(int inputLength, CompressionMethod compression) {
+            int payloadCapacity = compression == CompressionMethod.Zlib
+                ? checked(inputLength + (inputLength >> 12) + (inputLength >> 14) + (inputLength >> 25) + 13)
+                : inputLength;
+            int headerSize = compression == CompressionMethod.NotPresent ? 1 : 2;
+            return checked(payloadCapacity + headerSize);
+        }
+
         public static int Frame(ReadOnlyMemory<byte>[] packets, Span<byte> output) {
+            return Frame(packets.AsSpan(), output);
+        }
+
+        public static int Frame(ReadOnlySpan<ReadOnlyMemory<byte>> packets, Span<byte> output) {
             int offset = 0;
             BinaryWriter writer = new(output, ref offset);
 

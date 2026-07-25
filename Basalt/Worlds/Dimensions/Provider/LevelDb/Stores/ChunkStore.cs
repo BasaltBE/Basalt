@@ -38,7 +38,7 @@ internal sealed class ChunkStore {
     }
 
     public ChunkColumn? Load(DimensionType dimensionType, int x, int z) {
-        using var __zone = Profiler.BeginZone("ChunkStore.Load");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ChunkStore.Load") : default;
 
         ChunkColumn? vanilla = LoadVanilla(dimensionType, x, z);
         if (vanilla is not null) {
@@ -66,7 +66,7 @@ internal sealed class ChunkStore {
     }
 
     public void Save(WriteBatch batch, ChunkColumn chunk) {
-        using var __zone = Profiler.BeginZone("ChunkStore.Save");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ChunkStore.Save") : default;
 
         batch.Put(LevelDbKeyBuilder.BuildVersionKey(chunk.Type, chunk.X, chunk.Z), [22]);
 

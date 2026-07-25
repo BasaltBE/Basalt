@@ -31,7 +31,7 @@ internal sealed class LoginTask : ServerTask {
     }
 
     public override void Execute() {
-        using var _ = Profiler.BeginZone("LoginTask.Execute");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("LoginTask.Execute") : default;
 
         try {
             _identity = VerifyIdentity(_server, _packet);
@@ -66,7 +66,7 @@ internal sealed class LoginTask : ServerTask {
                 && !string.IsNullOrWhiteSpace(playerXuid);
 
             if (shouldMigrateXuid) {
-                world.Provider.SavePlayerData(playerXuid, savedData);
+                world.Persistence.SavePlayerData(playerXuid, savedData);
             }
         }
 
@@ -82,7 +82,7 @@ internal sealed class LoginTask : ServerTask {
     }
 
     public override void Complete() {
-        using var _ = Profiler.BeginZone("LoginTask.Complete");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("LoginTask.Complete") : default;
 
         if (_rejectMessage is not null) {
             DisconnectPacket disconnect = new() {
@@ -91,13 +91,13 @@ internal sealed class LoginTask : ServerTask {
                 Message = _rejectMessage,
                 FilteredMessage = _rejectMessage
             };
-            _server.Network.SendPacket(_connection, disconnect, CompressionMethod.NotPresent);
+            _server.Network.QueuePacket(_connection, disconnect, CompressionMethod.NotPresent);
             return;
         }
 
         Player.Player player = _player!;
 
-        using (Profiler.BeginZone("Login.KickDuplicate")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Login.KickDuplicate") : default) {
             KeyValuePair<NetworkConnection, Player.Player>? existingSession = null;
             foreach ((NetworkConnection existingConnection, Player.Player existingPlayer) in _server.Players) {
                 bool sameXuid = !string.IsNullOrWhiteSpace(_identity.Xuid) &&
@@ -120,12 +120,12 @@ internal sealed class LoginTask : ServerTask {
                     Message = "Logged in from another location.",
                     FilteredMessage = "Logged in from another location."
                 };
-                _server.Network.SendPacket(existingSession.Value.Key, duplicateDisconnect, CompressionMethod.NotPresent);
+                _server.Network.QueuePacket(existingSession.Value.Key, duplicateDisconnect, CompressionMethod.NotPresent);
                 existingSession.Value.Key.Disconnect();
             }
         }
 
-        using (Profiler.BeginZone("Login.EmitJoin")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Login.EmitJoin") : default) {
             PlayerJoinSignal joinSignal = new(player);
             _server.Emit(joinSignal);
             if (!joinSignal.Emit()) {
@@ -135,20 +135,20 @@ internal sealed class LoginTask : ServerTask {
                     Message = "Server force closed the connection.",
                     FilteredMessage = "Server force closed the connection."
                 };
-                _server.Network.SendPacket(_connection, disconnect, CompressionMethod.NotPresent);
+                _server.Network.QueuePacket(_connection, disconnect, CompressionMethod.NotPresent);
                 _connection.Disconnect();
                 return;
             }
         }
 
-        using (Profiler.BeginZone("Login.RegisterPlayer")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Login.RegisterPlayer") : default) {
             player.Connection = _connection;
             player.Network = _server.Network;
             player.DeviceOS = _clientData.DeviceOs;
             _server.Players[_connection] = player;
         }
 
-        using (Profiler.BeginZone("Login.SendResponse")) {
+        using (Profiler.Enabled ? Profiler.BeginZone("Login.SendResponse") : default) {
             PlayStatusPacket status = new(PlayStatus.LoginSuccess);
 
             ResourcePacksInfoPacket resources = new() {
@@ -172,7 +172,7 @@ internal sealed class LoginTask : ServerTask {
                 }).ToList()
             };
 
-            _server.Network.SendPackets(_connection, [status, resources]);
+            _server.Network.QueuePackets(_connection, [status, resources]);
         }
 
         Logger.Info($"Player {_identity.Username} has logged in!");
@@ -254,6 +254,11 @@ internal sealed class LoginTask : ServerTask {
             if (string.Equals(candidate, previous1, StringComparison.Ordinal) ||
                 string.Equals(candidate, previous2, StringComparison.Ordinal)) {
                 continue;
+            }
+
+            CompoundTag? pending = world.Persistence.GetPendingPlayerData(candidate);
+            if (pending is not null) {
+                return pending;
             }
 
             byte[]? raw = provider.GetRawPlayerData(candidate);

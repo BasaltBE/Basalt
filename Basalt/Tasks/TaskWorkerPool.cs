@@ -4,11 +4,15 @@ using System.Collections.Concurrent;
 using Basalt.Core.Profiling;
 
 public sealed class TaskWorkerPool : IDisposable {
+    [ThreadStatic]
+    private static bool _workerThread;
+
     private readonly Thread[] _workers;
-    private readonly BlockingCollection<WorkItem> _workQueue = new();
+    private readonly BlockingCollection<ServerTask> _workQueue = new();
     private readonly ConcurrentQueue<ServerTask> _completionQueue = new();
 
     public int WorkerCount => _workers.Length;
+    internal static bool WorkerThread => _workerThread;
 
     public TaskWorkerPool(int workerCount = 4) {
         _workers = new Thread[workerCount];
@@ -24,19 +28,11 @@ public sealed class TaskWorkerPool : IDisposable {
 
     internal void Enqueue(ServerTask task) {
         if (task.IsCancelled) return;
-        _workQueue.Add(new WorkItem(task, null));
-    }
-
-    internal void Enqueue(ServerTask task, CountdownEvent barrier) {
-        if (task.IsCancelled) {
-            barrier.Signal();
-            return;
-        }
-        _workQueue.Add(new WorkItem(task, barrier));
+        _workQueue.Add(task);
     }
 
     internal void DrainCompletions() {
-        using var _ = Profiler.BeginZone("WorkerPool.DrainCompletions");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("WorkerPool.DrainCompletions") : default;
         while (_completionQueue.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
             task.Complete();
@@ -45,17 +41,14 @@ public sealed class TaskWorkerPool : IDisposable {
     }
 
     private void WorkerLoop(int index) {
+        _workerThread = true;
         Profiler.SetThreadName($"BasaltWorker-{index}");
-        foreach (WorkItem item in _workQueue.GetConsumingEnumerable()) {
-            ServerTask task = item.Task;
-            CountdownEvent? barrier = item.Barrier;
-
+        foreach (ServerTask task in _workQueue.GetConsumingEnumerable()) {
             if (task.IsCancelled) {
-                barrier?.Signal();
                 continue;
             }
 
-            using (Profiler.BeginZone(task.GetType().Name)) {
+            using (Profiler.Enabled ? Profiler.BeginZone(task.GetType().Name) : default) {
                 try {
                     task.Execute();
                 }
@@ -66,11 +59,11 @@ public sealed class TaskWorkerPool : IDisposable {
 
             task.IsExecuted = true;
 
-            if (barrier is not null) {
-                barrier.Signal();
+            if (task.MainThreadCompletion) {
+                _completionQueue.Enqueue(task);
             }
             else {
-                _completionQueue.Enqueue(task);
+                task.IsCompleted = true;
             }
         }
     }
@@ -82,6 +75,4 @@ public sealed class TaskWorkerPool : IDisposable {
         }
         _workQueue.Dispose();
     }
-
-    private readonly record struct WorkItem(ServerTask Task, CountdownEvent? Barrier);
 }

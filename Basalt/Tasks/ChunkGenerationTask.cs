@@ -28,7 +28,7 @@ public sealed class ChunkGenerationTask : ServerTask {
     }
 
     public override void Execute() {
-        using var _ = Profiler.BeginZone("ChunkGen.Execute");
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("ChunkGen.Execute") : default;
         ChunkColumn? loaded = _provider.LoadChunk(_dimensionType, _x, _z);
         if (loaded is null) {
             loaded = _generator.Generate(_dimensionType, _x, _z);

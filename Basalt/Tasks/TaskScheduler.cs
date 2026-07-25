@@ -45,6 +45,7 @@ public sealed class TaskScheduler {
     }
 
     public void Tick(ulong currentTick) {
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("TaskScheduler.Process") : default;
         lock (_scheduleLock) {
             for (int i = _delayedTasks.Count - 1; i >= 0; i--) {
                 DelayedTask task = _delayedTasks[i];

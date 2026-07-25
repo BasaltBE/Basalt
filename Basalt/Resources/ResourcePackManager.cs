@@ -2,6 +2,7 @@ namespace Basalt.Core.Resources;
 
 using System.IO.Compression;
 using System.Text.Json;
+using Basalt.Core.Profiling;
 
 /// <summary>
 /// Loads and manages resource packs from the configured folder.
@@ -40,6 +41,7 @@ public sealed class ResourcePackManager {
     }
 
     public void Load(string folder) {
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("ResourcePacks.Load") : default;
         if (string.IsNullOrWhiteSpace(folder)) {
             folder = "resource_packs";
         }

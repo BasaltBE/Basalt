@@ -168,7 +168,7 @@ public sealed class CommandRegistry {
         if (player.Connection is null)
             return;
 
-        server.Network.SendPacket(player.Connection, BuildAvailableCommandsPacket(player));
+        server.Network.QueuePacket(player.Connection, BuildAvailableCommandsPacket(player));
     }
 
     static List<ProtocolCommandOverload> BuildOverloads(

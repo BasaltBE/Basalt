@@ -32,26 +32,26 @@ public sealed class LevelDbProvider : WorldProvider {
     }
 
     public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z) {
-        using var __zone = Profiler.BeginZone("LevelDb.LoadChunk");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.LoadChunk") : default;
         return _chunks.Load(dimensionType, x, z);
     }
 
     public override void SaveChunk(ChunkColumn chunk) {
-        using var __zone = Profiler.BeginZone("LevelDb.SaveChunk");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.SaveChunk") : default;
         using WriteBatch batch = new();
         _chunks.Save(batch, chunk);
         _database.Write(batch);
     }
 
     public override void DeleteChunk(DimensionType dimensionType, int x, int z) {
-        using var __zone = Profiler.BeginZone("LevelDb.DeleteChunk");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.DeleteChunk") : default;
         using WriteBatch batch = new();
         _chunks.Delete(batch, dimensionType, x, z);
         _database.Write(batch);
     }
 
     public override CompoundTag? LoadPlayerData(string xuid) {
-        using var __zone = Profiler.BeginZone("LevelDb.LoadPlayerData");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.LoadPlayerData") : default;
         return _players.Load(xuid);
     }
 
@@ -64,7 +64,7 @@ public sealed class LevelDbProvider : WorldProvider {
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data) {
-        using var __zone = Profiler.BeginZone("LevelDb.SavePlayerData");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.SavePlayerData") : default;
         _players.Save(xuid, data);
     }
 

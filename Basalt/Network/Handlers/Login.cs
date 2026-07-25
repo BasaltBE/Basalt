@@ -5,14 +5,9 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using BinaryReader = Basalt.Binary.BinaryReader;
 
 public static class Login {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        int offset = 0;
-        BinaryReader reader = new(packetBuffer, ref offset);
-        LoginPacket packet = (LoginPacket)Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, LoginPacket packet) {
         if (packet.Protocol != Constants.ProtocolVersion) {
             DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
               ? DisconnectReason.OutdatedClient
@@ -25,7 +20,7 @@ public static class Login {
                 FilteredMessage = ""
             };
 
-            server.Network.SendPacket(connection, disconnect, CompressionMethod.NotPresent);
+            server.Network.QueuePacket(connection, disconnect, CompressionMethod.NotPresent);
             return;
         }
 

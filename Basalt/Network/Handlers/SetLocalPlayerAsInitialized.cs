@@ -11,19 +11,14 @@ using Basalt.Core.Worlds;
 
 
 public static class SetLocalPlayerAsInitialized {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        SetLocalPlayerAsInitializedPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (SetLocalPlayerAsInitializedPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, SetLocalPlayerAsInitializedPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
         }
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
-        server.Network.SendPacket(connection, player.CreateActorDataPacket(tick));
+        server.Network.QueuePacket(connection, player.CreateActorDataPacket(tick));
         player.Attributes.Send();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();

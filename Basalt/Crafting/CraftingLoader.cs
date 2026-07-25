@@ -1,9 +1,11 @@
 namespace Basalt.Core.Crafting;
 
 using System.Text.Json;
+using Basalt.Core.Profiling;
 
 public static class CraftingLoader {
     public static void Load(string? dataDirectory = null) {
+        using var _ = Profiler.Enabled ? Profiler.BeginZone("Crafting.Load") : default;
         CraftingRegistry.Initialize();
         FurnaceRegistry.Initialize();
 

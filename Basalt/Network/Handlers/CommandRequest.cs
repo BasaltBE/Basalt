@@ -10,12 +10,8 @@ using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
 public static class CommandRequest {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        using var __zone = Profiler.BeginZone("CommandRequest.Handle");
-        CommandRequestPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (CommandRequestPacket)Protocol.Io.Packet.Deserialize(reader);
+    public static void Handle(Server server, NetworkConnection connection, CommandRequestPacket packet) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("CommandRequest.Handle") : default;
 
         CommandResult result = CommandResult.Fail;
 
@@ -63,6 +59,6 @@ public static class CommandRequest {
             OutputMessages = messages
         };
 
-        server.Network.SendPacket(connection, response);
+        server.Network.QueuePacket(connection, response);
     }
 }

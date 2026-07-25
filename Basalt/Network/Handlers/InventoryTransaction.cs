@@ -42,16 +42,7 @@ public static class InventoryTransaction {
         "minecraft:fire"
     ];
 
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        InventoryTransactionPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (InventoryTransactionPacket)Protocol.Io.Packet.Deserialize(reader);
-
-
-        // Logger.Info($"Data {packetBuffer.ToString()}");
-        // Logger.Info(packet.ToString());
-
+    public static void Handle(Server server, NetworkConnection connection, InventoryTransactionPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }

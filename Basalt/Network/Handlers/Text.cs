@@ -7,12 +7,7 @@ using Basalt.RakNet;
 
 
 public static class Text {
-    public static void Handle(Server server, NetworkConnection connection, ReadOnlySpan<byte> packetBuffer) {
-        TextPacket packet = new();
-        int offset = 0;
-        Binary.BinaryReader reader = new(packetBuffer, ref offset);
-        packet = (TextPacket)Protocol.Io.Packet.Deserialize(reader);
-
+    public static void Handle(Server server, NetworkConnection connection, TextPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? sender)) {
             Logger.Warn("Text received for unknown player session.");
             return;

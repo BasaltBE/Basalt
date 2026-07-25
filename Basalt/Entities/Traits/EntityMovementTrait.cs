@@ -62,7 +62,7 @@ public sealed class EntityMovementTrait : EntityTrait {
             return;
         }
 
-        using var __zone = Profiler.BeginZone("EntityMovement.OnTick");
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("EntityMovement.OnTick") : default;
         Vec3f previousPosition = Entity.Position;
         EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
         if (collision is not null) {
