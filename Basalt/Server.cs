@@ -266,7 +266,7 @@ public sealed class Server {
 
         foreach (PlayerInstance player in Players.Values.ToArray()) {
             try {
-                player.Disconnect("Server closed.");
+                player.Disconnect("Server closed.", true);
             }
             catch (Exception exception) {
                 Logger.Warn($"Unhandled disconnect error during shutdown: {exception}");

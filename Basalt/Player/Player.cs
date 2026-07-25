@@ -173,7 +173,7 @@ public sealed class Player : Entities.Entity {
         return inventory?.CollectItem(item) ?? 0;
     }
 
-    public void Disconnect(string reason = "") {
+    public void Disconnect(string reason = "", bool immediate = false) {
         if (Connection is null || Network is null) {
             return;
         }
@@ -185,7 +185,12 @@ public sealed class Player : Entities.Entity {
             FilteredMessage = string.Empty
         };
 
-        Network.QueuePacket(Connection, disconnect);
+        if (immediate) {
+            Network.SendPacket(Connection, disconnect);
+        }
+        else {
+            Network.QueuePacket(Connection, disconnect);
+        }
         Connection.Disconnect();
     }
 
