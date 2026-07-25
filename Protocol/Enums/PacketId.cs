@@ -34,7 +34,7 @@ namespace Basalt.Protocol.Enums {
         SetActorData = 0x27,
         SetActorMotion = 0x28,
         SetActorLink = 0x29,
-        ActorPickRequest = 0x24,
+        ActorPickRequest = 0x23,
         ContainerOpen = 0x2e,
         ContainerClose = 0x2f,
         PlayerHotBar = 0x30,
