@@ -74,7 +74,7 @@ namespace Basalt.Protocol.Io {
             PacketId id = (PacketId)reader.ReadVarUInt();
 
             if (!Pool.TryGetValue(id, out Func<DataPacket>? create)) {
-                throw new NotImplementedException($"Deserialization for packet ID {(byte)id} ({id}) is not implemented.");
+                throw new NotImplementedException($"Deserialization for packet ID {(uint)id} ({id}) is not implemented.");
             }
 
             DataPacket packet = create();
