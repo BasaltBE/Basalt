@@ -226,11 +226,12 @@ public static class CustomItemType {
             itemProperties.Set("damage", new IntTag { Value = (int)options.AttackDamage });
         }
 
+        itemProperties.Set("can_destroy_in_creative", new ByteTag { Value = options.CanDestroyInCreative ? (sbyte)1 : (sbyte)0 });
+
         // Food item properties.
         if (options.Food is not null) {
             itemProperties.Set("use_duration", new IntTag { Value = options.Food.UseDurationTicks > 0 ? options.Food.UseDurationTicks : 32 });
             itemProperties.Set("use_animation", new IntTag { Value = options.Food.IsDrink ? 2 : 1 });
-            itemProperties.Set("can_destroy_in_creative", new ByteTag { Value = 1 });
         }
 
         if (itemProperties.Values.Count > 0) {
@@ -290,13 +291,6 @@ public static class CustomItemType {
             digger.Set("destroy_speeds", destroySpeeds);
             digger.Set("use_efficiency", new ByteTag { Value = 1 });
             components.Set("minecraft:digger", digger);
-        }
-
-        // Can destroy in creative.
-        if (!options.CanDestroyInCreative) {
-            CompoundTag canDestroy = new();
-            canDestroy.Set("value", new ByteTag { Value = 0 });
-            components.Set("minecraft:can_destroy_in_creative", canDestroy);
         }
 
         // Wearable.
