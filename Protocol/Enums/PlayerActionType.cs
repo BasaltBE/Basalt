@@ -5,8 +5,6 @@ public enum PlayerActionType : int {
     StartDestroyBlock = 0,
     AbortDestroyBlock = 1,
     StopDestroyBlock = 2,
-    GetUpdatedBlock = 3,
-    DropItem = 4,
     StartSleeping = 5,
     StopSleeping = 6,
     Respawn = 7,
@@ -21,13 +19,10 @@ public enum PlayerActionType : int {
     StopGliding = 16,
     DenyDestroyBlock = 17,
     CrackBlock = 18,
-    ChangeSkin = 19,
-    DEPRECATED_UpdatedEnchantingSeed = 20,
     StartSwimming = 21,
     StopSwimming = 22,
     StartSpinAttack = 23,
     StopSpinAttack = 24,
-    InteractWithBlock = 25,
     PredictDestroyBlock = 26,
     ContinueDestroyBlock = 27,
     StartItemUseOn = 28,
@@ -38,7 +33,7 @@ public enum PlayerActionType : int {
     StopCrawling = 33,
     StartFlying = 34,
     StopFlying = 35,
-    ClientAckServerData = 36,
     StartUsingItem = 37,
-    Count = 38
+    InternalUpdate = 38,
+    Count = 39
 }
