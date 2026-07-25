@@ -1,5 +1,6 @@
 namespace Basalt.Core.Entities.Traits;
 
+using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
@@ -24,6 +25,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     public float TerminalVelocity { get; set; } = -3.92f;
     public float GroundFriction { get; set; } = 0.6f;
     public float MinHorizontalVelocity { get; set; } = 0.01f;
+    public float WaterCurrentForce { get; set; } = 0.04f;
     private const float CollisionEpsilon = 0.001f;
 
 
@@ -72,6 +74,45 @@ public sealed class EntityMovementTrait : EntityTrait {
         }
 
         for (uint i = 0; i < details.DeltaTick; i++) {
+            float flowX = 0f;
+            float flowY = 0f;
+            float flowZ = 0f;
+            float halfWidth = CollisionWidth() * 0.5f;
+            int minWaterX = (int)MathF.Floor(Entity.Position.X - halfWidth + CollisionEpsilon);
+            int maxWaterX = (int)MathF.Floor(Entity.Position.X + halfWidth - CollisionEpsilon);
+            int minWaterY = (int)MathF.Floor(Entity.Position.Y + CollisionEpsilon);
+            int maxWaterY = (int)MathF.Floor(Entity.Position.Y + CollisionHeight() - CollisionEpsilon);
+            int minWaterZ = (int)MathF.Floor(Entity.Position.Z - halfWidth + CollisionEpsilon);
+            int maxWaterZ = (int)MathF.Floor(Entity.Position.Z + halfWidth - CollisionEpsilon);
+
+            for (int waterX = minWaterX; waterX <= maxWaterX; waterX++) {
+                for (int waterY = minWaterY; waterY <= maxWaterY; waterY++) {
+                    for (int waterZ = minWaterZ; waterZ <= maxWaterZ; waterZ++) {
+                        Vec3f flow = FluidTrait.GetWaterFlow(
+                            Entity.Dimension,
+                            new BlockPos { X = waterX, Y = waterY, Z = waterZ },
+                            out float waterHeight);
+
+                        if (waterHeight == 0f || Entity.Position.Y >= waterY + waterHeight) {
+                            continue;
+                        }
+
+                        flowX += flow.X;
+                        flowY += flow.Y;
+                        flowZ += flow.Z;
+                    }
+                }
+            }
+
+            float flowLength = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
+            if (flowLength > 0f) {
+                Entity.Velocity = new Vec3f {
+                    X = Entity.Velocity.X + (flowX / flowLength * WaterCurrentForce),
+                    Y = Entity.Velocity.Y + (flowY / flowLength * WaterCurrentForce),
+                    Z = Entity.Velocity.Z + (flowZ / flowLength * WaterCurrentForce)
+                };
+            }
+
             bool applyGravity = Entity.Flags.GetActorFlag(ActorFlag.HasGravity) && !Entity.IsSwimming;
             if (applyGravity) {
                 Entity.Velocity = new Vec3f {
@@ -226,7 +267,8 @@ public sealed class EntityMovementTrait : EntityTrait {
             Drag = Drag,
             TerminalVelocity = TerminalVelocity,
             GroundFriction = GroundFriction,
-            MinHorizontalVelocity = MinHorizontalVelocity
+            MinHorizontalVelocity = MinHorizontalVelocity,
+            WaterCurrentForce = WaterCurrentForce
         };
     }
 

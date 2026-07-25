@@ -173,6 +173,61 @@ public class FluidTrait : BlockTrait {
         return null;
     }
 
+    public static Vec3f GetWaterFlow(Dimension dimension, BlockPos pos, out float height) {
+        BlockPermutation? permutation = GetBlock(dimension, pos);
+        int decay = WaterFlowDecay(permutation);
+        if (decay < 0) {
+            height = 0f;
+            return Vec3f.Zero;
+        }
+
+        int depth = LiquidDepth(permutation!) ?? 0;
+        height = depth >= 8 ? 1f : 1f - (depth / 8f);
+
+        float flowX = 0f;
+        float flowZ = 0f;
+        ReadOnlySpan<(int dx, int dz)> directions = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+
+        foreach ((int dx, int dz) in directions) {
+            BlockPos neighborPos = new() { X = pos.X + dx, Y = pos.Y, Z = pos.Z + dz };
+            BlockPermutation? neighbor = GetBlock(dimension, neighborPos);
+            int neighborDecay = WaterFlowDecay(neighbor);
+            int difference;
+
+            if (neighborDecay < 0) {
+                if (neighbor is null || neighbor.Type.Solid) {
+                    continue;
+                }
+
+                BlockPos belowNeighbor = new() { X = neighborPos.X, Y = neighborPos.Y - 1, Z = neighborPos.Z };
+                neighborDecay = WaterFlowDecay(GetBlock(dimension, belowNeighbor));
+                if (neighborDecay < 0) {
+                    continue;
+                }
+
+                difference = neighborDecay - (decay - 8);
+            }
+            else {
+                difference = neighborDecay - decay;
+            }
+
+            flowX += dx * difference;
+            flowZ += dz * difference;
+        }
+
+        float flowY = depth >= 8 ? -6f : 0f;
+        float length = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
+        if (length == 0f) {
+            return Vec3f.Zero;
+        }
+
+        return new Vec3f {
+            X = flowX / length,
+            Y = flowY / length,
+            Z = flowZ / length
+        };
+    }
+
     public static void TickFluid(FluidKind kind, Dimension dimension, int x, int y, int z) {
         BlockPos pos = new() { X = x, Y = y, Z = z };
         BlockPermutation? perm = GetBlock(dimension, pos);
@@ -265,6 +320,15 @@ public class FluidTrait : BlockTrait {
         }
 
         return best - DropOff(kind);
+    }
+
+    private static int WaterFlowDecay(BlockPermutation? permutation) {
+        if (permutation is null || !IsFluid(FluidKind.Water, permutation)) {
+            return -1;
+        }
+
+        int depth = LiquidDepth(permutation) ?? 0;
+        return depth >= 8 ? 0 : depth;
     }
 
     private static void DoSpread(FluidKind kind, Dimension dimension, BlockPos pos, int amount) {
