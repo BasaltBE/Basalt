@@ -3,13 +3,12 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using Basalt.Core.Profiling;
-using LevelDB;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 public sealed class LevelDbProvider : WorldProvider {
-    private readonly DB _database;
+    private readonly LevelDbDatabase _database;
     private readonly ChunkStore _chunks;
     private readonly PlayerStore _players;
     private readonly string _path;
@@ -18,13 +17,30 @@ public sealed class LevelDbProvider : WorldProvider {
     public string DatabasePath => _path;
 
     public LevelDbProvider(string path) {
-        _path = path;
-        Directory.CreateDirectory(path);
-        Options options = new() { CreateIfMissing = true };
-        _database = new DB(options, path);
+        _path = ResolveDatabasePath(path);
+        Directory.CreateDirectory(_path);
+        _database = new LevelDbDatabase(_path);
         EntityStore entities = new(_database);
         _chunks = new ChunkStore(_database, entities);
         _players = new PlayerStore(_database);
+    }
+
+    public static string ResolveDatabasePath(string path) {
+        string normalizedPath = Path.TrimEndingDirectorySeparator(path);
+        if (string.Equals(Path.GetFileName(normalizedPath), "db", StringComparison.OrdinalIgnoreCase)) {
+            return normalizedPath;
+        }
+
+        string databasePath = Path.Combine(normalizedPath, "db");
+        if (Directory.Exists(databasePath)) {
+            return databasePath;
+        }
+
+        if (File.Exists(Path.Combine(normalizedPath, "CURRENT"))) {
+            return normalizedPath;
+        }
+
+        return databasePath;
     }
 
     public override bool HasChunk(DimensionType dimensionType, int x, int z) {
@@ -38,14 +54,14 @@ public sealed class LevelDbProvider : WorldProvider {
 
     public override void SaveChunk(ChunkColumn chunk) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.SaveChunk") : default;
-        using WriteBatch batch = new();
+        LevelDbWriteBatch batch = new();
         _chunks.Save(batch, chunk);
         _database.Write(batch);
     }
 
     public override void DeleteChunk(DimensionType dimensionType, int x, int z) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.DeleteChunk") : default;
-        using WriteBatch batch = new();
+        LevelDbWriteBatch batch = new();
         _chunks.Delete(batch, dimensionType, x, z);
         _database.Write(batch);
     }

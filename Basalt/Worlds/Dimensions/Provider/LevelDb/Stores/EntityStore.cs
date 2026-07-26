@@ -3,7 +3,6 @@ using System.Buffers.Binary;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
-using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
@@ -13,9 +12,9 @@ namespace Basalt.Core.Worlds.Dimensions.Provider;
 internal sealed class EntityStore {
     private const uint FormatVersion = 1;
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
-    private readonly DB _database;
+    private readonly LevelDbDatabase _database;
 
-    public EntityStore(DB database) {
+    public EntityStore(LevelDbDatabase database) {
         _database = database;
     }
 
@@ -63,7 +62,7 @@ internal sealed class EntityStore {
         }
     }
 
-    public void WriteChunkEntities(WriteBatch batch, ChunkColumn chunk) {
+    public void WriteChunkEntities(LevelDbWriteBatch batch, ChunkColumn chunk) {
         List<KeyValuePair<long, CompoundTag>> entities = chunk.GetAllEntityStorages();
         HashSet<long> oldIds = ReadSavedEntityIds(chunk.Type, chunk.X, chunk.Z);
         HashSet<long> newIds = new(entities.Select(entity => entity.Key));
@@ -88,7 +87,7 @@ internal sealed class EntityStore {
         batch.Delete(LevelDbKeyBuilder.BuildLegacyEntityListKey(chunk.X, chunk.Z));
     }
 
-    public void DeleteChunkEntities(WriteBatch batch, DimensionType dimensionType, int x, int z) {
+    public void DeleteChunkEntities(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
         HashSet<long> uniqueIds = ReadSavedEntityIds(dimensionType, x, z);
         foreach (long uniqueId in uniqueIds) {
             batch.Delete(LevelDbKeyBuilder.BuildActorPrefixKey(uniqueId));

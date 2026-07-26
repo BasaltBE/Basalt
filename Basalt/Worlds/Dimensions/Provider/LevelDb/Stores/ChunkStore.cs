@@ -6,7 +6,6 @@ using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
-using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
@@ -14,10 +13,10 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 internal sealed class ChunkStore {
-    private readonly DB _database;
+    private readonly LevelDbDatabase _database;
     private readonly EntityStore _entities;
 
-    public ChunkStore(DB database, EntityStore entities) {
+    public ChunkStore(LevelDbDatabase database, EntityStore entities) {
         _database = database;
         _entities = entities;
     }
@@ -65,7 +64,7 @@ internal sealed class ChunkStore {
         return chunk;
     }
 
-    public void Save(WriteBatch batch, ChunkColumn chunk) {
+    public void Save(LevelDbWriteBatch batch, ChunkColumn chunk) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("ChunkStore.Save") : default;
 
         batch.Put(LevelDbKeyBuilder.BuildVersionKey(chunk.Type, chunk.X, chunk.Z), [22]);
@@ -114,7 +113,7 @@ internal sealed class ChunkStore {
         DeleteLegacyKeys(batch, chunk.Type, chunk.X, chunk.Z);
     }
 
-    public void Delete(WriteBatch batch, DimensionType dimensionType, int x, int z) {
+    public void Delete(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
         _entities.DeleteChunkEntities(batch, dimensionType, x, z);
 
         // Delete vanilla keys.
@@ -133,7 +132,7 @@ internal sealed class ChunkStore {
         DeleteLegacyKeys(batch, dimensionType, x, z);
     }
 
-    private static void DeleteLegacyKeys(WriteBatch batch, DimensionType dimensionType, int x, int z) {
+    private static void DeleteLegacyKeys(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
         batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(dimensionType, x, z));
         batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(x, z));
         batch.Delete(LevelDbKeyBuilder.BuildLegacyBlockStorageListKey(dimensionType, x, z));

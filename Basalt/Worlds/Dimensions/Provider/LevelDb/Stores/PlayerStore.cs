@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Text;
 using Basalt.Protocol.Io;
 using Basalt.Protocol.Nbt;
-using LevelDB;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -10,21 +9,21 @@ namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 internal sealed class PlayerStore {
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);
-    private readonly DB _database;
+    private readonly LevelDbDatabase _database;
 
-    public PlayerStore(DB database) {
+    public PlayerStore(LevelDbDatabase database) {
         _database = database;
     }
 
     public IReadOnlyList<string> ListXuids() {
         List<string> xuids = [];
-        using Iterator iterator = _database.CreateIterator(new ReadOptions());
+        using LevelDbIterator iterator = _database.CreateIterator();
 
         // In Vanilla Data the prefix is "player_server_" not a byte
         byte[] prefix = Encoding.UTF8.GetBytes("player_server_");
         iterator.Seek(prefix);
 
-        while (iterator.IsValid()) {
+        while (iterator.Valid()) {
             ReadOnlySpan<byte> key = iterator.Key();
             if (key.Length <= prefix.Length || !key.StartsWith(prefix)) {
                 break;
@@ -38,7 +37,7 @@ internal sealed class PlayerStore {
         byte[] legacyPrefix = [0x35];
         iterator.Seek(legacyPrefix);
 
-        while (iterator.IsValid()) {
+        while (iterator.Valid()) {
             ReadOnlySpan<byte> key = iterator.Key();
             if (key.Length == 0 || key[0] != 0x35) {
                 break;
