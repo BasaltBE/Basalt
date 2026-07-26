@@ -107,8 +107,11 @@ public sealed class LevelDbProvider : WorldProvider {
     }
 
     public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
-        // Delete legacy key if it exists.
-        _database.Delete(LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType));
+        byte[] data = new byte[12];
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(4, 4), position.Y);
+        BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(8, 4), position.Z);
+        _database.Put(LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType), data);
     }
 
     public override void WriteLevelDat(World world) {
