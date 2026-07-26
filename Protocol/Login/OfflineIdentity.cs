@@ -216,7 +216,8 @@ public static class OfflineIdentity {
     }
 
     public static string GetOfflineXuid(string username) {
-        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes($"OfflineXUID:{username}"));
+        string normalized = username.Trim().ToLowerInvariant();
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes($"OfflineXUID:{normalized}"));
         ulong value = System.Buffers.Binary.BinaryPrimitives.ReadUInt64BigEndian(hash);
         return value.ToString().PadLeft(16, '0')[..16];
     }
