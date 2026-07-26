@@ -9,12 +9,29 @@ using Basalt.Core.Item;
 public static class LootTableManager {
     private static readonly Dictionary<string, LootTable> Tables = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, LootTable> EntityTables = new(StringComparer.Ordinal);
-    private static string _dataRoot = string.Empty;
+    private static readonly Dictionary<string, JsonElement> Definitions = new(StringComparer.Ordinal);
 
     public static void LoadFromEntities(string dataRoot, IEnumerable<EntityType> entityTypes) {
-        _dataRoot = dataRoot;
+        using FileStream stream = File.OpenRead(Path.Combine(dataRoot, "entity_drops.json"));
+        LoadFromEntities(stream, entityTypes);
+    }
+
+    public static void LoadFromEntities(Stream stream, IEnumerable<EntityType> entityTypes) {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(entityTypes);
+
         Tables.Clear();
         EntityTables.Clear();
+        Definitions.Clear();
+
+        using JsonDocument document = JsonDocument.Parse(stream);
+        if (document.RootElement.ValueKind != JsonValueKind.Object) {
+            throw new JsonException("Entity drops data must contain an object of named loot tables.");
+        }
+
+        foreach (JsonProperty property in document.RootElement.EnumerateObject()) {
+            Definitions[NormalizePath(property.Name)] = property.Value.Clone();
+        }
 
         foreach (EntityType entityType in entityTypes) {
             if (string.IsNullOrWhiteSpace(entityType.LootTablePath)) {
@@ -70,26 +87,23 @@ public static class LootTableManager {
             return cached;
         }
 
-        string filePath = Path.Combine(_dataRoot, normalizedPath);
-        if (!File.Exists(filePath)) {
+        if (!Definitions.TryGetValue(normalizedPath, out JsonElement definition)) {
             LootTable missing = new(normalizedPath, []);
             Tables[normalizedPath] = missing;
             return missing;
         }
 
-        using FileStream stream = File.OpenRead(filePath);
-        using JsonDocument document = JsonDocument.Parse(stream);
-
         List<LootPool> pools = [];
-        if (document.RootElement.TryGetProperty("pools", out JsonElement poolElements) &&
+        LootTable table = new(normalizedPath, pools);
+        Tables[normalizedPath] = table;
+
+        if (definition.TryGetProperty("pools", out JsonElement poolElements) &&
             poolElements.ValueKind == JsonValueKind.Array) {
             foreach (JsonElement poolElement in poolElements.EnumerateArray()) {
                 pools.Add(ReadPool(poolElement));
             }
         }
 
-        LootTable table = new(normalizedPath, pools);
-        Tables[normalizedPath] = table;
         return table;
     }
 
@@ -114,7 +128,7 @@ public static class LootTableManager {
     private static LootEntry? ReadEntry(JsonElement element) {
         string type = ReadString(element, "type");
         string name = ReadString(element, "name");
-        if (string.IsNullOrWhiteSpace(type) || string.IsNullOrWhiteSpace(name)) {
+        if (string.IsNullOrWhiteSpace(type)) {
             return null;
         }
 
@@ -122,6 +136,7 @@ public static class LootTableManager {
         double probability = ReadConditionsProbability(element);
         int minCount = 1;
         int maxCount = 1;
+        List<LootPool> pools = [];
 
         if (element.TryGetProperty("functions", out JsonElement functions) &&
             functions.ValueKind == JsonValueKind.Array) {
@@ -132,9 +147,17 @@ public static class LootTableManager {
             }
         }
 
+        if (element.TryGetProperty("pools", out JsonElement poolElements) &&
+            poolElements.ValueKind == JsonValueKind.Array) {
+            foreach (JsonElement poolElement in poolElements.EnumerateArray()) {
+                pools.Add(ReadPool(poolElement));
+            }
+        }
+
         return type switch {
-            "item" => new LootEntry(name, weight, probability, minCount, maxCount, null),
-            "loot_table" => new LootEntry(string.Empty, weight, probability, 1, 1, LoadTable(name)),
+            "item" when !string.IsNullOrWhiteSpace(name) => new LootEntry(name, weight, probability, minCount, maxCount, null, pools),
+            "loot_table" when !string.IsNullOrWhiteSpace(name) => new LootEntry(string.Empty, weight, probability, 1, 1, LoadTable(name), pools),
+            "empty" => new LootEntry(string.Empty, weight, probability, 0, 0, null, pools),
             _ => null
         };
     }
@@ -189,8 +212,13 @@ public static class LootTableManager {
 
     private static string NormalizePath(string path) {
         string normalized = path.Replace('\\', '/').TrimStart('/');
-        if (!normalized.EndsWith(".json", StringComparison.Ordinal)) {
-            normalized += ".json";
+        if (normalized.EndsWith(".json", StringComparison.Ordinal)) {
+            normalized = normalized[..^5];
+        }
+
+        const string entityTablePrefix = "loot_tables/entities/";
+        if (normalized.StartsWith(entityTablePrefix, StringComparison.Ordinal)) {
+            normalized = normalized[entityTablePrefix.Length..];
         }
 
         return normalized;
@@ -264,13 +292,14 @@ public static class LootTableManager {
         }
     }
 
-    private sealed class LootEntry(string itemIdentifier, int weight, double probability, int minCount, int maxCount, LootTable? table) {
+    private sealed class LootEntry(string itemIdentifier, int weight, double probability, int minCount, int maxCount, LootTable? table, List<LootPool> pools) {
         public int Weight { get; } = weight;
         private readonly string _itemIdentifier = itemIdentifier;
         private readonly double _probability = probability;
         private readonly int _minCount = minCount;
         private readonly int _maxCount = maxCount;
         private readonly LootTable? _table = table;
+        private readonly List<LootPool> _pools = pools;
 
         public void Generate(List<ItemStack> items) {
             if (Random.Shared.NextDouble() > _probability) {
@@ -279,15 +308,17 @@ public static class LootTableManager {
 
             if (_table is not null) {
                 items.AddRange(_table.Generate());
-                return;
+            }
+            else if (!string.IsNullOrEmpty(_itemIdentifier)) {
+                int count = Random.Shared.Next(_minCount, _maxCount + 1);
+                if (count > 0 && ItemType.Get(_itemIdentifier) is ItemType itemType) {
+                    items.Add(new ItemStack(itemType, checked((ushort)count)));
+                }
             }
 
-            int count = Random.Shared.Next(_minCount, _maxCount + 1);
-            if (count <= 0 || ItemType.Get(_itemIdentifier) is not ItemType itemType) {
-                return;
+            for (int i = 0; i < _pools.Count; i++) {
+                _pools[i].Generate(items);
             }
-
-            items.Add(new ItemStack(itemType, checked((ushort)count)));
         }
     }
 }

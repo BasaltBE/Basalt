@@ -3,6 +3,7 @@ namespace Basalt.Core.Entities;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Loot;
 using Basalt.Protocol.Nbt;
 
 public sealed class EntityPalette {
@@ -114,6 +115,14 @@ public sealed class EntityPalette {
 
             if (EntityType.Get(PlayerIdentifier) is null) {
                 _ = new EntityType(PlayerIdentifier, []);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dataDirectory)) {
+                LootTableManager.LoadFromEntities(dataDirectory, EntityType.GetAll());
+            }
+            else {
+                using Stream stream = ProtocolData.Require("entity_drops.json");
+                LootTableManager.LoadFromEntities(stream, EntityType.GetAll());
             }
 
             _vanillaLoaded = true;
