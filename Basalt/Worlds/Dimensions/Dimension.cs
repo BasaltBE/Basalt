@@ -2,6 +2,8 @@ namespace Basalt.Core.Worlds.Dimensions;
 
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Item;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
 using Basalt.Protocol.Packets;
@@ -35,6 +37,7 @@ public sealed class Dimension : IDisposable {
     private readonly Dictionary<long, int> _chunkViewers;
     private readonly HashSet<long> _pendingUnloads = [];
     private readonly HashSet<Entity> _entities;
+    private readonly Dictionary<Entity, long> _entityChunks = [];
     private readonly List<long> _chunkSweepBuffer = [];
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
@@ -118,6 +121,8 @@ public sealed class Dimension : IDisposable {
         World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
         chunk.Simulated = _simulatedChunks.Contains(hash);
         _chunks[hash] = chunk;
+        MaterializeEntities(chunk);
+        SyncEntitiesToStorage(chunk);
         _provider.SaveChunk(chunk);
     }
 
@@ -179,6 +184,7 @@ public sealed class Dimension : IDisposable {
 
         foreach (ChunkColumn loadedChunk in _chunks.Values) {
             SyncBlockActorsToStorages(loadedChunk);
+            SyncEntitiesToStorage(loadedChunk);
         }
 
         foreach (ChunkColumn chunk in _chunks.Values) {
@@ -202,6 +208,7 @@ public sealed class Dimension : IDisposable {
         }
 
         SyncBlockActorsToStorages(chunk);
+        SyncEntitiesToStorage(chunk);
         try {
             _provider.SaveChunk(chunk);
             chunk.Dirty = false;
@@ -220,6 +227,7 @@ public sealed class Dimension : IDisposable {
             return false;
         }
 
+        SyncEntitiesToStorage(chunk);
         if (save && chunk.Dirty) {
             SyncBlockActorsToStorages(chunk);
             chunk.Dirty = false;
@@ -235,10 +243,15 @@ public sealed class Dimension : IDisposable {
                     Logger.Err($"Failed to save chunk {x},{z} on unload: {exception.Message}");
                 }
             }
+            UnloadEntities(chunk);
             return true;
         }
 
-        return _chunks.Remove(hash);
+        bool removed = _chunks.Remove(hash);
+        if (removed) {
+            UnloadEntities(chunk);
+        }
+        return removed;
     }
 
     public void AddChunkViewer(int x, int z) {
@@ -483,6 +496,7 @@ public sealed class Dimension : IDisposable {
 
         foreach (ChunkColumn chunk in _chunks.Values) {
             SyncBlockActorsToStorages(chunk);
+            SyncEntitiesToStorage(chunk);
             if (!chunk.Dirty) {
                 continue;
             }
@@ -676,10 +690,12 @@ public sealed class Dimension : IDisposable {
         if (_tickingEntities) {
             _pendingEntityRemoves.Remove(entity);
             _pendingEntityAdds.Add(entity);
+            UpdateEntityStorage(entity);
             return;
         }
 
         _entities.Add(entity);
+        UpdateEntityStorage(entity);
     }
 
     internal void RemoveEntity(Entity entity, bool complete = true) {
@@ -689,6 +705,7 @@ public sealed class Dimension : IDisposable {
             return;
         }
 
+        RemoveEntityStorage(entity);
         if (complete) {
             entity.CompleteDespawn();
         }
@@ -758,6 +775,7 @@ public sealed class Dimension : IDisposable {
         if (chunk is not null) {
             chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
+            MaterializeEntities(chunk);
         }
 
         return chunk;
@@ -770,6 +788,7 @@ public sealed class Dimension : IDisposable {
     private void FlushPendingEntityChanges() {
         if (_pendingEntityRemoves.Count > 0) {
             foreach (Entity entity in _pendingEntityRemoves) {
+                RemoveEntityStorage(entity);
                 if (entity.Dimension == this) {
                     entity.CompleteDespawn();
                 }
@@ -812,6 +831,156 @@ public sealed class Dimension : IDisposable {
             BlockLevelStorage storage = GetOrCreateBlockStorage(chunk, position, actorEntry.Value.Type.Identifier);
             actorEntry.Value.WriteTraits(storage);
             chunk.SetBlockStorage(position, storage, dirty: true);
+        }
+    }
+
+    internal void UpdateEntityStorage(Entity entity) {
+        if (entity is Player.Player || entity.Dimension != this) {
+            return;
+        }
+
+        if (entity.PendingDespawn) {
+            RemoveEntityStorage(entity);
+            return;
+        }
+
+        long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
+        if (_entityChunks.TryGetValue(entity, out long previousHash)) {
+            if (previousHash == hash) {
+                if (_chunks.TryGetValue(hash, out ChunkColumn? currentChunk)) {
+                    currentChunk.Dirty = true;
+                }
+                return;
+            }
+
+            if (_chunks.TryGetValue(previousHash, out ChunkColumn? previousChunk)) {
+                previousChunk.SetEntityStorage(entity.UniqueId, null);
+            }
+        }
+
+        ChunkColumn chunk = GetOrCreateChunk(
+            WorldToChunk(entity.Position.X),
+            WorldToChunk(entity.Position.Z)
+        );
+        chunk.SetEntityStorage(entity.UniqueId, entity.Write());
+        _entityChunks[entity] = hash;
+    }
+
+    private void RemoveEntityStorage(Entity entity) {
+        if (entity is Player.Player) {
+            return;
+        }
+
+        if (_entityChunks.Remove(entity, out long hash) &&
+            _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+            chunk.SetEntityStorage(entity.UniqueId, null);
+            return;
+        }
+
+        int chunkX = WorldToChunk(entity.Position.X);
+        int chunkZ = WorldToChunk(entity.Position.Z);
+        if (_chunks.TryGetValue(HashChunk(chunkX, chunkZ), out ChunkColumn? currentChunk)) {
+            currentChunk.SetEntityStorage(entity.UniqueId, null);
+        }
+    }
+
+    private void SyncEntitiesToStorage(ChunkColumn chunk) {
+        foreach (Entity entity in _entities) {
+            if (entity is Player.Player) {
+                continue;
+            }
+
+            if (entity.PendingDespawn || entity.Dimension != this) {
+                RemoveEntityStorage(entity);
+                continue;
+            }
+
+            long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
+            if (_entityChunks.TryGetValue(entity, out long previousHash) &&
+                previousHash != hash &&
+                _chunks.TryGetValue(previousHash, out ChunkColumn? previousChunk)) {
+                previousChunk.SetEntityStorage(entity.UniqueId, null);
+            }
+
+            if (hash != chunk.Hash) {
+                continue;
+            }
+
+            chunk.SetEntityStorage(entity.UniqueId, entity.Write());
+            _entityChunks[entity] = hash;
+        }
+    }
+
+    private void MaterializeEntities(ChunkColumn chunk) {
+        List<KeyValuePair<long, CompoundTag>> storedEntities = chunk.GetAllEntityStorages();
+        for (int i = 0; i < storedEntities.Count; i++) {
+            KeyValuePair<long, CompoundTag> stored = storedEntities[i];
+            Entity? existing = _entities.FirstOrDefault(entity => entity.UniqueId == stored.Key);
+            if (existing is not null) {
+                _entityChunks[existing] = HashChunk(
+                    WorldToChunk(existing.Position.X),
+                    WorldToChunk(existing.Position.Z)
+                );
+                continue;
+            }
+
+            CompoundTag tag = stored.Value;
+            string? identifier = tag.Get<StringTag>("identifier")?.Value;
+            ListTag? position = tag.Get<ListTag>("Pos");
+            bool positionStored =
+                tag.Get<FloatTag>("x") is not null &&
+                tag.Get<FloatTag>("y") is not null &&
+                tag.Get<FloatTag>("z") is not null;
+            if (string.IsNullOrWhiteSpace(identifier) ||
+                (!positionStored && position is not { Values.Count: >= 3 }) ||
+                string.Equals(identifier, EntityIdentifier.Player.ToIdentifierString(), StringComparison.Ordinal)) {
+                continue;
+            }
+
+            try {
+                Entity? entity;
+                if (string.Equals(identifier, "minecraft:item", StringComparison.Ordinal)) {
+                    CompoundTag? itemTag = tag.Get<CompoundTag>("item");
+                    ItemStack? item = itemTag is null ? null : ItemStack.Deserialize(itemTag);
+                    entity = item is null ? null : new Basalt.Core.Entities.ItemEntity(item);
+                }
+                else {
+                    entity = new Entity(identifier);
+                }
+
+                if (entity is null) {
+                    continue;
+                }
+
+                entity.RestoreUniqueId(stored.Key);
+                entity.Read(tag);
+                entity.Spawn(this, new EntitySpawnOptions(InitialSpawn: true));
+            }
+            catch (Exception exception) {
+                Logger.Warn($"Failed materializing entity {stored.Key} in chunk {chunk.X},{chunk.Z}: {exception.Message}");
+            }
+        }
+    }
+
+    private void UnloadEntities(ChunkColumn chunk) {
+        List<Entity> unloaded = [];
+        foreach (Entity entity in _entities) {
+            if (entity is Player.Player ||
+                WorldToChunk(entity.Position.X) != chunk.X ||
+                WorldToChunk(entity.Position.Z) != chunk.Z) {
+                continue;
+            }
+
+            unloaded.Add(entity);
+        }
+
+        for (int i = 0; i < unloaded.Count; i++) {
+            Entity entity = unloaded[i];
+            _pendingEntityAdds.Remove(entity);
+            _pendingEntityRemoves.Remove(entity);
+            _entities.Remove(entity);
+            _entityChunks.Remove(entity);
+            entity.CompleteDespawn();
         }
     }
 
@@ -886,6 +1055,7 @@ public sealed class Dimension : IDisposable {
         else {
             chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
+            MaterializeEntities(chunk);
 
             foreach (Action<ChunkColumn> callback in request.Callbacks) {
                 callback(chunk);
@@ -930,6 +1100,7 @@ public sealed class Dimension : IDisposable {
             }
 
             SyncBlockActorsToStorages(chunk);
+            SyncEntitiesToStorage(chunk);
             if (!chunk.Dirty) {
                 continue;
             }

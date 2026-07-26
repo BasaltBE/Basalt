@@ -18,15 +18,17 @@ using Player = Player.Player;
 using Basalt.Core.Traits;
 
 using Basalt.Core.Loot;
+using Basalt.Core.Events;
 
 public class Entity {
-    private static ulong _runtimeCounter;
+    private static long _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
+    private long _uniqueId;
 
     public EntityType Type { get; }
     public string Identifier => Type.Identifier;
-    public ulong RuntimeId { get; } = ++_runtimeCounter;
-    public long UniqueId => unchecked((long)RuntimeId);
+    public ulong RuntimeId { get; }
+    public long UniqueId => _uniqueId;
     public Vec3f Position;
     public Vec3f Location {
         get => Position;
@@ -59,6 +61,8 @@ public class Entity {
             throw new ArgumentException("Entity identifier cannot be empty.", nameof(identifier));
         }
 
+        RuntimeId = unchecked((ulong)Interlocked.Increment(ref _runtimeCounter));
+        _uniqueId = unchecked((long)RuntimeId);
         Type = EntityType.GetOrCreate(identifier);
         Attributes = new EntityAttributes(this);
         Flags = new EntityActorFlags(this);
@@ -190,6 +194,12 @@ public class Entity {
         }
 
         Dimension? dimension = Dimension;
+        if (dimension?.World?.Server is Server server) {
+            EntityDieSignal signal = new(this, options);
+            server.Emit(signal);
+            options = signal.Options;
+        }
+
         if (!options.Cancel && dimension is not null) {
             ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
             List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
@@ -228,12 +238,14 @@ public class Entity {
         for (int i = 0; i < _traits.Count; i++) {
             _traits[i].OnTeleport(options);
         }
+        Dimension?.UpdateEntityStorage(this);
     }
 
     public void OnMove(EntityMoveOptions options) {
         for (int i = 0; i < _traits.Count; i++) {
             _traits[i].OnMove(options);
         }
+        Dimension?.UpdateEntityStorage(this);
     }
 
     public void OnInteract(Player player, EntityInteractMethod method) {
@@ -287,12 +299,29 @@ public class Entity {
     //     Attributes.SetAttribute(attribute);
     // }
 
-    public CompoundTag Write() {
+    public virtual CompoundTag Write() {
         CompoundTag root = new();
+        root.Set("basalt_entity", new ByteTag { Value = 1 });
         root.Set("identifier", new StringTag { Value = Identifier });
         root.Set("x", new FloatTag { Value = Position.X });
         root.Set("y", new FloatTag { Value = Position.Y });
         root.Set("z", new FloatTag { Value = Position.Z });
+        root.Set("velocity_x", new FloatTag { Value = Velocity.X });
+        root.Set("velocity_y", new FloatTag { Value = Velocity.Y });
+        root.Set("velocity_z", new FloatTag { Value = Velocity.Z });
+        root.Set("UniqueID", new LongTag { Value = UniqueId });
+
+        ListTag position = new() { Name = "Pos" };
+        position.Values.Add(new FloatTag { Value = Position.X });
+        position.Values.Add(new FloatTag { Value = Position.Y });
+        position.Values.Add(new FloatTag { Value = Position.Z });
+        root.Set("Pos", position);
+
+        ListTag motion = new() { Name = "Motion" };
+        motion.Values.Add(new FloatTag { Value = Velocity.X });
+        motion.Values.Add(new FloatTag { Value = Velocity.Y });
+        motion.Values.Add(new FloatTag { Value = Velocity.Z });
+        root.Set("Motion", motion);
         root.Set("sprinting", new ByteTag { Value = IsSprinting ? (sbyte)1 : (sbyte)0 });
         root.Set("swimming", new ByteTag { Value = IsSwimming ? (sbyte)1 : (sbyte)0 });
 
@@ -313,12 +342,20 @@ public class Entity {
         return root;
     }
 
-    public void Read(CompoundTag root) {
+    public virtual void Read(CompoundTag root) {
         Position = new Vec3f {
             X = root.Get<FloatTag>("x")?.Value ?? Position.X,
             Y = root.Get<FloatTag>("y")?.Value ?? Position.Y,
             Z = root.Get<FloatTag>("z")?.Value ?? Position.Z
         };
+        Position = ReadVector(root, "Pos", Position);
+
+        Velocity = new Vec3f {
+            X = root.Get<FloatTag>("velocity_x")?.Value ?? Velocity.X,
+            Y = root.Get<FloatTag>("velocity_y")?.Value ?? Velocity.Y,
+            Z = root.Get<FloatTag>("velocity_z")?.Value ?? Velocity.Z
+        };
+        Velocity = ReadVector(root, "Motion", Velocity);
 
         IsSprinting = (root.Get<ByteTag>("sprinting")?.Value ?? 0) != 0;
         IsSwimming = (root.Get<ByteTag>("swimming")?.Value ?? 0) != 0;
@@ -351,6 +388,48 @@ public class Entity {
             }
 
             trait?.OnRead(root, traitData);
+        }
+    }
+
+    private static Vec3f ReadVector(CompoundTag root, string name, Vec3f fallback) {
+        ListTag? values = root.Get<ListTag>(name);
+        if (values is not { Values.Count: >= 3 }) {
+            return fallback;
+        }
+
+        return new Vec3f {
+            X = values.Values[0] switch {
+                FloatTag value => value.Value,
+                DoubleTag value => (float)value.Value,
+                _ => fallback.X
+            },
+            Y = values.Values[1] switch {
+                FloatTag value => value.Value,
+                DoubleTag value => (float)value.Value,
+                _ => fallback.Y
+            },
+            Z = values.Values[2] switch {
+                FloatTag value => value.Value,
+                DoubleTag value => (float)value.Value,
+                _ => fallback.Z
+            }
+        };
+    }
+
+    internal void RestoreUniqueId(long uniqueId) {
+        _uniqueId = uniqueId;
+        if (uniqueId <= 0) {
+            return;
+        }
+
+        long current = Volatile.Read(ref _runtimeCounter);
+        while (current < uniqueId) {
+            long observed = Interlocked.CompareExchange(ref _runtimeCounter, uniqueId, current);
+            if (observed == current) {
+                return;
+            }
+
+            current = observed;
         }
     }
 

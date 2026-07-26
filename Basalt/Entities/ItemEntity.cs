@@ -2,6 +2,7 @@ namespace Basalt.Core.Entities;
 
 using Basalt.Protocol.Packets;
 using Basalt.Protocol.Types;
+using Basalt.Protocol.Nbt;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
 using Player = Basalt.Core.Player.Player;
@@ -35,6 +36,12 @@ public sealed class ItemEntity : Entity {
 
     public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
         player.Send(CreateAddItemActorPacket());
+    }
+
+    public override CompoundTag Write() {
+        CompoundTag tag = base.Write();
+        tag.Set("item", Item.Serialize());
+        return tag;
     }
 
     private AddItemActorPacket CreateAddItemActorPacket() {

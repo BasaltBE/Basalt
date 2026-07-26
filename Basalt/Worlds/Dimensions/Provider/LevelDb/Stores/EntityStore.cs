@@ -19,23 +19,24 @@ internal sealed class EntityStore {
     }
 
     public void Load(ChunkColumn chunk) {
-        // Try vanilla "digp" key first.
         byte[]? entityList = _database.Get(LevelDbKeyBuilder.BuildDigpKey(chunk.Type, chunk.X, chunk.Z));
+        bool rawIds = true;
 
-        // Fallback to legacy Basalt keys.
         if (entityList is null || entityList.Length == 0) {
             entityList = _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(chunk.Type, chunk.X, chunk.Z));
+            rawIds = false;
         }
 
         if (entityList is null || entityList.Length == 0) {
             entityList = _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(chunk.X, chunk.Z));
+            rawIds = false;
         }
 
         if (entityList is null || entityList.Length == 0) {
             return;
         }
 
-        List<long>? uniqueIds = ReadEntityIds(entityList, chunk.Type, chunk.X, chunk.Z);
+        List<long>? uniqueIds = ReadEntityIds(entityList, chunk.Type, chunk.X, chunk.Z, rawIds);
         if (uniqueIds is null) {
             return;
         }
@@ -102,20 +103,19 @@ internal sealed class EntityStore {
     private HashSet<long> ReadSavedEntityIds(DimensionType dimensionType, int x, int z) {
         HashSet<long> ids = [];
 
-        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildDigpKey(dimensionType, x, z)), dimensionType, x, z);
+        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildDigpKey(dimensionType, x, z)), dimensionType, x, z, rawIds: true);
 
-        // Fallback to legacy keys.
-        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(dimensionType, x, z)), dimensionType, x, z);
-        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(x, z)), dimensionType, x, z);
+        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(dimensionType, x, z)), dimensionType, x, z, rawIds: false);
+        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(x, z)), dimensionType, x, z, rawIds: false);
         return ids;
     }
 
-    private static void AddEntityIds(HashSet<long> ids, byte[]? entityList, DimensionType dimensionType, int x, int z) {
+    private static void AddEntityIds(HashSet<long> ids, byte[]? entityList, DimensionType dimensionType, int x, int z, bool rawIds) {
         if (entityList is null || entityList.Length == 0) {
             return;
         }
 
-        List<long>? read = ReadEntityIds(entityList, dimensionType, x, z);
+        List<long>? read = ReadEntityIds(entityList, dimensionType, x, z, rawIds);
         if (read is null) {
             return;
         }
@@ -125,11 +125,11 @@ internal sealed class EntityStore {
         }
     }
 
-    private static List<long>? ReadEntityIds(byte[] entityList, DimensionType dimensionType, int x, int z) {
+    private static List<long>? ReadEntityIds(byte[] entityList, DimensionType dimensionType, int x, int z, bool rawIds) {
         try {
             int offset = 0;
             BinaryReader reader = new(entityList, ref offset);
-            return ReadEntityList(reader);
+            return ReadEntityList(reader, rawIds);
         }
         catch (Exception exception) {
             Logger.Warn($"Failed loading entity list for chunk {x},{z} in {dimensionType}: {exception.Message}");
@@ -176,38 +176,39 @@ internal sealed class EntityStore {
         return payload;
     }
 
-    private static List<long> ReadEntityList(BinaryReader reader) {
+    private static List<long> ReadEntityList(BinaryReader reader, bool rawIds) {
         if (reader.Remaining <= 0) {
             return [];
         }
 
         int total = reader.Remaining;
-
         int startOffset = reader.Offset;
-        uint possibleVersion = reader.ReadUInt32(littleEndian: true);
 
-        if (possibleVersion == FormatVersion && reader.Remaining >= 4) {
-            int count = reader.ReadInt32(littleEndian: true);
-            if (count >= 0 && count <= reader.Remaining / sizeof(long)) {
-                List<long> ids = new(count);
-                for (int i = 0; i < count; i++) {
-                    ids.Add(reader.ReadInt64(littleEndian: true));
+        if (!rawIds && reader.Remaining >= 8) {
+            uint possibleVersion = reader.ReadUInt32(littleEndian: true);
+            if (possibleVersion == FormatVersion) {
+                int count = reader.ReadInt32(littleEndian: true);
+                if (count >= 0 && count <= reader.Remaining / sizeof(long)) {
+                    List<long> ids = new(count);
+                    for (int i = 0; i < count; i++) {
+                        ids.Add(reader.ReadInt64(littleEndian: true));
+                    }
+
+                    return ids;
                 }
-
-                return ids;
             }
         }
 
         int rawCount = total / sizeof(long);
-        List<long> rawIds = new(rawCount);
+        List<long> rawEntityIds = new(rawCount);
         ReadOnlySpan<byte> buffer = reader.Buffer;
         int offset = startOffset;
         for (int i = 0; i < rawCount; i++) {
-            rawIds.Add(BinaryPrimitives.ReadInt64LittleEndian(buffer.Slice(offset, 8)));
+            rawEntityIds.Add(BinaryPrimitives.ReadInt64LittleEndian(buffer.Slice(offset, 8)));
             offset += 8;
         }
 
-        return rawIds;
+        return rawEntityIds;
     }
 
     private static CompoundTag ReadEntityPayload(BinaryReader reader) {
