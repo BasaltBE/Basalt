@@ -51,7 +51,7 @@ internal sealed class LoginTask : ServerTask {
 
         Guid playerUuid = ResolvePlayerUuid(
             _identity.Uuid, clientData.SelfSignedId, _identity.Username, _server.Properties.OnlineMode);
-        string playerXuid = ResolvePlayerXuid(_identity.Xuid, playerUuid, _server.Properties.OnlineMode);
+        string playerXuid = ResolvePlayerXuid(_identity.Xuid, _identity.Username);
 
         _player = new Player.Player(_identity.Username, playerXuid, playerUuid);
 
@@ -210,12 +210,12 @@ internal sealed class LoginTask : ServerTask {
         return Guid.NewGuid();
     }
 
-    private static string ResolvePlayerXuid(string identityXuid, Guid uuid, bool onlineMode) {
-        if (onlineMode && !string.IsNullOrWhiteSpace(identityXuid)) {
+    private static string ResolvePlayerXuid(string identityXuid, string username) {
+        if (!string.IsNullOrWhiteSpace(identityXuid)) {
             return identityXuid;
         }
 
-        return uuid.ToString("N");
+        return OfflineIdentity.GetOfflineXuid(username);
     }
 
     private static Guid CreateOfflineGuid(string username) {
