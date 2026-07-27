@@ -54,6 +54,7 @@ public sealed class Player : Entities.Entity {
         Flags.SetActorFlag(ActorFlag.Breathing, true);
         Flags.SetActorFlag(ActorFlag.CanShowName, true);
         Flags.SetActorFlag(ActorFlag.AlwaysShowName, true);
+        Flags.SetActorFlag(ActorFlag.CanClimb, true);
         Metadata.SetActorMetadata(ActorDataId.Name, ActorDataType.String, Username);
         Metadata.SetActorMetadata(ActorDataId.NametagAlwaysShow, ActorDataType.Byte, (sbyte)1);
     }
