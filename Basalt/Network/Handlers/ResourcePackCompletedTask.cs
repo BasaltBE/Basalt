@@ -50,7 +50,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             Entries = [_player.CreatePlayerListEntry()]
         };
 
-        _playerPosition = new Vec3f { X = 0f, Y = -57f, Z = 0f };
+        _playerPosition = _dimension?.SpawnPosition ?? new Vec3f { X = 0f, Y = -57f, Z = 0f };
         int dimensionId = 0;
 
         if (_dimension is not null) {
@@ -75,7 +75,11 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             WorldGameMode = 0,
             Hardcore = false,
             Difficulty = 1,
-            WorldSpawn = new BlockPos { X = 0, Y = -58, Z = 0 },
+            WorldSpawn = new BlockPos {
+                X = (int)(_dimension?.SpawnPosition.X ?? 0),
+                Y = (int)(_dimension?.SpawnPosition.Y ?? -58),
+                Z = (int)(_dimension?.SpawnPosition.Z ?? 0)
+            },
             AchievementsDisabled = !_server.Properties.AchievementsEnabled,
             EditorWorldType = EditorWorldType.NotEditor,
             CreatedInEditor = false,

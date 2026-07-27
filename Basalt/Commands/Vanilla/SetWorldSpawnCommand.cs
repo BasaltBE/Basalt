@@ -40,6 +40,11 @@ public static class SetWorldSpawnCommand {
         Vec3f spawn = position?.Value ?? player.Location;
 
         dimension.SpawnPosition = spawn;
+        if (dimension.World is { } world) {
+            world.Persistence.SaveSpawnPosition(dimension.Type, spawn);
+            world.Persistence.Flush();
+            world.Provider.WriteLevelDat(world);
+        }
 
         int x = (int)spawn.X;
         int y = (int)spawn.Y;
