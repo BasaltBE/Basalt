@@ -5,6 +5,52 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace Basalt.Protocol.Types;
 
 public sealed class Skin : DataType {
+    public static Skin FromSerializedSkin(SerializedSkin serializedSkin) {
+        return new Skin {
+            SkinId = serializedSkin.Id,
+            PlayFabId = serializedSkin.PlayFabId,
+            SkinResourcePatch = System.Text.Encoding.UTF8.GetBytes(serializedSkin.ResourcePatch),
+            SkinImageWidth = serializedSkin.ImageData.Width,
+            SkinImageHeight = serializedSkin.ImageData.Height,
+            SkinData = [.. serializedSkin.ImageData.Data],
+            Animations = serializedSkin.AnimatedImageData.Select(animation => new SkinAnimation {
+                ImageWidth = animation.ImageWidth,
+                ImageHeight = animation.ImageHeight,
+                ImageData = [.. animation.ImageData],
+                AnimationType = animation.AnimationType,
+                FrameCount = animation.FrameCount,
+                ExpressionType = animation.ExpressionType
+            }).ToList(),
+            CapeImageWidth = serializedSkin.CapeImageData.Width,
+            CapeImageHeight = serializedSkin.CapeImageData.Height,
+            CapeData = [.. serializedSkin.CapeImageData.Data],
+            SkinGeometry = System.Text.Encoding.UTF8.GetBytes(serializedSkin.GeometryData),
+            GeometryDataEngineVersion = System.Text.Encoding.UTF8.GetBytes(serializedSkin.GeometryDataMinEngineVersion.Value),
+            AnimationData = System.Text.Encoding.UTF8.GetBytes(serializedSkin.AnimationData),
+            CapeId = serializedSkin.CapeId,
+            FullId = serializedSkin.FullId,
+            ArmSize = serializedSkin.ArmSize,
+            SkinColor = serializedSkin.SkinColor,
+            PersonaPieces = serializedSkin.PersonaPieces.Select(piece => new PersonaPiece {
+                PieceId = piece.PieceId,
+                PieceType = piece.PieceType,
+                PackId = piece.PackId,
+                Default = piece.Default,
+                ProductId = piece.ProductId
+            }).ToList(),
+            PieceTintColors = serializedSkin.PieceTintColors.Select(tint => new PersonaPieceTintColor {
+                PieceType = tint.PieceType,
+                Colors = [.. tint.Colors]
+            }).ToList(),
+            PremiumSkin = serializedSkin.IsPremium,
+            PersonaSkin = serializedSkin.IsPersona,
+            PersonaCapeOnClassicSkin = serializedSkin.IsPersonaCapeOnClassicSkin,
+            PrimaryUser = serializedSkin.IsPrimaryUser,
+            OverrideAppearance = serializedSkin.OverridesPlayerAppearance,
+            Trusted = true
+        };
+    }
+
     public static Skin FromClientData(ClientData clientData) {
         static byte[] DecodeBase64(string value) {
             if (string.IsNullOrEmpty(value)) {

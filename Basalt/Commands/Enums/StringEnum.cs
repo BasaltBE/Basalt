@@ -9,8 +9,18 @@ public sealed class StringEnum : CommandEnum {
         if (tokenIndex >= tokens.Length)
             return false;
 
-        Value = tokens[tokenIndex];
-        tokenIndex++;
+        string token = tokens[tokenIndex++];
+        if (token.StartsWith('"')) {
+            while (!token.EndsWith('"') && tokenIndex < tokens.Length)
+                token += " " + tokens[tokenIndex++];
+
+            if (!token.EndsWith('"'))
+                return false;
+
+            token = token[1..^1];
+        }
+
+        Value = token;
         return true;
     }
 }

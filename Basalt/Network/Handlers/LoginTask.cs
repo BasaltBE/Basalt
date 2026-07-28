@@ -1,7 +1,5 @@
 namespace Basalt.Core.Network.Handlers;
 
-using System.Security.Cryptography;
-using System.Text;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
@@ -35,6 +33,7 @@ internal sealed class LoginTask : ServerTask {
 
         try {
             _identity = VerifyIdentity(_server, _packet);
+            Console.WriteLine($"Login: {_identity.Username} ({_identity.Xuid} | {_identity.Uuid})");
         }
         catch (Exception exception) {
             Logger.Info($"Login rejected: {exception.Message}");
@@ -50,23 +49,25 @@ internal sealed class LoginTask : ServerTask {
         _clientData = clientData;
 
         Guid playerUuid = ResolvePlayerUuid(
-            _identity.Uuid, clientData.SelfSignedId, _identity.Username);
+            _identity.Uuid,
+            clientData.SelfSignedId,
+            _identity.Username,
+            !_server.Properties.OnlineMode);
         string playerXuid = ResolvePlayerXuid(_identity.Xuid, _identity.Username);
 
         _player = new Player.Player(_identity.Username, playerXuid, playerUuid);
 
-        Worlds.World world = _server.GetWorld();
-        CompoundTag? savedData = LoadPlayerDataCompat(
-            world, playerXuid, _identity.Xuid, _identity.Username, playerUuid);
+        (Worlds.World World, CompoundTag Data)? savedPlayer = LoadPlayerDataCompat(
+            _server, playerXuid, _identity.Xuid, _identity.Username, playerUuid);
 
-        if (savedData is not null) {
-            _player.Read(savedData);
+        if (savedPlayer is not null) {
+            _player.Read(savedPlayer.Value.Data);
 
             bool shouldMigrateXuid = !string.Equals(playerXuid, _identity.Xuid, StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(playerXuid);
 
             if (shouldMigrateXuid) {
-                world.Persistence.SavePlayerData(playerXuid, savedData);
+                savedPlayer.Value.World.Persistence.SavePlayerData(playerXuid, savedPlayer.Value.Data);
             }
         }
 
@@ -83,6 +84,10 @@ internal sealed class LoginTask : ServerTask {
 
     public override void Complete() {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("LoginTask.Complete") : default;
+
+        if (_player is null && _rejectMessage is null) {
+            _rejectMessage = "Login processing failed.";
+        }
 
         if (_rejectMessage is not null) {
             DisconnectPacket disconnect = new() {
@@ -194,16 +199,24 @@ internal sealed class LoginTask : ServerTask {
         return LoginIdentity.Verify(packet.Identity);
     }
 
-    private static Guid ResolvePlayerUuid(string identityUuid, string selfSignedId, string username) {
-        if (Guid.TryParse(identityUuid, out Guid parsedIdentity)) {
-            return parsedIdentity;
+    private static Guid ResolvePlayerUuid(
+        string identityUuid,
+        string selfSignedId,
+        string username,
+        bool offline) {
+        if (Guid.TryParse(identityUuid, out Guid playerUuid)) {
+            return playerUuid;
         }
 
-        if (Guid.TryParse(selfSignedId, out Guid parsedSelfSigned)) {
-            return parsedSelfSigned;
+        if (Guid.TryParse(selfSignedId, out playerUuid)) {
+            return playerUuid;
         }
 
-        return CreateOfflineGuid(username);
+        if (offline) {
+            return OfflineIdentity.GetUuidFromUsername(username);
+        }
+
+        throw new InvalidOperationException("The login identity does not contain a valid UUID.");
     }
 
     private static string ResolvePlayerXuid(string identityXuid, string username) {
@@ -214,22 +227,12 @@ internal sealed class LoginTask : ServerTask {
         return OfflineIdentity.GetOfflineXuid(username);
     }
 
-    private static Guid CreateOfflineGuid(string username) {
-        string normalized = username.Trim().ToLowerInvariant();
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes("basalt:offline:" + normalized));
-        Span<byte> guidBytes = stackalloc byte[16];
-        bytes.AsSpan(0, 16).CopyTo(guidBytes);
-        return new Guid(guidBytes);
-    }
-
-    private static CompoundTag? LoadPlayerDataCompat(
-        Worlds.World world,
+    private static (Worlds.World World, CompoundTag Data)? LoadPlayerDataCompat(
+        Server server,
         string primaryXuid,
         string identityXuid,
         string username,
         Guid uuid) {
-        Worlds.Dimensions.Provider.WorldProvider provider = world.Provider;
-
         ReadOnlySpan<string> candidates =
         [
             primaryXuid,
@@ -239,31 +242,25 @@ internal sealed class LoginTask : ServerTask {
             username
         ];
 
-        string? previous1 = null;
-        string? previous2 = null;
+        foreach (Worlds.World world in server.Worlds) {
+            Worlds.Dimensions.Provider.WorldProvider provider = world.Provider;
 
-        foreach (string candidate in candidates) {
-            if (string.IsNullOrWhiteSpace(candidate)) {
-                continue;
+            foreach (string candidate in candidates) {
+                if (string.IsNullOrWhiteSpace(candidate)) {
+                    continue;
+                }
+
+                CompoundTag? pending = world.Persistence.GetPendingPlayerData(candidate);
+                if (pending is not null) {
+                    return (world, pending);
+                }
+
+                byte[]? raw = provider.GetRawPlayerData(candidate);
+                if (raw is not null && provider.LoadPlayerDataFromRaw(raw) is { } data) {
+                    return (world, data);
+                }
+
             }
-
-            if (string.Equals(candidate, previous1, StringComparison.Ordinal) ||
-                string.Equals(candidate, previous2, StringComparison.Ordinal)) {
-                continue;
-            }
-
-            CompoundTag? pending = world.Persistence.GetPendingPlayerData(candidate);
-            if (pending is not null) {
-                return pending;
-            }
-
-            byte[]? raw = provider.GetRawPlayerData(candidate);
-            if (raw is not null) {
-                return provider.LoadPlayerDataFromRaw(raw);
-            }
-
-            previous2 = previous1;
-            previous1 = candidate;
         }
 
         return null;

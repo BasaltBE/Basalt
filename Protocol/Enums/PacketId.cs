@@ -47,6 +47,7 @@ namespace Basalt.Protocol.Enums {
         ChangeDimension = 0x3d,
         SetPlayerGameType = 0x3e,
         PlayerList = 0x3f,
+        PlayerSkin = 0x5d,
         RequestChunkRadius = 0x45,
         ChunkRadiusUpdated = 0x46,
         AvailableCommands = 0x4c,

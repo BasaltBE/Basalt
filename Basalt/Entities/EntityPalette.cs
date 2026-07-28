@@ -51,10 +51,7 @@ public sealed class EntityPalette {
         foreach (EntityType type in EntityType.GetAll()) {
             CompoundTag entry = new();
             entry.Set("bid", new StringTag { Value = string.Empty });
-            entry.Set("hasspawnegg", new ByteTag { Value = 1 });
             entry.Set("id", new StringTag { Value = type.Identifier });
-            entry.Set("rid", new IntTag { Value = type.NetworkId });
-            entry.Set("summonable", new ByteTag { Value = 1 });
             idList.Values.Add(entry);
         }
 

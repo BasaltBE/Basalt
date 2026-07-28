@@ -163,7 +163,7 @@ public class Entity {
         }
     }
 
-    public void Despawn(EntityDespawnOptions options) {
+    public virtual void Despawn(EntityDespawnOptions options) {
         if (PendingDespawn) {
             return;
         }

@@ -3,6 +3,7 @@ namespace Basalt.Core.Worlds.Dimensions;
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Entities;
 using Basalt.Core.Item;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
@@ -635,7 +636,7 @@ public sealed class Dimension : IDisposable {
                     continue;
                 }
 
-                if (entity is Player.Player) {
+                if (entity is Player.Player player && player.Xuid.Length > 0) {
                     entity.Tick(currentTick, deltaTick);
                     continue;
                 }
@@ -835,7 +836,7 @@ public sealed class Dimension : IDisposable {
     }
 
     internal void UpdateEntityStorage(Entity entity) {
-        if (entity is Player.Player || entity.Dimension != this) {
+        if (entity is Player.Player player && player.Xuid.Length > 0 || entity.Dimension != this) {
             return;
         }
 
@@ -867,7 +868,7 @@ public sealed class Dimension : IDisposable {
     }
 
     private void RemoveEntityStorage(Entity entity) {
-        if (entity is Player.Player) {
+        if (entity is Player.Player player && player.Xuid.Length > 0) {
             return;
         }
 
@@ -886,7 +887,7 @@ public sealed class Dimension : IDisposable {
 
     private void SyncEntitiesToStorage(ChunkColumn chunk) {
         foreach (Entity entity in _entities) {
-            if (entity is Player.Player) {
+            if (entity is Player.Player player && player.Xuid.Length > 0) {
                 continue;
             }
 
@@ -945,7 +946,7 @@ public sealed class Dimension : IDisposable {
                     entity = item is null ? null : new Basalt.Core.Entities.ItemEntity(item);
                 }
                 else {
-                    entity = new Entity(identifier);
+                    entity = EntityFactory.Create(identifier, tag) ?? new Entity(identifier);
                 }
 
                 if (entity is null) {
@@ -965,7 +966,7 @@ public sealed class Dimension : IDisposable {
     private void UnloadEntities(ChunkColumn chunk) {
         List<Entity> unloaded = [];
         foreach (Entity entity in _entities) {
-            if (entity is Player.Player ||
+            if ((entity is Player.Player player && player.Xuid.Length > 0) ||
                 WorldToChunk(entity.Position.X) != chunk.X ||
                 WorldToChunk(entity.Position.Z) != chunk.Z) {
                 continue;

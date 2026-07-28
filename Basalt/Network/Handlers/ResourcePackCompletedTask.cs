@@ -191,9 +191,6 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             _player.Spawn(_dimension, spawnSignal.Options);
         }
 
-        _server.Network.QueuePackets(_connection, _playerListPackets);
-        _server.Broadcast(_broadcastEntry!, _player);
-
         _server.Network.SendSerializedPackets(_connection, [
             (PacketId.StartGame, _startGamePayload!),
             (PacketId.ItemRegistry, ItemPalette.GetItemRegistryPayload()),
@@ -202,6 +199,8 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             (PacketId.CreativeContent, ItemPalette.GetCreativeContentPayload()),
             (PacketId.CraftingData, Crafting.CraftingRegistry.Instance.GetCraftingDataPayload())
         ]);
+        _server.Network.QueuePackets(_connection, _playerListPackets);
+        _server.Broadcast(_broadcastEntry!, _player);
         _player.Permissions.Sync();
     }
 

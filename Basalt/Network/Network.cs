@@ -41,6 +41,7 @@ public sealed class NetworkHandler {
         On<PlayerAuthInputPacket>((connection, packet) => PlayerAuthInput.Handle(_server, connection, packet));
         On<InteractPacket>((connection, packet) => Interact.Handle(_server, connection, packet));
         On<AnimatePacket>((connection, packet) => Animate.Handle(_server, connection, packet));
+        On<PlayerSkinPacket>((connection, packet) => PlayerSkin.Handle(_server, connection, packet));
         On<ContainerClosePacket>((connection, packet) => ContainerClose.Handle(_server, connection, packet));
         On<InventoryTransactionPacket>((connection, packet) => InventoryTransaction.Handle(_server, connection, packet));
         On<MobEquipmentPacket>((connection, packet) => MobEquipment.Handle(_server, connection, packet));
@@ -137,7 +138,7 @@ public sealed class NetworkHandler {
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
-        Worlds.World world = _server.GetWorld();
+        Worlds.World world = player.Dimension?.World ?? _server.GetWorld();
         world.Persistence.SavePlayerData(player.Xuid, player.Write());
 
 

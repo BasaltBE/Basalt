@@ -16,7 +16,7 @@ using Basalt.Core.Player.Traits;
 using Basalt.Core.DDUI;
 using Basalt.Core.Scoreboard;
 
-public sealed class Player : Entities.Entity {
+public class Player : Entities.Entity {
     public readonly string Username;
     public readonly string Xuid;
     public readonly Guid Uuid;
@@ -43,7 +43,11 @@ public sealed class Player : Entities.Entity {
     internal Dictionary<string, DataDrivenScreen> Screens = [];
 
     public Player(string username, string xuid, Guid uuid) :
-        base(EntityIdentifier.Player.ToIdentifierString()) {
+        this(EntityIdentifier.Player.ToIdentifierString(), username, xuid, uuid) {
+    }
+
+    protected Player(string identifier, string username, string xuid, Guid uuid) :
+        base(identifier) {
         Username = username;
         Xuid = xuid;
         Uuid = uuid;
@@ -120,7 +124,7 @@ public sealed class Player : Entities.Entity {
         }
     }
 
-    public new CompoundTag Write() {
+    public override CompoundTag Write() {
         CompoundTag root = base.Write();
         root.Set("username", new StringTag { Value = Username });
         root.Set("xuid", new StringTag { Value = Xuid });
@@ -135,7 +139,7 @@ public sealed class Player : Entities.Entity {
         return root;
     }
 
-    public new void Read(CompoundTag root) {
+    public override void Read(CompoundTag root) {
         base.Read(root);
 
         if (root.Get<IntTag>("gamemode") is { } gamemodeTag) {
@@ -415,6 +419,17 @@ public sealed class Player : Entities.Entity {
         Binary.BinaryWriter writer = stream;
         skin.Write(writer);
         Skin = writer.GetProcessedBytes().ToArray();
+    }
+
+    public Skin GetSkin() {
+        Skin skin = new();
+        if (Skin is null || Skin.Length == 0)
+            return skin;
+
+        int offset = 0;
+        Binary.BinaryReader reader = new(Skin, ref offset);
+        skin.Read(reader);
+        return skin;
     }
 
     public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {

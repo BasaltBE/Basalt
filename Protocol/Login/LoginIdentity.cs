@@ -29,14 +29,17 @@ public static class LoginIdentity {
         using JsonDocument payloadDoc = JsonDocument.Parse(payloadBytes);
         JsonElement payload = payloadDoc.RootElement;
 
-        string uuid = JsonValue.GetString(payload, "identity")
-            .Or(JsonValue.GetString(payload, "uuid"))
-            .Or(JsonValue.GetString(payload, "sub"));
+        string xuid = JsonValue.GetString(payload, "xid");
+        string uuid = JsonValue.GetString(payload, "leguuid")
+            .Or(JsonValue.GetString(payload, "uuid"));
+        if (string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(xuid)) {
+            uuid = OfflineIdentity.GetUuidFromXuid(xuid);
+        }
 
         return new VerifiedIdentity(
             JsonValue.GetString(payload, "cpk"),
             JsonValue.GetString(payload, "xname"),
-            JsonValue.GetString(payload, "xid"),
+            xuid,
             uuid
         );
     }
