@@ -35,6 +35,7 @@ public class Entity {
         set => Position = value;
     }
     public Vec3f Velocity;
+    public Vec3f Rotation;
     public EntityAttributes Attributes { get; }
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
@@ -309,6 +310,9 @@ public class Entity {
         root.Set("velocity_x", new FloatTag { Value = Velocity.X });
         root.Set("velocity_y", new FloatTag { Value = Velocity.Y });
         root.Set("velocity_z", new FloatTag { Value = Velocity.Z });
+        root.Set("rotation_pitch", new FloatTag { Value = Rotation.X });
+        root.Set("rotation_yaw", new FloatTag { Value = Rotation.Y });
+        root.Set("rotation_head_yaw", new FloatTag { Value = Rotation.Z });
         root.Set("UniqueID", new LongTag { Value = UniqueId });
 
         ListTag position = new() { Name = "Pos" };
@@ -354,6 +358,11 @@ public class Entity {
             X = root.Get<FloatTag>("velocity_x")?.Value ?? Velocity.X,
             Y = root.Get<FloatTag>("velocity_y")?.Value ?? Velocity.Y,
             Z = root.Get<FloatTag>("velocity_z")?.Value ?? Velocity.Z
+        };
+        Rotation = new Vec3f {
+            X = root.Get<FloatTag>("rotation_pitch")?.Value ?? Rotation.X,
+            Y = root.Get<FloatTag>("rotation_yaw")?.Value ?? Rotation.Y,
+            Z = root.Get<FloatTag>("rotation_head_yaw")?.Value ?? Rotation.Z
         };
         Velocity = ReadVector(root, "Motion", Velocity);
 
@@ -535,14 +544,27 @@ public class Entity {
             EntityType = Identifier,
             Position = position ?? Position,
             Velocity = new Vec3f(),
-            Pitch = 0,
-            Yaw = 0,
-            HeadYaw = 0,
-            BodyYaw = 0,
+            Pitch = Rotation.X,
+            Yaw = Rotation.Y,
+            HeadYaw = Rotation.Z,
+            BodyYaw = Rotation.Y,
             Attributes = [],
             EntityMetadata = CreateActorDataPacket(tick).Metadata,
             EntityProperties = new EntityProperties(),
             EntityLinks = []
+        });
+    }
+
+    public void SetRotation(Vec3f rotation) {
+        Rotation = rotation;
+        if (Dimension is null) {
+            return;
+        }
+
+        Dimension.Broadcast(new MoveActorAbsolutePacket {
+            EntityRuntimeId = RuntimeId,
+            Position = Position,
+            Rotation = rotation
         });
     }
 

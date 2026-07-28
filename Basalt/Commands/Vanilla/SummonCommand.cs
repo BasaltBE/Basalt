@@ -50,12 +50,14 @@ public static class SummonCommand {
         if (posArg is not null) {
             position = posArg.Value;
             Player? self = ctx.Sender.AsPlayer();
+            if (self is not null && posArg.RelativeY)
+                position.Y -= self.Location.Y - self.GetPosition().Y;
             dimension = self?.Dimension ?? ctx.Server.GetWorld().GetDimension(DimensionType.Overworld);
         }
         else {
             Player? self = ctx.RequirePlayer(out CommandResult? error);
             if (self is null) return error!;
-            position = self.Location;
+            position = self.GetPosition();
             dimension = self.Dimension;
         }
 

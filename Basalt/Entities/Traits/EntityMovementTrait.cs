@@ -226,8 +226,16 @@ public sealed class EntityMovementTrait : EntityTrait {
         OnMove(new EntityMoveOptions(
             previousPosition,
             Entity.Position,
-            new MovementRotation(),
-            new MovementRotation()));
+            new MovementRotation {
+                Pitch = Entity.Rotation.X,
+                Yaw = Entity.Rotation.Y,
+                HeadYaw = Entity.Rotation.Z
+            },
+            new MovementRotation {
+                Pitch = Entity.Rotation.X,
+                Yaw = Entity.Rotation.Y,
+                HeadYaw = Entity.Rotation.Z
+            }));
 
         Entity.OnPhysicsTick(details.CurrentTick, IsGrounded(Entity.Position.X, Entity.Position.Y, Entity.Position.Z));
     }

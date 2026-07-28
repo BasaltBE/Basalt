@@ -5,11 +5,13 @@ using System.Text.Json;
 
 public sealed class EntityType {
     private static readonly Dictionary<string, EntityType> Registry = new(StringComparer.Ordinal);
+    private static int _nextNetworkId;
     private readonly Dictionary<string, Type> _traits = new(StringComparer.Ordinal);
     private readonly Dictionary<string, JsonElement> _componentProperties;
     private readonly Dictionary<string, Dictionary<string, JsonElement>> _componentGroupProperties;
 
     public string Identifier { get; }
+    public int NetworkId { get; }
     public IReadOnlyList<string> Components { get; }
     public string? LootTablePath { get; }
     public IReadOnlyDictionary<string, JsonElement> ComponentProperties => _componentProperties;
@@ -19,6 +21,7 @@ public sealed class EntityType {
 
     public EntityType(string identifier, IEnumerable<string>? components, EntityPropertiesPayloadData? propertiesPayload = null, string? lootTablePath = null) {
         Identifier = identifier;
+        NetworkId = ++_nextNetworkId;
         Components = components is null ? [] : [.. components];
         LootTablePath = string.IsNullOrWhiteSpace(lootTablePath) ? null : lootTablePath;
         _componentProperties = propertiesPayload?.Components is null

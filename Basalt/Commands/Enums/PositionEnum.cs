@@ -4,6 +4,7 @@ using Basalt.Protocol.Types;
 
 public sealed class PositionEnum : CommandEnum {
     public Vec3f Value { get; private set; }
+    public bool RelativeY { get; private set; }
 
     public PositionEnum() : base("position") { }
 
@@ -12,6 +13,7 @@ public sealed class PositionEnum : CommandEnum {
             return false;
 
         Vec3f origin = ctx.Sender.AsPlayer()?.Location ?? new Vec3f();
+        RelativeY = tokens[tokenIndex + 1].StartsWith('~');
 
         if (!ParseComponent(tokens[tokenIndex], origin.X, out float x) ||
             !ParseComponent(tokens[tokenIndex + 1], origin.Y, out float y) ||
