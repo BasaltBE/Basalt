@@ -22,6 +22,7 @@ public class Player : Entities.Entity {
     public readonly Guid Uuid;
     public DeviceOS DeviceOS;
     private byte[]? Skin;
+    internal string LastRequestedFullSkinId = string.Empty;
     internal NetworkConnection? Connection;
     internal NetworkHandler? Network;
     public PlayerAbilities Abilities { get; } = new();
@@ -65,6 +66,10 @@ public class Player : Entities.Entity {
 
     public Gamemode GetGamemode() {
         return Gamemode;
+    }
+
+    public void SetDisplayName(string displayName) {
+        Metadata.SetActorMetadata(ActorDataId.Name, ActorDataType.String, displayName);
     }
 
     public void SetGamemode(Gamemode gamemode) {
