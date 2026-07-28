@@ -33,7 +33,7 @@ internal sealed class LoginTask : ServerTask {
 
         try {
             _identity = VerifyIdentity(_server, _packet);
-            Console.WriteLine($"Login: {_identity.Username} ({_identity.Xuid} | {_identity.Uuid})");
+            // Console.WriteLine($"Login: {_identity.Username} ({_identity.Xuid} | {_identity.Uuid})");
         }
         catch (Exception exception) {
             Logger.Info($"Login rejected: {exception.Message}");
