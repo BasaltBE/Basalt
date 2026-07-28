@@ -1,5 +1,6 @@
 namespace Basalt.Core.Commands;
 
+using System.Globalization;
 using Basalt.Protocol.Types;
 using Player = Player.Player;
 using EntityInstance = Entities.Entity;
@@ -56,12 +57,40 @@ public sealed class CommandContext {
         if (selector == "@a")
             return Server.Players.Values.ToArray<EntityInstance>();
 
-        if (selector == "@e") {
-            if (context?.Dimension is not null)
-                return context.Dimension.Entities.ToArray();
-            return Server.Worlds
-                .SelectMany(w => w.Dimensions)
-                .SelectMany(d => d.Entities)
+        if (selector.StartsWith("@e", StringComparison.Ordinal)) {
+            string? type = null;
+            float? radius = null;
+            if (selector.Length > 2) {
+                if (selector.Length < 5 || selector[2] != '[' || selector[^1] != ']')
+                    return [];
+
+                string arguments = selector[3..^1];
+                foreach (string argument in arguments.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) {
+                    string[] pair = argument.Split('=', 2, StringSplitOptions.TrimEntries);
+                    if (pair.Length != 2)
+                        return [];
+
+                    if (string.Equals(pair[0], "type", StringComparison.OrdinalIgnoreCase))
+                        type = pair[1];
+                    else if (string.Equals(pair[0], "r", StringComparison.OrdinalIgnoreCase) &&
+                             float.TryParse(pair[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedRadius) &&
+                             parsedRadius >= 0f)
+                        radius = parsedRadius;
+                    else if (!string.Equals(pair[0], "type", StringComparison.OrdinalIgnoreCase))
+                        return [];
+                }
+            }
+
+            string? identifier = type is null || type.Contains(':', StringComparison.Ordinal)
+                ? type
+                : $"minecraft:{type}";
+            IEnumerable<EntityInstance> entities = context?.Dimension is not null
+                ? context.Dimension.Entities
+                : Server.Worlds.SelectMany(w => w.Dimensions).SelectMany(d => d.Entities);
+
+            return entities
+                .Where(entity => (identifier is null || string.Equals(entity.Identifier, identifier, StringComparison.OrdinalIgnoreCase)) &&
+                                 (radius is null || context is null || DistanceSquared(entity.Location, context.Location) <= radius.Value * radius.Value))
                 .ToArray();
         }
 
@@ -97,6 +126,13 @@ public sealed class CommandContext {
         }
 
         return [];
+    }
+
+    static float DistanceSquared(Vec3f first, Vec3f second) {
+        float dx = first.X - second.X;
+        float dy = first.Y - second.Y;
+        float dz = first.Z - second.Z;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /// <summary>

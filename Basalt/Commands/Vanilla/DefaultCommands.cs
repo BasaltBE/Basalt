@@ -21,5 +21,6 @@ public static class DefaultCommands {
         registry.Register(SetWorldSpawnCommand.Definition);
         registry.Register(FillCommand.Definition);
         registry.Register(SetBlockCommand.Definition);
+        registry.Register(KillCommand.Definition);
     }
 }
