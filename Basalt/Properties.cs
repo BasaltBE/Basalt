@@ -62,24 +62,34 @@ public class Properties {
     public string PluginsDirectory { get; set; } = "plugins";
 
     [ServerProperties.PropertyOrder(13)]
+    [ServerProperties.PropertyKey("crash-on-plugin-load-failure")]
+    [ServerProperties.PropertyComment("If true, stop the server when a plugin fails to load.")]
+    public bool CrashOnPluginLoadFailure { get; set; } = false;
+
+    [ServerProperties.PropertyOrder(14)]
     [ServerProperties.PropertyKey("worker-threads")]
     [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
     public int WorkerThreads { get; set; } = 2;
 
-    [ServerProperties.PropertyOrder(14)]
+    [ServerProperties.PropertyOrder(15)]
     [ServerProperties.PropertyKey("resource-packs-path")]
     [ServerProperties.PropertyComment("Directory containing resource pack folders.")]
     public string ResourcePacksPath { get; set; } = "resource_packs";
 
-    [ServerProperties.PropertyOrder(15)]
+    [ServerProperties.PropertyOrder(16)]
     [ServerProperties.PropertyKey("force-resource-packs")]
     [ServerProperties.PropertyComment("If true, clients must accept resource packs to join.")]
     public bool ForceResourcePacks { get; set; } = false;
 
-    [ServerProperties.PropertyOrder(16)]
+    [ServerProperties.PropertyOrder(17)]
     [ServerProperties.PropertyKey("achievements-enabled")]
     [ServerProperties.PropertyComment("If true, achievements are earnable but TAB autocomplete is limited.")]
     public bool AchievementsEnabled { get; set; } = false;
+
+    [ServerProperties.PropertyOrder(18)]
+    [ServerProperties.PropertyKey("player-data-path")]
+    [ServerProperties.PropertyComment("Directory containing server player data.")]
+    public string PlayerDataPath { get; set; } = "players";
 }
 
 

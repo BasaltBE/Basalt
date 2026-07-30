@@ -53,6 +53,15 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
     return _maxDurability - _damage;
   }
 
+  public void Repair(int amount) {
+    if (amount <= 0 || _damage <= 0) {
+      return;
+    }
+
+    _damage = Math.Max(0, _damage - amount);
+    SyncDamageTag();
+  }
+
   public override void OnRead(CompoundTag tag) {
     _damage = tag.Get<IntTag>("Damage")?.Value ?? 0;
     if (_damage > 0) {

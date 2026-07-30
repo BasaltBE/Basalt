@@ -133,7 +133,10 @@ public static class InventoryTransaction {
         foreach (InventoryAction action in actions) {
             if (action.SourceType == (uint)InventoryActionSourceType.World) {
                 // int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
-                SpawnWorldDrop(player, action);
+                if (!SpawnWorldDrop(player, action)) {
+                    inventory.Container.Update();
+                    return;
+                }
 
                 // Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
                 // Logger.Info("NetworkId Old/New: " + action.OldItem.Stack.NetworkId + "/" + action.NewItem.Stack.NetworkId);
@@ -226,14 +229,14 @@ public static class InventoryTransaction {
         return (int)action.InventorySlot;
     }
 
-    private static void SpawnWorldDrop(Player.Player player, InventoryAction action) {
+    private static bool SpawnWorldDrop(Player.Player player, InventoryAction action) {
         if (player.Dimension is null) {
-            return;
+            return false;
         }
 
         NetworkItemStackDescriptor dropped = action.NewItem;
         if (dropped.NetworkId == 0 || dropped.Count == 0) {
-            return;
+            return false;
         }
 
         ItemStack item;
@@ -241,9 +244,9 @@ public static class InventoryTransaction {
             item = ItemStack.FromNetworkStack(dropped);
         }
         catch {
-            return;
+            return false;
         }
-        player.DropItem(item);
+        return player.DropItem(item);
     }
 
     private static void HandleUseItem(
@@ -275,6 +278,10 @@ public static class InventoryTransaction {
                     player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
 
                 if (clickedBlock.Type.Identifier is not "minecraft:air" and not "minecraft:cave_air" and not "minecraft:void_air") {
+                    if (!CanUseItem(player, airHeldItem)) {
+                        return;
+                    }
+
                     airHeldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                         player,
                         transaction.HotBarSlot,
@@ -286,7 +293,9 @@ public static class InventoryTransaction {
                 }
             }
 
-            airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
+            if (CanUseItem(player, airHeldItem)) {
+                airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
+            }
             return;
         }
 
@@ -326,6 +335,10 @@ public static class InventoryTransaction {
                     blockPosition = player.LastActionBlockPosition.Value;
                 }
 
+                if (!CanUseItem(player, repeatItem)) {
+                    return;
+                }
+
                 repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                     player,
                     transaction.HotBarSlot,
@@ -346,6 +359,10 @@ public static class InventoryTransaction {
 
                     if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
                         blockPosition = player.LastActionBlockPosition.Value;
+                    }
+
+                    if (!CanUseItem(player, nonPlaceItem)) {
+                        return;
                     }
 
                     nonPlaceItem.OnUseOnBlock(new ItemUseOnBlockDetails(
@@ -369,6 +386,10 @@ public static class InventoryTransaction {
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
             if (block is not null && block.Interactable && !player.IsSneaking) {
+                if (!CanInteractBlock(player, blockPosition)) {
+                    return;
+                }
+
                 block.OnInteract(new BlockInteractDetails(
                     player,
                     blockPosition,
@@ -388,6 +409,10 @@ public static class InventoryTransaction {
             transaction.TriggerType == UseItemTriggerInitial &&
             actions.Count == 0) {
             if (heldItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier) is null) {
+                if (!CanUseItem(player, heldItem)) {
+                    return;
+                }
+
                 heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                     player,
                     transaction.HotBarSlot,
@@ -436,6 +461,11 @@ public static class InventoryTransaction {
             player.Dimension.GetBlock(clickedPosition.X, clickedPosition.Y, clickedPosition.Z);
 
         if (blockEntity?.Interactable == true && !player.IsSneaking) {
+            if (!CanInteractBlock(player, clickedPosition)) {
+                SendBlockUpdate(player, clickedPosition, clickedBlock.NetworkId);
+                return;
+            }
+
             blockEntity.OnInteract(new BlockInteractDetails(
                 player,
                 clickedPosition,
@@ -449,6 +479,10 @@ public static class InventoryTransaction {
         Basalt.Core.Blocks.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier);
 
         if (blockType is null || blockType.Identifier == "minecraft:air") {
+            if (!CanUseItem(player, heldItem)) {
+                return;
+            }
+
             heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                 player,
                 transaction.HotBarSlot,
@@ -584,6 +618,10 @@ public static class InventoryTransaction {
                     return;
                 }
 
+                if (!CanUseItem(player, heldItem)) {
+                    return;
+                }
+
                 heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(
                     player,
                     target,
@@ -593,6 +631,14 @@ public static class InventoryTransaction {
                 break;
 
             case 1:
+                if (player.Dimension.World?.Server is Server server) {
+                    PlayerAttackEntitySignal signal = new(player, target);
+                    server.Emit(signal);
+                    if (!signal.Emit()) {
+                        return;
+                    }
+                }
+
                 if (heldItem is not null) {
                     heldItem.OnUseAttack(new ItemUseAttackDetails(
                         player,
@@ -628,6 +674,26 @@ public static class InventoryTransaction {
 
         ItemStack? heldItem = inventory.GetHeldItem();
         return heldItem is null || heldItem.StackSize == 0 ? null : heldItem;
+    }
+
+    private static bool CanInteractBlock(Player.Player player, BlockPos blockPosition) {
+        if (player.Dimension?.World?.Server is not Server server) {
+            return true;
+        }
+
+        PlayerInteractBlockSignal signal = new(player, blockPosition);
+        server.Emit(signal);
+        return signal.Emit();
+    }
+
+    private static bool CanUseItem(Player.Player player, ItemStack item) {
+        if (player.Dimension?.World?.Server is not Server server) {
+            return true;
+        }
+
+        PlayerUseItemSignal signal = new(player, item);
+        server.Emit(signal);
+        return signal.Emit();
     }
 
     private static void SendBlockUpdate(Player.Player player, BlockPos position, int networkId) {

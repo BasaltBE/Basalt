@@ -192,6 +192,16 @@ public sealed class Block {
                         }
                     };
 
+                    if (HasTrait<CropTrait>()) {
+                        float angle = Random.Shared.NextSingle() * MathF.Tau;
+                        float horizontalSpeed = 0.07f + Random.Shared.NextSingle() * 0.06f;
+                        drop.Velocity = new Vec3f {
+                            X = MathF.Cos(angle) * horizontalSpeed,
+                            Y = 0.16f + Random.Shared.NextSingle() * 0.08f,
+                            Z = MathF.Sin(angle) * horizontalSpeed
+                        };
+                    }
+
                     drop.LockPickupUntil(currentTick + 10);
                     drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
                 }

@@ -225,6 +225,24 @@ public class Player : Entities.Entity {
         Location = spawnPosition;
 
         ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        if (Dimension.World?.Server is Server server) {
+            int chunkX = (int)MathF.Floor(Location.X) >> 4;
+            int chunkZ = (int)MathF.Floor(Location.Z) >> 4;
+            foreach ((_, Player other) in server.Players) {
+                if (ReferenceEquals(other, this) || other.Dimension != Dimension) {
+                    continue;
+                }
+
+                int otherChunkX = (int)MathF.Floor(other.Location.X) >> 4;
+                int otherChunkZ = (int)MathF.Floor(other.Location.Z) >> 4;
+                if (Math.Max(Math.Abs(chunkX - otherChunkX), Math.Abs(chunkZ - otherChunkZ)) > server.Properties.MaxViewDistance) {
+                    continue;
+                }
+
+                other.Send(new RemoveActorPacket { EntityUniqueId = UniqueId });
+                SpawnTo(other, tick);
+            }
+        }
 
         Send(new RespawnPacket {
             Position = spawnPosition,

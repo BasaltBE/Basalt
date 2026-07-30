@@ -76,6 +76,9 @@ public sealed class PluginManager {
         }
         catch (Exception exception) {
             Logger.Warn($"Failed to load plugin '{Path.GetFileName(assemblyPath)}': {exception.Message}");
+            if (_server.Properties.CrashOnPluginLoadFailure) {
+                throw;
+            }
         }
     }
 

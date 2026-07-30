@@ -16,6 +16,9 @@ public enum ServerEvent : int {
     PacketReceive = 14,
     PacketSend = 15,
     BlockForm = 16,
+    PlayerInteractBlock = 17,
+    PlayerUseItem = 18,
+    PlayerAttackEntity = 19,
 }
 
 

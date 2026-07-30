@@ -35,6 +35,37 @@ public class CropTrait : BlockTrait {
 
     }
 
+    public bool Fertilize(Dimension dimension, BlockPos position) {
+        BlockState state = Block.Permutation.State;
+        if (!state.TryGetValue("growth", out BlockStateValue growthValue) || growthValue.Kind != 0) {
+            return false;
+        }
+
+        int growth = (int)growthValue.AsNumber();
+        int maxGrowth = GetMaxGrowth(Block.Type.Identifier);
+        if (growth >= maxGrowth) {
+            return false;
+        }
+
+        int nextGrowth = Math.Min(growth + Random.Shared.Next(2, 6), maxGrowth);
+        BlockState nextState = [];
+        foreach ((string key, BlockStateValue value) in state) {
+            nextState[key] = key == "growth" ? nextGrowth : value;
+        }
+
+        BlockPermutation? nextPermutation = Block.Type.GetPermutation(nextState);
+        if (nextPermutation is null) {
+            return false;
+        }
+
+        dimension.SetPermutation(position.X, position.Y, position.Z, nextPermutation, 0, true);
+        if (nextGrowth < maxGrowth) {
+            ScheduleCropTick(dimension, position);
+        }
+
+        return true;
+    }
+
     public override List<Item.ItemStack>? GetCustomDrops(BlockPermutation permutation) {
         if (!permutation.State.TryGetValue("growth", out BlockStateValue growthVal))
             return null;

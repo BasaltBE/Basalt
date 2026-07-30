@@ -152,6 +152,17 @@ public static class PlayerAuthInput {
             return;
         }
 
+        if (player.Dimension?.World?.Server is Server server) {
+            PlayerUseItemSignal signal = new(player, heldItem);
+            server.Emit(signal);
+            if (!signal.Emit()) {
+                PendingItemUses.TryRemove(player.RuntimeId, out _);
+                LastEatSoundTick.TryRemove(player.RuntimeId, out _);
+                player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+                return;
+            }
+        }
+
         PlayerHungerTrait? hunger = player.GetTrait<PlayerHungerTrait>();
         if (hunger is null || (!food.CanAlwaysEat && hunger.CurrentValue >= hunger.MaximumValue)) {
             PendingItemUses.TryRemove(player.RuntimeId, out _);
@@ -599,6 +610,7 @@ public static class PlayerAuthInput {
         //     action.Action);
 
         Server? server = player.Dimension.World?.Server;
+        Basalt.Core.Blocks.BlockPermutation? replacement = null;
         if (server is not null) {
             Basalt.Core.Blocks.Block breakBlock =
                 player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
@@ -629,6 +641,8 @@ public static class PlayerAuthInput {
                 }
                 return;
             }
+
+            replacement = signal.Replacement;
         }
 
         player.Dimension.Broadcast(new LevelEventPacket {
@@ -648,6 +662,10 @@ public static class PlayerAuthInput {
         breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
 
         player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, air);
+
+        if (replacement is not null) {
+            player.Dimension.SetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z, replacement);
+        }
 
         if (block.Type.Liquid) {
             Basalt.Core.Blocks.Traits.FluidKind? fluidKind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(block);

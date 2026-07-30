@@ -20,7 +20,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     private const float KnockbackVerticalForce = 0.38f;
     private const float KnockbackVerticalLimit = 0.4f;
     private const ulong KnockbackCooldownTicks = 10;
+    private const ulong AttackCooldownTicks = 10;
     private ulong _lastKnockbackTick;
+    private ulong? _lastAttackTick;
 
     public override AttributeName Attribute => AttributeName.Health;
 
@@ -31,6 +33,17 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         EntityHurtSignal signal = new(Entity, amount, cause, damager);
         if (!signal.Emit()) {
             return;
+        }
+
+        if (signal.Cause == ActorDamageCause.EntityAttack && signal.Amount > 0f && Entity.Dimension?.World is Tickable cooldownTickable) {
+            ulong currentTick = cooldownTickable.TickValue;
+            if (_lastAttackTick is ulong lastAttackTick &&
+                currentTick >= lastAttackTick &&
+                currentTick - lastAttackTick < AttackCooldownTicks) {
+                return;
+            }
+
+            _lastAttackTick = currentTick;
         }
 
         CurrentValue -= signal.Amount;

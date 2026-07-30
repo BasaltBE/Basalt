@@ -12,6 +12,7 @@ public sealed class PlayerBreakBlockSignal : PlayerSignal {
     public int BlockFace { get; }
     public Block Block { get; }
     public ItemStack? Item { get; }
+    public BlockPermutation? Replacement { get; set; }
     public bool Cancelled;
 
     public PlayerBreakBlockSignal(Player player, BlockPos blockPosition, int blockFace, Block block, ItemStack? item) : base(player) {

@@ -2,6 +2,7 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Events;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
@@ -51,6 +52,12 @@ public static class Interact {
                 }
 
                 Vec3f clicked = packet.Position.HasValue && packet.Position.Value is Vec3f value ? value : new Vec3f();
+                PlayerUseItemSignal signal = new(player, heldItem);
+                server.Emit(signal);
+                if (!signal.Emit()) {
+                    break;
+                }
+
                 heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(player, entity, 0, player.Location, clicked));
                 break;
             }

@@ -256,12 +256,18 @@ public static class ItemStackRequest {
         }
 
         int amount = Math.Max(1, (int)action.Count);
-        ItemStack? removed = container.TakeItem(slot, amount);
-        if (removed is null) {
+        ItemStack? item = container.GetItem(slot);
+        if (item is null) {
             return ItemStackResponseStatus.CannotDropItem;
         }
 
-        _ = player.DropItem(removed);
+        int count = Math.Min(amount, item.StackSize);
+        ItemStack dropped = item.Clone((ushort)count);
+        if (!player.DropItem(dropped)) {
+            return ItemStackResponseStatus.CannotDropItem;
+        }
+
+        _ = container.TakeItem(slot, count);
 
         RecordChange(changed, action.Source.Container, container, action.Source.Slot, slot);
         return ItemStackResponseStatus.Ok;

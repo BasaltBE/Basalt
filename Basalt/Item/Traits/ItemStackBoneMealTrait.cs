@@ -31,6 +31,9 @@ public sealed class ItemStackBoneMealTrait : ItemTrait {
             block?.GetTrait<GrowablePlantTrait>()?.Fertilize(
                 dimension,
                 position) == true ||
+            block?.GetTrait<CropTrait>()?.Fertilize(
+                dimension,
+                position) == true ||
             block?.GetTrait<GrassBlockTrait>()?.Fertilize(
                 dimension,
                 position) == true;

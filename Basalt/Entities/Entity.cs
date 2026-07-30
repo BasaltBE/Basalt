@@ -141,10 +141,13 @@ public class Entity {
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn") : default;
         ArgumentNullException.ThrowIfNull(dimension);
-        Dimension = dimension;
+        if (Dimension != dimension) {
+            Dimension = dimension;
+            dimension.AddEntity(this);
+        }
+
         IsAlive = true;
         PendingDespawn = false;
-        dimension.AddEntity(this);
 
         using (Profiler.Enabled ? Profiler.BeginZone($"Spawn.Traits:{GetType().Name}") : default) {
             for (int i = 0; i < _traits.Count; i++) {
@@ -195,15 +198,16 @@ public class Entity {
         }
 
         Dimension? dimension = Dimension;
+        List<ItemStack> drops = dimension is null ? [] : LootTableManager.GenerateLootFromEntity(this);
         if (dimension?.World?.Server is Server server) {
-            EntityDieSignal signal = new(this, options);
+            EntityDieSignal signal = new(this, options, drops);
             server.Emit(signal);
             options = signal.Options;
+            drops = signal.Drops;
         }
 
         if (!options.Cancel && dimension is not null) {
             ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
-            List<ItemStack> drops = LootTableManager.GenerateLootFromEntity(this);
             for (int i = 0; i < drops.Count; i++) {
                 ItemEntity drop = new(drops[i]) {
                     Position = Position,
@@ -220,6 +224,14 @@ public class Entity {
         }
 
         IsAlive = false;
+        if (dimension is not null) {
+            dimension.Broadcast(new ActorEventPacket {
+                ActorRuntimeId = RuntimeId,
+                Event = ActorEvent.Death,
+                Data = 0
+            });
+        }
+
         for (int i = 0; i < _traits.Count; i++) {
             _traits[i].OnDeath(options);
         }
