@@ -68,6 +68,7 @@ public sealed class Server {
     public readonly ConcurrentDictionary<NetworkConnection, PlayerInstance> Players = new();
     public CommandRegistry Commands = new();
     public PermissionStore PermissionStore { get; }
+    public PlayerDataStore PlayerData { get; }
     public PluginManager Plugins { get; }
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
@@ -94,6 +95,7 @@ public sealed class Server {
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
         Network = new NetworkHandler(this);
         PermissionStore = new PermissionStore();
+        PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
         Plugins = new PluginManager(this);
         WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
         Scheduler = new TaskScheduler(WorkerPool);
@@ -264,6 +266,8 @@ public sealed class Server {
             return;
         }
 
+        SavePlayers();
+
         foreach (PlayerInstance player in Players.Values.ToArray()) {
             try {
                 player.Disconnect("Server closed.", true);
@@ -389,8 +393,19 @@ public sealed class Server {
     }
 
     public void SaveAll() {
+        SavePlayers();
         foreach (WorldInstance world in _worlds.Values) {
             world.Save();
+        }
+    }
+
+    public void SavePlayer(PlayerInstance player) {
+        PlayerData.Save(player.Xuid, player.Write());
+    }
+
+    public void SavePlayers() {
+        foreach (PlayerInstance player in Players.Values) {
+            SavePlayer(player);
         }
     }
 
@@ -435,6 +450,7 @@ public sealed class Server {
         ulong currentTick = GetWorld().TickValue;
         if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks) {
             _lastAutoSaveTick = currentTick;
+            SavePlayers();
             foreach (WorldInstance world in _worlds.Values) {
                 if (world.AutoSaving) {
                     continue;

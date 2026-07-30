@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.Text;
+using Basalt.Core.Player;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
@@ -10,7 +12,6 @@ namespace Basalt.Core.Worlds.Dimensions.Provider;
 public sealed class LevelDbProvider : WorldProvider {
     private readonly LevelDbDatabase _database;
     private readonly ChunkStore _chunks;
-    private readonly PlayerStore _players;
     private readonly string _path;
     public override string Identifier => "leveldb";
 
@@ -22,7 +23,6 @@ public sealed class LevelDbProvider : WorldProvider {
         _database = new LevelDbDatabase(_path);
         EntityStore entities = new(_database);
         _chunks = new ChunkStore(_database, entities);
-        _players = new PlayerStore(_database);
     }
 
     public static string ResolveDatabasePath(string path) {
@@ -68,24 +68,79 @@ public sealed class LevelDbProvider : WorldProvider {
 
     public override CompoundTag? LoadPlayerData(string xuid) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.LoadPlayerData") : default;
-        return _players.Load(xuid);
+        byte[]? data = GetRawPlayerData(xuid);
+        return data is null ? null : PlayerDataStore.Deserialize(data);
     }
 
     public override byte[]? GetRawPlayerData(string xuid) {
-        return _players.GetRaw(xuid);
+        if (string.IsNullOrWhiteSpace(xuid)) {
+            return null;
+        }
+
+        byte[]? data = _database.Get(LevelDbKeyBuilder.BuildPlayerServerKey(xuid));
+        return data is { Length: > 0 }
+            ? data
+            : _database.Get(LevelDbKeyBuilder.BuildLegacyPlayerStorageKey(xuid));
     }
 
     public override CompoundTag? LoadPlayerDataFromRaw(byte[] data) {
-        return PlayerStore.LoadFromRaw(data);
+        return PlayerDataStore.Deserialize(data);
     }
 
     public override void SavePlayerData(string xuid, CompoundTag data) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.SavePlayerData") : default;
-        _players.Save(xuid, data);
+        if (string.IsNullOrWhiteSpace(xuid)) {
+            throw new ArgumentException("Player xuid cannot be empty.", nameof(xuid));
+        }
+
+        _database.Put(LevelDbKeyBuilder.BuildPlayerServerKey(xuid), PlayerDataStore.Serialize(data));
+        _database.Delete(LevelDbKeyBuilder.BuildLegacyPlayerStorageKey(xuid));
+    }
+
+    public override void DeletePlayerData(string xuid) {
+        if (string.IsNullOrWhiteSpace(xuid)) {
+            return;
+        }
+
+        _database.Delete(LevelDbKeyBuilder.BuildPlayerServerKey(xuid));
+        _database.Delete(LevelDbKeyBuilder.BuildLegacyPlayerStorageKey(xuid));
     }
 
     public override IReadOnlyList<string> ListPlayerXuids() {
-        return _players.ListXuids();
+        List<string> xuids = [];
+        using LevelDbIterator iterator = _database.CreateIterator();
+
+        byte[] prefix = Encoding.UTF8.GetBytes("player_server_");
+        iterator.Seek(prefix);
+
+        while (iterator.Valid()) {
+            ReadOnlySpan<byte> key = iterator.Key();
+            if (key.Length <= prefix.Length || !key.StartsWith(prefix)) {
+                break;
+            }
+
+            xuids.Add(Encoding.UTF8.GetString(key[prefix.Length..]));
+            iterator.Next();
+        }
+
+        byte[] legacyPrefix = [0x35];
+        iterator.Seek(legacyPrefix);
+
+        while (iterator.Valid()) {
+            ReadOnlySpan<byte> key = iterator.Key();
+            if (key.Length == 0 || key[0] != 0x35) {
+                break;
+            }
+
+            string xuid = Encoding.UTF8.GetString(key[1..]);
+            if (!xuids.Contains(xuid)) {
+                xuids.Add(xuid);
+            }
+
+            iterator.Next();
+        }
+
+        return xuids;
     }
 
     public override void Dispose() {

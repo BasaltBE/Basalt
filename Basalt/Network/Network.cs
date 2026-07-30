@@ -138,8 +138,7 @@ public sealed class NetworkHandler {
         Entities.Traits.Types.EntityDespawnOptions options = new(Disconnected: true);
         _server.Emit(new PlayerLeaveSignal(player, options));
 
-        Worlds.World world = player.Dimension?.World ?? _server.GetWorld();
-        world.Persistence.SavePlayerData(player.Xuid, player.Write());
+        _server.SavePlayer(player);
 
 
         string leaveMessage = $"§e{player.Username} left the server.";
@@ -644,7 +643,6 @@ public sealed class NetworkHandler {
     }
 
 }
-
 
 
 

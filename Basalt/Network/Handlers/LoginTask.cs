@@ -57,17 +57,17 @@ internal sealed class LoginTask : ServerTask {
 
         _player = new Player.Player(_identity.Username, playerXuid, playerUuid);
 
-        (Worlds.World World, CompoundTag Data)? savedPlayer = LoadPlayerDataCompat(
+        CompoundTag? savedPlayer = _server.PlayerData.Load(playerXuid) ?? LoadPlayerDataCompat(
             _server, playerXuid, _identity.Xuid, _identity.Username, playerUuid);
 
         if (savedPlayer is not null) {
-            _player.Read(savedPlayer.Value.Data);
+            _player.Read(savedPlayer);
 
             bool shouldMigrateXuid = !string.Equals(playerXuid, _identity.Xuid, StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(playerXuid);
 
             if (shouldMigrateXuid) {
-                savedPlayer.Value.World.Persistence.SavePlayerData(playerXuid, savedPlayer.Value.Data);
+                _server.PlayerData.Save(playerXuid, savedPlayer);
             }
         }
 
@@ -227,7 +227,7 @@ internal sealed class LoginTask : ServerTask {
         return OfflineIdentity.GetOfflineXuid(username);
     }
 
-    private static (Worlds.World World, CompoundTag Data)? LoadPlayerDataCompat(
+    private static CompoundTag? LoadPlayerDataCompat(
         Server server,
         string primaryXuid,
         string identityXuid,
@@ -252,12 +252,16 @@ internal sealed class LoginTask : ServerTask {
 
                 CompoundTag? pending = world.Persistence.GetPendingPlayerData(candidate);
                 if (pending is not null) {
-                    return (world, pending);
+                    server.PlayerData.Save(primaryXuid, pending);
+                    world.Provider.DeletePlayerData(candidate);
+                    return pending;
                 }
 
                 byte[]? raw = provider.GetRawPlayerData(candidate);
                 if (raw is not null && provider.LoadPlayerDataFromRaw(raw) is { } data) {
-                    return (world, data);
+                    server.PlayerData.Save(primaryXuid, data);
+                    provider.DeletePlayerData(candidate);
+                    return data;
                 }
 
             }

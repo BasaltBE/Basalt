@@ -89,7 +89,7 @@ public class Properties {
     [ServerProperties.PropertyOrder(18)]
     [ServerProperties.PropertyKey("player-data-path")]
     [ServerProperties.PropertyComment("Directory containing server player data.")]
-    public string PlayerDataPath { get; set; } = "players";
+    public string PlayerDataPath { get; set; } = "worlds/players";
 }
 
 
