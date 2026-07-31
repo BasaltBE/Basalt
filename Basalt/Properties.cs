@@ -69,7 +69,7 @@ public class Properties {
     [ServerProperties.PropertyOrder(14)]
     [ServerProperties.PropertyKey("worker-threads")]
     [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
-    public int WorkerThreads { get; set; } = 2;
+    public int WorkerThreads { get; set; } = 4;
 
     [ServerProperties.PropertyOrder(15)]
     [ServerProperties.PropertyKey("resource-packs-path")]
