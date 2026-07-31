@@ -14,7 +14,6 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 using Entity = Basalt.Core.Entities.Entity;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait {
-    private const int ChunksPerTick = 64;
     private const float EntityVisibilityRadiusSquared = 64f * 64f;
     private const int EntityVisibilityRadiusChunks = 4;
 
@@ -189,14 +188,15 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
     private void SendChunks(Dimension dimension) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.SendChunks") : default;
+        int chunksPerTick = Math.Max(dimension.World?.Server?.Properties.ChunksPerTick ?? 64, 1);
         _sendBuffer.Clear();
         _sentChunkBuffer.Clear();
 
-        SendReadyChunks(dimension);
+        SendReadyChunks(dimension, chunksPerTick);
 
-        int requestLimit = ChunksPerTick - _requestedChunks.Count;
+        int requestLimit = chunksPerTick - _requestedChunks.Count;
         if (requestLimit > 0) {
-            Span<(int X, int Z)> requests = stackalloc (int X, int Z)[ChunksPerTick];
+            Span<(int X, int Z)> requests = stackalloc (int X, int Z)[chunksPerTick];
             int requestCount = 0;
 
             while (requestCount < requestLimit && NextRingPosition(out int x, out int z)) {
@@ -246,8 +246,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         }
     }
 
-    private void SendReadyChunks(Dimension dimension) {
-        while (_sendBuffer.Count < ChunksPerTick && _readyChunks.Count > 0) {
+    private void SendReadyChunks(Dimension dimension, int chunksPerTick) {
+        while (_sendBuffer.Count < chunksPerTick && _readyChunks.Count > 0) {
             (Dimension requestedDimension, ChunkColumn chunk) = _readyChunks.Dequeue();
             _requestedChunks.Remove(chunk.Hash);
 

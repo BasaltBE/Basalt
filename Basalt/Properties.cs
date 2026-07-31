@@ -90,6 +90,11 @@ public class Properties {
     [ServerProperties.PropertyKey("player-data-path")]
     [ServerProperties.PropertyComment("Directory containing server player data.")]
     public string PlayerDataPath { get; set; } = "worlds/players";
+
+    [ServerProperties.PropertyOrder(19)]
+    [ServerProperties.PropertyKey("chunks-per-tick")]
+    [ServerProperties.PropertyComment("Maximum chunks each player can request and receive per tick.")]
+    public int ChunksPerTick { get; set; } = 32;
 }
 
 

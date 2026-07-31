@@ -48,5 +48,6 @@ sealed class Program {
         if (!props.HasProperty("compression-algorithm")) props.SetStringProperty("compression-algorithm", "zlib");
         if (!props.HasProperty("max-view-distance")) props.SetNumericalProperty("max-view-distance", 32);
         if (!props.HasProperty("simulation-distance")) props.SetNumericalProperty("simulation-distance", 4);
+        if (!props.HasProperty("chunks-per-tick")) props.SetNumericalProperty("chunks-per-tick", 64);
     }
 }
