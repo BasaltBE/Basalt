@@ -19,6 +19,7 @@ public enum ServerEvent : int {
     PlayerInteractBlock = 17,
     PlayerUseItem = 18,
     PlayerAttackEntity = 19,
+    PlayerStartBreakBlock = 20,
 }
 
 

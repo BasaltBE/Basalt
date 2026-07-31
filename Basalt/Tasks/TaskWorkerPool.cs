@@ -12,6 +12,8 @@ public sealed class TaskWorkerPool : IDisposable {
     private readonly ConcurrentQueue<ServerTask> _completionQueue = new();
 
     public int WorkerCount => _workers.Length;
+    public int PendingWorkCount => _workQueue.Count;
+    public int PendingCompletionCount => _completionQueue.Count;
     internal static bool WorkerThread => _workerThread;
 
     public TaskWorkerPool(int workerCount = 4) {

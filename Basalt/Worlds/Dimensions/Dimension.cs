@@ -3,6 +3,7 @@ namespace Basalt.Core.Worlds.Dimensions;
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities;
 using Basalt.Core.Item;
 using Basalt.Core.Profiling;
@@ -19,6 +20,8 @@ using Entity = Entities.Entity;
 
 public sealed class Dimension : IDisposable {
     private const int CompletedChunkLimit = 128;
+    private const float VoidY = -64f;
+    private const ulong VoidDamageCooldownTicks = 20;
 
     private static readonly Dictionary<string, string> BlockActorIds = new() {
         ["minecraft:barrel"] = "Barrel",
@@ -77,6 +80,14 @@ public sealed class Dimension : IDisposable {
 
     public int ChunkCount => _chunks.Count;
     public int ChunkViewerCount => _chunkViewers.Count;
+    public int PendingChunkRequestCount {
+        get {
+            lock (_chunkRequestLock) {
+                return _pendingChunkRequests.Count;
+            }
+        }
+    }
+    public int PendingChunkCallbackCount => _chunkRequestCallbacks.Count;
     public IReadOnlyCollection<Entity> Entities => _entities;
 
     internal bool ChunkLoaded(int x, int z) {
@@ -633,6 +644,18 @@ public sealed class Dimension : IDisposable {
             foreach (Entity entity in _entities) {
                 if (entity.PendingDespawn || entity.Dimension != this) {
                     _pendingEntityRemoves.Add(entity);
+                    continue;
+                }
+
+                if (entity.Position.Y < VoidY) {
+                    if (entity is ItemEntity) {
+                        entity.Despawn(new EntityDespawnOptions());
+                    }
+                    else if (currentTick >= entity.NextVoidDamageTick && entity.GetTrait<EntityHealthTrait>() is { } health) {
+                        entity.NextVoidDamageTick = currentTick + VoidDamageCooldownTicks;
+                        health.ApplyDamage(float.MaxValue, null, ActorDamageCause.Void);
+                    }
+
                     continue;
                 }
 

@@ -1,9 +1,6 @@
-Implement a way to register 
- - Custom Entities
-
-Fix changing to diff dimensions sometimes not loading the chunks at first try
-
-Implement more item, entity, block components
+Fix MobEquipmentPacket not being broadcasted so others cant see ur item changes
 
 ocasionally run 
 dotnet format --diagnostics=IDE0001 IDE0005
+
+

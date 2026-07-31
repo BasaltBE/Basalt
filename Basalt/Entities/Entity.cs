@@ -43,6 +43,7 @@ public class Entity {
     public bool AttributesDirty { get; set; }
     public bool IsAlive { get; private set; }
     public bool PendingDespawn { get; private set; }
+    internal ulong NextVoidDamageTick;
     public bool IsSprinting {
         get => Flags.GetActorFlag(ActorFlag.Sprinting);
         set => Flags.SetActorFlag(ActorFlag.Sprinting, value);
@@ -148,6 +149,7 @@ public class Entity {
 
         IsAlive = true;
         PendingDespawn = false;
+        NextVoidDamageTick = 0;
 
         using (Profiler.Enabled ? Profiler.BeginZone($"Spawn.Traits:{GetType().Name}") : default) {
             for (int i = 0; i < _traits.Count; i++) {

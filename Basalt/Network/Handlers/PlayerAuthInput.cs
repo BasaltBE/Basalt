@@ -394,6 +394,15 @@ public static class PlayerAuthInput {
             }
             : packet.Position;
 
+        if (previousPosition.X == player.Location.X &&
+            previousPosition.Y == player.Location.Y &&
+            previousPosition.Z == player.Location.Z &&
+            fromRotation.Pitch == toRotation.Pitch &&
+            fromRotation.Yaw == toRotation.Yaw &&
+            fromRotation.HeadYaw == toRotation.HeadYaw) {
+            return;
+        }
+
         player.OnMove(new EntityMoveOptions(previousPosition, player.Location, fromRotation, toRotation));
 
     }
@@ -445,6 +454,20 @@ public static class PlayerAuthInput {
     }
 
     private static void StartBreakBlock(Player.Player player, BlockPos blockPosition, ulong tick) {
+        if (player.Dimension?.World?.Server is Server server) {
+            PlayerStartBreakBlockSignal signal = new(player, blockPosition);
+            server.Emit(signal);
+            if (!signal.Emit()) {
+                player.Send(new UpdateBlockPacket {
+                    Position = blockPosition,
+                    NetworkBlockId = (uint)player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z).NetworkId,
+                    Flags = UpdateBlockFlagsType.Network,
+                    Layer = UpdateBlockLayerType.Normal
+                });
+                return;
+            }
+        }
+
         if (player.BreakingBlock.HasValue && !SameBlock(player.BreakingBlock.Value, blockPosition)) {
             StopCrackBlock(player, player.BreakingBlock.Value);
         }
@@ -611,6 +634,7 @@ public static class PlayerAuthInput {
 
         Server? server = player.Dimension.World?.Server;
         Basalt.Core.Blocks.BlockPermutation? replacement = null;
+        List<ItemStack>? customDrops = null;
         if (server is not null) {
             Basalt.Core.Blocks.Block breakBlock =
                 player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
@@ -643,6 +667,7 @@ public static class PlayerAuthInput {
             }
 
             replacement = signal.Replacement;
+            customDrops = signal.Drops;
         }
 
         player.Dimension.Broadcast(new LevelEventPacket {
@@ -658,6 +683,10 @@ public static class PlayerAuthInput {
         Basalt.Core.Blocks.Block breakingBlock =
             player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z) ??
             new Basalt.Core.Blocks.Block(block);
+
+        if (customDrops is not null) {
+            breakingBlock.SetDrops(customDrops);
+        }
 
         breakingBlock.OnBreak(new BlockBreakDetails(player, blockPosition));
 

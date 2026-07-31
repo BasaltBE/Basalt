@@ -31,6 +31,7 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
 
     public void ApplyDamage(float amount, Entity? damager = null, ActorDamageCause? cause = null) {
         EntityHurtSignal signal = new(Entity, amount, cause, damager);
+        Entity.Dimension?.World?.Server?.Emit(signal);
         if (!signal.Emit()) {
             return;
         }

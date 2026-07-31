@@ -29,6 +29,16 @@ public sealed class NetworkHandler {
     private readonly Dictionary<NetworkConnection, List<OutgoingPacket>> _outgoingBuffer = [];
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
     private int _threadId;
+    private long _sentBytes;
+    private long _sentPackets;
+    private long _sentFrames;
+
+    public int PendingIncomingFrameCount => _incomingFrames.Count;
+    public int PendingIncomingPacketCount => _incomingPackets.Count;
+    public int PendingOutgoingPacketCount => _outgoingPackets.Count;
+    public long SentBytes => Interlocked.Read(ref _sentBytes);
+    public long SentPackets => Interlocked.Read(ref _sentPackets);
+    public long SentFrames => Interlocked.Read(ref _sentFrames);
 
     public NetworkHandler(Server server) {
         _server = server;
@@ -556,6 +566,7 @@ public sealed class NetworkHandler {
                 frameLength = Protocol.Io.Packet.Frame(payloads.AsSpan(0, packetCount), frame);
             }
             SendFrame(connection, frame.AsSpan(0, frameLength), compression, immediate);
+            Interlocked.Add(ref _sentPackets, packetCount);
             return end;
         }
         finally {
@@ -583,6 +594,8 @@ public sealed class NetworkHandler {
             using (Profiler.Enabled ? Profiler.BeginZone("Network.RakNetSend") : default) {
                 connection.SendPacket(compressedBuffer.AsSpan(0, frameLength), Reliability.ReliableOrdered, immediate);
             }
+            Interlocked.Add(ref _sentBytes, frameLength);
+            Interlocked.Increment(ref _sentFrames);
         }
         finally {
             ArrayPool<byte>.Shared.Return(compressedBuffer);
@@ -643,10 +656,6 @@ public sealed class NetworkHandler {
     }
 
 }
-
-
-
-
 
 
 
