@@ -154,6 +154,18 @@ public sealed class Chunk {
         return MaxSubChunks - emptyTail;
     }
 
+    /// <summary>
+    /// Bedrock clients always read dimension.height/16 biome storages from LevelChunk,
+    /// independent of how many subchunks were sent
+    /// </summary>
+    public static int GetBiomeSendCount(DimensionType type) {
+        return type switch {
+            DimensionType.Nether => 8,
+            DimensionType.End => 16,
+            _ => MaxSubChunks
+        };
+    }
+
     public List<BlockLevelStorage> GetAllBlockStorages() {
         return [.. _blocks.Values];
     }
@@ -349,13 +361,29 @@ public sealed class Chunk {
             SubChunk.Serialize(subChunk, writer, nbt);
         }
 
-        for (int index = 0; index < subChunkCount; index++) {
-            SubChunk? subChunk = chunk.SubChunks[index];
-            if (subChunk is null || subChunk.IsEmpty()) {
-                continue;
-            }
+        if (nbt) {
+            // Disk/NBT column format only stores biomes for non-empty subchunks.
+            for (int index = 0; index < subChunkCount; index++) {
+                SubChunk? subChunk = chunk.SubChunks[index];
+                if (subChunk is null || subChunk.IsEmpty()) {
+                    continue;
+                }
 
-            BiomeStorage.Serialize(subChunk.Biomes, ref writer, nbt);
+                BiomeStorage.Serialize(subChunk.Biomes, ref writer, nbt);
+            }
+        }
+        else {
+            // Network: client always reads height/16 biome sections.
+            int biomeCount = GetBiomeSendCount(chunk.Type);
+            for (int index = 0; index < biomeCount; index++) {
+                SubChunk? subChunk = index < chunk.SubChunks.Length ? chunk.SubChunks[index] : null;
+                if (subChunk is null) {
+                    BiomeStorage.Serialize(BiomeStorage.Default, ref writer, disk: false);
+                    continue;
+                }
+
+                BiomeStorage.Serialize(subChunk.Biomes, ref writer, disk: false);
+            }
         }
 
         writer.WriteUInt8(0);
@@ -420,13 +448,43 @@ public sealed class Chunk {
             }
         }
 
-        for (int i = 0; i < subChunks.Length; i++) {
-            SubChunk? subChunk = subChunks[i];
-            if (subChunk is null || subChunk.IsEmpty()) {
-                continue;
-            }
+        if (nbt) {
+            for (int i = 0; i < subChunks.Length; i++) {
+                SubChunk? subChunk = subChunks[i];
+                if (subChunk is null || subChunk.IsEmpty()) {
+                    continue;
+                }
 
-            subChunk.Biomes = BiomeStorage.Deserialize(ref reader, biomeNbt ?? nbt);
+                subChunk.Biomes = BiomeStorage.Deserialize(ref reader, biomeNbt ?? nbt);
+            }
+        }
+        else {
+            int biomeCount = GetBiomeSendCount(type);
+            int offset = type == DimensionType.Overworld ? 4 : 0;
+            bool biomesDisk = biomeNbt ?? false;
+
+            for (int i = 0; i < biomeCount; i++) {
+                if (reader.Remaining <= 0) {
+                    break;
+                }
+
+                BiomeStorage biomes = BiomeStorage.Deserialize(ref reader, biomesDisk);
+                if (i >= subChunks.Length) {
+                    continue;
+                }
+
+                SubChunk? subChunk = subChunks[i];
+                if (subChunk is null) {
+                    if (biomes.IsEmpty()) {
+                        continue;
+                    }
+
+                    subChunks[i] = new SubChunk { Index = (sbyte)(i - offset), Biomes = biomes };
+                    continue;
+                }
+
+                subChunk.Biomes = biomes;
+            }
         }
 
         if (reader.Remaining > 0) {

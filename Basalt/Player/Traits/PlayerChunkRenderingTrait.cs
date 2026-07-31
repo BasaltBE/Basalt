@@ -76,7 +76,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             UpdateTrackedChunkPosition();
             UnloadChunks(Player.Dimension, clearClient: true);
-            SendPublisherUpdate(includeSavedChunks: true);
+            SendPublisherUpdate();
         }
     }
 
@@ -87,7 +87,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             ResetChunkRequests();
             UpdateTrackedChunkPosition();
             ResetRingScan();
-            SendPublisherUpdate(includeSavedChunks: true);
+            SendPublisherUpdate();
 
             if (Player.Dimension is not null) {
                 SendChunks(Player.Dimension);
@@ -125,7 +125,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             }
 
             UnloadChunks(Player.Dimension, clearClient: true);
-            SendPublisherUpdate(includeSavedChunks: true);
+            SendPublisherUpdate();
             UpdateVisibleChunks(Player.Dimension);
         }
     }
@@ -145,10 +145,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             UnloadChunks(Player.Dimension, clearClient: true);
             UpdateVisibleChunks(Player.Dimension);
-
-            if (Math.Abs(chunkX - _publisherChunkX) > 2 || Math.Abs(chunkZ - _publisherChunkZ) > 2) {
-                SendPublisherUpdate(includeSavedChunks: true);
-            }
+            SendPublisherUpdate();
         }
     }
 
@@ -165,10 +162,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             bool changedChunk = UpdateChunkPosition(chunkX, chunkZ);
             UnloadChunks(dimension, clearClient: true);
-            SendChunks(dimension);
             if (changedChunk) {
+                SendPublisherUpdate();
                 UpdateVisibleChunks(dimension);
             }
+
+            SendChunks(dimension);
         }
     }
 
@@ -432,34 +431,20 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         }
     }
 
-    private void SendPublisherUpdate(bool includeSavedChunks) {
-        Player.Send(CreateChunkPublisherPacket(includeSavedChunks));
+    private void SendPublisherUpdate() {
+        Player.Send(CreateChunkPublisherPacket());
         _publisherChunkX = ChunkX;
         _publisherChunkZ = ChunkZ;
     }
 
-    private NetworkChunkPublisherUpdatePacket CreateChunkPublisherPacket(bool includeSavedChunks) {
-        NetworkChunkPublisherUpdatePacket packet = new() {
+    private NetworkChunkPublisherUpdatePacket CreateChunkPublisherPacket() {
+        return new NetworkChunkPublisherUpdatePacket {
             CoordinateX = (int)MathF.Floor(Player.Location.X),
             CoordinateY = (int)MathF.Floor(Player.Location.Y),
             CoordinateZ = (int)MathF.Floor(Player.Location.Z),
-            Radius = (uint)(ViewDistance << 4),
+            Radius = ChunkViewMath.PublisherRadiusBlocks(ViewDistance),
             SavedChunks = []
         };
-
-        if (!includeSavedChunks) {
-            return packet;
-        }
-
-        foreach (long hash in _loadedChunks) {
-            UnhashChunk(hash, out int x, out int z);
-
-            if (ChunkInRange(x, z)) {
-                packet.SavedChunks.Add((x, z));
-            }
-        }
-
-        return packet;
     }
 
     private static int WorldToChunk(float coordinate) {
