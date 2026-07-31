@@ -8,6 +8,7 @@ public sealed class BiomeStorage {
     public const int MaxY = 16;
     public const int MaxZ = 16;
     public const int MaxSize = MaxX * MaxY * MaxZ;
+    public static readonly BiomeStorage Default = new([0], new int[MaxSize]);
 
     private readonly Dictionary<int, int> _paletteIndices;
 
@@ -101,7 +102,7 @@ public sealed class BiomeStorage {
         int bitsPerBiome = paletteAndFlag >> 1;
 
         if (bitsPerBiome == 0x7F) {
-            return new BiomeStorage();
+            return Default;
         }
 
         if (bitsPerBiome > 16) {
@@ -110,6 +111,10 @@ public sealed class BiomeStorage {
 
         if (bitsPerBiome == 0) {
             int value = disk ? reader.ReadInt32(littleEndian: true) : reader.ReadZigZag();
+            if (value == 0) {
+                return Default;
+            }
+
             return new BiomeStorage([value], new int[MaxSize]);
         }
 

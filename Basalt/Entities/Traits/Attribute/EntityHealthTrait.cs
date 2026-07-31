@@ -85,11 +85,7 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
             ActorEventPacket packet = new() {
                 ActorRuntimeId = Entity.RuntimeId,
                 Event = ActorEvent.Hurt,
-                Data = (int)(signal.Cause ?? ActorDamageCause.None),
-                FiredAt = new Optional<Vec3f> {
-                    HasValue = true,
-                    Value = Entity.Position
-                }
+                Data = (int)(signal.Cause ?? ActorDamageCause.None)
             };
             Entity.Dimension.Broadcast(packet);
         }

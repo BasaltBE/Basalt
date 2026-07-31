@@ -295,7 +295,9 @@ public sealed class Chunk {
                 layers.Add(new BlockStorage([.. storage.Palette], [.. storage.Blocks]));
             }
 
-            BiomeStorage biomes = new([.. source.Biomes.Palette], [.. source.Biomes.Biomes]);
+            BiomeStorage biomes = ReferenceEquals(source.Biomes, BiomeStorage.Default)
+                ? BiomeStorage.Default
+                : new BiomeStorage([.. source.Biomes.Palette], [.. source.Biomes.Biomes]);
             subChunks[i] = new SubChunk(source.Version, layers, biomes) {
                 Index = source.Index
             };

@@ -30,7 +30,7 @@ public static class StatusCommand {
 
         string message = $"§r§7Server Status ({color}{tps:0.0}§7)\n" +
                          $"§7` TPS ({color}{tps:0.0}§7)\n" +
-                         $"§7` Tick Work (§a{ctx.Server.TickWork:0.00} ms§7)\n" +
+                         $"§7` Tick Work (§a{ctx.Server.TickWork:0.00} ms last, {ctx.Server.TickWorkAverage:0.00} ms avg, {ctx.Server.TickWorkMaximum:0.00} ms max§7)\n" +
                          $"§7` Players (§a{playerCount}§7)\n" +
                          $"§7` Worlds (§a{worldCount}§7)\n" +
                          $"§7` Dimensions (§a{dimensions.Length}§7)\n" +

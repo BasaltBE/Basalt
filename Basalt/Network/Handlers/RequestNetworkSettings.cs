@@ -22,6 +22,7 @@ public static class RequestNetworkSettings {
                 FilteredMessage = ""
             };
 
+            Logger.Warn($"Session failed due to {reason.ToString()}");
             server.Network.QueuePacket(connection, disconnect, CompressionMethod.NotPresent);
             return;
         }

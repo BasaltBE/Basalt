@@ -14,6 +14,7 @@ using Basalt.Protocol.Nbt;
 using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
+using Basalt.Core.Player.Traits;
 using ChunkColumn = Chunk.Chunk;
 
 using Entity = Entities.Entity;
@@ -42,6 +43,9 @@ public sealed class Dimension : IDisposable {
     private readonly HashSet<long> _pendingUnloads = [];
     private readonly HashSet<Entity> _entities;
     private readonly Dictionary<Entity, long> _entityChunks = [];
+    private readonly Dictionary<Entity, long> _entityChunkIndexes = [];
+    private readonly Dictionary<long, HashSet<Entity>> _chunkEntities = [];
+    private readonly List<Entity> _tickEntityBuffer = [];
     private readonly List<long> _chunkSweepBuffer = [];
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
@@ -89,6 +93,12 @@ public sealed class Dimension : IDisposable {
     }
     public int PendingChunkCallbackCount => _chunkRequestCallbacks.Count;
     public IReadOnlyCollection<Entity> Entities => _entities;
+
+    internal IReadOnlyCollection<Entity> GetEntities(int x, int z) {
+        return _chunkEntities.TryGetValue(HashChunk(x, z), out HashSet<Entity>? entities)
+            ? entities
+            : Array.Empty<Entity>();
+    }
 
     internal bool ChunkLoaded(int x, int z) {
         return _chunks.ContainsKey(HashChunk(x, z));
@@ -639,9 +649,16 @@ public sealed class Dimension : IDisposable {
             _simulatedChunks.UnionWith(_simulationChunkBuffer);
         }
 
+        _tickEntityBuffer.Clear();
+        foreach (long hash in _simulatedChunks) {
+            if (_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+                _tickEntityBuffer.AddRange(entities);
+            }
+        }
+
         _tickingEntities = true;
         using (Profiler.Enabled ? Profiler.BeginZone("Dimension.TickEntities") : default) {
-            foreach (Entity entity in _entities) {
+            foreach (Entity entity in _tickEntityBuffer) {
                 if (entity.PendingDespawn || entity.Dimension != this) {
                     _pendingEntityRemoves.Add(entity);
                     continue;
@@ -656,15 +673,6 @@ public sealed class Dimension : IDisposable {
                         health.ApplyDamage(float.MaxValue, null, ActorDamageCause.Void);
                     }
 
-                    continue;
-                }
-
-                if (entity is Player.Player player && player.Xuid.Length > 0) {
-                    entity.Tick(currentTick, deltaTick);
-                    continue;
-                }
-
-                if (!EntityInSimulatedChunk(entity)) {
                     continue;
                 }
 
@@ -719,7 +727,9 @@ public sealed class Dimension : IDisposable {
         }
 
         _entities.Add(entity);
+        IndexEntity(entity);
         UpdateEntityStorage(entity);
+        UpdateEntityVisibility(entity);
     }
 
     internal void RemoveEntity(Entity entity, bool complete = true) {
@@ -730,6 +740,7 @@ public sealed class Dimension : IDisposable {
         }
 
         RemoveEntityStorage(entity);
+        UnindexEntity(entity);
         if (complete) {
             entity.CompleteDespawn();
         }
@@ -742,46 +753,37 @@ public sealed class Dimension : IDisposable {
         }
 
         ulong tick = World is Tickable tickable ? tickable.TickValue : 0;
-        int joiningChunkX = WorldToChunk(joining.Location.X);
-        int joiningChunkZ = WorldToChunk(joining.Location.Z);
-        int viewDistance = server.Properties.MaxViewDistance;
-
+        PlayerChunkRenderingTrait? joiningRenderer = joining.GetTrait<PlayerChunkRenderingTrait>();
         foreach ((_, Player.Player other) in server.Players) {
-            if (ReferenceEquals(other, joining) || other.Dimension != this) {
+            if (ReferenceEquals(other, joining) || other.Dimension != this || !other.IsAlive ||
+                !InEntityVisibilityRange(joining.Location, other.Location)) {
                 continue;
             }
 
-            int otherChunkX = WorldToChunk(other.Location.X);
-            int otherChunkZ = WorldToChunk(other.Location.Z);
+            if (joiningRenderer?.VisibleActorIds.TryAdd(other.RuntimeId, other.UniqueId) != false) {
+                other.SpawnTo(joining, tick);
+            }
 
-            bool otherInRange = InViewRange(joiningChunkX, joiningChunkZ, otherChunkX, otherChunkZ, viewDistance);
-            other.SpawnTo(joining, tick, otherInRange ? other.Location : new Vec3f());
-
-            bool joiningInRange = InViewRange(otherChunkX, otherChunkZ, joiningChunkX, joiningChunkZ, viewDistance);
-            joining.SpawnTo(other, tick, joiningInRange ? joining.Location : new Vec3f());
+            PlayerChunkRenderingTrait? otherRenderer = other.GetTrait<PlayerChunkRenderingTrait>();
+            if (otherRenderer?.VisibleActorIds.TryAdd(joining.RuntimeId, joining.UniqueId) != false) {
+                joining.SpawnTo(other, tick);
+            }
         }
     }
 
     public void RemovePlayer(Player.Player leaving) {
-        Broadcast(new RemoveActorPacket {
-            EntityUniqueId = leaving.UniqueId
-        }, new BroadcastOptions { Except = [leaving] });
-    }
-
-    private static bool InViewRange(int viewerChunkX, int viewerChunkZ, int targetChunkX, int targetChunkZ, int viewDistance) {
-        int dx = targetChunkX - viewerChunkX;
-        int dz = targetChunkZ - viewerChunkZ;
-        return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= viewDistance;
+        HideEntity(leaving);
     }
 
     private static long HashChunk(int x, int z) {
         return ((long)x << 32) | (uint)z;
     }
 
-    private bool EntityInSimulatedChunk(Entity entity) {
-        int chunkX = WorldToChunk(entity.Position.X);
-        int chunkZ = WorldToChunk(entity.Position.Z);
-        return _chunks.TryGetValue(HashChunk(chunkX, chunkZ), out ChunkColumn? chunk) && chunk.Simulated;
+    private static bool InEntityVisibilityRange(Vec3f first, Vec3f second) {
+        float dx = first.X - second.X;
+        float dy = first.Y - second.Y;
+        float dz = first.Z - second.Z;
+        return (dx * dx) + (dy * dy) + (dz * dz) <= 64f * 64f;
     }
 
     private static int WorldToChunk(float coordinate) {
@@ -813,6 +815,7 @@ public sealed class Dimension : IDisposable {
         if (_pendingEntityRemoves.Count > 0) {
             foreach (Entity entity in _pendingEntityRemoves) {
                 RemoveEntityStorage(entity);
+                UnindexEntity(entity);
                 if (entity.Dimension == this) {
                     entity.CompleteDespawn();
                 }
@@ -825,6 +828,7 @@ public sealed class Dimension : IDisposable {
         if (_pendingEntityAdds.Count > 0) {
             foreach (Entity entity in _pendingEntityAdds) {
                 _entities.Add(entity);
+                IndexEntity(entity);
             }
 
             _pendingEntityAdds.Clear();
@@ -859,12 +863,23 @@ public sealed class Dimension : IDisposable {
     }
 
     internal void UpdateEntityStorage(Entity entity) {
-        if (entity is Player.Player player && player.Xuid.Length > 0 || entity.Dimension != this) {
+        if (entity.Dimension != this) {
             return;
         }
 
         if (entity.PendingDespawn) {
             RemoveEntityStorage(entity);
+            UnindexEntity(entity);
+            return;
+        }
+
+        bool changedChunk = UpdateEntityIndex(entity);
+
+        if (changedChunk) {
+            UpdateEntityVisibility(entity);
+        }
+
+        if (entity is Player.Player player && player.Xuid.Length > 0) {
             return;
         }
 
@@ -908,6 +923,79 @@ public sealed class Dimension : IDisposable {
         }
     }
 
+    private void IndexEntity(Entity entity) {
+        long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
+        _entityChunkIndexes[entity] = hash;
+
+        if (!_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+            entities = [];
+            _chunkEntities[hash] = entities;
+        }
+
+        entities.Add(entity);
+    }
+
+    private bool UpdateEntityIndex(Entity entity) {
+        long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
+        if (_entityChunkIndexes.TryGetValue(entity, out long previousHash)) {
+            if (previousHash == hash) {
+                return false;
+            }
+
+            if (_chunkEntities.TryGetValue(previousHash, out HashSet<Entity>? previousEntities)) {
+                previousEntities.Remove(entity);
+                if (previousEntities.Count == 0) {
+                    _chunkEntities.Remove(previousHash);
+                }
+            }
+        }
+
+        _entityChunkIndexes[entity] = hash;
+        if (!_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+            entities = [];
+            _chunkEntities[hash] = entities;
+        }
+
+        entities.Add(entity);
+        return true;
+    }
+
+    private void UnindexEntity(Entity entity) {
+        if (!_entityChunkIndexes.Remove(entity, out long hash) ||
+            !_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+            return;
+        }
+
+        entities.Remove(entity);
+        if (entities.Count == 0) {
+            _chunkEntities.Remove(hash);
+        }
+    }
+
+    private void UpdateEntityVisibility(Entity entity) {
+        if (World?.Server is not Server server) {
+            return;
+        }
+
+        foreach (Player.Player player in server.Players.Values) {
+            if (player.Dimension == this) {
+                player.GetTrait<PlayerChunkRenderingTrait>()?.UpdateVisibleEntity(entity);
+            }
+        }
+    }
+
+    internal void HideEntity(Entity entity) {
+        if (World?.Server is not Server server) {
+            return;
+        }
+
+        foreach (Player.Player player in server.Players.Values) {
+            if (player.Dimension == this) {
+                player.GetTrait<PlayerChunkRenderingTrait>()?.HideVisibleEntity(entity);
+            }
+        }
+    }
+
     private void SyncEntitiesToStorage(ChunkColumn chunk) {
         foreach (Entity entity in _entities) {
             if (entity is Player.Player player && player.Xuid.Length > 0) {
@@ -945,6 +1033,7 @@ public sealed class Dimension : IDisposable {
                     WorldToChunk(existing.Position.X),
                     WorldToChunk(existing.Position.Z)
                 );
+                UpdateEntityIndex(existing);
                 continue;
             }
 
@@ -1004,6 +1093,7 @@ public sealed class Dimension : IDisposable {
             _pendingEntityRemoves.Remove(entity);
             _entities.Remove(entity);
             _entityChunks.Remove(entity);
+            UnindexEntity(entity);
             entity.CompleteDespawn();
         }
     }
@@ -1031,6 +1121,9 @@ public sealed class Dimension : IDisposable {
 
             case MovePlayerPacket movePlayer:
                 return movePlayer.Position;
+
+            case MoveActorDeltaPacket moveActorDelta:
+                return moveActorDelta.Position;
 
             default:
                 return null;

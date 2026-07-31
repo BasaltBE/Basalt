@@ -63,6 +63,9 @@ public sealed class Server {
     private long _lastTpsTimestamp;
     private ulong _lastTpsTick;
     private ulong _lastAutoSaveTick;
+    private double _tickWorkTotal;
+    private double _tickWorkMaximum;
+    private int _tickWorkSamples;
     private TimeSpan _startupElapsed;
     private readonly Dictionary<ServerEvent, List<SignalHandler>> _signalHandlers = new(ServerEventComparer.Instance);
     public readonly ConcurrentDictionary<NetworkConnection, PlayerInstance> Players = new();
@@ -88,6 +91,10 @@ public sealed class Server {
     /// Milliseconds the last server tick took.
     /// </summary>
     public double TickWork { get; private set; }
+
+    public double TickWorkAverage { get; private set; }
+
+    public double TickWorkMaximum { get; private set; }
 
     public Server(Properties? properties = null) {
         long startTimestamp = Stopwatch.GetTimestamp();
@@ -479,6 +486,9 @@ public sealed class Server {
 
         long endTimestamp = Stopwatch.GetTimestamp();
         TickWork = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+        _tickWorkTotal += TickWork;
+        _tickWorkMaximum = Math.Max(_tickWorkMaximum, TickWork);
+        _tickWorkSamples++;
         UpdateTps(endTimestamp);
         Profiler.FrameMark();
     }
@@ -503,6 +513,11 @@ public sealed class Server {
         double elapsedSeconds = (double)timestampDelta / Stopwatch.Frequency;
         double currentTps = Math.Min(20.0, tickDelta / elapsedSeconds);
         Tps = Tps == 0 ? currentTps : Tps + ((currentTps - Tps) * 0.2);
+        TickWorkAverage = _tickWorkSamples == 0 ? 0 : _tickWorkTotal / _tickWorkSamples;
+        TickWorkMaximum = _tickWorkMaximum;
+        _tickWorkTotal = 0;
+        _tickWorkMaximum = 0;
+        _tickWorkSamples = 0;
         _lastTpsTimestamp = timestamp;
         _lastTpsTick = GetWorld().TickValue;
     }

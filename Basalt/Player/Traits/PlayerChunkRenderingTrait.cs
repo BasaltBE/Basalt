@@ -15,6 +15,8 @@ using Entity = Basalt.Core.Entities.Entity;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private const int ChunksPerTick = 64;
+    private const float EntityVisibilityRadiusSquared = 64f * 64f;
+    private const int EntityVisibilityRadiusChunks = 4;
 
     public new static string Identifier => "chunk_rendering";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
@@ -26,8 +28,9 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private readonly List<long> _unloadBuffer = [];
     private readonly List<DataPacket> _sendBuffer = [];
     private readonly List<(long Hash, int X, int Z)> _sentChunkBuffer = [];
-    private readonly HashSet<ulong> _visibleThisTick = [];
-    private readonly List<ulong> _hideBuffer = [];
+    private readonly HashSet<long> _visibleChunks = [];
+    private readonly HashSet<long> _visibilityChunkBuffer = [];
+    private readonly List<long> _visibilityRemoveBuffer = [];
 
     /// <summary>
     /// Maps entity runtime ID to its unique ID for all entities currently visible to this player.
@@ -89,6 +92,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             if (Player.Dimension is not null) {
                 SendChunks(Player.Dimension);
+                UpdateVisibleChunks(Player.Dimension);
             }
         }
     }
@@ -105,6 +109,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             if (details.ChangedDimension) {
                 HideAllVisibleEntities();
+                _visibleChunks.Clear();
                 UnloadChunks(Player.Dimension, clearClient: true, force: true);
                 _loadedChunks.Clear();
                 ResetChunkRequests();
@@ -122,6 +127,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             UnloadChunks(Player.Dimension, clearClient: true);
             SendPublisherUpdate(includeSavedChunks: true);
+            UpdateVisibleChunks(Player.Dimension);
         }
     }
 
@@ -139,6 +145,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             }
 
             UnloadChunks(Player.Dimension, clearClient: true);
+            UpdateVisibleChunks(Player.Dimension);
 
             if (Math.Abs(chunkX - _publisherChunkX) > 2 || Math.Abs(chunkZ - _publisherChunkZ) > 2) {
                 SendPublisherUpdate(includeSavedChunks: true);
@@ -157,10 +164,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             int chunkX = WorldToChunk(Player.Location.X);
             int chunkZ = WorldToChunk(Player.Location.Z);
 
-            UpdateChunkPosition(chunkX, chunkZ);
+            bool changedChunk = UpdateChunkPosition(chunkX, chunkZ);
             UnloadChunks(dimension, clearClient: true);
             SendChunks(dimension);
-            UpdateVisibleEntities(dimension);
+            if (changedChunk) {
+                UpdateVisibleChunks(dimension);
+            }
         }
     }
 
@@ -403,6 +412,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             _loadedChunks.Clear();
             ResetChunkRequests();
             VisibleActorIds.Clear();
+            _visibleChunks.Clear();
             _started = false;
             ChunkX = int.MinValue;
             ChunkZ = int.MinValue;
@@ -471,59 +481,92 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         return Math.Max(Math.Abs(dx), Math.Abs(dz)) <= ViewDistance;
     }
 
-    private void UpdateVisibleEntities(Dimension dimension) {
-        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.UpdateVisibleEntities") : default;
-        ulong tick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
-        _visibleThisTick.Clear();
-
-        foreach (Entity entity in dimension.Entities) {
-            if (ReferenceEquals(entity, Player) || entity is Player) {
-                continue;
-            }
-
-            if (!entity.IsAlive || entity.PendingDespawn || entity.Dimension != dimension) {
-                continue;
-            }
-
-            int chunkX = WorldToChunk(entity.Location.X);
-            int chunkZ = WorldToChunk(entity.Location.Z);
-            long hash = HashChunk(chunkX, chunkZ);
-
-            if (!_loadedChunks.Contains(hash)) {
-                continue;
-            }
-
-            _visibleThisTick.Add(entity.RuntimeId);
-
-            if (VisibleActorIds.ContainsKey(entity.RuntimeId)) {
-                continue;
-            }
-
-            entity.SpawnTo(Player, tick);
-            VisibleActorIds[entity.RuntimeId] = entity.UniqueId;
-        }
-
-        if (VisibleActorIds.Count == 0) {
+    internal void UpdateVisibleEntity(Entity entity) {
+        if (!_started || !Player.IsAlive || Player.Dimension is null) {
             return;
         }
 
-        _hideBuffer.Clear();
+        lock (_lock) {
+            RefreshVisibleEntity(entity, Player.Dimension.World is Tickable tickable ? tickable.TickValue : 0);
+        }
+    }
 
-        foreach ((ulong runtimeId, long uniqueId) in VisibleActorIds) {
-            if (_visibleThisTick.Contains(runtimeId)) {
+    internal void HideVisibleEntity(Entity entity) {
+        lock (_lock) {
+            HideEntity(entity);
+        }
+    }
+
+    private void UpdateVisibleChunks(Dimension dimension) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerChunkRendering.UpdateVisibleChunks") : default;
+        ulong tick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        _visibilityChunkBuffer.Clear();
+
+        for (int dx = -EntityVisibilityRadiusChunks; dx <= EntityVisibilityRadiusChunks; dx++) {
+            for (int dz = -EntityVisibilityRadiusChunks; dz <= EntityVisibilityRadiusChunks; dz++) {
+                _visibilityChunkBuffer.Add(HashChunk(ChunkX + dx, ChunkZ + dz));
+            }
+        }
+
+        _visibilityRemoveBuffer.Clear();
+        foreach (long hash in _visibleChunks) {
+            if (!_visibilityChunkBuffer.Contains(hash)) {
+                _visibilityRemoveBuffer.Add(hash);
+            }
+        }
+
+        for (int i = 0; i < _visibilityRemoveBuffer.Count; i++) {
+            long hash = _visibilityRemoveBuffer[i];
+            UnhashChunk(hash, out int x, out int z);
+            foreach (Entity entity in dimension.GetEntities(x, z)) {
+                HideEntity(entity);
+            }
+
+            _visibleChunks.Remove(hash);
+        }
+
+        foreach (long hash in _visibilityChunkBuffer) {
+            if (!_visibleChunks.Add(hash)) {
                 continue;
             }
 
-            Player.Send(new RemoveActorPacket {
-                EntityUniqueId = uniqueId
-            });
+            UnhashChunk(hash, out int x, out int z);
+            foreach (Entity entity in dimension.GetEntities(x, z)) {
+                RefreshVisibleEntity(entity, tick);
+            }
+        }
+    }
 
-            _hideBuffer.Add(runtimeId);
+    private void RefreshVisibleEntity(Entity entity, ulong tick) {
+        if (ReferenceEquals(entity, Player) || !entity.IsAlive || entity.PendingDespawn) {
+            HideEntity(entity);
+            return;
         }
 
-        for (int i = 0; i < _hideBuffer.Count; i++) {
-            VisibleActorIds.Remove(_hideBuffer[i]);
+        float dx = entity.Location.X - Player.Location.X;
+        float dy = entity.Location.Y - Player.Location.Y;
+        float dz = entity.Location.Z - Player.Location.Z;
+        if ((dx * dx) + (dy * dy) + (dz * dz) > EntityVisibilityRadiusSquared) {
+            HideEntity(entity);
+            return;
         }
+
+        if (VisibleActorIds.ContainsKey(entity.RuntimeId)) {
+            return;
+        }
+
+        entity.SpawnTo(Player, tick);
+        VisibleActorIds[entity.RuntimeId] = entity.UniqueId;
+    }
+
+    private void HideEntity(Entity entity) {
+        if (!VisibleActorIds.Remove(entity.RuntimeId, out long uniqueId)) {
+            return;
+        }
+
+        Player.Send(new RemoveActorPacket {
+            EntityUniqueId = uniqueId
+        });
     }
 
     private void HideAllVisibleEntities() {

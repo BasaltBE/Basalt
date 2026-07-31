@@ -12,7 +12,7 @@ public sealed class SubChunk {
     public SubChunk(byte version = 9, List<BlockStorage>? layers = null, BiomeStorage? biomes = null) {
         Version = version;
         Layers = layers ?? [];
-        Biomes = biomes ?? new BiomeStorage();
+        Biomes = biomes ?? BiomeStorage.Default;
     }
 
     public bool IsEmpty() {
@@ -48,6 +48,10 @@ public sealed class SubChunk {
     }
 
     public void SetBiome(int bx, int by, int bz, int biome) {
+        if (ReferenceEquals(Biomes, BiomeStorage.Default)) {
+            Biomes = new BiomeStorage();
+        }
+
         Biomes.SetBiome(bx, by, bz, biome);
     }
 

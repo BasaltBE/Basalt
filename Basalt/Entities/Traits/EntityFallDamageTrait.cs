@@ -43,11 +43,20 @@ public sealed class EntityFallDamageTrait : EntityTrait {
 
     if (deltaY < -0.001f) {
       _fallDistance += -deltaY;
+      return;
     }
-    else if (_fallDistance > 0f) {
-      ApplyFallDamage(details.To);
+
+    if (_fallDistance <= 0f) return;
+
+    if (IsInLiquid(details.To)) {
       _fallDistance = 0f;
+      return;
     }
+
+    if (!IsGrounded(details.To)) return;
+
+    ApplyFallDamage(details.To);
+    _fallDistance = 0f;
   }
 
   public override void OnFallOnBlock(EntityFallOnBlockTraitEvent @event) {
@@ -94,6 +103,36 @@ public sealed class EntityFallDamageTrait : EntityTrait {
 
     EntityHealthTrait? health = Entity.GetTrait<EntityHealthTrait>();
     health?.ApplyDamage(finalDamage, null, ActorDamageCause.Fall);
+  }
+
+  private bool IsGrounded(Vec3f position) {
+    if (Entity.Dimension is null) return false;
+
+    float halfWidth = Entity.GetTrait<EntityCollisionTrait>()?.Width * 0.5f
+      ?? EntityCollisionTrait.DefaultWidth * 0.5f;
+    int minX = (int)MathF.Floor(position.X - halfWidth + 0.001f);
+    int maxX = (int)MathF.Floor(position.X + halfWidth - 0.001f);
+    int blockY = (int)MathF.Floor(position.Y - 0.001f);
+    int minZ = (int)MathF.Floor(position.Z - halfWidth + 0.001f);
+    int maxZ = (int)MathF.Floor(position.Z + halfWidth - 0.001f);
+
+    for (int blockX = minX; blockX <= maxX; blockX++) {
+      for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
+        var block = Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type;
+        if (block.Solid && !block.Air && !block.Liquid) return true;
+      }
+    }
+
+    return false;
+  }
+
+  private bool IsInLiquid(Vec3f position) {
+    if (Entity.Dimension is null) return false;
+
+    int blockX = (int)MathF.Floor(position.X);
+    int blockY = (int)MathF.Floor(position.Y);
+    int blockZ = (int)MathF.Floor(position.Z);
+    return Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type.Liquid;
   }
 
   private static float GetBlockDamageModifier(string blockIdentifier) {

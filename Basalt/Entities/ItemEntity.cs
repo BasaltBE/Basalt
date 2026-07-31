@@ -31,7 +31,6 @@ public sealed class ItemEntity : Entity {
 
     public override void Spawn(Basalt.Core.Worlds.Dimensions.Dimension dimension, EntitySpawnOptions options) {
         base.Spawn(dimension, options);
-        Dimension?.Broadcast(CreateAddItemActorPacket());
     }
 
     public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
