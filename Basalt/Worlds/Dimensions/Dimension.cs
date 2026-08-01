@@ -775,6 +775,22 @@ public sealed class Dimension : IDisposable {
         HideEntity(leaving);
     }
 
+    internal void UpdatePlayerVisibility(Player.Player moving) {
+        if (World?.Server is not Server server) {
+            return;
+        }
+
+        PlayerChunkRenderingTrait? movingRenderer = moving.GetTrait<PlayerChunkRenderingTrait>();
+        foreach (Player.Player other in server.Players.Values) {
+            if (ReferenceEquals(other, moving) || other.Dimension != this) {
+                continue;
+            }
+
+            movingRenderer?.UpdateVisibleEntity(other);
+            other.GetTrait<PlayerChunkRenderingTrait>()?.UpdateVisibleEntity(moving);
+        }
+    }
+
     private static long HashChunk(int x, int z) {
         return ((long)x << 32) | (uint)z;
     }

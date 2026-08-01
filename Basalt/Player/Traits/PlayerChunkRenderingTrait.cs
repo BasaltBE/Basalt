@@ -101,15 +101,16 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     }
 
     public override void OnTeleport(EntityTeleportOptions details) {
+        Dimension? dimension = Player.Dimension;
         lock (_lock) {
-            if (Player.Dimension is null) {
+            if (dimension is null) {
                 return;
             }
 
             if (details.ChangedDimension) {
                 HideAllVisibleEntities();
                 _visibleChunks.Clear();
-                UnloadChunks(Player.Dimension, clearClient: true, force: true);
+                UnloadChunks(dimension, clearClient: true, force: true);
                 _loadedChunks.Clear();
                 ResetChunkRequests();
                 VisibleActorIds.Clear();
@@ -120,14 +121,14 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             int chunkX = WorldToChunk(details.To.X);
             int chunkZ = WorldToChunk(details.To.Z);
-            if (!UpdateChunkPosition(chunkX, chunkZ)) {
-                return;
+            if (UpdateChunkPosition(chunkX, chunkZ)) {
+                UnloadChunks(dimension, clearClient: true);
+                SendPublisherUpdate();
+                UpdateVisibleChunks(dimension);
             }
-
-            UnloadChunks(Player.Dimension, clearClient: true);
-            SendPublisherUpdate();
-            UpdateVisibleChunks(Player.Dimension);
         }
+
+        dimension.UpdatePlayerVisibility(Player);
     }
 
     public override void OnMove(EntityMoveOptions details) {
@@ -135,17 +136,22 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             return;
         }
 
+        Dimension dimension = Player.Dimension;
         lock (_lock) {
             int chunkX = WorldToChunk(details.To.X);
             int chunkZ = WorldToChunk(details.To.Z);
 
-            if (!UpdateChunkPosition(chunkX, chunkZ)) {
-                return;
+            if (UpdateChunkPosition(chunkX, chunkZ)) {
+                UnloadChunks(dimension, clearClient: true);
+                UpdateVisibleChunks(dimension);
+                SendPublisherUpdate();
             }
+        }
 
-            UnloadChunks(Player.Dimension, clearClient: true);
-            UpdateVisibleChunks(Player.Dimension);
-            SendPublisherUpdate();
+        if (details.From.X != details.To.X ||
+            details.From.Y != details.To.Y ||
+            details.From.Z != details.To.Z) {
+            dimension.UpdatePlayerVisibility(Player);
         }
     }
 
