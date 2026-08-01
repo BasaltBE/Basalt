@@ -10,6 +10,7 @@ public class ServerProperties {
     protected Dictionary<string, double> NumericalProperties = [];
     protected Dictionary<string, bool> BooleanProperties = [];
     protected Dictionary<string, List<string>> Comments = [];
+    protected Dictionary<string, string> Categories = [];
     protected List<string> OrderedKeys = [];
     protected HashSet<string> MetadataKeys = [];
 
@@ -21,6 +22,11 @@ public class ServerProperties {
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public sealed class PropertyCommentAttribute(params string[] comments) : Attribute {
         public string[] Comments { get; } = comments;
+    }
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+    public sealed class PropertyCategoryAttribute(string category) : Attribute {
+        public string Category { get; } = category;
     }
 
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
@@ -169,6 +175,10 @@ public class ServerProperties {
             .Where(kv => MetadataKeys.Contains(kv.Key))
             .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
 
+        Categories = Categories
+            .Where(kv => MetadataKeys.Contains(kv.Key))
+            .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
+
         OrderedKeys = OrderedKeys.Where(MetadataKeys.Contains).ToList();
     }
 
@@ -220,12 +230,13 @@ public class ServerProperties {
 
     private void ApplyMetadata([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) {
         object? defaults = Activator.CreateInstance(type);
-        List<(string Key, int Order, string[] Comments)> keys = [];
+        List<(string Key, int Order, string Category, string[] Comments)> keys = [];
         foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public)) {
             string key = GetMemberKey(field);
             int order = field.GetCustomAttribute<PropertyOrderAttribute>()?.Order ?? int.MaxValue;
+            string category = field.GetCustomAttribute<PropertyCategoryAttribute>()?.Category ?? string.Empty;
             string[] comments = field.GetCustomAttribute<PropertyCommentAttribute>()?.Comments ?? [];
-            keys.Add((key, order, comments));
+            keys.Add((key, order, category, comments));
             EnsureDefault(key, field.FieldType, defaults is not null ? field.GetValue(defaults) : null);
         }
 
@@ -236,8 +247,9 @@ public class ServerProperties {
 
             string key = GetMemberKey(prop);
             int order = prop.GetCustomAttribute<PropertyOrderAttribute>()?.Order ?? int.MaxValue;
+            string category = prop.GetCustomAttribute<PropertyCategoryAttribute>()?.Category ?? string.Empty;
             string[] comments = prop.GetCustomAttribute<PropertyCommentAttribute>()?.Comments ?? [];
-            keys.Add((key, order, comments));
+            keys.Add((key, order, category, comments));
             EnsureDefault(key, prop.PropertyType, defaults is not null ? prop.GetValue(defaults) : null);
         }
 
@@ -266,6 +278,12 @@ public class ServerProperties {
             .ToList();
 
         foreach (var item in keys) {
+            if (string.IsNullOrWhiteSpace(item.Category)) {
+                Categories.Remove(item.Key);
+            }
+            else {
+                Categories[item.Key] = item.Category;
+            }
             if (item.Comments.Length > 0) {
                 SetComments(item.Key, item.Comments);
             }
@@ -451,7 +469,22 @@ public class ServerProperties {
 
     public string GetRawText() {
         StringBuilder sb = new();
+        string? previousCategory = null;
+        bool wroteProperty = false;
         foreach (string key in OrderedKeys) {
+            Categories.TryGetValue(key, out string? category);
+            if (!string.Equals(category, previousCategory, StringComparison.Ordinal)) {
+                if (wroteProperty) {
+                    sb.Append('\n');
+                }
+                if (!string.IsNullOrWhiteSpace(category)) {
+                    sb.Append("# ");
+                    sb.Append(category);
+                    sb.Append('\n');
+                }
+                previousCategory = category;
+            }
+
             if (Comments.TryGetValue(key, out List<string>? comments)) {
                 for (int i = 0; i < comments.Count; i++) {
                     sb.Append("# ");
@@ -473,6 +506,7 @@ public class ServerProperties {
             }
 
             sb.Append('\n');
+            wroteProperty = true;
         }
 
         return sb.ToString();

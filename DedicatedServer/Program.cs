@@ -42,7 +42,7 @@ sealed class Program {
         if (!props.HasProperty("raknet-mtu")) props.SetNumericalProperty("raknet-mtu", 1024);
         if (!props.HasProperty("default-world")) props.SetStringProperty("default-world", "world");
         if (!props.HasProperty("world-provider")) props.SetStringProperty("world-provider", "leveldb");
-        if (!props.HasProperty("world-path")) props.SetStringProperty("world-path", Path.Combine("worlds", props.GetStringProperty("default-world", "world") ?? "world"));
+        if (!props.HasProperty("world-path")) props.SetStringProperty("world-path", "worlds");
         if (!props.HasProperty("plugins-directory")) props.SetStringProperty("plugins-directory", "plugins");
         if (!props.HasProperty("compression-threshold")) props.SetNumericalProperty("compression-threshold", 1);
         if (!props.HasProperty("compression-algorithm")) props.SetStringProperty("compression-algorithm", "zlib");
