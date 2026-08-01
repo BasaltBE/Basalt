@@ -362,7 +362,10 @@ public class FluidTrait : BlockTrait {
         if (!IsReplaceable(dimension, below)) return;
 
         BlockPermutation? bp = GetBlock(dimension, below);
-        if (bp is not null && IsFluid(kind, bp) && (LiquidDepth(bp) ?? 0) == 8) return;
+        if (bp is not null && IsFluid(kind, bp)
+            && (IsSourceBlock(kind, bp) || (LiquidDepth(bp) ?? 0) == 8)) {
+            return;
+        }
 
         BlockPermutation? fp = FlowingPerm(kind, 8) ?? SourcePerm(kind);
         if (fp is null) return;
