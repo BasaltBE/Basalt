@@ -2,8 +2,6 @@ namespace Basalt.Core.Blocks.Traits;
 
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
-using Basalt.Core.Tasks;
-using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
@@ -34,6 +32,7 @@ public class FarmlandTrait : BlockTrait {
     }
 
     public override void OnTick(BlockTickDetails details) {
+        TickFarmland(details.Dimension, details.BlockPosition);
     }
 
     public override void OnLandOn(BlockLandOnDetails details) {
@@ -42,11 +41,8 @@ public class FarmlandTrait : BlockTrait {
     }
 
     public static void ScheduleFarmlandTick(Dimension dimension, BlockPos pos, uint offset = 0) {
-        if (dimension.World?.Scheduler is null) return;
-
         uint delay = offset > 0 ? offset : (uint)Random.Shared.Next((int)CheckIntervalMin, (int)CheckIntervalMax + 1);
-        dimension.World.Scheduler.Schedule(
-            new FarmlandTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true });
+        dimension.ScheduleBlockTick(pos, delay);
     }
 
     private static (int Water, int FlowingWater) GetWaterHashes() {
@@ -164,19 +160,4 @@ public class FarmlandTrait : BlockTrait {
         ScheduleFarmlandTick(dimension, pos);
     }
 
-    private sealed class FarmlandTickTask : DelayedTask {
-        private readonly Dimension _dimension;
-        private readonly BlockPos _pos;
-
-        public FarmlandTickTask(Dimension dimension, BlockPos pos) {
-            _dimension = dimension;
-            _pos = pos;
-            RunOnMainThread = true;
-        }
-
-        public override void Execute() {
-            using var _ = Profiler.Enabled ? Profiler.BeginZone("Farmland.Tick") : default;
-            TickFarmland(_dimension, _pos);
-        }
-    }
 }

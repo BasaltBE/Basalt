@@ -2,6 +2,9 @@ namespace Basalt.Core.Worlds.Dimensions;
 
 using System.Collections.Concurrent;
 using Basalt.Core.Blocks;
+using Basalt.Core.Blocks.Traits;
+using Basalt.Core.Blocks.Traits.Types;
+using Basalt.Core.Blocks.Types;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities;
@@ -54,6 +57,7 @@ public sealed class Dimension : IDisposable {
     private readonly List<Player.Player> _simulationPlayerRemovalBuffer = [];
     private readonly HashSet<long> _simulatedChunks = [];
     private readonly HashSet<long> _simulationChunkBuffer = [];
+    private readonly Dictionary<(int X, int Y, int Z), BlockTickTask> _blockTicks = [];
     private readonly Lock _chunkRequestLock = new();
     private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
@@ -135,6 +139,9 @@ public sealed class Dimension : IDisposable {
         chunk.Dirty = true;
         chunk.Simulated = _simulatedChunks.Contains(hash);
         _chunks[hash] = chunk;
+        if (chunk.Simulated) {
+            RestoreBlockTicks(chunk);
+        }
         return chunk;
     }
 
@@ -144,6 +151,9 @@ public sealed class Dimension : IDisposable {
         chunk.Simulated = _simulatedChunks.Contains(hash);
         _chunks[hash] = chunk;
         MaterializeEntities(chunk);
+        if (chunk.Simulated) {
+            RestoreBlockTicks(chunk);
+        }
         SyncEntitiesToStorage(chunk);
         _provider.SaveChunk(chunk);
     }
@@ -359,6 +369,10 @@ public sealed class Dimension : IDisposable {
         BlockPermutation previous = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
         bool wasFluid = previous.Type.Liquid && !permutation.Type.Liquid;
 
+        if (layer == 0 && !string.Equals(previous.Type.Identifier, permutation.Type.Identifier, StringComparison.Ordinal)) {
+            CancelBlockTick(new BlockPos { X = x, Y = y, Z = z });
+        }
+
         chunk.SetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), permutation, layer, dirty);
 
         BlockPos position = new() { X = x, Y = y, Z = z };
@@ -430,6 +444,120 @@ public sealed class Dimension : IDisposable {
         }
 
         return null;
+    }
+
+    public bool ScheduleBlockTick(BlockPos position, uint delay) {
+        if (_disposed || World?.Scheduler is not { } scheduler) {
+            return false;
+        }
+
+        long chunkHash = HashChunk(position.X >> 4, position.Z >> 4);
+        if (!_chunks.TryGetValue(chunkHash, out ChunkColumn? chunk)) {
+            return false;
+        }
+
+        var key = (position.X, position.Y, position.Z);
+        if (_blockTicks.ContainsKey(key)) {
+            return false;
+        }
+
+        BlockPermutation permutation = chunk.GetPermutation(GetChunkLocal(position.X), position.Y, GetChunkLocal(position.Z));
+        BlockTickTask task = new(this, position, permutation.Type.Identifier, delay);
+        _blockTicks[key] = task;
+        scheduler.Schedule(task);
+        return true;
+    }
+
+    private void CancelBlockTick(BlockPos position) {
+        var key = (position.X, position.Y, position.Z);
+        if (_blockTicks.Remove(key, out BlockTickTask? task)) {
+            task.Cancel();
+        }
+    }
+
+    internal void ExecuteBlockTick(BlockTickTask task) {
+        BlockPos position = task.Position;
+        var key = (position.X, position.Y, position.Z);
+        if (!_blockTicks.TryGetValue(key, out BlockTickTask? scheduled) || !ReferenceEquals(task, scheduled)) {
+            return;
+        }
+
+        _blockTicks.Remove(key);
+
+        long chunkHash = HashChunk(position.X >> 4, position.Z >> 4);
+        if (!_chunks.TryGetValue(chunkHash, out ChunkColumn? chunk) || !chunk.Simulated) {
+            return;
+        }
+
+        BlockPermutation permutation = chunk.GetPermutation(GetChunkLocal(position.X), position.Y, GetChunkLocal(position.Z));
+        if (!string.Equals(permutation.Type.Identifier, task.BlockIdentifier, StringComparison.Ordinal)) {
+            return;
+        }
+
+        Block? block = GetBlock(position.X, position.Y, position.Z);
+        block?.OnTick(new BlockTickDetails(this, position));
+    }
+
+    private void RestoreBlockTicks(ChunkColumn chunk) {
+        int subChunkOffset = Type == DimensionType.Overworld ? 4 : 0;
+
+        for (int subChunkIndex = 0; subChunkIndex < chunk.SubChunks.Length; subChunkIndex++) {
+            Chunk.SubChunk? subChunk = chunk.SubChunks[subChunkIndex];
+            if (subChunk is null || subChunk.Layers.Count == 0) {
+                continue;
+            }
+
+            Chunk.BlockStorage storage = subChunk.Layers[0];
+            bool tickablePalette = false;
+            for (int paletteIndex = 0; paletteIndex < storage.Palette.Count; paletteIndex++) {
+                BlockType type = BlockPermutation.Resolve(storage.Palette[paletteIndex]).Type;
+                if (HasTrait<CropTrait>(type) || HasTrait<FarmlandTrait>(type)) {
+                    tickablePalette = true;
+                    break;
+                }
+            }
+
+            if (!tickablePalette) {
+                continue;
+            }
+
+            int subChunkY = subChunk.Index ?? subChunkIndex - subChunkOffset;
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int y = 0; y < 16; y++) {
+                        BlockPermutation permutation = BlockPermutation.Resolve(storage.GetState(x, y, z));
+                        BlockPos position = new() {
+                            X = (chunk.X << 4) + x,
+                            Y = (subChunkY << 4) + y,
+                            Z = (chunk.Z << 4) + z
+                        };
+
+                        if (HasTrait<FarmlandTrait>(permutation.Type)) {
+                            FarmlandTrait.ScheduleFarmlandTick(this, position);
+                            continue;
+                        }
+
+                        if (!HasTrait<CropTrait>(permutation.Type) ||
+                            !permutation.State.TryGetValue(CropTrait.State, out BlockStateValue growth) ||
+                            growth.Kind != 0 || growth.AsNumber() >= 7) {
+                            continue;
+                        }
+
+                        CropTrait.ScheduleCropTick(this, position);
+                    }
+                }
+            }
+        }
+    }
+
+    private static bool HasTrait<T>(BlockType type) where T : BlockTrait {
+        foreach (Type traitType in type.Traits.Values) {
+            if (traitType == typeof(T)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void SetBlock(int x, int y, int z, Block block) {
@@ -513,6 +641,10 @@ public sealed class Dimension : IDisposable {
 
     public void Dispose() {
         _disposed = true;
+        foreach (BlockTickTask task in _blockTicks.Values) {
+            task.Cancel();
+        }
+        _blockTicks.Clear();
         FlushCompletedChunkRequests(int.MaxValue);
         _provider.SaveSpawnPosition(Type, SpawnPosition);
 
@@ -642,6 +774,7 @@ public sealed class Dimension : IDisposable {
                 if (!_simulatedChunks.Contains(hash) &&
                     _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
                     chunk.Simulated = true;
+                    RestoreBlockTicks(chunk);
                 }
             }
 
@@ -818,6 +951,9 @@ public sealed class Dimension : IDisposable {
             chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
             MaterializeEntities(chunk);
+            if (chunk.Simulated) {
+                RestoreBlockTicks(chunk);
+            }
         }
 
         return chunk;
@@ -845,6 +981,7 @@ public sealed class Dimension : IDisposable {
             foreach (Entity entity in _pendingEntityAdds) {
                 _entities.Add(entity);
                 IndexEntity(entity);
+                UpdateEntityVisibility(entity);
             }
 
             _pendingEntityAdds.Clear();
@@ -988,7 +1125,7 @@ public sealed class Dimension : IDisposable {
         }
     }
 
-    private void UpdateEntityVisibility(Entity entity) {
+    internal void UpdateEntityVisibility(Entity entity) {
         if (World?.Server is not Server server) {
             return;
         }
@@ -1189,6 +1326,9 @@ public sealed class Dimension : IDisposable {
             chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
             MaterializeEntities(chunk);
+            if (chunk.Simulated) {
+                RestoreBlockTicks(chunk);
+            }
 
             foreach (Action<ChunkColumn> callback in request.Callbacks) {
                 callback(chunk);

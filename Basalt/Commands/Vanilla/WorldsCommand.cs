@@ -55,7 +55,7 @@ public static class WorldsCommand {
     }
 
     private static CommandResult ListWorlds(CommandContext ctx) {
-        string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
+        string worldsDirectory = ctx.Server.Properties.WorldPath;
         if (string.IsNullOrWhiteSpace(worldsDirectory)) {
             worldsDirectory = "worlds";
         }
@@ -100,7 +100,7 @@ public static class WorldsCommand {
         }
 
         if (world is null) {
-            string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
+            string worldsDirectory = ctx.Server.Properties.WorldPath;
             if (string.IsNullOrWhiteSpace(worldsDirectory)) {
                 worldsDirectory = "worlds";
             }
@@ -149,7 +149,7 @@ public static class WorldsCommand {
         }
 
         if (world is null) {
-            string worldsDirectory = Path.GetDirectoryName(ctx.Server.Properties.WorldPath) ?? "worlds";
+            string worldsDirectory = ctx.Server.Properties.WorldPath;
             if (string.IsNullOrWhiteSpace(worldsDirectory)) {
                 worldsDirectory = "worlds";
             }

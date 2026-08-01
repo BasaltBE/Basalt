@@ -2,8 +2,6 @@ namespace Basalt.Core.Blocks.Traits;
 
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
-using Basalt.Core.Tasks;
-using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Types;
@@ -27,8 +25,8 @@ public class CropTrait : BlockTrait {
         }
     }
 
-    public override void OnRandomTick(BlockRandomTickDetails details) {
-        TryGrow(details.BlockPosition);
+    public override void OnTick(BlockTickDetails details) {
+        TickCrop(details.Dimension, details.BlockPosition);
     }
 
     public override void OnBreak(BlockBreakDetails details) {
@@ -100,15 +98,8 @@ public class CropTrait : BlockTrait {
     }
 
     public static void ScheduleCropTick(Dimension dimension, BlockPos pos, uint? customDelay = null) {
-        if (dimension.World?.Scheduler is null) return;
-
         uint delay = customDelay ?? (uint)Random.Shared.Next((int)MinTickInterval, (int)MaxTickInterval + 1);
-
-        dimension.World.Scheduler.Schedule(
-            new CropTickTask(dimension, pos) { DelayTicks = delay, RunOnMainThread = true });
-    }
-
-    private static void TryGrow(BlockPos pos) {
+        dimension.ScheduleBlockTick(pos, delay);
     }
 
     private static void TickCrop(Dimension dimension, BlockPos pos) {
@@ -163,19 +154,4 @@ public class CropTrait : BlockTrait {
         return MaxGrowth;
     }
 
-    private sealed class CropTickTask : DelayedTask {
-        private readonly Dimension _dimension;
-        private readonly BlockPos _pos;
-
-        public CropTickTask(Dimension dimension, BlockPos pos) {
-            _dimension = dimension;
-            _pos = pos;
-            RunOnMainThread = true;
-        }
-
-        public override void Execute() {
-            using var _ = Profiler.Enabled ? Profiler.BeginZone("Crop.Tick") : default;
-            TickCrop(_dimension, _pos);
-        }
-    }
 }

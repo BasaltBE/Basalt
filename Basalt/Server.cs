@@ -121,9 +121,12 @@ public sealed class Server {
         // Logger.Info($"Loaded ReourcePacks in ({LoadReourcePacksElapsed.Milliseconds}ms)");
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
+        string defaultWorldPath = Path.Combine(Properties.WorldPath, DefaultWorldIdentifier);
         WorldInstance defaultWorld = Properties.WorldProvider.Equals("memory", StringComparison.OrdinalIgnoreCase)
-            ? LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
-            : LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath) ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, Properties.WorldPath);
+            ? LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider)
+                ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider)
+            : LoadWorld(DefaultWorldIdentifier, Properties.WorldProvider, defaultWorldPath)
+                ?? CreateWorld(DefaultWorldIdentifier, Properties.WorldProvider, defaultWorldPath);
 
         if (!_generatorRegistry.TryGetValue("superflat", out Type? generatorType)) {
             throw new KeyNotFoundException("No generator registered with identifier 'superflat'.");
@@ -132,7 +135,7 @@ public sealed class Server {
         if (defaultWorld.GetDimension("overworld") is null) {
             defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
         }
-        WorldInstance.ConfigurePersistence(Properties.WorldPath);
+        WorldInstance.ConfigurePersistence(defaultWorldPath);
 
         DefaultCommands.Register(Commands);
         Crafting.CraftingLoader.Load();
