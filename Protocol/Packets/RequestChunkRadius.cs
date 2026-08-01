@@ -20,7 +20,7 @@ public sealed record RequestChunkRadiusPacket : DataPacket {
     }
 
     public override void Serialize(Binary.BinaryWriter writer) {
-        writer.WriteVarInt(ChunkRadius);
+        writer.WriteZigZag(ChunkRadius);
         writer.WriteUInt8(MaxChunkRadius);
     }
 }
