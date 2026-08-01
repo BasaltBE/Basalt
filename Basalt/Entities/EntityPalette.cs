@@ -8,6 +8,7 @@ using Basalt.Protocol.Nbt;
 
 public sealed class EntityPalette {
     private const string PlayerIdentifier = "minecraft:player";
+    private const string RideableComponent = "minecraft:rideable";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
 
@@ -102,6 +103,11 @@ public sealed class EntityPalette {
                 EntityTypeData entry = types[i];
                 if (string.IsNullOrEmpty(entry.Identifier) || EntityType.Get(entry.Identifier) is not null) {
                     continue;
+                }
+
+                if (entry.Identifier == PlayerIdentifier) {
+                    entry.Components.Remove(RideableComponent);
+                    entry.PropertiesPayload?.Components.Remove(RideableComponent);
                 }
 
                 _ = new EntityType(entry.Identifier, entry.Components, entry.PropertiesPayload, entry.Loot?.Table);
