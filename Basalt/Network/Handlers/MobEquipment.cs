@@ -2,6 +2,7 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
@@ -20,8 +21,18 @@ public static class MobEquipment {
             return;
         }
 
-        if (packet.HotBarSlot < 9) {
-            inventory.SetHeldItem(packet.HotBarSlot);
+        if (packet.HotBarSlot >= 9) {
+            return;
         }
+
+        inventory.SetHeldItem(packet.HotBarSlot);
+        packet.EntityRuntimeId = player.RuntimeId;
+        packet.NewItem = inventory.GetHeldItem()?.ToNetworkStackDescriptor() ?? new();
+
+        player.Dimension?.Broadcast(packet, new BroadcastOptions {
+            Center = player.Position,
+            Except = [player],
+            Radius = 64,
+        });
     }
 }
