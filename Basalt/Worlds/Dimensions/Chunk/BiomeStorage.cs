@@ -47,7 +47,7 @@ public sealed class BiomeStorage {
     public static void Serialize(BiomeStorage storage, ref BinaryWriter writer, bool disk = false) {
         int bitsPerBiome = ResolveBitsPerValue(storage.Palette.Count, true);
 
-        writer.WriteUInt8((byte)(bitsPerBiome << 1));
+        writer.WriteUInt8((byte)((bitsPerBiome << 1) | (disk ? 0 : 1)));
 
         if (bitsPerBiome == 0) {
             int value = storage.Palette[0];

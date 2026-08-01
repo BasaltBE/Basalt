@@ -32,7 +32,7 @@ public sealed record NetworkChunkPublisherUpdatePacket : DataPacket {
 
     public override void Deserialize(Binary.BinaryReader reader) {
         CoordinateX = reader.ReadZigZag();
-        CoordinateY = unchecked((int)reader.ReadVarUInt());
+        CoordinateY = reader.ReadZigZag();
         CoordinateZ = reader.ReadZigZag();
         Radius = reader.ReadVarUInt();
 
@@ -51,7 +51,7 @@ public sealed record NetworkChunkPublisherUpdatePacket : DataPacket {
 
     public override void Serialize(Binary.BinaryWriter writer) {
         writer.WriteZigZag(CoordinateX);
-        writer.WriteVarUInt(unchecked((uint)CoordinateY));
+        writer.WriteZigZag(CoordinateY);
         writer.WriteZigZag(CoordinateZ);
         writer.WriteVarUInt(Radius);
 

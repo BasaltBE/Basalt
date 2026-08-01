@@ -17,10 +17,10 @@ public sealed record UpdateChunkRadiusPacket : DataPacket {
     public int ChunkRadius;
 
     public override void Deserialize(Binary.BinaryReader reader) {
-        ChunkRadius = reader.ReadVarInt();
+        ChunkRadius = reader.ReadZigZag();
     }
 
     public override void Serialize(Binary.BinaryWriter writer) {
-        writer.WriteVarInt(ChunkRadius);
+        writer.WriteZigZag(ChunkRadius);
     }
 }
