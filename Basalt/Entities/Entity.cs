@@ -142,14 +142,15 @@ public class Entity {
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn") : default;
         ArgumentNullException.ThrowIfNull(dimension);
-        if (Dimension != dimension) {
-            Dimension = dimension;
-            dimension.AddEntity(this);
-        }
 
         IsAlive = true;
         PendingDespawn = false;
         NextVoidDamageTick = 0;
+
+        if (Dimension != dimension) {
+            Dimension = dimension;
+            dimension.AddEntity(this);
+        }
 
         using (Profiler.Enabled ? Profiler.BeginZone($"Spawn.Traits:{GetType().Name}") : default) {
             for (int i = 0; i < _traits.Count; i++) {
@@ -245,6 +246,7 @@ public class Entity {
             _traits[i].OnTeleport(options);
         }
         Dimension?.UpdateEntityStorage(this);
+        Dimension?.UpdateEntityVisibility(this);
     }
 
     public void OnMove(EntityMoveOptions options) {
@@ -252,6 +254,7 @@ public class Entity {
             _traits[i].OnMove(options);
         }
         Dimension?.UpdateEntityStorage(this);
+        Dimension?.UpdateEntityVisibility(this);
     }
 
     public void OnInteract(Player player, EntityInteractMethod method) {

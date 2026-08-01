@@ -223,7 +223,7 @@ public sealed class EntityMovementTrait : EntityTrait {
             return;
         }
 
-        OnMove(new EntityMoveOptions(
+        Entity.OnMove(new EntityMoveOptions(
             previousPosition,
             Entity.Position,
             new MovementRotation {

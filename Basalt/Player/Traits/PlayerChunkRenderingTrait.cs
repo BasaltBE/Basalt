@@ -517,9 +517,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         }
 
         foreach (long hash in _visibilityChunkBuffer) {
-            if (!_visibleChunks.Add(hash)) {
-                continue;
-            }
+            _visibleChunks.Add(hash);
 
             UnhashChunk(hash, out int x, out int z);
             foreach (Entity entity in dimension.GetEntities(x, z)) {
