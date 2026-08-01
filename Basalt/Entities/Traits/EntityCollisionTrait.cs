@@ -32,6 +32,9 @@ public sealed class EntityCollisionTrait : EntityTrait {
             Width = ReadFloat(collisionBox, "width") ?? DefaultWidth;
         }
 
+        Entity.Metadata.SetActorMetadata(ActorDataId.Width, ActorDataType.Float, Width);
+        Entity.Metadata.SetActorMetadata(ActorDataId.Height, ActorDataType.Float, Height);
+
         if (!Entity.Flags.GetActorFlag(ActorFlag.HasCollision)) {
             Entity.Flags.SetActorFlag(ActorFlag.HasCollision, true);
         }

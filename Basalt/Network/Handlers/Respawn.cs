@@ -1,7 +1,7 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Events;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Protocol.Enums;
 using Basalt.Protocol.Packets;
 using Basalt.RakNet;
@@ -20,18 +20,20 @@ public static class Respawn {
             return;
         }
 
-        PlayerRespawnSignal signal = new(player);
-        server.Emit(signal);
-        if (!signal.Emit()) {
-            return;
+        if (player.IsAlive && player.GetTrait<EntityHealthTrait>() is { } health &&
+            health.CurrentValue <= health.MinimumValue) {
+            health.Reset();
+            player.Attributes.Send();
         }
 
         player.Send(new RespawnPacket {
-            Position = player.Location,
+            Position = player.Dimension?.SpawnPosition ?? player.Location,
             State = RespawnState.ReadyToSpawn,
             EntityRuntimeId = player.RuntimeId
         });
 
-        player.Respawn();
+        if (!player.IsAlive) {
+            player.Respawn();
+        }
     }
 }

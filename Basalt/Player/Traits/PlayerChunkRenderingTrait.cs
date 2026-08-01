@@ -527,8 +527,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     }
 
     private void RefreshVisibleEntity(Entity entity, ulong tick) {
-        if (ReferenceEquals(entity, Player) || !entity.IsAlive || entity.PendingDespawn) {
+        if (ReferenceEquals(entity, Player) || entity.PendingDespawn) {
             HideEntity(entity);
+            return;
+        }
+
+        if (!entity.IsAlive && !VisibleActorIds.ContainsKey(entity.RuntimeId)) {
             return;
         }
 

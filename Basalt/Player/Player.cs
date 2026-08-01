@@ -12,6 +12,7 @@ using Basalt.Core.Worlds.Dimensions;
 using Basalt.Binary;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Events;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.DDUI;
 using Basalt.Core.Scoreboard;
@@ -216,40 +217,41 @@ public class Player : Entities.Entity {
     }
 
     public void Respawn() {
-        if (IsAlive || Dimension is null) {
+        if (IsAlive) {
             return;
         }
 
-        Vec3f spawnPosition = Location;
-        Spawn(Dimension, new EntitySpawnOptions(InitialSpawn: false));
-        Location = spawnPosition;
+        if (Dimension is null) {
+            return;
+        }
 
-        ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-        if (Dimension.World?.Server is Server server) {
-            int chunkX = (int)MathF.Floor(Location.X) >> 4;
-            int chunkZ = (int)MathF.Floor(Location.Z) >> 4;
-            foreach ((_, Player other) in server.Players) {
-                if (ReferenceEquals(other, this) || other.Dimension != Dimension) {
-                    continue;
-                }
-
-                int otherChunkX = (int)MathF.Floor(other.Location.X) >> 4;
-                int otherChunkZ = (int)MathF.Floor(other.Location.Z) >> 4;
-                if (Math.Max(Math.Abs(chunkX - otherChunkX), Math.Abs(chunkZ - otherChunkZ)) > server.Properties.MaxViewDistance) {
-                    continue;
-                }
-
-                other.Send(new RemoveActorPacket { EntityUniqueId = UniqueId });
-                SpawnTo(other, tick);
+        Dimension dimension = Dimension;
+        if (dimension.World?.Server is Server server) {
+            PlayerRespawnSignal signal = new(this);
+            server.Emit(signal);
+            if (!signal.Emit()) {
+                return;
             }
         }
 
-        Send(new RespawnPacket {
-            Position = spawnPosition,
-            State = RespawnState.ReadyToSpawn,
-            EntityRuntimeId = RuntimeId
-        });
+        Vec3f spawnPosition = dimension.SpawnPosition;
+        IsSprinting = false;
+        IsSneaking = false;
+        IsSwimming = false;
+        Flags.SetActorFlag(ActorFlag.Swimming, false);
+        Flags.SetActorFlag(ActorFlag.Crawling, false);
+        Flags.SetActorFlag(ActorFlag.Gliding, false);
+        Flags.SetActorFlag(ActorFlag.UsingItem, false);
+        Teleport(spawnPosition);
+        Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+        dimension.UpdateEntityVisibility(this);
 
+        ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
+        dimension.Broadcast(new ActorEventPacket {
+            ActorRuntimeId = RuntimeId,
+            Event = ActorEvent.SpawnAlive,
+            Data = 0
+        }, new BroadcastOptions { Center = spawnPosition });
         Send(CreateActorDataPacket(tick));
         Attributes.Send();
     }
@@ -316,7 +318,6 @@ public class Player : Entities.Entity {
 
         if (!changedDimension) {
             targetDimension.Broadcast(movePlayer, new BroadcastOptions {
-                Radius = float.PositiveInfinity,
                 Except = [this]
             });
         }

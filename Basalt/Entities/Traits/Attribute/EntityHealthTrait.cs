@@ -112,14 +112,8 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                 Entity.OnDeath(new EntityDeathOptions(KillerSource: damager, DamageCause: signal.Cause));
 
                 player.Send(new RespawnPacket {
-                    Position = player.Location,
+                    Position = player.Dimension?.SpawnPosition ?? player.Location,
                     State = RespawnState.SearchingForSpawn,
-                    EntityRuntimeId = player.RuntimeId
-                });
-
-                player.Send(new RespawnPacket {
-                    Position = player.Location,
-                    State = RespawnState.ReadyToSpawn,
                     EntityRuntimeId = player.RuntimeId
                 });
             }
@@ -154,6 +148,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
 
     public override void OnSpawn(EntitySpawnOptions details) {
         if (details.InitialSpawn) {
+            if (CurrentValue <= MinimumValue) {
+                CurrentValue = DefaultValue;
+            }
             return;
         }
 
