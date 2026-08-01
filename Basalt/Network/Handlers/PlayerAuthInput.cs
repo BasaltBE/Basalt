@@ -134,6 +134,22 @@ public static class PlayerAuthInput {
                 player.IsSneaking = false;
             }
 
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartSwimming)) {
+                player.IsSwimming = true;
+                player.Flags.SetActorFlag(ActorFlag.Swimming, true);
+            }
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopSwimming)) {
+                player.IsSwimming = false;
+                player.Flags.SetActorFlag(ActorFlag.Swimming, false);
+            }
+
+            if (packet.InputData.HasFlag(PlayerAuthInputFlag.StartCrawling)) {
+                player.Flags.SetActorFlag(ActorFlag.Crawling, true);
+            }
+            else if (packet.InputData.HasFlag(PlayerAuthInputFlag.StopCrawling)) {
+                player.Flags.SetActorFlag(ActorFlag.Crawling, false);
+            }
+
             LastInputTickByRuntimeId[player.RuntimeId] = packet.Tick;
         }
         catch (Exception exception) {

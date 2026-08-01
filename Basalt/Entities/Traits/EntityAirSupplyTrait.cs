@@ -1,5 +1,6 @@
 namespace Basalt.Core.Entities.Traits;
 
+using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Protocol.Enums;
@@ -9,6 +10,7 @@ using Basalt.Core.Traits;
 
 public sealed class EntityAirSupplyTrait : EntityTrait {
     private const int MaxAirTicks = 300;
+    private const float LowPoseHeadOffset = 1.22f;
 
     public new static string Identifier => "air_supply";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
@@ -33,7 +35,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
             return;
         }
 
-        if (CanBreathe()) {
+        if (CanBreathe(out bool submerged)) {
             if (_airTicks < MaxAirTicks) {
                 _airTicks += 5;
 
@@ -60,7 +62,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
         Entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
             0.5f,
             null,
-            Entity.IsSwimming ? ActorDamageCause.Drowning : ActorDamageCause.Suffocation
+            submerged ? ActorDamageCause.Drowning : ActorDamageCause.Suffocation
         );
     }
 
@@ -76,27 +78,26 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
         return new EntityAirSupplyTrait(entity);
     }
 
-    private bool CanBreathe() {
+    private bool CanBreathe(out bool submerged) {
+        submerged = false;
         if (Entity.Dimension is null || Entity.HasEffect(EffectType.WaterBreathing)) {
             return true;
         }
 
         Vec3f head = Entity.GetHeadLocation();
+        if (Entity.IsSwimming || Entity.Flags.GetActorFlag(ActorFlag.Crawling)) {
+            head.Y -= LowPoseHeadOffset;
+        }
 
-        string block = Entity.Dimension
+        BlockType block = Entity.Dimension
             .GetPermutation(
                 (int)MathF.Floor(head.X),
                 (int)MathF.Floor(head.Y),
                 (int)MathF.Floor(head.Z))
-            .Type
-            .Identifier;
+            .Type;
 
-        if (block.Contains("water", StringComparison.Ordinal) ||
-            block.Contains("lava", StringComparison.Ordinal)) {
-            return false;
-        }
-
-        return block == "minecraft:air";
+        submerged = block.Liquid;
+        return !submerged && !block.Solid;
     }
 }
 
