@@ -1,5 +1,3 @@
-Fix MobEquipmentPacket not being broadcasted so others cant see ur item changes
-
 ocasionally run 
 dotnet format --diagnostics=IDE0001 IDE0005
 
