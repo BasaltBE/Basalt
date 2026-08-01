@@ -26,13 +26,3 @@ public static class PlayerAction {
         player.LastActionResultPosition = packet.ResultPosition;
     }
 }
-
-
-
-
-
-
-
-
-
-

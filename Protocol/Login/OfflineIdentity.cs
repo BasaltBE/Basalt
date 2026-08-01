@@ -231,14 +231,14 @@ public static class OfflineIdentity {
         return new Guid(hash);
     }
 
-    #pragma warning disable CA5351
+#pragma warning disable CA5351
     public static string GetUuidFromXuid(string xuid) {
         byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes($"pocket-auth-1-xuid:{xuid}"));
         hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
         hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
         return $"{Convert.ToHexString(hash[..4])}-{Convert.ToHexString(hash[4..6])}-{Convert.ToHexString(hash[6..8])}-{Convert.ToHexString(hash[8..10])}-{Convert.ToHexString(hash[10..])}";
     }
-    #pragma warning restore CA5351
+#pragma warning restore CA5351
 
     public static VerifiedIdentity ToVerifiedIdentity(OfflineCertificateData certificate, string username, string xuid) {
         Guid uuid = Guid.TryParse(certificate.IdentityUuid, out Guid parsed)
