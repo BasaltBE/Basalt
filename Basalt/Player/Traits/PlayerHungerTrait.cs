@@ -51,9 +51,24 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
         if (health is null)
             return;
 
-        AddExhaustion(player);
         TryDrainExhaustion();
         TickHungerEffects(health, player, details.CurrentTick);
+    }
+
+    public override void OnMove(EntityMoveOptions details) {
+        if (Entity is not Player player || !CanLoseHunger(player))
+            return;
+
+        float deltaX = details.To.X - details.From.X;
+        float deltaZ = details.To.Z - details.From.Z;
+
+        if (player.IsSwimming) {
+            float deltaY = details.To.Y - details.From.Y;
+            Exhaustion += MathF.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * SwimCost;
+        }
+        else if (player.IsSprinting) {
+            Exhaustion += MathF.Sqrt(deltaX * deltaX + deltaZ * deltaZ) * SprintCost;
+        }
     }
 
     public void OnJump() {
@@ -108,11 +123,6 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
 
         var gamemode = player.GetGamemode();
         return gamemode is not (Gamemode.Spectator or Gamemode.Creative);
-    }
-
-    private void AddExhaustion(Player player) {
-        if (player.IsSprinting) Exhaustion += SprintCost;
-        if (player.IsSwimming) Exhaustion += SwimCost;
     }
 
     private void TryDrainExhaustion() {
