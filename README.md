@@ -17,7 +17,7 @@
 
 <h2 align="center">Features</h2>
 
-<table>
+<table align="center">
 <tr>
 <td width="50%" valign="top">
 
