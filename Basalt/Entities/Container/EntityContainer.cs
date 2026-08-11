@@ -1,9 +1,11 @@
 namespace Basalt.Core.Entities.Container;
 
 using Basalt.Core.Containers;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+
+
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class EntityContainer : Containers.Container {
     public Entity Entity { get; }
@@ -29,13 +31,16 @@ public sealed class EntityContainer : Containers.Container {
 
         if (Entity is Player.Player player && Identifier is not null && player.Spawned) {
             player.Send(new InventorySlotPacket {
-                ContainerId = Identifier ?? ContainerId.None,
-                Slot = slot,
-                Container = new Optional<FullContainerName> {
-                    HasValue = true,
-                    Value = new FullContainerName { ContainerId = 0 }
-                },
-                NewItem = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
+                ContainerId = (byte)(Identifier ?? ContainerID.CONTAINER_ID_NONE),
+                Slot = (uint)slot,
+                // FullContainerName = new BedrockProtocol.Types.FullContainerName() {
+                //     ContainerName = ContainerEnumName.SmithingTableInputContainer
+                // },
+                // Container = new Optional<FullContainerName> {
+                //     HasValue = true,
+                //     Value = new FullContainerName { ContainerId = 0 }
+                // },
+                Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
             });
         }
 
@@ -45,16 +50,16 @@ public sealed class EntityContainer : Containers.Container {
     public override void Update() {
         Entity.OnContainerUpdate(this);
 
-        if (Entity is Player.Player player && Identifier is not null && player.Spawned) {
+        if (Entity is Player.Player player && Identifier is { } identifier && player.Spawned) {
             InventoryContentPacket packet = new() {
-                ContainerId = Identifier ?? ContainerId.None,
-                Content = new List<NetworkItemStackDescriptor>(GetSize()),
-                Container = new FullContainerName { ContainerId = 0 },
+                ContainerId = (byte)identifier,
+                Slots = new List<NetworkItemStackDescriptor>(GetSize()),
+                FullContainerName = GetFullContainerName((ContainerID)identifier),
                 StorageItem = new NetworkItemStackDescriptor()
             };
 
             for (int i = 0; i < GetSize(); i++) {
-                packet.Content.Add(GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
+                packet.Slots.Add(GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
             }
 
             player.Send(packet);
@@ -84,19 +89,19 @@ public sealed class EntityContainer : Containers.Container {
         };
     }
 
-    protected override bool CanOpen(Player.Player player, ContainerId containerId) {
+    protected override bool CanOpen(Player.Player player, ContainerID containerId) {
         return true;
     }
 
-    protected override byte GetFullContainerId() {
-        if (Identifier == ContainerId.Ui) {
-            return (byte)ContainerName.Barrel;
+    protected override ContainerEnumName GetFullContainerID() {
+        if (Identifier == ContainerID.CONTAINER_ID_PLAYER_ONLY_UI) {
+            return ContainerEnumName.BarrelContainer;
         }
 
-        if (Type == ContainerType.Armor) {
-            return (byte)ContainerName.Armor;
+        if (Type == ContainerType.ARMOR) {
+            return ContainerEnumName.ArmorContainer;
         }
 
-        return base.GetFullContainerId();
+        return base.GetFullContainerID();
     }
 }

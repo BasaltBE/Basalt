@@ -1,6 +1,6 @@
 namespace Basalt.Core.Entities;
 
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 
 public static class EntityFactory {
     private static readonly Dictionary<string, Func<CompoundTag, Entity>> Factories = new(StringComparer.Ordinal);

@@ -1,7 +1,9 @@
 namespace Basalt.Core.Entities.Traits;
 
-using Basalt.Protocol.Enums;
 using System.Text.Json;
+using Basalt.Core.Enums;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
 
 public sealed class EntityCollisionTrait : EntityTrait {
     public new static string Identifier => "collision";
@@ -32,8 +34,17 @@ public sealed class EntityCollisionTrait : EntityTrait {
             Width = ReadFloat(collisionBox, "width") ?? DefaultWidth;
         }
 
-        Entity.Metadata.SetActorMetadata(ActorDataId.Width, ActorDataType.Float, Width);
-        Entity.Metadata.SetActorMetadata(ActorDataId.Height, ActorDataType.Float, Height);
+        // Entity.Metadata.SetActorMetadata(ActorDataId.Width, ActorDataType.Float, Width);
+        // Entity.Metadata.SetActorMetadata(ActorDataId.Height, ActorDataType.Float, Height);
+        Entity.Metadata.SetActorMetadata(ActorDataId.Width, new DataItemFloatPayload() {
+            Type = DataItemType.Float,
+            Value = Width
+        });
+        Entity.Metadata.SetActorMetadata(ActorDataId.Height, new DataItemFloatPayload() {
+            Type = DataItemType.Float,
+            Value = Height
+        });
+
 
         if (!Entity.Flags.GetActorFlag(ActorFlag.HasCollision)) {
             Entity.Flags.SetActorFlag(ActorFlag.HasCollision, true);

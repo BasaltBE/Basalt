@@ -1,12 +1,12 @@
 namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Blocks.Traits;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 using Basalt.Core.Traits;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class EntityMovementTrait : EntityTrait {
     public new static string Identifier => "movement";
@@ -52,8 +52,8 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
-        if (!Entity.Flags.GetActorFlag(ActorFlag.HasGravity)) {
-            Entity.Flags.SetActorFlag(ActorFlag.HasGravity, true);
+        if (!Entity.Flags.GetActorFlag(Entities.ActorFlag.HasGravity)) {
+            Entity.Flags.SetActorFlag(Entities.ActorFlag.HasGravity, true);
         }
 
         _fallDistance = 0f;
@@ -65,7 +65,7 @@ public sealed class EntityMovementTrait : EntityTrait {
         }
 
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("EntityMovement.OnTick") : default;
-        Vec3f previousPosition = Entity.Position;
+        Vec3 previousPosition = Entity.Position;
         EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
         if (collision is not null) {
             collision.XAxisCollision = 0;
@@ -88,7 +88,7 @@ public sealed class EntityMovementTrait : EntityTrait {
             for (int waterX = minWaterX; waterX <= maxWaterX; waterX++) {
                 for (int waterY = minWaterY; waterY <= maxWaterY; waterY++) {
                     for (int waterZ = minWaterZ; waterZ <= maxWaterZ; waterZ++) {
-                        Vec3f flow = FluidTrait.GetWaterFlow(
+                        Vec3 flow = FluidTrait.GetWaterFlow(
                             Entity.Dimension,
                             new BlockPos { X = waterX, Y = waterY, Z = waterZ },
                             out float waterHeight);
@@ -106,7 +106,7 @@ public sealed class EntityMovementTrait : EntityTrait {
 
             float flowLength = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
             if (flowLength > 0f) {
-                Entity.Velocity = new Vec3f {
+                Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X + (flowX / flowLength * WaterCurrentForce),
                     Y = Entity.Velocity.Y + (flowY / flowLength * WaterCurrentForce),
                     Z = Entity.Velocity.Z + (flowZ / flowLength * WaterCurrentForce)
@@ -115,23 +115,23 @@ public sealed class EntityMovementTrait : EntityTrait {
 
             bool applyGravity = Entity.Flags.GetActorFlag(ActorFlag.HasGravity) && !Entity.IsSwimming;
             if (applyGravity) {
-                Entity.Velocity = new Vec3f {
+                Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X,
                     Y = Entity.Velocity.Y - GravityPerTick,
                     Z = Entity.Velocity.Z
                 };
-                Entity.Velocity = new Vec3f {
+                Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X,
                     Y = Entity.Velocity.Y * Drag,
                     Z = Entity.Velocity.Z
                 };
-                Entity.Velocity = new Vec3f {
+                Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X * Drag,
                     Y = Entity.Velocity.Y,
                     Z = Entity.Velocity.Z * Drag
                 };
                 if (Entity.Velocity.Y < TerminalVelocity) {
-                    Entity.Velocity = new Vec3f {
+                    Entity.Velocity = new Vec3 {
                         X = Entity.Velocity.X,
                         Y = TerminalVelocity,
                         Z = Entity.Velocity.Z
@@ -178,7 +178,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                     groundedVelocityZ = 0f;
                 }
 
-                Entity.Position = new Vec3f {
+                Entity.Position = new Vec3 {
                     X = nextX,
                     Y = landingY,
                     Z = nextZ
@@ -188,7 +188,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                     Entity.OnFallOnBlock(new EntityFallOnBlockTraitEvent(Entity.Position, _fallDistance));
                 }
 
-                Entity.Velocity = new Vec3f {
+                Entity.Velocity = new Vec3 {
                     X = groundedVelocityX,
                     Y = 0f,
                     Z = groundedVelocityZ
@@ -204,12 +204,12 @@ public sealed class EntityMovementTrait : EntityTrait {
                 _fallDistance = 0f;
             }
 
-            Entity.Position = new Vec3f {
+            Entity.Position = new Vec3 {
                 X = nextX,
                 Y = nextY,
                 Z = nextZ
             };
-            Entity.Velocity = new Vec3f {
+            Entity.Velocity = new Vec3 {
                 X = velocityX,
                 Y = Entity.Velocity.Y,
                 Z = velocityZ
@@ -254,18 +254,54 @@ public sealed class EntityMovementTrait : EntityTrait {
             return;
         }
 
-        Entity.Dimension.Broadcast(new MoveActorDeltaPacket() {
-            EntityRuntimeId = Entity.RuntimeId,
-            Flags = (ushort)MoveDeltaFlags.All,
-            Position = details.To,
-            Rotation = new Vec3f() {
-                X = details.ToRotation.Pitch,
-                Y = details.ToRotation.Yaw,
-                Z = details.ToRotation.HeadYaw,
+        Entity.Dimension.Broadcast(new MoveActorDeltaPacket {
+            MoveData = new MoveActorDeltaData {
+                ActorRuntimeID = new ActorRuntimeID {
+                    Value = Entity.RuntimeId
+                },
+
+                NewPositionX = details.To.X,
+                NewPositionY = details.To.Y,
+                NewPositionZ = details.To.Z,
+
+                RotationX = PackRotation(details.ToRotation.Pitch),
+                RotationY = PackRotation(details.ToRotation.Yaw),
+                RotationYHead = PackRotation(details.ToRotation.HeadYaw),
+
+                IsOnGround = IsGrounded(
+                    details.To.X,
+                    details.To.Y,
+                    details.To.Z
+                ),
+
+                ForceMove = false,
+                ForceMoveLocalEntity = false,
+                ForceCompletion = false
             }
         });
+
+        if (!Entity.IsPlayer()) {
+            Entity.Dimension.Broadcast(new MoveActorAbsolutePacket {
+                MoveData = new MoveActorAbsoluteData {
+                    ActorRuntimeID = new ActorRuntimeID {
+                        Value = Entity.RuntimeId
+                    },
+                    Header = 0,
+                    Position = details.To,
+                    RotationX = unchecked((byte)PackRotation(details.ToRotation.Pitch)),
+                    RotationY = unchecked((byte)PackRotation(details.ToRotation.Yaw)),
+                    RotationYHead = unchecked((byte)PackRotation(details.ToRotation.HeadYaw))
+                }
+            });
+        }
     }
 
+
+
+    private static sbyte PackRotation(float degrees) {
+        int packed = (int)(degrees * (256f / 360f));
+        return unchecked((sbyte)packed);
+    }
 
 
     public override EntityTrait Clone(Entity entity) {
@@ -284,15 +320,24 @@ public sealed class EntityMovementTrait : EntityTrait {
         const float min = 0f;
         const float max = float.MaxValue;
 
-        Protocol.Types.Attribute attribute = Entity.Attributes.GetAttribute(name)
-            ?? new Protocol.Types.Attribute(min, max, current, @default, name);
+        AttributeData  attribute = Entity.Attributes.GetAttribute(name)
+            ?? new AttributeData {
+                CurrentValue = current,
+                DefaultMaxValue = max,
+                DefaultMinValue = min,
+                DefaultValue = @default,
+                MaxValue = max,
+                MinValue = min,
+                Modifiers = new List<AttributeModifier>(){},
+                Name = name.ToProtocolString(),
+            }; // (min, max, current, @default, name);
 
-        attribute.Min = min;
-        attribute.Max = max;
-        attribute.DefaultMin = min;
-        attribute.DefaultMax = max;
-        attribute.Default = @default;
-        attribute.Current = current;
+        attribute.MinValue = min;
+        attribute.MaxValue = max;
+        attribute.DefaultMinValue = min;
+        attribute.DefaultMaxValue = max;
+        attribute.DefaultValue = @default;
+        attribute.CurrentValue = current;
         Entity.Attributes.SetAttribute(attribute);
     }
 
@@ -400,9 +445,3 @@ public sealed class EntityMovementTrait : EntityTrait {
         return groundY + 1f;
     }
 }
-
-
-
-
-
-

@@ -2,15 +2,15 @@ namespace Basalt.Core.Entities.Traits.Attribute;
 
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
-using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds;
 using System.Text.Json;
+
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
+using BedrockProtocol.Nbt;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait {
     public new static string Identifier => "health";
@@ -21,7 +21,7 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     private const float KnockbackVerticalLimit = 0.4f;
     private const ulong KnockbackCooldownTicks = 10;
     private const ulong AttackCooldownTicks = 10;
-    private ulong _lastKnockbackTick;
+    private ulong? _lastKnockbackTick;
     private ulong? _lastAttackTick;
 
     public override AttributeName Attribute => AttributeName.Health;
@@ -48,9 +48,11 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         }
 
         CurrentValue -= signal.Amount;
+        bool knockbackApplied = false;
+        ulong knockbackTick = 0;
         if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension) {
             ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-            if (currentTick >= _lastKnockbackTick && currentTick - _lastKnockbackTick >= KnockbackCooldownTicks) {
+            if (_lastKnockbackTick is null || currentTick - _lastKnockbackTick.Value >= KnockbackCooldownTicks) {
                 float x = Entity.Position.X - damager.Position.X;
                 float z = Entity.Position.Z - damager.Position.Z;
                 float length = MathF.Sqrt((x * x) + (z * z));
@@ -66,28 +68,38 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                         velocityY = KnockbackVerticalLimit;
                     }
 
-                    Entity.Velocity = new Vec3f {
+                    Entity.Velocity = new Vec3 {
                         X = velocityX,
                         Y = velocityY,
                         Z = velocityZ
                     };
                     _lastKnockbackTick = currentTick;
-
-                    Entity.Dimension.Broadcast(new SetActorMotionPacket {
-                        EntityRuntimeId = Entity.RuntimeId,
-                        Velocity = Entity.Velocity,
-                        Tick = currentTick
-                    });
+                    knockbackApplied = true;
+                    knockbackTick = currentTick;
                 }
             }
         }
         if (Entity.Dimension is not null) {
             ActorEventPacket packet = new() {
-                ActorRuntimeId = Entity.RuntimeId,
-                Event = ActorEvent.Hurt,
-                Data = (int)(signal.Cause ?? ActorDamageCause.None)
+                TargetRuntimeID = new ActorRuntimeID() {
+                    Value = Entity.RuntimeId,
+                },
+                EventID = ActorEvent.HURT,
+                Data = (int)(signal.Cause ?? ActorDamageCause.Fall)
             };
             Entity.Dimension.Broadcast(packet);
+
+            if (knockbackApplied) {
+                Entity.Dimension.Broadcast(new SetActorMotionPacket {
+                    Motion = Entity.Velocity,
+                    TargetRuntimeID = new ActorRuntimeID {
+                        Value = Entity.RuntimeId
+                    },
+                    Tick = new PlayerInputTick {
+                        InputTick = knockbackTick
+                    }
+                });
+            }
         }
 
         EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
@@ -113,8 +125,10 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
 
                 player.Send(new RespawnPacket {
                     Position = player.Dimension?.SpawnPosition ?? player.Location,
-                    State = RespawnState.SearchingForSpawn,
-                    EntityRuntimeId = player.RuntimeId
+                    State = PlayerRespawnState.SearchingForSpawn,
+                    PlayerRuntimeId = new() {
+                        Value = player.RuntimeId,
+                    }
                 });
             }
             else {

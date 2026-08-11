@@ -1,9 +1,8 @@
 namespace Basalt.Core.Entities.Traits;
 
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Enums;
-using ProtoAttribute = Basalt.Protocol.Types.Attribute;
-
+using BedrockProtocol.Types;
 
 public abstract class EntityAttributeTrait : EntityTrait {
     private readonly AttributeProperties? _initialProperties;
@@ -13,60 +12,60 @@ public abstract class EntityAttributeTrait : EntityTrait {
     public bool Sync { get; set; } = true;
 
     public float MinimumValue {
-        get => GetAttribute().Min;
+        get => GetAttribute().MinValue;
         set {
-            ProtoAttribute attribute = GetAttribute();
+            AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Min == next) {
+            if (attribute.MinValue == next) {
                 return;
             }
 
-            attribute.Min = next;
+            attribute.MinValue = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float MaximumValue {
-        get => GetAttribute().Max;
+        get => GetAttribute().MaxValue;
         set {
-            ProtoAttribute attribute = GetAttribute();
+            AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Max == next) {
+            if (attribute.MaxValue == next) {
                 return;
             }
 
-            attribute.Max = next;
+            attribute.MaxValue = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float DefaultValue {
-        get => GetAttribute().Default;
+        get => GetAttribute().DefaultValue;
         set {
-            ProtoAttribute attribute = GetAttribute();
+            AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Default == next) {
+            if (attribute.DefaultValue == next) {
                 return;
             }
 
-            attribute.Default = next;
+            attribute.DefaultValue = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float CurrentValue {
-        get => GetAttribute().Current;
+        get => GetAttribute().CurrentValue;
         set {
-            ProtoAttribute attribute = GetAttribute();
+            AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.Current == next) {
+            if (attribute.CurrentValue == next) {
                 return;
             }
 
-            attribute.Current = next;
+            attribute.CurrentValue = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
@@ -76,7 +75,7 @@ public abstract class EntityAttributeTrait : EntityTrait {
         _initialProperties = properties;
     }
 
-    public ProtoAttribute GetAttribute() {
+    public AttributeData GetAttribute() {
         return Entity.Attributes.GetAttribute(Attribute)
             ?? throw new InvalidOperationException($"Attribute {Attribute} is not registered on entity.");
     }
@@ -99,7 +98,15 @@ public abstract class EntityAttributeTrait : EntityTrait {
         float @default = Truncate4(properties.DefaultValue ?? 0f);
         float current = Truncate4(properties.CurrentValue ?? @default);
 
-        Entity.Attributes.SetAttribute(new ProtoAttribute(min, max, current, @default, Attribute));
+        Entity.Attributes.SetAttribute(new AttributeData() {
+            CurrentValue = current,
+            DefaultMaxValue = max,
+            DefaultMinValue = min,
+            DefaultValue = @default,
+            MaxValue = max,
+            MinValue = min,
+            Name = Attribute.ToProtocolString(),
+        });
         MarkDirty();
     }
 

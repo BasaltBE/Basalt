@@ -1,7 +1,5 @@
 namespace Basalt.Core.Entities.Traits;
 
-using Basalt.Protocol.Enums;
-
 public sealed class EntityGravityTrait : EntityTrait {
     public new static string Identifier => "gravity";
     public new static readonly string[] Components = [

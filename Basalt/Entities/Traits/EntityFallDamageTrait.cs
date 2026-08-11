@@ -5,8 +5,9 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using Basalt.Core.Player;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
 
 public sealed class EntityFallDamageTrait : EntityTrait {
     public new static string Identifier => "fall_damage";
@@ -40,10 +41,24 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         }
 
         float deltaY = details.To.Y - details.From.Y;
+        bool wasGrounded = IsGrounded(details.From);
+        bool isGrounded = IsGrounded(details.To);
+
+        if (wasGrounded) {
+            _fallDistance = 0f;
+        }
+
+        if (deltaY > 0.001f) {
+            _fallDistance = 0f;
+            return;
+        }
 
         if (deltaY < -0.001f) {
-            _fallDistance += -deltaY;
-            return;
+            if (!wasGrounded || !isGrounded) {
+                _fallDistance += -deltaY;
+            }
+
+            if (!isGrounded) return;
         }
 
         if (_fallDistance <= 0f) return;
@@ -53,7 +68,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
             return;
         }
 
-        if (!IsGrounded(details.To)) return;
+        if (!isGrounded) return;
 
         ApplyFallDamage(details.To);
         _fallDistance = 0f;
@@ -67,12 +82,12 @@ public sealed class EntityFallDamageTrait : EntityTrait {
 
     public override EntityTrait Clone(Entity entity) => new EntityFallDamageTrait(entity);
 
-    private void ApplyFallDamage(Vec3f landingPosition) {
+    private void ApplyFallDamage(Vec3 landingPosition) {
         if (!Entity.IsAlive) return;
 
-        if (Entity is Player.Player player) {
-            if (player.GetGamemode() is Gamemode.Creative or Gamemode.Spectator) return;
-            if (player.Abilities.GetAbility(AbilityIndex.Flying)) return;
+        if (Entity is Player player) {
+            if (player.GetGamemode() is GameType.Creative or GameType.Spectator) return;
+            if (player.Abilities.GetAbility(PlayerAbility.Flying)) return;
         }
 
         if (Entity.Dimension?.Gamerules.FallDamage == false) return;
@@ -105,7 +120,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         health?.ApplyDamage(finalDamage, null, ActorDamageCause.Fall);
     }
 
-    private bool IsGrounded(Vec3f position) {
+    private bool IsGrounded(Vec3 position) {
         if (Entity.Dimension is null) return false;
 
         float halfWidth = Entity.GetTrait<EntityCollisionTrait>()?.Width * 0.5f
@@ -126,7 +141,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         return false;
     }
 
-    private bool IsInLiquid(Vec3f position) {
+    private bool IsInLiquid(Vec3 position) {
         if (Entity.Dimension is null) return false;
 
         int blockX = (int)MathF.Floor(position.X);
@@ -156,7 +171,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
 
     private float GetEnchantmentReduction(float rawDamage) {
         EntityEquipmentTrait? equipment = Entity.GetTrait<EntityEquipmentTrait>();
-        if (equipment is null || Entity is not Player.Player player) return 0f;
+        if (equipment is null || Entity is not Player player) return 0f;
 
         HurtEnchantmentContext ctx = new() {
             Player = player,

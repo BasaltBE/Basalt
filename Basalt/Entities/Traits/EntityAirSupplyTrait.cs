@@ -3,10 +3,10 @@ namespace Basalt.Core.Entities.Traits;
 using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using Basalt.Core.Enums;
 using Basalt.Core.Traits;
-
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
 
 public sealed class EntityAirSupplyTrait : EntityTrait {
     private const int MaxAirTicks = 300;
@@ -31,7 +31,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
         }
 
         if (Entity is Player.Player player &&
-            player.GetGamemode() is not (Gamemode.Survival or Gamemode.Adventure)) {
+            player.GetGamemode() is not (GameType.Survival or GameType.Adventure)) {
             return;
         }
 
@@ -84,7 +84,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
             return true;
         }
 
-        Vec3f head = Entity.GetHeadLocation();
+        Vec3 head = Entity.GetHeadLocation();
         if (Entity.IsSwimming || Entity.Flags.GetActorFlag(ActorFlag.Crawling)) {
             head.Y -= LowPoseHeadOffset;
         }

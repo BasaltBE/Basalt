@@ -1,11 +1,12 @@
 namespace Basalt.Core.Entities;
 
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
-using Basalt.Protocol.Nbt;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
 using Player = Basalt.Core.Player.Player;
+
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class ItemEntity : Entity {
     public ItemStack Item { get; }
@@ -33,7 +34,7 @@ public sealed class ItemEntity : Entity {
         base.Spawn(dimension, options);
     }
 
-    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
+    public override void SpawnTo(Player player, ulong tick, Vec3? position = null) {
         player.Send(CreateAddItemActorPacket());
     }
 
@@ -44,18 +45,14 @@ public sealed class ItemEntity : Entity {
     }
 
     private AddItemActorPacket CreateAddItemActorPacket() {
-        LegacyItem stack = Item.ToNetworkStack();
         return new AddItemActorPacket {
-            EntityUniqueId = UniqueId,
-            EntityRuntimeId = RuntimeId,
-            Item = new ItemInstance {
-                Stack = stack,
-                StackNetworkId = stack.ItemStackId ?? 0
-            },
+            TargetActorID = new BedrockProtocol.Types.ActorUniqueID() { Value = UniqueId },
+            TargetRuntimeID = new BedrockProtocol.Types.ActorRuntimeID() { Value = RuntimeId },
+            Item = Item.ToNetworkStackDescriptor(),
             Position = Position,
             Velocity = Velocity,
-            EntityMetadata = CreateActorDataPacket(Dimension?.World is Basalt.Core.Worlds.Tickable tickable ? tickable.TickValue : 0).Metadata,
-            FromFishing = false
+            EntityData = CreateActorDataPacket(Dimension?.World is Basalt.Core.Worlds.Tickable tickable ? tickable.TickValue : 0).ActorData,
+            IsFromFishing = false,
         };
     }
 
@@ -140,7 +137,7 @@ public sealed class ItemEntity : Entity {
                 continue;
             }
 
-            Vec3f feetPos = player.GetPosition();
+            Vec3 feetPos = player.GetPosition();
             float dx = feetPos.X - Position.X;
             float dy = feetPos.Y - Position.Y;
             float dz = feetPos.Z - Position.Z;
@@ -162,8 +159,8 @@ public sealed class ItemEntity : Entity {
             ushort after = Item.StackSize;
 
             Dimension.Broadcast(new TakeItemActorPacket {
-                ItemEntityRuntimeId = RuntimeId,
-                TakerEntityRuntimeId = player.RuntimeId
+                ItemRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
+                ActorRuntimeID = new ActorRuntimeID() { Value = player.RuntimeId }
             });
 
             if (after == 0) {
@@ -181,12 +178,12 @@ public sealed class ItemEntity : Entity {
             return false;
         }
 
-        string thisNbt = Item.ExtraData?.Nbt?.ToString() ?? string.Empty;
-        string otherNbt = other.Item.ExtraData?.Nbt?.ToString() ?? string.Empty;
+        string thisNbt = Item.Storage?.ToString() ?? string.Empty;
+        string otherNbt = other.Item.Storage?.ToString() ?? string.Empty;
         return string.Equals(thisNbt, otherNbt, StringComparison.Ordinal);
     }
 
-    private bool IsGrounded(Vec3f position) {
+    private bool IsGrounded(Vec3 position) {
         if (Dimension is null) {
             return false;
         }
@@ -214,7 +211,7 @@ public sealed class ItemEntity : Entity {
         }
 
         Dimension.Broadcast(new RemoveActorPacket {
-            EntityUniqueId = UniqueId
+            TargetActorID = new ActorUniqueID() { Value = UniqueId }
         });
         Dimension.Broadcast(CreateAddItemActorPacket());
     }

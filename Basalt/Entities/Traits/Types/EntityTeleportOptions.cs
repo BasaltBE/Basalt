@@ -1,8 +1,9 @@
+using BedrockProtocol.Types;
+
 namespace Basalt.Core.Entities.Traits.Types;
 
-using Basalt.Protocol.Types;
 
-public readonly record struct EntityTeleportOptions(Vec3f From, Vec3f To, bool ChangedDimension = false);
+public readonly record struct EntityTeleportOptions(Vec3 From, Vec3 To, bool ChangedDimension = false);
 
 
 

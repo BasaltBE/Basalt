@@ -2,9 +2,9 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 using System.Text.Json;
 using Player = Basalt.Core.Player.Player;
 
@@ -34,6 +34,7 @@ public sealed class EntityRideableTrait : EntityTrait {
 
     public List<(Entity Rider, RideableSeat Seat)> GetRiders() {
         List<(Entity, RideableSeat)> result = [];
+
         if (Entity.Dimension is null) {
             return result;
         }
@@ -66,12 +67,16 @@ public sealed class EntityRideableTrait : EntityTrait {
         }
 
         SetActorLinkPacket packet = new() {
-            EntityLink = new EntityLink {
-                RiddenEntityUniqueId = Entity.UniqueId,
-                RiderEntityUniqueId = rider.UniqueId,
-                Type = 1,
+            Link = new ActorLink {
+                TargetA = new ActorUniqueID {
+                    Value = Entity.UniqueId
+                },
+                TargetB = new ActorUniqueID {
+                    Value = rider.UniqueId
+                },
+                Type = ActorLinkType.Riding,
                 Immediate = true,
-                RiderInitiated = true,
+                PassengerInitiated = true,
                 VehicleAngularVelocity = 0f
             }
         };
@@ -88,12 +93,16 @@ public sealed class EntityRideableTrait : EntityTrait {
 
     public void RemoveRider(Entity rider) {
         SetActorLinkPacket packet = new() {
-            EntityLink = new EntityLink {
-                RiddenEntityUniqueId = Entity.UniqueId,
-                RiderEntityUniqueId = rider.UniqueId,
-                Type = 0,
+            Link = new ActorLink {
+                TargetA = new ActorUniqueID {
+                    Value = Entity.UniqueId
+                },
+                TargetB = new ActorUniqueID {
+                    Value = rider.UniqueId
+                },
+                Type = ActorLinkType.None,
                 Immediate = true,
-                RiderInitiated = true,
+                PassengerInitiated = true,
                 VehicleAngularVelocity = 0f
             }
         };
@@ -108,6 +117,7 @@ public sealed class EntityRideableTrait : EntityTrait {
         }
 
         rider.Flags.SetActorFlag(ActorFlag.Riding, false);
+
         EntityRidingTrait? riding = rider.GetTrait<EntityRidingTrait>();
         if (riding is not null) {
             rider.RemoveTrait(riding);
@@ -116,6 +126,7 @@ public sealed class EntityRideableTrait : EntityTrait {
 
     public void ClearRiders() {
         List<long> riderIds = [.. _riders.Values];
+
         foreach (long uniqueId in riderIds) {
             Entity? rider = FindEntityByUniqueId(uniqueId);
             if (rider is null) {
@@ -126,9 +137,22 @@ public sealed class EntityRideableTrait : EntityTrait {
         }
     }
 
-    public RideableSeat CreateSeat(Vec3f position, bool driver = false, float seatRotation = 0f, bool lockRotation = false) {
+    public RideableSeat CreateSeat(
+        Vec3 position,
+        bool driver = false,
+        float seatRotation = 0f,
+        bool lockRotation = false
+    ) {
         int index = _seats.Count;
-        RideableSeat seat = new(index, position, seatRotation, lockRotation, driver);
+
+        RideableSeat seat = new(
+            index,
+            position,
+            seatRotation,
+            lockRotation,
+            driver
+        );
+
         _seats.Add(seat);
         return seat;
     }
@@ -150,10 +174,11 @@ public sealed class EntityRideableTrait : EntityTrait {
             return;
         }
 
-        // Dismount from current ride if already riding something else.
         EntityRidingTrait? currentRiding = player.GetTrait<EntityRidingTrait>();
         if (currentRiding is not null) {
-            currentRiding.Vehicle.GetTrait<EntityRideableTrait>()?.RemoveRider(player);
+            currentRiding.Vehicle
+                .GetTrait<EntityRideableTrait>()
+                ?.RemoveRider(player);
         }
 
         AddRider(player);
@@ -164,12 +189,20 @@ public sealed class EntityRideableTrait : EntityTrait {
             return;
         }
 
-        if (Entity.Type.TryGetComponentProperties("minecraft:rideable", out JsonElement rideable)) {
+        if (
+            Entity.Type.TryGetComponentProperties(
+                "minecraft:rideable",
+                out JsonElement rideable
+            )
+        ) {
             ParseSeatsFromJson(rideable);
         }
 
         if (_seats.Count == 0) {
-            CreateSeat(new Vec3f(0f, 1f, 0f), driver: true);
+            CreateSeat(
+                new Vec3() { X = 0f, Y = 1f, Z = 0f },
+                driver: true
+            );
         }
     }
 
@@ -181,10 +214,18 @@ public sealed class EntityRideableTrait : EntityTrait {
 
     public override EntityTrait Clone(Entity entity) {
         EntityRideableTrait clone = new(entity);
+
         for (int i = 0; i < _seats.Count; i++) {
             RideableSeat src = _seats[i];
-            clone.CreateSeat(src.Position, src.Driver, src.SeatRotation, src.LockRotation);
+
+            clone.CreateSeat(
+                src.Position,
+                src.Driver,
+                src.SeatRotation,
+                src.LockRotation
+            );
         }
+
         return clone;
     }
 
@@ -204,25 +245,46 @@ public sealed class EntityRideableTrait : EntityTrait {
     }
 
     private void ParseSingleSeat(JsonElement seatElement) {
-        Vec3f position = new(0f, 1f, 0f);
+        Vec3 position = new() { X = 0f, Y = 1f, Z = 0f };
         float seatRotation = 0f;
         bool lockRotation = false;
 
-        if (seatElement.TryGetProperty("position", out JsonElement posElement) && posElement.ValueKind == JsonValueKind.Array) {
+        if (
+            seatElement.TryGetProperty(
+                "position",
+                out JsonElement posElement
+            ) &&
+            posElement.ValueKind == JsonValueKind.Array
+        ) {
             float[] coords = new float[3];
             int idx = 0;
+
             foreach (JsonElement coord in posElement.EnumerateArray()) {
                 if (idx < 3 && coord.TryGetSingle(out float val)) {
                     coords[idx] = val;
                 }
+
                 idx++;
             }
-            position = new Vec3f(coords[0], coords[1], coords[2]);
+
+            position = new Vec3() {
+                X = coords[0],
+                Y = coords[1],
+                Z = coords[2]
+            };
         }
 
-        if (seatElement.TryGetProperty("lock_rider_rotation", out JsonElement lockElement)) {
+        if (
+            seatElement.TryGetProperty(
+                "lock_rider_rotation",
+                out JsonElement lockElement
+            )
+        ) {
             if (lockElement.ValueKind == JsonValueKind.Number) {
-                seatRotation = lockElement.TryGetSingle(out float rot) ? rot : 0f;
+                seatRotation = lockElement.TryGetSingle(out float rot)
+                    ? rot
+                    : 0f;
+
                 lockRotation = true;
             }
             else if (lockElement.ValueKind == JsonValueKind.True) {
@@ -230,7 +292,12 @@ public sealed class EntityRideableTrait : EntityTrait {
             }
         }
 
-        CreateSeat(position, driver: _seats.Count == 0, seatRotation, lockRotation);
+        CreateSeat(
+            position,
+            driver: _seats.Count == 0,
+            seatRotation,
+            lockRotation
+        );
     }
 
     private Entity? FindEntityByUniqueId(long uniqueId) {

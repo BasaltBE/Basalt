@@ -1,14 +1,10 @@
 namespace Basalt.Core.Entities;
 
-using Basalt.Protocol.Types;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Nbt;
 using Basalt.Core.Worlds;
 using Basalt.Core.Entities.Metadata;
 using Basalt.Core.Item;
@@ -20,6 +16,13 @@ using Basalt.Core.Traits;
 using Basalt.Core.Loot;
 using Basalt.Core.Events;
 
+using BedrockProtocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Nbt;
+using System.Security.Cryptography.X509Certificates;
+using Basalt.Core.Enums;
+
 public class Entity {
     private static long _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
@@ -29,13 +32,13 @@ public class Entity {
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; }
     public long UniqueId => _uniqueId;
-    public Vec3f Position;
-    public Vec3f Location {
-        get => Position;
+    public Vec3 Position = new();
+    public Vec3 Location {
+        get => GetPosition();
         set => Position = value;
     }
-    public Vec3f Velocity;
-    public Vec3f Rotation;
+    public Vec3 Velocity = new();
+    public Vec3 Rotation = new();
     public EntityAttributes Attributes { get; }
     public EntityActorFlags Flags { get; }
     public EntityActorMetadata Metadata { get; }
@@ -72,13 +75,21 @@ public class Entity {
         InitializeTraits();
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
     private void InitializeTraits() {
-        foreach (Type traitType in Type.Traits.Values) {
-            if (Activator.CreateInstance(traitType, this) is EntityTrait trait) {
+        foreach (System.Type traitType in Type.Traits.Values) {
+            EntityTrait? trait = CreateTrait(traitType);
+
+            if (trait is not null) {
                 AddTrait(trait);
             }
         }
+    }
+
+    private EntityTrait? CreateTrait(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        System.Type traitType
+    ) {
+        return Activator.CreateInstance(traitType, this) as EntityTrait;
     }
 
     public T AddTrait<T>(T trait) where T : EntityTrait {
@@ -205,7 +216,7 @@ public class Entity {
             for (int i = 0; i < drops.Count; i++) {
                 ItemEntity drop = new(drops[i]) {
                     Position = Position,
-                    Velocity = new Vec3f {
+                    Velocity = new Vec3 {
                         X = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f,
                         Y = 0.18f,
                         Z = ((float)Random.Shared.NextDouble() - 0.5f) * 0.12f
@@ -220,8 +231,8 @@ public class Entity {
         IsAlive = false;
         if (dimension is not null) {
             dimension.Broadcast(new ActorEventPacket {
-                ActorRuntimeId = RuntimeId,
-                Event = ActorEvent.Death,
+                TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
+                EventID = ActorEvent.DEATH,
                 Data = 0
             });
         }
@@ -355,19 +366,19 @@ public class Entity {
     }
 
     public virtual void Read(CompoundTag root) {
-        Position = new Vec3f {
+        Position = new Vec3 {
             X = root.Get<FloatTag>("x")?.Value ?? Position.X,
             Y = root.Get<FloatTag>("y")?.Value ?? Position.Y,
             Z = root.Get<FloatTag>("z")?.Value ?? Position.Z
         };
         Position = ReadVector(root, "Pos", Position);
 
-        Velocity = new Vec3f {
+        Velocity = new Vec3 {
             X = root.Get<FloatTag>("velocity_x")?.Value ?? Velocity.X,
             Y = root.Get<FloatTag>("velocity_y")?.Value ?? Velocity.Y,
             Z = root.Get<FloatTag>("velocity_z")?.Value ?? Velocity.Z
         };
-        Rotation = new Vec3f {
+        Rotation = new Vec3 {
             X = root.Get<FloatTag>("rotation_pitch")?.Value ?? Rotation.X,
             Y = root.Get<FloatTag>("rotation_yaw")?.Value ?? Rotation.Y,
             Z = root.Get<FloatTag>("rotation_head_yaw")?.Value ?? Rotation.Z
@@ -396,7 +407,7 @@ public class Entity {
 
             EntityTrait? trait = GetTrait(identifier);
             if (trait == null) {
-                if (EntityTraitRegistry.RegisteredTraits.TryGetValue(identifier, out Type? traitType)) {
+                if (EntityTraitRegistry.RegisteredTraits.TryGetValue(identifier, out System.Type? traitType)) {
                     if (Activator.CreateInstance(traitType, this) is EntityTrait newTrait) {
                         AddTrait(newTrait);
                         trait = newTrait;
@@ -408,13 +419,13 @@ public class Entity {
         }
     }
 
-    private static Vec3f ReadVector(CompoundTag root, string name, Vec3f fallback) {
+    private static Vec3 ReadVector(CompoundTag root, string name, Vec3 fallback) {
         ListTag? values = root.Get<ListTag>(name);
         if (values is not { Values.Count: >= 3 }) {
             return fallback;
         }
 
-        return new Vec3f {
+        return new Vec3 {
             X = values.Values[0] switch {
                 FloatTag value => value.Value,
                 DoubleTag value => (float)value.Value,
@@ -465,20 +476,20 @@ public class Entity {
         return string.Equals(Identifier, EntityIdentifier.Player.ToIdentifierString(), StringComparison.Ordinal);
     }
 
-    public Vec3f GetHeadLocation() {
+    public Vec3 GetHeadLocation() {
         return GetEyePosition();
     }
 
-    public Vec3f GetPosition() {
-        return new Vec3f {
+    public Vec3 GetPosition() {
+        return new Vec3 {
             X = Position.X,
             Y = Position.Y - 1.62f,
             Z = Position.Z
         };
     }
 
-    public Vec3f GetEyePosition() {
-        return new Vec3f {
+    public Vec3 GetEyePosition() {
+        return new Vec3 {
             X = Position.X,
             Y = Position.Y,
             Z = Position.Z
@@ -503,99 +514,153 @@ public class Entity {
         }
 
         SetActorDataPacket packet = new() {
-            RuntimeId = RuntimeId,
-            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
-            Metadata =
-            [
-                new ActorMetadataItem
-                {
-                    Id = ActorDataId.Reserved0,
-                    Type = ActorDataType.Long,
-                    Value = Flags.Lower64()
+            TargetRuntimeID = new ActorRuntimeID() {
+                Value = RuntimeId,
+            },
+            Tick = new PlayerInputTick() { InputTick = Dimension.World is Tickable tickable ? tickable.TickValue : 0 },
+            ActorData = new SynchedActorDataList() {
+                Data = new List<DataItemEntry> {
+                    new DataItemEntry() {
+                        ID = (uint)ActorDataId.Reserved0,
+                        Payload = new DataItemInt64Payload() {
+                            Type = DataItemType.Int64,
+                            Value = Flags.Lower64(),
+                        }
+                    },
+                    new DataItemEntry() {
+                        ID = (uint)ActorDataId.Reserved092,
+                        Payload = new DataItemInt64Payload() {
+                            Type = DataItemType.Int64,
+                            Value = Flags.Upper64(),
+                        }
+                    },
                 },
-                new ActorMetadataItem
-                {
-                    Id = ActorDataId.Reserved092,
-                    Type = ActorDataType.Long,
-                    Value = Flags.Upper64()
-                }
-            ]
+            },
+            SynchedProperties = new PropertySyncData() {
+                FloatEntriesList = new List<PropertySyncFloatEntry>(),
+                IntEntriesList = new List<PropertySyncIntEntry>(),
+            },
         };
 
         Dimension.Broadcast(packet);
     }
 
     public SetActorDataPacket CreateActorDataPacket(ulong tick) {
-        List<ActorMetadataItem> metadata = Metadata.GetAll();
-        metadata.Add(new ActorMetadataItem {
-            Id = ActorDataId.Reserved0,
-            Type = ActorDataType.Long,
-            Value = Flags.Lower64()
-        });
-        metadata.Add(new ActorMetadataItem {
-            Id = ActorDataId.Reserved092,
-            Type = ActorDataType.Long,
-            Value = Flags.Upper64()
-        });
+        List<DataItemEntry> metadata = Metadata.GetAll();
+
+        metadata.Add(
+            new DataItemEntry() {
+                ID = (uint)ActorDataId.Reserved0,
+                Payload = new DataItemInt64Payload() {
+                    Type = DataItemType.Int64,
+                    Value = Flags.Lower64(),
+                }
+            }
+        );
+        metadata.Add(
+            new DataItemEntry() {
+                ID = (uint)ActorDataId.Reserved092,
+                Payload = new DataItemInt64Payload() {
+                    Type = DataItemType.Int64,
+                    Value = Flags.Upper64(),
+                }
+            }
+        );
 
         return new SetActorDataPacket {
-            RuntimeId = RuntimeId,
-            Tick = tick,
-            Metadata = metadata
+            TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
+            Tick = new PlayerInputTick() { InputTick = tick },
+            ActorData = new SynchedActorDataList() {
+                Data = metadata,
+            },
+            SynchedProperties = new PropertySyncData() {
+                FloatEntriesList = new List<PropertySyncFloatEntry>(),
+                IntEntriesList = new List<PropertySyncIntEntry>(),
+            },
         };
     }
 
-    public virtual void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
+    public virtual void SpawnTo(Player player, ulong tick, Vec3? position = null) {
         player.Send(new AddActorPacket {
-            EntityUniqueId = UniqueId,
-            EntityRuntimeId = RuntimeId,
-            EntityType = Identifier,
+            TargetActorID = new ActorUniqueID() { Value = UniqueId, },
+            TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
+            ActorType = Identifier,
             Position = position ?? Position,
-            Velocity = new Vec3f(),
-            Pitch = Rotation.X,
-            Yaw = Rotation.Y,
-            HeadYaw = Rotation.Z,
-            BodyYaw = Rotation.Y,
-            Attributes = [],
-            EntityMetadata = CreateActorDataPacket(tick).Metadata,
-            EntityProperties = new EntityProperties(),
-            EntityLinks = []
+            Velocity = new Vec3(),
+            Rotation = new Vec2() {
+                X = Rotation.X,
+                Y = Rotation.Y,
+            },
+            YBodyRotation = Rotation.Y,
+            YHeadRotation = Rotation.Z,
+            AttributesList = new List<SyncedAttribute> { },
+            ActorData = CreateActorDataPacket(tick).ActorData,
+            // EntityProperties = new EntityProperties(),
+            // EntityLinks = []
+            ActorLinks = new List<ActorLink>() { },
+            SynchedProperties = new PropertySyncData() {
+                FloatEntriesList = new List<PropertySyncFloatEntry>(),
+                IntEntriesList = new List<PropertySyncIntEntry>(),
+            },
         });
     }
 
-    public void SetRotation(Vec3f rotation) {
+    public void SetRotation(Vec3 rotation) {
         Rotation = rotation;
         if (Dimension is null) {
             return;
         }
 
         Dimension.Broadcast(new MoveActorAbsolutePacket {
-            EntityRuntimeId = RuntimeId,
-            Position = Position,
-            Rotation = rotation
+            // EntityRuntimeId = RuntimeId,
+            // Position = Position,
+            // Rotation = rotation
+            MoveData = new MoveActorAbsoluteData() {
+                ActorRuntimeID = new ActorRuntimeID() { Value = RuntimeId, },
+                Position = Position,
+                RotationX = (byte)Rotation.X,
+                RotationY = (byte)Rotation.Y,
+                RotationYHead = (byte)Rotation.Z,
+                Header = 0,
+            }
         });
     }
 
     public virtual void OnPhysicsTick(ulong currentTick, bool grounded) {
     }
 
-    internal void SendActorMetadataUpdate(ActorDataId id, ActorDataType type, object value) {
+    internal void SendActorMetadataUpdate(
+       ActorDataId id,
+       DataItemEntryPayloadVariant payload
+   ) {
         if (Dimension is null) {
             return;
         }
 
         SetActorDataPacket packet = new() {
-            RuntimeId = RuntimeId,
-            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
-            Metadata =
-            [
-                new ActorMetadataItem
-                {
-                    Id = id,
-                    Type = type,
-                    Value = value
+            TargetRuntimeID = new ActorRuntimeID {
+                Value = RuntimeId
+            },
+
+            Tick = new PlayerInputTick {
+                InputTick = Dimension.World is Tickable tickable
+                    ? tickable.TickValue
+                    : 0
+            },
+
+            ActorData = new SynchedActorDataList {
+                Data = [
+                    new DataItemEntry {
+                    ID = (uint)id,
+                    Payload = payload
                 }
-            ]
+                ]
+            },
+
+            SynchedProperties = new PropertySyncData {
+                FloatEntriesList = [],
+                IntEntriesList = []
+            }
         };
 
         Dimension.Broadcast(packet);

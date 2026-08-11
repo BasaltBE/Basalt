@@ -2,7 +2,6 @@ namespace Basalt.Core.Entities.Traits;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Basalt.Protocol.Enums;
 
 
 public static class EntityTraitRegistry {

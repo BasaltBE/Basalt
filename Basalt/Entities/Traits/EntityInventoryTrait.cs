@@ -7,13 +7,13 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Worlds;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 using Player = Player.Player;
 using Basalt.Core.Traits;
-
+using Basalt.Core.Enums;
 
 public sealed class EntityInventoryTrait : EntityTrait {
     public new static string Identifier => "inventory";
@@ -29,9 +29,9 @@ public sealed class EntityInventoryTrait : EntityTrait {
 
         Container = new EntityContainer(
             entity,
-            playerInventory ? ContainerType.Inventory : ContainerType.Container,
+            playerInventory ? ContainerType.INVENTORY : ContainerType.CONTAINER,
             playerInventory ? 36 : 27) {
-            Identifier = ContainerId.Inventory
+            Identifier = ContainerID.CONTAINER_ID_INVENTORY
         };
     }
 
@@ -53,9 +53,19 @@ public sealed class EntityInventoryTrait : EntityTrait {
         }
 
         InventoryContentPacket packet = new() {
-            ContainerId = Container.Identifier ?? ContainerId.Inventory,
-            Content = Enumerable.Repeat(new NetworkItemStackDescriptor(), Container.GetSize()).ToList(),
-            Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
+            ContainerId = unchecked((uint)(int)(
+                Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY
+            )),
+            FullContainerName = new FullContainerName {
+                ContainerName = ContainerEnumName.InventoryContainer,
+                DynamicID = 0
+            },
+            Slots = Enumerable
+                .Repeat(
+                    new NetworkItemStackDescriptor(),
+                    Container.GetSize()
+                )
+                .ToList(),
             StorageItem = new NetworkItemStackDescriptor()
         };
 
@@ -73,8 +83,17 @@ public sealed class EntityInventoryTrait : EntityTrait {
     }
 
     public override void OnAdd() {
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)Container.Type);
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, Container.GetSize());
+        // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, DataItemType.Byte, (sbyte)Container.Type);
+        // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, DataItemType.Int, Container.GetSize());
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new DataItemBytePayload() {
+            Type = DataItemType.Byte,
+            Value = (sbyte)Container.Type
+        });
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new DataItemIntPayload() {
+            Type = DataItemType.Int,
+            Value = Container.GetSize(),
+        });
+
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
@@ -90,8 +109,16 @@ public sealed class EntityInventoryTrait : EntityTrait {
         equipment?.SyncToPlayer(player);
     }
     public override void OnRemove() {
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)ContainerType.None);
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
+        // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)ContainerType.None);
+        // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new DataItemBytePayload() {
+            Type = DataItemType.Byte,
+            Value = (sbyte)ContainerType.NONE,
+        });
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new DataItemIntPayload() {
+            Type = DataItemType.Int,
+            Value = 0,
+        });
     }
 
     public override void OnInteract(Player player, EntityInteractMethod method) {
@@ -226,14 +253,24 @@ public sealed class EntityInventoryTrait : EntityTrait {
         }
 
         InventoryContentPacket packet = new() {
-            ContainerId = Container.Identifier ?? ContainerId.Inventory,
-            Content = new List<NetworkItemStackDescriptor>(Container.GetSize()),
-            Container = new FullContainerName { ContainerId = (byte)ContainerName.Inventory },
+            ContainerId = unchecked((uint)(int)(
+                Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY
+            )),
+            FullContainerName = new FullContainerName {
+                ContainerName = ContainerEnumName.InventoryContainer,
+                DynamicID = 0
+            },
+            Slots = new List<NetworkItemStackDescriptor>(
+                Container.GetSize()
+            ),
             StorageItem = new NetworkItemStackDescriptor()
         };
 
         for (int i = 0; i < Container.GetSize(); i++) {
-            packet.Content.Add(Container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
+            packet.Slots.Add(
+                Container.GetItem(i)?.ToNetworkStackDescriptor()
+                ?? new NetworkItemStackDescriptor()
+            );
         }
 
         player.Send(packet);
@@ -256,17 +293,17 @@ public sealed class EntityInventoryTrait : EntityTrait {
             }
         }
 
-        Vec3f feet = Entity.GetPosition();
+        Vec3 feet = Entity.Position;
         float yaw = MathF.PI / 180f * player.Yaw;
         float pitch = MathF.PI / 180f * player.Pitch;
 
         ItemEntity drop = new(item) {
-            Location = new Vec3f {
+            Position = new Vec3 {
                 X = feet.X,
                 Y = feet.Y + 1.15f,
                 Z = feet.Z
             },
-            Velocity = new Vec3f {
+            Velocity = new Vec3 {
                 X = -MathF.Sin(yaw) * MathF.Cos(pitch) / 3f,
                 Y = -MathF.Sin(pitch) / 2f + 0.2f,
                 Z = MathF.Cos(yaw) * MathF.Cos(pitch) / 3f
@@ -331,9 +368,5 @@ public sealed class EntityInventoryTrait : EntityTrait {
         return moved;
     }
 }
-
-
-
-
 
 

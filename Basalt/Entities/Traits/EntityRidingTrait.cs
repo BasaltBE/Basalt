@@ -1,7 +1,7 @@
 namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 
 /// <summary>
 /// Applied to an entity that is currently riding another entity.
@@ -27,10 +27,10 @@ public sealed class EntityRidingTrait : EntityTrait {
     // Required for deserialization. Trait will be non-functional until properly re-linked.
     public EntityRidingTrait(Entity entity) : base(entity) {
         Vehicle = entity;
-        Seat = new RideableSeat(0, new Vec3f(0f, 0f, 0f), 0f, false, false);
+        Seat = new RideableSeat(0, new Vec3() { X = 0f, Y = 0f, Z = 0f }, 0f, false, false);
     }
 
-    public Vec3f GetSeatPosition() {
+    public Vec3 GetSeatPosition() {
         return Seat.Position;
     }
 

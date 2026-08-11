@@ -1,8 +1,9 @@
+using BedrockProtocol.Types;
+
 namespace Basalt.Core.Entities.Traits.Types;
 
-using Basalt.Protocol.Types;
 
-public readonly record struct EntityFallOnBlockTraitEvent(Vec3f Position, float Distance);
+public readonly record struct EntityFallOnBlockTraitEvent(Vec3 Position, float Distance);
 
 
 

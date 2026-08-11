@@ -1,7 +1,5 @@
 namespace Basalt.Core.Entities.Metadata;
 
-using Basalt.Protocol.Enums;
-
 public sealed class EntityActorFlags {
     private readonly Entity _entity;
     private UInt128 _value;

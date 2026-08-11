@@ -1,13 +1,12 @@
+using Basalt.Core.Enums;
+using BedrockProtocol.Types;
+
 namespace Basalt.Core.Entities.Metadata;
-
-
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
-
 
 public sealed class EntityActorMetadata {
     private readonly Entity _entity;
-    private readonly Dictionary<ActorDataId, (ActorDataType Type, object Value)> _metadata = [];
+
+    private readonly Dictionary<ActorDataId, DataItemEntryPayloadVariant> _metadata = [];
 
     public EntityActorMetadata(Entity entity) {
         _entity = entity;
@@ -17,50 +16,45 @@ public sealed class EntityActorMetadata {
         return _metadata.ContainsKey(id);
     }
 
-    public T? GetActorMetadata<T>(ActorDataId id, ActorDataType type) {
-        if (!_metadata.TryGetValue(id, out (ActorDataType Type, object Value) value)) {
-            return default;
+    public T? GetActorMetadata<T>(ActorDataId id)
+        where T : class, DataItemEntryPayloadVariant {
+
+        if (!_metadata.TryGetValue(id, out DataItemEntryPayloadVariant? payload)) {
+            return null;
         }
 
-        if (value.Type != type) {
-            return default;
-        }
-
-        if (value.Value is T typed) {
-            return typed;
-        }
-
-        return default;
+        return payload as T;
     }
 
-    public void SetActorMetadata(ActorDataId id, ActorDataType type, object value) {
+    public void SetActorMetadata(
+        ActorDataId id,
+        DataItemEntryPayloadVariant payload
+    ) {
+        ArgumentNullException.ThrowIfNull(payload);
+
         bool changed = true;
-        if (_metadata.TryGetValue(id, out (ActorDataType Type, object Value) previous)) {
-            changed = previous.Type != type || !Equals(previous.Value, value);
+
+        if (_metadata.TryGetValue(id, out DataItemEntryPayloadVariant? previous)) {
+            changed = !Equals(previous, payload);
         }
 
-        _metadata[id] = (type, value);
+        _metadata[id] = payload;
+
         if (changed) {
-            _entity.SendActorMetadataUpdate(id, type, value);
+            _entity.SendActorMetadataUpdate(id, payload);
         }
     }
 
-    public List<ActorMetadataItem> GetAll() {
-        List<ActorMetadataItem> metadata = new(_metadata.Count);
-        foreach ((ActorDataId id, (ActorDataType type, object value)) in _metadata) {
-            metadata.Add(new ActorMetadataItem {
-                Id = id,
-                Type = type,
-                Value = value
+    public List<DataItemEntry> GetAll() {
+        List<DataItemEntry> metadata = new(_metadata.Count);
+
+        foreach ((ActorDataId id, DataItemEntryPayloadVariant payload) in _metadata.OrderBy(static entry => entry.Key)) {
+            metadata.Add(new DataItemEntry {
+                ID = (uint)id,
+                Payload = payload
             });
         }
 
         return metadata;
     }
 }
-
-
-
-
-
-
