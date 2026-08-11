@@ -11,7 +11,9 @@ public static class LoginPayload {
         TokenParts parts = ParseTokenParts(clientJwt);
 
         byte[] payloadBytes = JsonValue.DecodeBase64Url(clientJwt.AsSpan(parts.PayloadStart, parts.PayloadLength));
-        using JsonDocument payloadDoc = JsonDocument.Parse(payloadBytes);
+         using JsonDocument payloadDoc = JsonDocument.Parse(payloadBytes);
+
+
         JsonElement payload = payloadDoc.RootElement;
 
         return new ClientData(
@@ -101,16 +103,30 @@ public static class LoginPayload {
 
     private static TokenParts ParseTokenParts(string token) {
         int firstDot = token.IndexOf('.');
-        int secondDot = firstDot > 0 ? token.IndexOf('.', firstDot + 1) : -1;
 
-        if (firstDot <= 0
-            || secondDot <= firstDot + 1
+        if (firstDot <= 0 || firstDot == token.Length - 1) {
+            throw new InvalidOperationException("Malformed client token.");
+        }
+
+        int secondDot = token.IndexOf('.', firstDot + 1);
+
+        if (secondDot == -1) {
+            return new TokenParts(
+                firstDot + 1,
+                token.Length - firstDot - 1
+            );
+        }
+
+        if (secondDot == firstDot + 1
             || secondDot == token.Length - 1
             || token.IndexOf('.', secondDot + 1) >= 0) {
             throw new InvalidOperationException("Malformed client token.");
         }
 
-        return new TokenParts(firstDot + 1, secondDot - firstDot - 1);
+        return new TokenParts(
+            firstDot + 1,
+            secondDot - firstDot - 1
+        );
     }
 
     private readonly record struct TokenParts(int PayloadStart, int PayloadLength);

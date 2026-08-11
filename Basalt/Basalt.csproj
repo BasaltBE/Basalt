@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Protocol\Protocol.csproj" />
+    <ProjectReference Include="..\Package\Package.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -349,3 +349,4 @@ public sealed class Skin : DataType {
         writer.WriteBool(OverrideAppearance);
     }
 }
+

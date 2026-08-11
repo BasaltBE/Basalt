@@ -9,8 +9,6 @@ using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 using Basalt.Core.Events;
 using Basalt.Core.Worlds;
@@ -20,6 +18,8 @@ using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
+using BedrockProtocol.Packets;
+using Basalt.Core.Worlds.Dimensions;
 
 public sealed class Server {
     private const ulong TpsUpdateIntervalTicks = 20;
@@ -133,7 +133,7 @@ public sealed class Server {
         }
 
         if (defaultWorld.GetDimension("overworld") is null) {
-            defaultWorld.CreateDimension("overworld", DimensionType.Overworld, generatorType);
+            defaultWorld.CreateDimension("overworld", DimensionId.Overworld, generatorType);
         }
         WorldInstance.ConfigurePersistence(defaultWorldPath);
 
@@ -526,7 +526,7 @@ public sealed class Server {
     }
 
 
-    public void Broadcast(DataPacket packet, params PlayerInstance[]? exclude) {
+    public void Broadcast(Packet packet, params PlayerInstance[]? exclude) {
         foreach ((NetworkConnection connection, PlayerInstance player) in Players) {
             if (exclude is not null) {
                 bool skipped = false;
