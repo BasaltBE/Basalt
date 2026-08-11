@@ -270,7 +270,16 @@ public class ChestTrait : BlockTrait {
         player.Send(
             new BlockActorDataPacket {
                 BlockPosition = position,
-                ActorDataTags = storage
+                ActorDataTags = storage,
+                WriteActorDataTags = static (writer, value) => {
+                    if (value is not CompoundTag tag) {
+                        throw new InvalidOperationException(
+                            $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
+                        );
+                    }
+
+                    NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
+                }
             },
             new UpdateBlockPacket {
                 BlockPosition = position,

@@ -168,7 +168,7 @@ public sealed class HopperTrait : BlockTrait {
                       );
                   }
 
-                  NBT.WriteTag(writer, tag);
+                  NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
               }
           },
           new UpdateBlockPacket {

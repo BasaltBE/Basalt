@@ -105,7 +105,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
                         );
                     }
 
-                    NBT.WriteTag(writer, tag);
+                    NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
                 }
             },
             new UpdateBlockPacket {
@@ -205,7 +205,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
                     );
                 }
 
-                NBT.WriteTag(writer, tag);
+                NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
             }
         });
 

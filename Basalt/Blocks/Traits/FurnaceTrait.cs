@@ -141,7 +141,7 @@ public sealed class FurnaceTrait : BlockTrait {
                       );
                   }
 
-                  NBT.WriteTag(writer, tag);
+                  NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
               }
           },
           new UpdateBlockPacket {
