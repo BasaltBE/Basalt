@@ -1,10 +1,12 @@
 namespace Basalt.Core.Crafting;
 
+using System.Buffers.Binary;
 using Basalt.Core.Item;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+using ProtocolRecipeIngredient = BedrockProtocol.Types.RecipeIngredient_1164730002;
 
 public sealed class CraftingRegistry {
     private static CraftingRegistry? _instance;
@@ -20,48 +22,52 @@ public sealed class CraftingRegistry {
     }
 
     public void RegisterShaped(
-      string identifier,
-      IReadOnlyList<string> pattern,
-      IReadOnlyDictionary<char, RecipeIngredient> key,
-      RecipeResult result,
-      IReadOnlyList<string>? tags = null,
-      int priority = 0) {
+        string identifier,
+        IReadOnlyList<string> pattern,
+        IReadOnlyDictionary<char, RecipeIngredient> key,
+        RecipeResult result,
+        IReadOnlyList<string>? tags = null,
+        int priority = 0) {
+
         CraftingRecipe recipe = new(
-          RecipeType.Shaped,
-          identifier,
-          tags ?? ["crafting_table"],
-          priority,
-          pattern,
-          key,
-          Array.Empty<RecipeIngredient>(),
-          result);
+            RecipeType.Shaped,
+            identifier,
+            tags ?? ["crafting_table"],
+            priority,
+            pattern,
+            key,
+            Array.Empty<RecipeIngredient>(),
+            result);
 
         AddRecipe(recipe);
     }
 
     public void RegisterShapeless(
-      string identifier,
-      IReadOnlyList<RecipeIngredient> ingredients,
-      RecipeResult result,
-      IReadOnlyList<string>? tags = null,
-      int priority = 0) {
+        string identifier,
+        IReadOnlyList<RecipeIngredient> ingredients,
+        RecipeResult result,
+        IReadOnlyList<string>? tags = null,
+        int priority = 0) {
+
         CraftingRecipe recipe = new(
-          RecipeType.Shapeless,
-          identifier,
-          tags ?? ["crafting_table"],
-          priority,
-          Array.Empty<string>(),
-          new Dictionary<char, RecipeIngredient>(),
-          ingredients,
-          result);
+            RecipeType.Shapeless,
+            identifier,
+            tags ?? ["crafting_table"],
+            priority,
+            Array.Empty<string>(),
+            new Dictionary<char, RecipeIngredient>(),
+            ingredients,
+            result);
 
         AddRecipe(recipe);
     }
 
     public void AddRecipe(CraftingRecipe recipe) {
         _recipes.Add(recipe);
+
         int index = _recipes.Count - 1;
         _identifierToIndex[recipe.Identifier] = index;
+
         InvalidateCache();
     }
 
@@ -69,6 +75,7 @@ public sealed class CraftingRegistry {
         if (_networkIdToIndex.TryGetValue(networkId, out int index) && index < _recipes.Count) {
             return _recipes[index];
         }
+
         return null;
     }
 
@@ -76,50 +83,85 @@ public sealed class CraftingRegistry {
         if (_identifierToIndex.TryGetValue(identifier, out int index)) {
             return _recipes[index];
         }
+
         return null;
     }
 
     public IReadOnlyList<CraftingRecipe> GetAll() => _recipes;
 
     public byte[] GetCraftingDataPayload() {
-        if (_cachedPayload is not null) return _cachedPayload;
+        if (_cachedPayload is not null) {
+            return _cachedPayload;
+        }
 
-        List<CraftingDataEntry> entries = [];
+        List<ShapedRecipePayload> shapedRecipes = [];
+        List<ShapelessRecipePayload> shapelessRecipes = [];
+
         _networkIdToIndex.Clear();
+
         uint networkId = 1;
 
         for (int i = 0; i < _recipes.Count; i++) {
             CraftingRecipe recipe = _recipes[i];
-            CraftingDataEntry? entry = BuildEntry(recipe, networkId);
-            if (entry is null) {
-                networkId++;
-                continue;
+
+            switch (recipe.Type) {
+                case RecipeType.Shaped: {
+                        ShapedRecipePayload? payload = BuildShapedRecipe(recipe, networkId);
+                        if (payload is not null) {
+                            shapedRecipes.Add(payload);
+                            _networkIdToIndex[networkId] = i;
+                        }
+
+                        break;
+                    }
+
+                case RecipeType.Shapeless: {
+                        ShapelessRecipePayload? payload = BuildShapelessRecipe(recipe, networkId);
+                        if (payload is not null) {
+                            shapelessRecipes.Add(payload);
+                            _networkIdToIndex[networkId] = i;
+                        }
+
+                        break;
+                    }
             }
 
-            entries.Add(entry);
-            _networkIdToIndex[networkId] = i;
             networkId++;
         }
 
-        int furnaceSkipped = 0;
+        // Keep the old behaviour where furnace recipes were exposed to the
+        // client as shapeless recipes.
         IReadOnlyList<FurnaceRecipe> furnaceRecipes = FurnaceRegistry.Instance.GetAll();
+
         for (int i = 0; i < furnaceRecipes.Count; i++) {
             FurnaceRecipe furnace = furnaceRecipes[i];
+
             for (int t = 0; t < furnace.Tags.Count; t++) {
-                CraftingDataEntry? entry = BuildFurnaceAsShapeless(furnace, furnace.Tags[t], networkId);
-                if (entry is null) {
-                    furnaceSkipped++;
-                    networkId++;
-                    continue;
+                ShapelessRecipePayload? payload =
+                    BuildFurnaceAsShapeless(furnace, furnace.Tags[t], networkId);
+
+                if (payload is not null) {
+                    shapelessRecipes.Add(payload);
                 }
 
-                entries.Add(entry);
                 networkId++;
             }
         }
 
         CraftingDataPacket packet = new() {
-            Recipes = entries,
+            ShapedRecipes = shapedRecipes,
+            ShapelessRecipes = shapelessRecipes,
+
+            MultiRecipes = [],
+            UserDataShapelessRecipes = [],
+            ShapelessChemistryRecipes = [],
+            ShapedChemistryRecipes = [],
+            SmithingTransformRecipes = [],
+            SmithingTrimRecipes = [],
+            PotionMixes = [],
+            ContainerMixes = [],
+            MaterialReducers = [],
+
             ClearRecipes = true
         };
 
@@ -132,205 +174,269 @@ public sealed class CraftingRegistry {
         _networkIdToIndex.Clear();
     }
 
-    private static CraftingDataEntry? BuildEntry(CraftingRecipe recipe, uint networkId) {
-        // if(networkId == 248)
-        // {
-        //   Logger.Info("Item {0}", recipe.Identifier);
-        // };
+    private static ShapedRecipePayload? BuildShapedRecipe(
+        CraftingRecipe recipe,
+        uint networkId) {
 
-        // num + 1 // breaks at id 248
-        // if (networkId > 246)
-        // {
-        //   for (int t = 0; t < recipe.Tags.Count; t++)
-        //   {
-        //     if (recipe.Tags[t] == "crafting_table") return null;
-        //   }
-        // }
-
-        ItemType? resultType = ResolveItemType(recipe.Result.Item);
-        if (resultType is null) {
-            Logger.Warn("Crafting: skipping '{0}', result item '{1}' not found.", recipe.Identifier, recipe.Result.Item);
+        if (recipe.Pattern.Count == 0) {
             return null;
         }
 
-        byte[] uuid = Guid.NewGuid().ToByteArray();
+        ItemType? resultType = ResolveItemType(recipe.Result.Item);
+        if (resultType is null) {
+            Logger.Warn(
+                "Crafting: skipping '{0}', result item '{1}' not found.",
+                recipe.Identifier,
+                recipe.Result.Item);
 
-        return recipe.Type switch {
-            RecipeType.Shaped => BuildShapedEntry(recipe, resultType, networkId, uuid),
-            RecipeType.Shapeless => BuildShapelessEntry(recipe, resultType, networkId, uuid),
-            _ => null
-        };
-    }
-
-    private static CraftingDataEntry? BuildShapedEntry(CraftingRecipe recipe, ItemType resultType, uint networkId, byte[] uuid) {
-        if (recipe.Pattern.Count == 0) return null;
+            return null;
+        }
 
         int height = recipe.Pattern.Count;
         int width = recipe.Pattern[0].Length;
 
-        List<ItemDescriptorCount> input = new(width * height);
+        List<ProtocolRecipeIngredient> ingredients = new(width * height);
+
         for (int row = 0; row < height; row++) {
             string line = recipe.Pattern[row];
+
             for (int col = 0; col < width; col++) {
-                char symbol = col < line.Length ? line[col] : ' ';
+                char symbol = col < line.Length
+                    ? line[col]
+                    : ' ';
+
                 if (symbol == ' ') {
-                    input.Add(new ItemDescriptorCount { DescriptorType = 0, Count = 0 });
+                    ingredients.Add(CreateEmptyIngredient());
                     continue;
                 }
 
                 if (!recipe.Key.TryGetValue(symbol, out RecipeIngredient? ingredient)) {
-                    input.Add(new ItemDescriptorCount { DescriptorType = 0, Count = 0 });
+                    ingredients.Add(CreateEmptyIngredient());
                     continue;
                 }
 
-                ItemDescriptorCount? descriptor = BuildDescriptor(ingredient);
+                ProtocolRecipeIngredient? descriptor = BuildDescriptor(ingredient);
+
                 if (descriptor is null) {
-                    Logger.Warn("Crafting: skipping '{0}', ingredient for '{1}' not found.", recipe.Identifier, symbol);
+                    Logger.Warn(
+                        "Crafting: skipping '{0}', ingredient for '{1}' not found.",
+                        recipe.Identifier,
+                        symbol);
+
                     return null;
                 }
-                input.Add(descriptor);
+
+                ingredients.Add(descriptor);
             }
         }
 
-        ShapedRecipeData data = new() {
+        return new ShapedRecipePayload {
             RecipeId = recipe.Identifier,
             Width = width,
             Height = height,
-            Input = input,
-            Output = [BuildResultItem(resultType, recipe.Result)],
-            Uuid = uuid,
-            Block = ResolveBlock(recipe.Tags),
+            Ingredients = ingredients,
+            Results = [BuildResultItem(resultType, recipe.Result)],
+            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Tag = ResolveBlock(recipe.Tags),
             Priority = recipe.Priority,
             AssumeSymmetry = true,
-            UnlockRequirement = new RecipeUnlockingRequirement { Context = RecipeUnlockingRequirement.ContextNone },
-            RecipeNetworkId = networkId
-        };
 
-        return new CraftingDataEntry {
-            RecipeType = CraftingDataRecipeType.Shaped,
-            Shaped = data
+            UnlockingRequirement = new RecipeUnlockingRequirement {
+                UnlockingContext = RecipeUnlockingContext.AlwaysUnlocked,
+                UnlockingIngredients = null
+            },
+
+            NetId = new RecipeNetId {
+                RawId = networkId
+            }
         };
     }
 
-    private static CraftingDataEntry? BuildShapelessEntry(CraftingRecipe recipe, ItemType resultType, uint networkId, byte[] uuid) {
-        List<ItemDescriptorCount> input = new(recipe.Ingredients.Count);
-        for (int i = 0; i < recipe.Ingredients.Count; i++) {
-            ItemDescriptorCount? descriptor = BuildDescriptor(recipe.Ingredients[i]);
-            if (descriptor is null) {
-                Logger.Warn("Crafting: skipping '{0}', ingredient '{1}' not found.", recipe.Identifier, recipe.Ingredients[i].Item ?? recipe.Ingredients[i].Tag);
-                return null;
-            }
-            input.Add(descriptor);
+    private static ShapelessRecipePayload? BuildShapelessRecipe(
+        CraftingRecipe recipe,
+        uint networkId) {
+
+        ItemType? resultType = ResolveItemType(recipe.Result.Item);
+        if (resultType is null) {
+            Logger.Warn(
+                "Crafting: skipping '{0}', result item '{1}' not found.",
+                recipe.Identifier,
+                recipe.Result.Item);
+
+            return null;
         }
 
-        ShapelessRecipeData data = new() {
-            RecipeId = recipe.Identifier,
-            Input = input,
-            Output = [BuildResultItem(resultType, recipe.Result)],
-            Uuid = uuid,
-            Block = ResolveBlock(recipe.Tags),
-            Priority = recipe.Priority,
-            UnlockRequirement = new RecipeUnlockingRequirement { Context = RecipeUnlockingRequirement.ContextNone },
-            RecipeNetworkId = networkId
-        };
+        List<ProtocolRecipeIngredient> ingredients =
+            new(recipe.Ingredients.Count);
 
-        return new CraftingDataEntry {
-            RecipeType = CraftingDataRecipeType.Shapeless,
-            Shapeless = data
+        for (int i = 0; i < recipe.Ingredients.Count; i++) {
+            ProtocolRecipeIngredient? descriptor =
+                BuildDescriptor(recipe.Ingredients[i]);
+
+            if (descriptor is null) {
+                Logger.Warn(
+                    "Crafting: skipping '{0}', ingredient '{1}' not found.",
+                    recipe.Identifier,
+                    recipe.Ingredients[i].Item ?? recipe.Ingredients[i].Tag);
+
+                return null;
+            }
+
+            ingredients.Add(descriptor);
+        }
+
+        return new ShapelessRecipePayload {
+            RecipeId = recipe.Identifier,
+            Ingredients = ingredients,
+            Results = [BuildResultItem(resultType, recipe.Result)],
+            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Tag = ResolveBlock(recipe.Tags),
+            Priority = recipe.Priority,
+
+            UnlockingRequirement = new RecipeUnlockingRequirement {
+                UnlockingContext = RecipeUnlockingContext.AlwaysUnlocked,
+                UnlockingIngredients = null
+            },
+
+            NetId = new RecipeNetId {
+                RawId = networkId
+            }
         };
     }
 
-    private static CraftingDataEntry? BuildFurnaceAsShapeless(FurnaceRecipe recipe, string block, uint networkId) {
+    private static ShapelessRecipePayload? BuildFurnaceAsShapeless(
+        FurnaceRecipe recipe,
+        string block,
+        uint networkId) {
+
         ItemType? inputType = ResolveItemType(recipe.InputItem);
         if (inputType is null) {
-            Logger.Warn("Crafting: skipping furnace '{0}', input '{1}' not found.", recipe.Identifier, recipe.InputItem);
+            Logger.Warn(
+                "Crafting: skipping furnace '{0}', input '{1}' not found.",
+                recipe.Identifier,
+                recipe.InputItem);
+
             return null;
         }
 
         ItemType? outputType = ResolveItemType(recipe.OutputItem);
         if (outputType is null) {
-            Logger.Warn("Crafting: skipping furnace '{0}', output '{1}' not found.", recipe.Identifier, recipe.OutputItem);
+            Logger.Warn(
+                "Crafting: skipping furnace '{0}', output '{1}' not found.",
+                recipe.Identifier,
+                recipe.OutputItem);
+
             return null;
         }
 
-        ItemDescriptorCount inputDescriptor = new() {
-            DescriptorType = 1,
-            NetworkId = checked((short)inputType.NetworkId),
-            MetadataValue = 0x7FFF,
-            Count = 1
+        ProtocolRecipeIngredient input = new() {
+            DescriptorType = ItemDescriptorType.ItemName,
+            Text = inputType.Identifier,
+            AuxValue = 0x7FFF,
+            StackSize = 1
         };
 
-        int blockRuntimeId = 0;
-        if (outputType.BlockType is not null && outputType.BlockType.Permutations.Count > 0) {
-            blockRuntimeId = outputType.BlockType.Permutations[0].NetworkId;
-        }
+        RecipeResult result = new(
+            recipe.OutputItem,
+            1,
+            0);
 
-        RecipeItemStack output = new() {
-            NetworkId = outputType.NetworkId,
-            Count = 1,
-            Metadata = 0,
-            BlockRuntimeId = blockRuntimeId
-        };
-
-        ShapelessRecipeData data = new() {
+        return new ShapelessRecipePayload {
             RecipeId = recipe.Identifier,
-            Input = [inputDescriptor],
-            Output = [output],
-            Uuid = Guid.NewGuid().ToByteArray(),
-            Block = block,
+            Ingredients = [input],
+            Results = [BuildResultItem(outputType, result)],
+            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Tag = block,
             Priority = 0,
-            UnlockRequirement = new RecipeUnlockingRequirement {
-                Context = RecipeUnlockingRequirement.ContextNone,
-                Ingredients = [inputDescriptor]
-            },
-            RecipeNetworkId = networkId
-        };
 
-        return new CraftingDataEntry {
-            RecipeType = CraftingDataRecipeType.Shapeless,
-            Shapeless = data
+            UnlockingRequirement = new RecipeUnlockingRequirement {
+                UnlockingContext = RecipeUnlockingContext.None,
+                UnlockingIngredients = [input]
+            },
+
+            NetId = new RecipeNetId {
+                RawId = networkId
+            }
         };
     }
 
-    private static ItemDescriptorCount? BuildDescriptor(RecipeIngredient ingredient) {
+    private static ProtocolRecipeIngredient? BuildDescriptor(
+        RecipeIngredient ingredient) {
+
+        int stackSize = Math.Max(1, ingredient.Count);
+
         if (ingredient.Tag is not null) {
-            return new ItemDescriptorCount {
-                DescriptorType = 3,
+            return new ProtocolRecipeIngredient {
+                DescriptorType = ItemDescriptorType.ItemTag,
                 Text = ingredient.Tag,
-                Count = ingredient.Count
+                AuxValue = 0x7FFF,
+                StackSize = stackSize
             };
         }
 
-        if (ingredient.Item is null) return null;
+        if (ingredient.Item is null) {
+            return null;
+        }
 
         ItemType? type = ResolveItemType(ingredient.Item);
-        if (type is null) return null;
+        if (type is null) {
+            return null;
+        }
 
-        return new ItemDescriptorCount {
-            DescriptorType = 1,
-            NetworkId = checked((short)type.NetworkId),
-            MetadataValue = 0x7FFF,
-            Count = ingredient.Count
+        return new ProtocolRecipeIngredient {
+            DescriptorType = ItemDescriptorType.ItemName,
+            Text = type.Identifier,
+            AuxValue = 0x7FFF,
+            StackSize = stackSize
         };
     }
 
-    private static RecipeItemStack BuildResultItem(ItemType type, RecipeResult result) {
+    private static ProtocolRecipeIngredient CreateEmptyIngredient() {
+        return new ProtocolRecipeIngredient {
+            DescriptorType = ItemDescriptorType.Empty,
+            AuxValue = 0x7FFF,
+            StackSize = 1
+        };
+    }
+
+    private static NetworkItemInstanceDescriptorData BuildResultItem(
+        ItemType type,
+        RecipeResult result) {
+
         int blockRuntimeId = 0;
-        if (type.BlockType is not null && type.BlockType.Permutations.Count > 0) {
+
+        if (
+            type.BlockType is not null
+            && type.BlockType.Permutations.Count > 0
+        ) {
             blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new RecipeItemStack {
-            NetworkId = type.NetworkId,
-            Count = checked((ushort)result.Count),
-            Metadata = unchecked((uint)result.Data),
-            BlockRuntimeId = blockRuntimeId
+        return new NetworkItemInstanceDescriptorData {
+            Id = type.NetworkId,
+            StackSize = checked((ushort)result.Count),
+            AuxValue = unchecked((uint)result.Data),
+            BlockRuntimeId = blockRuntimeId,
+            UserDataBuffer = []
+        };
+    }
+
+    private static UUID CreateProtocolUuid(Guid value) {
+        Span<byte> bytes = stackalloc byte[16];
+        value.TryWriteBytes(bytes);
+
+        return new UUID {
+            MostSignificantBits = BinaryPrimitives.ReadUInt64LittleEndian(bytes[..8]),
+            LeastSignificantBits = BinaryPrimitives.ReadUInt64LittleEndian(bytes[8..])
         };
     }
 
     private static ItemType? ResolveItemType(string identifier) {
         ItemType? type = ItemType.Get(identifier);
-        if (type is not null) return type;
+
+        if (type is not null) {
+            return type;
+        }
 
         if (!identifier.Contains(':')) {
             type = ItemType.Get("minecraft:" + identifier);
@@ -342,30 +448,53 @@ public sealed class CraftingRegistry {
     private static string ResolveBlock(IReadOnlyList<string> tags) {
         for (int i = 0; i < tags.Count; i++) {
             switch (tags[i]) {
-                case "crafting_table": return "crafting_table";
-                case "stonecutter": return "stonecutter";
-                case "furnace": return "furnace";
-                case "blast_furnace": return "blast_furnace";
-                case "smoker": return "smoker";
-                case "campfire": return "campfire";
-                case "cartography_table": return "cartography_table";
-                case "smithing_table": return "smithing_table";
+                case "crafting_table":
+                    return "crafting_table";
+
+                case "stonecutter":
+                    return "stonecutter";
+
+                case "furnace":
+                    return "furnace";
+
+                case "blast_furnace":
+                    return "blast_furnace";
+
+                case "smoker":
+                    return "smoker";
+
+                case "campfire":
+                    return "campfire";
+
+                case "cartography_table":
+                    return "cartography_table";
+
+                case "smithing_table":
+                    return "smithing_table";
             }
         }
+
         return "crafting_table";
     }
 
-    private static byte[] SerializePacket(DataPacket packet) {
+    private static byte[] SerializePacket(Packet packet) {
         int size = 1024 * 256;
+
         while (true) {
             byte[] buffer = new byte[size];
+
             try {
                 int offset = 0;
                 BinaryWriter writer = new(buffer, ref offset);
+
                 packet.Serialize(writer);
+
                 return writer.GetProcessedBytes().ToArray();
             }
-            catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException) {
+            catch (Exception ex) when (
+                ex is ArgumentOutOfRangeException
+                or IndexOutOfRangeException
+            ) {
                 size *= 2;
             }
         }

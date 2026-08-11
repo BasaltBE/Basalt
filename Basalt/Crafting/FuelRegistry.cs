@@ -1,7 +1,6 @@
 namespace Basalt.Core.Crafting;
 
 using Basalt.Core.Item;
-using Basalt.Protocol.Enums;
 
 // For now fuel is hard coded as we have no way of dumping them
 public static class FuelRegistry {
