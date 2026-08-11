@@ -1,37 +1,40 @@
 namespace Basalt.Core.Player;
 
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.Core.Network;
 using Basalt.RakNet;
 using Basalt.Core.Containers;
-using Basalt.Protocol.Types;
-using Basalt.Protocol.Nbt;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Binary;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.DDUI;
 using Basalt.Core.Scoreboard;
+using Basalt.Core.Entities;
+
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Nbt;
+using Basalt.Core.Enums;
 
 public class Player : Entities.Entity {
     public readonly string Username;
     public readonly string Xuid;
     public readonly Guid Uuid;
-    public DeviceOS DeviceOS;
-    private byte[]? Skin;
+    public BuildPlatform DeviceOS;
+    public SerializedSkin Skin = new();
     internal string LastRequestedFullSkinId = string.Empty;
     internal NetworkConnection? Connection;
     internal NetworkHandler? Network;
     public PlayerAbilities Abilities { get; } = new();
     public PlayerPermissions Permissions { get; }
     public Dictionary<DisplaySlotType, Scoreboard> Scoreboards { get; } = [];
-    public Gamemode Gamemode { get; private set; } = Gamemode.Survival;
+    public GameType Gamemode { get; private set; } = GameType.Survival;
     public bool IsOperator { get; internal set; }
     public bool Spawned { get; internal set; }
+    public bool InitialAttributesSynced { get; internal set; }
     public float Pitch;
     public float Yaw;
     public float HeadYaw { get; set; }
@@ -40,8 +43,8 @@ public class Player : Entities.Entity {
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
-    public Dictionary<ContainerId, Container> openedContainers = [];
-    internal Dictionary<int, PendingForm> PendingForms = [];
+    public Dictionary<ContainerID, Container> openedContainers = [];
+    internal Dictionary<uint, PendingForm> PendingForms = [];
     internal Dictionary<string, DataDrivenScreen> Screens = [];
 
     public Player(string username, string xuid, Guid uuid) :
@@ -61,25 +64,54 @@ public class Player : Entities.Entity {
         Flags.SetActorFlag(ActorFlag.CanShowName, true);
         Flags.SetActorFlag(ActorFlag.AlwaysShowName, true);
         Flags.SetActorFlag(ActorFlag.CanClimb, true);
-        Metadata.SetActorMetadata(ActorDataId.Name, ActorDataType.String, Username);
-        Metadata.SetActorMetadata(ActorDataId.NametagAlwaysShow, ActorDataType.Byte, (sbyte)1);
+        Metadata.SetActorMetadata(
+            ActorDataId.Name,
+            new DataItemStringPayload {
+                Type = DataItemType.String,
+                Value = Username
+            }
+        );
+        Metadata.SetActorMetadata(
+            ActorDataId.NametagAlwaysShow,
+            new DataItemBytePayload {
+                Type = DataItemType.Byte,
+                Value = 1
+            }
+        );
+        Metadata.SetActorMetadata(
+            ActorDataId.PlayerFlags,
+            new DataItemBytePayload {
+                Type = DataItemType.Byte,
+                Value = 0
+            }
+        );
     }
 
-    public Gamemode GetGamemode() {
+    public GameType GetGamemode() {
         return Gamemode;
     }
 
     public void SetDisplayName(string displayName) {
-        Metadata.SetActorMetadata(ActorDataId.Name, ActorDataType.String, displayName);
+        Metadata.SetActorMetadata(
+            ActorDataId.Name,
+            new DataItemStringPayload {
+                Type = DataItemType.String,
+                Value = displayName
+            }
+        );
     }
 
-    public void SetGamemode(Gamemode gamemode) {
+    public void SetGamemode(GameType gamemode) {
         Gamemode = gamemode;
 
         UpdatePlayerGameTypePacket gamemodePacket = new() {
-            GameType = gamemode,
-            PlayerUniqueId = UniqueId,
-            Tick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0
+            PlayerGameType = gamemode,
+            TargetPlayer = new ActorUniqueID {
+                Value = UniqueId
+            },
+            Tick = new PlayerInputTick {
+                InputTick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0
+            }
         };
         Abilities.SetGamemode(gamemode);
 
@@ -90,7 +122,7 @@ public class Player : Entities.Entity {
         if (Dimension?.World?.Server is Server server) {
             foreach ((NetworkConnection connection, Player player) in server.Players) {
                 if (ReferenceEquals(player, this)) {
-                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { GameType = gamemode });
+                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { PlayerGameType = gamemode });
                     server.Network.QueuePacket(connection, abilitiesPacket);
                     break;
                 }
@@ -98,7 +130,7 @@ public class Player : Entities.Entity {
         }
     }
 
-    public void RestoreGamemode(Gamemode gamemode) {
+    public void RestoreGamemode(GameType gamemode) {
         Gamemode = gamemode;
         Abilities.SetGamemode(gamemode);
         if (IsOperator) {
@@ -149,7 +181,7 @@ public class Player : Entities.Entity {
         base.Read(root);
 
         if (root.Get<IntTag>("gamemode") is { } gamemodeTag) {
-            RestoreGamemode((Gamemode)gamemodeTag.Value);
+            RestoreGamemode((GameType)gamemodeTag.Value);
         }
 
         SavedWorldName = root.Get<StringTag>("world")?.Value;
@@ -168,12 +200,33 @@ public class Player : Entities.Entity {
 
 
 
-    public void Send(params DataPacket[] packets) {
+    public void Send(params Packet[] packets) {
         if (Connection is null || Network is null || packets.Length == 0) {
             return;
         }
 
         Network.QueuePackets(Connection, packets);
+    }
+
+    public void PlaySound(
+        string soundEvent,
+        Vec3? position = null,
+        int data = 0,
+        string actorIdentifier = "",
+        bool babyMob = false,
+        bool disableRelativeVolume = false,
+        long uniqueActorId = 0,
+        Vec3? fireAtPosition = null) {
+        Send(new LevelSoundEventPacket {
+            SoundEvent = soundEvent,
+            Position = position ?? Position,
+            Data = data,
+            ActorIdentifier = actorIdentifier,
+            IsBaby = babyMob,
+            IsGlobal = disableRelativeVolume,
+            ActorUniqueId = uniqueActorId,
+            FireAtPosition = fireAtPosition
+        });
     }
 
     public bool DropItem(Item.ItemStack item) {
@@ -192,10 +245,15 @@ public class Player : Entities.Entity {
         }
 
         DisconnectPacket disconnect = new() {
-            Reason = string.IsNullOrEmpty(reason) ? DisconnectReason.Disconnected : DisconnectReason.NetherNetSignalingSigninFailed,
-            HideDisconnectionScreen = string.IsNullOrEmpty(reason),
-            Message = reason,
-            FilteredMessage = string.Empty
+            Reason = string.IsNullOrEmpty(reason)
+                ? DisconnectFailReason.Disconnected
+                : DisconnectFailReason.Kicked,
+            Messages = string.IsNullOrEmpty(reason)
+                ? null
+                : new DisconnectPacketMessages {
+                    Message = reason,
+                    FilteredMessage = string.Empty
+                }
         };
 
         if (immediate) {
@@ -234,7 +292,7 @@ public class Player : Entities.Entity {
             }
         }
 
-        Vec3f spawnPosition = dimension.SpawnPosition;
+        Vec3 spawnPosition = dimension.SpawnPosition;
         IsSprinting = false;
         IsSneaking = false;
         IsSwimming = false;
@@ -248,25 +306,25 @@ public class Player : Entities.Entity {
 
         ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
         dimension.Broadcast(new ActorEventPacket {
-            ActorRuntimeId = RuntimeId,
-            Event = ActorEvent.SpawnAlive,
+            TargetRuntimeID = new ActorRuntimeID { Value = RuntimeId },
+            EventID = ActorEvent.SPAWN_ALIVE,
             Data = 0
         }, new BroadcastOptions { Center = spawnPosition });
         Send(CreateActorDataPacket(tick));
         Attributes.Send();
     }
 
-    public void Teleport(Vec3f position, Dimension? dimension = null) {
+    public void Teleport(Vec3 position, Dimension? dimension = null) {
         Dimension? previousDimension = Dimension;
         Dimension targetDimension = dimension ?? previousDimension ??
             throw new InvalidOperationException("Player must have a dimension to teleport without a target dimension.");
 
-        Vec3f previousPosition = Location;
+        Vec3 previousPosition = Location;
         bool changedDimension = previousDimension != targetDimension;
         bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
 
         Location = position;
-        Velocity = new Vec3f();
+        Velocity = new Vec3();
 
         ulong teleportTick = targetDimension.World is Tickable tp ? tp.TickValue : 0;
         LastTeleportTick = teleportTick;
@@ -280,7 +338,7 @@ public class Player : Entities.Entity {
                         continue;
                     }
 
-                    Send(new RemoveActorPacket { EntityUniqueId = other.UniqueId });
+                    Send(new RemoveActorPacket { TargetActorID = new ActorUniqueID() { Value = other.UniqueId } });
                 }
             }
 
@@ -294,25 +352,39 @@ public class Player : Entities.Entity {
 
         if (changedDimensionType) {
             Send(new ChangeDimensionPacket {
-                Dimension = targetDimension.Type,
+                DimensionID = new DimensionType() { Value = (int)targetDimension.Type },
                 Position = position,
                 Respawn = true,
-                HasLoadingScreen = false
+                LoadingScreenId = 0
             });
         }
 
         MovePlayerPacket movePlayer = new() {
-            RuntimeId = RuntimeId,
+            PlayerRuntimeID = new ActorRuntimeID {
+                Value = RuntimeId
+            },
             Position = position,
-            Pitch = Pitch,
-            Yaw = Yaw,
-            HeadYaw = HeadYaw,
-            Mode = changedDimension ? MoveMode.Reset : MoveMode.Teleport,
+            Rotation = new Vec2 {
+                X = Pitch,
+                Y = Yaw
+            },
+            YHeadRotation = HeadYaw,
+            PositionMode = changedDimension
+                ? PositionMode.Respawn
+                : PositionMode.Teleport,
             OnGround = false,
-            RiddenRuntimeId = 0,
-            TeleportCause = TeleportCause.Command,
-            TeleportSourceEntityType = 0,
-            Tick = tick
+            RidingRuntimeID = new ActorRuntimeID {
+                Value = 0
+            },
+            TeleportData = changedDimension
+                ? null
+                : new MovePlayerTeleportData {
+                    TeleportationCause = (int)TeleportCause.Command,
+                    SourceActorType = 0
+                },
+            Tick = new PlayerInputTick {
+                InputTick = tick
+            }
         };
         Send(movePlayer);
 
@@ -334,11 +406,11 @@ public class Player : Entities.Entity {
 
 
 
-    public void RegisterOpenContainer(ContainerId containerId, Container container) {
+    public void RegisterOpenContainer(ContainerID containerId, Container container) {
         openedContainers[containerId] = container;
     }
 
-    public bool TryGetOpenContainer(ContainerId containerId, out Container? container) {
+    public bool TryGetOpenContainer(ContainerID containerId, out Container? container) {
         return openedContainers.TryGetValue(containerId, out container);
     }
 
@@ -348,66 +420,58 @@ public class Player : Entities.Entity {
             return null;
         }
 
-        if (name.ContainerId == (byte)ContainerName.Armor) {
-            EntityEquipmentTrait? equipment = GetTrait<EntityEquipmentTrait>();
-            return equipment?.Armor;
+        if (name.ContainerName == ContainerEnumName.ArmorContainer) {
+            return GetTrait<EntityEquipmentTrait>()?.Armor;
         }
 
-        if (name.ContainerId == (byte)ContainerName.Offhand) {
-            EntityEquipmentTrait? equipment = GetTrait<EntityEquipmentTrait>();
-            return equipment?.Offhand;
+        if (name.ContainerName == ContainerEnumName.OffhandContainer) {
+            return GetTrait<EntityEquipmentTrait>()?.Offhand;
         }
 
-        if (name.ContainerId is (byte)ContainerName.CombinedHotbarAndInventory
-            or (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar) {
+        if (name.ContainerName is ContainerEnumName.CombinedHotbarAndInventoryContainer
+            or ContainerEnumName.InventoryContainer
+            or ContainerEnumName.HotbarContainer) {
             return inventory.Container;
         }
 
-        if (name.ContainerId == (byte)ContainerName.Barrel) {
-            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? containerById)) {
-                return containerById;
-            }
+        if (name.ContainerName == ContainerEnumName.CursorContainer
+            || name.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+            return GetTrait<PlayerCursorTrait>()?.Container;
+        }
 
-            foreach ((ContainerId _, Container candidate) in openedContainers) {
-                if (candidate.Type != ContainerType.Inventory) {
+        if (name.ContainerName == ContainerEnumName.CraftingInputContainer) {
+            foreach ((ContainerID _, Container candidate) in openedContainers) {
+                if (candidate.Type == ContainerType.WORKBENCH) {
                     return candidate;
                 }
             }
 
-            return inventory.Container;
-        }
-
-        if (name.ContainerId is (byte)ContainerName.Cursor or (byte)ContainerName.CreatedOutput) {
-            PlayerCursorTrait? cursor = GetTrait<PlayerCursorTrait>();
-            return cursor?.Container;
-        }
-
-        if (name.ContainerId == (byte)ContainerName.LevelEntity) {
-            if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? containerById)) {
-                return containerById;
-            }
-
-            foreach ((ContainerId _, Container candidate) in openedContainers) {
-                if (candidate.Type != ContainerType.Inventory) {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
-
-        if (name.ContainerId == (byte)ContainerName.CraftingInput) {
-            foreach ((ContainerId _, Container candidate) in openedContainers) {
-                if (candidate.Type == ContainerType.Workbench) {
-                    return candidate;
-                }
-            }
-
-            Traits.PlayerCraftingGridTrait? grid = GetTrait<Traits.PlayerCraftingGridTrait>();
+            PlayerCraftingGridTrait? grid = GetTrait<PlayerCraftingGridTrait>();
             return grid?.Container;
         }
 
-        if (name.DynamicContainerId.HasValue && TryGetOpenContainer((ContainerId)(sbyte)name.DynamicContainerId.Value, out Container? container)) {
+        if (name.ContainerName is ContainerEnumName.BarrelContainer
+            or ContainerEnumName.LevelEntityContainer
+            or ContainerEnumName.DynamicContainer) {
+
+            if (name.DynamicID != 0 &&
+                TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)name.DynamicID), out Container? containerById)) {
+                return containerById;
+            }
+
+            foreach ((ContainerID _, Container candidate) in openedContainers) {
+                if (candidate.Type != ContainerType.INVENTORY) {
+                    return candidate;
+                }
+            }
+
+            return name.ContainerName == ContainerEnumName.BarrelContainer
+                ? inventory.Container
+                : null;
+        }
+
+        if (name.DynamicID != 0 &&
+            TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)name.DynamicID), out Container? container)) {
             return container;
         }
 
@@ -415,102 +479,94 @@ public class Player : Entities.Entity {
     }
 
 
-    public PlayerListEntry CreatePlayerListEntry() {
-        Skin skin = new();
-        if (Skin is not null && Skin.Length > 0) {
-            int offset = 0;
-            Binary.BinaryReader reader = new(Skin, ref offset);
-            skin.Read(reader);
+    public PlayerListEntryVariant CreatePlayerListEntry(bool add = true) {
+        if (add) {
+            return new PlayerListAddEntry {
+                Action = PlayerListPacketType.Add,
+                ActorUniqueID = new ActorUniqueID() {
+                    Value = UniqueId,
+                },
+                BuildPlatform = BuildPlatform.Unknown,
+                IsHost = false,
+                IsSubClient = false,
+                IsTeacher = false,
+                PlatformOnlineID = "",
+                PlayerColor = new Color() {
+                    Value = 0,
+                },
+                PlayerName = Username,
+                UUID = GetUUID(),
+                XBLXUID = "",
+                SerializedSkin = Skin,
+            };
         }
-
-        return new PlayerListEntry {
-            Uuid = Uuid,
-            EntityUniqueId = UniqueId,
-            Username = Username,
-            Xuid = Xuid,
-            PlatformChatId = string.Empty,
-            DeviceOS = DeviceOS,
-            Skin = skin,
-            Teacher = false,
-            Host = false,
-            SubClient = false,
-            PlayerColor = 0
+        return new PlayerListRemoveEntry {
+            Action = PlayerListPacketType.Remove,
+            UUID = GetUUID(),
         };
     }
 
-    public void SetSkin(Skin skin) {
-        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
-        Binary.BinaryWriter writer = stream;
-        skin.Write(writer);
-        Skin = writer.GetProcessedBytes().ToArray();
-    }
-
-    public Skin GetSkin() {
-        Skin skin = new();
-        if (Skin is null || Skin.Length == 0)
-            return skin;
-
-        int offset = 0;
-        Binary.BinaryReader reader = new(Skin, ref offset);
-        skin.Read(reader);
-        return skin;
-    }
-
-    public override void SpawnTo(Player player, ulong tick, Vec3f? position = null) {
-        Vec3f spawnPosition = position ?? Location;
-        ItemInstance heldItem = new();
+    public override void SpawnTo(Player player, ulong tick, Vec3? position = null) {
+        Vec3 spawnPosition = position ?? Location;
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
-
         Item.ItemStack? held = inventory?.GetHeldItem();
-        if (held is not null) {
-            heldItem.Stack = held.ToNetworkStack();
-            heldItem.StackNetworkId = held.NetworkStackId;
-        }
+
+        NetworkItemStackDescriptor carriedItem =
+            held?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
 
         player.Send(new AddPlayerPacket {
-            Uuid = Uuid,
-            Username = Username,
-            EntityRuntimeId = RuntimeId,
-            PlatformChatId = string.Empty,
-            Position = spawnPosition,
-            Velocity = new Vec3f(),
-            Pitch = Pitch,
-            Yaw = Yaw,
-            HeadYaw = HeadYaw,
-            HeldItem = heldItem,
-            GameType = (int)Gamemode,
-            EntityMetadata = CreateActorDataPacket(tick).Metadata,
-            EntityProperties = new EntityProperties(),
-            AbilityData = new AbilityData {
-                EntityUniqueId = UniqueId,
-                Layers = [Abilities.ToLayer()]
-            },
-            EntityLinks = [],
+            BuildPlatform = DeviceOS,
             DeviceId = string.Empty,
-            DeviceOS = DeviceOS
+            ActorLinks = [],
+            AbilitiesData = new SerializedAbilitiesData {
+                CommandPermissions = IsOperator
+                    ? CommandPermissionLevel.Admin
+                    : CommandPermissionLevel.Any,
+                Layers = [
+                    Abilities.ToLayer()
+                ],
+                PlayerPermissions = IsOperator
+                    ? PlayerPermissionLevel.Operator
+                    : PlayerPermissionLevel.Member,
+                TargetPlayerRawId = UniqueId
+            },
+            SynchedProperties = new PropertySyncData {
+                FloatEntriesList = [],
+                IntEntriesList = []
+            },
+            EntityData = CreateActorDataPacket(tick).ActorData,
+            PlayerGameType = Gamemode,
+            CarriedItem = carriedItem,
+            Rotation = new Vec2 {
+                X = Pitch,
+                Y = Yaw
+            },
+            Velocity = new Vec3(),
+            Position = spawnPosition,
+            PlatformChatId = string.Empty,
+            TargetRuntimeID = new ActorRuntimeID {
+                Value = RuntimeId
+            },
+            PlayerName = Username,
+            UUID = GetUUID(),
+            YHeadRotation = HeadYaw
         });
     }
 
-    public void SendMessage(
-        string message
-    ) {
-        var packet = new TextPacket() {
-            VariantType = TextVariantType.MessageOnly,
-            FilteredMessage = null,
-            NeedsTranslation = false,
-            Xuid = "",
-            PlatformChatId = "",
-            Variant = new TextVariant() {
-                Message = message,
-                Parameters = new List<string>(),
-                Source = "",
-                Type = TextType.Raw,
+    public void SendMessage(string message) {
+        TextPacket packet = new() {
+            Body = new MessageOnly {
+                MessageType = TextPacketType.raw,
+                Message = message
             }
         };
 
         Send(packet);
     }
 
+    public BedrockProtocol.Types.UUID GetUUID() {
+        return NetworkIo.FromGuid(Uuid);
+    }
 }
 
 

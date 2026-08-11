@@ -1,29 +1,56 @@
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 namespace Basalt.Core.Player;
 
+public enum PlayerAbility : byte {
+    Build = 0,
+    Mine = 1,
+    DoorsAndSwitches = 2,
+    OpenContainers = 3,
+    AttackPlayers = 4,
+    AttackMobs = 5,
+    OperatorCommands = 6,
+    Teleport = 7,
+    Invulnerable = 8,
+    Flying = 9,
+    MayFly = 10,
+    InstantBuild = 11,
+    Lightning = 12,
+    FlySpeed = 13,
+    WalkSpeed = 14,
+    Muted = 15,
+    WorldBuilder = 16,
+    NoClip = 17,
+    PrivilegedBuilder = 18,
+    VerticalFlySpeed = 19
+}
+
 public sealed class PlayerAbilities {
-    private readonly HashSet<AbilityIndex> _enabled = [];
-    private static readonly AbilityIndex[] BaseAbilities =
-    [
-        AbilityIndex.Build,
-        AbilityIndex.Mine,
-        AbilityIndex.DoorsAndSwitches,
-        AbilityIndex.OpenContainers,
-        AbilityIndex.AttackPlayers,
-        AbilityIndex.AttackMobs,
-        AbilityIndex.FlySpeed,
-        AbilityIndex.WalkSpeed,
-        AbilityIndex.VerticalFlySpeed
+    private static readonly PlayerAbility[] BaseAbilities = [
+        PlayerAbility.Build,
+        PlayerAbility.Mine,
+        PlayerAbility.DoorsAndSwitches,
+        PlayerAbility.OpenContainers,
+        PlayerAbility.AttackPlayers,
+        PlayerAbility.AttackMobs
     ];
 
-    public bool GetAbility(AbilityIndex ability) {
+    private readonly HashSet<PlayerAbility> _enabled = [];
+    private readonly HashSet<PlayerAbility> _controlled = [];
+
+    public float FlySpeed { get; set; } = 0.05f;
+    public float VerticalFlySpeed { get; set; } = 1.0f;
+    public float WalkSpeed { get; set; } = 0.1f;
+
+    public bool GetAbility(PlayerAbility ability) {
         return _enabled.Contains(ability);
     }
 
-    public void SetAbility(AbilityIndex ability, bool enabled) {
+    public void SetAbility(PlayerAbility ability, bool enabled) {
+        _controlled.Add(ability);
+
         if (enabled) {
             _enabled.Add(ability);
             return;
@@ -32,55 +59,102 @@ public sealed class PlayerAbilities {
         _enabled.Remove(ability);
     }
 
-    public void SetGamemode(Gamemode gamemode) {
+    public void SetGamemode(GameType gamemode) {
         _enabled.Clear();
+        _controlled.Clear();
+
         Enable(BaseAbilities);
 
-        if (gamemode is Gamemode.Creative or Gamemode.Spectator) {
-            Enable(AbilityIndex.MayFly, AbilityIndex.InstantBuild);
+        if (gamemode is GameType.Creative or GameType.Spectator) {
+            Enable(
+                PlayerAbility.MayFly,
+                PlayerAbility.InstantBuild
+            );
         }
 
-        if (gamemode == Gamemode.Spectator) {
-            Enable(AbilityIndex.Invulnerable, AbilityIndex.Flying, AbilityIndex.NoClip);
+        if (gamemode == GameType.Spectator) {
+            Enable(
+                PlayerAbility.Invulnerable,
+                PlayerAbility.Flying,
+                PlayerAbility.NoClip
+            );
         }
     }
 
     public void SetOperator(bool isOperator) {
-        SetAbility(AbilityIndex.OperatorCommands, isOperator);
-        SetAbility(AbilityIndex.Teleport, isOperator);
+        if (isOperator) {
+            SetAbility(PlayerAbility.OperatorCommands, true);
+            SetAbility(PlayerAbility.Teleport, true);
+            return;
+        }
+
+        Disable(PlayerAbility.OperatorCommands);
+        Disable(PlayerAbility.Teleport);
     }
 
-    public UpdateAbilitiesPacket CreatePacket(long entityUniqueId, bool isOperator) {
+    public UpdateAbilitiesPacket CreatePacket(
+        long entityUniqueId,
+        bool isOperator
+    ) {
         return new UpdateAbilitiesPacket {
-            EntityUniqueId = entityUniqueId,
-            PlayerPermission = isOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
-            CommandPermission = isOperator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,
-            Layers = [ToLayer()]
+            Data = new() {
+                CommandPermissions = isOperator
+                    ? CommandPermissionLevel.Admin
+                    : CommandPermissionLevel.Any,
+
+                Layers = [
+                    ToLayer()
+                ],
+
+                PlayerPermissions = isOperator
+                    ? PlayerPermissionLevel.Operator
+                    : PlayerPermissionLevel.Member,
+
+                TargetPlayerRawId = entityUniqueId
+            }
         };
     }
 
-    public AbilityLayer ToLayer() {
-        uint values = 0;
-        foreach (AbilityIndex ability in _enabled) {
-            values |= 1U << (int)ability;
-        }
-
-        return new AbilityLayer {
-            Type = AbilityLayerType.Base,
-            Abilities = (1U << (int)AbilityIndex.Count) - 1U,
-            Values = values
+    public SerializedAbilitiesDataSerializedLayer ToLayer() {
+        return new SerializedAbilitiesDataSerializedLayer {
+            SerializedLayer = 1,
+            AbilitiesSet = CreateMask(_controlled)
+                | (1U << (int)PlayerAbility.FlySpeed)
+                | (1U << (int)PlayerAbility.WalkSpeed)
+                | (1U << (int)PlayerAbility.VerticalFlySpeed),
+            AbilityValues = CreateMask(_enabled),
+            FlySpeed = FlySpeed,
+            VerticalFlySpeed = VerticalFlySpeed,
+            WalkSpeed = WalkSpeed
         };
     }
 
-    private void Enable(params AbilityIndex[] abilities) {
+    private void Enable(params PlayerAbility[] abilities) {
         for (int i = 0; i < abilities.Length; i++) {
-            _enabled.Add(abilities[i]);
+            PlayerAbility ability = abilities[i];
+
+            _controlled.Add(ability);
+            _enabled.Add(ability);
         }
+    }
+
+    private void Disable(params PlayerAbility[] abilities) {
+        for (int i = 0; i < abilities.Length; i++) {
+            PlayerAbility ability = abilities[i];
+            _controlled.Remove(ability);
+            _enabled.Remove(ability);
+        }
+    }
+
+    private static uint CreateMask(
+        IEnumerable<PlayerAbility> abilities
+    ) {
+        uint mask = 0;
+
+        foreach (PlayerAbility ability in abilities) {
+            mask |= 1U << (int)ability;
+        }
+
+        return mask;
     }
 }
-
-
-
-
-
-

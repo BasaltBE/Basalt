@@ -1,8 +1,5 @@
 namespace Basalt.Core.Player.Traits;
 
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
@@ -12,6 +9,9 @@ using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 using Entity = Basalt.Core.Entities.Entity;
+using Basalt.Core.Entities;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private const float EntityVisibilityRadiusSquared = 64f * 64f;
@@ -25,7 +25,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private readonly HashSet<long> _requestedChunks = [];
     private readonly Queue<(Dimension Dimension, ChunkColumn Chunk)> _readyChunks = [];
     private readonly List<long> _unloadBuffer = [];
-    private readonly List<DataPacket> _sendBuffer = [];
+    private readonly List<Packet> _sendBuffer = [];
     private readonly List<(long Hash, int X, int Z)> _sentChunkBuffer = [];
     private readonly HashSet<long> _visibleChunks = [];
     private readonly HashSet<long> _visibilityChunkBuffer = [];
@@ -275,12 +275,18 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             }
 
             _sendBuffer.Add(new LevelChunkPacket {
-                ChunkX = chunk.X,
-                ChunkZ = chunk.Z,
-                Dimension = (int)chunk.Type,
-                SubChunkCount = (uint)chunk.GetSubChunkSendCount(),
+                ChunkPosition = new ChunkPos {
+                    X = chunk.X,
+                    Z = chunk.Z
+                },
+                DimensionId = new DimensionType {
+                    Value = (int)chunk.Type
+                },
+                SubChunksCount = (uint)chunk.GetSubChunkSendCount(),
+                ClientRequestSubChunkLimit = null,
                 CacheEnabled = false,
-                RawPayload = payload
+                CacheMetadata = [],
+                SerializedChunkData = payload
             });
 
             _sentChunkBuffer.Add((chunk.Hash, chunk.X, chunk.Z));
@@ -303,12 +309,18 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             if (clearClient) {
                 Player.Send(new LevelChunkPacket {
-                    ChunkX = x,
-                    ChunkZ = z,
-                    Dimension = (int)dimension.Type,
-                    SubChunkCount = 0,
+                    ChunkPosition = new ChunkPos {
+                        X = x,
+                        Z = z
+                    },
+                    DimensionId = new DimensionType {
+                        Value = (int)dimension.Type
+                    },
+                    SubChunksCount = 0,
+                    ClientRequestSubChunkLimit = null,
                     CacheEnabled = false,
-                    RawPayload = []
+                    CacheMetadata = [],
+                    SerializedChunkData = []
                 });
             }
 
@@ -445,11 +457,13 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
     private NetworkChunkPublisherUpdatePacket CreateChunkPublisherPacket() {
         return new NetworkChunkPublisherUpdatePacket {
-            CoordinateX = (int)MathF.Floor(Player.Location.X),
-            CoordinateY = (int)MathF.Floor(Player.Location.Y),
-            CoordinateZ = (int)MathF.Floor(Player.Location.Z),
-            Radius = ChunkViewMath.PublisherRadiusBlocks(ViewDistance),
-            SavedChunks = []
+            NewPositionForView = new BlockPos {
+                X = (int)MathF.Floor(Player.Location.X),
+                Y = (int)MathF.Floor(Player.Location.Y),
+                Z = (int)MathF.Floor(Player.Location.Z)
+            },
+            NewRadiusForView = (uint)ChunkViewMath.PublisherRadiusBlocks(ViewDistance),
+            ServerBuiltChunksList = []
         };
     }
 
@@ -558,14 +572,14 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         }
 
         Player.Send(new RemoveActorPacket {
-            EntityUniqueId = uniqueId
+            TargetActorID = new ActorUniqueID() { Value = uniqueId, }
         });
     }
 
     private void HideAllVisibleEntities() {
         foreach ((_, long uniqueId) in VisibleActorIds) {
             Player.Send(new RemoveActorPacket {
-                EntityUniqueId = uniqueId
+                TargetActorID = new ActorUniqueID() { Value = uniqueId, }
             });
         }
     }

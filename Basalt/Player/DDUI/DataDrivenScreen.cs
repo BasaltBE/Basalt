@@ -1,7 +1,7 @@
-namespace Basalt.Core.DDUI;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+namespace Basalt.Core.DDUI;
 
 public abstract class DataDrivenScreen {
     static uint _nextId;
@@ -47,7 +47,7 @@ public abstract class DataDrivenScreen {
                         DataStoreName = StoreName,
                         Property = existing.Property,
                         UpdateCount = existing._updateCount + 1,
-                        Value = Root.ToValue()
+                        TheNewPropertyValue = Root.ToValue()
                     }
                 ]
             });
@@ -111,7 +111,7 @@ public abstract class DataDrivenScreen {
                     DataStoreName = StoreName,
                     Property = registeredProperty,
                     UpdateCount = ++updateCount,
-                    Value = emptyRoot.ToValue()
+                    TheNewPropertyValue = emptyRoot.ToValue()
                 }
             ]
         });
@@ -142,7 +142,7 @@ public abstract class DataDrivenScreen {
         if (isClick)
             _handled = true;
 
-        target.Trigger(player, update.Value);
+        target.Trigger(player, update);
     }
 
     private protected void Set(DduiProperty property) {
@@ -168,7 +168,7 @@ public abstract class DataDrivenScreen {
                     DataStoreName = StoreName,
                     Property = Property,
                     UpdateCount = ++_updateCount,
-                    Value = Root.ToValue()
+                    TheNewPropertyValue = Root.ToValue()
                 }
             ]
         };
@@ -183,7 +183,7 @@ public abstract class DataDrivenScreen {
                     DataStoreName = StoreName,
                     Property = Property,
                     UpdateCount = ++_updateCount,
-                    Value = DataStorePropertyValue.Null()
+                    TheNewPropertyValue = DataStorePropertyValue.Null()
                 }
             ]
         };

@@ -3,10 +3,10 @@ namespace Basalt.Core.Player;
 using System.Buffers;
 using System.Text;
 using Basalt.Binary;
-using Basalt.Protocol.Io;
-using Basalt.Protocol.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+using BedrockProtocol.Nbt;
 
 public sealed class PlayerDataStore {
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);

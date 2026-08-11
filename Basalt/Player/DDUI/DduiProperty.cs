@@ -1,7 +1,5 @@
 namespace Basalt.Core.DDUI;
 
-using Basalt.Protocol.Types;
-
 internal sealed class DduiProperty {
     readonly Dictionary<string, DduiProperty> _children = [];
     readonly List<Func<Player.Player, object, bool>> _listeners = [];

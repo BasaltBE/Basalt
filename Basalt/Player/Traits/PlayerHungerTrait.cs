@@ -1,12 +1,13 @@
 namespace Basalt.Core.Player.Traits;
 
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Traits;
 using Entity = Basalt.Core.Entities.Entity;
+using Basalt.Core.Entities;
+using BedrockProtocol.Enums;
 
 public sealed class PlayerHungerTrait : EntityAttributeTrait {
     public new static string Identifier => "hunger";
@@ -14,7 +15,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
 
     public override AttributeName Attribute => AttributeName.PlayerHunger;
 
-    public float Saturation = 10f;
+    public float Saturation;
     public float Exhaustion;
 
     // Exhaustion costs for actions
@@ -32,7 +33,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
     private const ulong RegenTicks = 30UL;
     private const float RegenAt = 17f;
     private const float StarveDamage = 1f;
-    private const float DefaultSat = 10f;
+    private const float DefaultSat = 0f;
 
     public PlayerHungerTrait(Entity entity) : base(entity) { }
 
@@ -118,11 +119,11 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
         if (difficulty == Difficulty.Peaceful)
             return false;
 
-        if (!player.IsAlive || player.Abilities.GetAbility(AbilityIndex.Flying))
+        if (!player.IsAlive || player.Abilities.GetAbility(PlayerAbility.Flying))
             return false;
 
         var gamemode = player.GetGamemode();
-        return gamemode is not (Gamemode.Spectator or Gamemode.Creative);
+        return gamemode is not (GameType.Spectator or GameType.Creative);
     }
 
     private void TryDrainExhaustion() {

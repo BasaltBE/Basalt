@@ -40,7 +40,7 @@ public sealed class PlayerPermissions {
         _player.Network.QueuePacket(_player.Connection, _player.Abilities.CreatePacket(_player.UniqueId, _player.IsOperator));
 
         if (_player.Dimension?.World?.Server is Server server) {
-            server.Commands.SendAvailableCommands(server, _player);
+            server.Commands.SendAvailableCommands(server, _player); 
         }
     }
 

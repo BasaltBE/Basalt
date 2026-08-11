@@ -4,16 +4,16 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Basalt.Core.Player;
-using Basalt.Protocol.Packets;
+using BedrockProtocol.Packets;
 
 public abstract class Form<TResponse> {
     private static readonly JsonSerializerOptions JsonOptions = new() {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    private static int NextFormId;
+    private static uint NextFormId;
 
-    internal readonly int FormId = Interlocked.Increment(ref NextFormId);
+    internal readonly uint FormId = Interlocked.Increment(ref NextFormId);
     public string Title;
 
     protected Form(string title) {
@@ -28,8 +28,8 @@ public abstract class Form<TResponse> {
         });
 
         player.Send(new ModalFormRequestPacket {
-            FormId = FormId,
-            Payload = ToJson()
+            FormID = checked((uint)FormId),
+            FormUIJSON = ToJson()
         });
     }
 

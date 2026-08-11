@@ -1,11 +1,10 @@
 namespace Basalt.Core.Player.Traits;
 
-using Basalt.Core.Containers;
+using Basalt.Core.Entities;
 using Basalt.Core.Entities.Container;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Enums;
-
+using BedrockProtocol.Enums;
 using Entity = Basalt.Core.Entities.Entity;
 
 /// <summary>
@@ -21,7 +20,7 @@ public sealed class PlayerCraftingGridTrait : PlayerTrait {
     public EntityContainer Container { get; }
 
     public PlayerCraftingGridTrait(Entity entity) : base(entity) {
-        Container = new EntityContainer(Player, ContainerType.None, GridSize);
+        Container = new EntityContainer(Player, ContainerType.NONE, GridSize);
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
