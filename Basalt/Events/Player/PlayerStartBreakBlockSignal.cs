@@ -1,7 +1,7 @@
 namespace Basalt.Core.Events;
 
 using Basalt.Core.Player;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 
 public sealed class PlayerStartBreakBlockSignal : PlayerSignal {
     public override ServerEvent Event => ServerEvent.PlayerStartBreakBlock;

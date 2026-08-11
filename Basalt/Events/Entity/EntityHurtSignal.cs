@@ -1,6 +1,6 @@
 namespace Basalt.Core.Events;
 
-using Basalt.Protocol.Enums;
+using BedrockProtocol.Enums;
 using Entity = Entities.Entity;
 
 public sealed class EntityHurtSignal : EntitySignal {

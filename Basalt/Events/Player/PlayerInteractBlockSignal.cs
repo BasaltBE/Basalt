@@ -1,7 +1,7 @@
 namespace Basalt.Core.Events;
 
 using Basalt.Core.Player;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 
 public sealed class PlayerInteractBlockSignal : PlayerSignal {
     public override ServerEvent Event => ServerEvent.PlayerInteractBlock;

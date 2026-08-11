@@ -3,7 +3,7 @@ namespace Basalt.Core.Events;
 using Basalt.Core.Blocks;
 using Basalt.Core.Item;
 using Basalt.Core.Player;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 
 public sealed class PlayerPlaceBlockSignal : PlayerSignal {
     public override ServerEvent Event => ServerEvent.PlayerPlaceBlock;
