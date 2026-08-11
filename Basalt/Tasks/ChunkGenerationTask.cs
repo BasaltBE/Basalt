@@ -1,6 +1,7 @@
 namespace Basalt.Core.Tasks;
 
 using Basalt.Core.Profiling;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Protocol.Enums;
@@ -9,7 +10,7 @@ using ChunkColumn = Worlds.Dimensions.Chunk.Chunk;
 public sealed class ChunkGenerationTask : ServerTask {
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
-    private readonly DimensionType _dimensionType;
+    private readonly DimensionId _dimensionType;
     private readonly int _x;
     private readonly int _z;
     private readonly long _hash;
@@ -17,7 +18,7 @@ public sealed class ChunkGenerationTask : ServerTask {
 
     public ChunkColumn? Result { get; private set; }
 
-    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionType dimensionType, int x, int z, long hash, Action<long, ChunkColumn?> onComplete) {
+    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionId dimensionType, int x, int z, long hash, Action<long, ChunkColumn?> onComplete) {
         _provider = provider;
         _generator = generator;
         _dimensionType = dimensionType;
