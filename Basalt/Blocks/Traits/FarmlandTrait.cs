@@ -3,8 +3,7 @@ namespace Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 public class FarmlandTrait : BlockTrait {

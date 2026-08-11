@@ -3,7 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Enums;
+using BedrockProtocol.Enums;
 using Player = Player.Player;
 
 public static class KillCommand {
@@ -43,10 +43,10 @@ public static class KillCommand {
             Entity entity = entities[i];
             if (entity is Player player) {
                 EntityHealthTrait? health = player.GetTrait<EntityHealthTrait>();
-                health?.ApplyDamage(MathF.Max(health.CurrentValue, 1f), null, ActorDamageCause.Suicide);
+                health?.ApplyDamage(MathF.Max(health.CurrentValue, 1f), null, ActorDamageCause.SelfDestruct);
             }
             else {
-                entity.Kill(new EntityDeathOptions(DamageCause: ActorDamageCause.Suicide));
+                entity.Kill(new EntityDeathOptions(DamageCause: ActorDamageCause.SelfDestruct));
             }
         }
 

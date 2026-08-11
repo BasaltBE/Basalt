@@ -1,7 +1,7 @@
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Types;
 
+using BedrockProtocol.Types;
 namespace Basalt.Core.Blocks.Traits;
 
 public sealed class GrassBlockTrait : BlockTrait {

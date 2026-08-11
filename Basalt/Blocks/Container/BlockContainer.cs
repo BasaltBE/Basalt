@@ -1,12 +1,13 @@
 namespace Basalt.Core.Blocks.Container;
 
 using Basalt.Core.Containers;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions;
 
 
-public sealed class BlockContainer : Containers.Container {
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
+
+public sealed class BlockContainer : Container {
     public Action<BlockContainer, Basalt.Core.Player.Player>? OnViewerAddedEvent { get; set; }
     public Action<BlockContainer, Basalt.Core.Player.Player>? OnViewerRemovedEvent { get; set; }
     public Dimension? Dimension { get; set; }
@@ -32,11 +33,11 @@ public sealed class BlockContainer : Containers.Container {
         return Position;
     }
 
-    protected override void OnViewerAdded(Basalt.Core.Player.Player player, ContainerId containerId) {
+    protected override void OnViewerAdded(Basalt.Core.Player.Player player, ContainerID containerId) {
         OnViewerAddedEvent?.Invoke(this, player);
     }
 
-    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, ContainerId containerId) {
+    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, ContainerID containerId) {
         OnViewerRemovedEvent?.Invoke(this, player);
     }
 }

@@ -1,9 +1,6 @@
 namespace Basalt.Core.Blocks;
 
 using System.Diagnostics.CodeAnalysis;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
@@ -15,6 +12,9 @@ using Basalt.Core.Item;
 using Basalt.Core.Loot;
 using Basalt.Core.Worlds;
 
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
+using BedrockProtocol.Enums;
 
 public sealed class Block {
     private readonly List<BlockTrait> _traits = [];
@@ -45,8 +45,11 @@ public sealed class Block {
 
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Trait types are registered with constructors preserved.")]
     private void InitializeTraits() {
-        foreach (Type traitType in Type.Traits.Values) {
-            if (Activator.CreateInstance(traitType, this) is BlockTrait trait) {
+        foreach (System.Type traitType in Type.Traits.Values) {
+            if (Activator.CreateInstance(
+                traitType,
+                [this]
+            ) is BlockTrait trait) {
                 AddTrait(trait);
             }
         }
@@ -178,14 +181,14 @@ public sealed class Block {
     }
 
     public void OnBreak(BlockBreakDetails details) {
-        if (details.Player.Gamemode != Gamemode.Creative && details.Player.Dimension is { } dimension) {
+        if (details.Player.Gamemode == GameType.Creative && details.Player.Dimension is { } dimension) {
             if (MeetsToolTierRequirement(details.Player)) {
                 ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
                 List<ItemStack> drops = GetDrops();
 
                 for (int i = 0; i < drops.Count; i++) {
                     ItemEntity drop = new(drops[i]) {
-                        Position = new Vec3f {
+                        Position = new Vec3 {
                             X = details.BlockPosition.X + 0.5f,
                             Y = details.BlockPosition.Y + 0.5f,
                             Z = details.BlockPosition.Z + 0.5f
@@ -195,7 +198,7 @@ public sealed class Block {
                     if (HasTrait<CropTrait>()) {
                         float angle = Random.Shared.NextSingle() * MathF.Tau;
                         float horizontalSpeed = 0.07f + Random.Shared.NextSingle() * 0.06f;
-                        drop.Velocity = new Vec3f {
+                        drop.Velocity = new Vec3() {
                             X = MathF.Cos(angle) * horizontalSpeed,
                             Y = 0.16f + Random.Shared.NextSingle() * 0.08f,
                             Z = MathF.Sin(angle) * horizontalSpeed
@@ -377,13 +380,23 @@ public sealed class Block {
             if (identifier == null || traitData == null) continue;
 
             BlockTrait? trait = GetTrait(identifier);
-            if (trait == null) {
-                if (BlockTraitRegistry.RegisteredTraits.TryGetValue(identifier, out Type? traitType)) {
-                    if (Activator.CreateInstance(traitType, this) is BlockTrait newTrait) {
-                        AddTrait(newTrait);
-                        trait = newTrait;
-                    }
+            if (trait is null && BlockTraitRegistry.RegisteredTraits.TryGetValue(
+                identifier,
+                out System.Type? traitType
+            )) {
+                object? instance = Activator.CreateInstance(
+                    traitType,
+                    [this]
+                );
+
+                if (instance is not BlockTrait newTrait) {
+                    throw new InvalidOperationException(
+                        $"Could not create block trait {traitType.FullName}."
+                    );
                 }
+
+                AddTrait(newTrait);
+                trait = newTrait;
             }
 
             trait?.OnRead(traitData);
@@ -391,9 +404,16 @@ public sealed class Block {
     }
 }
 
+[Flags]
+public enum UpdateBlockFlagsType : uint {
+    None = 0,
+    Neighbors = 1,
+    Network = 2,
+    NoGraphic = 4,
+    Priority = 8
+}
 
-
-
-
-
-
+public enum UpdateBlockLayerType : uint {
+    Normal = 0,
+    WaterLogged = 1
+}

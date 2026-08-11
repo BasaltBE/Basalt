@@ -2,8 +2,9 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Types;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
+
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
 
 /// <summary>
 /// Options for defining a custom block type.
@@ -51,7 +52,7 @@ public sealed class CustomBlockTypeOptions {
 /// Factory for creating and registering custom block types.
 /// </summary>
 public static class CustomBlockType {
-    private static readonly List<BlockEntry> Entries = [];
+    private static readonly List<ServerBlockProperty> Entries = [];
     private static int _nextBlockId = 10000;
 
     /// <summary>
@@ -88,15 +89,15 @@ public static class CustomBlockType {
             registeredPermutations.Add(BlockPermutation.Create(type, permutations[i].State));
         }
 
-        Entries.Add(new BlockEntry {
-            Name = options.Identifier,
-            Properties = BuildProperties(options, permutations, registeredPermutations, _nextBlockId++)
+        Entries.Add(new ServerBlockProperty {
+            BlockName = options.Identifier,
+            BlockDefinition = BuildProperties(options, permutations, registeredPermutations, _nextBlockId++)
         });
 
         return type;
     }
 
-    internal static List<BlockEntry> GetEntries() {
+    internal static List<ServerBlockProperty> GetEntries() {
         return [.. Entries];
     }
 

@@ -1,6 +1,6 @@
 namespace Basalt.Core.Blocks;
 
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 
 
 public sealed class BlockTypeComponentCollection : CompoundTag {

@@ -1,7 +1,7 @@
 namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 using Player = Player.Player;
 
 public static class SetWorldSpawnCommand {
@@ -37,7 +37,7 @@ public static class SetWorldSpawnCommand {
             return CommandResult.Error("No dimension available.");
 
         PositionEnum? position = ctx.Get<PositionEnum>("position");
-        Vec3f spawn = position?.Value ?? player.Location;
+        Vec3 spawn = position?.Value ?? player.Location;
 
         dimension.SpawnPosition = spawn;
         if (dimension.World is { } world) {

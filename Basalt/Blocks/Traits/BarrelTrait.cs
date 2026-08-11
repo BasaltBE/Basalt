@@ -4,14 +4,11 @@ using Basalt.Core.Blocks.Container;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Containers;
-using Basalt.Core.Entities;
 using Basalt.Core.Item;
-using Basalt.Core.Worlds;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
-
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public class BarrelTrait : BlockTrait {
     public override bool Interactable => true;
@@ -103,7 +100,7 @@ public class BarrelTrait : BlockTrait {
                 if (item is null || item.StackSize == 0) continue;
 
                 Entities.ItemEntity drop = new(item) {
-                    Position = new Protocol.Types.Vec3f {
+                    Position = new Vec3 {
                         X = details.BlockPosition.X + 0.5f,
                         Y = details.BlockPosition.Y + 0.5f,
                         Z = details.BlockPosition.Z + 0.5f
@@ -141,20 +138,20 @@ public class BarrelTrait : BlockTrait {
 
         player.Send(
         new BlockActorDataPacket {
-            Position = position,
-            Data = storage
+            BlockPosition = position,
+            ActorDataTags = storage,
         },
         new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = 0,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = position,
+            BlockRuntimeID = 0,
+            Flags = (uint)UpdateBlockFlagsType.None,
+            Layer = (uint)UpdateBlockLayerType.Normal
         },
         new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = networkId,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = position,
+            BlockRuntimeID = networkId,
+            Flags = (uint)UpdateBlockFlagsType.None,
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
     }
 
@@ -162,7 +159,7 @@ public class BarrelTrait : BlockTrait {
         SetOpen(true);
 
         if (!silent) {
-            BroadcastSound(LevelSoundEvent.BarrelOpen);
+            BroadcastSound(LevelSoundEvent.block_barrel_open.ToProtoString());
         }
     }
 
@@ -170,11 +167,11 @@ public class BarrelTrait : BlockTrait {
         SetOpen(false);
 
         if (!silent) {
-            BroadcastSound(LevelSoundEvent.BarrelClose);
+            BroadcastSound(LevelSoundEvent.block_barrel_close.ToProtoString());
         }
     }
 
-    private void EnsureContainer(global::Basalt.Core.Worlds.Dimensions.Dimension? dimension, int x, int y, int z) {
+    private void EnsureContainer(Worlds.Dimensions.Dimension? dimension, int x, int y, int z) {
         if (_container is not null) {
             if (dimension is not null && _container.Dimension is null) {
                 _container.Dimension = dimension;
@@ -184,7 +181,7 @@ public class BarrelTrait : BlockTrait {
             return;
         }
 
-        _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 27);
+        _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.CONTAINER, 27);
         _container.OnViewerAddedEvent = OnViewerAdded;
         _container.OnViewerRemovedEvent = OnViewerRemoved;
         _container.OnContainerUpdated = OnContainerUpdated;
@@ -231,19 +228,13 @@ public class BarrelTrait : BlockTrait {
             return;
         }
 
-        _container.Dimension.Broadcast(new LevelSoundEventPacket {
-            Event = soundEvent,
-            Position = new Vec3f {
+        _container.Dimension.PlaySound(soundEvent, new Vec3 {
                 X = _container.Position.X,
                 Y = _container.Position.Y,
                 Z = _container.Position.Z
             },
-            Data = Block.Permutation.NetworkId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = -1
-        });
+            data: Block.Permutation.NetworkId,
+            uniqueActorId: -1);
     }
 
     private void OnContainerUpdated(BlockContainer container) {

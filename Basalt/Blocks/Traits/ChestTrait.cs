@@ -3,14 +3,13 @@ namespace Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Container;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
-using Basalt.Core.Containers;
-using Basalt.Core.Entities;
+using Basalt.Core.Enums;
 using Basalt.Core.Item;
 using Basalt.Core.Worlds;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public class ChestTrait : BlockTrait {
     public override bool Interactable => true;
@@ -234,7 +233,7 @@ public class ChestTrait : BlockTrait {
             if (item is null || item.StackSize == 0) continue;
 
             Entities.ItemEntity drop = new(item) {
-                Position = new Protocol.Types.Vec3f {
+                Position = new Vec3 {
                     X = details.BlockPosition.X + 0.5f,
                     Y = details.BlockPosition.Y + 0.5f,
                     Z = details.BlockPosition.Z + 0.5f
@@ -269,22 +268,23 @@ public class ChestTrait : BlockTrait {
         uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
 
         player.Send(
-        new BlockActorDataPacket {
-            Position = position,
-            Data = storage
-        },
-        new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = 0,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
-        },
-        new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = networkId,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
-        });
+            new BlockActorDataPacket {
+                BlockPosition = position,
+                ActorDataTags = storage
+            },
+            new UpdateBlockPacket {
+                BlockPosition = position,
+                BlockRuntimeID = 0,
+                Flags = (uint)UpdateBlockFlagsType.None,
+                Layer = (uint)UpdateBlockLayerType.Normal
+            },
+            new UpdateBlockPacket {
+                BlockPosition = position,
+                BlockRuntimeID = networkId,
+                Flags = (uint)UpdateBlockFlagsType.None,
+                Layer = (uint)UpdateBlockLayerType.Normal
+            }
+        );
     }
 
     public void CheckPairing(global::Basalt.Core.Worlds.Dimensions.Dimension? dimension, int x, int y, int z) {
@@ -392,7 +392,7 @@ public class ChestTrait : BlockTrait {
         BlockContainer left = thisIsLeft ? _container : pair._container;
         BlockContainer right = thisIsLeft ? pair._container : _container;
 
-        _sharedContainer = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 54);
+        _sharedContainer = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.CONTAINER, 54);
         _sharedContainer.OnViewerAddedEvent = OnViewerAdded;
         _sharedContainer.OnViewerRemovedEvent = OnViewerRemoved;
         _sharedContainer.OnContainerUpdated = OnContainerUpdated;
@@ -540,7 +540,7 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.Container, 27);
+        _container = new BlockContainer(dimension, new BlockPos { X = x, Y = y, Z = z }, ContainerType.CONTAINER, 27);
         _container.OnViewerAddedEvent = OnViewerAdded;
         _container.OnViewerRemovedEvent = OnViewerRemoved;
         _container.OnContainerUpdated = OnContainerUpdated;
@@ -604,10 +604,10 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        BroadcastState(1, LevelSoundEvent.ChestOpen, container.Position);
+        BroadcastState(1, LevelSoundEvent.chest_open.ToProtocolString(), container.Position);
 
         if (GetPairPosition(container.Position.Y, out BlockPos pairPosition)) {
-            BroadcastState(1, LevelSoundEvent.ChestOpen, pairPosition);
+            BroadcastState(1, LevelSoundEvent.chest_open.ToProtocolString(), pairPosition);
         }
     }
 
@@ -616,15 +616,15 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        BroadcastState(0, LevelSoundEvent.ChestClosed, container.Position);
+        BroadcastState(0, LevelSoundEvent.chest_closed.ToProtocolString(), container.Position);
 
         if (GetPairPosition(container.Position.Y, out BlockPos pairPosition)) {
-            BroadcastState(0, LevelSoundEvent.ChestClosed, pairPosition);
+            BroadcastState(0, LevelSoundEvent.chest_closed.ToProtocolString(), pairPosition);
         }
     }
 
     private bool GetPairPosition(int y, out BlockPos position) {
-        position = default;
+        position = new BlockPos();
 
         if (!IsPaired || Container?.Dimension is null) {
             return false;
@@ -653,26 +653,20 @@ public class ChestTrait : BlockTrait {
         }
 
         Container.Dimension.Broadcast(new BlockEventPacket {
-            Position = position,
-            Type = BlockEventType.ChangeState,
-            Data = state
+            BlockPosition = position,
+            EventType = (int)BlockEventType.ChangeState,
+            EventValue = state
         });
 
         int runtimeId = Container.Dimension.GetPermutation(position.X, position.Y, position.Z).NetworkId;
 
-        Container.Dimension.Broadcast(new LevelSoundEventPacket {
-            Event = soundEvent,
-            Position = new Vec3f {
-                X = position.X,
-                Y = position.Y,
-                Z = position.Z
+        Container.Dimension.PlaySound(soundEvent, new Vec3 {
+                X = position.X + 0.5f,
+                Y = position.Y + 0.5f,
+                Z = position.Z + 0.5f
             },
-            Data = runtimeId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = -1
-        });
+            data: runtimeId,
+            uniqueActorId: -1);
     }
 
     private static int GetChestOrder(int x, int z) {
@@ -857,11 +851,3 @@ public class ChestTrait : BlockTrait {
     }
 
 }
-
-
-
-
-
-
-
-

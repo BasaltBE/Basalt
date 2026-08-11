@@ -9,7 +9,7 @@ public sealed class ParameterDefinition {
     public required string Name { get; init; }
 
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
-    public required Type Type { get; init; }
+    public required System.Type Type { get; init; }
 
     public bool Optional { get; init; }
 }

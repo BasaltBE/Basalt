@@ -1,7 +1,7 @@
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Generation.Features;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 
 namespace Basalt.Core.Blocks.Traits;
 

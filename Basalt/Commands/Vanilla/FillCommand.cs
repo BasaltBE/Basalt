@@ -4,7 +4,6 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Tasks;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Types;
 using Player = Player.Player;
 
 public static class FillCommand {

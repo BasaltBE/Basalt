@@ -9,10 +9,10 @@ using Basalt.Core.Item;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class HopperTrait : BlockTrait {
     public override bool Interactable => true;
@@ -125,7 +125,7 @@ public sealed class HopperTrait : BlockTrait {
                 if (item is null || item.StackSize == 0) continue;
 
                 ItemEntity drop = new(item) {
-                    Position = new Vec3f {
+                    Position = new Vec3 {
                         X = details.BlockPosition.X + 0.5f,
                         Y = details.BlockPosition.Y + 0.5f,
                         Z = details.BlockPosition.Z + 0.5f
@@ -159,20 +159,29 @@ public sealed class HopperTrait : BlockTrait {
 
         player.Send(
           new BlockActorDataPacket {
-              Position = position,
-              Data = storage
+              BlockPosition = position,
+              ActorDataTags = storage,
+              WriteActorDataTags = static (writer, value) => {
+                  if (value is not CompoundTag tag) {
+                      throw new InvalidOperationException(
+                          $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
+                      );
+                  }
+
+                  NBT.WriteTag(writer, tag);
+              }
           },
           new UpdateBlockPacket {
-              Position = position,
-              NetworkBlockId = 0,
-              Flags = UpdateBlockFlagsType.None,
-              Layer = UpdateBlockLayerType.Normal
+              BlockPosition = position,
+              BlockRuntimeID = 0,
+              Flags = (uint)UpdateBlockFlagsType.None,
+              Layer = (uint)UpdateBlockLayerType.Normal
           },
           new UpdateBlockPacket {
-              Position = position,
-              NetworkBlockId = networkId,
-              Flags = UpdateBlockFlagsType.None,
-              Layer = UpdateBlockLayerType.Normal
+              BlockPosition = position,
+              BlockRuntimeID = networkId,
+              Flags = (uint)UpdateBlockFlagsType.None,
+              Layer = (uint)UpdateBlockLayerType.Normal
           });
     }
 
@@ -317,7 +326,7 @@ public sealed class HopperTrait : BlockTrait {
 
             if (itemEntity.Item.StackSize == 0) continue;
 
-            Vec3f ePos = itemEntity.Position;
+            Vec3 ePos = itemEntity.Position;
             if (ePos.X < minX || ePos.X > maxX ||
                 ePos.Z < minZ || ePos.Z > maxZ ||
                 ePos.Y < minY || ePos.Y > maxY) {
@@ -485,7 +494,7 @@ public sealed class HopperTrait : BlockTrait {
         _container = new BlockContainer(
           dimension,
           new BlockPos { X = x, Y = y, Z = z },
-          ContainerType.Hopper,
+          ContainerType.HOPPER,
           HopperSize);
 
         _container.OnContainerUpdated = OnContainerUpdated;

@@ -1,14 +1,12 @@
 namespace Basalt.Core.Commands;
 
 using System.Diagnostics.CodeAnalysis;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
+using BedrockProtocol.Enums;
 using Player = Player.Player;
 using ServerInstance = Server;
-using ProtocolCommand = Protocol.Types.Command;
-using ProtocolCommandEnum = Protocol.Types.CommandEnum;
-using ProtocolCommandOverload = Protocol.Types.CommandOverload;
-using ProtocolCommandParameter = Protocol.Types.CommandParameter;
+using Basalt.Core.Enums;
 
 public sealed class CommandRegistry {
     readonly Dictionary<string, CommandDefinition> _commands = new(StringComparer.OrdinalIgnoreCase);
@@ -110,7 +108,7 @@ public sealed class CommandRegistry {
 
     static CommandEnum? CreateAndParse(
         CommandContext ctx,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type enumType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] System.Type enumType,
         string[] tokens,
         ref int tokenIndex) {
         if (Activator.CreateInstance(enumType) is not CommandEnum instance)
@@ -143,21 +141,43 @@ public sealed class CommandRegistry {
     }
 
     public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null) {
-        AvailableCommandsPacket packet = new();
+        AvailableCommandsPacket packet = new() {
+            EnumValues = [],
+            ChainedSubcommandValues = [],
+            PostFixes = [],
+            EnumData = [],
+            ChainedSubcommandData = [],
+            Commands = [],
+            SoftEnums = [],
+            Constraints = []
+        };
+
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
-        Dictionary<Type, uint> enumOffsets = new();
+        Dictionary<System.Type, int> enumOffsets = new();
 
         foreach (CommandDefinition def in _definitions) {
-            if (player is not null && !HasPermission(new CommandSender.PlayerSender(player), def))
+            if (
+                player is not null &&
+                !HasPermission(new CommandSender.PlayerSender(player), def)
+            ) {
                 continue;
+            }
 
-            packet.Commands.Add(new ProtocolCommand {
+            packet.Commands.Add(new AvailableCommandsPacketCommandData {
                 Name = def.Name,
                 Description = def.Description,
-                Flags = 0x80,
-                PermissionLevel = def.Permissions.Length == 0 ? CommandPermissionLevel.Any : CommandPermissionLevel.GameDirectors,
-                AliasesOffset = GetAliasesOffset(packet, enumValueOffsets, def),
-                Overloads = BuildOverloads(packet, enumValueOffsets, enumOffsets, def)
+                Flags = 0,
+                PermissionLevel = def.Permissions.Length == 0
+                    ? CommandPermissionLevel.Any
+                    : CommandPermissionLevel.GameDirectors,
+                AliasEnum = GetAliasesOffset(packet, enumValueOffsets, def),
+                CommandDataChainedSubcommandIndexes = [],
+                Overloads = BuildOverloads(
+                    packet,
+                    enumValueOffsets,
+                    enumOffsets,
+                    def
+                )
             });
         }
 
@@ -165,118 +185,199 @@ public sealed class CommandRegistry {
     }
 
     public void SendAvailableCommands(ServerInstance server, Player player) {
-        if (player.Connection is null)
+        if (player.Connection is null) {
             return;
+        }
 
-        server.Network.QueuePacket(player.Connection, BuildAvailableCommandsPacket(player));
+        server.Network.QueuePacket(
+            player.Connection,
+            BuildAvailableCommandsPacket(player)
+        );
     }
 
-    static List<ProtocolCommandOverload> BuildOverloads(
+    static List<AvailableCommandsPacketOverloadData> BuildOverloads(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        Dictionary<Type, uint> enumOffsets,
-        CommandDefinition def) {
-        List<ProtocolCommandOverload> overloads = [];
+        Dictionary<System.Type, int> enumOffsets,
+        CommandDefinition def
+    ) {
+        List<AvailableCommandsPacketOverloadData> overloads = [];
 
         foreach (OverloadDefinition overload in def.Overloads) {
-            List<ProtocolCommandParameter> parameters = [];
+            List<AvailableCommandsPacketParamData> parameters = [];
+
             foreach (ParameterDefinition param in overload.Parameters) {
-                parameters.Add(BuildParameter(packet, enumValueOffsets, enumOffsets, param));
+                parameters.Add(
+                    BuildParameter(
+                        packet,
+                        enumValueOffsets,
+                        enumOffsets,
+                        param
+                    )
+                );
             }
-            overloads.Add(new ProtocolCommandOverload { Parameters = parameters });
+
+            overloads.Add(new AvailableCommandsPacketOverloadData {
+                IsChaining = false,
+                ParameterData = parameters
+            });
         }
 
         return overloads;
     }
 
-    static ProtocolCommandParameter BuildParameter(
+    static AvailableCommandsPacketParamData BuildParameter(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        Dictionary<Type, uint> enumOffsets,
-        ParameterDefinition param) {
-        Type type = param.Type;
+        Dictionary<System.Type, int> enumOffsets,
+        ParameterDefinition param
+    ) {
+        System.Type type = param.Type;
 
-        if (type == typeof(ItemEnum) || type == typeof(EntityEnum) || type == typeof(EnchantmentEnum) || type == typeof(BlockEnum)) {
-            uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, type);
-            return new ProtocolCommandParameter {
+        if (
+            type == typeof(ItemEnum) ||
+            type == typeof(EntityEnum) ||
+            type == typeof(EnchantmentEnum) ||
+            type == typeof(BlockEnum) ||
+            typeof(CustomEnum).IsAssignableFrom(type)
+        ) {
+            int enumOffset = GetEnumOffset(
+                packet,
+                enumValueOffsets,
+                enumOffsets,
+                type
+            );
+
+            return new AvailableCommandsPacketParamData {
                 Name = param.Name,
-                Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
-                Optional = param.Optional
+                ParseSymbol =
+                    (uint)CommandParameterTypeFlag.Valid |
+                    (uint)CommandParameterTypeFlag.Enum |
+                    unchecked((uint)enumOffset),
+                IsOptional = param.Optional,
+                Options = 0
             };
         }
 
-        if (typeof(CustomEnum).IsAssignableFrom(type)) {
-            uint enumOffset = GetEnumOffset(packet, enumValueOffsets, enumOffsets, type);
-            return new ProtocolCommandParameter {
-                Name = param.Name,
-                Type = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | enumOffset,
-                Optional = param.Optional
-            };
-        }
-
-        return new ProtocolCommandParameter {
+        return new AvailableCommandsPacketParamData {
             Name = param.Name,
-            Type = (uint)CommandParameterTypeFlag.Valid | (uint)GetParameterType(type),
-            Optional = param.Optional
+            ParseSymbol =
+                (uint)CommandParameterTypeFlag.Valid |
+                (uint)GetParameterType(type),
+            IsOptional = param.Optional,
+            Options = 0
         };
     }
 
-    static CommandParameterType GetParameterType(Type type) {
-        if (type == typeof(IntEnum)) return CommandParameterType.Int;
-        if (type == typeof(TargetEnum)) return CommandParameterType.Target;
-        if (type == typeof(StringEnum)) return CommandParameterType.String;
-        if (type == typeof(PositionEnum)) return CommandParameterType.Position;
-        if (type == typeof(JsonEnum)) return CommandParameterType.Json;
-        throw new InvalidOperationException($"Unsupported command enum type: {type.FullName}.");
+    static CommandParameterType GetParameterType(System.Type type) {
+        if (type == typeof(IntEnum))
+            return CommandParameterType.Int;
+
+        if (type == typeof(TargetEnum))
+            return CommandParameterType.Target;
+
+        if (type == typeof(StringEnum))
+            return CommandParameterType.String;
+
+        if (type == typeof(PositionEnum))
+            return CommandParameterType.Position;
+
+        if (type == typeof(JsonEnum))
+            return CommandParameterType.Json;
+
+        throw new InvalidOperationException(
+            $"Unsupported command enum type: {type.FullName}."
+        );
     }
 
-    static uint GetAliasesOffset(AvailableCommandsPacket packet, Dictionary<string, uint> enumValueOffsets, CommandDefinition def) {
-        if (def.Aliases.Length == 0)
-            return uint.MaxValue;
-
-        return AddEnum(packet, enumValueOffsets, def.Name + "_aliases", [def.Name, .. def.Aliases]);
-    }
-
-    static uint GetEnumOffset(
+    static int GetAliasesOffset(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        Dictionary<Type, uint> enumOffsets,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type) {
-        if (enumOffsets.TryGetValue(type, out uint offset))
+        CommandDefinition def
+    ) {
+        if (def.Aliases.Length == 0) {
+            return -1;
+        }
+
+        return AddEnum(
+            packet,
+            enumValueOffsets,
+            def.Name + "_aliases",
+            [def.Name, .. def.Aliases]
+        );
+    }
+
+    static int GetEnumOffset(
+        AvailableCommandsPacket packet,
+        Dictionary<string, uint> enumValueOffsets,
+        Dictionary<System.Type, int> enumOffsets,
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+        )]
+        System.Type type
+    ) {
+        if (enumOffsets.TryGetValue(type, out int offset)) {
             return offset;
+        }
 
-        if (Activator.CreateInstance(type) is not CommandEnum instance)
-            throw new InvalidOperationException($"Could not create enum instance for '{type.FullName}'.");
+        if (Activator.CreateInstance(type) is not CommandEnum instance) {
+            throw new InvalidOperationException(
+                $"Could not create enum instance for '{type.FullName}'."
+            );
+        }
 
-        offset = AddEnum(packet, enumValueOffsets, instance.Identifier, instance.Options);
+        offset = AddEnum(
+            packet,
+            enumValueOffsets,
+            instance.Identifier,
+            instance.Options
+        );
+
         enumOffsets[type] = offset;
         return offset;
     }
 
-    static uint AddEnum(
+    static int AddEnum(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        string type,
-        IEnumerable<string> values) {
-        ProtocolCommandEnum commandEnum = new() { Type = type };
+        string name,
+        IEnumerable<string> values
+    ) {
+        List<uint> valueIndices = [];
+
         foreach (string value in values) {
-            commandEnum.ValueIndices.Add(GetEnumValueOffset(packet, enumValueOffsets, value));
+            valueIndices.Add(
+                GetEnumValueOffset(
+                    packet,
+                    enumValueOffsets,
+                    value
+                )
+            );
         }
-        uint offset = (uint)packet.Enums.Count;
-        packet.Enums.Add(commandEnum);
+
+        int offset = packet.EnumData.Count;
+
+        packet.EnumData.Add(new AvailableCommandsPacketEnumData {
+            Name = name,
+            Values = valueIndices
+        });
+
         return offset;
     }
 
     static uint GetEnumValueOffset(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
-        string value) {
-        if (enumValueOffsets.TryGetValue(value, out uint offset))
+        string value
+    ) {
+        if (enumValueOffsets.TryGetValue(value, out uint offset)) {
             return offset;
+        }
 
-        offset = (uint)packet.EnumValues.Count;
+        offset = checked((uint)packet.EnumValues.Count);
         enumValueOffsets[value] = offset;
         packet.EnumValues.Add(value);
         return offset;
     }
+
 }

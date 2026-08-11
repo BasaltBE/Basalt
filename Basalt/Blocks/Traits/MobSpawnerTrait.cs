@@ -6,10 +6,10 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class MobSpawnerTrait : BlockTrait {
     public static new readonly string Identifier = "mob_spawner";
@@ -96,20 +96,29 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
         player.Send(
             new BlockActorDataPacket {
-                Position = position,
-                Data = storage
+                BlockPosition = position,
+                ActorDataTags = storage,
+                WriteActorDataTags = static (writer, value) => {
+                    if (value is not CompoundTag tag) {
+                        throw new InvalidOperationException(
+                            $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
+                        );
+                    }
+
+                    NBT.WriteTag(writer, tag);
+                }
             },
             new UpdateBlockPacket {
-                Position = position,
-                NetworkBlockId = 0,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
+                BlockPosition = position,
+                BlockRuntimeID = 0,
+                Flags = (uint)UpdateBlockFlagsType.None,
+                Layer = (uint)UpdateBlockLayerType.Normal
             },
             new UpdateBlockPacket {
-                Position = position,
-                NetworkBlockId = networkId,
-                Flags = UpdateBlockFlagsType.None,
-                Layer = UpdateBlockLayerType.Normal
+                BlockPosition = position,
+                BlockRuntimeID = networkId,
+                Flags = (uint)UpdateBlockFlagsType.None,
+                Layer = (uint)UpdateBlockLayerType.Normal
             });
     }
 
@@ -146,7 +155,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
                 return;
             }
 
-            Vec3f spawnPosition = new() {
+            Vec3 spawnPosition = new() {
                 X = position.X + 0.5f + RandomOffset(spawnRange),
                 Y = position.Y + Random.Shared.Next(-1, 2),
                 Z = position.Z + 0.5f + RandomOffset(spawnRange)
@@ -187,8 +196,17 @@ public sealed class MobSpawnerTrait : BlockTrait {
         }
 
         dimension.Broadcast(new BlockActorDataPacket {
-            Position = position,
-            Data = storage
+            BlockPosition = position,
+            ActorDataTags = storage,
+            WriteActorDataTags = static (writer, value) => {
+                if (value is not CompoundTag tag) {
+                    throw new InvalidOperationException(
+                        $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
+                    );
+                }
+
+                NBT.WriteTag(writer, tag);
+            }
         });
 
         if (!refreshBlock) {
@@ -197,16 +215,16 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
         uint networkId = (uint)dimension.GetPermutation(position.X, position.Y, position.Z).NetworkId;
         dimension.Broadcast(new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = 0,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = position,
+            BlockRuntimeID = 0,
+            Flags = (uint)UpdateBlockFlagsType.None,
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
         dimension.Broadcast(new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = networkId,
-            Flags = UpdateBlockFlagsType.None,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = position,
+            BlockRuntimeID = networkId,
+            Flags = (uint)UpdateBlockFlagsType.None,
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
     }
 
@@ -266,7 +284,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
         return count;
     }
 
-    private static bool HasSpawnSpace(Dimension dimension, Entity entity, Vec3f position) {
+    private static bool HasSpawnSpace(Dimension dimension, Entity entity, Vec3 position) {
         EntityCollisionTrait? collision = entity.GetTrait<EntityCollisionTrait>();
         float width = collision?.Width ?? EntityCollisionTrait.DefaultWidth;
         float height = collision?.Height ?? EntityCollisionTrait.DefaultHeight;

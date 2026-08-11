@@ -5,7 +5,7 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Containers;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
 
 public sealed class CraftingTableTrait : BlockTrait {
     public override bool Interactable => true;
@@ -25,7 +25,7 @@ public sealed class CraftingTableTrait : BlockTrait {
             _container = new BlockContainer(
               dimension,
               details.BlockPosition,
-              ContainerType.Workbench,
+              ContainerType.WORKBENCH,
               9);
 
             _container.OnViewerRemovedEvent = OnViewerRemoved;

@@ -1,9 +1,9 @@
+using BedrockProtocol.Types;
+
 namespace Basalt.Core.Commands;
 
-using Basalt.Protocol.Types;
-
 public sealed class PositionEnum : CommandEnum {
-    public Vec3f Value { get; private set; }
+    public Vec3 Value { get; private set; } = new();
     public bool RelativeY { get; private set; }
 
     public PositionEnum() : base("position") { }
@@ -12,7 +12,7 @@ public sealed class PositionEnum : CommandEnum {
         if (tokenIndex + 2 >= tokens.Length)
             return false;
 
-        Vec3f origin = ctx.Sender.AsPlayer()?.Location ?? new Vec3f();
+        Vec3 origin = ctx.Sender.AsPlayer()?.Location ?? new Vec3();
         RelativeY = tokens[tokenIndex + 1].StartsWith('~');
 
         if (!ParseComponent(tokens[tokenIndex], origin.X, out float x) ||
@@ -20,7 +20,7 @@ public sealed class PositionEnum : CommandEnum {
             !ParseComponent(tokens[tokenIndex + 2], origin.Z, out float z))
             return false;
 
-        Value = new Vec3f { X = x, Y = y, Z = z };
+        Value = new Vec3 { X = x, Y = y, Z = z };
         tokenIndex += 3;
         return true;
     }

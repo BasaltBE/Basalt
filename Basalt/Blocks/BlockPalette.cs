@@ -3,11 +3,11 @@ namespace Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Components;
-using System.Diagnostics.CodeAnalysis;
+
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-
+using BedrockProtocol.Types;
 
 public sealed class BlockPalette {
     private const string AirIdentifier = "minecraft:air";
@@ -36,7 +36,7 @@ public sealed class BlockPalette {
         return [.. Permutations.Values];
     }
 
-    public static List<Protocol.Types.BlockEntry> GetCustomBlockEntries() {
+    public static List<ServerBlockProperty> GetCustomBlockEntries() {
         return CustomBlockType.GetEntries();
     }
 

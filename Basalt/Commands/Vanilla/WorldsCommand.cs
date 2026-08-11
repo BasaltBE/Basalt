@@ -1,9 +1,9 @@
 namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Generation;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
 using Player = Player.Player;
 
@@ -164,7 +164,7 @@ public static class WorldsCommand {
         }
 
         if (world.DimensionCount == 0) {
-            world.CreateDimension("overworld", DimensionType.Overworld, typeof(VoidGenerator));
+            world.CreateDimension("overworld", DimensionId.Overworld, typeof(VoidGenerator));
         }
 
         Dimension? targetDimension = world.Dimensions.FirstOrDefault();
@@ -172,7 +172,7 @@ public static class WorldsCommand {
             return CommandResult.Error($"World '{name}' has no dimensions.");
         }
 
-        Vec3f spawnPosition = targetDimension.SpawnPosition;
+        Vec3 spawnPosition = targetDimension.SpawnPosition;
         player.Teleport(spawnPosition, targetDimension);
 
         return CommandResult.OkMessage($"§7Teleported to world '§a{world.Name}§7'.");

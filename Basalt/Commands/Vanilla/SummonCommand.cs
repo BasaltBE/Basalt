@@ -3,8 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 using Player = Player.Player;
 
 public static class SummonCommand {
@@ -44,7 +43,7 @@ public static class SummonCommand {
 
         // Resolve position
         PositionEnum? posArg = ctx.Get<PositionEnum>("position");
-        Vec3f position;
+        Vec3 position;
         Dimension? dimension;
 
         if (posArg is not null) {
@@ -52,7 +51,7 @@ public static class SummonCommand {
             Player? self = ctx.Sender.AsPlayer();
             if (self is not null && posArg.RelativeY)
                 position.Y -= self.Location.Y - self.GetPosition().Y;
-            dimension = self?.Dimension ?? ctx.Server.GetWorld().GetDimension(DimensionType.Overworld);
+            dimension = self?.Dimension ?? ctx.Server.GetWorld().GetDimension(DimensionId.Overworld);
         }
         else {
             Player? self = ctx.RequirePlayer(out CommandResult? error);

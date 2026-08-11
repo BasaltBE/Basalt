@@ -6,8 +6,8 @@ using Basalt.Core.Events;
 using Basalt.Core.Tasks;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+
+using BedrockProtocol.Types;
 
 public enum FluidKind {
     Water,
@@ -173,12 +173,16 @@ public class FluidTrait : BlockTrait {
         return null;
     }
 
-    public static Vec3f GetWaterFlow(Dimension dimension, BlockPos pos, out float height) {
+    public static Vec3 GetWaterFlow(Dimension dimension, BlockPos pos, out float height) {
         BlockPermutation? permutation = GetBlock(dimension, pos);
         int decay = WaterFlowDecay(permutation);
         if (decay < 0) {
             height = 0f;
-            return Vec3f.Zero;
+            return new Vec3() {
+                X = 0,
+                Y = 0,
+                Z = 0,
+            };
         }
 
         int depth = LiquidDepth(permutation!) ?? 0;
@@ -218,10 +222,14 @@ public class FluidTrait : BlockTrait {
         float flowY = depth >= 8 ? -6f : 0f;
         float length = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
         if (length == 0f) {
-            return Vec3f.Zero;
+            return new Vec3() {
+                X = 0,
+                Y = 0,
+                Z = 0,
+            };
         }
 
-        return new Vec3f {
+        return new Vec3 {
             X = flowX / length,
             Y = flowY / length,
             Z = flowZ / length

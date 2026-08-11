@@ -1,6 +1,6 @@
 namespace Basalt.Core.Commands.Vanilla;
 
-using Basalt.Protocol.Enums;
+using BedrockProtocol.Enums;
 using Player = Player.Player;
 
 public sealed class GamemodeEnum : CustomEnum {
@@ -14,12 +14,12 @@ public sealed class GamemodeEnum : CustomEnum {
 
     public GamemodeEnum() : base("GameMode", Values) { }
 
-    public Gamemode ToGamemode() => Value?.ToLowerInvariant() switch {
-        "survival" or "s" or "0" => Gamemode.Survival,
-        "creative" or "c" or "1" => Gamemode.Creative,
-        "adventure" or "a" or "2" => Gamemode.Adventure,
-        "spectator" or "sp" or "6" => Gamemode.Spectator,
-        _ => Gamemode.Survival
+    public GameType ToGamemode() => Value?.ToLowerInvariant() switch {
+        "survival" or "s" or "0" => GameType.Survival,
+        "creative" or "c" or "1" => GameType.Creative,
+        "adventure" or "a" or "2" => GameType.Adventure,
+        "spectator" or "sp" or "6" => GameType.Spectator,
+        _ => GameType.Survival
     };
 }
 
@@ -55,7 +55,7 @@ public static class GamemodeCommand {
         if (gamemode is null)
             return CommandResult.Error("Usage: /gamemode <survival|creative|adventure|spectator> [player]");
 
-        Gamemode mode = gamemode.ToGamemode();
+        GameType mode = gamemode.ToGamemode();
 
         TargetEnum? target = ctx.Get<TargetEnum>("player");
         if (target is not null) {

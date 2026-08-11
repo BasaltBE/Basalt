@@ -1,14 +1,18 @@
 namespace Basalt.Core.Blocks;
 
 using System.Diagnostics.CodeAnalysis;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
+
+using BedrockProtocol.Types;
+using BedrockProtocol.Nbt;
+
+// using IntTag = BedrockProtocol.Nbt.IntTag;
+// using StringTag = BedrockProtocol.Nbt.StringTag;
 
 [Tag(TagType.Compound)]
 public sealed class BlockLevelStorage : CompoundTag {
@@ -224,7 +228,13 @@ public sealed class BlockLevelStorage : CompoundTag {
     }
 
     public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer) {
-        Protocol.Io.NBT.WriteTag(writer, storage, new TagOptions(Name: true, Type: true, VarInt: false));
+        // Protocol.Io.NBT.WriteTag(writer, storage, );
+        var options = new TagOptions(Name: true, Type: true, VarInt: false);
+
+        if (options.Type)
+            writer.WriteInt8((sbyte)storage.Type);
+
+        storage.Write(writer, options with { Type = false });
         return writer.GetProcessedBytes();
     }
 

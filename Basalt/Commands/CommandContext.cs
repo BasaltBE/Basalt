@@ -1,10 +1,10 @@
 namespace Basalt.Core.Commands;
 
 using System.Globalization;
-using Basalt.Protocol.Types;
 using Player = Player.Player;
 using EntityInstance = Entities.Entity;
 using ServerInstance = Server;
+using BedrockProtocol.Types;
 
 /// <summary>
 /// Identifies who sent the command.
@@ -128,7 +128,7 @@ public sealed class CommandContext {
         return [];
     }
 
-    static float DistanceSquared(Vec3f first, Vec3f second) {
+    static float DistanceSquared(Vec3 first, Vec3 second) {
         float dx = first.X - second.X;
         float dy = first.Y - second.Y;
         float dz = first.Z - second.Z;

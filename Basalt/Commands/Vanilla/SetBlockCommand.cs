@@ -2,7 +2,6 @@ namespace Basalt.Core.Commands.Vanilla;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Types;
 using Player = Player.Player;
 
 public static class SetBlockCommand {

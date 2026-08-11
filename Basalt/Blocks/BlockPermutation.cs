@@ -1,7 +1,7 @@
 namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Types;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;

@@ -1,10 +1,9 @@
 namespace Basalt.Core.Blocks.Traits;
 
 using System.Reflection;
-using Basalt.Protocol.Nbt;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
-
+using BedrockProtocol.Nbt;
 
 public abstract class BlockTrait {
     public static readonly string[] Types = [];
