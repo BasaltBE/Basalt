@@ -1,8 +1,7 @@
 namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Item.Enchantment;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Nbt;
 
 /// <summary>
 /// Holds enchantments on an item stack.
@@ -171,7 +170,7 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
     }
 
     private void SetTag() {
-        CompoundTag nbt = ItemStack.ExtraData?.Nbt ?? new CompoundTag();
+        CompoundTag nbt = ItemStack.Storage ?? new CompoundTag();
 
         if (_enchantments.Count == 0) {
             nbt.Values.Remove("ench");
@@ -181,12 +180,7 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
         }
 
         if (nbt.Values.Count > 0) {
-            ItemStack.SetExtraData(new ItemInstanceUserData {
-                Nbt = nbt,
-                CanPlaceOn = ItemStack.ExtraData?.CanPlaceOn ?? [],
-                CanDestroy = ItemStack.ExtraData?.CanDestroy ?? [],
-                Ticking = ItemStack.ExtraData?.Ticking
-            });
+            ItemStack.Storage = nbt;
         }
     }
 }

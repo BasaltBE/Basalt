@@ -1,10 +1,10 @@
 namespace Basalt.Core.Item.Traits.Types;
 
+using BedrockProtocol.Types;
 using Player = Basalt.Core.Player.Player;
-using Basalt.Protocol.Types;
 
 
-public readonly record struct ItemUseOnEntityDetails(Player Player, Basalt.Core.Entities.Entity Target, int HotBarSlot, Vec3f Position, Vec3f ClickedPosition);
+public readonly record struct ItemUseOnEntityDetails(Player Player, Basalt.Core.Entities.Entity Target, int HotBarSlot, Vec3 Position, Vec3 ClickedPosition);
 
 
 

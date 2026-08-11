@@ -2,10 +2,9 @@ namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Item.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
-
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class ItemStackHoeTrait : ItemTrait {
     public new static string Identifier => "hoe_till";
@@ -29,9 +28,16 @@ public sealed class ItemStackHoeTrait : ItemTrait {
         var dimension = details.Player.Dimension;
         BlockPos pos = details.BlockPosition;
 
-        BlockPermutation current = dimension.GetPermutation(pos.X, pos.Y, pos.Z);
+        BlockPermutation current = dimension.GetPermutation(
+            pos.X,
+            pos.Y,
+            pos.Z
+        );
 
-        if (!TillableBlocks.TryGetValue(current.Type.Identifier, out string? resultIdentifier)) {
+        if (!TillableBlocks.TryGetValue(
+            current.Type.Identifier,
+            out string? resultIdentifier
+        )) {
             return;
         }
 
@@ -42,32 +48,36 @@ public sealed class ItemStackHoeTrait : ItemTrait {
 
         BlockPermutation resultPermutation = resultType.GetPermutation();
 
-        dimension.SetPermutation(pos.X, pos.Y, pos.Z, resultPermutation);
+        dimension.SetPermutation(
+            pos.X,
+            pos.Y,
+            pos.Z,
+            resultPermutation
+        );
 
-        if (string.Equals(resultIdentifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal)) {
-            Basalt.Core.Blocks.Traits.FarmlandTrait.ScheduleFarmlandTick(dimension, pos);
+        if (
+            string.Equals(
+                resultIdentifier,
+                BlockIdentifier.Farmland.ToIdentifier(),
+                StringComparison.Ordinal
+            )
+        ) {
+            Basalt.Core.Blocks.Traits.FarmlandTrait
+                .ScheduleFarmlandTick(dimension, pos);
         }
 
         dimension.Broadcast(new UpdateBlockPacket {
-            Position = pos,
-            NetworkBlockId = (uint)resultPermutation.NetworkId,
-            Flags = UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = pos,
+            BlockRuntimeID = (uint)resultPermutation.NetworkId,
+            Flags = (uint)UpdateBlockFlagsType.Network,
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
 
-        dimension.Broadcast(new LevelSoundEventPacket {
-            Event = LevelSoundEvent.ItemUseOn,
-            Position = new Vec3f {
+        dimension.PlaySound(LevelSoundEvent.item_use_on.ToProtoString(), new Vec3 {
                 X = pos.X + 0.5f,
                 Y = pos.Y + 0.5f,
                 Z = pos.Z + 0.5f
             },
-            Data = resultPermutation.NetworkId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = 0,
-            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-        });
+            data: resultPermutation.NetworkId);
     }
 }

@@ -4,9 +4,9 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class ItemStackBucketFillTrait : ItemTrait {
     public new static string Identifier => "bucket_fill";
@@ -36,25 +36,17 @@ public sealed class ItemStackBucketFillTrait : ItemTrait {
         dimension.SetPermutation(clickedPos.X, clickedPos.Y, clickedPos.Z, air);
 
         string soundEvent = kind.Value == FluidKind.Water
-          ? LevelSoundEvent.BucketFillWater
-          : LevelSoundEvent.BucketFillLava;
+          ? LevelSoundEvent.bucket_fill_water.ToProtocolString()
+          : LevelSoundEvent.bucket_fill_lava.ToProtocolString();
 
-        dimension.Broadcast(new LevelSoundEventPacket {
-            Event = soundEvent,
-            Position = new Vec3f {
+        dimension.PlaySound(soundEvent, new Vec3 {
                 X = clickedPos.X + 0.5f,
                 Y = clickedPos.Y + 0.5f,
                 Z = clickedPos.Z + 0.5f
             },
-            Data = perm.NetworkId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = 0,
-            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-        });
+            data: perm.NetworkId);
 
-        if (details.Player.Gamemode == Gamemode.Survival) {
+        if (details.Player.Gamemode == GameType.Survival) {
             ItemIdentifier filledBucket = kind.Value == FluidKind.Water
               ? ItemIdentifier.WaterBucket
               : ItemIdentifier.LavaBucket;

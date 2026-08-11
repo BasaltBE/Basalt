@@ -1,7 +1,7 @@
 namespace Basalt.Core.Item.Traits;
 
 using System.Reflection;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 using Basalt.Core.Item.Traits.Types;
 
 

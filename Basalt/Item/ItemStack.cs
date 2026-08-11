@@ -1,10 +1,12 @@
 namespace Basalt.Core.Item;
 
 using System.Diagnostics.CodeAnalysis;
-using Basalt.Protocol.Types;
-using Basalt.Protocol.Nbt;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
+
+using Basalt.Binary;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
 
 public sealed class ItemStack {
     private static int _nextNetworkStackId;
@@ -15,13 +17,14 @@ public sealed class ItemStack {
     public ushort StackSize { get; private set; }
     public uint Metadata { get; private set; }
     public int NetworkStackId { get; } = ++_nextNetworkStackId;
-    public ItemInstanceUserData? ExtraData { get; private set; }
 
-    public ItemStack(ItemType type, ushort stackSize = 1, uint metadata = 0, ItemInstanceUserData? extraData = null) {
+    public CompoundTag? Storage;
+
+    public ItemStack(ItemType type, ushort stackSize = 1, uint metadata = 0, CompoundTag? nbt = null) {
         Type = type;
         StackSize = (ushort)Math.Min(stackSize, type.MaxStackSize);
         Metadata = metadata;
-        ExtraData = extraData;
+        Storage = nbt;
         InitializeTraits();
     }
 
@@ -34,8 +37,8 @@ public sealed class ItemStack {
         }
     }
 
-    public ItemStack(string identifier, ushort stackSize = 1, uint metadata = 0, ItemInstanceUserData? extraData = null)
-        : this(ItemType.Get(identifier) ?? throw new InvalidOperationException($"Unknown item type '{identifier}'."), stackSize, metadata, extraData) {
+    public ItemStack(string identifier, ushort stackSize = 1, uint metadata = 0)
+        : this(ItemType.Get(identifier) ?? throw new InvalidOperationException($"Unknown item type '{identifier}'."), stackSize, metadata) {
     }
 
     public void SetStackSize(ushort value) {
@@ -54,15 +57,10 @@ public sealed class ItemStack {
         Metadata = value;
     }
 
-    public void SetExtraData(ItemInstanceUserData? extraData) {
-        ExtraData = extraData;
-    }
-
     public bool Equals(ItemStack other) {
         return Type.Identifier == other.Type.Identifier
                && StackSize == other.StackSize
-               && Metadata == other.Metadata
-               && Equals(ExtraData, other.ExtraData);
+               && Metadata == other.Metadata;
     }
 
     public bool CanStackWith(ItemStack other) {
@@ -71,49 +69,71 @@ public sealed class ItemStack {
                && HasSameTraits(other);
     }
 
-    public LegacyItem ToNetworkStack() {
-        LegacyItem descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
-        descriptor.ItemStackId = NetworkStackId;
-        descriptor.ExtraData = ExtraData;
-        return descriptor;
-    }
+    // public LegacyItem ToNetworkStack() {
+    //     LegacyItem descriptor = ItemType.ToNetworkStack(Type, StackSize, Metadata);
+    //     descriptor.ItemStackId = NetworkStackId;
+    //     descriptor.ExtraData = ExtraData;
+    //     return descriptor;
+    // }
 
     public NetworkItemStackDescriptor ToNetworkStackDescriptor() {
         if (Type.NetworkId == 0 || StackSize == 0) {
             return new NetworkItemStackDescriptor();
         }
 
+        byte[] nbt = [];
+
+        if (GetSerializedNbt() is CompoundTag tag) {
+            using BinaryStream stream = BinaryStream.Rent(6000);
+            BinaryWriter writer = stream;
+            writer.WriteInt16(-1, true);
+            writer.WriteUInt8(1);
+            NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
+            writer.WriteVarUInt(0);
+            writer.WriteVarUInt(0);
+            nbt = writer.GetProcessedBytes().ToArray();
+        } else {
+            using BinaryStream stream = BinaryStream.Rent(16);
+            BinaryWriter writer = stream;
+            writer.WriteInt16(-1, true);
+            writer.WriteVarUInt(0);
+            writer.WriteVarUInt(0);
+            nbt = writer.GetProcessedBytes().ToArray();
+        }
+
         return new NetworkItemStackDescriptor {
-            NetworkId = Type.NetworkId,
-            Count = StackSize,
-            Metadata = Metadata,
-            StackNetworkId = NetworkStackId,
+            Id = (short)Type.NetworkId,
+            AuxValue = Metadata,
             BlockRuntimeId = 0,
-            Nbt = GetSerializedNbt(),
-            CanPlaceOn = ExtraData?.CanPlaceOn ?? [],
-            CanDestroy = ExtraData?.CanDestroy ?? [],
-            BlockingTick = ExtraData?.Ticking ?? 0
+            NetIdVariant = NetworkStackId,
+            StackSize = StackSize,
+            UserDataBuffer = nbt,
+            // NetworkId = Type.NetworkId,
+            // Count = StackSize,
+            // Metadata = Metadata,
+            // StackNetworkId = NetworkStackId,
+            // BlockRuntimeId = 0,
+            // Nbt = GetSerializedNbt(),
+            // CanPlaceOn = ExtraData?.CanPlaceOn ?? [],
+            // CanDestroy = ExtraData?.CanDestroy ?? [],
+            // BlockingTick = ExtraData?.Ticking ?? 0
         };
-    }
-
-    public static ItemStack FromNetworkStack(LegacyItem descriptor) {
-        ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
-                        ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");
-
-        return new ItemStack(type, descriptor.StackSize, unchecked((uint)descriptor.Metadata), descriptor.ExtraData);
     }
 
     public static ItemStack FromNetworkStack(NetworkItemStackDescriptor descriptor) {
-        ItemType type = ItemType.GetByNetwork(descriptor.NetworkId)
-                        ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.NetworkId}'.");
+        ItemType type = ItemType.GetByNetwork(descriptor.Id)
+                        ?? throw new InvalidOperationException($"Unknown item network id '{descriptor.Id}'.");
 
-        ItemInstanceUserData extraData = new() {
-            Nbt = descriptor.Nbt,
-            CanPlaceOn = descriptor.CanPlaceOn,
-            CanDestroy = descriptor.CanDestroy,
-            Ticking = descriptor.BlockingTick
-        };
-        return new ItemStack(type, descriptor.Count, descriptor.Metadata, extraData);
+        CompoundTag? nbt = null;
+
+        if (descriptor.UserDataBuffer.Length > 0) {
+            byte[] data = descriptor.UserDataBuffer;
+            int offset = 0;
+            BinaryReader reader = new(data, ref offset);
+            nbt = NBT.ReadTag<CompoundTag>(reader);
+        }
+
+        return new ItemStack(type, descriptor.StackSize, descriptor.AuxValue, nbt);
     }
 
     public static ItemStack Empty() {
@@ -148,17 +168,9 @@ public sealed class ItemStack {
         ushort stackSize = (ushort)Math.Max(0, tag.Get<IntTag>("count")?.Value ?? 0);
         uint metadata = unchecked((uint)(tag.Get<IntTag>("meta")?.Value ?? 0));
         CompoundTag? nbt = tag.Get<CompoundTag>("nbt");
-        ItemInstanceUserData? extraData = null;
-        if (nbt is not null) {
-            extraData = new ItemInstanceUserData {
-                Nbt = nbt,
-                CanPlaceOn = [],
-                CanDestroy = [],
-                Ticking = null
-            };
-        }
 
-        ItemStack stack = new(type, stackSize, metadata, extraData);
+
+        ItemStack stack = new(type, stackSize, metadata);
         if (nbt is not null) {
             stack.ReadTraits(nbt);
         }
@@ -177,11 +189,11 @@ public sealed class ItemStack {
     }
 
     public CompoundTag? GetSerializedNbt() {
-        if (_traits.Count == 0 && ExtraData?.Nbt is null) {
+        if (_traits.Count == 0 && Storage is null) {
             return null;
         }
 
-        CompoundTag nbt = ExtraData?.Nbt ?? new CompoundTag();
+        CompoundTag nbt = Storage ?? new CompoundTag();
         WriteTraits(nbt);
         return nbt.Values.Count > 0 ? nbt : null;
     }
@@ -321,9 +333,3 @@ public sealed class ItemStack {
         return true;
     }
 }
-
-
-
-
-
-

@@ -1,10 +1,10 @@
 namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Item.Traits.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 using Player = Basalt.Core.Player.Player;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 
 
 public sealed class ItemDebugTrait : ItemTrait {
@@ -34,17 +34,14 @@ public sealed class ItemDebugTrait : ItemTrait {
     }
 
     private static void Send(Player player, string message) {
-        player.Send(new TextPacket {
-            NeedsTranslation = false,
-            VariantType = TextVariantType.MessageOnly,
-            Variant = new TextVariant {
-                Type = TextType.Tip,
+        TextPacket packet = new() {
+            Body = new MessageOnly {
+                MessageType = TextPacketType.tip,
                 Message = $"ItemDebugTrait: {message}"
             },
-            Xuid = string.Empty,
-            PlatformChatId = string.Empty,
+            Localize = false,
             FilteredMessage = null
-        });
+        };
     }
 }
 

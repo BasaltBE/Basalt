@@ -2,15 +2,15 @@ namespace Basalt.Core.Item;
 
 using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Io;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Text.Json;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Enums;
 
 public sealed class ItemPalette {
     private const string AirIdentifier = "minecraft:air";
@@ -59,13 +59,12 @@ public sealed class ItemPalette {
 
             LoadVanilla();
 
-            List<ItemEntry> items = [.. ItemType.GetAll().Select(type => new ItemEntry
-            {
-                Name = type.Identifier,
-                RuntimeId = checked((short)type.NetworkId),
-                ComponentBased = type.IsComponentBased,
-                Version = type.Version,
-                Data = type.Properties
+            List<ItemData> items = [.. ItemType.GetAll().Select(type => new ItemData {
+                ItemName = type.Identifier,
+                ItemId = checked((short)type.NetworkId),
+                IsComponentBased = type.IsComponentBased,
+                ItemVersion = (ItemVersion)type.Version,
+                ItemComponentData = type.Properties
             })];
 
             _itemRegistryPayload = SerializeItemRegistryBody(items);
@@ -87,8 +86,8 @@ public sealed class ItemPalette {
 
             List<ItemType> allTypes = ItemType.GetAll();
             Dictionary<string, int> groupIndexMap = new(StringComparer.Ordinal);
-            List<CreativeGroup> groups = [];
-            List<CreativeItem> items = [];
+            List<CreativeGroupInfoPayload> groups = [];
+            List<CreativeItemEntryPayload> items = [];
             Dictionary<uint, ItemStack> creativeItems = [];
 
             for (int i = 0; i < allTypes.Count; i++) {
@@ -113,15 +112,15 @@ public sealed class ItemPalette {
                         blockRuntimeIdIcon = iconType.BlockType.Permutations[0].NetworkId;
                     }
 
-                    groups.Add(new CreativeGroup {
-                        Category = type.Catalog.Category,
+                    groups.Add(new CreativeGroupInfoPayload {
+                        CreativeCategory = (CreativeItemCategory)(sbyte)type.Catalog.Category,
                         Name = groupName,
-                        Icon = new LegacyNetworkItemStackDescriptor {
-                            NetworkId = iconType.NetworkId,
+                        GroupIconItem = new NetworkItemInstanceDescriptorData {
+                            Id = iconType.NetworkId,
                             StackSize = 1,
-                            Metadata = 0,
-                            NetworkBlockId = blockRuntimeIdIcon,
-                            ExtraData = null
+                            AuxValue = 0,
+                            BlockRuntimeId = blockRuntimeIdIcon,
+                            UserDataBuffer = [],
                         }
                     });
                     groupIndexMap[key] = groupIndex;
@@ -134,14 +133,14 @@ public sealed class ItemPalette {
                     blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
                 }
 
-                items.Add(new CreativeItem {
-                    CreativeItemNetworkId = creativeNetworkId,
-                    ItemInstance = new LegacyNetworkItemStackDescriptor {
-                        NetworkId = type.NetworkId,
+                items.Add(new CreativeItemEntryPayload {
+                    CreativeNetId = new CreativeItemNetId() { ID = creativeNetworkId },
+                    ItemInstance = new NetworkItemInstanceDescriptorData {
+                        Id = type.NetworkId,
                         StackSize = 1,
-                        Metadata = 0,
-                        NetworkBlockId = blockRuntimeId,
-                        ExtraData = null
+                        AuxValue = 0,
+                        BlockRuntimeId = blockRuntimeId,
+                        UserDataBuffer = [],
                     },
                     GroupIndex = checked((uint)groupIndex)
                 });
@@ -153,7 +152,7 @@ public sealed class ItemPalette {
 
             CreativeContentPacket packet = new() {
                 Groups = groups,
-                Items = items
+                Entries = items,
             };
 
             _creativeContentPayload = SerializePacketBody(packet);
@@ -238,27 +237,44 @@ public sealed class ItemPalette {
         }
     }
 
-    private static byte[] SerializeItemRegistryBody(List<ItemEntry> items) {
+    private static byte[] SerializeItemRegistryBody(List<ItemData> items) {
         int size = Math.Max(1024, (items.Count * 256) + 8);
+
         while (true) {
             byte[] buffer = new byte[size];
+
             try {
                 int offset = 0;
                 BinaryWriter writer = new(buffer, ref offset);
-                writer.WriteVarUInt((uint)items.Count);
+
+                writer.WriteVarUInt(checked((uint)items.Count));
+
                 for (int i = 0; i < items.Count; i++) {
-                    items[i].Write(writer);
+                    items[i].Write(
+                        writer,
+                        static (itemWriter, value) => {
+                            if (value is not CompoundTag tag) {
+                                throw new InvalidOperationException(
+                                    $"Expected {nameof(CompoundTag)} item component data, got {value?.GetType().FullName ?? "null"}."
+                                );
+                            }
+
+                            NBT.WriteTag(itemWriter, tag, new TagOptions(VarInt: true));
+                        }
+                    );
                 }
 
                 return writer.GetProcessedBytes().ToArray();
             }
-            catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException) {
+            catch (Exception ex) when (
+                ex is ArgumentOutOfRangeException or IndexOutOfRangeException
+            ) {
                 size *= 2;
             }
         }
     }
 
-    private static byte[] SerializePacketBody(DataPacket packet) {
+    private static byte[] SerializePacketBody(Packet packet) {
         int size = 16384;
         while (true) {
             byte[] buffer = new byte[size];
@@ -275,8 +291,8 @@ public sealed class ItemPalette {
     }
 
     private static void AppendEnchantedBookEntries(
-        List<CreativeGroup> groups,
-        List<CreativeItem> items,
+        List<CreativeGroupInfoPayload> groups,
+        List<CreativeItemEntryPayload> items,
         Dictionary<uint, ItemStack> creativeItems,
         Dictionary<string, int> groupIndexMap) {
         ItemType? enchantedBook = ItemType.Get("minecraft:enchanted_book");
@@ -293,24 +309,15 @@ public sealed class ItemPalette {
         else {
             groupIndex = groups.Count;
 
-            // Group icon is an enchanted book with protection I.
-            CompoundTag iconNbt = Traits.ItemStackEnchantmentTrait.BuildEnchantmentNbt(
-                [new Enchantment.EnchantmentInstance(EnchantmentType.Get(0)!, 1)]);
-
-            groups.Add(new CreativeGroup {
-                Category = enchantedBookCategory,
+            groups.Add(new CreativeGroupInfoPayload {
+                CreativeCategory = (CreativeItemCategory)enchantedBookCategory,
                 Name = enchantedBookGroupName,
-                Icon = new LegacyNetworkItemStackDescriptor {
-                    NetworkId = enchantedBook.NetworkId,
+                GroupIconItem = new NetworkItemInstanceDescriptorData {
+                    Id = enchantedBook.NetworkId,
                     StackSize = 1,
-                    Metadata = 0,
-                    NetworkBlockId = 0,
-                    ExtraData = new ItemInstanceUserData {
-                        Nbt = iconNbt,
-                        CanPlaceOn = [],
-                        CanDestroy = [],
-                        Ticking = null
-                    }
+                    AuxValue = 0,
+                    BlockRuntimeId = 0,
+                    UserDataBuffer = []
                 }
             });
             groupIndexMap[key] = groupIndex;
@@ -318,34 +325,31 @@ public sealed class ItemPalette {
 
         foreach ((int _, EnchantmentType enchantment) in EnchantmentType.All) {
             for (int level = 1; level <= enchantment.MaxLevel; level++) {
-                EnchantmentInstance instance = new(enchantment, level);
+                Basalt.Core.Item.Enchantment.EnchantmentInstance instance = new(enchantment, level);
                 CompoundTag nbt = Traits.ItemStackEnchantmentTrait.BuildEnchantmentNbt([instance]);
 
                 uint creativeNetworkId = checked((uint)(items.Count + 1));
 
-                items.Add(new CreativeItem {
-                    CreativeItemNetworkId = creativeNetworkId,
-                    ItemInstance = new LegacyNetworkItemStackDescriptor {
-                        NetworkId = enchantedBook.NetworkId,
+                items.Add(new CreativeItemEntryPayload {
+                    CreativeNetId = new CreativeItemNetId {
+                        ID = creativeNetworkId
+                    },
+                    ItemInstance = new NetworkItemInstanceDescriptorData {
+                        Id = enchantedBook.NetworkId,
                         StackSize = 1,
-                        Metadata = 0,
-                        NetworkBlockId = 0,
-                        ExtraData = new ItemInstanceUserData {
-                            Nbt = nbt,
-                            CanPlaceOn = [],
-                            CanDestroy = [],
-                            Ticking = null
-                        }
+                        AuxValue = 0,
+                        BlockRuntimeId = 0,
+                        UserDataBuffer = []
                     },
                     GroupIndex = checked((uint)groupIndex)
                 });
 
-                ItemStack stack = new(enchantedBook, 1, 0, new ItemInstanceUserData {
-                    Nbt = nbt,
-                    CanPlaceOn = [],
-                    CanDestroy = [],
-                    Ticking = null
-                });
+                ItemStack stack = new(
+                    enchantedBook,
+                    1,
+                    0,
+                    nbt
+                );
                 creativeItems[creativeNetworkId] = stack;
             }
         }
@@ -514,9 +518,3 @@ public sealed class ItemPalette {
         return new FloatTag { Value = element.GetSingle() };
     }
 }
-
-
-
-
-
-

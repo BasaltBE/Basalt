@@ -1,6 +1,6 @@
 namespace Basalt.Core.Item.Components;
 
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 
 
 public sealed class ItemTypeSeedComponent : ItemTypeComponent {

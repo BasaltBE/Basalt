@@ -1,11 +1,12 @@
 using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Enums;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 namespace Basalt.Core.Item.Traits;
 
@@ -42,8 +43,8 @@ public sealed class ItemStackBoneMealTrait : ItemTrait {
         }
 
         dimension.Broadcast(new LevelEventPacket {
-            Event = LevelEvent.ParticlesCropGrowth,
-            Position = new Vec3f {
+            EventId = (int)LevelEvent.ParticlesCropGrowth,
+            Position = new Vec3 {
                 X = position.X + 0.5f,
                 Y = position.Y + 0.5f,
                 Z = position.Z + 0.5f
@@ -51,7 +52,7 @@ public sealed class ItemStackBoneMealTrait : ItemTrait {
             Data = 0
         });
 
-        if (details.Player.Gamemode != Gamemode.Survival) {
+        if (details.Player.Gamemode != GameType.Survival) {
             return;
         }
 

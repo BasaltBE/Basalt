@@ -1,6 +1,6 @@
 namespace Basalt.Core.Item.Traits;
 
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 using Basalt.Core.Item.Components;
 
 

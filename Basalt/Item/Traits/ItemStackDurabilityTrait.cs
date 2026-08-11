@@ -4,14 +4,14 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class ItemStackDurabilityTrait : ItemTrait {
     public new static string Identifier => "durability";
-    public new static readonly Type? Component = typeof(ItemTypeDurabilityComponent);
+    public new static readonly System.Type? Component = typeof(ItemTypeDurabilityComponent);
 
     private int _maxDurability;
     private int _damageChanceMin;
@@ -129,16 +129,9 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
         if (_damage >= _maxDurability) {
             inventory?.Container.ClearSlot(slot);
 
-            player.Dimension?.Broadcast(new LevelSoundEventPacket {
-                Event = LevelSoundEvent.Break,
-                Position = player.Position,
-                Data = 0,
-                ActorIdentifier = string.Empty,
-                BabyMob = false,
-                DisableRelativeVolume = false,
-                UniqueActorId = 0,
-                FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-            });
+            player.Dimension?.PlaySound(
+                LevelSoundEvent.Break.ToProtocolString(),
+                player.Position);
             return;
         }
 
@@ -146,15 +139,10 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
     }
 
     private void SyncDamageTag() {
-        CompoundTag nbt = ItemStack.ExtraData?.Nbt ?? new CompoundTag();
+        CompoundTag nbt = ItemStack.Storage ?? new CompoundTag();
         nbt.Set("Damage", new IntTag { Value = _damage });
 
-        ItemStack.SetExtraData(new ItemInstanceUserData {
-            Nbt = nbt,
-            CanPlaceOn = ItemStack.ExtraData?.CanPlaceOn ?? [],
-            CanDestroy = ItemStack.ExtraData?.CanDestroy ?? [],
-            Ticking = ItemStack.ExtraData?.Ticking
-        });
+        ItemStack.Storage = nbt;
     }
 
     private bool HasUnbreakingProtection() {

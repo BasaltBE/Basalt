@@ -5,9 +5,9 @@ using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public sealed class ItemStackBucketTrait : ItemTrait {
     public new static string Identifier => "bucket_place";
@@ -44,25 +44,17 @@ public sealed class ItemStackBucketTrait : ItemTrait {
         FluidTrait.ScheduleFluidTick(dimension, placePos, kind);
 
         string soundEvent = kind == FluidKind.Water
-            ? LevelSoundEvent.BucketEmptyWater
-            : LevelSoundEvent.BucketEmptyLava;
+            ? LevelSoundEvent.bucket_empty_water.ToProtoString()
+            : LevelSoundEvent.bucket_empty_lava.ToProtoString();
 
-        dimension.Broadcast(new LevelSoundEventPacket {
-            Event = soundEvent,
-            Position = new Vec3f {
+        dimension.PlaySound(soundEvent, new Vec3 {
                 X = placePos.X + 0.5f,
                 Y = placePos.Y + 0.5f,
                 Z = placePos.Z + 0.5f
             },
-            Data = sourcePerm.NetworkId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = 0,
-            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-        });
+            data: sourcePerm.NetworkId);
 
-        if (details.Player.Gamemode == Gamemode.Survival) {
+        if (details.Player.Gamemode == GameType.Survival) {
             var inventory = details.Player.GetTrait<Basalt.Core.Entities.Traits.EntityInventoryTrait>();
             if (inventory is not null) {
                 ItemType? emptyBucket = ItemType.Get(ItemIdentifier.Bucket.ToIdentifier());
