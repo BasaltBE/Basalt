@@ -670,8 +670,8 @@ public static class ItemStackRequest {
             return false;
         }
 
-        if (name.DynamicID != 0) {
-            if (!player.TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)name.DynamicID), out Container? opened) ||
+        if (name.DynamicID is uint dynamicId && dynamicId != 0) {
+            if (!player.TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)dynamicId), out Container? opened) ||
                 opened is null || opened.Type == ContainerType.INVENTORY) {
                 return false;
             }
@@ -728,8 +728,8 @@ public static class ItemStackRequest {
         Container container,
         int responseSlot,
         int storageSlot) {
-        string key = containerName.DynamicID != 0
-            ? $"{containerName.ContainerName}:{containerName.DynamicID}"
+        string key = containerName.DynamicID is uint dynamicId && dynamicId != 0
+            ? $"{containerName.ContainerName}:{dynamicId}"
             : containerName.ContainerName.ToString();
 
         if (!changed.TryGetValue(key, out ItemStackResponseContainerInfo? info)) {

@@ -454,8 +454,8 @@ public class Player : Entities.Entity {
             or ContainerEnumName.LevelEntityContainer
             or ContainerEnumName.DynamicContainer) {
 
-            if (name.DynamicID != 0 &&
-                TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)name.DynamicID), out Container? containerById)) {
+            if (name.DynamicID is uint dynamicId && dynamicId != 0 &&
+                TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)dynamicId), out Container? containerById)) {
                 return containerById;
             }
 
@@ -470,8 +470,8 @@ public class Player : Entities.Entity {
                 : null;
         }
 
-        if (name.DynamicID != 0 &&
-            TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)name.DynamicID), out Container? container)) {
+        if (name.DynamicID is uint otherDynamicId && otherDynamicId != 0 &&
+            TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)otherDynamicId), out Container? container)) {
             return container;
         }
 
