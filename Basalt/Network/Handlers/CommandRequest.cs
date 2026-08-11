@@ -4,10 +4,10 @@ using Basalt.Core;
 using Basalt.Core.Commands;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 using Basalt.RakNet;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Types;
 
 public static class CommandRequest {
     public static void Handle(Server server, NetworkConnection connection, CommandRequestPacket packet) {
@@ -45,18 +45,20 @@ public static class CommandRequest {
         List<CommandOutputMessage> messages = [];
         if (result.Message is not null) {
             messages.Add(new CommandOutputMessage {
-                Message = result.Message,
+                MessageID = result.Message,
                 Parameters = [],
-                Success = result.Success
+                Successful = result.Success,
             });
         }
 
-        CommandResponsePacket response = new() {
-            SuccessCount = result.Success ? 1U : 0U,
-            OutputType = CommandOutputType.AllOutput,
-            DataSet = string.Empty,
-            Origin = packet.Origin,
-            OutputMessages = messages
+        CommandOutputPacket response = new() {
+            Output = new BedrockProtocol.Types.CommandOutput() {
+                OutputMessages = messages,
+                DataSet = string.Empty,
+                OutputType = CommandOutputType.AllOutput,
+                SuccessCount = result.Success ? 1U : 0U,
+            },
+            OriginData = packet.Origin,
         };
 
         server.Network.QueuePacket(connection, response);

@@ -1,20 +1,20 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Binary;
+using Basalt.Core.Profiling;
+using Basalt.Core.Tasks;
+using Basalt.RakNet;
+
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
+using Basalt.Core.Worlds.Dimensions;
+using BedrockProtocol.Nbt;
 using Basalt.Core.Blocks;
+using Basalt.Core.Item;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
-using Basalt.Core.Item;
-using Basalt.Core.Profiling;
-using Basalt.Core.Tasks;
-using Basalt.Protocol;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Io;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
-using Basalt.RakNet;
 
 internal sealed class ResourcePackCompletedTask : ServerTask {
     private readonly Server _server;
@@ -27,7 +27,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
     private byte[]? _startGamePayload;
     private byte[]? _spawnStatusPayload;
     private Worlds.Dimensions.Dimension? _dimension;
-    private Vec3f _playerPosition;
+    private Vec3 _playerPosition = new();
 
     public ResourcePackCompletedTask(Server server, NetworkConnection connection, Player.Player player) {
         _server = server;
@@ -41,16 +41,16 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         _dimension = ResolvePlayerDimension(_server, _player);
 
         _playerListPackets = _server.Players.Values.Select(static online => new PlayerListPacket {
-            ActionType = PlayerListActionType.Add,
             Entries = [online.CreatePlayerListEntry()]
         }).ToList();
 
         _broadcastEntry = new PlayerListPacket {
-            ActionType = PlayerListActionType.Add,
-            Entries = [_player.CreatePlayerListEntry()]
+            Entries = new List<PlayerListEntryVariant> {
+                _player.CreatePlayerListEntry(),
+            }
         };
 
-        _playerPosition = _dimension?.SpawnPosition ?? new Vec3f { X = 0f, Y = -57f, Z = 0f };
+        _playerPosition = _dimension?.SpawnPosition ?? new Vec3 { X = 0f, Y = -57f, Z = 0f };
         int dimensionId = 0;
 
         if (_dimension is not null) {
@@ -61,104 +61,138 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         }
 
         StartGamePacket startGame = new() {
-            EntityUniqueId = _player.UniqueId,
-            EntityRuntimeId = _player.RuntimeId,
-            PlayerGameMode = (int)_player.GetGamemode(),
-            PlayerPosition = _playerPosition,
-            Pitch = 0f,
-            Yaw = 0f,
-            WorldSeed = 0,
-            SpawnBiomeType = SpawnBiomeType.Default,
-            UserDefinedBiomeName = "plains",
-            Dimension = dimensionId,
-            Generator = 1,
-            WorldGameMode = 0,
-            Hardcore = false,
-            Difficulty = 1,
-            WorldSpawn = new BlockPos {
-                X = (int)(_dimension?.SpawnPosition.X ?? 0),
-                Y = (int)(_dimension?.SpawnPosition.Y ?? -58),
-                Z = (int)(_dimension?.SpawnPosition.Z ?? 0)
+            EntityID = new() {
+                Value = _player.UniqueId,
             },
-            AchievementsDisabled = !_server.Properties.AchievementsEnabled,
-            EditorWorldType = EditorWorldType.NotEditor,
-            CreatedInEditor = false,
-            ExportedFromEditor = false,
-            DayCycleLockTime = 0,
-            EducationEditionOffer = 0,
-            EducationFeaturesEnabled = false,
-            EducationProductId = string.Empty,
-            RainLevel = 0f,
-            LightningLevel = 0f,
-            ConfirmedPlatformLockedContent = false,
-            MultiPlayerGame = true,
-            LanBroadcastEnabled = false,
-            XblBroadcastMode = XblBroadcastMode.Public,
-            PlatformBroadcastMode = (int)XblBroadcastMode.Public,
-            CommandsEnabled = !_server.Properties.AchievementsEnabled,
-            TexturePackRequired = false,
-            GameRules = [],
-            Experiments = [],
-            ExperimentsPreviouslyToggled = false,
-            BonusChestEnabled = false,
-            StartWithMapEnabled = false,
-            PlayerPermissions = _player.IsOperator ? 2 : 1,
-            ServerChunkTickRadius = 4,
-            HasLockedBehaviourPack = false,
-            HasLockedTexturePack = false,
-            FromLockedWorldTemplate = false,
-            MsaGamerTagsOnly = false,
-            FromWorldTemplate = false,
-            WorldTemplateSettingsLocked = false,
-            OnlySpawnV1Villagers = false,
-            PersonaDisabled = false,
-            CustomSkinsDisabled = false,
-            EmoteChatMuted = false,
-            BaseGameVersion = Constants.MinecraftVersion,
-            LimitedWorldWidth = 0,
-            LimitedWorldDepth = 0,
-            NewNether = true,
-            EducationSharedResourceUri = new EducationSharedResourceUri {
-                ButtonName = string.Empty,
-                LinkUri = string.Empty
+            RuntimeID = new() {
+                Value = (ulong)_player.UniqueId,
             },
-            ForceExperimentalGameplay = new Optional<BoolType> { HasValue = false },
-            ChatRestrictionLevel = ChatRestrictionLevel.None,
-            DisablePlayerInteractions = false,
-            LevelId = "BasaltWorld",
-            WorldName = "Basalt",
-            TemplateContentIdentity = string.Empty,
-            Trial = false,
-            PlayerMovementSettings = new PlayerMovementSettings {
-                RewindHistorySize = 0,
-                ServerAuthoritativeBlockBreaking = true
-            },
-            Time = 0,
+            GameType = _player.GetGamemode(),
+            BlockNetworkIdsAreHashes = true,
+            EnableItemStackNetManager = true,
             EnchantmentSeed = 0,
-            Blocks = BlockPalette.GetCustomBlockEntries(),
-            MultiPlayerCorrelationId = Guid.NewGuid().ToString(),
-            ServerAuthoritativeInventory = true,
-            GameVersion = Constants.MinecraftVersion,
-            PropertyData = new CompoundTag(),
-            ServerBlockStateChecksum = 0,
-            WorldTemplateId = Guid.Empty,
-            ClientSideGeneration = false,
-            UseBlockNetworkIdHashes = true,
-            ServerAuthoritativeSound = true,
-            ServerJoinInformation = new OptionalValue<ServerJoinInformation> { HasValue = false },
-            ServerId = string.Empty,
-            ScenarioId = string.Empty,
-            WorldId = string.Empty,
-            OwnerId = _player.Xuid
+            IsTrial = false,
+            LevelCurrentTime = 0,
+            LevelID = "",
+            LevelName = "Basalt",
+            MovementSettings = new SyncedPlayerMovementSettings() {
+                RewindHistorySize = 0,
+                ServerAuthoritativeBlockBreaking = true,
+            },
+            MultiplayerCorrelationId = Guid.NewGuid().ToString(),
+            NetworkPermissions = new NetworkPermissions() {
+                ServerAuthSoundEnabled = true,
+            },
+            Position = new Vec3() {
+                X = _player.Position.X,
+                Y = _player.Position.Y,
+                Z = _player.Position.Z,
+            },
+            Rotation = new Vec2() {
+                X = 0f,
+                Y = 0f,
+            },
+            ServerBlockTypeRegistryChecksum = 0,
+            ServerConfigurationJoinInfo = null,
+            ServerEnabledClientSideGeneration = false,
+            ServerTelemetryData = new ServerTelemetryData() {
+                OwnerId = "Basalt",
+                ScenarioId = "",
+                ServerId = "",
+                WorldId = "",
+            },
+            ServerVersion = "1.21.40",
+            Settings = new LevelSettings() {
+                AchievementsDisabled = !_server.Properties.AchievementsEnabled,
+                AllowAnonymousBlockDropsInEditorWorlds = true,
+                BaseGameVersion = "1.21.40",
+                ChatRestrictionLevel = ChatRestrictionLevel.None,
+                CommandsEnabled = !_server.Properties.AchievementsEnabled,
+                CustomSkinsDisabled = false,
+                DayCycleStopTime = 0,
+                DefaultSpawnBlockPosition = new BlockPos() {
+                    X = (int)(_dimension?.SpawnPosition.X ?? 0),
+                    Y = (int)(_dimension?.SpawnPosition.Y ?? 0),
+                    Z = (int)(_dimension?.SpawnPosition.Z ?? 0)
+                },
+                DisablePlayerInteractions = false,
+                EditorWorldType = EditorWorldType.NonEditor,
+                EducationEditionOffer = EducationEditionOffer.None,
+                EducationFeaturesEnabled = true,
+                EducationProductID = "",
+                EduSharedUriResource = new EduSharedUriResource() {
+                    ButtonName = "",
+                    LinkUri = "",
+                },
+                EmoteChatMuted = true,
+                Experiments = new Experiments() {
+                    ExperimentsEverToggled = false,
+                    Toggles = [],
+                },
+                GameDifficulty = Difficulty.Normal,
+                GeneratorType = GeneratorType.Overworld,
+                GameType = _player.GetGamemode(),
+                HasBonusChestEnabled = false,
+                HasConfirmedPlatformLockedContent = false,
+                HasLockedBehaviorPack = false,
+                HasLockedResourcePack = false,
+                IsCreatedInEditor = false,
+                IsExportedFromEditor = false,
+                IsFromLockedTemplate = false,
+                IsFromWorldTemplate = false,
+                IsHardcore = false,
+                IsWorldTemplateOptionLocked = false,
+                LANBroadcastIntent = true,
+                LightningLevel = 0,
+                LimitedWorldDepth = 0,
+                LimitedWorldWidth = 0,
+                MultiplayerGameIntent = true,
+                NetherType = true,
+                OnlySpawnV1Villagers = false,
+                OverrideForceExperimentalGameplay = false,
+                PersonaDisabled = false,
+                PlatformBroadcastSetting = GamePublishSetting.Public,
+                PlayerPermissions = _player.IsOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
+                RainLevel = 0,
+                RuleData = new() {
+                    RulesList = [],
+                },
+                Seed = 0,
+                ServerChunkTickRange = _server.Properties.SimulationDistance,
+                ServerEditorConnectionPolicy = ServerEditorConnectionPolicy.Mixed,
+                SpawnSettings = new SpawnSettings() {
+                    Dimension = dimensionId,
+                    SpawnBiomeType = SpawnBiomeType.Default,
+                    UserDefinedBiomeName = "",
+                },
+                StartWithMapEnabled = false,
+                TexturePacksRequired = _server.Properties.ForceResourcePacks,
+                UseMsaGamertagsOnly = false,
+                XboxLiveBroadcastSetting = GamePublishSetting.Public,
+            },
+            WorldTemplateID = new UUID {
+                MostSignificantBits = 0,
+                LeastSignificantBits = 0
+            },
+            TemplateContentIdentity = "",
+            PlayerPropertyData = new CompoundTag(),
+            BlockProperties = BlockPalette.GetCustomBlockEntries(),
         };
+
+        Logger.Info($"Spawn IDs: unique={_player.UniqueId}, runtime={_player.RuntimeId}, startGameEntity={startGame.EntityID.Value}, startGameRuntime={startGame.RuntimeID.Value}");
+
+
+
 
         _startGamePayload = SerializePacket(startGame);
 
-        PlayStatusPacket spawnStatus = new(PlayStatus.PlayerSpawn);
+        PlayStatusPacket spawnStatus = new PlayStatusPacket() {
+            Status = PlayStatus.PlayerSpawn,
+        };
         _spawnStatusPayload = SerializePacket(spawnStatus);
     }
 
-    private static byte[] SerializePacket(DataPacket packet) {
+    private static byte[] SerializePacket(Packet packet) {
         using BinaryStream stream = BinaryStream.Rent(1024 * 1024);
         BinaryWriter writer = stream;
         packet.Serialize(writer);
@@ -178,10 +212,15 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             _server.Emit(spawnSignal);
             if (!spawnSignal.Emit()) {
                 DisconnectPacket forcedDisconnect = new() {
-                    Reason = DisconnectReason.Disconnected,
-                    HideDisconnectionScreen = false,
-                    Message = "Server force closed the connection.",
-                    FilteredMessage = "Server force closed the connection."
+                    // Reason = DisconnectReason.Disconnected,
+                    // HideDisconnectionScreen = false,
+                    // Message = "Server force closed the connection.",
+                    // FilteredMessage = "Server force closed the connection."
+                    Reason = DisconnectFailReason.UnrecoverableError,
+                    Messages = new DisconnectPacketMessages() {
+                        Message = "Server force closed the connection.",
+                        FilteredMessage = "Server force closed the connection.",
+                    },
                 };
                 _server.Network.QueuePacket(_connection, forcedDisconnect);
                 _connection.Disconnect();
@@ -192,23 +231,24 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         }
 
         _server.Network.SendSerializedPackets(_connection, [
-            (PacketId.StartGame, _startGamePayload!),
-            (PacketId.ItemRegistry, ItemPalette.GetItemRegistryPayload()),
-            (PacketId.AvailableActorIdentifiers, EntityPalette.GetActorIdentifiersPayload()),
-            (PacketId.PlayStatus, _spawnStatusPayload!),
-            (PacketId.CreativeContent, ItemPalette.GetCreativeContentPayload()),
-            (PacketId.CraftingData, Crafting.CraftingRegistry.Instance.GetCraftingDataPayload())
+            (StartGamePacket.PacketId, _startGamePayload!),
+            (ItemRegistryPacket.PacketId, ItemPalette.GetItemRegistryPayload()),
+            (AvailableActorIdentifiersPacket.PacketId, EntityPalette.GetActorIdentifiersPayload()),
+            (PlayStatusPacket.PacketId, _spawnStatusPayload!),
+            (CreativeContentPacket.PacketId, ItemPalette.GetCreativeContentPayload()),
+            (CraftingDataPacket.PacketId, Crafting.CraftingRegistry.Instance.GetCraftingDataPayload())
         ]);
-        _server.Network.QueuePackets(_connection, _playerListPackets);
+
+        _server.Network.QueuePackets(_connection, _playerListPackets); // An error occured 
         _server.Broadcast(_broadcastEntry!, _player);
         _player.Permissions.Sync();
     }
 
-    private static Worlds.Dimensions.Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
+    private static Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
         if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null) {
             foreach (Worlds.World world in server.Worlds) {
                 if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase)) {
-                    Worlds.Dimensions.Dimension? dim = world.GetDimension(player.SavedDimensionIdentifier);
+                    Dimension? dim = world.GetDimension(player.SavedDimensionIdentifier);
                     if (dim is not null) {
                         return dim;
                     }
@@ -216,6 +256,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             }
         }
 
-        return server.GetWorld().GetDimension(DimensionType.Overworld);
+        return server.GetWorld().GetDimension(DimensionId.Overworld);
     }
+
 }

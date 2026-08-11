@@ -8,11 +8,12 @@ using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 using Basalt.RakNet;
 
+using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Enums;
+using Basalt.Core.Blocks;
 
 public static class InventoryTransaction {
     private const uint UseItemActionClickBlock = 0;
@@ -53,30 +54,36 @@ public static class InventoryTransaction {
         }
 
 
-        switch (packet.TransactionData) {
-            case NormalInventoryTransactionData:
-                HandleInventoryActions(player, inventory, packet.Actions, packet.LegacySetItemSlots);
+        switch (packet.Transaction) {
+            case NormalTransactionData normal:
+                HandleInventoryActions(player, inventory, normal.Actions.Actions, packet.LegacySetItemSlots ?? []);
                 break;
 
-            case UseItemInventoryTransactionData useItem:
-                HandleUseItem(player, inventory, useItem, packet.Actions);
+            case ItemUseInventoryTransaction useItem:
+                HandleUseItem(player, inventory, useItem, useItem.Actions.Actions);
                 break;
 
-            case UseItemOnEntityInventoryTransactionData useItemOnEntity:
+            case ItemUseOnActorInventoryTransaction useItemOnEntity:
                 HandleUseItemOnEntity(player, inventory, useItemOnEntity);
                 break;
 
-            case ReleaseItemInventoryTransactionData:
+            case ItemReleaseInventoryTransaction:
                 PlayerAuthInput.CancelPendingItemUse(player);
                 break;
 
-            case MismatchInventoryTransactionData:
+            case InventoryMismatchData:
                 break;
         }
 
     }
 
-    public static void HandleUseItemFromAuthInput(Player.Player player, UseItemTransactionData data, float pitch, float yaw) {
+    public static void HandleUseItemFromAuthInput(
+        Player.Player player,
+        PackedItemUseLegacyInventoryTransaction data,
+        float pitch,
+        float yaw,
+        Vec3 cameraOrientation
+    ) {
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is null) {
             return;
@@ -86,39 +93,28 @@ public static class InventoryTransaction {
         player.Yaw = yaw;
         player.HeadYaw = yaw;
 
-        UseItemInventoryTransactionData transaction = new() {
-            ActionType = data.ActionType,
-            TriggerType = data.TriggerType,
-            BlockPosition = data.BlockPosition,
-            BlockFace = data.BlockFace,
-            HotBarSlot = data.HotBarSlot,
-            HeldItem = data.HeldItem,
-            Position = data.Position,
-            ClickedPosition = data.ClickedPosition,
-            BlockRuntimeId = data.BlockRuntimeId,
-            ClientPrediction = data.ClientPrediction,
-            ClientCooldownState = data.ClientCooldownState
-        };
+        ItemUseInventoryTransaction transaction = data.ItemUseTransaction;
+
 
         bool missingBlockPosition =
-            transaction.BlockPosition.X == 0 &&
-            transaction.BlockPosition.Y == 0 &&
-            transaction.BlockPosition.Z == 0 &&
-            transaction.BlockRuntimeId == 0;
+            transaction.Position.X == 0 &&
+            transaction.Position.Y == 0 &&
+            transaction.Position.Z == 0 &&
+            transaction.TargetBlockId == 0;
 
-        if (missingBlockPosition && FindBlockFromView(player, pitch, yaw, out BlockPos viewedBlock, out int viewedFace)) {
-            transaction.BlockPosition = viewedBlock;
-            transaction.BlockFace = viewedFace;
+        if (missingBlockPosition && FindBlockFromView(player, pitch, yaw, cameraOrientation, out BlockPos viewedBlock, out int viewedFace)) {
+            transaction.Position = viewedBlock;
+            transaction.Face = (byte)viewedFace;
         }
         else if (missingBlockPosition) {
-            transaction.BlockPosition = new BlockPos {
+            transaction.Position = new BlockPos {
                 X = (int)MathF.Floor(player.Location.X),
                 Y = (int)MathF.Floor(player.Location.Y - 1f),
                 Z = (int)MathF.Floor(player.Location.Z)
             };
 
-            if (transaction.BlockFace is < 0 or > 5) {
-                transaction.BlockFace = 1;
+            if (transaction.Face is < 0 or > 5) {
+                transaction.Face = 1;
             }
         }
 
@@ -129,9 +125,9 @@ public static class InventoryTransaction {
         Player.Player player,
         EntityInventoryTrait inventory,
         List<InventoryAction> actions,
-        List<LegacySetItemSlot> legacySetItemSlots) {
+        List<LegacySetSlot> legacySetItemSlots) {
         foreach (InventoryAction action in actions) {
-            if (action.SourceType == (uint)InventoryActionSourceType.World) {
+            if (action.Source.SourceType == InventorySourceType.WorldInteraction) {
                 // int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
                 if (!SpawnWorldDrop(player, action)) {
                     inventory.Container.Update();
@@ -139,22 +135,23 @@ public static class InventoryTransaction {
                 }
 
                 // Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
-                // Logger.Info("NetworkId Old/New: " + action.OldItem.Stack.NetworkId + "/" + action.NewItem.Stack.NetworkId);
-                // Logger.Info("StackSize Old/New: " + action.OldItem.Stack.StackSize + "/" + action.NewItem.Stack.StackSize);
+                // Logger.Info("Id Old/New: " + action.FromItem.Stack.Id + "/" + action.ToItem.Stack.Id);
+                // Logger.Info("StackSize Old/New: " + action.FromItem.Stack.StackSize + "/" + action.ToItem.Stack.StackSize);
 
                 inventory.Container.Update();
                 continue;
             }
 
-            if (action.SourceType != (uint)InventoryActionSourceType.Container) {
+            if (action.Source.SourceType != (uint)InventorySourceType.ContainerInventory) {
                 continue;
             }
+            if (action.Source.ContainerID is null) continue;
 
             Containers.Container? container = null;
-            if ((ContainerId)action.WindowId == (inventory.Container.Identifier ?? ContainerId.Inventory)) {
+            if ((ContainerID)action.Source.ContainerID == (inventory.Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY)) {
                 container = inventory.Container;
             }
-            else if (player.TryGetOpenContainer((ContainerId)action.WindowId, out Containers.Container? opened)) {
+            else if (player.TryGetOpenContainer((ContainerID)action.Source.ContainerID, out Containers.Container? opened)) {
                 container = opened;
             }
 
@@ -162,13 +159,13 @@ public static class InventoryTransaction {
                 continue;
             }
 
-            int slot = (int)action.InventorySlot;
+            int slot = (int)action.Slot;
             if (slot < 0 || slot >= container.GetSize()) {
                 continue;
             }
 
-            NetworkItemStackDescriptor stack = action.NewItem;
-            if (stack.NetworkId == 0 || stack.Count == 0) {
+            NetworkItemStackDescriptor stack = action.ToItem;
+            if (stack.Id == 0 || stack.StackSize == 0) {
                 container.ClearSlot(slot);
                 continue;
             }
@@ -186,47 +183,47 @@ public static class InventoryTransaction {
         EntityInventoryTrait inventory,
         InventoryAction action,
         List<InventoryAction> actions,
-        List<LegacySetItemSlot> legacySetItemSlots) {
+        List<LegacySetSlot> legacySetItemSlots) {
         for (int i = 0; i < legacySetItemSlots.Count; i++) {
-            LegacySetItemSlot legacy = legacySetItemSlots[i];
-            if (legacy.Slots.Length == 0) {
+            LegacySetSlot legacy = legacySetItemSlots[i];
+            if (legacy.Slots.Count == 0) {
                 continue;
             }
 
-            if (legacy.ContainerId is (byte)ContainerName.Inventory or (byte)ContainerName.Hotbar) {
+            if (legacy.ContainerEnum is ContainerEnumName.InventoryContainer or ContainerEnumName.HotbarContainer) {
                 return legacy.Slots[0];
             }
         }
 
         for (int i = 0; i < actions.Count; i++) {
             InventoryAction candidate = actions[i];
-            if (candidate.SourceType != (uint)InventoryActionSourceType.Container || candidate.WindowId != 0) {
+            if (candidate.Source.SourceType != (uint)InventorySourceType.ContainerInventory || candidate.Source.ContainerID != 0) {
                 continue;
             }
 
-            NetworkItemStackDescriptor candidateOld = candidate.OldItem;
-            NetworkItemStackDescriptor candidateNew = candidate.NewItem;
-            NetworkItemStackDescriptor dropped = action.NewItem;
+            NetworkItemStackDescriptor candidateOld = candidate.FromItem;
+            NetworkItemStackDescriptor candidateNew = candidate.ToItem;
+            NetworkItemStackDescriptor dropped = action.ToItem;
 
-            if (candidateOld.NetworkId == 0 || dropped.NetworkId == 0) {
+            if (candidateOld.Id == 0 || dropped.Id == 0) {
                 continue;
             }
 
-            if (candidateOld.NetworkId != dropped.NetworkId || candidateOld.Count <= candidateNew.Count) {
+            if (candidateOld.Id != dropped.Id || candidateOld.StackSize <= candidateNew.StackSize) {
                 continue;
             }
 
-            int delta = candidateOld.Count - candidateNew.Count;
-            if (delta == dropped.Count) {
-                return (int)candidate.InventorySlot;
+            int delta = candidateOld.StackSize - candidateNew.StackSize;
+            if (delta == dropped.StackSize) {
+                return (int)candidate.Slot;
             }
         }
 
-        if (action.InventorySlot == 0 && inventory.SelectedSlot is >= 0 and < 9) {
+        if (action.Slot == 0 && inventory.SelectedSlot is >= 0 and < 9) {
             return inventory.SelectedSlot;
         }
 
-        return (int)action.InventorySlot;
+        return (int)action.Slot;
     }
 
     private static bool SpawnWorldDrop(Player.Player player, InventoryAction action) {
@@ -234,8 +231,8 @@ public static class InventoryTransaction {
             return false;
         }
 
-        NetworkItemStackDescriptor dropped = action.NewItem;
-        if (dropped.NetworkId == 0 || dropped.Count == 0) {
+        NetworkItemStackDescriptor dropped = action.ToItem;
+        if (dropped.Id == 0 || dropped.StackSize == 0) {
             return false;
         }
 
@@ -252,22 +249,22 @@ public static class InventoryTransaction {
     private static void HandleUseItem(
         Player.Player player,
         EntityInventoryTrait inventory,
-        UseItemInventoryTransactionData transaction,
+        ItemUseInventoryTransaction transaction,
         List<InventoryAction> actions) {
         // Logger.Info($"HandleUseItem ActionType:{transaction.ActionType} Trigger:{transaction.TriggerType} Prediction:{transaction.ClientPrediction} Pos:({transaction.BlockPosition.X},{transaction.BlockPosition.Y},{transaction.BlockPosition.Z}) Face:{transaction.BlockFace} actions:{actions.Count}");
 
-        if (transaction.ActionType == UseItemActionClickAir) {
-            ItemStack? airHeldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        if (transaction.ActionType == ItemUseActionType.Use) {
+            ItemStack? airHeldItem = GetHeldItem(inventory, transaction.Slot);
             if (airHeldItem is null) {
                 return;
             }
 
             if (player.Dimension is not null) {
-                BlockPos blockPosition = transaction.BlockPosition;
-                int blockFace = transaction.BlockFace;
+                BlockPos blockPosition = transaction.Position;
+                int blockFace = transaction.Face;
 
-                if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
-                    blockPosition = player.LastActionBlockPosition.Value;
+                if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+                    blockPosition = player.LastActionBlockPosition;
 
                     if (player.LastActionFace is >= 0 and <= 5) {
                         blockFace = player.LastActionFace;
@@ -284,17 +281,17 @@ public static class InventoryTransaction {
 
                     airHeldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                         player,
-                        transaction.HotBarSlot,
+                        transaction.Slot,
                         blockPosition,
                         blockFace,
                         transaction.Position,
-                        transaction.ClickedPosition));
+                        transaction.ClickPosition));
                     return;
                 }
             }
 
             if (CanUseItem(player, airHeldItem)) {
-                airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.HotBarSlot, transaction.Position));
+                airHeldItem.OnUseOnAir(new ItemUseOnAirDetails(player, transaction.Slot, transaction.Position));
             }
             return;
         }
@@ -303,18 +300,18 @@ public static class InventoryTransaction {
             return;
         }
 
-        if (player.Dimension is not null && transaction.BlockRuntimeId != 0 && !IsEmptyPosition(transaction.BlockPosition)) {
+        if (player.Dimension is not null && transaction.TargetBlockId != 0 && !IsEmptyPosition(transaction.Position)) {
             Basalt.Core.Blocks.BlockPermutation serverPermutation =
-                player.Dimension.GetPermutation(transaction.BlockPosition.X, transaction.BlockPosition.Y, transaction.BlockPosition.Z);
+                player.Dimension.GetPermutation(transaction.Position.X, transaction.Position.Y, transaction.Position.Z);
 
-            if ((uint)serverPermutation.NetworkId != transaction.BlockRuntimeId) {
-                SendBlockUpdate(player, transaction.BlockPosition, serverPermutation.NetworkId);
+            if ((uint)serverPermutation.NetworkId != transaction.TargetBlockId) {
+                SendBlockUpdate(player, transaction.Position, serverPermutation.NetworkId);
                 return;
             }
         }
 
-        if (transaction.TriggerType == UseItemTriggerRepeat) {
-            ItemStack? repeatItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        if (transaction.TriggerType == ItemUseTriggerType.SimulationTick) {
+            ItemStack? repeatItem = GetHeldItem(inventory, transaction.Slot);
             if (repeatItem is null) {
                 return;
             }
@@ -329,10 +326,10 @@ public static class InventoryTransaction {
             }
 
             if (player.Dimension is not null) {
-                BlockPos blockPosition = transaction.BlockPosition;
+                BlockPos blockPosition = transaction.Position;
 
-                if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
-                    blockPosition = player.LastActionBlockPosition.Value;
+                if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+                    blockPosition = player.LastActionBlockPosition;
                 }
 
                 if (!CanUseItem(player, repeatItem)) {
@@ -341,24 +338,24 @@ public static class InventoryTransaction {
 
                 repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                     player,
-                    transaction.HotBarSlot,
+                    transaction.Slot,
                     blockPosition,
-                    transaction.BlockFace,
+                    transaction.Face,
                     transaction.Position,
-                    transaction.ClickedPosition));
+                    transaction.ClickPosition));
             }
             return;
         }
 
-        if (transaction.TriggerType == UseItemTriggerInitial &&
-            transaction.ClientPrediction != UseItemClientPredictionPlace) {
-            ItemStack? nonPlaceItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        if (transaction.TriggerType == ItemUseTriggerType.PlayerInput &&
+            transaction.ClientInteractPrediction != ItemUsePredictedResult.Success) {
+            ItemStack? nonPlaceItem = GetHeldItem(inventory, transaction.Slot);
             if (nonPlaceItem is not null && nonPlaceItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(nonPlaceItem.Identifier) is null) {
                 if (player.Dimension is not null) {
-                    BlockPos blockPosition = transaction.BlockPosition;
+                    BlockPos blockPosition = transaction.Position;
 
-                    if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
-                        blockPosition = player.LastActionBlockPosition.Value;
+                    if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+                        blockPosition = player.LastActionBlockPosition;
                     }
 
                     if (!CanUseItem(player, nonPlaceItem)) {
@@ -367,21 +364,21 @@ public static class InventoryTransaction {
 
                     nonPlaceItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                         player,
-                        transaction.HotBarSlot,
+                        transaction.Slot,
                         blockPosition,
-                        transaction.BlockFace,
+                        transaction.Face,
                         transaction.Position,
-                        transaction.ClickedPosition));
+                        transaction.ClickPosition));
                 }
                 return;
             }
         }
 
         if (player.Dimension is not null) {
-            BlockPos blockPosition = transaction.BlockPosition;
+            BlockPos blockPosition = transaction.Position;
 
-            if (IsEmptyPosition(blockPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
-                blockPosition = player.LastActionBlockPosition.Value;
+            if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+                blockPosition = player.LastActionBlockPosition;
             }
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
@@ -393,20 +390,20 @@ public static class InventoryTransaction {
                 block.OnInteract(new BlockInteractDetails(
                     player,
                     blockPosition,
-                    transaction.BlockFace,
-                    transaction.ClickedPosition));
+                    transaction.Face,
+                    transaction.ClickPosition));
 
                 return;
             }
         }
 
-        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.Slot);
         if (heldItem is null) {
             return;
         }
 
-        if (player.Gamemode == Gamemode.Survival &&
-            transaction.TriggerType == UseItemTriggerInitial &&
+        if (player.Gamemode == GameType.Survival &&
+            transaction.TriggerType == ItemUseTriggerType.PlayerInput &&
             actions.Count == 0) {
             if (heldItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier) is null) {
                 if (!CanUseItem(player, heldItem)) {
@@ -415,11 +412,11 @@ public static class InventoryTransaction {
 
                 heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                     player,
-                    transaction.HotBarSlot,
-                    transaction.BlockPosition,
-                    transaction.BlockFace,
+                    transaction.Slot,
                     transaction.Position,
-                    transaction.ClickedPosition));
+                    transaction.Face,
+                    transaction.Position,
+                    transaction.ClickPosition));
                 return;
             }
         }
@@ -431,18 +428,18 @@ public static class InventoryTransaction {
         Player.Player player,
         EntityInventoryTrait inventory,
         ItemStack heldItem,
-        UseItemInventoryTransactionData transaction) {
+        ItemUseInventoryTransaction transaction) {
         if (player.Dimension is null) {
             return;
         }
 
-        BlockPos clickedPosition = transaction.BlockPosition;
-        int clickedFace = transaction.BlockFace;
+        BlockPos clickedPosition = transaction.Position;
+        int clickedFace = transaction.Face;
 
         // Logger.Info($"UseItemOnBlock pos:({clickedPosition.X},{clickedPosition.Y},{clickedPosition.Z}) face:{clickedFace} item:{heldItem.Identifier}");
 
-        if (IsEmptyPosition(clickedPosition) && transaction.BlockRuntimeId == 0 && player.LastActionBlockPosition.HasValue) {
-            clickedPosition = player.LastActionBlockPosition.Value;
+        if (IsEmptyPosition(clickedPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+            clickedPosition = player.LastActionBlockPosition;
 
             if (player.LastActionFace is >= 0 and <= 5) {
                 clickedFace = player.LastActionFace;
@@ -470,7 +467,7 @@ public static class InventoryTransaction {
                 player,
                 clickedPosition,
                 clickedFace,
-                transaction.ClickedPosition));
+                transaction.ClickPosition));
 
             SendBlockUpdate(player, clickedPosition, clickedBlock.NetworkId);
             return;
@@ -485,11 +482,11 @@ public static class InventoryTransaction {
 
             heldItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                 player,
-                transaction.HotBarSlot,
+                transaction.Slot,
                 clickedPosition,
                 clickedFace,
                 transaction.Position,
-                transaction.ClickedPosition));
+                transaction.ClickPosition));
 
             Basalt.Core.Blocks.BlockPermutation currentBlock =
                 player.Dimension.GetPermutation(placePosition.X, placePosition.Y, placePosition.Z);
@@ -509,11 +506,11 @@ public static class InventoryTransaction {
             server.Emit(signal);
             if (!signal.Emit()) {
                 SendBlockUpdate(player, placePosition, existingBlock.NetworkId);
-                ItemStack? rollbackItem = inventory.Container.GetItem(transaction.HotBarSlot);
+                ItemStack? rollbackItem = inventory.Container.GetItem(transaction.Slot);
                 if (rollbackItem is not null) {
-                    inventory.Container.SetItem(transaction.HotBarSlot, rollbackItem.Clone());
+                    inventory.Container.SetItem(transaction.Slot, rollbackItem.Clone());
                 }
-                inventory.Container.UpdateSlot(transaction.HotBarSlot);
+                inventory.Container.UpdateSlot(transaction.Slot);
                 inventory.Container.Update();
                 inventory.SyncToPlayer(player);
                 return;
@@ -534,7 +531,7 @@ public static class InventoryTransaction {
             player,
             placePosition,
             clickedFace,
-            transaction.ClickedPosition));
+            transaction.Position));
 
         if (placedBlock is not null && placedBlock.Permutation.NetworkId != placedPermutation.NetworkId) {
             placedPermutation = placedBlock.Permutation;
@@ -544,36 +541,32 @@ public static class InventoryTransaction {
         SendBlockUpdate(player, placePosition, placedPermutation.NetworkId);
 
         player.Dimension.Broadcast(new UpdateBlockPacket {
-            Position = placePosition,
-            NetworkBlockId = (uint)placedPermutation.NetworkId,
-            Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = placePosition,
+            BlockRuntimeID = (uint)placedPermutation.NetworkId,
+            Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
 
-        player.Dimension.Broadcast(new LevelSoundEventPacket {
-            Event = LevelSoundEvent.Place,
-            Position = new Vec3f {
+        player.Dimension.PlaySound(LevelSoundEvent.place.ToProtocolString(), new Vec3 {
                 X = placePosition.X + 0.5f,
                 Y = placePosition.Y + 0.5f,
                 Z = placePosition.Z + 0.5f
             },
-            Data = placedPermutation.NetworkId,
-            ActorIdentifier = string.Empty,
-            BabyMob = false,
-            DisableRelativeVolume = false,
-            UniqueActorId = 0,
-            FireAtPosition = new Optional<Vec3f> { HasValue = false, Value = default }
-        });
+            data: placedPermutation.NetworkId);
 
         heldItem.OnPlace(new ItemPlaceDetails(
             player,
-            transaction.HotBarSlot,
+            transaction.Slot,
             clickedPosition,
             clickedFace,
-            transaction.Position,
-            transaction.ClickedPosition));
+            new Vec3() {
+                X = placePosition.X,
+                Y = placePosition.Y,
+                Z = placePosition.Z,
+            },
+            transaction.ClickPosition));
 
-        if (player.Gamemode != Gamemode.Survival) {
+        if (player.Gamemode != GameType.Survival) {
             return;
         }
 
@@ -590,17 +583,17 @@ public static class InventoryTransaction {
     private static void HandleUseItemOnEntity(
         Player.Player player,
         EntityInventoryTrait inventory,
-        UseItemOnEntityInventoryTransactionData transaction) {
+        ItemUseOnActorInventoryTransaction transaction) {
         if (player.Dimension is null) {
             return;
         }
 
-        ItemStack? heldItem = GetHeldItem(inventory, transaction.HotBarSlot);
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.Slot);
 
         Basalt.Core.Entities.Entity? target = null;
 
         foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities) {
-            if (entity.RuntimeId == transaction.TargetEntityRuntimeId) {
+            if (entity.RuntimeId == transaction.RuntimeId.Value) {
                 target = entity;
                 break;
             }
@@ -611,7 +604,7 @@ public static class InventoryTransaction {
         }
 
         switch (transaction.ActionType) {
-            case 0:
+            case ItemUseOnActorActionType.Interact:
                 target.OnInteract(player, Basalt.Core.Entities.Traits.Enums.EntityInteractMethod.Interact);
 
                 if (heldItem is null) {
@@ -625,12 +618,12 @@ public static class InventoryTransaction {
                 heldItem.OnUseOnEntity(new ItemUseOnEntityDetails(
                     player,
                     target,
-                    transaction.HotBarSlot,
-                    transaction.Position,
-                    transaction.ClickedPosition));
+                    transaction.Slot,
+                    transaction.FromPosition,
+                    transaction.HitPosition));
                 break;
 
-            case 1:
+            case ItemUseOnActorActionType.Attack:
                 if (player.Dimension.World?.Server is Server server) {
                     PlayerAttackEntitySignal signal = new(player, target);
                     server.Emit(signal);
@@ -643,9 +636,9 @@ public static class InventoryTransaction {
                     heldItem.OnUseAttack(new ItemUseAttackDetails(
                         player,
                         target,
-                        transaction.HotBarSlot,
-                        transaction.Position,
-                        transaction.ClickedPosition));
+                        transaction.Slot,
+                        transaction.FromPosition,
+                        transaction.HitPosition));
                 }
 
                 if (!ReferenceEquals(target, player)) {
@@ -698,10 +691,10 @@ public static class InventoryTransaction {
 
     private static void SendBlockUpdate(Player.Player player, BlockPos position, int networkId) {
         player.Send(new UpdateBlockPacket {
-            Position = position,
-            NetworkBlockId = (uint)networkId,
-            Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
-            Layer = UpdateBlockLayerType.Normal
+            BlockPosition = position,
+            BlockRuntimeID = (uint)networkId,
+            Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
+            Layer = (uint)UpdateBlockLayerType.Normal
         });
     }
 
@@ -721,20 +714,42 @@ public static class InventoryTransaction {
         return position.X == 0 && position.Y == 0 && position.Z == 0;
     }
 
-    private static bool FindBlockFromView(Player.Player player, float pitchDegrees, float yawDegrees, out BlockPos blockPosition, out int face) {
-        blockPosition = default;
+    private static bool FindBlockFromView(
+        Player.Player player,
+        float pitchDegrees,
+        float yawDegrees,
+        Vec3 cameraOrientation,
+        out BlockPos blockPosition,
+        out int face) {
+        blockPosition = new BlockPos();
         face = 1;
 
         if (player.Dimension is null) {
             return false;
         }
 
-        float yaw = MathF.PI / 180f * yawDegrees;
-        float pitch = MathF.PI / 180f * pitchDegrees;
+        float directionX;
+        float directionY;
+        float directionZ;
 
-        float directionX = -MathF.Sin(yaw) * MathF.Cos(pitch);
-        float directionY = -MathF.Sin(pitch);
-        float directionZ = MathF.Cos(yaw) * MathF.Cos(pitch);
+        float cameraLengthSquared = cameraOrientation.X * cameraOrientation.X
+            + cameraOrientation.Y * cameraOrientation.Y
+            + cameraOrientation.Z * cameraOrientation.Z;
+
+        if (cameraLengthSquared > 0.0001f) {
+            float inverseLength = 1f / MathF.Sqrt(cameraLengthSquared);
+            directionX = cameraOrientation.X * inverseLength;
+            directionY = cameraOrientation.Y * inverseLength;
+            directionZ = cameraOrientation.Z * inverseLength;
+        }
+        else {
+            float yaw = MathF.PI / 180f * yawDegrees;
+            float pitch = MathF.PI / 180f * pitchDegrees;
+
+            directionX = -MathF.Sin(yaw) * MathF.Cos(pitch);
+            directionY = -MathF.Sin(pitch);
+            directionZ = MathF.Cos(yaw) * MathF.Cos(pitch);
+        }
 
         float startX = player.Location.X;
         float startY = player.Location.Y + 1.62f;

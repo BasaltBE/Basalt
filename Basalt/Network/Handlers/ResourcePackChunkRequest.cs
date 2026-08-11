@@ -2,24 +2,24 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using BedrockProtocol.Packets;
 
 public static class ResourcePackChunkRequest {
     public static void Handle(Server server, NetworkConnection connection, ResourcePackChunkRequestPacket packet) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("ResourcePackChunkRequest.Handle") : default;
 
-        ResourcePack? pack = server.ResourcePacks.GetByUuid(packet.Uuid);
+        ResourcePack? pack = server.ResourcePacks.GetByUuid(packet.ResourceName);
         if (pack is null) {
-            Logger.Warn($"Client requested unknown resource pack: {packet.Uuid}");
+            Logger.Warn($"Client requested unknown resource pack: {packet.ResourceName}");
             return;
         }
 
         uint chunkSize = server.ResourcePacks.ChunkSize;
-        ulong dataOffset = (ulong)packet.ChunkIndex * chunkSize;
+        ulong dataOffset = (ulong)packet.Chunk * chunkSize;
 
         if (dataOffset >= pack.Size) {
-            Logger.Warn($"Client requested out-of-range chunk {packet.ChunkIndex} for pack {pack.Name}.");
+            Logger.Warn($"Client requested out-of-range chunk {packet.Chunk} for pack {pack.Name}.");
             return;
         }
 
@@ -27,10 +27,10 @@ public static class ResourcePackChunkRequest {
         int length = (int)(end - dataOffset);
 
         ResourcePackChunkDataPacket response = new() {
-            Uuid = pack.Uuid.ToString(),
-            ChunkIndex = packet.ChunkIndex,
-            DataOffset = dataOffset,
-            Data = pack.Data.AsSpan((int)dataOffset, length).ToArray()
+            ResourceName = pack.Uuid.ToString(),
+            ChunkID = (uint)packet.Chunk,
+            ByteOffset = dataOffset,
+            ChunkData = pack.Data.AsSpan((int)dataOffset, length).ToArray(),
         };
 
         server.Network.QueuePacket(connection, response);

@@ -1,26 +1,24 @@
 namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Core.Tasks;
-using Basalt.Protocol.Enums;
 using Basalt.Protocol.Io;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
-public static class Login {
+using BedrockProtocol.Packets;
+using BedrockProtocol.Enums;
+
+public static class LoginHandler {
     public static void Handle(Server server, NetworkConnection connection, LoginPacket packet) {
-        if (packet.Protocol != Constants.ProtocolVersion) {
-            DisconnectReason reason = packet.Protocol < Constants.ProtocolVersion
-              ? DisconnectReason.OutdatedClient
-              : DisconnectReason.OutdatedServer;
+        if (packet.ClientNetworkVersion != Constants.ProtocolVersion) {
+            DisconnectFailReason reason = packet.ClientNetworkVersion < Constants.ProtocolVersion
+                ? DisconnectFailReason.OutdatedClient
+                : DisconnectFailReason.OutdatedServer;
 
             DisconnectPacket disconnect = new() {
                 Reason = reason,
-                HideDisconnectionScreen = true,
-                Message = "",
-                FilteredMessage = ""
             };
 
-            server.Network.QueuePacket(connection, disconnect, CompressionMethod.NotPresent);
+            Logger.Warn($"Session failed due to {reason.ToString()}");
+            server.Network.QueuePacket(connection, disconnect, Protocol.Enums.CompressionMethod.NotPresent);
             return;
         }
 

@@ -1,40 +1,39 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.Core.Entities;
-using Basalt.Core.Events;
-using Basalt.Core.Item;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
-using Basalt.Protocol;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Types;
 using Basalt.RakNet;
-using Basalt.Core.Entities.Traits.Types;
-using Basalt.Protocol.Io;
-using Basalt.Core.Blocks;
-
+using BedrockProtocol.Packets;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Types;
 
 public static class ResourcePackClientResponse {
     public static void Handle(Server server, NetworkConnection connection, ResourcePackClientResponsePacket packet) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("ResourcePackResponse.Handle") : default;
 
+        if (packet.Response is ResourcePackClientResponseDownloading initialDownloading
+            && initialDownloading.DownloadingPacks.Count == 1
+            && initialDownloading.DownloadingPacks[0] == "downloadingfinished") {
+            packet.Response = new ResourcePackClientResponseDownloadingFinished();
+        }
+
         switch (packet.Response) {
-            case ResourcePackResponse.Refused:
+            case ResourcePackClientResponseCancel:
                 if (server.Properties.ForceResourcePacks) {
                     DisconnectPacket disconnect = new() {
-                        Reason = DisconnectReason.ResourcePackProblem,
-                        HideDisconnectionScreen = false,
-                        Message = "Required resource packs were refused.",
-                        FilteredMessage = "Required resource packs were refused."
+                        Reason = DisconnectFailReason.ResourcePackProblem,
+                        Messages = new() {
+                            Message = "Required resource packs were refused.",
+                            FilteredMessage = "Required resource packs were refused."
+                        }
                     };
                     server.Network.QueuePacket(connection, disconnect);
                 }
                 return;
 
-            case ResourcePackResponse.SendPacks:
-                foreach (string packId in packet.PacksToDownload) {
+            case ResourcePackClientResponseDownloading downloading:
+                foreach (string packId in downloading.DownloadingPacks) {
                     ResourcePack? pack = server.ResourcePacks.GetByUuid(packId);
                     if (pack is null) {
                         Logger.Warn($"Client requested unknown pack: {packId}");
@@ -43,56 +42,59 @@ public static class ResourcePackClientResponse {
 
                     uint chunkSize = server.ResourcePacks.ChunkSize;
                     ResourcePackDataInfoPacket dataInfo = new() {
-                        Uuid = pack.Uuid.ToString(),
+                        FileHash = pack.Hash.ToString() ?? "",
+                        FileSize = pack.Size,
+                        IsPremiumPack = false,
+                        NumberOfChunks = pack.ChunkCount(chunkSize),
                         ChunkSize = chunkSize,
-                        ChunkCount = pack.ChunkCount(chunkSize),
-                        Size = pack.Size,
-                        Hash = pack.Hash,
-                        Premium = false,
-                        PackType = 6
+                        PackType = 6,
+                        ResourceName = pack.Uuid.ToString() ?? ""
                     };
                     server.Network.QueuePacket(connection, dataInfo);
                 }
                 return;
 
-            case ResourcePackResponse.AllPacksDownloaded:
-                List<ResourcePackStackEntry> stackPacks =
+            case ResourcePackClientResponseDownloadingFinished finished:
+                List<PackInstanceId> stackPacks =
                 [
-                    new ResourcePackStackEntry
-                    {
-                        Uuid = Guid.Parse("0fba4063-dba1-4281-9b89-ff9390653530"),
+                    new PackInstanceId {
                         Version = "1.0.0",
-                        SubPackName = ""
+                        SubPackName = "",
+                        PackID = "0fba4063-dba1-4281-9b89-ff9390653530",
                     }
                 ];
 
                 foreach (ResourcePack loadedPack in server.ResourcePacks.Packs) {
-                    stackPacks.Add(new ResourcePackStackEntry {
-                        Uuid = loadedPack.Uuid,
+                    stackPacks.Add(new PackInstanceId {
+                        PackID = loadedPack.Uuid.ToString(),
                         Version = loadedPack.VersionString,
                         SubPackName = "Education Edition Resource Pack"
                     });
                 }
 
                 ResourcePackStackPacket stack = new() {
-                    MustAccept = server.Properties.ForceResourcePacks,
-                    Packs = stackPacks,
+                    TexturePackRequired = server.Properties.ForceResourcePacks,
                     BaseGameVersion = Constants.MinecraftVersion,
-                    Experiments = [],
-                    ExperimentsPreviouslyToggled = false,
-                    IncludeEditorPacks = true
+                    IncludeEditorPacks = true,
+                    TexturePackList = stackPacks,
+                    Experiments = new() {
+                        ExperimentsEverToggled = false,
+                        Toggles = [],
+                    },
                 };
+                Logger.Info($"ResourcePackStackPacket: Required={stack.TexturePackRequired}, Packs={string.Join(",", stack.TexturePackList.Select(static pack => $"{pack.PackID}/{pack.Version}/{pack.SubPackName}"))}, Base={stack.BaseGameVersion}, Experiments={stack.Experiments.Toggles.Count}, EverToggled={stack.Experiments.ExperimentsEverToggled}, IncludeEditorPacks={stack.IncludeEditorPacks}");
                 server.Network.QueuePacket(connection, stack);
                 return;
 
-            case ResourcePackResponse.Completed:
+            case ResourcePackClientResponseResourcePackStackFinished:
                 if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
                     Console.WriteLine("Resource pack flow completed, but no player session was found.");
                     DisconnectPacket missingSessionDisconnect = new() {
-                        Reason = DisconnectReason.Disconnected,
-                        HideDisconnectionScreen = false,
-                        Message = "Server force closed the connection.",
-                        FilteredMessage = "Server force closed the connection."
+                        Reason = DisconnectFailReason.Disconnected,
+                        Messages = new() {
+                            Message = "Server force closed the connection.",
+                            FilteredMessage = "Server force closed the connection."
+                        }
                     };
                     server.Network.QueuePacket(connection, missingSessionDisconnect);
                     connection.Disconnect();
@@ -103,7 +105,7 @@ public static class ResourcePackClientResponse {
                 return;
 
             default:
-                Console.WriteLine($"Unknown resource pack response: {(byte)packet.Response}");
+                Console.WriteLine($"Unknown resource pack response: {packet.Response}");
                 return;
         }
     }

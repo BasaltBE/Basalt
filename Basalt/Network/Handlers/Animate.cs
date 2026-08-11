@@ -2,8 +2,9 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+
+using BedrockProtocol.Packets;
 
 public static class Animate {
     public static void Handle(Server server, NetworkConnection connection, AnimatePacket packet) {
@@ -11,7 +12,10 @@ public static class Animate {
             return;
         }
 
-        packet.EntityRuntimeId = player.RuntimeId;
+        packet.TargetActorRuntimeID = new BedrockProtocol.Types.ActorRuntimeID() {
+            Value = player.RuntimeId,
+        };
+
         player.Dimension.Broadcast(packet, new BroadcastOptions {
             Center = player.Position,
             Except = [player]

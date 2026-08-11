@@ -3,8 +3,9 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+
+using BedrockProtocol.Packets;
 
 public static class MobEquipment {
     public static void Handle(Server server, NetworkConnection connection, MobEquipmentPacket packet) {
@@ -12,7 +13,7 @@ public static class MobEquipment {
             return;
         }
 
-        if (packet.EntityRuntimeId != 0 && packet.EntityRuntimeId != player.RuntimeId) {
+        if (packet.TargetRuntimeID.Value != 0 && packet.TargetRuntimeID.Value != player.RuntimeId) {
             return;
         }
 
@@ -21,13 +22,13 @@ public static class MobEquipment {
             return;
         }
 
-        if (packet.HotBarSlot >= 9) {
+        if (packet.Slot >= 9) {
             return;
         }
 
-        inventory.SetHeldItem(packet.HotBarSlot);
-        packet.EntityRuntimeId = player.RuntimeId;
-        packet.NewItem = inventory.GetHeldItem()?.ToNetworkStackDescriptor() ?? new();
+        inventory.SetHeldItem(packet.Slot);
+        packet.TargetRuntimeID.Value = player.RuntimeId;
+        packet.Item = inventory.GetHeldItem()?.ToNetworkStackDescriptor() ?? new();
 
         player.Dimension?.Broadcast(packet, new BroadcastOptions {
             Center = player.Position,

@@ -3,12 +3,11 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Player.Traits;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
-using Basalt.Core.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds;
 
+using BedrockProtocol.Packets;
 
 public static class SetLocalPlayerAsInitialized {
     public static void Handle(Server server, NetworkConnection connection, SetLocalPlayerAsInitializedPacket packet) {
@@ -18,8 +17,11 @@ public static class SetLocalPlayerAsInitialized {
         }
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
+        Logger.Info($"Local player initialized: unique={player.UniqueId}, runtime={player.RuntimeId}, tick={tick}");
+
+        player.Attributes.Send(true);
+
         server.Network.QueuePacket(connection, player.CreateActorDataPacket(tick));
-        player.Attributes.Send();
 
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is not null) {
@@ -35,7 +37,6 @@ public static class SetLocalPlayerAsInitialized {
         }
 
         player.Spawned = true;
-
         EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
         if (inventory is not null) {
             inventory.Container.Update();
@@ -45,6 +46,8 @@ public static class SetLocalPlayerAsInitialized {
         if (equipment is not null) {
             equipment.SyncToPlayer(player);
         }
+
+        player.AttributesDirty = true;
 
         string joinMessage = $"§e{player.Username} joined the server.";
         foreach (Player.Player target in server.Players.Values) {

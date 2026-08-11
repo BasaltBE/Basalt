@@ -3,9 +3,9 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds.Dimensions;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
 
+using BedrockProtocol.Packets;
 
 public static class RequestChunkRadius {
     public static void Handle(Server server, NetworkConnection connection, RequestChunkRadiusPacket packet) {
@@ -19,7 +19,7 @@ public static class RequestChunkRadius {
         int radius = Math.Clamp(requestedRadius, 4, Math.Min(maxViewDistance, maxChebyshev));
         int bedrockRadius = ChunkViewMath.SquareToCircle(radius);
 
-        server.Network.SendPacket(connection, new UpdateChunkRadiusPacket {
+        server.Network.SendPacket(connection, new ChunkRadiusUpdatedPacket {
             ChunkRadius = bedrockRadius
         });
 

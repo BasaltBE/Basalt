@@ -1,7 +1,8 @@
 namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
 
 public static class ModalFormResponse {
     public static void Handle(Server server, NetworkConnection connection, ModalFormResponsePacket packet) {
@@ -10,10 +11,15 @@ public static class ModalFormResponse {
             return;
         }
 
-        if (!player.PendingForms.Remove(packet.FormId, out Player.PendingForm? participant)) {
+        if (!player.PendingForms.Remove(packet.FormID, out Player.PendingForm? participant)) {
             return;
         }
+        var canceled = false;
+        if(
+            packet.FormCancelReason == ModalFormCancelReason.UserClosed ||
+            packet.FormCancelReason == ModalFormCancelReason.UserBusy
+        ) canceled = true;
 
-        participant.Complete(packet.Data, packet.Canceled);
+        participant.Complete(packet.JSONResponse, canceled);
     }
 }

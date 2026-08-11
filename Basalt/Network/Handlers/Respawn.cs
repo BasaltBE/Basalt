@@ -2,9 +2,9 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Entities.Traits.Attribute;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Packets;
 
 public static class Respawn {
     public static void Handle(Server server, NetworkConnection connection, RespawnPacket packet) {
@@ -12,11 +12,11 @@ public static class Respawn {
             return;
         }
 
-        if (packet.EntityRuntimeId != player.RuntimeId) {
+        if (packet.PlayerRuntimeId.Value != player.RuntimeId) {
             return;
         }
 
-        if (packet.State != RespawnState.ClientReadyToSpawn) {
+        if (packet.State != PlayerRespawnState.ClientReadyToSpawn) {
             return;
         }
 
@@ -28,8 +28,10 @@ public static class Respawn {
 
         player.Send(new RespawnPacket {
             Position = player.Dimension?.SpawnPosition ?? player.Location,
-            State = RespawnState.ReadyToSpawn,
-            EntityRuntimeId = player.RuntimeId
+            State = PlayerRespawnState.ReadyToSpawn,
+            PlayerRuntimeId = new BedrockProtocol.Types.ActorRuntimeID() {
+                Value = player.RuntimeId,
+            }
         });
 
         if (!player.IsAlive) {

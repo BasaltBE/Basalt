@@ -1,8 +1,8 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core.DDUI;
-using Basalt.Protocol.Packets;
 using Basalt.RakNet;
+using BedrockProtocol.Packets;
 
 public static class ServerboundDataStore {
     public static void Handle(Server server, NetworkConnection connection, ServerboundDataStorePacket packet) {
