@@ -11,16 +11,17 @@ using Basalt.Core.Entities;
 using Basalt.Core.Item;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
-using Basalt.Protocol.Packets;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Core.Player.Traits;
 using ChunkColumn = Chunk.Chunk;
 
 using Entity = Entities.Entity;
+
+using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
+using BedrockProtocol.Enums;
+using BedrockProtocol.Nbt;
 
 public sealed class Dimension : IDisposable {
     private const int CompletedChunkLimit = 128;
@@ -70,13 +71,17 @@ public sealed class Dimension : IDisposable {
     private bool _disposed;
 
     public string Identifier { get; }
-    public DimensionType Type { get; }
+    public DimensionId Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
-    public Vec3f SpawnPosition { get; set; } = new(0, 80, 0);
+    public Vec3 SpawnPosition { get; set; } = new() {
+        X = 0,
+        Y = 80,
+        Z = 0,
+    };
     public World? World { get; internal set; }
     public DimensionGameRules Gamerules { get; } = new();
 
-    public Dimension(string identifier, DimensionType type, WorldProvider provider, Generator? generator = null) {
+    public Dimension(string identifier, DimensionId type, WorldProvider provider, Generator? generator = null) {
         Identifier = identifier;
         Type = type;
         _chunks = [];
@@ -401,10 +406,13 @@ public sealed class Dimension : IDisposable {
 
         if (broadcast) {
             Broadcast(new UpdateBlockPacket {
-                Position = position,
-                NetworkBlockId = (uint)permutation.NetworkId,
-                Flags = UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network,
-                Layer = (UpdateBlockLayerType)layer
+                BlockPosition = position,
+                BlockRuntimeID = (uint)permutation.NetworkId,
+                Flags = (uint)(
+                    UpdateBlockFlagsType.Neighbors |
+                    UpdateBlockFlagsType.Network
+                ),
+                Layer = (uint)layer
             },
             new BroadcastOptions {
                 Radius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256,
@@ -412,9 +420,9 @@ public sealed class Dimension : IDisposable {
         }
 
         if (wasFluid) {
-            Basalt.Core.Blocks.Traits.FluidKind? kind = Basalt.Core.Blocks.Traits.FluidTrait.GetFluidKind(previous);
+            FluidKind? kind = FluidTrait.GetFluidKind(previous);
             if (kind.HasValue) {
-                Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(kind.Value, this, position);
+                FluidTrait.NotifyFluidNeighbors(kind.Value, this, position);
             }
         }
     }
@@ -499,7 +507,7 @@ public sealed class Dimension : IDisposable {
     }
 
     private void RestoreBlockTicks(ChunkColumn chunk) {
-        int subChunkOffset = Type == DimensionType.Overworld ? 4 : 0;
+        int subChunkOffset = Type == DimensionId.Overworld ? 4 : 0;
 
         for (int subChunkIndex = 0; subChunkIndex < chunk.SubChunks.Length; subChunkIndex++) {
             Chunk.SubChunk? subChunk = chunk.SubChunks[subChunkIndex];
@@ -551,7 +559,7 @@ public sealed class Dimension : IDisposable {
     }
 
     private static bool HasTrait<T>(BlockType type) where T : BlockTrait {
-        foreach (Type traitType in type.Traits.Values) {
+        foreach (System.Type traitType in type.Traits.Values) {
             if (traitType == typeof(T)) {
                 return true;
             }
@@ -590,7 +598,7 @@ public sealed class Dimension : IDisposable {
     /// </summary>
     public int Fill(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, BlockPermutation permutation) {
         int filled = 0;
-        Dictionary<(int cx, int cy, int cz), List<BlockChangeEntry>> subChunkEntries = [];
+        Dictionary<(int cx, int cy, int cz), List<UpdateSubChunkNetworkBlockInfo>> subChunkEntries = [];
 
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
@@ -603,32 +611,46 @@ public sealed class Dimension : IDisposable {
                     int cz = z >> 4;
                     var key = (cx, cy, cz);
 
-                    if (!subChunkEntries.TryGetValue(key, out List<BlockChangeEntry>? entries)) {
+                    if (!subChunkEntries.TryGetValue(key, out List<UpdateSubChunkNetworkBlockInfo>? entries)) {
                         entries = [];
                         subChunkEntries[key] = entries;
                     }
 
-                    entries.Add(new BlockChangeEntry {
-                        Position = new BlockPos { X = x, Y = y, Z = z },
-                        BlockRuntimeId = (uint)permutation.NetworkId,
-                        Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
-                        SyncedUpdateEntityUniqueId = 0,
-                        SyncedUpdateType = 0
+                    entries.Add(new UpdateSubChunkNetworkBlockInfo {
+                        Pos = new BlockPos() {
+                            X = x,
+                            Y = y,
+                            Z = z,
+                        },
+                        RuntimeId = (uint)permutation.NetworkId,
+                        SyncMessageEntityUniqueID = 0,
+                        SyncMessageMessage = 0,
+                        UpdateFlags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Neighbors),
                     });
                 }
             }
         }
 
         float broadcastRadius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256;
-        foreach (((int scx, int scy, int scz), List<BlockChangeEntry> entries) in subChunkEntries) {
+        foreach (((int scx, int scy, int scz), List<UpdateSubChunkNetworkBlockInfo> entries) in subChunkEntries) {
             Broadcast(new UpdateSubChunkBlocksPacket {
-                SubChunkX = scx,
-                SubChunkY = scy,
-                SubChunkZ = scz,
-                Blocks = entries
+                SubChunkBlockPosition = new BlockPos() {
+                    X = scx,
+                    Y = scy,
+                    Z = scz,
+                },
+                BlocksChanged = new UpdateSubChunkBlocksChangedInfo() {
+                    BlocksChangedStandards = entries,
+                    BlocksChangedExtras = new List<UpdateSubChunkNetworkBlockInfo>()
+                },
+
+                // SubChunkX = scx,
+                // SubChunkY = scy,
+                // SubChunkZ = scz,
+                // Blocks = entries
             }, new BroadcastOptions {
                 Radius = broadcastRadius,
-                Center = new Vec3f {
+                Center = new Vec3 {
                     X = (scx << 4) + 8,
                     Y = (scy << 4) + 8,
                     Z = (scz << 4) + 8
@@ -816,7 +838,7 @@ public sealed class Dimension : IDisposable {
         FlushPendingEntityChanges();
     }
 
-    public void Broadcast(DataPacket packet, BroadcastOptions? options = null) {
+    public void Broadcast(Packet packet, BroadcastOptions? options = null) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.Broadcast") : default;
         if (World?.Server is not Server server) {
             return;
@@ -835,9 +857,9 @@ public sealed class Dimension : IDisposable {
                 continue;
             }
 
-            if (resolved.Center.HasValue) {
-                Vec3f playerPosition = player.Position;
-                Vec3f centerPosition = resolved.Center.Value;
+            if (resolved.Center is not null) {
+                Vec3 playerPosition = player.Position;
+                Vec3 centerPosition = resolved.Center;
                 float dx = playerPosition.X - centerPosition.X;
                 float dy = playerPosition.Y - centerPosition.Y;
                 float dz = playerPosition.Z - centerPosition.Z;
@@ -849,6 +871,31 @@ public sealed class Dimension : IDisposable {
 
             server.Network.QueuePacket(connection, packet);
         }
+    }
+
+    public void PlaySound(
+        string soundEvent,
+        Vec3 position,
+        float radius = 64f,
+        int data = 0,
+        string actorIdentifier = "",
+        bool babyMob = false,
+        bool disableRelativeVolume = false,
+        long uniqueActorId = 0,
+        Vec3? fireAtPosition = null) {
+        Broadcast(new LevelSoundEventPacket {
+            SoundEvent = soundEvent,
+            Position = position,
+            Data = data,
+            ActorIdentifier = actorIdentifier,
+            IsBaby = babyMob,
+            IsGlobal = disableRelativeVolume,
+            ActorUniqueId = uniqueActorId,
+            FireAtPosition = fireAtPosition
+        }, new BroadcastOptions {
+            Center = position,
+            Radius = radius
+        });
     }
 
     internal void AddEntity(Entity entity) {
@@ -928,7 +975,7 @@ public sealed class Dimension : IDisposable {
         return ((long)x << 32) | (uint)z;
     }
 
-    private static bool InEntityVisibilityRange(Vec3f first, Vec3f second) {
+    private static bool InEntityVisibilityRange(Vec3 first, Vec3 second) {
         float dx = first.X - second.X;
         float dy = first.Y - second.Y;
         float dz = first.Z - second.Z;
@@ -1255,19 +1302,19 @@ public sealed class Dimension : IDisposable {
         return BlockActorIds.TryGetValue(blockIdentifier, out string? value) ? value : blockIdentifier;
     }
 
-    private static Vec3f? GetPacketPosition(DataPacket packet) {
+    private static Vec3? GetPacketPosition(Packet packet) {
         switch (packet) {
             case UpdateBlockPacket updateBlock:
-                return ToVec3f(updateBlock.Position.X, updateBlock.Position.Y, updateBlock.Position.Z);
+                return ToVec3(updateBlock.BlockPosition.X, updateBlock.BlockPosition.Y, updateBlock.BlockPosition.Z);
 
             case BlockActorDataPacket blockActor:
-                return ToVec3f(blockActor.Position.X, blockActor.Position.Y, blockActor.Position.Z);
+                return ToVec3(blockActor.BlockPosition.X, blockActor.BlockPosition.Y, blockActor.BlockPosition.Z);
 
             case LevelEventPacket levelEvent:
                 return levelEvent.Position;
 
             case BlockEventPacket blockEvent:
-                return ToVec3f(blockEvent.Position.X, blockEvent.Position.Y, blockEvent.Position.Z);
+                return ToVec3(blockEvent.BlockPosition.X, blockEvent.BlockPosition.Y, blockEvent.BlockPosition.Z);
 
             case LevelSoundEventPacket levelSoundEvent:
                 return levelSoundEvent.Position;
@@ -1276,15 +1323,19 @@ public sealed class Dimension : IDisposable {
                 return movePlayer.Position;
 
             case MoveActorDeltaPacket moveActorDelta:
-                return moveActorDelta.Position;
+                return new Vec3() {
+                    X = moveActorDelta.MoveData.NewPositionX ?? 0,
+                    Y = moveActorDelta.MoveData.NewPositionX ?? 0,
+                    Z = moveActorDelta.MoveData.NewPositionX ?? 0,
+                };
 
             default:
                 return null;
         }
     }
 
-    private static Vec3f ToVec3f(float x, float y, float z) {
-        return new Vec3f { X = x, Y = y, Z = z };
+    private static Vec3 ToVec3(float x, float y, float z) {
+        return new Vec3 { X = x, Y = y, Z = z };
     }
 
     private void FlushCompletedChunkRequests(int limit) {
@@ -1401,9 +1452,11 @@ public sealed class Dimension : IDisposable {
     }
 }
 
-
-
-
-
-
-
+[Flags]
+public enum UpdateBlockFlagsType : uint {
+    None = 0,
+    Neighbors = 1,
+    Network = 2,
+    NoGraphic = 4,
+    Priority = 8
+}

@@ -1,11 +1,11 @@
 using System.Buffers.Binary;
 using System.Text;
 using Basalt.Core.Player;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
@@ -43,11 +43,11 @@ public sealed class LevelDbProvider : WorldProvider {
         return databasePath;
     }
 
-    public override bool HasChunk(DimensionType dimensionType, int x, int z) {
+    public override bool HasChunk(DimensionId dimensionType, int x, int z) {
         return _chunks.Exists(dimensionType, x, z);
     }
 
-    public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z) {
+    public override ChunkColumn? LoadChunk(DimensionId dimensionType, int x, int z) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.LoadChunk") : default;
         return _chunks.Load(dimensionType, x, z);
     }
@@ -59,7 +59,7 @@ public sealed class LevelDbProvider : WorldProvider {
         _database.Write(batch);
     }
 
-    public override void DeleteChunk(DimensionType dimensionType, int x, int z) {
+    public override void DeleteChunk(DimensionId dimensionType, int x, int z) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("LevelDb.DeleteChunk") : default;
         LevelDbWriteBatch batch = new();
         _chunks.Delete(batch, dimensionType, x, z);
@@ -147,7 +147,7 @@ public sealed class LevelDbProvider : WorldProvider {
         _database.Dispose();
     }
 
-    public override Vec3f? LoadSpawnPosition(DimensionType dimensionType) {
+    public override Vec3? LoadSpawnPosition(DimensionId dimensionType) {
         // Try legacy key first (for migration).
         byte[] legacyKey = LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType);
         byte[]? data = _database.Get(legacyKey);
@@ -155,13 +155,17 @@ public sealed class LevelDbProvider : WorldProvider {
             float lx = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(0, 4));
             float ly = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(4, 4));
             float lz = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(8, 4));
-            return new Vec3f(lx, ly, lz);
+            return new Vec3() {
+                X = lx,
+                Y = ly,
+                Z = lz,
+            };
         }
 
         return null;
     }
 
-    public override void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
+    public override void SaveSpawnPosition(DimensionId dimensionType, Vec3 position) {
         byte[] data = new byte[12];
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(4, 4), position.Y);

@@ -1,9 +1,9 @@
-using Basalt.Protocol;
 using Basalt.Core.Blocks;
-using Basalt.Protocol.Nbt;
 
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+using BedrockProtocol.Nbt;
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
@@ -83,7 +83,7 @@ public sealed class BlockStorage {
             if (nbt) {
                 BlockPermutation permutation = BlockPermutation.Resolve(state);
                 CompoundTag tag = BlockPermutation.ToCompound(permutation);
-                Protocol.Io.NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
+                NBT.WriteTag(writer, tag, new TagOptions(Name: true, Type: true, VarInt: false));
             }
             else {
                 writer.WriteZigZag(state);

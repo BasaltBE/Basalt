@@ -2,13 +2,11 @@ using System.Buffers;
 using Basalt.Core.Blocks;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions.Chunk;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Io;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+
+using BedrockProtocol.Nbt;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
@@ -21,7 +19,7 @@ internal sealed class ChunkStore {
         _entities = entities;
     }
 
-    public bool Exists(DimensionType dimensionType, int x, int z) {
+    public bool Exists(DimensionId dimensionType, int x, int z) {
         byte[]? version = _database.Get(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
         if (version is { Length: > 0 }) {
             return true;
@@ -36,7 +34,7 @@ internal sealed class ChunkStore {
         return legacy is { Length: > 0 };
     }
 
-    public ChunkColumn? Load(DimensionType dimensionType, int x, int z) {
+    public ChunkColumn? Load(DimensionId dimensionType, int x, int z) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("ChunkStore.Load") : default;
 
         ChunkColumn? vanilla = LoadVanilla(dimensionType, x, z);
@@ -69,12 +67,12 @@ internal sealed class ChunkStore {
 
         batch.Put(LevelDbKeyBuilder.BuildVersionKey(chunk.Type, chunk.X, chunk.Z), [22]);
 
-        int offset = chunk.Type == DimensionType.Overworld ? 4 : 0;
-        int minIndex = chunk.Type == DimensionType.Overworld ? -4 : 0;
-        int maxIndex = chunk.Type == DimensionType.Overworld ? 19 : 15;
+        int offset = chunk.Type == DimensionId.Overworld ? 4 : 0;
+        int minIndex = chunk.Type == DimensionId.Overworld ? -4 : 0;
+        int maxIndex = chunk.Type == DimensionId.Overworld ? 19 : 15;
 
         for (int i = minIndex; i <= maxIndex; i++) {
-            int arrayIndex = chunk.Type == DimensionType.Overworld ? i + 4 : i;
+            int arrayIndex = chunk.Type == DimensionId.Overworld ? i + 4 : i;
             byte[] subChunkKey = LevelDbKeyBuilder.BuildSubChunkKey(chunk.Type, chunk.X, chunk.Z, (sbyte)i);
 
             if (arrayIndex < 0 || arrayIndex >= ChunkColumn.MaxSubChunks) {
@@ -113,7 +111,7 @@ internal sealed class ChunkStore {
         DeleteLegacyKeys(batch, chunk.Type, chunk.X, chunk.Z);
     }
 
-    public void Delete(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
+    public void Delete(LevelDbWriteBatch batch, DimensionId dimensionType, int x, int z) {
         _entities.DeleteChunkEntities(batch, dimensionType, x, z);
 
         // Delete vanilla keys.
@@ -122,8 +120,8 @@ internal sealed class ChunkStore {
         batch.Delete(LevelDbKeyBuilder.BuildData2DKey(dimensionType, x, z));
         batch.Delete(LevelDbKeyBuilder.BuildBlockEntityKey(dimensionType, x, z));
 
-        int minIndex = dimensionType == DimensionType.Overworld ? -4 : 0;
-        int maxIndex = dimensionType == DimensionType.Overworld ? 19 : 15;
+        int minIndex = dimensionType == DimensionId.Overworld ? -4 : 0;
+        int maxIndex = dimensionType == DimensionId.Overworld ? 19 : 15;
         for (int i = minIndex; i <= maxIndex; i++) {
             batch.Delete(LevelDbKeyBuilder.BuildSubChunkKey(dimensionType, x, z, (sbyte)i));
         }
@@ -132,14 +130,14 @@ internal sealed class ChunkStore {
         DeleteLegacyKeys(batch, dimensionType, x, z);
     }
 
-    private static void DeleteLegacyKeys(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
+    private static void DeleteLegacyKeys(LevelDbWriteBatch batch, DimensionId dimensionType, int x, int z) {
         batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(dimensionType, x, z));
         batch.Delete(LevelDbKeyBuilder.BuildLegacyChunkKey(x, z));
         batch.Delete(LevelDbKeyBuilder.BuildLegacyBlockStorageListKey(dimensionType, x, z));
         batch.Delete(LevelDbKeyBuilder.BuildLegacyBlockStorageListKey(x, z));
     }
 
-    private ChunkColumn? LoadVanilla(DimensionType dimensionType, int x, int z) {
+    private ChunkColumn? LoadVanilla(DimensionId dimensionType, int x, int z) {
         byte[]? version = _database.Get(LevelDbKeyBuilder.BuildVersionKey(dimensionType, x, z));
         if (version is not { Length: > 0 }) {
             return null;
@@ -147,8 +145,8 @@ internal sealed class ChunkStore {
 
         SubChunk?[] subChunks = new SubChunk?[ChunkColumn.MaxSubChunks];
 
-        int minIndex = dimensionType == DimensionType.Overworld ? -4 : 0;
-        int maxIndex = dimensionType == DimensionType.Overworld ? 19 : 15;
+        int minIndex = dimensionType == DimensionId.Overworld ? -4 : 0;
+        int maxIndex = dimensionType == DimensionId.Overworld ? 19 : 15;
 
         for (int i = minIndex; i <= maxIndex; i++) {
             byte[]? subChunkData = _database.Get(LevelDbKeyBuilder.BuildSubChunkKey(dimensionType, x, z, (sbyte)i));
@@ -162,7 +160,7 @@ internal sealed class ChunkStore {
                 SubChunk subChunk = SubChunk.Deserialize(reader, nbt: true);
                 subChunk.Index = (sbyte)i;
 
-                int arrayIndex = dimensionType == DimensionType.Overworld ? i + 4 : i;
+                int arrayIndex = dimensionType == DimensionId.Overworld ? i + 4 : i;
                 if (arrayIndex >= 0 && arrayIndex < ChunkColumn.MaxSubChunks) {
                     subChunks[arrayIndex] = subChunk;
                 }
@@ -351,7 +349,7 @@ internal sealed class ChunkStore {
         }
     }
 
-    private static ChunkColumn? DecodeChunk(byte[] terrain, DimensionType dimensionType, int x, int z) {
+    private static ChunkColumn? DecodeChunk(byte[] terrain, DimensionId dimensionType, int x, int z) {
         int offset = 0;
         BinaryReader reader = new(terrain, ref offset);
         try {

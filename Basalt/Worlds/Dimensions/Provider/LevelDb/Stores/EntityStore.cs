@@ -1,11 +1,10 @@
 using System.Buffers;
 using System.Buffers.Binary;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Io;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+
+using BedrockProtocol.Nbt;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
@@ -88,7 +87,7 @@ internal sealed class EntityStore {
         batch.Delete(LevelDbKeyBuilder.BuildLegacyEntityListKey(chunk.X, chunk.Z));
     }
 
-    public void DeleteChunkEntities(LevelDbWriteBatch batch, DimensionType dimensionType, int x, int z) {
+    public void DeleteChunkEntities(LevelDbWriteBatch batch, DimensionId dimensionType, int x, int z) {
         HashSet<long> uniqueIds = ReadSavedEntityIds(dimensionType, x, z);
         foreach (long uniqueId in uniqueIds) {
             batch.Delete(LevelDbKeyBuilder.BuildActorPrefixKey(uniqueId));
@@ -100,7 +99,7 @@ internal sealed class EntityStore {
         batch.Delete(LevelDbKeyBuilder.BuildLegacyEntityListKey(x, z));
     }
 
-    private HashSet<long> ReadSavedEntityIds(DimensionType dimensionType, int x, int z) {
+    private HashSet<long> ReadSavedEntityIds(DimensionId dimensionType, int x, int z) {
         HashSet<long> ids = [];
 
         AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildDigpKey(dimensionType, x, z)), dimensionType, x, z, rawIds: true);
@@ -110,7 +109,7 @@ internal sealed class EntityStore {
         return ids;
     }
 
-    private static void AddEntityIds(HashSet<long> ids, byte[]? entityList, DimensionType dimensionType, int x, int z, bool rawIds) {
+    private static void AddEntityIds(HashSet<long> ids, byte[]? entityList, DimensionId dimensionType, int x, int z, bool rawIds) {
         if (entityList is null || entityList.Length == 0) {
             return;
         }
@@ -125,7 +124,7 @@ internal sealed class EntityStore {
         }
     }
 
-    private static List<long>? ReadEntityIds(byte[] entityList, DimensionType dimensionType, int x, int z, bool rawIds) {
+    private static List<long>? ReadEntityIds(byte[] entityList, DimensionId dimensionType, int x, int z, bool rawIds) {
         try {
             int offset = 0;
             BinaryReader reader = new(entityList, ref offset);
@@ -137,7 +136,7 @@ internal sealed class EntityStore {
         }
     }
 
-    private static CompoundTag? ReadEntityPayload(byte[] entityData, DimensionType dimensionType, int x, int z, long uniqueId) {
+    private static CompoundTag? ReadEntityPayload(byte[] entityData, DimensionId dimensionType, int x, int z, long uniqueId) {
         try {
             int offset = 0;
             BinaryReader reader = new(entityData, ref offset);

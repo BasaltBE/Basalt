@@ -33,7 +33,7 @@ internal static class LevelDbKeyBuilder {
         return key;
     }
 
-    public static byte[] BuildLegacyChunkKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyChunkKey(DimensionId dimensionType, int x, int z) {
         byte[] key = new byte[10];
         key[0] = LegacyPrefixChunk;
         key[1] = (byte)dimensionType;
@@ -50,7 +50,7 @@ internal static class LevelDbKeyBuilder {
         return key;
     }
 
-    public static byte[] BuildLegacyBlockStorageListKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyBlockStorageListKey(DimensionId dimensionType, int x, int z) {
         byte[] key = new byte[10];
         key[0] = LegacyPrefixBlockList;
         key[1] = (byte)dimensionType;
@@ -67,7 +67,7 @@ internal static class LevelDbKeyBuilder {
         return key;
     }
 
-    public static byte[] BuildLegacyEntityListKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildLegacyEntityListKey(DimensionId dimensionType, int x, int z) {
         byte[] key = new byte[10];
         key[0] = LegacyPrefixEntityList;
         key[1] = (byte)dimensionType;
@@ -91,13 +91,13 @@ internal static class LevelDbKeyBuilder {
         return key;
     }
 
-    public static byte[] BuildLegacySpawnPositionKey(DimensionType dimensionType) {
+    public static byte[] BuildLegacySpawnPositionKey(DimensionId dimensionType) {
         return [LegacyPrefixSpawnPosition, (byte)dimensionType];
     }
 
 
-    public static byte[] BuildTagKey(DimensionType dimensionType, int x, int z, byte tag) {
-        if (dimensionType == DimensionType.Overworld) {
+    public static byte[] BuildTagKey(DimensionId dimensionType, int x, int z, byte tag) {
+        if (dimensionType == DimensionId.Overworld) {
             byte[] key = new byte[9];
             BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(0, 4), x);
             BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), z);
@@ -113,8 +113,8 @@ internal static class LevelDbKeyBuilder {
         return dimKey;
     }
 
-    public static byte[] BuildSubChunkKey(DimensionType dimensionType, int x, int z, sbyte index) {
-        if (dimensionType == DimensionType.Overworld) {
+    public static byte[] BuildSubChunkKey(DimensionId dimensionType, int x, int z, sbyte index) {
+        if (dimensionType == DimensionId.Overworld) {
             byte[] key = new byte[10];
             BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(0, 4), x);
             BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), z);
@@ -132,19 +132,19 @@ internal static class LevelDbKeyBuilder {
         return dimKey;
     }
 
-    public static byte[] BuildVersionKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildVersionKey(DimensionId dimensionType, int x, int z) {
         return BuildTagKey(dimensionType, x, z, TagVersion);
     }
 
-    public static byte[] BuildData3DKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildData3DKey(DimensionId dimensionType, int x, int z) {
         return BuildTagKey(dimensionType, x, z, TagData3D);
     }
 
-    public static byte[] BuildData2DKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildData2DKey(DimensionId dimensionType, int x, int z) {
         return BuildTagKey(dimensionType, x, z, TagData2D);
     }
 
-    public static byte[] BuildBlockEntityKey(DimensionType dimensionType, int x, int z) {
+    public static byte[] BuildBlockEntityKey(DimensionId dimensionType, int x, int z) {
         return BuildTagKey(dimensionType, x, z, TagBlockEntity);
     }
 
@@ -155,8 +155,8 @@ internal static class LevelDbKeyBuilder {
         return key;
     }
 
-    public static byte[] BuildDigpKey(DimensionType dimensionType, int x, int z) {
-        if (dimensionType == DimensionType.Overworld) {
+    public static byte[] BuildDigpKey(DimensionId dimensionType, int x, int z) {
+        if (dimensionType == DimensionId.Overworld) {
             byte[] key = new byte[12];
             DigpBytes.CopyTo(key, 0);
             BinaryPrimitives.WriteInt32LittleEndian(key.AsSpan(4, 4), x);
@@ -172,12 +172,12 @@ internal static class LevelDbKeyBuilder {
         return dimKey;
     }
 
-    public static int WriteDigpKey(Span<byte> destination, DimensionType dimensionType, int x, int z) {
+    public static int WriteDigpKey(Span<byte> destination, DimensionId dimensionType, int x, int z) {
         DigpBytes.CopyTo(destination);
         BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4, 4), x);
         BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8, 4), z);
 
-        if (dimensionType == DimensionType.Overworld) {
+        if (dimensionType == DimensionId.Overworld) {
             return 12;
         }
 

@@ -1,12 +1,13 @@
 using Basalt.Binary;
 using Basalt.Core.Blocks;
 using Basalt.Core.Profiling;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Io;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+
+using BedrockProtocol.Types;
+using BedrockProtocol.Nbt;
+
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
@@ -17,7 +18,7 @@ public sealed class Chunk {
     private readonly Dictionary<(int X, int Y, int Z), Block> _blockActors = [];
     private readonly Dictionary<long, CompoundTag> _entities = [];
 
-    public DimensionType Type { get; }
+    public DimensionId Type { get; }
     public int X { get; }
     public int Z { get; }
     public long Hash { get; }
@@ -27,7 +28,7 @@ public sealed class Chunk {
     public bool Dirty;
     public bool Simulated;
 
-    public Chunk(int x, int z, DimensionType type, SubChunk?[]? subChunks = null) {
+    public Chunk(int x, int z, DimensionId type, SubChunk?[]? subChunks = null) {
         X = x;
         Z = z;
         Type = type;
@@ -93,7 +94,7 @@ public sealed class Chunk {
     }
 
     public SubChunk GetSubChunk(int index) {
-        int offset = Type == DimensionType.Overworld ? 4 : 0;
+        int offset = Type == DimensionId.Overworld ? 4 : 0;
 
         if (index + offset < 0) {
             index = 0;
@@ -124,7 +125,7 @@ public sealed class Chunk {
     }
 
     public void SetSubChunk(int index, SubChunk subChunk) {
-        int offset = Type == DimensionType.Overworld ? 4 : 0;
+        int offset = Type == DimensionId.Overworld ? 4 : 0;
 
         if (index + offset < 0) {
             index = 0;
@@ -158,10 +159,10 @@ public sealed class Chunk {
     /// Bedrock clients always read dimension.height/16 biome storages from LevelChunk,
     /// independent of how many subchunks were sent
     /// </summary>
-    public static int GetBiomeSendCount(DimensionType type) {
+    public static int GetBiomeSendCount(DimensionId type) {
         return type switch {
-            DimensionType.Nether => 8,
-            DimensionType.End => 16,
+            DimensionId.Nether => 8,
+            DimensionId.End => 16,
             _ => MaxSubChunks
         };
     }
@@ -351,7 +352,7 @@ public sealed class Chunk {
         }
 
         for (int index = 0; index < subChunkCount; index++) {
-            int offset = chunk.Type == DimensionType.Overworld ? 4 : 0;
+            int offset = chunk.Type == DimensionId.Overworld ? 4 : 0;
             SubChunk? subChunk = chunk.SubChunks[index];
 
             if (subChunk is null) {
@@ -419,7 +420,7 @@ public sealed class Chunk {
         return writer.Offset;
     }
 
-    public static Chunk Deserialize(DimensionType type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null) {
+    public static Chunk Deserialize(DimensionId type, int x, int z, BinaryReader reader, bool nbt = false, bool? biomeNbt = null) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Chunk.Deserialize") : default;
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
 
@@ -460,7 +461,7 @@ public sealed class Chunk {
         }
         else {
             int biomeCount = GetBiomeSendCount(type);
-            int offset = type == DimensionType.Overworld ? 4 : 0;
+            int offset = type == DimensionId.Overworld ? 4 : 0;
             bool biomesDisk = biomeNbt ?? false;
 
             for (int i = 0; i < biomeCount; i++) {
@@ -525,7 +526,7 @@ public sealed class Chunk {
     }
 
     private SubChunk? PeekSubChunk(int index) {
-        int offset = Type == DimensionType.Overworld ? 4 : 0;
+        int offset = Type == DimensionId.Overworld ? 4 : 0;
         int resolved = index + offset;
 
         if (resolved < 0 || resolved >= MaxSubChunks) {

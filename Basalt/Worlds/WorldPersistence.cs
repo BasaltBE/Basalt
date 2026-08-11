@@ -2,10 +2,12 @@ namespace Basalt.Core.Worlds;
 
 using System.Collections.Concurrent;
 using System.Threading.Channels;
+using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Chunk;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
 
 internal sealed class WorldPersistence : IDisposable {
     private readonly WorldProvider _provider;
@@ -23,7 +25,7 @@ internal sealed class WorldPersistence : IDisposable {
         _worker = Task.Run(Loop);
     }
 
-    public bool ChunkPending(DimensionType type, int x, int z) {
+    public bool ChunkPending(DimensionId type, int x, int z) {
         return _chunkSaves.ContainsKey(new ChunkSaveKey(type, x, z));
     }
 
@@ -40,7 +42,7 @@ internal sealed class WorldPersistence : IDisposable {
         }
     }
 
-    public void WaitForChunk(DimensionType type, int x, int z) {
+    public void WaitForChunk(DimensionId type, int x, int z) {
         WaitForChunk(new ChunkSaveKey(type, x, z));
     }
 
@@ -55,7 +57,7 @@ internal sealed class WorldPersistence : IDisposable {
         }
     }
 
-    public void SaveSpawnPosition(DimensionType type, Basalt.Protocol.Types.Vec3f position) {
+    public void SaveSpawnPosition(DimensionId type, Vec3 position) {
         Write(new SpawnWork(type, position));
     }
 
@@ -143,8 +145,8 @@ internal sealed class WorldPersistence : IDisposable {
     private abstract record PersistenceWork;
     private sealed record ChunkWork(Chunk Chunk, ChunkSaveKey Key, TaskCompletionSource Completion) : PersistenceWork;
     private sealed record PlayerWork(string Xuid, CompoundTag Data) : PersistenceWork;
-    private sealed record SpawnWork(DimensionType Type, Basalt.Protocol.Types.Vec3f Position) : PersistenceWork;
+    private sealed record SpawnWork(DimensionId Type, Vec3 Position) : PersistenceWork;
     private sealed record FlushWork(TaskCompletionSource Completion) : PersistenceWork;
 
-    private readonly record struct ChunkSaveKey(DimensionType Type, int X, int Z);
+    private readonly record struct ChunkSaveKey(DimensionId Type, int X, int Z);
 }

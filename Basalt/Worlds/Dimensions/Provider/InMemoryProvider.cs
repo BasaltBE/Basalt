@@ -6,11 +6,11 @@ namespace Basalt.Core.Worlds.Dimensions.Provider;
 using System.Collections.Concurrent;
 
 public sealed class InMemoryProvider : WorldProvider {
-    private readonly ConcurrentDictionary<(DimensionType, long), ChunkColumn> _chunks = [];
+    private readonly ConcurrentDictionary<(DimensionId, long), ChunkColumn> _chunks = [];
     public override string Identifier => "memory";
-    public override bool HasChunk(DimensionType dimensionType, int x, int z) => _chunks.ContainsKey((dimensionType, HashChunk(x, z)));
+    public override bool HasChunk(DimensionId dimensionType, int x, int z) => _chunks.ContainsKey((dimensionType, HashChunk(x, z)));
 
-    public override ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z) {
+    public override ChunkColumn? LoadChunk(DimensionId dimensionType, int x, int z) {
         _chunks.TryGetValue((dimensionType, HashChunk(x, z)), out ChunkColumn? chunk);
         return chunk;
     }
@@ -19,7 +19,7 @@ public sealed class InMemoryProvider : WorldProvider {
         _chunks[(chunk.Type, HashChunk(chunk.X, chunk.Z))] = chunk;
     }
 
-    public override void DeleteChunk(DimensionType dimensionType, int x, int z) {
+    public override void DeleteChunk(DimensionId dimensionType, int x, int z) {
         _chunks.TryRemove((dimensionType, HashChunk(x, z)), out _);
     }
 

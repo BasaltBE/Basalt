@@ -23,7 +23,7 @@ public sealed class SuperFlatGenerator : Generator {
         ];
     }
 
-    public override ChunkColumn Generate(DimensionType dimensionType, int x, int z) {
+    public override ChunkColumn Generate(DimensionId dimensionType, int x, int z) {
         ChunkColumn chunk = new(x, z, dimensionType);
 
         for (int lx = 0; lx < 16; lx++) {

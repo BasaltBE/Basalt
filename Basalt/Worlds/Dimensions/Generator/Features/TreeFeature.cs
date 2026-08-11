@@ -369,7 +369,7 @@ public sealed class TreeFeature {
     }
 
     private bool Populate(
-        DimensionType dimensionType,
+        DimensionId dimensionType,
         int x,
         int y,
         int z,
@@ -383,7 +383,7 @@ public sealed class TreeFeature {
             return false;
         }
 
-        int minY = dimensionType == DimensionType.Overworld ? -64 : 0;
+        int minY = dimensionType == DimensionId.Overworld ? -64 : 0;
         int maxY = minY + ChunkColumn.MaxSubChunks * 16 - 1;
 
         foreach (((int px, int py, int pz), TreePlacement placement) in placements) {

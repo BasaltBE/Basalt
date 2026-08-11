@@ -112,7 +112,7 @@ public sealed class MangroveTreeFeature {
 
         AddDecorators(dimension, placements, source);
 
-        int minY = dimension.Type == DimensionType.Overworld ? -64 : 0;
+        int minY = dimension.Type == DimensionId.Overworld ? -64 : 0;
         int maxY = minY + Chunk.Chunk.MaxSubChunks * 16 - 1;
         foreach (((int _, int blockY, int _), _) in placements) {
             if (blockY < minY || blockY > maxY) {

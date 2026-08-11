@@ -3,11 +3,11 @@ namespace Basalt.Core.Worlds;
 using System.Diagnostics.CodeAnalysis;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Dimension = Dimensions.Dimension;
+using Basalt.Core.Worlds.Dimensions;
+using BedrockProtocol.Types;
 
 public sealed class World : IDisposable, Tickable {
     private readonly Dictionary<string, Dimension> _dimensions = new(StringComparer.OrdinalIgnoreCase);
@@ -88,8 +88,8 @@ public sealed class World : IDisposable, Tickable {
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public Dimension CreateDimension(string identifier, DimensionType type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
-        return CreateDimension(identifier, type, new Vec3f(0, 80, 0), generatorType, generatorArgs);
+    public Dimension CreateDimension(string identifier, DimensionId type, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
+        return CreateDimension(identifier, type, new Vec3() { X = 0, Y = 80, Z = 0 }, generatorType, generatorArgs);
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public sealed class World : IDisposable, Tickable {
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public Dimension CreateDimension(string identifier, DimensionType type, Vec3f spawnPosition, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
+    public Dimension CreateDimension(string identifier, DimensionId type, Vec3 spawnPosition, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type generatorType, params object[] generatorArgs) {
         if (!typeof(Generator).IsAssignableFrom(generatorType))
             throw new ArgumentException($"Generator type must inherit {nameof(Generator)}.", nameof(generatorType));
 
@@ -113,9 +113,9 @@ public sealed class World : IDisposable, Tickable {
         Dimension dimension = new(identifier, type, Provider, generator);
         dimension.SpawnPosition = spawnPosition;
 
-        Vec3f? stored = Provider.LoadSpawnPosition(type);
-        if (stored.HasValue) {
-            dimension.SpawnPosition = stored.Value;
+        Vec3? stored = Provider.LoadSpawnPosition(type);
+        if (stored is not null) {
+            dimension.SpawnPosition = stored;
         }
 
         AddDimension(dimension);
@@ -158,7 +158,7 @@ public sealed class World : IDisposable, Tickable {
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    public Dimension? GetDimension(DimensionType type) =>
+    public Dimension? GetDimension(DimensionId type) =>
         _dimensions.Values.FirstOrDefault(d => d.Type == type);
 
     /// <summary>

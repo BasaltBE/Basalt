@@ -1,6 +1,7 @@
 using Basalt.Protocol.Enums;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 using Basalt.Protocol.Types;
+using BedrockProtocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
@@ -18,16 +19,16 @@ public abstract class WorldProvider : IDisposable {
     /// <param name="x"></param>
     /// <param name="z"></param>
     /// <returns></returns>
-    public abstract bool HasChunk(DimensionType dimensionType, int x, int z);
-    public abstract ChunkColumn? LoadChunk(DimensionType dimensionType, int x, int z);
+    public abstract bool HasChunk(DimensionId dimensionType, int x, int z);
+    public abstract ChunkColumn? LoadChunk(DimensionId dimensionType, int x, int z);
     public abstract void SaveChunk(ChunkColumn chunk);
-    public abstract void DeleteChunk(DimensionType dimensionType, int x, int z);
+    public abstract void DeleteChunk(DimensionId dimensionType, int x, int z);
 
-    public virtual Vec3f? LoadSpawnPosition(DimensionType dimensionType) {
+    public virtual Vec3? LoadSpawnPosition(DimensionId dimensionType) {
         return null;
     }
 
-    public virtual void SaveSpawnPosition(DimensionType dimensionType, Vec3f position) {
+    public virtual void SaveSpawnPosition(DimensionId dimensionType, Vec3 position) {
     }
 
     public virtual CompoundTag? LoadPlayerData(string xuid) {

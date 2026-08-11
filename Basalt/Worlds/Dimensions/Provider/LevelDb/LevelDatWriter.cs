@@ -1,10 +1,10 @@
 using System.Buffers;
 using System.Buffers.Binary;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Io;
-using Basalt.Protocol.Nbt;
-using Basalt.Protocol.Types;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+using BedrockProtocol.Nbt;
+using BedrockProtocol.Types;
+using BedrockProtocol.Enums;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
@@ -27,8 +27,8 @@ public static class LevelDatWriter {
     private static CompoundTag BuildRootTag(World world) {
         CompoundTag root = new() { Name = string.Empty };
 
-        Dimension? overworld = world.GetDimension(DimensionType.Overworld);
-        Vec3f spawn = overworld?.SpawnPosition ?? new Vec3f(0, 80, 0);
+        Dimension? overworld = world.GetDimension(DimensionId.Overworld);
+        Vec3 spawn = overworld?.SpawnPosition ?? new Vec3(){ X = 0, Y = 80, Z = 0};
         Difficulty difficulty = overworld?.Difficulty ?? Difficulty.Normal;
 
         // Core world properties.
