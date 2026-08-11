@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Basalt.Protocol.Nbt;
+using BedrockProtocol.Nbt;
 
 namespace Basalt.Core.Blocks.Components;
 
