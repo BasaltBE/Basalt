@@ -28,17 +28,10 @@ public sealed class DisconnectPacket : Packet {
 
     public override void Deserialize(BinaryReader reader) {
         Reason = (global::BedrockProtocol.Enums.DisconnectFailReason)reader.ReadZigZag();
-        if (reader.ReadBool()) {
-            uint variant2 = reader.ReadVarUInt();
-            switch (variant2) {
-                case 0:
-                    DisconnectPacketMessages readValue3002 = new();
-                    readValue3002.Read(reader);
-                    Messages = readValue3002;
-                    break;
-                default:
-                    throw new FormatException($"Unknown union variant {variant2} for Messages.");
-            }
+        if (!reader.ReadBool()) {
+            DisconnectPacketMessages readValue2 = new();
+            readValue2.Read(reader);
+            Messages = readValue2;
         } else {
             Messages = default;
         }
@@ -46,16 +39,9 @@ public sealed class DisconnectPacket : Packet {
 
     public override void Serialize(BinaryWriter writer) {
         writer.WriteZigZag((int)Reason);
-        writer.WriteBool(Messages is not null);
+        writer.WriteBool(Messages is null);
         if (Messages is { } optionalValue3) {
-            switch (optionalValue3) {
-                case DisconnectPacketMessages variantValue0:
-                    writer.WriteVarUInt(0);
-                    variantValue0.Write(writer);
-                    break;
-                default:
-                    throw new InvalidOperationException("Unsupported union value for optionalValue3.");
-            }
+            optionalValue3.Write(writer);
         }
     }
 }
