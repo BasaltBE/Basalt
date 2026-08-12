@@ -11,6 +11,7 @@ using BedrockProtocol.Types;
 public static class ResourcePackClientResponse {
     public static void Handle(Server server, NetworkConnection connection, ResourcePackClientResponsePacket packet) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("ResourcePackResponse.Handle") : default;
+        // Logger.Info($"Response: {packet.Response}");
 
         if (packet.Response is ResourcePackClientResponseDownloading initialDownloading
             && initialDownloading.DownloadingPacks.Count == 1
@@ -28,6 +29,7 @@ public static class ResourcePackClientResponse {
                             FilteredMessage = "Required resource packs were refused."
                         }
                     };
+                    Logger.Warn("Session failed due to Required resource packs were refused.");
                     server.Network.QueuePacket(connection, disconnect);
                 }
                 return;

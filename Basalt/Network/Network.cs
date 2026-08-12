@@ -739,6 +739,10 @@ public sealed class NetworkHandler {
             return false;
         }
 
+        // if (packet is ResourcePackClientResponsePacket) {
+        //     Logger.Info($"ResourcePackClientResponse bytes: {Convert.ToHexString(packetBuffer)}");
+        // }
+
         packet.Deserialize(reader);
 
         if (packet is ResourcePackClientResponsePacket resourcePackResponse) {
