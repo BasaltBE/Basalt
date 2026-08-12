@@ -181,7 +181,7 @@ public sealed class Block {
     }
 
     public void OnBreak(BlockBreakDetails details) {
-        if (details.Player.Gamemode == GameType.Creative && details.Player.Dimension is { } dimension) {
+        if (details.Player.Gamemode != GameType.Creative && details.Player.Dimension is { } dimension) {
             if (MeetsToolTierRequirement(details.Player)) {
                 ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
                 List<ItemStack> drops = GetDrops();
