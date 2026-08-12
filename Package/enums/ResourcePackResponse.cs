@@ -1,12 +1,14 @@
+#nullable enable
+
 using System;
 
 namespace BedrockProtocol.Enums;
 
 public enum ResourcePackResponse {
-    Cancel = 1,
-    Downloading = 2,
-    DownloadingFinished = 3,
-    ResourcePackStackFinished = 4,
+    Cancel = 0,
+    Downloading = 1,
+    DownloadingFinished = 2,
+    ResourcePackStackFinished = 3,
 }
 
 public static class ResourcePackResponseExtensions {
