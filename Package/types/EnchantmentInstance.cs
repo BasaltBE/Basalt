@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using BedrockProtocol.Enums;
 using BinaryReader = Basalt.Binary.BinaryReader;

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;

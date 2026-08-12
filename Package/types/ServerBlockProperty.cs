@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using BedrockProtocol.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;

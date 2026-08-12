@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using BedrockProtocol.Enums;
@@ -15,8 +17,9 @@ public sealed class ResourcePackClientResponseDownloading : ResourcePackClientRe
         if (constValue0 != global::BedrockProtocol.Enums.ResourcePackResponse.Downloading) {
             throw new FormatException($"Expected downloading for ResponseType, got {constValue0}.");
         }
-        DownloadingPacks = new List<string>();
-        while (reader.Remaining > 0) {
+        int count2 = checked((int)reader.ReadVarUInt());
+        DownloadingPacks = new List<string>(count2);
+        for (int i2 = 0; i2 < count2; i2++) {
             string item2 = default!;
             item2 = reader.ReadVarString();
             DownloadingPacks.Add(item2);
@@ -25,6 +28,7 @@ public sealed class ResourcePackClientResponseDownloading : ResourcePackClientRe
 
     public void Write(BinaryWriter writer) {
         writer.WriteInt8((sbyte)global::BedrockProtocol.Enums.ResourcePackResponse.Downloading);
+        writer.WriteVarUInt(checked((uint)DownloadingPacks.Count));
         foreach (var item3 in DownloadingPacks) {
             writer.WriteVarString(item3);
         }
