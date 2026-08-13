@@ -514,7 +514,7 @@ internal sealed class LoginTask : ServerTask {
             AnimatedImageData = animations,
 
             GeometryData =
-                DecodeString(data.SkinGeometryData),
+                DecodeBase64(data.SkinGeometryData),
 
             GeometryDataMinEngineVersion =
                 DecodeString(data.SkinGeometryDataEngineVersion),
