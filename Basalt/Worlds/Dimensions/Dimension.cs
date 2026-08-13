@@ -43,6 +43,7 @@ public sealed class Dimension : IDisposable {
     };
 
     private readonly Dictionary<long, ChunkColumn> _chunks;
+    private readonly object _chunkAccessLock = new();
     private readonly Dictionary<long, int> _chunkViewers;
     private readonly HashSet<long> _pendingUnloads = [];
     private readonly HashSet<Entity> _entities;
@@ -143,12 +144,13 @@ public sealed class Dimension : IDisposable {
     }
 
     public ChunkColumn GetOrCreateChunk(int x, int z) {
-        ChunkColumn? chunk = GetOrLoadChunk(x, z);
-        if (chunk is not null) {
-            return chunk;
-        }
+        lock (_chunkAccessLock) {
+            ChunkColumn? chunk = GetOrLoadChunk(x, z);
+            if (chunk is not null) {
+                return chunk;
+            }
 
-        long hash = HashChunk(x, z);
+            long hash = HashChunk(x, z);
 
         if (_provider.HasChunk(Type, x, z)) {
             Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
@@ -165,20 +167,23 @@ public sealed class Dimension : IDisposable {
         if (chunk.Simulated) {
             RestoreBlockTicks(chunk);
         }
-        return chunk;
+            return chunk;
+        }
     }
 
     public void SetChunk(ChunkColumn chunk) {
-        long hash = HashChunk(chunk.X, chunk.Z);
-        World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
-        chunk.Simulated = _simulatedChunks.Contains(hash);
-        _chunks[hash] = chunk;
-        MaterializeEntities(chunk);
-        if (chunk.Simulated) {
-            RestoreBlockTicks(chunk);
+        lock (_chunkAccessLock) {
+            long hash = HashChunk(chunk.X, chunk.Z);
+            World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
+            chunk.Simulated = _simulatedChunks.Contains(hash);
+            _chunks[hash] = chunk;
+            MaterializeEntities(chunk);
+            if (chunk.Simulated) {
+                RestoreBlockTicks(chunk);
+            }
+            SyncEntitiesToStorage(chunk);
+            _provider.SaveChunk(chunk);
         }
-        SyncEntitiesToStorage(chunk);
-        _provider.SaveChunk(chunk);
     }
 
     public void RequestChunks(ReadOnlySpan<(int X, int Z)> chunks, Action<ChunkColumn> ready) {
@@ -226,14 +231,16 @@ public sealed class Dimension : IDisposable {
     }
 
     public bool RemoveChunk(int x, int z) {
-        if (HashChunk(x, z) == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
-            return false;
-        }
+        lock (_chunkAccessLock) {
+            if (HashChunk(x, z) == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
+                return false;
+            }
 
         World?.Persistence.WaitForChunk(Type, x, z);
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
-        return _chunks.Remove(hash);
+            return _chunks.Remove(hash);
+        }
     }
 
     public void SaveDirtyChunks() {
@@ -281,7 +288,8 @@ public sealed class Dimension : IDisposable {
     }
 
     public bool UnloadChunk(int x, int z, bool save = true) {
-        long hash = HashChunk(x, z);
+        lock (_chunkAccessLock) {
+            long hash = HashChunk(x, z);
         if (hash == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
             return false;
         }
@@ -314,7 +322,8 @@ public sealed class Dimension : IDisposable {
         if (removed) {
             UnloadEntities(chunk);
         }
-        return removed;
+            return removed;
+        }
     }
 
     public void AddChunkViewer(int x, int z) {
@@ -398,7 +407,25 @@ public sealed class Dimension : IDisposable {
         return chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
     }
 
+    public bool TryGetLoadedPermutation(int x, int y, int z, out BlockPermutation? permutation, int layer = 0) {
+        lock (_chunkAccessLock) {
+            if (!_chunks.TryGetValue(HashChunk(x >> 4, z >> 4), out ChunkColumn? chunk)) {
+                permutation = null;
+                return false;
+            }
+
+            permutation = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
+            return true;
+        }
+    }
+
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true, bool broadcast = true) {
+        lock (_chunkAccessLock) {
+            SetPermutationLocked(x, y, z, permutation, layer, dirty, broadcast);
+        }
+    }
+
+    private void SetPermutationLocked(int x, int y, int z, BlockPermutation permutation, int layer, bool dirty, bool broadcast) {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
 
         BlockPermutation previous = chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
@@ -1021,23 +1048,25 @@ public sealed class Dimension : IDisposable {
     }
 
     private ChunkColumn? GetOrLoadChunk(int x, int z) {
-        long hash = HashChunk(x, z);
-        if (_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+        lock (_chunkAccessLock) {
+            long hash = HashChunk(x, z);
+            if (_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+                return chunk;
+            }
+
+            World?.Persistence.WaitForChunk(Type, x, z);
+            chunk = _provider.LoadChunk(Type, x, z);
+            if (chunk is not null) {
+                chunk.Simulated = _simulatedChunks.Contains(hash);
+                _chunks[hash] = chunk;
+                MaterializeEntities(chunk);
+                if (chunk.Simulated) {
+                    RestoreBlockTicks(chunk);
+                }
+            }
+
             return chunk;
         }
-
-        World?.Persistence.WaitForChunk(Type, x, z);
-        chunk = _provider.LoadChunk(Type, x, z);
-        if (chunk is not null) {
-            chunk.Simulated = _simulatedChunks.Contains(hash);
-            _chunks[hash] = chunk;
-            MaterializeEntities(chunk);
-            if (chunk.Simulated) {
-                RestoreBlockTicks(chunk);
-            }
-        }
-
-        return chunk;
     }
 
     private static int GetChunkLocal(int value) {
