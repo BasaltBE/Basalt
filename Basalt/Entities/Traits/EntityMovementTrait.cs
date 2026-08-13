@@ -5,6 +5,7 @@ using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Core.Traits;
+using Basalt.Core.Worlds.Dimensions;
 using BedrockProtocol.Packets;
 using BedrockProtocol.Types;
 
@@ -278,6 +279,8 @@ public sealed class EntityMovementTrait : EntityTrait {
                 ForceMoveLocalEntity = false,
                 ForceCompletion = false
             }
+        }, new BroadcastOptions {
+            Except = Entity.IsPlayer() ? [Entity] : null
         });
 
         if (!Entity.IsPlayer()) {
