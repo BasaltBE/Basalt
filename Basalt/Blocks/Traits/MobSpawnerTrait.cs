@@ -133,8 +133,6 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
         if (Delay > 0) {
             Delay--;
-            WriteStorage(dimension, position);
-            BroadcastUpdate(dimension, position);
             return;
         }
 
