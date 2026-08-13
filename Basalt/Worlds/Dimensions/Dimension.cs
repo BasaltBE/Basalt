@@ -64,6 +64,11 @@ public sealed class Dimension : IDisposable {
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
+    private Vec3 _spawnPosition = new() {
+        X = 0,
+        Y = 80,
+        Z = 0,
+    };
     private ChunkColumn[]? _autoSaveChunks;
     private int _autoSaveIndex;
     private int _simulationDistance = -1;
@@ -73,12 +78,25 @@ public sealed class Dimension : IDisposable {
     public string Identifier { get; }
     public DimensionId Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
-    public Vec3 SpawnPosition { get; set; } = new() {
-        X = 0,
-        Y = 80,
-        Z = 0,
-    };
-    public World? World { get; internal set; }
+    public Vec3 SpawnPosition {
+        get => _spawnPosition;
+        set {
+            _spawnPosition = value;
+            if (World is not null) {
+                GetOrCreateChunk(WorldToChunk(value.X), WorldToChunk(value.Z));
+            }
+        }
+    }
+    public World? World {
+        get => _world;
+        internal set {
+            _world = value;
+            if (value is not null) {
+                GetOrCreateChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z));
+            }
+        }
+    }
+    private World? _world;
     public DimensionGameRules Gamerules { get; } = new();
 
     public Dimension(string identifier, DimensionId type, WorldProvider provider, Generator? generator = null) {
@@ -208,6 +226,10 @@ public sealed class Dimension : IDisposable {
     }
 
     public bool RemoveChunk(int x, int z) {
+        if (HashChunk(x, z) == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
+            return false;
+        }
+
         World?.Persistence.WaitForChunk(Type, x, z);
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
@@ -260,6 +282,10 @@ public sealed class Dimension : IDisposable {
 
     public bool UnloadChunk(int x, int z, bool save = true) {
         long hash = HashChunk(x, z);
+        if (hash == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
+            return false;
+        }
+
         if (!_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
             return false;
         }
@@ -333,6 +359,10 @@ public sealed class Dimension : IDisposable {
         }
 
         foreach (long hash in _chunks.Keys) {
+            if (hash == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
+                continue;
+            }
+
             if (_chunkViewers.ContainsKey(hash)) {
                 continue;
             }
@@ -702,6 +732,10 @@ public sealed class Dimension : IDisposable {
             _chunkSweepBuffer.Clear();
 
             foreach (long hash in _pendingUnloads) {
+                if (hash == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
+                    continue;
+                }
+
                 if (_chunkViewers.ContainsKey(hash)) {
                     continue;
                 }
