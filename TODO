@@ -1,4 +1,0 @@
-ocasionally run 
-dotnet format --diagnostics=IDE0001 IDE0005
-
-
