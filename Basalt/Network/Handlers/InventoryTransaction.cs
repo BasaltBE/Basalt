@@ -126,19 +126,20 @@ public static class InventoryTransaction {
         EntityInventoryTrait inventory,
         List<InventoryAction> actions,
         List<LegacySetSlot> legacySetItemSlots) {
+        for (int i = 0; i < actions.Count; i++) {
+            InventoryAction action = actions[i];
+            if (action.Source.SourceType != InventorySourceType.WorldInteraction) {
+                continue;
+            }
+
+            if (!SpawnWorldDrop(player, inventory, action, actions)) {
+                inventory.Container.Update();
+                return;
+            }
+        }
+
         foreach (InventoryAction action in actions) {
             if (action.Source.SourceType == InventorySourceType.WorldInteraction) {
-                // int worldSlot = ResolveWorldActionSlot(inventory, action, actions, legacySetItemSlots);
-                if (!SpawnWorldDrop(player, action)) {
-                    inventory.Container.Update();
-                    return;
-                }
-
-                // Logger.Info("World Interaction WindowId: " + action.WindowId + " Slot: " + worldSlot + " RawSlot: " + action.InventorySlot);
-                // Logger.Info("Id Old/New: " + action.FromItem.Stack.Id + "/" + action.ToItem.Stack.Id);
-                // Logger.Info("StackSize Old/New: " + action.FromItem.Stack.StackSize + "/" + action.ToItem.Stack.StackSize);
-
-                inventory.Container.Update();
                 continue;
             }
 
@@ -226,24 +227,38 @@ public static class InventoryTransaction {
         return (int)action.Slot;
     }
 
-    private static bool SpawnWorldDrop(Player.Player player, InventoryAction action) {
+    private static bool SpawnWorldDrop(
+        Player.Player player,
+        EntityInventoryTrait inventory,
+        InventoryAction action,
+        List<InventoryAction> actions) {
         if (player.Dimension is null) {
+            Logger.Error("Drop failed: player has no dimension");
             return false;
         }
 
-        NetworkItemStackDescriptor dropped = action.ToItem;
-        if (dropped.Id == 0 || dropped.StackSize == 0) {
-            return false;
+        for (int i = 0; i < actions.Count; i++) {
+            InventoryAction source = actions[i];
+
+            int slot = (int)source.Slot;
+            if (slot < 0 || slot >= inventory.Container.GetSize()) {
+                continue;
+            }
+
+            ItemStack? item = inventory.Container.GetItem(slot);
+            if (item is null || item.StackSize == 0) {
+                return false;
+            }
+
+            int amount = source.FromItem.StackSize - source.ToItem.StackSize;
+            if (amount <= 0 || amount > item.StackSize) {
+                return false;
+            }
+
+            return player.DropItem(item.Clone((ushort)amount));
         }
 
-        ItemStack item;
-        try {
-            item = ItemStack.FromNetworkStack(dropped);
-        }
-        catch {
-            return false;
-        }
-        return player.DropItem(item);
+        return false;
     }
 
     private static void HandleUseItem(
@@ -548,10 +563,10 @@ public static class InventoryTransaction {
         });
 
         player.Dimension.PlaySound(LevelSoundEvent.place.ToProtocolString(), new Vec3 {
-                X = placePosition.X + 0.5f,
-                Y = placePosition.Y + 0.5f,
-                Z = placePosition.Z + 0.5f
-            },
+            X = placePosition.X + 0.5f,
+            Y = placePosition.Y + 0.5f,
+            Z = placePosition.Z + 0.5f
+        },
             data: placedPermutation.NetworkId);
 
         heldItem.OnPlace(new ItemPlaceDetails(
