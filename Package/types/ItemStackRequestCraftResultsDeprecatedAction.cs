@@ -14,27 +14,22 @@ public sealed class ItemStackRequestCraftResultsDeprecatedAction : ItemStackRequ
     public byte NumCrafts;
 
     public void Read(BinaryReader reader) {
-        global::BedrockProtocol.Enums.ItemStackRequestActionType constValue0 = (global::BedrockProtocol.Enums.ItemStackRequestActionType)reader.ReadUInt8();
-        if (constValue0 != global::BedrockProtocol.Enums.ItemStackRequestActionType.CraftResults) {
-            throw new FormatException($"Expected craftresults for ActionType, got {constValue0}.");
-        }
-        int count2 = checked((int)reader.ReadVarUInt());
-        CraftResults = new List<ItemStackRequestNetworkItemInstanceDescriptor>(count2);
-        for (int i2 = 0; i2 < count2; i2++) {
-            ItemStackRequestNetworkItemInstanceDescriptor item2 = default!;
-            ItemStackRequestNetworkItemInstanceDescriptor readValue1002 = new();
-            readValue1002.Read(reader);
-            item2 = readValue1002;
-            CraftResults.Add(item2);
+        int count0 = checked((int)reader.ReadVarUInt());
+        CraftResults = new List<ItemStackRequestNetworkItemInstanceDescriptor>(count0);
+        for (int i0 = 0; i0 < count0; i0++) {
+            ItemStackRequestNetworkItemInstanceDescriptor item0 = default!;
+            ItemStackRequestNetworkItemInstanceDescriptor readValue1000 = new();
+            readValue1000.Read(reader);
+            item0 = readValue1000;
+            CraftResults.Add(item0);
         }
         NumCrafts = reader.ReadUInt8();
     }
 
     public void Write(BinaryWriter writer) {
-        writer.WriteUInt8((byte)(byte)global::BedrockProtocol.Enums.ItemStackRequestActionType.CraftResults);
         writer.WriteVarUInt(checked((uint)CraftResults.Count));
-        foreach (var item3 in CraftResults) {
-            item3.Write(writer);
+        foreach (var item1 in CraftResults) {
+            item1.Write(writer);
         }
         writer.WriteUInt8(NumCrafts);
     }

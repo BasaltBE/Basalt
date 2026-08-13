@@ -11,13 +11,8 @@ public sealed class ItemStackRequestCraftNonImplementedDeprecatedAction : ItemSt
     public ItemStackRequestActionType ActionType = global::BedrockProtocol.Enums.ItemStackRequestActionType.CraftNonImplemented;
 
     public void Read(BinaryReader reader) {
-        global::BedrockProtocol.Enums.ItemStackRequestActionType constValue0 = (global::BedrockProtocol.Enums.ItemStackRequestActionType)reader.ReadUInt8();
-        if (constValue0 != global::BedrockProtocol.Enums.ItemStackRequestActionType.CraftNonImplemented) {
-            throw new FormatException($"Expected craftnonimplemented for ActionType, got {constValue0}.");
-        }
     }
 
     public void Write(BinaryWriter writer) {
-        writer.WriteUInt8((byte)(byte)global::BedrockProtocol.Enums.ItemStackRequestActionType.CraftNonImplemented);
     }
 }

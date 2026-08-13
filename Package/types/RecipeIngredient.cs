@@ -12,33 +12,28 @@ public sealed class RecipeIngredient {
     public ushort StackSize;
 
     public void Read(BinaryReader reader) {
-        ItemDescriptorType variant0 = (global::BedrockProtocol.Enums.ItemDescriptorType)reader.ReadUInt8();
+        uint variant0 = reader.ReadVarUInt();
         switch (variant0) {
-            case global::BedrockProtocol.Enums.ItemDescriptorType.Empty: {
-                EmptyItemDescriptor variantValue0_0 = new();
-                ItemDescriptor = variantValue0_0;
+            case 0:
+                EmptyItemDescriptor readValue3000 = new();
+                readValue3000.Read(reader);
+                ItemDescriptor = readValue3000;
                 break;
-            }
-            case global::BedrockProtocol.Enums.ItemDescriptorType.ItemName: {
-                ItemNameDescriptor variantValue0_1 = new();
-                variantValue0_1.FullName = reader.ReadVarString();
-                variantValue0_1.AuxValue = reader.ReadZigZag();
-                ItemDescriptor = variantValue0_1;
+            case 1:
+                ItemNameDescriptor readValue3001 = new();
+                readValue3001.Read(reader);
+                ItemDescriptor = readValue3001;
                 break;
-            }
-            case global::BedrockProtocol.Enums.ItemDescriptorType.Molang: {
-                MolangItemDescriptor variantValue0_2 = new();
-                variantValue0_2.TagExpression = reader.ReadVarString();
-                variantValue0_2.MolangVersion = (global::BedrockProtocol.Enums.MolangVersion)reader.ReadInt16(true);
-                ItemDescriptor = variantValue0_2;
+            case 2:
+                MolangItemDescriptor readValue3002 = new();
+                readValue3002.Read(reader);
+                ItemDescriptor = readValue3002;
                 break;
-            }
-            case global::BedrockProtocol.Enums.ItemDescriptorType.ItemTag: {
-                ItemTagDescriptor variantValue0_3 = new();
-                variantValue0_3.ItemTag = reader.ReadVarString();
-                ItemDescriptor = variantValue0_3;
+            case 3:
+                ItemTagDescriptor readValue3003 = new();
+                readValue3003.Read(reader);
+                ItemDescriptor = readValue3003;
                 break;
-            }
             default:
                 throw new FormatException($"Unknown union variant {variant0} for ItemDescriptor.");
         }
@@ -48,15 +43,19 @@ public sealed class RecipeIngredient {
     public void Write(BinaryWriter writer) {
         switch (ItemDescriptor) {
             case EmptyItemDescriptor variantValue0:
+                writer.WriteVarUInt(0);
                 variantValue0.Write(writer);
                 break;
             case ItemNameDescriptor variantValue1:
+                writer.WriteVarUInt(1);
                 variantValue1.Write(writer);
                 break;
             case MolangItemDescriptor variantValue2:
+                writer.WriteVarUInt(2);
                 variantValue2.Write(writer);
                 break;
             case ItemTagDescriptor variantValue3:
+                writer.WriteVarUInt(3);
                 variantValue3.Write(writer);
                 break;
             default:
