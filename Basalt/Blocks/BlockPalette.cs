@@ -177,7 +177,7 @@ public sealed class BlockPalette {
                 || types[i].States.Contains("powered_shelf_type")
                 || types[i].Identifier.Contains("_shulker_box")
                 || types[i].Identifier.Contains("_stained_glass")
-                || types[i].Identifier.Contains("minecraft:grass_path") 
+                || types[i].Identifier.Contains("minecraft:grass_path")
                 ) {
                 Solid = true;
             }

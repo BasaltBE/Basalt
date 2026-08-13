@@ -20,11 +20,10 @@ public static class ItemStackRequest {
 
         foreach (BedrockProtocol.Types.ItemStackRequest request in packet.Requests) {
             try {
-                Logger.Info($"[ItemStackRequest] Processing request {request.ClientRequestId} with {request.Actions.Count} actions");
                 responses.Add(ProcessRequest(player, request));
             }
             catch (Exception ex) {
-                Console.WriteLine(string.Format("[ItemStackRequest] Exception on request: {0} {1}", request.ClientRequestId, ex));
+                Logger.Err(string.Format("Exception on ItemStackRequest: {0} {1}", request.ClientRequestId, ex));
                 responses.Add(ErrorResponse(request.ClientRequestId));
             }
         }
@@ -59,14 +58,12 @@ public static class ItemStackRequest {
         _pendingCraftResult = null;
 
         foreach (ItemStackRequestActionVariant action in request.Actions) {
-            Logger.Info($"[ItemStackRequest] Request {request.ClientRequestId} action: {DescribeAction(action)}");
             ItemStackNetResult status = HandleAction(player, action, changed);
 
             if (status == ItemStackNetResult.Success) {
                 continue;
             }
 
-            Console.WriteLine(string.Format("[ItemStackRequest] Failed: request: {0} status: {1} action: {2}", request.ClientRequestId, status, DescribeAction(action)));
             ResyncContainers(player);
 
             return ErrorResponse(request.ClientRequestId, status);
@@ -120,7 +117,6 @@ public static class ItemStackRequest {
             ItemStack item = _pendingCreativeItem;
             creativeDst.SetItem(creativeDstSlot, item);
             _pendingCreativeItem = null;
-            Logger.Info($"[ItemStackRequest] Created output placed in {Slot(destination)} -> storage slot {creativeDstSlot}: {Item(item)}");
             RecordChange(changed, destination.FullContainerName, creativeDst, destination.Slot, creativeDstSlot);
             return ItemStackNetResult.Success;
         }
@@ -172,7 +168,6 @@ public static class ItemStackRequest {
             }
 
             _pendingCraftResult = null;
-            Logger.Info($"[ItemStackRequest] Crafted output placed in {Slot(destination)} -> storage slot {craftDstSlot}: {Item(item)}");
             RecordChange(changed, destination.FullContainerName, craftDst, destination.Slot, craftDstSlot);
             return ItemStackNetResult.Success;
         }
@@ -180,11 +175,8 @@ public static class ItemStackRequest {
         bool sourceResolved = TryResolveSlot(player, source, out Container srcContainer, out int srcSlot);
         bool destinationResolved = TryResolveSlot(player, destination, out Container dstContainer, out int dstSlot);
         if (!sourceResolved || !destinationResolved) {
-            Logger.Warn($"[ItemStackRequest] Place/Take slot resolution failed sourceResolved={sourceResolved} destinationResolved={destinationResolved} source={Slot(source)} destination={Slot(destination)}");
             return ItemStackNetResult.InvalidSourceContainer;
         }
-
-        Logger.Info($"[ItemStackRequest] Resolved transfer source {Slot(source)} -> storage {srcSlot}, destination {Slot(destination)} -> storage {dstSlot}");
 
         ItemStack? srcItem = srcContainer.GetItem(srcSlot);
 
@@ -217,7 +209,6 @@ public static class ItemStackRequest {
             }
 
             dstContainer.SetItem(dstSlot, taken);
-            Logger.Info($"[ItemStackRequest] Transfer placed {Item(taken)} sourceStorage={srcSlot} destinationStorage={dstSlot} destination={destination.FullContainerName.ContainerName}");
         }
         else {
             if (!srcItem.CanStackWith(dstItem)) {
@@ -324,7 +315,6 @@ public static class ItemStackRequest {
         }
 
         if (item is null || item.StackSize < action.Amount) {
-            Logger.Warn($"[ItemStackRequest] Consume failed at {Slot(action.Source)} resolved={slot} item={Item(item)} amount={action.Amount}");
             return ItemStackNetResult.FailedToMatchExpectedSlotConsumedItem;
         }
 
@@ -337,7 +327,6 @@ public static class ItemStackRequest {
             container.UpdateSlot(slot);
         }
 
-        Logger.Info($"[ItemStackRequest] Consumed {action.Amount} from {Slot(action.Source)} resolved={slot}: {before} -> {item?.StackSize ?? 0}");
         RecordChange(changed, action.Source.FullContainerName, container, action.Source.Slot, slot);
         return ItemStackNetResult.Success;
     }
@@ -400,7 +389,6 @@ public static class ItemStackRequest {
         ushort stackSize = (ushort)Math.Min(totalCount, resultType.MaxStackSize);
 
         _pendingCraftResult = new ItemStack(resultType, stackSize);
-        Logger.Info($"[ItemStackRequest] Prepared craft result recipe={recipe.Identifier} id={GetRecipeNetworkId(recipeNetworkId)} crafts={craftCount}: {Item(_pendingCraftResult)}");
         return ItemStackNetResult.Success;
     }
 
