@@ -46,6 +46,8 @@ sealed class Program {
         if (!props.HasProperty("plugins-directory")) props.SetStringProperty("plugins-directory", "plugins");
         if (!props.HasProperty("compression-threshold")) props.SetNumericalProperty("compression-threshold", 1);
         if (!props.HasProperty("compression-algorithm")) props.SetStringProperty("compression-algorithm", "zlib");
+        if (!props.HasProperty("rcon-port")) props.SetNumericalProperty("rcon-port", 25575);
+        if (!props.HasProperty("rcon-password")) props.SetStringProperty("rcon-password", string.Empty);
         if (!props.HasProperty("max-view-distance")) props.SetNumericalProperty("max-view-distance", 32);
         if (!props.HasProperty("simulation-distance")) props.SetNumericalProperty("simulation-distance", 4);
         if (!props.HasProperty("chunks-per-tick")) props.SetNumericalProperty("chunks-per-tick", 64);

@@ -10,6 +10,7 @@ public sealed class ResourcePack {
     public required Guid Uuid { get; init; }
     public required string Name { get; init; }
     public required string Description { get; init; }
+    public string Author { get; init; } = string.Empty;
     public required int[] Version { get; init; }
     public required byte[] Data { get; init; }
     public required byte[] Hash { get; init; }
@@ -23,13 +24,14 @@ public sealed class ResourcePack {
         return (uint)((Data.Length + chunkSize - 1) / chunkSize);
     }
 
-    public static ResourcePack Create(string folderName, Guid uuid, string name, string description, int[] version, byte[] data) {
+    public static ResourcePack Create(string folderName, Guid uuid, string name, string description, int[] version, byte[] data, string author = "") {
         byte[] hash = SHA256.HashData(data);
         return new ResourcePack {
             FolderName = folderName,
             Uuid = uuid,
             Name = name,
             Description = description,
+            Author = author,
             Version = version.Length >= 3 ? version : [0, 0, 0],
             Data = data,
             Hash = hash

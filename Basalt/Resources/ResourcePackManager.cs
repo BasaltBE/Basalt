@@ -100,11 +100,15 @@ public sealed class ResourcePackManager {
             ? descEl.GetString() ?? ""
             : "";
 
+        string author = header.TryGetProperty("author", out JsonElement authorEl)
+            ? authorEl.GetString() ?? ""
+            : "";
+
         int[] version = ParseVersion(header);
 
         byte[] zipData = CompressToZip(packDir);
 
-        return ResourcePack.Create(Path.GetFileName(packDir), parsedUuid, name, description, version, zipData);
+        return ResourcePack.Create(Path.GetFileName(packDir), parsedUuid, name, description, version, zipData, author);
     }
 
     private static int[] ParseVersion(JsonElement header) {

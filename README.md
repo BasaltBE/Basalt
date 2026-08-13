@@ -37,11 +37,11 @@
 * Events and signals
 * Scoreboards, forms, and DDUI
 * Multithreading and Tracy integration
+* Custom RCON
 
 </td>
 </tr>
 </table>
-
 
 <h2 align="center">Contributors</h2>
 

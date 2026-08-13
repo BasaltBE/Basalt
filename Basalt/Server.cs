@@ -20,6 +20,7 @@ using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
 using BedrockProtocol.Packets;
 using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Rcon;
 
 public sealed class Server {
     private const ulong TpsUpdateIntervalTicks = 20;
@@ -33,6 +34,7 @@ public sealed class Server {
     /// Raknet server
     /// </summary>
     private readonly NetworkServer _raknet;
+    private readonly RconServer? _rcon;
     /// <summary>
     /// Registry for dimension generators
     /// </summary>
@@ -100,6 +102,9 @@ public sealed class Server {
         long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
         _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
+        if (Properties.RconPort != 0 && Properties.RconPassword.Length > 0) {
+            _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
+        }
         Network = new NetworkHandler(this);
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
@@ -145,6 +150,7 @@ public sealed class Server {
 
     public void Start() {
         Plugins.StartAll();
+        _rcon?.Start();
 
         _ = Item.ItemPalette.GetItemRegistryPayload();
         _ = Item.ItemPalette.GetCreativeContentPayload();
@@ -259,6 +265,7 @@ public sealed class Server {
     }
 
     public void Stop() {
+        _rcon?.Stop();
         Plugins.DisableAll();
         CancellationTokenSource? runCancellation = _runCancellation;
         Task? networkLoopTask = _networkLoopTask;
