@@ -218,6 +218,7 @@ public sealed class NetworkHandler {
                                 : ReadOnlyMemory<byte>.Empty));
                     }
                     catch (Exception exception) {
+                        Logger.Warn($"Packet raw bytes: {Convert.ToHexString(packetBuffer)}");
                         Logger.Warn($"Packet decode error ({packetBuffer.Length} bytes): {exception}");
                     }
                 }

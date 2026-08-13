@@ -8,6 +8,7 @@ using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
+using Basalt.Core.Player.Traits;
 using Basalt.RakNet;
 
 using BedrockProtocol.Types;
@@ -148,11 +149,22 @@ public static class InventoryTransaction {
             }
             if (action.Source.ContainerID is null) continue;
 
+            ContainerID sourceContainerId = (ContainerID)action.Source.ContainerID;
+            int slot = (int)action.Slot;
+            PlayerCraftingGridTrait? craftingGrid = player.GetTrait<PlayerCraftingGridTrait>();
+
             Containers.Container? container = null;
-            if ((ContainerID)action.Source.ContainerID == (inventory.Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY)) {
+            if (sourceContainerId == ContainerID.CONTAINER_ID_INVENTORY &&
+                slot >= PlayerCraftingGridTrait.SlotOffset &&
+                slot < PlayerCraftingGridTrait.SlotOffset + PlayerCraftingGridTrait.GridSize &&
+                craftingGrid is not null) {
+                container = craftingGrid.Container;
+                slot = PlayerCraftingGridTrait.MapSlot(slot);
+            }
+            else if (sourceContainerId == (inventory.Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY)) {
                 container = inventory.Container;
             }
-            else if (player.TryGetOpenContainer((ContainerID)action.Source.ContainerID, out Containers.Container? opened)) {
+            else if (player.TryGetOpenContainer(sourceContainerId, out Containers.Container? opened)) {
                 container = opened;
             }
 
@@ -160,7 +172,6 @@ public static class InventoryTransaction {
                 continue;
             }
 
-            int slot = (int)action.Slot;
             if (slot < 0 || slot >= container.GetSize()) {
                 continue;
             }

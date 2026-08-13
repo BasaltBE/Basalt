@@ -266,7 +266,7 @@ public class Container {
 
             InventorySlotPacket packet = new() {
                 ContainerId = (byte)containerId,
-                Slot = (uint)slot,
+                Slot = (uint)GetNetworkSlot(slot),
                 // Container = new Optional<FullContainerName> {
                 //     HasValue = true,
                 //     Value = GetFullContainerName(containerId)
@@ -482,6 +482,15 @@ public class Container {
 
     protected virtual ContainerEnumName GetFullContainerID() {
         return Type == ContainerType.INVENTORY ? ContainerEnumName.InventoryContainer : ContainerEnumName.LevelEntityContainer;
+    }
+
+    /// <summary>
+    /// This should be overriden by extended classes e.g god dam 2x2 Crafing grid 
+    /// </summary>
+    /// <param name="slot"></param>
+    /// <returns></returns>
+    protected virtual int GetNetworkSlot(int slot) {
+        return slot;
     }
 
     protected FullContainerName GetFullContainerName(ContainerID containerId) {

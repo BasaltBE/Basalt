@@ -16,7 +16,7 @@ public sealed class ItemStack {
     public string Identifier => Type.Identifier;
     public ushort StackSize { get; private set; }
     public uint Metadata { get; private set; }
-    public int NetworkStackId { get; } = ++_nextNetworkStackId;
+    public int NetworkStackId { get; private set; } = ++_nextNetworkStackId;
 
     public CompoundTag? Storage;
 
@@ -133,7 +133,12 @@ public sealed class ItemStack {
             nbt = NBT.ReadTag<CompoundTag>(reader);
         }
 
-        return new ItemStack(type, descriptor.StackSize, descriptor.AuxValue, nbt);
+        ItemStack item = new(type, descriptor.StackSize, descriptor.AuxValue, nbt);
+        if (descriptor.NetIdVariant is int networkStackId && networkStackId != 0) {
+            item.NetworkStackId = networkStackId;
+        }
+
+        return item;
     }
 
     public static ItemStack Empty() {
