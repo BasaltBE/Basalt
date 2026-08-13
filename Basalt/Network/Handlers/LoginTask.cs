@@ -283,6 +283,19 @@ internal sealed class LoginTask : ServerTask {
             username
         ];
 
+        foreach (string candidate in candidates) {
+            if (string.IsNullOrWhiteSpace(candidate)
+                || string.Equals(candidate, primaryXuid, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            CompoundTag? savedPlayer = server.PlayerData.Load(candidate);
+            if (savedPlayer is not null) {
+                server.PlayerData.Save(primaryXuid, savedPlayer);
+                return savedPlayer;
+            }
+        }
+
         foreach (Worlds.World world in server.Worlds) {
             Worlds.Dimensions.Provider.WorldProvider provider = world.Provider;
 
