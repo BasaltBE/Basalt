@@ -22,6 +22,7 @@ internal sealed class LavaCheckTask : ServerTask {
     private readonly int _minZ;
     private readonly int _maxZ;
     private bool _inLava;
+    private bool _inWater;
 
     public LavaCheckTask(
         Entity entity,
@@ -48,6 +49,8 @@ internal sealed class LavaCheckTask : ServerTask {
     public override void Execute() {
         string lava = BlockIdentifier.Lava.ToIdentifier();
         string flowingLava = BlockIdentifier.FlowingLava.ToIdentifier();
+        string water = BlockIdentifier.Water.ToIdentifier();
+        string flowingWater = BlockIdentifier.FlowingWater.ToIdentifier();
         for (int x = _minX; x <= _maxX; x++) {
             for (int y = _minY; y <= _maxY; y++) {
                 for (int z = _minZ; z <= _maxZ; z++) {
@@ -59,7 +62,10 @@ internal sealed class LavaCheckTask : ServerTask {
                     if (string.Equals(permutation.Type.Identifier, lava, StringComparison.Ordinal) ||
                         string.Equals(permutation.Type.Identifier, flowingLava, StringComparison.Ordinal)) {
                         _inLava = true;
-                        return;
+                    }
+                    else if (string.Equals(permutation.Type.Identifier, water, StringComparison.Ordinal) ||
+                             string.Equals(permutation.Type.Identifier, flowingWater, StringComparison.Ordinal)) {
+                        _inWater = true;
                     }
                 }
             }
@@ -67,10 +73,19 @@ internal sealed class LavaCheckTask : ServerTask {
     }
 
     public override void Complete() {
-        if (!_inLava || !_entity.IsAlive || _entity.PendingDespawn ||
+        if (!_entity.IsAlive || _entity.PendingDespawn ||
             MathF.Abs(_entity.Position.X - _position.X) > 0.25f ||
             MathF.Abs(_entity.Position.Y - _position.Y) > 0.25f ||
             MathF.Abs(_entity.Position.Z - _position.Z) > 0.25f) {
+            return;
+        }
+
+        _entity.IsInWater = _inWater;
+        if (_inWater) {
+            _entity.SetOnFire(0);
+        }
+
+        if (!_inLava) {
             return;
         }
 
@@ -83,8 +98,13 @@ internal sealed class LavaCheckTask : ServerTask {
         }
 
         if (_entity is Player player &&
-            player.GetGamemode() is GameType.Survival or GameType.Adventure &&
-            !_entity.HasEffect(EffectType.FireResistance)) {
+            player.GetGamemode() is GameType.Survival or GameType.Adventure) {
+            _entity.SetOnFire(8 * 20);
+
+            if (_entity.HasEffect(EffectType.FireResistance)) {
+                return;
+            }
+
             _entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
                 EntityLavaTrait.Damage,
                 null,

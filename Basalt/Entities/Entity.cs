@@ -1,6 +1,7 @@
 namespace Basalt.Core.Entities;
 
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
@@ -46,6 +47,8 @@ public class Entity {
     public bool AttributesDirty { get; set; }
     public bool IsAlive { get; private set; }
     public bool PendingDespawn { get; private set; }
+    public int OnFireTicks { get; private set; }
+    public bool IsInWater { get; internal set; }
     internal ulong NextVoidDamageTick;
     public bool IsSprinting {
         get => Flags.GetActorFlag(ActorFlag.Sprinting);
@@ -130,6 +133,20 @@ public class Entity {
 
     public void Tick(ulong currentTick, uint deltaTick) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Entity.Tick({Identifier})") : default;
+        if (OnFireTicks > 0) {
+            if (HasEffect(EffectType.FireResistance) || IsInWater) {
+                SetOnFire(0);
+            }
+            else {
+                OnFireTicks = Math.Max(0, OnFireTicks - (int)deltaTick);
+                if (OnFireTicks % 20 == 0) {
+                    GetTrait<EntityHealthTrait>()?.ApplyDamage(1f, null, ActorDamageCause.FireTick);
+                }
+
+                Flags.SetActorFlag(ActorFlag.OnFire, OnFireTicks > 0);
+            }
+        }
+
         TraitOnTickDetails details = new(currentTick, deltaTick);
         for (int i = 0; i < _traits.Count; i++) {
             EntityTrait trait = _traits[i];
@@ -347,6 +364,7 @@ public class Entity {
         root.Set("Motion", motion);
         root.Set("sprinting", new ByteTag { Value = IsSprinting ? (sbyte)1 : (sbyte)0 });
         root.Set("swimming", new ByteTag { Value = IsSwimming ? (sbyte)1 : (sbyte)0 });
+        root.Set("fire_ticks", new IntTag { Value = OnFireTicks });
 
         ListTag traitsTag = new() { Name = "traits" };
         for (int i = 0; i < _traits.Count; i++) {
@@ -387,6 +405,8 @@ public class Entity {
 
         IsSprinting = (root.Get<ByteTag>("sprinting")?.Value ?? 0) != 0;
         IsSwimming = (root.Get<ByteTag>("swimming")?.Value ?? 0) != 0;
+        OnFireTicks = root.Get<IntTag>("fire_ticks")?.Value ?? OnFireTicks;
+        Flags.SetActorFlag(ActorFlag.OnFire, OnFireTicks > 0);
 
         ListTag? traitsTag = root.Get<ListTag>("traits");
         if (traitsTag is null) {
@@ -506,6 +526,25 @@ public class Entity {
 
     public void RemoveEffect(EffectType effectType) {
         _effects.Remove(effectType);
+    }
+
+    public void SetOnFire(int ticks) {
+        if (ticks < 0) {
+            throw new ArgumentOutOfRangeException(nameof(ticks));
+        }
+
+        if (HasEffect(EffectType.FireResistance) || IsInWater) {
+            ticks = 0;
+        }
+
+        if (ticks > OnFireTicks) {
+            OnFireTicks = ticks;
+        }
+        else if (ticks == 0) {
+            OnFireTicks = 0;
+        }
+
+        Flags.SetActorFlag(ActorFlag.OnFire, OnFireTicks > 0);
     }
 
     internal void SendActorFlagsUpdate() {

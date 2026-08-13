@@ -6,6 +6,7 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
+using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
@@ -675,6 +676,13 @@ public static class InventoryTransaction {
                         ItemStackEnchantmentTrait? enchantments = heldItem?.GetTrait<ItemStackEnchantmentTrait>();
                         if (enchantments is not null) {
                             damage += enchantments.GetAttackBonus();
+
+                            AttackEntityEnchantmentContext enchantmentContext = new() {
+                                Player = player,
+                                Target = target
+                            };
+                            enchantments.OnAttackEntity(enchantmentContext);
+                            target.SetOnFire(enchantmentContext.FireTicks);
                         }
 
                         health.ApplyDamage(damage, player, ActorDamageCause.EntityAttack);
