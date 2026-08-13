@@ -1,5 +1,6 @@
 namespace Basalt.Core.Network.Handlers;
 
+using System.Text;
 using Basalt.RakNet;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Packets;
@@ -20,6 +21,9 @@ public static class ModalFormResponse {
             packet.FormCancelReason == ModalFormCancelReason.UserBusy
         ) canceled = true;
 
-        participant.Complete(packet.JSONResponse, canceled);
+        participant.Complete(
+            packet.JSONResponse is null ? null : Encoding.UTF8.GetString(packet.JSONResponse),
+            canceled
+        );
     }
 }

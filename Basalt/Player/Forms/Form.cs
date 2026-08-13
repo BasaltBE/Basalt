@@ -1,6 +1,7 @@
 namespace Basalt.Core.Forms;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Basalt.Core.Player;
@@ -29,7 +30,7 @@ public abstract class Form<TResponse> {
 
         player.Send(new ModalFormRequestPacket {
             FormID = checked((uint)FormId),
-            FormUIJSON = ToJson()
+            FormUIJSON = Encoding.UTF8.GetBytes(ToJson())
         });
     }
 
