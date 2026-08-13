@@ -169,10 +169,23 @@ public sealed class BlockPalette {
                 continue;
             }
 
+
+            // Vanilla Has them as non solids
+            bool Solid = types[i].Solid;
+            if (
+                types[i].Tags.Contains("minecraft:cornerable_stairs")
+                || types[i].States.Contains("powered_shelf_type")
+                || types[i].Identifier.Contains("_shulker_box")
+                || types[i].Identifier.Contains("_stained_glass")
+                ) {
+                Solid = true;
+            }
+
+
             BlockType type = BlockType.Get(identifier) ?? new BlockType(identifier);
             type.Air = types[i].Air;
             type.Liquid = types[i].Liquid;
-            type.Solid = types[i].Solid;
+            type.Solid = Solid;
             type.BlastResistance = types[i].BlastResistance;
             type.Brightness = types[i].Brightness;
             type.FlameEncouragement = types[i].FlameEncouragement;
