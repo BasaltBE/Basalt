@@ -300,7 +300,7 @@ public sealed class EntityInventoryTrait : EntityTrait {
         ItemEntity drop = new(item) {
             Position = new Vec3 {
                 X = feet.X,
-                Y = feet.Y + 1.15f,
+                Y = feet.Y - 0.18f,
                 Z = feet.Z
             },
             Velocity = new Vec3 {
