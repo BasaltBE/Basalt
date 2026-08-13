@@ -24,15 +24,17 @@ public sealed class ModalFormRequestPacket : Packet {
     public const int PacketId = 100;
 
     public uint FormID;
-    public string FormUIJSON = string.Empty;
+    public byte[] FormUIJSON = [];
 
     public override void Deserialize(BinaryReader reader) {
         FormID = reader.ReadVarUInt();
-        FormUIJSON = reader.ReadVarString();
+        int binaryLength2 = checked((int)reader.ReadVarUInt());
+        FormUIJSON = reader.ReadBytes(binaryLength2).ToArray();
     }
 
     public override void Serialize(BinaryWriter writer) {
         writer.WriteVarUInt(FormID);
-        writer.WriteVarString(FormUIJSON);
+        writer.WriteVarUInt(checked((uint)FormUIJSON.Length));
+        writer.WriteBytes(FormUIJSON);
     }
 }

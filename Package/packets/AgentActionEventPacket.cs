@@ -26,17 +26,19 @@ public sealed class AgentActionEventPacket : Packet {
 
     public string RequestId = string.Empty;
     public AgentActionType Action;
-    public string Response = string.Empty;
+    public byte[] Response = [];
 
     public override void Deserialize(BinaryReader reader) {
         RequestId = reader.ReadVarString();
         Action = (global::BedrockProtocol.Enums.AgentActionType)reader.ReadInt32(true);
-        Response = reader.ReadVarString();
+        int binaryLength4 = checked((int)reader.ReadVarUInt());
+        Response = reader.ReadBytes(binaryLength4).ToArray();
     }
 
     public override void Serialize(BinaryWriter writer) {
         writer.WriteVarString(RequestId);
         writer.WriteInt32((int)Action, true);
-        writer.WriteVarString(Response);
+        writer.WriteVarUInt(checked((uint)Response.Length));
+        writer.WriteBytes(Response);
     }
 }

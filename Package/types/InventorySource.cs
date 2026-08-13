@@ -15,12 +15,20 @@ public sealed class InventorySource {
     public void Read(BinaryReader reader) {
         SourceType = (global::BedrockProtocol.Enums.InventorySourceType)reader.ReadVarUInt();
         if (reader.ReadBool()) {
-            ContainerID = reader.ReadInt8();
+            if (reader.ReadBool()) {
+                ContainerID = reader.ReadInt8();
+            } else {
+                ContainerID = default;
+            }
         } else {
             ContainerID = default;
         }
         if (reader.ReadBool()) {
-            BitFlags = (global::BedrockProtocol.Enums.InventorySourceFlags)reader.ReadVarUInt();
+            if (reader.ReadBool()) {
+                BitFlags = (global::BedrockProtocol.Enums.InventorySourceFlags)reader.ReadVarUInt();
+            } else {
+                BitFlags = default;
+            }
         } else {
             BitFlags = default;
         }
@@ -28,10 +36,12 @@ public sealed class InventorySource {
 
     public void Write(BinaryWriter writer) {
         writer.WriteVarUInt((uint)SourceType);
+        writer.WriteBool(true);
         writer.WriteBool(ContainerID is not null);
         if (ContainerID is { } optionalValue3) {
             writer.WriteInt8(optionalValue3);
         }
+        writer.WriteBool(true);
         writer.WriteBool(BitFlags is not null);
         if (BitFlags is { } optionalValue5) {
             writer.WriteVarUInt((uint)optionalValue5);

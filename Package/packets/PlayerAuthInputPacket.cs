@@ -152,43 +152,33 @@ public sealed class PlayerAuthInputPacket : Packet {
         InteractRotation.Write(writer);
         ClientTick.Write(writer);
         PosDelta.Write(writer);
+        writer.WriteBool(true);
         writer.WriteBool(ItemUseTransaction is not null);
-        if (ItemUseTransaction is not null) {
-            writer.WriteBool(ItemUseTransaction is not null);
-            if (ItemUseTransaction is { } optionalValue23) {
-                optionalValue23.Write(writer);
-            }
+        if (ItemUseTransaction is { } optionalValue23) {
+            optionalValue23.Write(writer);
         }
+        writer.WriteBool(true);
         writer.WriteBool(ItemStackRequest is not null);
-        if (ItemStackRequest is not null) {
-            writer.WriteBool(ItemStackRequest is not null);
-            if (ItemStackRequest is { } optionalValue25) {
-                optionalValue25.Write(writer);
-            }
+        if (ItemStackRequest is { } optionalValue25) {
+            optionalValue25.Write(writer);
         }
+        writer.WriteBool(true);
         writer.WriteBool(PlayerBlockActions is not null);
-        if (PlayerBlockActions is not null) {
-            writer.WriteBool(PlayerBlockActions is not null);
-            if (PlayerBlockActions is { } optionalValue27) {
-                writer.WriteVarUInt(checked((uint)optionalValue27.Count));
-                foreach (var item27 in optionalValue27) {
-                    item27.Write(writer);
-                }
+        if (PlayerBlockActions is { } optionalValue27) {
+            writer.WriteVarUInt(checked((uint)optionalValue27.Count));
+            foreach (var item27 in optionalValue27) {
+                item27.Write(writer);
             }
         }
+        writer.WriteBool(true);
         writer.WriteBool(VehicleRotation is not null);
-        if (VehicleRotation is not null) {
-            writer.WriteBool(VehicleRotation is not null);
-            if (VehicleRotation is { } optionalValue29) {
-                optionalValue29.Write(writer);
-            }
+        if (VehicleRotation is { } optionalValue29) {
+            optionalValue29.Write(writer);
         }
+        writer.WriteBool(true);
         writer.WriteBool(ClientPredictedVehicle is not null);
-        if (ClientPredictedVehicle is not null) {
-            writer.WriteBool(ClientPredictedVehicle is not null);
-            if (ClientPredictedVehicle is { } optionalValue31) {
-                optionalValue31.Write(writer);
-            }
+        if (ClientPredictedVehicle is { } optionalValue31) {
+            optionalValue31.Write(writer);
         }
         AnalogMoveVector.Write(writer);
         CameraOrientation.Write(writer);

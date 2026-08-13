@@ -25,18 +25,34 @@ public sealed class ModalFormResponsePacket : Packet {
     public const int PacketId = 101;
 
     public uint FormID;
-    public string JSONResponse = string.Empty;
-    public ModalFormCancelReason FormCancelReason;
+    public byte[]? JSONResponse;
+    public ModalFormCancelReason? FormCancelReason;
 
     public override void Deserialize(BinaryReader reader) {
         FormID = reader.ReadVarUInt();
-        JSONResponse = reader.ReadVarString();
-        FormCancelReason = (global::BedrockProtocol.Enums.ModalFormCancelReason)reader.ReadUInt8();
+        if (reader.ReadBool()) {
+            int binaryLength2 = checked((int)reader.ReadVarUInt());
+            JSONResponse = reader.ReadBytes(binaryLength2).ToArray();
+        } else {
+            JSONResponse = default;
+        }
+        if (reader.ReadBool()) {
+            FormCancelReason = (global::BedrockProtocol.Enums.ModalFormCancelReason)reader.ReadUInt8();
+        } else {
+            FormCancelReason = default;
+        }
     }
 
     public override void Serialize(BinaryWriter writer) {
         writer.WriteVarUInt(FormID);
-        writer.WriteVarString(JSONResponse);
-        writer.WriteUInt8((byte)FormCancelReason);
+        writer.WriteBool(JSONResponse is not null);
+        if (JSONResponse is { } optionalValue3) {
+            writer.WriteVarUInt(checked((uint)optionalValue3.Length));
+            writer.WriteBytes(optionalValue3);
+        }
+        writer.WriteBool(FormCancelReason is not null);
+        if (FormCancelReason is { } optionalValue5) {
+            writer.WriteUInt8((byte)optionalValue5);
+        }
     }
 }

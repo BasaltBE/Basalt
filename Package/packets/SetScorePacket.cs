@@ -33,10 +33,14 @@ public sealed class SetScorePacket : Packet {
         ScoreInfo = new List<SetScoreScoreInfoVariant>(count0);
         for (int i0 = 0; i0 < count0; i0++) {
             SetScoreScoreInfoVariant item0 = default!;
-            ScorePacketEntryAction variant1000 = (global::BedrockProtocol.Enums.ScorePacketEntryAction)reader.ReadUInt8();
+            uint variant1000 = reader.ReadVarUInt();
             switch (variant1000) {
-                case global::BedrockProtocol.Enums.ScorePacketEntryAction.Remove: {
+                case 0: {
                     RemoveScore variantValue1000_0 = new();
+                    string variantName1000_0 = reader.ReadVarString();
+                    if (variantName1000_0 != "remove") {
+                        throw new FormatException($"Expected remove, got {variantName1000_0}.");
+                    }
                     variantValue1000_0.ScoreboardId.Read(reader);
                     if (reader.ReadBool()) {
                         variantValue1000_0.ObjectiveName = reader.ReadVarString();
@@ -46,8 +50,12 @@ public sealed class SetScorePacket : Packet {
                     item0 = variantValue1000_0;
                     break;
                 }
-                case global::BedrockProtocol.Enums.ScorePacketEntryAction.ChangePlayer: {
+                case 1: {
                     ChangePlayerScore variantValue1000_1 = new();
+                    string variantName1000_1 = reader.ReadVarString();
+                    if (variantName1000_1 != "changeplayer") {
+                        throw new FormatException($"Expected changeplayer, got {variantName1000_1}.");
+                    }
                     variantValue1000_1.ScoreboardId.Read(reader);
                     variantValue1000_1.ObjectiveName = reader.ReadVarString();
                     variantValue1000_1.ScoreValue = reader.ReadInt32(true);
@@ -55,8 +63,12 @@ public sealed class SetScorePacket : Packet {
                     item0 = variantValue1000_1;
                     break;
                 }
-                case global::BedrockProtocol.Enums.ScorePacketEntryAction.ChangeEntity: {
+                case 2: {
                     ChangeEntityScore variantValue1000_2 = new();
+                    string variantName1000_2 = reader.ReadVarString();
+                    if (variantName1000_2 != "changeentity") {
+                        throw new FormatException($"Expected changeentity, got {variantName1000_2}.");
+                    }
                     variantValue1000_2.ScoreboardId.Read(reader);
                     variantValue1000_2.ObjectiveName = reader.ReadVarString();
                     variantValue1000_2.ScoreValue = reader.ReadInt32(true);
@@ -64,8 +76,12 @@ public sealed class SetScorePacket : Packet {
                     item0 = variantValue1000_2;
                     break;
                 }
-                case global::BedrockProtocol.Enums.ScorePacketEntryAction.ChangeFakePlayer: {
+                case 3: {
                     ChangeFakePlayerScore variantValue1000_3 = new();
+                    string variantName1000_3 = reader.ReadVarString();
+                    if (variantName1000_3 != "changefakeplayer") {
+                        throw new FormatException($"Expected changefakeplayer, got {variantName1000_3}.");
+                    }
                     variantValue1000_3.ScoreboardId.Read(reader);
                     variantValue1000_3.ObjectiveName = reader.ReadVarString();
                     variantValue1000_3.ScoreValue = reader.ReadInt32(true);
@@ -85,16 +101,37 @@ public sealed class SetScorePacket : Packet {
         foreach (var item1 in ScoreInfo) {
             switch (item1) {
                 case RemoveScore variantValue0:
-                    variantValue0.Write(writer);
+                    writer.WriteVarUInt(0u);
+                    writer.WriteVarString("remove");
+                    variantValue0.ScoreboardId.Write(writer);
+                    writer.WriteBool(variantValue0.ObjectiveName is not null);
+                    if (variantValue0.ObjectiveName is { } optionalValue4000) {
+                        writer.WriteVarString(optionalValue4000);
+                    }
                     break;
                 case ChangePlayerScore variantValue1:
-                    variantValue1.Write(writer);
+                    writer.WriteVarUInt(1u);
+                    writer.WriteVarString("changeplayer");
+                    variantValue1.ScoreboardId.Write(writer);
+                    writer.WriteVarString(variantValue1.ObjectiveName);
+                    writer.WriteInt32(variantValue1.ScoreValue, true);
+                    variantValue1.PlayerUniqueId.Write(writer);
                     break;
                 case ChangeEntityScore variantValue2:
-                    variantValue2.Write(writer);
+                    writer.WriteVarUInt(2u);
+                    writer.WriteVarString("changeentity");
+                    variantValue2.ScoreboardId.Write(writer);
+                    writer.WriteVarString(variantValue2.ObjectiveName);
+                    writer.WriteInt32(variantValue2.ScoreValue, true);
+                    variantValue2.ActorId.Write(writer);
                     break;
                 case ChangeFakePlayerScore variantValue3:
-                    variantValue3.Write(writer);
+                    writer.WriteVarUInt(3u);
+                    writer.WriteVarString("changefakeplayer");
+                    variantValue3.ScoreboardId.Write(writer);
+                    writer.WriteVarString(variantValue3.ObjectiveName);
+                    writer.WriteInt32(variantValue3.ScoreValue, true);
+                    writer.WriteVarString(variantValue3.FakePlayerName);
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported union value for item1.");

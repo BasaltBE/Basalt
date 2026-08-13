@@ -15,7 +15,7 @@ public sealed class SerializedSkin {
     public SkinImage ImageData = new();
     public List<AnimatedImageData> AnimatedImageData = [];
     public SkinImage CapeImageData = new();
-    public string GeometryData = string.Empty;
+    public byte[] GeometryData = [];
     public string GeometryDataMinEngineVersion = string.Empty;
     public string AnimationData = string.Empty;
     public string CapeID = string.Empty;
@@ -47,7 +47,8 @@ public sealed class SerializedSkin {
             AnimatedImageData.Add(item8);
         }
         CapeImageData.Read(reader);
-        GeometryData = reader.ReadVarString();
+        int binaryLength12 = checked((int)reader.ReadVarUInt());
+        GeometryData = reader.ReadBytes(binaryLength12).ToArray();
         GeometryDataMinEngineVersion = reader.ReadVarString();
         AnimationData = reader.ReadVarString();
         CapeID = reader.ReadVarString();
@@ -94,7 +95,8 @@ public sealed class SerializedSkin {
             item9.Write(writer);
         }
         CapeImageData.Write(writer);
-        writer.WriteVarString(GeometryData);
+        writer.WriteVarUInt(checked((uint)GeometryData.Length));
+        writer.WriteBytes(GeometryData);
         writer.WriteVarString(GeometryDataMinEngineVersion);
         writer.WriteVarString(AnimationData);
         writer.WriteVarString(CapeID);

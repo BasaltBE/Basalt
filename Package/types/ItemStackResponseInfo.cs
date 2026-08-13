@@ -38,14 +38,12 @@ public sealed class ItemStackResponseInfo {
     public void Write(BinaryWriter writer) {
         writer.WriteUInt8((byte)Result);
         writer.WriteZigZag(ClientRequestId);
+        writer.WriteBool(true);
         writer.WriteBool(Containers is not null);
-        if (Containers is not null) {
-            writer.WriteBool(Containers is not null);
-            if (Containers is { } optionalValue5) {
-                writer.WriteVarUInt(checked((uint)optionalValue5.Count));
-                foreach (var item5 in optionalValue5) {
-                    item5.Write(writer);
-                }
+        if (Containers is { } optionalValue5) {
+            writer.WriteVarUInt(checked((uint)optionalValue5.Count));
+            foreach (var item5 in optionalValue5) {
+                item5.Write(writer);
             }
         }
     }
