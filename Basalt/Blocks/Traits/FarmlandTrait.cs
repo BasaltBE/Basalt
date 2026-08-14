@@ -1,10 +1,15 @@
 namespace Basalt.Core.Blocks.Traits;
 
+using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Enums;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
+using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using BedrockProtocol.Types;
-using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+using BedrockProtocol.Packets;
+using ChunkColumn = Worlds.Dimensions.Chunk.Chunk;
 
 public class FarmlandTrait : BlockTrait {
     public static new readonly string Identifier = "minecraft:farmland";
@@ -145,6 +150,62 @@ public class FarmlandTrait : BlockTrait {
                 else {
                     BlockPermutation? dirtPerm = BlockPermutation.Resolve(BlockIdentifier.Dirt.ToIdentifier());
                     if (dirtPerm is not null) {
+                        BlockPos cropPosition = new() {
+                            X = pos.X,
+                            Y = pos.Y + 1,
+                            Z = pos.Z
+                        };
+                        Block? crop = dimension.GetBlock(
+                            cropPosition.X,
+                            cropPosition.Y,
+                            cropPosition.Z);
+                        BlockPermutation? airPerm = BlockPermutation.Resolve(BlockIdentifier.Air.ToIdentifier());
+                        if (crop?.GetTrait<CropTrait>() is not null && airPerm is not null) {
+                            dimension.Broadcast(new LevelEventPacket {
+                                EventId = (int)LevelEvent.ParticlesDestroyBlock,
+                                Position = new Vec3 {
+                                    X = cropPosition.X + 0.5f,
+                                    Y = cropPosition.Y + 0.5f,
+                                    Z = cropPosition.Z + 0.5f
+                                },
+                                Data = crop.Permutation.NetworkId
+                            });
+
+                            ulong currentTick = dimension.World is Tickable tickable
+                                ? tickable.TickValue
+                                : 0;
+                            foreach (Item.ItemStack drop in crop.GetDrops()) {
+                                ItemEntity dropEntity = new(drop) {
+                                    Position = new Vec3 {
+                                        X = cropPosition.X + 0.5f,
+                                        Y = cropPosition.Y + 0.5f,
+                                        Z = cropPosition.Z + 0.5f
+                                    }
+                                };
+                                float angle = Random.Shared.NextSingle() * MathF.Tau;
+                                float speed = 0.07f + Random.Shared.NextSingle() * 0.06f;
+                                dropEntity.Velocity = new Vec3 {
+                                    X = MathF.Cos(angle) * speed,
+                                    Y = 0.16f + Random.Shared.NextSingle() * 0.08f,
+                                    Z = MathF.Sin(angle) * speed
+                                };
+                                dropEntity.LockPickupUntil(currentTick + 10);
+                                dropEntity.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
+                            }
+
+                            dimension.RemoveBlock(
+                                cropPosition.X,
+                                cropPosition.Y,
+                                cropPosition.Z);
+                            dimension.SetPermutation(
+                                cropPosition.X,
+                                cropPosition.Y,
+                                cropPosition.Z,
+                                airPerm,
+                                0,
+                                true);
+                        }
+
                         dimension.RemoveBlock(pos.X, pos.Y, pos.Z);
                         dimension.SetPermutation(pos.X, pos.Y, pos.Z, dirtPerm, 0, true);
                     }
