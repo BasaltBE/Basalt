@@ -9,10 +9,12 @@ using BedrockProtocol.Enums;
 using BedrockProtocol.Types;
 using BedrockProtocol.Packets;
 using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Worlds.Dimensions.Generation;
 using BedrockProtocol.Nbt;
 using Basalt.Core.Blocks;
 using Basalt.Core.Item;
 using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 
@@ -50,12 +52,26 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             }
         };
 
-        _playerPosition = _dimension?.SpawnPosition ?? new Vec3 { X = 0f, Y = -57f, Z = 0f };
+        Vec3 spawnPosition = _dimension?.SpawnPosition ?? new Vec3 { X = 0f, Y = -57f, Z = 0f };
+        _playerPosition = new Vec3 {
+            X = spawnPosition.X,
+            Y = spawnPosition.Y + EntityCollisionTrait.DefaultHeight,
+            Z = spawnPosition.Z
+        };
         int dimensionId = 0;
 
         if (_dimension is not null) {
-            if (_player.SavedWorldName is not null) {
-                _playerPosition = _player.Location;
+            bool savedDimension =
+                string.Equals(
+                    _dimension.World?.Name,
+                    _player.SavedWorldName,
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    _dimension.Identifier,
+                    _player.SavedDimensionIdentifier,
+                    StringComparison.OrdinalIgnoreCase);
+            if (savedDimension) {
+                _playerPosition = _player.Position;
             }
             dimensionId = (int)_dimension.Type;
         }
@@ -84,9 +100,9 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
                 ServerAuthSoundEnabled = true,
             },
             Position = new Vec3() {
-                X = _player.Position.X,
-                Y = _player.Position.Y,
-                Z = _player.Position.Z,
+                X = _playerPosition.X,
+                Y = _playerPosition.Y,
+                Z = _playerPosition.Z,
             },
             Rotation = new Vec2() {
                 X = 0f,
@@ -203,9 +219,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("ResourcePackCompleted.Complete") : default;
 
         if (_dimension is not null) {
-            if (_player.SavedWorldName is null) {
-                _player.Location = _playerPosition;
-            }
+            _player.Position = _playerPosition;
 
             EntitySpawnOptions options = new(InitialSpawn: true);
             PlayerSpawnSignal spawnSignal = new(_player, options);
@@ -246,12 +260,35 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
 
     private static Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
         if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null) {
-            foreach (Worlds.World world in server.Worlds) {
-                if (string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase)) {
-                    Dimension? dim = world.GetDimension(player.SavedDimensionIdentifier);
-                    if (dim is not null) {
-                        return dim;
+            Worlds.World? world = server.Worlds.FirstOrDefault(world =>
+                string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase));
+
+            if (world is null) {
+                string worldPath = Path.Combine(server.Properties.WorldPath, player.SavedWorldName);
+                if (Directory.Exists(worldPath)) {
+                    try {
+                        world = server.LoadWorld(
+                            player.SavedWorldName,
+                            server.Properties.WorldProvider,
+                            worldPath);
                     }
+                    catch {
+                        world = null;
+                    }
+                }
+            }
+
+            if (world is not null) {
+                if (world.DimensionCount == 0) {
+                    world.CreateDimension(
+                        player.SavedDimensionIdentifier,
+                        DimensionId.Overworld,
+                        typeof(VoidGenerator));
+                }
+
+                Dimension? dimension = world.GetDimension(player.SavedDimensionIdentifier);
+                if (dimension is not null) {
+                    return dimension;
                 }
             }
         }
