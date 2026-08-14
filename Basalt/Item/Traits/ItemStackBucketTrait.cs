@@ -4,6 +4,7 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Item.Traits.Types;
+using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Packets;
@@ -24,6 +25,11 @@ public sealed class ItemStackBucketTrait : ItemTrait {
         if (details.Player.Dimension is null) return;
 
         Dimension dimension = details.Player.Dimension;
+        World? world = dimension.World;
+        if (world is null || world.TickValue < details.Player.BucketCooldownTick) {
+            return;
+        }
+
         BlockPos clickedPos = details.BlockPosition;
         int face = details.BlockFace;
 
@@ -40,6 +46,8 @@ public sealed class ItemStackBucketTrait : ItemTrait {
 
         dimension.RemoveBlock(placePos.X, placePos.Y, placePos.Z);
         dimension.SetPermutation(placePos.X, placePos.Y, placePos.Z, sourcePerm, 0, true);
+        details.Player.BucketCooldownTick =
+            world.TickValue + Player.Player.BucketCooldownTicks;
 
         FluidTrait.ScheduleFluidTick(dimension, placePos, kind);
 

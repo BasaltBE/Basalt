@@ -20,6 +20,8 @@ using BedrockProtocol.Nbt;
 using Basalt.Core.Enums;
 
 public class Player : Entities.Entity {
+    public const ulong BucketCooldownTicks = 5;
+
     public readonly string Username;
     public readonly string Xuid;
     public readonly Guid Uuid;
@@ -43,6 +45,7 @@ public class Player : Entities.Entity {
     public BlockPos? LastActionBlockPosition { get; set; }
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
+    public ulong BucketCooldownTick;
     public Dictionary<ContainerID, Container> openedContainers = [];
     internal Dictionary<uint, PendingForm> PendingForms = [];
     internal Dictionary<string, DataDrivenScreen> Screens = [];

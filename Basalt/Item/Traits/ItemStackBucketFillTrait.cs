@@ -3,6 +3,7 @@ namespace Basalt.Core.Item.Traits;
 using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Item.Traits.Types;
+using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Packets;
@@ -22,6 +23,11 @@ public sealed class ItemStackBucketFillTrait : ItemTrait {
         if (details.Player.Dimension is null) return;
 
         Dimension dimension = details.Player.Dimension;
+        World? world = dimension.World;
+        if (world is null || world.TickValue < details.Player.BucketCooldownTick) {
+            return;
+        }
+
         BlockPos clickedPos = details.BlockPosition;
 
         BlockPermutation perm = dimension.GetPermutation(clickedPos.X, clickedPos.Y, clickedPos.Z);
@@ -34,6 +40,8 @@ public sealed class ItemStackBucketFillTrait : ItemTrait {
         BlockPermutation air = BlockPermutation.Resolve(BlockIdentifier.Air.ToIdentifier());
         dimension.RemoveBlock(clickedPos.X, clickedPos.Y, clickedPos.Z);
         dimension.SetPermutation(clickedPos.X, clickedPos.Y, clickedPos.Z, air);
+        details.Player.BucketCooldownTick =
+            world.TickValue + Player.Player.BucketCooldownTicks;
 
         string soundEvent = kind.Value == FluidKind.Water
           ? LevelSoundEvent.bucket_fill_water.ToProtocolString()
