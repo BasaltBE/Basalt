@@ -44,8 +44,7 @@ public sealed class SaplingTrait : BlockTrait {
             return true;
         }
 
-        Grow(dimension, position, random);
-        return true;
+        return Grow(dimension, position, random);
     }
 
     public bool Grow(Dimension dimension, BlockPos position, Random? random = null) {

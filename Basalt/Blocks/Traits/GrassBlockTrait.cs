@@ -14,6 +14,7 @@ public sealed class GrassBlockTrait : BlockTrait {
         BlockPermutation.Resolve("minecraft:dandelion");
     private static readonly BlockPermutation Poppy =
         BlockPermutation.Resolve("minecraft:poppy");
+    public List<BlockPos> AffectedPositions { get; } = [];
 
     public GrassBlockTrait(Block block) : base(block) {
     }
@@ -29,6 +30,8 @@ public sealed class GrassBlockTrait : BlockTrait {
         }
 
         Random source = random ?? Random.Shared;
+        int placed = 0;
+        AffectedPositions.Clear();
         for (int attempt = 0; attempt < 128; attempt++) {
             int x = position.X;
             int y = position.Y + 1;
@@ -58,8 +61,10 @@ public sealed class GrassBlockTrait : BlockTrait {
                     ? Dandelion
                     : Poppy;
             dimension.SetPermutation(x, y, z, permutation);
+            AffectedPositions.Add(new BlockPos { X = x, Y = y, Z = z });
+            placed++;
         }
 
-        return true;
+        return placed > 0;
     }
 }
