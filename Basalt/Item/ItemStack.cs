@@ -175,7 +175,7 @@ public sealed class ItemStack {
         CompoundTag? nbt = tag.Get<CompoundTag>("nbt");
 
 
-        ItemStack stack = new(type, stackSize, metadata);
+        ItemStack stack = new(type, stackSize, metadata, nbt);
         if (nbt is not null) {
             stack.ReadTraits(nbt);
         }
