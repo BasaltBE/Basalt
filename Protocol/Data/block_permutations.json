@@ -19685,6 +19685,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:black_wool_double_slab",
+    "hash": 875469052,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_double_slab",
+    "hash": 2136520609,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_slab",
+    "hash": -496896735,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_slab",
+    "hash": -892416298,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -1010951320,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -1072426143,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -1133900966,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -1195375789,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -441117723,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -379642900,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -564067369,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "hash": -502592546,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:blackstone",
     "hash": -2017701205,
     "state": {}
@@ -21760,6 +21852,98 @@
     "identifier": "minecraft:blue_wool",
     "hash": 1416924150,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:blue_wool_double_slab",
+    "hash": 846773570,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_double_slab",
+    "hash": 425562563,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_slab",
+    "hash": -1887734285,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_slab",
+    "hash": -455923348,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": -2064714686,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": -2126189509,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": -1941765040,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": -2003239863,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": 130758095,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": 192232918,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": 253707741,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "hash": 315182564,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:bone_block",
@@ -25923,6 +26107,98 @@
     "identifier": "minecraft:brown_wool",
     "hash": -52932765,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:brown_wool_double_slab",
+    "hash": 1443986419,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_double_slab",
+    "hash": -1488225428,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_slab",
+    "hash": 1338941956,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_slab",
+    "hash": -1233617543,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": -1739190655,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": -1677715832,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": -1862140301,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": -1800665478,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": 533194980,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": 471720157,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": 410245334,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "hash": 348770511,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:bubble_column",
@@ -50149,6 +50425,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:cyan_wool_double_slab",
+    "hash": -707709767,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_double_slab",
+    "hash": 510444478,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_slab",
+    "hash": 103704446,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_slab",
+    "hash": 1531803223,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": -1245872073,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": -1184397250,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": -1122922427,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": -1061447604,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": 2023917162,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": 1962442339,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": 2146866808,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "hash": 2085391985,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:damaged_anvil",
     "hash": -467540639,
     "state": {
@@ -69715,6 +70083,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:gray_wool_double_slab",
+    "hash": -1357397503,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_double_slab",
+    "hash": 954685494,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_slab",
+    "hash": 882531302,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_slab",
+    "hash": -1372497937,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -290625817,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -229150994,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -167676171,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -106201348,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -2073737190,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -2135212013,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -1950787544,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "hash": -2012262367,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:green_candle",
     "hash": 1000092441,
     "state": {
@@ -69873,6 +70333,98 @@
     "identifier": "minecraft:green_wool",
     "hash": -258297172,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:green_wool_double_slab",
+    "hash": 1581647052,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_double_slab",
+    "hash": 531476497,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_slab",
+    "hash": 1308145817,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_slab",
+    "hash": -2074737634,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": -1587249000,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": -1648723823,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": -1710198646,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": -1771673469,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": 2146550229,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": -2086942244,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": 2023600583,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "hash": 2085075406,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:grindstone",
@@ -77727,6 +78279,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:light_blue_wool_double_slab",
+    "hash": -1128206695,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_double_slab",
+    "hash": -2116622818,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_slab",
+    "hash": -1538169118,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_slab",
+    "hash": -732921885,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -716058809,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -654583986,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -593109163,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -531634340,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -1375092742,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -1436567565,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -1252143096,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "hash": -1313617919,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:light_gray_candle",
     "hash": 2060361839,
     "state": {
@@ -77843,6 +78487,98 @@
     "identifier": "minecraft:light_gray_wool",
     "hash": -2130077302,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_double_slab",
+    "hash": 614232078,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_double_slab",
+    "hash": -1494768185,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_slab",
+    "hash": 1380068187,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_slab",
+    "hash": 160262916,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": 1248623814,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": 1187148991,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": 1371573460,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": 1310098637,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": -766464477,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": -704989654,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": -643514831,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "hash": -582040008,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:light_weighted_pressure_plate",
@@ -78232,6 +78968,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:lime_wool_double_slab",
+    "hash": -10828929,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_double_slab",
+    "hash": 1633997536,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_slab",
+    "hash": -783395348,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_slab",
+    "hash": 374984369,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1989613087,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1928138264,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -2112562733,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -2051087910,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1382857020,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1444331843,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1505806666,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "hash": -1567281489,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:lit_blast_furnace",
     "hash": 1464259042,
     "state": {
@@ -78550,6 +79378,98 @@
     "identifier": "minecraft:magenta_wool",
     "hash": 882906254,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:magenta_wool_double_slab",
+    "hash": 1460045618,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_double_slab",
+    "hash": -417763309,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_slab",
+    "hash": 1048533111,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_slab",
+    "hash": -230460728,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 1843225462,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 1781750639,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 1966175108,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 1904700285,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 436221331,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 497696154,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 559170977,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "hash": 620645800,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:magma",
@@ -96868,6 +97788,38 @@
     }
   },
   {
+    "identifier": "minecraft:orange_poplar_leaves",
+    "hash": -1018857853,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:orange_poplar_leaves",
+    "hash": -2074164424,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:orange_poplar_leaves",
+    "hash": -12360208,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:orange_poplar_leaves",
+    "hash": 1042946363,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": true
+    }
+  },
+  {
     "identifier": "minecraft:orange_shulker_box",
     "hash": -1730998678,
     "state": {}
@@ -96896,6 +97848,98 @@
     "identifier": "minecraft:orange_wool",
     "hash": -1011696902,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:orange_wool_double_slab",
+    "hash": 1608083206,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_double_slab",
+    "hash": -833456753,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_slab",
+    "hash": -1551284733,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_slab",
+    "hash": -532470756,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 30861150,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": -30613673,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 153810796,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 92335973,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 795327867,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 856802690,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 918277513,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "hash": 979752336,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:oxeye_daisy",
@@ -105326,6 +106370,98 @@
     "identifier": "minecraft:pink_wool",
     "hash": -1438952986,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:pink_wool_double_slab",
+    "hash": 1745715234,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_double_slab",
+    "hash": 1346907939,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_slab",
+    "hash": -1996218601,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_slab",
+    "hash": -2000289560,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -548412158,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -609886981,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -425462512,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -486937335,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -642365041,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -580890218,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -519415395,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "hash": -457940572,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:piston",
@@ -117475,6 +118611,5262 @@
     }
   },
   {
+    "identifier": "minecraft:poplar_button",
+    "hash": 600872696,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": 539397873,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": 477923050,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": 416448227,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": 354973404,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 4
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": 293498581,
+    "state": {
+      "button_pressed_bit": false,
+      "facing_direction": 5
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -1082948203,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -1021473380,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -1205897849,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -1144423026,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -837048911,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 4
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "hash": -775574088,
+    "state": {
+      "button_pressed_bit": true,
+      "facing_direction": 5
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 1550144044,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1689516681,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -736388247,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1791694818,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 1244262781,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 188956210,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1585218128,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -529911557,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 746740010,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 1802046581,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 107866127,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -947440444,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -149447273,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1204753844,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -5423182,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 1049883389,
+    "state": {
+      "door_hinge_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1006239867,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -2061546438,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -70389128,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 984917443,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1445067170,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -389760599,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 686089139,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -369217432,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1339634813,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 1900025912,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -2015669202,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -960362631,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -153554056,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": 901752515,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -1089404795,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true,
+      "upper_block_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "hash": -2144711366,
+    "state": {
+      "door_hinge_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true,
+      "upper_block_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_double_slab",
+    "hash": -315560219,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_double_slab",
+    "hash": 431215410,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence",
+    "hash": 477233997,
+    "state": {}
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 954811320,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 2010117891,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -2061911781,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 1177748944,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 975554042,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 2030860613,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -1872500903,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 1367159822,
+    "state": {
+      "in_wall_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 628247775,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -427058796,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 850218894,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 1905525465,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": 375263337,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -680043234,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -1674428812,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "hash": -619122241,
+    "state": {
+      "in_wall_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "open_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1540685478,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1698975247,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -670847159,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1726153730,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 617840460,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1673147031,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1598625199,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 543318628,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -4971382,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1050335189,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1847970093,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 792663522,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1464790400,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -409483829,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2082785219,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1027478648,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -331680114,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 723626457,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -114750159,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1170056730,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -445780364,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 609526207,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 206354007,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -848952564,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 276268274,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1331574845,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 857818197,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -197488374,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -297578552,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 757728019,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1173688299,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 118381728,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 0,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1109730709,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 54424138,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 747171634,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1802478205,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1743135531,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 687828960,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -787996664,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 267309907,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1741698929,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 686392358,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -347632178,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 707674393,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 53713047,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1001593524,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1612136116,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1627524609,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1886638957,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 831332386,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2118856246,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1063549675,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1834044669,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1405616056,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -627478592,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 427827979,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 801670025,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -253636546,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1630005786,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -574699215,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 227070959,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -828235612,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1255261068,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1984399657,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 1,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1344376480,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1895284245,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 982492899,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -72813672,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2072022442,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1167638283,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1269878451,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1969782274,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -482451860,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 572854711,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1555139279,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 499832708,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1520850746,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -465544175,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 552426345,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -502880226,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1147404776,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2092255949,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -523664373,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1578970944,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1612394222,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -557087651,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 592622453,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -462684118,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2143133036,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1087826465,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1025074039,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -30232532,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 845438638,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1900745209,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 273426769,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -781879802,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 2,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2124550545,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1115110180,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1096360436,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -41053865,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1549951479,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1689709246,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 313340006,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1368646577,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 109301123,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -946005448,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1315867200,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1923793525,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -464982547,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1520289118,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -175510454,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 879796117,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1997058839,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 941752268,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -739485388,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 315821183,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -609922575,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1665229146,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1595713614,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1643947111,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -608485973,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1663792544,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1155349128,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2084311597,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1241890795,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1997769930,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1604449870,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -549143299,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 3,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1488143154,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1751517571,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1850702229,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 795395658,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -47025144,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1008281427,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1810860245,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1428800480,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 393339342,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1448645913,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1812296847,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1427363878,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1941859660,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -886553089,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 794684567,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -260622004,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1377884726,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -322578155,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1667356819,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1572303906,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 113492928,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1168799499,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1093073149,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2146587576,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -889034266,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 166272305,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1542641545,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 487334974,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1996232588,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1243428137,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 968042479,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -87264092,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 4,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 559221601,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -496084970,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1923874750,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1315785975,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1778344391,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 723037820,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1272511716,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1967149009,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2114393083,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1125267642,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 788105890,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1843412461,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1384249445,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1855411280,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2095590712,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1144070013,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -972650695,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2027957266,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1204835946,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -149529375,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 399226527,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -656080044,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 367314492,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1422621063,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1928104413,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 872797842,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -738248006,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 317058565,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 553007987,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -502298584,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -462263440,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 593043131,
+    "state": {
+      "attached_bit": false,
+      "facing_direction": 5,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -364691399,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1419997970,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -596876650,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 458429921,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1007185823,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -48120748,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 975273788,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2030580359,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1758903587,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1480757138,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -130288710,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 925017861,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1160967283,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 105660712,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 145695856,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1201002427,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1167180897,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 111874326,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1763133250,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -707826679,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1908663609,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1330997116,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1880471012,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1359189713,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1506433787,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1733226938,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1396065186,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1843595539,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -776290149,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1831596720,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1591417288,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -536110717,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 0,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -735116694,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 320189877,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1599830515,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1639830210,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1452605088,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -397298517,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2094970531,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1039663960,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 810540166,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1865846737,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1986391767,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1253268958,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 631601964,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1686908535,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 293238159,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -762068412,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1555669458,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1683991267,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -359182539,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1414489110,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2038057384,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1201603341,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2077167307,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1021860736,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 370331502,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1425638073,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 375709201,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -679597370,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 457698644,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1513005215,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -569946057,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1625252628,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 1,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1744661629,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1494999096,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -538095552,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 517211019,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1976021997,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 920715426,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2029473206,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -974166635,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 316453999,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -738852572,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1344644108,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1895016617,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 891053065,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -164253506,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1540622746,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -485316175,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1832518571,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 777212000,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -698613624,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 356692947,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1199113749,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 143807178,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 836554674,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1891861245,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 143096087,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -912210484,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1701519156,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1538141569,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1831081969,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 775775398,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -258249138,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 797057433,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 2,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1064618916,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2119925487,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -17133177,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1072439748,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -246953346,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 808353225,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1051312673,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -3993898,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1610317832,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -555011261,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1047471013,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2102777584,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -254883486,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 800423085,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 560766917,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -494539654,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1702511868,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1537148857,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2086077345,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1153583380,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1392486314,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -337179743,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 635545337,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -419761234,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1144622288,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -89315717,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -964447437,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -2019754008,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1715202170,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1524458555,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1134017379,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 2105643346,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 3,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 477866253,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -577440318,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1342580074,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1897080651,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -122299997,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1177606568,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 625091680,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1680398251,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 91305001,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -964001570,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1406730362,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -351423791,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1924032369,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1315628356,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1585668564,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -530361993,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1718514229,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 663207658,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -661601070,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 393705501,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -140103221,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1195409792,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -179213144,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 876093427,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1841561327,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1398099398,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1846939026,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -791632455,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1507750711,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 452444140,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1759571884,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -704265313,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 4,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -523482274,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 0,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 531824297,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 0,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -445820927,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 1,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1501127498,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 1,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1174845308,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 2,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -119538737,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 2,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 773301863,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 3,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -282004708,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 3,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1649093566,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 4,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -593786995,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 4,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1477229915,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 5,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1762430810,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 5,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1675947480,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 6,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1563713245,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 6,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1912594117,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 7,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1327066608,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 7,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 864484150,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 8,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1919790721,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 8,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1977693223,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 9,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1261967502,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 9,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1380058660,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 10,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -324752089,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 10,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -30574273,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 11,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1085880844,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 11,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 918052442,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 12,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1973359013,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 12,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1931167107,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 13,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1308493618,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 13,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 921038352,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 14,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1976344923,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 14,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": -1884191469,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 15,
+      "hanging": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "hash": 1355469256,
+    "state": {
+      "attached_bit": true,
+      "facing_direction": 5,
+      "ground_sign_direction": 15,
+      "hanging": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_log",
+    "hash": 391599337,
+    "state": {
+      "pillar_axis": "y"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_log",
+    "hash": -663707234,
+    "state": {
+      "pillar_axis": "x"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_log",
+    "hash": 1520646920,
+    "state": {
+      "pillar_axis": "z"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_planks",
+    "hash": 1414931100,
+    "state": {}
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 563991224,
+    "state": {
+      "redstone_signal": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 502516401,
+    "state": {
+      "redstone_signal": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 441041578,
+    "state": {
+      "redstone_signal": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 379566755,
+    "state": {
+      "redstone_signal": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 318091932,
+    "state": {
+      "redstone_signal": 4
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 256617109,
+    "state": {
+      "redstone_signal": 5
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 195142286,
+    "state": {
+      "redstone_signal": 6
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 133667463,
+    "state": {
+      "redstone_signal": 7
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 1055789808,
+    "state": {
+      "redstone_signal": 8
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 994314985,
+    "state": {
+      "redstone_signal": 9
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 932840162,
+    "state": {
+      "redstone_signal": 10
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 871365339,
+    "state": {
+      "redstone_signal": 11
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 809890516,
+    "state": {
+      "redstone_signal": 12
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 748415693,
+    "state": {
+      "redstone_signal": 13
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 686940870,
+    "state": {
+      "redstone_signal": 14
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "hash": 625466047,
+    "state": {
+      "redstone_signal": 15
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_sapling",
+    "hash": -67767387,
+    "state": {
+      "age_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_sapling",
+    "hash": -1123073958,
+    "state": {
+      "age_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1343894540,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": false,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1282419717,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": false,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1220944894,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": false,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1159470071,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": false,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 352363717,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": true,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 413838540,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": true,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 229414071,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": true,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 290888894,
+    "state": {
+      "minecraft:cardinal_direction": "south",
+      "powered_bit": true,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1586861033,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": false,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1525386210,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": false,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1463911387,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": false,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1402436564,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": false,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1473687286,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": true,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1412212463,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": true,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1596636932,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": true,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": 1535162109,
+    "state": {
+      "minecraft:cardinal_direction": "west",
+      "powered_bit": true,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1748904098,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": false,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1810378921,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": false,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1625954452,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": false,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1687429275,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": false,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1885862369,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": true,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1824387546,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": true,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1762912723,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": true,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1701437900,
+    "state": {
+      "minecraft:cardinal_direction": "north",
+      "powered_bit": true,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1173191659,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": false,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1111716836,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": false,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1296141305,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": false,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1234666482,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": false,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1884786148,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": true,
+      "powered_shelf_type": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -1946260971,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": true,
+      "powered_shelf_type": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -2007735794,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": true,
+      "powered_shelf_type": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "hash": -2069210617,
+    "state": {
+      "minecraft:cardinal_direction": "east",
+      "powered_bit": true,
+      "powered_shelf_type": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_slab",
+    "hash": 681695894,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_slab",
+    "hash": -1960025921,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -2132602205,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -2071127382,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -2009652559,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -1948177736,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -117513914,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -178988737,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": 5435732,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "hash": -56039091,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 802179001,
+    "state": {
+      "ground_sign_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 863653824,
+    "state": {
+      "ground_sign_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 679229355,
+    "state": {
+      "ground_sign_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 740704178,
+    "state": {
+      "ground_sign_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 556279709,
+    "state": {
+      "ground_sign_direction": 4
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 617754532,
+    "state": {
+      "ground_sign_direction": 5
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 433330063,
+    "state": {
+      "ground_sign_direction": 6
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 494804886,
+    "state": {
+      "ground_sign_direction": 7
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 310380417,
+    "state": {
+      "ground_sign_direction": 8
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 371855240,
+    "state": {
+      "ground_sign_direction": 9
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 187430771,
+    "state": {
+      "ground_sign_direction": 10
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 248905594,
+    "state": {
+      "ground_sign_direction": 11
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 64481125,
+    "state": {
+      "ground_sign_direction": 12
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 125955948,
+    "state": {
+      "ground_sign_direction": 13
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": -58468521,
+    "state": {
+      "ground_sign_direction": 14
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_standing_sign",
+    "hash": 3006302,
+    "state": {
+      "ground_sign_direction": 15
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 638475673,
+    "state": {
+      "direction": 0,
+      "open_bit": false,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -416830898,
+    "state": {
+      "direction": 0,
+      "open_bit": false,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 2144996872,
+    "state": {
+      "direction": 0,
+      "open_bit": true,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1094663853,
+    "state": {
+      "direction": 0,
+      "open_bit": true,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 1350528986,
+    "state": {
+      "direction": 1,
+      "open_bit": false,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1889131739,
+    "state": {
+      "direction": 1,
+      "open_bit": false,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -54432501,
+    "state": {
+      "direction": 1,
+      "open_bit": true,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1109739072,
+    "state": {
+      "direction": 1,
+      "open_bit": true,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1829628697,
+    "state": {
+      "direction": 2,
+      "open_bit": false,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 1410032028,
+    "state": {
+      "direction": 2,
+      "open_bit": false,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 1288350118,
+    "state": {
+      "direction": 2,
+      "open_bit": true,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1951310607,
+    "state": {
+      "direction": 2,
+      "open_bit": true,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 220428808,
+    "state": {
+      "direction": 3,
+      "open_bit": false,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 1275735379,
+    "state": {
+      "direction": 3,
+      "open_bit": false,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": -1286092391,
+    "state": {
+      "direction": 3,
+      "open_bit": true,
+      "upside_down_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "hash": 1953568334,
+    "state": {
+      "direction": 3,
+      "open_bit": true,
+      "upside_down_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": -126578093,
+    "state": {
+      "facing_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": -65103270,
+    "state": {
+      "facing_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": -3628447,
+    "state": {
+      "facing_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": 57846376,
+    "state": {
+      "facing_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": -372477385,
+    "state": {
+      "facing_direction": 4
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wall_sign",
+    "hash": -311002562,
+    "state": {
+      "facing_direction": 5
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wood",
+    "hash": 1689899121,
+    "state": {
+      "pillar_axis": "y"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wood",
+    "hash": 634592550,
+    "state": {
+      "pillar_axis": "x"
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wood",
+    "hash": -1476020592,
+    "state": {
+      "pillar_axis": "z"
+    }
+  },
+  {
     "identifier": "minecraft:poppy",
     "hash": -876992014,
     "state": {}
@@ -120417,6 +126809,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:purple_wool_double_slab",
+    "hash": -1916494462,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_double_slab",
+    "hash": 136863491,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_slab",
+    "hash": -1975697473,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_slab",
+    "hash": -470929120,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": 1459001430,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": 1397526607,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": 1581951076,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": 1520476253,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": -1982860173,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": -1921385350,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": -1859910527,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "hash": -1798435704,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:purpur_block",
     "hash": -2047108768,
     "state": {
@@ -122911,6 +129395,38 @@
     }
   },
   {
+    "identifier": "minecraft:red_poplar_leaves",
+    "hash": 435385347,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:red_poplar_leaves",
+    "hash": -619921224,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:red_poplar_leaves",
+    "hash": 1441882992,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:red_poplar_leaves",
+    "hash": -1797777733,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": true
+    }
+  },
+  {
     "identifier": "minecraft:red_sand",
     "hash": -66861741,
     "state": {}
@@ -124795,6 +131311,11 @@
     }
   },
   {
+    "identifier": "minecraft:red_shrub",
+    "hash": 1319997426,
+    "state": {}
+  },
+  {
     "identifier": "minecraft:red_shulker_box",
     "hash": 670752730,
     "state": {}
@@ -124823,6 +131344,98 @@
     "identifier": "minecraft:red_wool",
     "hash": 1885700022,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:red_wool_double_slab",
+    "hash": 317399106,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_double_slab",
+    "hash": -99362109,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_slab",
+    "hash": -1973135973,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_slab",
+    "hash": 1121226308,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1458152306,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1519627129,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1335202660,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1396677483,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1423511829,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1362037006,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1300562183,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "hash": -1239087360,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:redstone_block",
@@ -130207,6 +136820,262 @@
     "hash": -828280508,
     "state": {
       "sea_grass_type": "double_bot"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 274999335,
+    "state": {
+      "growth": 0,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 997300324,
+    "state": {
+      "growth": 0,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1593583661,
+    "state": {
+      "growth": 0,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1440411394,
+    "state": {
+      "growth": 0,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1620645878,
+    "state": {
+      "growth": 1,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 379914871,
+    "state": {
+      "growth": 1,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1268718704,
+    "state": {
+      "growth": 1,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1871968381,
+    "state": {
+      "growth": 1,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -2051703767,
+    "state": {
+      "growth": 2,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 794491754,
+    "state": {
+      "growth": 2,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1339887691,
+    "state": {
+      "growth": 2,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -767799776,
+    "state": {
+      "growth": 2,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1817524592,
+    "state": {
+      "growth": 3,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1406445011,
+    "state": {
+      "growth": 3,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 356493278,
+    "state": {
+      "growth": 3,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 880920327,
+    "state": {
+      "growth": 3,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1450852995,
+    "state": {
+      "growth": 4,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 501220872,
+    "state": {
+      "growth": 4,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -691771527,
+    "state": {
+      "growth": 4,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1332181958,
+    "state": {
+      "growth": 4,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1569774642,
+    "state": {
+      "growth": 5,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1319577435,
+    "state": {
+      "growth": 5,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 497565372,
+    "state": {
+      "growth": 5,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 2029824521,
+    "state": {
+      "growth": 5,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1202181429,
+    "state": {
+      "growth": 6,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 1874967902,
+    "state": {
+      "growth": 6,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1108151369,
+    "state": {
+      "growth": 6,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 884738972,
+    "state": {
+      "growth": 6,
+      "minecraft:cardinal_direction": "east"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -2127612580,
+    "state": {
+      "growth": 7,
+      "minecraft:cardinal_direction": "south"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 791288017,
+    "state": {
+      "growth": 7,
+      "minecraft:cardinal_direction": "west"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": 209500026,
+    "state": {
+      "growth": 7,
+      "minecraft:cardinal_direction": "north"
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "hash": -1481807965,
+    "state": {
+      "growth": 7,
+      "minecraft:cardinal_direction": "east"
     }
   },
   {
@@ -138984,6 +145853,150 @@
     }
   },
   {
+    "identifier": "minecraft:straw_bed",
+    "hash": 1601900097,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 546593526,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "south",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 1188747900,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": -2050912825,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "west",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 1139635883,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 84329312,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "north",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": -830493918,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 224812653,
+    "state": {
+      "head_piece_bit": false,
+      "minecraft:cardinal_direction": "east",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 1033695406,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 2089001977,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "south",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": -51943231,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": -1107249802,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "west",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": -1024780632,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 30525939,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "north",
+      "occupied_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 1622035975,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "occupied_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "hash": 566729404,
+    "state": {
+      "head_piece_bit": true,
+      "minecraft:cardinal_direction": "east",
+      "occupied_bit": true
+    }
+  },
+  {
     "identifier": "minecraft:stripped_acacia_log",
     "hash": 1367858272,
     "state": {
@@ -139378,6 +146391,48 @@
   {
     "identifier": "minecraft:stripped_pale_oak_wood",
     "hash": -1269754903,
+    "state": {
+      "pillar_axis": "z"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_log",
+    "hash": 1192710024,
+    "state": {
+      "pillar_axis": "y"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_log",
+    "hash": -2046950701,
+    "state": {
+      "pillar_axis": "x"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_log",
+    "hash": 63662441,
+    "state": {
+      "pillar_axis": "z"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_wood",
+    "hash": 303175278,
+    "state": {
+      "pillar_axis": "y"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_wood",
+    "hash": 1358481849,
+    "state": {
+      "pillar_axis": "x"
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_wood",
+    "hash": -752131293,
     "state": {
       "pillar_axis": "z"
     }
@@ -159033,6 +166088,98 @@
     "state": {}
   },
   {
+    "identifier": "minecraft:white_wool_double_slab",
+    "hash": -1221361390,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_double_slab",
+    "hash": -491564429,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_slab",
+    "hash": 1990068687,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_slab",
+    "hash": -311756528,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -2006576510,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -2068051333,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -1883626864,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -1945101687,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -2100529393,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -2039054570,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -1977579747,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "hash": -1916104924,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
+  },
+  {
     "identifier": "minecraft:wildflowers",
     "hash": -390925247,
     "state": {
@@ -159999,6 +167146,38 @@
     }
   },
   {
+    "identifier": "minecraft:yellow_poplar_leaves",
+    "hash": -700046363,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_poplar_leaves",
+    "hash": -1755352934,
+    "state": {
+      "persistent_bit": false,
+      "update_bit": true
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_poplar_leaves",
+    "hash": -1527341270,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": false
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_poplar_leaves",
+    "hash": -472034699,
+    "state": {
+      "persistent_bit": true,
+      "update_bit": true
+    }
+  },
+  {
     "identifier": "minecraft:yellow_shulker_box",
     "hash": 642416912,
     "state": {}
@@ -160022,6 +167201,98 @@
     "identifier": "minecraft:yellow_wool",
     "hash": 1549901968,
     "state": {}
+  },
+  {
+    "identifier": "minecraft:yellow_wool_double_slab",
+    "hash": 1820826296,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_double_slab",
+    "hash": 773235109,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_slab",
+    "hash": 542999925,
+    "state": {
+      "minecraft:vertical_half": "bottom"
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_slab",
+    "hash": 1072876706,
+    "state": {
+      "minecraft:vertical_half": "top"
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 764936028,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 703461205,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 641986382,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 580511559,
+    "state": {
+      "upside_down_bit": false,
+      "weirdo_direction": 3
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 317867705,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 0
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 379342528,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 1
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 194918059,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 2
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "hash": 256392882,
+    "state": {
+      "upside_down_bit": true,
+      "weirdo_direction": 3
+    }
   },
   {
     "identifier": "minecraft:zombie_head",

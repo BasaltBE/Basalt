@@ -1374,7 +1374,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 391,
+    "networkId": 362,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1397,7 +1397,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 592,
+    "networkId": 563,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1420,7 +1420,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 593,
+    "networkId": 564,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1443,7 +1443,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 594,
+    "networkId": 565,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1466,7 +1466,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 595,
+    "networkId": 566,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1489,7 +1489,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 596,
+    "networkId": 567,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -1512,7 +1512,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 404,
+    "networkId": 375,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -7807,7 +7807,7 @@
         "plantAt": []
       }
     },
-    "networkId": 320,
+    "networkId": 291,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -7838,7 +7838,7 @@
         "plantAt": []
       }
     },
-    "networkId": 321,
+    "networkId": 292,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -7869,7 +7869,7 @@
         "plantAt": []
       }
     },
-    "networkId": 322,
+    "networkId": 293,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -7900,7 +7900,7 @@
         "plantAt": []
       }
     },
-    "networkId": 324,
+    "networkId": 295,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -7926,7 +7926,7 @@
         "compostingChance": 65
       }
     },
-    "networkId": 366,
+    "networkId": 337,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -7962,7 +7962,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 314,
+    "networkId": 285,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8003,7 +8003,7 @@
         "plantAt": []
       }
     },
-    "networkId": 309,
+    "networkId": 280,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8035,7 +8035,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 311,
+    "networkId": 282,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8076,7 +8076,7 @@
         "plantAt": []
       }
     },
-    "networkId": 308,
+    "networkId": 279,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8108,7 +8108,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 312,
+    "networkId": 283,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8149,7 +8149,7 @@
       },
       "useDuration": 1.6
     },
-    "networkId": 285,
+    "networkId": 880,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "nature",
@@ -8181,7 +8181,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 287,
+    "networkId": 258,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8204,7 +8204,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 288,
+    "networkId": 259,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8260,7 +8260,7 @@
         "compostingChance": 50
       }
     },
-    "networkId": 301,
+    "networkId": 272,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -8281,7 +8281,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 467,
+    "networkId": 438,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -8326,7 +8326,7 @@
         ]
       }
     },
-    "networkId": 316,
+    "networkId": 287,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -9439,7 +9439,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 442,
+    "networkId": 413,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9460,7 +9460,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 434,
+    "networkId": 405,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9481,7 +9481,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 435,
+    "networkId": 406,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9502,7 +9502,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 427,
+    "networkId": 398,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9523,7 +9523,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 430,
+    "networkId": 401,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9544,7 +9544,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 428,
+    "networkId": 399,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9565,7 +9565,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 441,
+    "networkId": 412,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9586,7 +9586,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 438,
+    "networkId": 409,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9607,7 +9607,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 437,
+    "networkId": 408,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9628,7 +9628,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 429,
+    "networkId": 400,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9649,7 +9649,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 433,
+    "networkId": 404,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9670,7 +9670,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 439,
+    "networkId": 410,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9691,7 +9691,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 431,
+    "networkId": 402,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9712,7 +9712,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 432,
+    "networkId": 403,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9733,7 +9733,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 440,
+    "networkId": 411,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9754,7 +9754,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 436,
+    "networkId": 407,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9775,7 +9775,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 445,
+    "networkId": 416,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9798,7 +9798,7 @@
         "compostingChance": 65
       }
     },
-    "networkId": 444,
+    "networkId": 415,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9818,7 +9818,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 446,
+    "networkId": 417,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9836,7 +9836,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 443,
+    "networkId": 414,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -9928,7 +9928,7 @@
         "compostingChance": 30
       }
     },
-    "networkId": 414,
+    "networkId": 385,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10090,7 +10090,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 304,
+    "networkId": 275,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10123,7 +10123,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 291,
+    "networkId": 262,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10156,7 +10156,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 302,
+    "networkId": 273,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10180,7 +10180,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 589,
+    "networkId": 560,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10213,7 +10213,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 317,
+    "networkId": 288,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10237,7 +10237,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 293,
+    "networkId": 264,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10270,7 +10270,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 294,
+    "networkId": 265,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10294,7 +10294,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 295,
+    "networkId": 266,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10327,7 +10327,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 296,
+    "networkId": 267,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10339,7 +10339,9 @@
   },
   {
     "identifier": "minecraft:brown_mushroom",
-    "tags": [],
+    "tags": [
+      "minecraft:mushrooms_for_stew"
+    ],
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
@@ -10365,7 +10367,9 @@
   },
   {
     "identifier": "minecraft:red_mushroom",
-    "tags": [],
+    "tags": [
+      "minecraft:mushrooms_for_stew"
+    ],
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
@@ -10486,7 +10490,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 422,
+    "networkId": 393,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10509,7 +10513,7 @@
         "compostingChance": 50
       }
     },
-    "networkId": 417,
+    "networkId": 388,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10527,7 +10531,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 448,
+    "networkId": 419,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10557,7 +10561,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 306,
+    "networkId": 277,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10575,7 +10579,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 447,
+    "networkId": 418,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10622,7 +10626,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 307,
+    "networkId": 278,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -10845,7 +10849,7 @@
         "entity": "minecraft:chicken"
       }
     },
-    "networkId": 468,
+    "networkId": 439,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10873,7 +10877,7 @@
         "entity": "minecraft:cow"
       }
     },
-    "networkId": 469,
+    "networkId": 440,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10901,7 +10905,7 @@
         "entity": "minecraft:pig"
       }
     },
-    "networkId": 470,
+    "networkId": 441,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10929,7 +10933,7 @@
         "entity": "minecraft:sheep"
       }
     },
-    "networkId": 471,
+    "networkId": 442,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10957,7 +10961,7 @@
         "entity": "minecraft:wolf"
       }
     },
-    "networkId": 472,
+    "networkId": 443,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -10985,7 +10989,7 @@
         "entity": "minecraft:polar_bear"
       }
     },
-    "networkId": 506,
+    "networkId": 477,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11013,7 +11017,7 @@
         "entity": "minecraft:ocelot"
       }
     },
-    "networkId": 484,
+    "networkId": 455,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11041,7 +11045,7 @@
         "entity": "minecraft:cat"
       }
     },
-    "networkId": 522,
+    "networkId": 493,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11069,7 +11073,7 @@
         "entity": "minecraft:mooshroom"
       }
     },
-    "networkId": 473,
+    "networkId": 444,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11097,7 +11101,7 @@
         "entity": "minecraft:bat"
       }
     },
-    "networkId": 486,
+    "networkId": 457,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11125,7 +11129,7 @@
         "entity": "minecraft:parrot"
       }
     },
-    "networkId": 512,
+    "networkId": 483,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11153,7 +11157,7 @@
         "entity": "minecraft:rabbit"
       }
     },
-    "networkId": 492,
+    "networkId": 463,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11181,7 +11185,7 @@
         "entity": "minecraft:llama"
       }
     },
-    "networkId": 507,
+    "networkId": 478,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11209,7 +11213,7 @@
         "entity": "minecraft:horse"
       }
     },
-    "networkId": 491,
+    "networkId": 462,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11237,7 +11241,7 @@
         "entity": "minecraft:donkey"
       }
     },
-    "networkId": 499,
+    "networkId": 470,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11265,7 +11269,7 @@
         "entity": "minecraft:mule"
       }
     },
-    "networkId": 500,
+    "networkId": 471,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11293,7 +11297,7 @@
         "entity": "minecraft:skeleton_horse"
       }
     },
-    "networkId": 501,
+    "networkId": 472,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11321,7 +11325,7 @@
         "entity": "minecraft:zombie_horse"
       }
     },
-    "networkId": 502,
+    "networkId": 473,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11349,7 +11353,7 @@
         "entity": "minecraft:tropicalfish"
       }
     },
-    "networkId": 513,
+    "networkId": 484,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11377,7 +11381,7 @@
         "entity": "minecraft:cod"
       }
     },
-    "networkId": 514,
+    "networkId": 485,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11405,7 +11409,7 @@
         "entity": "minecraft:pufferfish"
       }
     },
-    "networkId": 515,
+    "networkId": 486,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11433,7 +11437,7 @@
         "entity": "minecraft:salmon"
       }
     },
-    "networkId": 516,
+    "networkId": 487,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11461,7 +11465,7 @@
         "entity": "minecraft:dolphin"
       }
     },
-    "networkId": 518,
+    "networkId": 489,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11489,7 +11493,7 @@
         "entity": "minecraft:turtle"
       }
     },
-    "networkId": 519,
+    "networkId": 490,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11517,7 +11521,7 @@
         "entity": "minecraft:panda"
       }
     },
-    "networkId": 523,
+    "networkId": 494,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11545,7 +11549,7 @@
         "entity": "minecraft:fox"
       }
     },
-    "networkId": 524,
+    "networkId": 495,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11573,7 +11577,7 @@
         "entity": "minecraft:creeper"
       }
     },
-    "networkId": 474,
+    "networkId": 445,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11601,7 +11605,7 @@
         "entity": "minecraft:enderman"
       }
     },
-    "networkId": 475,
+    "networkId": 446,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11629,7 +11633,7 @@
         "entity": "minecraft:silverfish"
       }
     },
-    "networkId": 476,
+    "networkId": 447,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11657,7 +11661,7 @@
         "entity": "minecraft:skeleton"
       }
     },
-    "networkId": 477,
+    "networkId": 448,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11685,7 +11689,7 @@
         "entity": "minecraft:wither_skeleton"
       }
     },
-    "networkId": 498,
+    "networkId": 469,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11713,7 +11717,7 @@
         "entity": "minecraft:stray"
       }
     },
-    "networkId": 495,
+    "networkId": 466,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11741,7 +11745,7 @@
         "entity": "minecraft:slime"
       }
     },
-    "networkId": 478,
+    "networkId": 449,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11769,7 +11773,7 @@
         "entity": "minecraft:spider"
       }
     },
-    "networkId": 479,
+    "networkId": 450,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11797,7 +11801,7 @@
         "entity": "minecraft:zombie"
       }
     },
-    "networkId": 480,
+    "networkId": 451,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11825,7 +11829,7 @@
         "entity": "minecraft:zombie_pigman"
       }
     },
-    "networkId": 481,
+    "networkId": 452,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11853,7 +11857,7 @@
         "entity": "minecraft:husk"
       }
     },
-    "networkId": 497,
+    "networkId": 468,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11881,7 +11885,7 @@
         "entity": "minecraft:drowned"
       }
     },
-    "networkId": 517,
+    "networkId": 488,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11909,7 +11913,7 @@
         "entity": "minecraft:squid"
       }
     },
-    "networkId": 483,
+    "networkId": 454,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11937,7 +11941,7 @@
         "entity": "minecraft:cave_spider"
       }
     },
-    "networkId": 490,
+    "networkId": 461,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11965,7 +11969,7 @@
         "entity": "minecraft:witch"
       }
     },
-    "networkId": 485,
+    "networkId": 456,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -11993,7 +11997,7 @@
         "entity": "minecraft:guardian"
       }
     },
-    "networkId": 494,
+    "networkId": 465,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12021,7 +12025,7 @@
         "entity": "minecraft:elder_guardian"
       }
     },
-    "networkId": 505,
+    "networkId": 476,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12049,7 +12053,7 @@
         "entity": "minecraft:endermite"
       }
     },
-    "networkId": 493,
+    "networkId": 464,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12077,7 +12081,7 @@
         "entity": "minecraft:magma_cube"
       }
     },
-    "networkId": 488,
+    "networkId": 459,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12105,7 +12109,7 @@
         "entity": "minecraft:ghast"
       }
     },
-    "networkId": 487,
+    "networkId": 458,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12133,7 +12137,7 @@
         "entity": "minecraft:blaze"
       }
     },
-    "networkId": 489,
+    "networkId": 460,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12161,7 +12165,7 @@
         "entity": "minecraft:shulker"
       }
     },
-    "networkId": 503,
+    "networkId": 474,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12189,7 +12193,7 @@
         "entity": "minecraft:vindicator"
       }
     },
-    "networkId": 508,
+    "networkId": 479,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12217,7 +12221,7 @@
         "entity": "minecraft:evocation_illager"
       }
     },
-    "networkId": 509,
+    "networkId": 480,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12245,7 +12249,7 @@
         "entity": "minecraft:vex"
       }
     },
-    "networkId": 510,
+    "networkId": 481,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12273,7 +12277,7 @@
         "entity": "minecraft:villager"
       }
     },
-    "networkId": 482,
+    "networkId": 453,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12301,7 +12305,7 @@
         "entity": "minecraft:wandering_trader"
       }
     },
-    "networkId": 526,
+    "networkId": 497,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12329,7 +12333,7 @@
         "entity": "minecraft:zombie_villager"
       }
     },
-    "networkId": 511,
+    "networkId": 482,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12357,7 +12361,7 @@
         "entity": "minecraft:phantom"
       }
     },
-    "networkId": 520,
+    "networkId": 491,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12385,7 +12389,7 @@
         "entity": "minecraft:pillager"
       }
     },
-    "networkId": 525,
+    "networkId": 496,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12413,7 +12417,7 @@
         "entity": "minecraft:ravager"
       }
     },
-    "networkId": 527,
+    "networkId": 498,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12441,7 +12445,7 @@
         "entity": "minecraft:iron_golem"
       }
     },
-    "networkId": 539,
+    "networkId": 510,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12469,7 +12473,7 @@
         "entity": "minecraft:snow_golem"
       }
     },
-    "networkId": 540,
+    "networkId": 511,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12581,7 +12585,7 @@
         ]
       }
     },
-    "networkId": 323,
+    "networkId": 294,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -12671,7 +12675,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 597,
+    "networkId": 568,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -12689,7 +12693,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 598,
+    "networkId": 569,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -12989,7 +12993,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 367,
+    "networkId": 338,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13022,7 +13026,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 371,
+    "networkId": 342,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13055,7 +13059,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 375,
+    "networkId": 346,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13088,7 +13092,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 383,
+    "networkId": 354,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13122,7 +13126,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 379,
+    "networkId": 350,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13155,7 +13159,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 368,
+    "networkId": 339,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13188,7 +13192,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 372,
+    "networkId": 343,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13221,7 +13225,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 376,
+    "networkId": 347,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13254,7 +13258,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 384,
+    "networkId": 355,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13288,7 +13292,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 380,
+    "networkId": 351,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13321,7 +13325,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 369,
+    "networkId": 340,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13354,7 +13358,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 373,
+    "networkId": 344,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13387,7 +13391,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 377,
+    "networkId": 348,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13420,7 +13424,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 385,
+    "networkId": 356,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13454,7 +13458,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 381,
+    "networkId": 352,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13487,7 +13491,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 370,
+    "networkId": 341,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13520,7 +13524,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 374,
+    "networkId": 345,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13553,7 +13557,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 378,
+    "networkId": 349,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13587,7 +13591,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 386,
+    "networkId": 357,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13621,7 +13625,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 382,
+    "networkId": 353,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13654,7 +13658,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 339,
+    "networkId": 310,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13687,7 +13691,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 343,
+    "networkId": 314,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13720,7 +13724,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 338,
+    "networkId": 309,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13753,7 +13757,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 354,
+    "networkId": 325,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13787,7 +13791,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 347,
+    "networkId": 318,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13821,7 +13825,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 342,
+    "networkId": 313,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13855,7 +13859,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 346,
+    "networkId": 317,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13889,7 +13893,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 329,
+    "networkId": 300,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13923,7 +13927,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 357,
+    "networkId": 328,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13958,7 +13962,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 350,
+    "networkId": 321,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -13992,7 +13996,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 341,
+    "networkId": 312,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14026,7 +14030,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 345,
+    "networkId": 316,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14060,7 +14064,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 328,
+    "networkId": 299,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14094,7 +14098,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 356,
+    "networkId": 327,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14129,7 +14133,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 349,
+    "networkId": 320,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14163,7 +14167,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 340,
+    "networkId": 311,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14197,7 +14201,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 344,
+    "networkId": 315,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14231,7 +14235,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 327,
+    "networkId": 298,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14265,7 +14269,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 355,
+    "networkId": 326,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14300,7 +14304,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 348,
+    "networkId": 319,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14334,7 +14338,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 361,
+    "networkId": 332,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14368,7 +14372,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 362,
+    "networkId": 333,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14402,7 +14406,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 363,
+    "networkId": 334,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14436,7 +14440,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 365,
+    "networkId": 336,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14471,7 +14475,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 364,
+    "networkId": 335,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14500,7 +14504,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 331,
+    "networkId": 302,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14526,7 +14530,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 614,
+    "networkId": 585,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14546,7 +14550,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 332,
+    "networkId": 303,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14580,7 +14584,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 387,
+    "networkId": 358,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -14611,7 +14615,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 305,
+    "networkId": 276,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14645,7 +14649,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 292,
+    "networkId": 263,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14679,7 +14683,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 303,
+    "networkId": 274,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14704,7 +14708,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 590,
+    "networkId": 561,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14738,7 +14742,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 318,
+    "networkId": 289,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14763,7 +14767,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 297,
+    "networkId": 268,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14797,7 +14801,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 298,
+    "networkId": 269,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14833,7 +14837,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 290,
+    "networkId": 261,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14865,7 +14869,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 289,
+    "networkId": 260,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14897,7 +14901,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 315,
+    "networkId": 286,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14931,7 +14935,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 319,
+    "networkId": 290,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -14967,7 +14971,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 310,
+    "networkId": 281,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -15003,7 +15007,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 300,
+    "networkId": 271,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -15039,7 +15043,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 313,
+    "networkId": 284,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -15065,7 +15069,7 @@
         "compostingChance": 100
       }
     },
-    "networkId": 449,
+    "networkId": 420,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15101,7 +15105,7 @@
       },
       "useDuration": 16
     },
-    "networkId": 299,
+    "networkId": 270,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -15135,7 +15139,7 @@
         }
       }
     },
-    "networkId": 424,
+    "networkId": 395,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15161,7 +15165,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 556,
+    "networkId": 527,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15179,7 +15183,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 406,
+    "networkId": 377,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15207,7 +15211,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 453,
+    "networkId": 424,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15233,7 +15237,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 330,
+    "networkId": 301,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15251,7 +15255,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 586,
+    "networkId": 557,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15269,7 +15273,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 425,
+    "networkId": 396,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15289,7 +15293,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 423,
+    "networkId": 394,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15307,7 +15311,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 555,
+    "networkId": 526,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15325,7 +15329,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 403,
+    "networkId": 374,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15345,7 +15349,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 569,
+    "networkId": 540,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15368,7 +15372,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 570,
+    "networkId": 541,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15391,7 +15395,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 571,
+    "networkId": 542,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15415,7 +15419,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 572,
+    "networkId": 543,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15446,7 +15450,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 585,
+    "networkId": 556,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15475,7 +15479,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 612,
+    "networkId": 583,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15503,7 +15507,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 603,
+    "networkId": 574,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15521,7 +15525,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 607,
+    "networkId": 578,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15539,7 +15543,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 460,
+    "networkId": 431,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15557,7 +15561,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 548,
+    "networkId": 519,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15586,7 +15590,7 @@
         }
       }
     },
-    "networkId": 459,
+    "networkId": 430,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15618,7 +15622,7 @@
         }
       }
     },
-    "networkId": 600,
+    "networkId": 571,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15650,7 +15654,7 @@
         }
       }
     },
-    "networkId": 601,
+    "networkId": 572,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -15671,7 +15675,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 352,
+    "networkId": 323,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -15689,7 +15693,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 450,
+    "networkId": 421,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -15841,7 +15845,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 630,
+    "networkId": 601,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -15913,7 +15917,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 464,
+    "networkId": 435,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16066,7 +16070,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 465,
+    "networkId": 436,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16540,7 +16544,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 591,
+    "networkId": 562,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16596,7 +16600,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 573,
+    "networkId": 544,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16619,7 +16623,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 574,
+    "networkId": 545,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16642,7 +16646,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 575,
+    "networkId": 546,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16665,7 +16669,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 576,
+    "networkId": 547,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16688,7 +16692,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 577,
+    "networkId": 548,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16711,7 +16715,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 578,
+    "networkId": 549,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16734,7 +16738,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 579,
+    "networkId": 550,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16757,7 +16761,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 580,
+    "networkId": 551,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16780,7 +16784,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 581,
+    "networkId": 552,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16803,7 +16807,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 582,
+    "networkId": 553,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16826,7 +16830,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 583,
+    "networkId": 554,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16849,7 +16853,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 584,
+    "networkId": 555,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16870,7 +16874,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 426,
+    "networkId": 397,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16899,9 +16903,7 @@
   },
   {
     "identifier": "minecraft:redstone_lamp",
-    "tags": [
-      "minecraft:sulfur_cube_archetype_slow_bouncy"
-    ],
+    "tags": [],
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
@@ -16950,7 +16952,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 390,
+    "networkId": 361,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16973,7 +16975,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 615,
+    "networkId": 586,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -16996,7 +16998,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 616,
+    "networkId": 587,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17019,7 +17021,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 617,
+    "networkId": 588,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17042,7 +17044,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 618,
+    "networkId": 589,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17065,7 +17067,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 619,
+    "networkId": 590,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17088,7 +17090,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 389,
+    "networkId": 360,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17106,7 +17108,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 553,
+    "networkId": 524,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17124,7 +17126,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 554,
+    "networkId": 525,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17142,7 +17144,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 353,
+    "networkId": 324,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17160,7 +17162,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 392,
+    "networkId": 363,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17178,7 +17180,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 393,
+    "networkId": 364,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17201,7 +17203,7 @@
         "block": "minecraft:water"
       }
     },
-    "networkId": 394,
+    "networkId": 365,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17224,7 +17226,7 @@
         "block": "minecraft:lava"
       }
     },
-    "networkId": 395,
+    "networkId": 366,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17248,7 +17250,7 @@
         "entity": "minecraft:cod"
       }
     },
-    "networkId": 396,
+    "networkId": 367,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17272,7 +17274,7 @@
         "entity": "minecraft:salmon"
       }
     },
-    "networkId": 397,
+    "networkId": 368,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17296,7 +17298,7 @@
         "entity": "minecraft:tropicalfish"
       }
     },
-    "networkId": 398,
+    "networkId": 369,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17320,7 +17322,7 @@
         "entity": "minecraft:pufferfish"
       }
     },
-    "networkId": 399,
+    "networkId": 370,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17550,7 +17552,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 333,
+    "networkId": 304,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17570,7 +17572,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 334,
+    "networkId": 305,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17590,7 +17592,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 335,
+    "networkId": 306,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17610,7 +17612,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 608,
+    "networkId": 579,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17630,7 +17632,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 336,
+    "networkId": 307,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17650,7 +17652,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 458,
+    "networkId": 429,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17670,7 +17672,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 337,
+    "networkId": 308,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17690,7 +17692,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 552,
+    "networkId": 523,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17710,7 +17712,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 563,
+    "networkId": 534,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17728,7 +17730,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 416,
+    "networkId": 387,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17748,7 +17750,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 415,
+    "networkId": 386,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17766,7 +17768,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 562,
+    "networkId": 533,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17784,7 +17786,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 604,
+    "networkId": 575,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17802,7 +17804,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 588,
+    "networkId": 559,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17820,7 +17822,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 609,
+    "networkId": 580,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17838,7 +17840,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 610,
+    "networkId": 581,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17856,7 +17858,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 611,
+    "networkId": 582,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17874,7 +17876,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 613,
+    "networkId": 584,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17892,7 +17894,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 358,
+    "networkId": 329,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17910,7 +17912,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 359,
+    "networkId": 330,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17928,7 +17930,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 388,
+    "networkId": 359,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17946,7 +17948,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 360,
+    "networkId": 331,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17964,7 +17966,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 413,
+    "networkId": 384,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -17982,7 +17984,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 568,
+    "networkId": 539,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18000,7 +18002,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 567,
+    "networkId": 538,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18018,7 +18020,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 549,
+    "networkId": 520,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18036,7 +18038,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 455,
+    "networkId": 426,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18054,7 +18056,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 462,
+    "networkId": 433,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18072,7 +18074,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 463,
+    "networkId": 434,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18090,7 +18092,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 461,
+    "networkId": 432,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18108,7 +18110,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 599,
+    "networkId": 570,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18126,7 +18128,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 605,
+    "networkId": 576,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18144,7 +18146,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 457,
+    "networkId": 428,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18162,7 +18164,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 420,
+    "networkId": 391,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18186,7 +18188,7 @@
         "cooldownTicks": 20
       }
     },
-    "networkId": 454,
+    "networkId": 425,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18204,7 +18206,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 466,
+    "networkId": 437,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18222,7 +18224,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 557,
+    "networkId": 528,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18258,7 +18260,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 844,
+    "networkId": 849,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18276,7 +18278,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 418,
+    "networkId": 389,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18298,7 +18300,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 419,
+    "networkId": 390,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18321,7 +18323,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 550,
+    "networkId": 521,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18342,7 +18344,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 407,
+    "networkId": 378,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18366,7 +18368,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 410,
+    "networkId": 381,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18390,7 +18392,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 408,
+    "networkId": 379,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18414,7 +18416,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 409,
+    "networkId": 380,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18438,7 +18440,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 411,
+    "networkId": 382,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18462,7 +18464,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 412,
+    "networkId": 383,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18569,7 +18571,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 402,
+    "networkId": 373,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18592,7 +18594,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 421,
+    "networkId": 392,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18615,7 +18617,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 565,
+    "networkId": 536,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18638,7 +18640,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 564,
+    "networkId": 535,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -18661,7 +18663,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 405,
+    "networkId": 376,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19078,9 +19080,7 @@
   },
   {
     "identifier": "minecraft:observer",
-    "tags": [
-      "minecraft:sulfur_cube_archetype_slow_bouncy"
-    ],
+    "tags": [],
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
@@ -19125,7 +19125,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 451,
+    "networkId": 422,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19143,7 +19143,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 561,
+    "networkId": 532,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19161,7 +19161,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 566,
+    "networkId": 537,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19271,7 +19271,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 587,
+    "networkId": 558,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19307,7 +19307,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 621,
+    "networkId": 592,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19328,7 +19328,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 622,
+    "networkId": 593,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19349,7 +19349,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 620,
+    "networkId": 591,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19370,7 +19370,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 623,
+    "networkId": 594,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19391,7 +19391,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 624,
+    "networkId": 595,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19412,7 +19412,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 625,
+    "networkId": 596,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19433,7 +19433,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 626,
+    "networkId": 597,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19454,7 +19454,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 627,
+    "networkId": 598,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -19531,7 +19531,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 632,
+    "networkId": 603,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -19556,7 +19556,7 @@
         "entity": "minecraft:bee"
       }
     },
-    "networkId": 528,
+    "networkId": 499,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -19598,7 +19598,7 @@
       "maxAmount": 16,
       "useDuration": 40
     },
-    "networkId": 633,
+    "networkId": 604,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "items",
@@ -19918,7 +19918,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 659,
+    "networkId": 630,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -19941,7 +19941,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 660,
+    "networkId": 631,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -20759,7 +20759,7 @@
         "compostingChance": 50
       }
     },
-    "networkId": 663,
+    "networkId": 634,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -20937,7 +20937,7 @@
         "entity": "minecraft:strider"
       }
     },
-    "networkId": 529,
+    "networkId": 500,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -20965,7 +20965,7 @@
         "entity": "minecraft:hoglin"
       }
     },
-    "networkId": 530,
+    "networkId": 501,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -20993,7 +20993,7 @@
         "entity": "minecraft:piglin"
       }
     },
-    "networkId": 531,
+    "networkId": 502,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -21021,7 +21021,7 @@
         "entity": "minecraft:zoglin"
       }
     },
-    "networkId": 532,
+    "networkId": 503,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -21049,7 +21049,7 @@
         "entity": "minecraft:piglin_brute"
       }
     },
-    "networkId": 533,
+    "networkId": 504,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -21102,7 +21102,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 652,
+    "networkId": 623,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21135,7 +21135,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 653,
+    "networkId": 624,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21168,7 +21168,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 654,
+    "networkId": 625,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21201,7 +21201,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 655,
+    "networkId": 626,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21234,7 +21234,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 646,
+    "networkId": 617,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21268,7 +21268,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 649,
+    "networkId": 620,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21302,7 +21302,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 648,
+    "networkId": 619,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21336,7 +21336,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 647,
+    "networkId": 618,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21370,7 +21370,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 650,
+    "networkId": 621,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21404,7 +21404,7 @@
         }
       }
     },
-    "networkId": 661,
+    "networkId": 632,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -21458,7 +21458,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 664,
+    "networkId": 635,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -21496,7 +21496,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 662,
+    "networkId": 633,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -21519,7 +21519,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 657,
+    "networkId": 628,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -21542,7 +21542,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 658,
+    "networkId": 629,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -21563,7 +21563,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 656,
+    "networkId": 627,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -21584,7 +21584,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 651,
+    "networkId": 622,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23297,7 +23297,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 845,
+    "networkId": 881,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -23318,7 +23318,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 543,
+    "networkId": 514,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -23741,7 +23741,7 @@
         "entity": "minecraft:glow_squid"
       }
     },
-    "networkId": 538,
+    "networkId": 509,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -23769,7 +23769,7 @@
         "entity": "minecraft:goat"
       }
     },
-    "networkId": 537,
+    "networkId": 508,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -23797,7 +23797,7 @@
         "entity": "minecraft:axolotl"
       }
     },
-    "networkId": 536,
+    "networkId": 507,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -23818,7 +23818,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 667,
+    "networkId": 638,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -23836,7 +23836,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 665,
+    "networkId": 636,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23859,7 +23859,7 @@
         "block": "minecraft:powder_snow"
       }
     },
-    "networkId": 400,
+    "networkId": 371,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23883,7 +23883,7 @@
         "entity": "minecraft:axolotl"
       }
     },
-    "networkId": 401,
+    "networkId": 372,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23901,7 +23901,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 545,
+    "networkId": 516,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23919,7 +23919,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 546,
+    "networkId": 517,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23937,7 +23937,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 547,
+    "networkId": 518,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23957,7 +23957,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 544,
+    "networkId": 515,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -23977,7 +23977,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 666,
+    "networkId": 637,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -24372,7 +24372,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 668,
+    "networkId": 639,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -24524,7 +24524,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 675,
+    "networkId": 646,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "construction",
@@ -24954,7 +24954,7 @@
         "entity": "minecraft:warden"
       }
     },
-    "networkId": 674,
+    "networkId": 645,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -24982,7 +24982,7 @@
         "entity": "minecraft:allay"
       }
     },
-    "networkId": 673,
+    "networkId": 644,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -25010,7 +25010,7 @@
         "entity": "minecraft:frog"
       }
     },
-    "networkId": 670,
+    "networkId": 641,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -25038,7 +25038,7 @@
         "entity": "minecraft:tadpole"
       }
     },
-    "networkId": 671,
+    "networkId": 642,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -25184,7 +25184,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 688,
+    "networkId": 659,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -25208,7 +25208,7 @@
         "cooldownTicks": 140
       }
     },
-    "networkId": 669,
+    "networkId": 640,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -25231,7 +25231,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 678,
+    "networkId": 649,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25252,7 +25252,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 679,
+    "networkId": 650,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25272,7 +25272,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 676,
+    "networkId": 647,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25299,7 +25299,7 @@
         "entity": "minecraft:tadpole"
       }
     },
-    "networkId": 672,
+    "networkId": 643,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25317,7 +25317,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 689,
+    "networkId": 660,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25338,7 +25338,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 677,
+    "networkId": 648,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25362,7 +25362,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 680,
+    "networkId": 651,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25386,7 +25386,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 683,
+    "networkId": 654,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25410,7 +25410,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 681,
+    "networkId": 652,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25434,7 +25434,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 682,
+    "networkId": 653,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25458,7 +25458,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 684,
+    "networkId": 655,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25482,7 +25482,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 685,
+    "networkId": 656,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25506,7 +25506,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 686,
+    "networkId": 657,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -25576,7 +25576,7 @@
         "entity": "minecraft:trader_llama"
       }
     },
-    "networkId": 690,
+    "networkId": 661,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -26173,7 +26173,7 @@
         "compostingChance": 30
       }
     },
-    "networkId": 325,
+    "networkId": 296,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -26199,7 +26199,7 @@
         "compostingChance": 30
       }
     },
-    "networkId": 326,
+    "networkId": 297,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "nature",
@@ -26323,7 +26323,7 @@
         "entity": "minecraft:camel"
       }
     },
-    "networkId": 697,
+    "networkId": 668,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -26351,7 +26351,7 @@
         "entity": "minecraft:sniffer"
       }
     },
-    "networkId": 534,
+    "networkId": 505,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -26401,7 +26401,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 722,
+    "networkId": 693,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -26475,7 +26475,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 742,
+    "networkId": 713,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26498,7 +26498,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 693,
+    "networkId": 664,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26521,7 +26521,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 694,
+    "networkId": 665,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26832,7 +26832,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 691,
+    "networkId": 662,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26856,7 +26856,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 695,
+    "networkId": 666,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26880,7 +26880,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 692,
+    "networkId": 663,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -26904,7 +26904,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 696,
+    "networkId": 667,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27011,7 +27011,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 699,
+    "networkId": 670,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27034,7 +27034,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 700,
+    "networkId": 671,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27057,7 +27057,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 701,
+    "networkId": 672,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27080,7 +27080,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 702,
+    "networkId": 673,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27103,7 +27103,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 703,
+    "networkId": 674,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27126,7 +27126,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 704,
+    "networkId": 675,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27149,7 +27149,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 705,
+    "networkId": 676,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27172,7 +27172,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 706,
+    "networkId": 677,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27195,7 +27195,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 708,
+    "networkId": 679,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27218,7 +27218,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 710,
+    "networkId": 681,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27241,7 +27241,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 711,
+    "networkId": 682,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27264,7 +27264,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 712,
+    "networkId": 683,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27287,7 +27287,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 713,
+    "networkId": 684,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27310,7 +27310,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 714,
+    "networkId": 685,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27333,7 +27333,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 715,
+    "networkId": 686,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27356,7 +27356,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 716,
+    "networkId": 687,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27379,7 +27379,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 718,
+    "networkId": 689,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27402,7 +27402,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 719,
+    "networkId": 690,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27425,7 +27425,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 720,
+    "networkId": 691,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27448,7 +27448,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 721,
+    "networkId": 692,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27471,7 +27471,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 723,
+    "networkId": 694,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27494,7 +27494,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 724,
+    "networkId": 695,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27517,7 +27517,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 730,
+    "networkId": 701,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27540,7 +27540,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 727,
+    "networkId": 698,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27563,7 +27563,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 726,
+    "networkId": 697,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27586,7 +27586,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 725,
+    "networkId": 696,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27609,7 +27609,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 736,
+    "networkId": 707,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27632,7 +27632,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 738,
+    "networkId": 709,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27655,7 +27655,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 737,
+    "networkId": 708,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27678,7 +27678,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 739,
+    "networkId": 710,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27701,7 +27701,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 728,
+    "networkId": 699,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27724,7 +27724,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 735,
+    "networkId": 706,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27747,7 +27747,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 731,
+    "networkId": 702,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27770,7 +27770,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 732,
+    "networkId": 703,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27793,7 +27793,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 733,
+    "networkId": 704,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27816,7 +27816,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 729,
+    "networkId": 700,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27839,7 +27839,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 734,
+    "networkId": 705,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -27885,7 +27885,7 @@
         "entity": "minecraft:armadillo"
       }
     },
-    "networkId": 745,
+    "networkId": 719,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -27920,7 +27920,7 @@
         }
       }
     },
-    "networkId": 747,
+    "networkId": 721,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -27938,7 +27938,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 746,
+    "networkId": 720,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29168,7 +29168,7 @@
         "entity": "minecraft:breeze"
       }
     },
-    "networkId": 535,
+    "networkId": 506,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -29196,7 +29196,7 @@
         "entity": "minecraft:bogged"
       }
     },
-    "networkId": 496,
+    "networkId": 467,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -29229,7 +29229,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 351,
+    "networkId": 322,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -29258,7 +29258,7 @@
         }
       }
     },
-    "networkId": 284,
+    "networkId": 879,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -29276,7 +29276,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 634,
+    "networkId": 605,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -29299,7 +29299,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 828,
+    "networkId": 830,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29322,7 +29322,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 829,
+    "networkId": 831,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29345,7 +29345,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 830,
+    "networkId": 832,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29371,7 +29371,7 @@
         }
       }
     },
-    "networkId": 281,
+    "networkId": 876,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "items",
@@ -29425,7 +29425,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 628,
+    "networkId": 599,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29446,7 +29446,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 629,
+    "networkId": 600,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29469,7 +29469,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 707,
+    "networkId": 678,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29492,7 +29492,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 709,
+    "networkId": 680,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29515,7 +29515,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 717,
+    "networkId": 688,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29538,7 +29538,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 740,
+    "networkId": 711,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29561,7 +29561,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 741,
+    "networkId": 712,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -29587,7 +29587,7 @@
         }
       }
     },
-    "networkId": 283,
+    "networkId": 878,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "items",
@@ -29610,7 +29610,7 @@
         }
       }
     },
-    "networkId": 282,
+    "networkId": 877,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "items",
@@ -30324,7 +30324,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 754,
+    "networkId": 728,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -30344,7 +30344,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 753,
+    "networkId": 727,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -30405,7 +30405,7 @@
         "entity": "minecraft:creaking"
       }
     },
-    "networkId": 751,
+    "networkId": 725,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -30433,7 +30433,7 @@
         "entity": "minecraft:happy_ghast"
       }
     },
-    "networkId": 755,
+    "networkId": 729,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -30456,7 +30456,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 770,
+    "networkId": 744,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30479,7 +30479,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 763,
+    "networkId": 737,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30502,7 +30502,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 760,
+    "networkId": 734,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30525,7 +30525,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 756,
+    "networkId": 730,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30548,7 +30548,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 758,
+    "networkId": 732,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30571,7 +30571,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 769,
+    "networkId": 743,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30594,7 +30594,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 766,
+    "networkId": 740,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30617,7 +30617,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 771,
+    "networkId": 745,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30640,7 +30640,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 764,
+    "networkId": 738,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30663,7 +30663,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 761,
+    "networkId": 735,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30686,7 +30686,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 759,
+    "networkId": 733,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30709,7 +30709,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 762,
+    "networkId": 736,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30732,7 +30732,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 757,
+    "networkId": 731,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30755,7 +30755,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 768,
+    "networkId": 742,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30778,7 +30778,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 765,
+    "networkId": 739,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30801,7 +30801,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 767,
+    "networkId": 741,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -30831,7 +30831,7 @@
         }
       }
     },
-    "networkId": 267,
+    "networkId": 862,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -30861,7 +30861,7 @@
         }
       }
     },
-    "networkId": 279,
+    "networkId": 874,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -30891,7 +30891,7 @@
         }
       }
     },
-    "networkId": 272,
+    "networkId": 867,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -30921,7 +30921,7 @@
         }
       }
     },
-    "networkId": 269,
+    "networkId": 864,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -30951,7 +30951,7 @@
         }
       }
     },
-    "networkId": 264,
+    "networkId": 859,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -30981,7 +30981,7 @@
         }
       }
     },
-    "networkId": 266,
+    "networkId": 861,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31011,7 +31011,7 @@
         }
       }
     },
-    "networkId": 278,
+    "networkId": 873,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31041,7 +31041,7 @@
         }
       }
     },
-    "networkId": 275,
+    "networkId": 870,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31071,7 +31071,7 @@
         }
       }
     },
-    "networkId": 280,
+    "networkId": 875,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31101,7 +31101,7 @@
         }
       }
     },
-    "networkId": 273,
+    "networkId": 868,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31131,7 +31131,7 @@
         }
       }
     },
-    "networkId": 270,
+    "networkId": 865,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31161,7 +31161,7 @@
         }
       }
     },
-    "networkId": 268,
+    "networkId": 863,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31191,7 +31191,7 @@
         }
       }
     },
-    "networkId": 271,
+    "networkId": 866,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31221,7 +31221,7 @@
         }
       }
     },
-    "networkId": 265,
+    "networkId": 860,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31251,7 +31251,7 @@
         }
       }
     },
-    "networkId": 277,
+    "networkId": 872,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31281,7 +31281,7 @@
         }
       }
     },
-    "networkId": 274,
+    "networkId": 869,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31311,7 +31311,7 @@
         }
       }
     },
-    "networkId": 276,
+    "networkId": 871,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -31334,7 +31334,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 831,
+    "networkId": 833,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31357,7 +31357,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 832,
+    "networkId": 834,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31380,7 +31380,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 750,
+    "networkId": 724,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31427,7 +31427,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 752,
+    "networkId": 726,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31448,7 +31448,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 748,
+    "networkId": 722,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31472,7 +31472,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 749,
+    "networkId": 723,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -31710,7 +31710,7 @@
         "entity": "minecraft:copper_golem"
       }
     },
-    "networkId": 772,
+    "networkId": 746,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -31743,7 +31743,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 778,
+    "networkId": 752,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31776,7 +31776,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 779,
+    "networkId": 753,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31809,7 +31809,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 780,
+    "networkId": 754,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31842,7 +31842,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 781,
+    "networkId": 755,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31875,7 +31875,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 773,
+    "networkId": 747,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31909,7 +31909,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 776,
+    "networkId": 750,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31943,7 +31943,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 775,
+    "networkId": 749,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -31977,7 +31977,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 774,
+    "networkId": 748,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -32011,7 +32011,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 777,
+    "networkId": 751,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -32034,7 +32034,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 783,
+    "networkId": 757,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -32978,7 +32978,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 782,
+    "networkId": 756,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -33196,7 +33196,7 @@
       },
       "useDuration": 32
     },
-    "networkId": 631,
+    "networkId": 602,
     "itemVersion": 0,
     "catalog": {
       "categoryName": "equipment",
@@ -33224,7 +33224,7 @@
         "entity": "minecraft:nautilus"
       }
     },
-    "networkId": 784,
+    "networkId": 758,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -33252,7 +33252,7 @@
         "entity": "minecraft:camel_husk"
       }
     },
-    "networkId": 698,
+    "networkId": 669,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -33280,7 +33280,7 @@
         "entity": "minecraft:parched"
       }
     },
-    "networkId": 786,
+    "networkId": 760,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -33308,7 +33308,7 @@
         "entity": "minecraft:zombie_nautilus"
       }
     },
-    "networkId": 785,
+    "networkId": 759,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -33357,7 +33357,7 @@
       "damage": 1,
       "useDuration": 72000
     },
-    "networkId": 263,
+    "networkId": 858,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33406,7 +33406,7 @@
       "damage": 2,
       "useDuration": 72000
     },
-    "networkId": 262,
+    "networkId": 857,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33455,7 +33455,7 @@
       "damage": 2,
       "useDuration": 72000
     },
-    "networkId": 257,
+    "networkId": 852,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33504,7 +33504,7 @@
       "damage": 3,
       "useDuration": 72000
     },
-    "networkId": 260,
+    "networkId": 855,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33553,7 +33553,7 @@
       "damage": 1,
       "useDuration": 72000
     },
-    "networkId": 259,
+    "networkId": 854,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33603,7 +33603,7 @@
       "damage": 4,
       "useDuration": 72000
     },
-    "networkId": 258,
+    "networkId": 853,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33652,7 +33652,7 @@
       "damage": 5,
       "useDuration": 72000
     },
-    "networkId": 261,
+    "networkId": 856,
     "itemVersion": 1,
     "catalog": {
       "categoryName": "equipment",
@@ -33676,7 +33676,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 792,
+    "networkId": 766,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -33699,7 +33699,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 787,
+    "networkId": 761,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -33722,7 +33722,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 788,
+    "networkId": 762,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -33745,7 +33745,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 789,
+    "networkId": 763,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -33769,7 +33769,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 790,
+    "networkId": 764,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -33793,7 +33793,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 791,
+    "networkId": 765,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "equipment",
@@ -34443,7 +34443,7 @@
         "entity": "minecraft:sulfur_cube"
       }
     },
-    "networkId": 793,
+    "networkId": 767,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "nature",
@@ -34466,7 +34466,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 833,
+    "networkId": 835,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -34493,7 +34493,7 @@
         "entity": "minecraft:sulfur_cube"
       }
     },
-    "networkId": 794,
+    "networkId": 768,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -37094,7 +37094,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 637,
+    "networkId": 608,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -37115,7 +37115,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 640,
+    "networkId": 611,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -37142,7 +37142,7 @@
         "cooldownTicks": 10
       }
     },
-    "networkId": 638,
+    "networkId": 609,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -37163,7 +37163,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 639,
+    "networkId": 610,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -37331,7 +37331,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 642,
+    "networkId": 613,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -38066,7 +38066,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 641,
+    "networkId": 612,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -38094,7 +38094,7 @@
         "unbreakable": false
       }
     },
-    "networkId": 644,
+    "networkId": 615,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
@@ -38122,13 +38122,1617 @@
         "unbreakable": false
       }
     },
-    "networkId": 643,
+    "networkId": 614,
     "itemVersion": 2,
     "catalog": {
       "categoryName": "items",
       "group_identifier": {
         "icon": "minecraft:balloon",
         "name": "minecraft:itemGroup.name.products"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:red_shrub",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 64,
+      "compostable": {
+        "compostingChance": 30
+      },
+      "icon": {
+        "textures": {
+          "default": "red_shrub"
+        }
+      }
+    },
+    "networkId": 850,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:fern",
+        "name": "minecraft:itemGroup.name.grass"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:shelf_mushroom",
+    "tags": [
+      "minecraft:mushrooms_for_stew"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 64,
+      "compostable": {
+        "compostingChance": 65
+      }
+    },
+    "networkId": 851,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:shelf_mushroom",
+        "name": "minecraft:itemGroup.name.mushroom"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:orange_poplar_leaves",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 64,
+      "compostable": {
+        "compostingChance": 30
+      }
+    },
+    "networkId": -1144,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_leaves",
+        "name": "minecraft:itemGroup.name.leaves"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:red_poplar_leaves",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 64,
+      "compostable": {
+        "compostingChance": 30
+      }
+    },
+    "networkId": -1145,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_leaves",
+        "name": "minecraft:itemGroup.name.leaves"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_poplar_leaves",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 64,
+      "compostable": {
+        "compostingChance": 30
+      }
+    },
+    "networkId": -1146,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_leaves",
+        "name": "minecraft:itemGroup.name.leaves"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_sapling",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1143,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_sapling",
+        "name": "minecraft:itemGroup.name.sapling"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_log",
+    "tags": [
+      "minecraft:logs",
+      "minecraft:logs_that_burn",
+      "minecraft:sulfur_cube_archetype_bouncy"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1132,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_log",
+        "name": "minecraft:itemGroup.name.log"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_log",
+    "tags": [
+      "minecraft:logs",
+      "minecraft:logs_that_burn",
+      "minecraft:sulfur_cube_archetype_bouncy"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1131,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_log",
+        "name": "minecraft:itemGroup.name.log"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_wood",
+    "tags": [
+      "minecraft:logs",
+      "minecraft:logs_that_burn",
+      "minecraft:sulfur_cube_archetype_bouncy"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1142,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_wood",
+        "name": "minecraft:itemGroup.name.wood"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:stripped_poplar_wood",
+    "tags": [
+      "minecraft:logs",
+      "minecraft:logs_that_burn",
+      "minecraft:sulfur_cube_archetype_bouncy"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1141,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "nature",
+      "group_identifier": {
+        "icon": "minecraft:oak_wood",
+        "name": "minecraft:itemGroup.name.wood"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_planks",
+    "tags": [
+      "minecraft:planks",
+      "minecraft:sulfur_cube_archetype_bouncy"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1133,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:oak_planks",
+        "name": "minecraft:itemGroup.name.planks"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1128,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:oak_fence",
+        "name": "minecraft:itemGroup.name.fence"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_fence_gate",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1129,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:fence_gate",
+        "name": "minecraft:itemGroup.name.fenceGate"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1137,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1150,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1159,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1158,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1164,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1163,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1149,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1152,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1155,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1156,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1162,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1160,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1154,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1151,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1161,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1153,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_stairs",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1157,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:stone_stairs",
+        "name": "minecraft:itemGroup.name.stairs"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_door",
+    "tags": [
+      "minecraft:door"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1127,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:wooden_door",
+        "name": "minecraft:itemGroup.name.door"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_trapdoor",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1139,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:trapdoor",
+        "name": "minecraft:itemGroup.name.trapdoor"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_slab",
+    "tags": [
+      "minecraft:wooden_slabs"
+    ],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1135,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:white_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1165,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1166,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:gray_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1167,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:black_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1168,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:brown_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1169,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:red_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1170,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:orange_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1171,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1172,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:lime_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1173,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:green_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1174,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1175,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1176,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:blue_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1177,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:purple_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1178,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1179,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:pink_wool_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1180,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "construction",
+      "group_identifier": {
+        "icon": "minecraft:smooth_stone_slab",
+        "name": "minecraft:itemGroup.name.slab"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_boat",
+    "tags": [
+      "minecraft:boat",
+      "minecraft:boats"
+    ],
+    "stackable": false,
+    "maxAmount": 1,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": false,
+      "maxAmount": 1
+    },
+    "networkId": 769,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:oak_boat",
+        "name": "minecraft:itemGroup.name.boat"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_chest_boat",
+    "tags": [
+      "minecraft:boat",
+      "minecraft:boats"
+    ],
+    "stackable": false,
+    "maxAmount": 1,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": false,
+      "maxAmount": 1
+    },
+    "networkId": 770,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:oak_chest_boat",
+        "name": "minecraft:itemGroup.name.chestboat"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_pressure_plate",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1134,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:wooden_pressure_plate",
+        "name": "minecraft:itemGroup.name.pressurePlate"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_shelf",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1147,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:oak_shelf",
+        "name": "minecraft:itemGroup.name.shelf"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_sign",
+    "tags": [
+      "minecraft:sign"
+    ],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 771,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:oak_sign",
+        "name": "minecraft:itemGroup.name.sign"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_hanging_sign",
+    "tags": [
+      "minecraft:sign",
+      "minecraft:hanging_sign"
+    ],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": -1130,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:oak_hanging_sign",
+        "name": "minecraft:itemGroup.name.hanging_sign"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:poplar_button",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1126,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:wooden_button",
+        "name": "minecraft:itemGroup.name.buttons"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:straw_bed",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": true,
+    "propertiesPayload": {
+      "components": [
+        "minecraft:compostable"
+      ],
+      "stackable": true,
+      "maxAmount": 16,
+      "compostable": {
+        "compostingChance": 85
+      }
+    },
+    "networkId": 772,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:bed",
+        "name": "minecraft:itemGroup.name.bed"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:black_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 773,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:blue_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 774,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:brown_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 775,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:cyan_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 776,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:gray_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 777,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:green_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 778,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_blue_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 779,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:light_gray_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 780,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:lime_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 781,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:magenta_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 782,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:orange_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 783,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:pink_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 784,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:purple_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 785,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:red_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 786,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:white_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 787,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:yellow_cushion",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 16,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 16
+    },
+    "networkId": 788,
+    "itemVersion": 2,
+    "catalog": {
+      "categoryName": "items",
+      "group_identifier": {
+        "icon": "minecraft:red_cushion",
+        "name": "minecraft:itemGroup.name.cushion"
       }
     }
   },
@@ -38180,7 +39784,7 @@
       "stackable": true,
       "maxAmount": 16
     },
-    "networkId": 606,
+    "networkId": 577,
     "itemVersion": 2
   },
   {
@@ -38198,6 +39802,34 @@
     "itemVersion": 2
   },
   {
+    "identifier": "minecraft:black_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1184,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:blue_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1193,
+    "itemVersion": 2
+  },
+  {
     "identifier": "minecraft:border_block",
     "tags": [],
     "stackable": true,
@@ -38209,6 +39841,20 @@
       "maxAmount": 64
     },
     "networkId": 212,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:brown_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1185,
     "itemVersion": 2
   },
   {
@@ -38252,7 +39898,21 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 602,
+    "networkId": 573,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:cyan_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1191,
     "itemVersion": 2
   },
   {
@@ -38284,7 +39944,7 @@
       "stackable": false,
       "maxAmount": 1
     },
-    "networkId": 560,
+    "networkId": 531,
     "itemVersion": 2
   },
   {
@@ -38305,7 +39965,7 @@
         "entity": "minecraft:ender_dragon"
       }
     },
-    "networkId": 541,
+    "networkId": 512,
     "itemVersion": 2
   },
   {
@@ -38319,7 +39979,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 452,
+    "networkId": 423,
     "itemVersion": 2
   },
   {
@@ -38333,7 +39993,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 558,
+    "networkId": 529,
     "itemVersion": 2
   },
   {
@@ -38347,7 +40007,7 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 559,
+    "networkId": 530,
     "itemVersion": 2
   },
   {
@@ -38362,6 +40022,34 @@
       "maxAmount": 64
     },
     "networkId": 207,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:gray_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1183,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:green_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1190,
     "itemVersion": 2
   },
   {
@@ -38603,6 +40291,48 @@
     "itemVersion": 2
   },
   {
+    "identifier": "minecraft:light_blue_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1192,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:light_gray_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1182,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:lime_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1189,
+    "itemVersion": 2
+  },
+  {
     "identifier": "minecraft:lodestone_compass",
     "tags": [],
     "stackable": true,
@@ -38615,7 +40345,35 @@
       "stackable": true,
       "maxAmount": 64
     },
-    "networkId": 645,
+    "networkId": 616,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:magenta_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1195,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:orange_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1187,
     "itemVersion": 2
   },
   {
@@ -38630,6 +40388,48 @@
       "maxAmount": 64
     },
     "networkId": -902,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:pink_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1196,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:purple_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1194,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:red_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1186,
     "itemVersion": 2
   },
   {
@@ -38675,6 +40475,20 @@
     "itemVersion": 2
   },
   {
+    "identifier": "minecraft:white_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1181,
+    "itemVersion": 2
+  },
+  {
     "identifier": "minecraft:wither_spawn_egg",
     "tags": [
       "minecraft:spawn_egg"
@@ -38692,7 +40506,21 @@
         "entity": "minecraft:wither"
       }
     },
-    "networkId": 542,
+    "networkId": 513,
+    "itemVersion": 2
+  },
+  {
+    "identifier": "minecraft:yellow_wool_double_slab",
+    "tags": [],
+    "stackable": true,
+    "maxAmount": 64,
+    "componentBased": false,
+    "propertiesPayload": {
+      "components": [],
+      "stackable": true,
+      "maxAmount": 64
+    },
+    "networkId": -1188,
     "itemVersion": 2
   }
 ]
