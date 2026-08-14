@@ -343,6 +343,21 @@ public static class InventoryTransaction {
                 return;
             }
 
+            if (transaction.ClientInteractPrediction != ItemUsePredictedResult.Success) {
+                if (player.Dimension is null || !CanUseItem(player, repeatItem)) {
+                    return;
+                }
+
+                repeatItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                    player,
+                    transaction.Slot,
+                    transaction.Position,
+                    transaction.Face,
+                    transaction.Position,
+                    transaction.ClickPosition));
+                return;
+            }
+
             bool isPlaceableBlock = repeatItem.Type.BlockType is not null
                 || Basalt.Core.Blocks.BlockType.Get(repeatItem.Identifier) is not null;
 
@@ -376,29 +391,29 @@ public static class InventoryTransaction {
 
         if (transaction.TriggerType == ItemUseTriggerType.PlayerInput &&
             transaction.ClientInteractPrediction != ItemUsePredictedResult.Success) {
-            ItemStack? nonPlaceItem = GetHeldItem(inventory, transaction.Slot);
-            if (nonPlaceItem is not null && nonPlaceItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(nonPlaceItem.Identifier) is null) {
-                if (player.Dimension is not null) {
-                    BlockPos blockPosition = transaction.Position;
-
-                    if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
-                        blockPosition = player.LastActionBlockPosition;
-                    }
-
-                    if (!CanUseItem(player, nonPlaceItem)) {
-                        return;
-                    }
-
-                    nonPlaceItem.OnUseOnBlock(new ItemUseOnBlockDetails(
-                        player,
-                        transaction.Slot,
-                        blockPosition,
-                        transaction.Face,
-                        transaction.Position,
-                        transaction.ClickPosition));
-                }
+            ItemStack? usedItem = GetHeldItem(inventory, transaction.Slot);
+            if (usedItem is null || player.Dimension is null) {
                 return;
             }
+
+            BlockPos blockPosition = transaction.Position;
+
+            if (IsEmptyPosition(blockPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
+                blockPosition = player.LastActionBlockPosition;
+            }
+
+            if (!CanUseItem(player, usedItem)) {
+                return;
+            }
+
+            usedItem.OnUseOnBlock(new ItemUseOnBlockDetails(
+                player,
+                transaction.Slot,
+                blockPosition,
+                transaction.Face,
+                transaction.Position,
+                transaction.ClickPosition));
+            return;
         }
 
         if (player.Dimension is not null) {
