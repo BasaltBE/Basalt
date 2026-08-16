@@ -29,6 +29,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
     public short SpawnRange = 4;
 
     private bool _ticking;
+    private readonly List<Entity> _nearbyEntities = [];
 
     public MobSpawnerTrait(Block block) : base(block) {
     }
@@ -122,9 +123,9 @@ public sealed class MobSpawnerTrait : BlockTrait {
             });
     }
 
-    public void Tick(Dimension dimension, BlockPos position) {
+    public bool Tick(Dimension dimension, BlockPos position) {
         if (!PlayerInRange(dimension, position)) {
-            return;
+            return false;
         }
 
         if (Delay < 0) {
@@ -133,24 +134,25 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
         if (Delay > 0) {
             Delay--;
-            return;
+            return true;
         }
 
         if (string.IsNullOrWhiteSpace(EntityIdentifier) ||
             EntityType.Get(EntityIdentifier) is null ||
             SpawnCount <= 0) {
-            return;
+            return true;
         }
 
         bool spawned = false;
         int spawnRange = Math.Max(0, (int)SpawnRange);
+        int nearbyEntities = NearbyEntityCount(dimension, position, spawnRange);
 
         for (int i = 0; i < SpawnCount; i++) {
-            if (NearbyEntityCount(dimension, position, spawnRange) >= Math.Max(0, (int)MaxNearbyEntities)) {
+            if (nearbyEntities >= Math.Max(0, (int)MaxNearbyEntities)) {
                 ResetDelay();
                 WriteStorage(dimension, position);
                 BroadcastUpdate(dimension, position);
-                return;
+                return true;
             }
 
             Vec3 spawnPosition = new() {
@@ -169,6 +171,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
             entity.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));
             spawned = true;
+            nearbyEntities++;
         }
 
         if (spawned) {
@@ -176,6 +179,8 @@ public sealed class MobSpawnerTrait : BlockTrait {
             WriteStorage(dimension, position);
             BroadcastUpdate(dimension, position);
         }
+
+        return true;
     }
 
     public void Configure(Dimension dimension, BlockPos position, string entityIdentifier) {
@@ -242,7 +247,9 @@ public sealed class MobSpawnerTrait : BlockTrait {
         float centerY = position.Y + 0.5f;
         float centerZ = position.Z + 0.5f;
 
-        foreach (Entity entity in dimension.Entities) {
+        _nearbyEntities.Clear();
+        GatherEntities(dimension, centerX, centerZ, range, _nearbyEntities);
+        foreach (Entity entity in _nearbyEntities) {
             if (entity is not Player player || !player.Spawned || player.Dimension != dimension) {
                 continue;
             }
@@ -264,7 +271,9 @@ public sealed class MobSpawnerTrait : BlockTrait {
         float centerY = position.Y + 0.5f;
         float centerZ = position.Z + 0.5f;
 
-        foreach (Entity entity in dimension.Entities) {
+        _nearbyEntities.Clear();
+        GatherEntities(dimension, centerX, centerZ, Math.Max(spawnRange, 4), _nearbyEntities);
+        foreach (Entity entity in _nearbyEntities) {
             if (!entity.IsAlive ||
                 entity.PendingDespawn ||
                 entity.Dimension != dimension ||
@@ -280,6 +289,19 @@ public sealed class MobSpawnerTrait : BlockTrait {
         }
 
         return count;
+    }
+
+    private static void GatherEntities(Dimension dimension, float centerX, float centerZ, float range, List<Entity> entities) {
+        int minChunkX = (int)MathF.Floor((centerX - range) / 16f);
+        int maxChunkX = (int)MathF.Floor((centerX + range) / 16f);
+        int minChunkZ = (int)MathF.Floor((centerZ - range) / 16f);
+        int maxChunkZ = (int)MathF.Floor((centerZ + range) / 16f);
+
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                entities.AddRange(dimension.GetEntities(chunkX, chunkZ));
+            }
+        }
     }
 
     private static bool HasSpawnSpace(Dimension dimension, Entity entity, Vec3 position) {

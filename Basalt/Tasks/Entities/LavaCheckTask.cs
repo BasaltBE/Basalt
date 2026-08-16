@@ -98,18 +98,19 @@ internal sealed class LavaCheckTask : ServerTask {
         }
 
         if (_entity is Player player &&
-            player.GetGamemode() is GameType.Survival or GameType.Adventure) {
-            _entity.SetOnFire(8 * 20);
-
-            if (_entity.HasEffect(EffectType.FireResistance)) {
-                return;
-            }
-
-            _entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
-                EntityLavaTrait.Damage,
-                null,
-                ActorDamageCause.Lava
-            );
+            player.GetGamemode() is not (GameType.Survival or GameType.Adventure)) {
+            return;
         }
+
+        _entity.SetOnFire(8 * 20);
+        if (_entity.HasEffect(EffectType.FireResistance)) {
+            return;
+        }
+
+        _entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
+            EntityLavaTrait.Damage,
+            null,
+            ActorDamageCause.Lava
+        );
     }
 }

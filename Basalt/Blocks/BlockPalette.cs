@@ -171,7 +171,7 @@ public sealed class BlockPalette {
 
 
             // Vanilla Has them as non solids
-            bool Solid = types[i].Solid;
+            bool Solid = types[i].Solid || (!types[i].Air && !types[i].Liquid && types[i].Hardness > 0f);
             if (
                 types[i].Tags.Contains("minecraft:cornerable_stairs")
                 || types[i].States.Contains("powered_shelf_type")

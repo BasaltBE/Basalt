@@ -161,7 +161,20 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     }
 
     public override void OnAdd() {
-        EnsureAttribute(GetHealthProperties());
+        AttributeProperties properties = GetHealthProperties();
+        if (Entity.Attributes.GetAttribute(Attribute) is AttributeData attribute) {
+            attribute.MinValue = properties.MinimumValue ?? attribute.MinValue;
+            attribute.MaxValue = properties.MaximumValue ?? attribute.MaxValue;
+            attribute.DefaultMinValue = properties.MinimumValue ?? attribute.DefaultMinValue;
+            attribute.DefaultMaxValue = properties.MaximumValue ?? attribute.DefaultMaxValue;
+            attribute.DefaultValue = properties.DefaultValue ?? attribute.DefaultValue;
+            attribute.CurrentValue = properties.CurrentValue ?? attribute.CurrentValue;
+            Entity.Attributes.SetAttribute(attribute);
+            Entity.AttributesDirty = true;
+            return;
+        }
+
+        EnsureAttribute(properties);
     }
 
     private AttributeProperties GetHealthProperties() {

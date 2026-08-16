@@ -29,6 +29,7 @@ public sealed class EntityLavaTrait : EntityTrait {
 
     public new static string Identifier => "lava";
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Item, EntityIdentifier.Player];
+    public new static readonly string[] Components = ["minecraft:lava_movement"];
 
     public EntityLavaTrait(Entity entity) : base(entity) {
     }
@@ -38,11 +39,12 @@ public sealed class EntityLavaTrait : EntityTrait {
             return;
         }
 
-        if (Entity is ItemEntity && details.CurrentTick % ItemCheckInterval != 0) {
-            return;
+        if (Entity is ItemEntity) {
+            if (details.CurrentTick % ItemCheckInterval != 0) {
+                return;
+            }
         }
-
-        if (Entity is Player.Player && details.CurrentTick % DamageInterval != 0) {
+        else if (details.CurrentTick % DamageInterval != 0) {
             return;
         }
 

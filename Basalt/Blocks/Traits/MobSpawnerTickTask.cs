@@ -9,10 +9,10 @@ internal sealed class MobSpawnerTickTask : DelayedTask {
     private readonly Dimension _dimension;
     private readonly BlockPos _position;
 
-    public MobSpawnerTickTask(Dimension dimension, BlockPos position) {
+    public MobSpawnerTickTask(Dimension dimension, BlockPos position, uint delayTicks = 1) {
         _dimension = dimension;
         _position = position;
-        DelayTicks = 1;
+        DelayTicks = delayTicks;
         RunOnMainThread = true;
     }
 
@@ -29,7 +29,11 @@ internal sealed class MobSpawnerTickTask : DelayedTask {
             return;
         }
 
-        trait.Tick(_dimension, _position);
-        _dimension.World?.Scheduler?.Schedule(new MobSpawnerTickTask(_dimension, _position));
+        bool active = trait.Tick(_dimension, _position);
+        _dimension.World?.Scheduler?.Schedule(new MobSpawnerTickTask(
+            _dimension,
+            _position,
+            active ? 1u : 20u
+        ));
     }
 }
