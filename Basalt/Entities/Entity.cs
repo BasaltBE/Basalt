@@ -528,6 +528,12 @@ public class Entity {
         _effects.Remove(effectType);
     }
 
+    public void OnHurt(EntityHurtDetails details) {
+        for (int i = 0; i < _traits.Count; i++) {
+            _traits[i].OnHurt(details);
+        }
+    }
+
     public void SetOnFire(int ticks) {
         if (ticks < 0) {
             throw new ArgumentOutOfRangeException(nameof(ticks));

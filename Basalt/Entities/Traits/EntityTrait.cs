@@ -45,6 +45,9 @@ public abstract class EntityTrait : Trait {
     public virtual void OnDeath(EntityDeathOptions details) {
     }
 
+    public virtual void OnHurt(EntityHurtDetails details) {
+    }
+
     public virtual void OnTeleport(EntityTeleportOptions details) {
     }
 

@@ -5,6 +5,7 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
+using Basalt.Core.Blocks.Components;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities;
@@ -14,6 +15,7 @@ using Basalt.Core.Tasks;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Core.Player.Traits;
+using Basalt.Core.Pathfinding;
 using ChunkColumn = Chunk.Chunk;
 
 using Entity = Entities.Entity;
@@ -99,6 +101,15 @@ public sealed class Dimension : IDisposable {
     }
     private World? _world;
     public DimensionGameRules Gamerules { get; } = new();
+
+    public bool IsDay() {
+        int time = World?.CurrentDayTime ?? 0;
+        return time < 12000;
+    }
+
+    public bool IsNight() {
+        return !IsDay();
+    }
 
     public Dimension(string identifier, DimensionId type, WorldProvider provider, Generator? generator = null) {
         Identifier = identifier;
@@ -405,6 +416,79 @@ public sealed class Dimension : IDisposable {
     public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0) {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
         return chunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
+    }
+
+    public PathfindingSnapshot CreatePathfindingSnapshot(
+        PathNode start,
+        PathNode target,
+        int radius = 32,
+        int verticalRange = 8) {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(radius);
+        ArgumentOutOfRangeException.ThrowIfNegative(verticalRange);
+
+        int minX = Math.Min(start.X, target.X) - radius;
+        int maxX = Math.Max(start.X, target.X) + radius;
+        int minY = Math.Min(start.Y, target.Y) - verticalRange;
+        int maxY = Math.Max(start.Y, target.Y) + verticalRange;
+        int minZ = Math.Min(start.Z, target.Z) - radius;
+        int maxZ = Math.Max(start.Z, target.Z) + radius;
+        int width = checked(maxX - minX + 1);
+        int height = checked(maxY - minY + 1);
+        int depth = checked(maxZ - minZ + 1);
+        bool[] walkable = new bool[checked(width * height * depth)];
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                for (int x = minX; x <= maxX; x++) {
+                    if (!TryGetLoadedPermutation(x, y - 1, z, out BlockPermutation? below) ||
+                        !TryGetLoadedPermutation(x, y, z, out BlockPermutation? feet) ||
+                        !TryGetLoadedPermutation(x, y + 1, z, out BlockPermutation? head)) {
+                        continue;
+                    }
+
+                    bool supported = HasFullHeightSupport(below!);
+                    bool clear = BlockCollisionShape.GetBoxes(feet!).Count == 0 &&
+                        BlockCollisionShape.GetBoxes(head!).Count == 0;
+                    if (supported && clear) {
+                        int index = ((y - minY) * depth + z - minZ) * width + x - minX;
+                        walkable[index] = true;
+                    }
+                }
+            }
+        }
+
+        return new PathfindingSnapshot(minX, minY, minZ, width, height, depth, walkable);
+    }
+
+    private static bool HasFullHeightSupport(BlockPermutation permutation) {
+        foreach (CollisionBox box in BlockCollisionShape.GetBoxes(permutation)) {
+            if (box.OriginY + box.SizeY >= 16f) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void RequestPath(
+        PathNode start,
+        PathNode target,
+        Action<Path?> completion,
+        int radius = 32,
+        int verticalRange = 8,
+        int maxVisitedNodes = 4096,
+        float maxDistance = 32f) {
+        ArgumentNullException.ThrowIfNull(completion);
+        PathfindingSnapshot snapshot = CreatePathfindingSnapshot(start, target, radius, verticalRange);
+        PathfindingTask task = new(snapshot, start, target, completion, maxVisitedNodes, maxDistance);
+
+        if (World?.Scheduler is { } scheduler) {
+            scheduler.Schedule(task);
+        }
+        else {
+            task.Execute();
+            task.Complete();
+        }
     }
 
     public bool TryGetLoadedPermutation(int x, int y, int z, out BlockPermutation? permutation, int layer = 0) {
