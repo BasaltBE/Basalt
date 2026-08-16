@@ -86,6 +86,39 @@ public sealed class ModalForm : Form<object?[]?> {
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Deserializing simple types for form responses.")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Deserializing simple types for form responses.")]
     protected override object?[]? ReadResponse(string? data) {
-        return data is null ? null : JsonSerializer.Deserialize<object?[]?>(data);
+        if (data is null) {
+            return null;
+        }
+
+        using JsonDocument document = JsonDocument.Parse(data);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) {
+            return null;
+        }
+
+        JsonElement.ArrayEnumerator values = document.RootElement.EnumerateArray();
+        List<object?> response = [];
+        foreach (JsonElement value in values) {
+            response.Add(ReadValue(value));
+        }
+
+        return [.. response];
+    }
+
+    private static object? ReadValue(JsonElement value) {
+        return value.ValueKind switch {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => value.GetString(),
+            JsonValueKind.Number when value.TryGetInt32(out int integer) => integer,
+            JsonValueKind.Number when value.TryGetInt64(out long longInteger) => longInteger,
+            JsonValueKind.Number when value.TryGetDouble(out double number) => number,
+            JsonValueKind.Array => value.EnumerateArray().Select(ReadValue).ToArray(),
+            JsonValueKind.Object => value.EnumerateObject().ToDictionary(
+                property => property.Name,
+                property => ReadValue(property.Value),
+                StringComparer.Ordinal),
+            _ => null
+        };
     }
 }
