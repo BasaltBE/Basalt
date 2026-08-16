@@ -50,7 +50,7 @@ public static class LevelDatWriter {
         root.Set("SpawnZ", new IntTag { Value = (int)spawn.Z });
 
         // Time and tick.
-        root.Set("Time", new LongTag { Value = (long)world.TickValue });
+        root.Set("Time", new LongTag { Value = world.DayTime });
         root.Set("currentTick", new LongTag { Value = (long)world.TickValue });
         root.Set("LastPlayed", new LongTag { Value = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
         root.Set("RandomSeed", new LongTag { Value = 0 });
@@ -161,7 +161,7 @@ public static class LevelDatWriter {
         root.Set("dotiledrops", new ByteTag { Value = 1 });
         root.Set("doentitydrops", new ByteTag { Value = 1 });
         root.Set("doweathercycle", new ByteTag { Value = 1 });
-        root.Set("dodaylightcycle", new ByteTag { Value = 1 });
+        root.Set("dodaylightcycle", new ByteTag { Value = (sbyte)(rules?.DaylightCycle != false ? 1 : 0) });
         root.Set("doinsomnia", new ByteTag { Value = 1 });
         root.Set("doimmediaterespawn", new ByteTag { Value = 0 });
         root.Set("dolimitedcrafting", new ByteTag { Value = 0 });

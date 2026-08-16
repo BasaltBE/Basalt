@@ -13,6 +13,11 @@ public sealed class DimensionGameRules {
     /// Whether players take fall damage in this dimension.
     /// </summary>
     public bool FallDamage = true;
+
+    /// <summary>
+    /// Whether world time advances in this dimension.
+    /// </summary>
+    public bool DaylightCycle = true;
 }
 
 

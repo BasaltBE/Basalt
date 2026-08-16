@@ -88,7 +88,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             EnableItemStackNetManager = true,
             EnchantmentSeed = 0,
             IsTrial = false,
-            LevelCurrentTime = 0,
+            LevelCurrentTime = (ulong)(_dimension?.World?.DayTime ?? 0),
             LevelID = "",
             LevelName = "Basalt",
             MovementSettings = new SyncedPlayerMovementSettings() {

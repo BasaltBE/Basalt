@@ -4,6 +4,9 @@ using Basalt.Core.Events;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player.Traits;
+using Basalt.Core.Traits;
+using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Blocks;
 using Basalt.Core.Worlds;
 using System.Text.Json;
 
@@ -21,12 +24,29 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     private const float KnockbackVerticalLimit = 0.4f;
     private const ulong KnockbackCooldownTicks = 10;
     private const ulong AttackCooldownTicks = 10;
+    private const int DaylightFireTicks = 160;
     private ulong? _lastKnockbackTick;
     private ulong? _lastAttackTick;
+
+    public ActorDamageCause? LastDamageCause { get; private set; }
 
     public override AttributeName Attribute => AttributeName.Health;
 
     public EntityHealthTrait(Entity entity) : base(entity) {
+    }
+
+    public override void OnTick(TraitOnTickDetails details) {
+        if (!Entity.IsAlive || !Entity.Type.Components.Contains("minecraft:burns_in_daylight") ||
+            Entity.Dimension is not Dimension dimension || dimension.Type != DimensionId.Overworld ||
+            dimension.World is not Tickable world) {
+            return;
+        }
+
+        if (!dimension.IsDay() || !CanSeeSky(dimension)) {
+            return;
+        }
+
+        Entity.SetOnFire(DaylightFireTicks);
     }
 
     public void ApplyDamage(float amount, Entity? damager = null, ActorDamageCause? cause = null) {
@@ -35,6 +55,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         if (!signal.Emit()) {
             return;
         }
+
+        LastDamageCause = signal.Cause;
+        Entity.OnHurt(new EntityHurtDetails(signal.Cause, signal.Damager));
 
         if (signal.Cause == ActorDamageCause.EntityAttack && signal.Amount > 0f && Entity.Dimension?.World is Tickable cooldownTickable) {
             ulong currentTick = cooldownTickable.TickValue;
@@ -158,6 +181,24 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         }
 
         return value.TryGetSingle(out float result) ? result : null;
+    }
+
+    private bool CanSeeSky(Dimension dimension) {
+        int x = (int)MathF.Floor(Entity.Position.X);
+        int y = (int)MathF.Floor(Entity.Position.Y + 0.1f);
+        int z = (int)MathF.Floor(Entity.Position.Z);
+
+        for (int currentY = y; currentY <= World.MaxY; currentY++) {
+            if (!dimension.TryGetLoadedPermutation(x, currentY, z, out BlockPermutation? permutation)) {
+                return true;
+            }
+
+            if (!permutation!.Type.Air && !permutation.Type.Liquid && permutation.Type.Opacity >= 1f) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {

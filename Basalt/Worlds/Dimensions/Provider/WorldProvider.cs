@@ -59,6 +59,10 @@ public abstract class WorldProvider : IDisposable {
     public virtual void WriteLevelDat(World world) {
     }
 
+    public virtual (long DayTime, ulong TickValue) LoadWorldTime() {
+        return (0, 0);
+    }
+
     public virtual IReadOnlyList<string> ListPlayerXuids() {
         return [];
     }

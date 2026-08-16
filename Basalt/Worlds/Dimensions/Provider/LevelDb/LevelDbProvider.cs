@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using BinaryReader = Basalt.Binary.BinaryReader;
 using Basalt.Core.Player;
 using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
@@ -181,6 +182,33 @@ public sealed class LevelDbProvider : WorldProvider {
         // Write levelname.txt (vanilla expects this).
         string levelNamePath = Path.Combine(worldDir, "levelname.txt");
         File.WriteAllText(levelNamePath, world.Name);
+    }
+
+    public override (long DayTime, ulong TickValue) LoadWorldTime() {
+        string worldDir = Path.GetDirectoryName(_path) ?? _path;
+        string levelDatPath = Path.Combine(worldDir, "level.dat");
+        if (!File.Exists(levelDatPath)) {
+            return (0, 0);
+        }
+
+        try {
+            byte[] file = File.ReadAllBytes(levelDatPath);
+            if (file.Length <= 8) {
+                return (0, 0);
+            }
+
+            int offset = 8;
+            BinaryReader reader = new(file.AsSpan(8), ref offset);
+            CompoundTag root = NBT.ReadTag<CompoundTag>(
+                reader,
+                new TagOptions(Name: true, Type: true, VarInt: false));
+            long dayTime = root.Get<LongTag>("Time")?.Value ?? 0;
+            long currentTick = root.Get<LongTag>("currentTick")?.Value ?? 0;
+            return (Math.Max(0, dayTime), (ulong)Math.Max(0, currentTick));
+        }
+        catch {
+            return (0, 0);
+        }
     }
 }
 

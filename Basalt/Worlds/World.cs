@@ -8,8 +8,11 @@ using Basalt.Core.Worlds.Dimensions.Provider;
 using Dimension = Dimensions.Dimension;
 using Basalt.Core.Worlds.Dimensions;
 using BedrockProtocol.Types;
+using BedrockProtocol.Packets;
 
 public sealed class World : IDisposable, Tickable {
+    public const long DayLength = 24000;
+    public const int MaxY = 319;
     private readonly Dictionary<string, Dimension> _dimensions = new(StringComparer.OrdinalIgnoreCase);
     private Dimension[]? _autoSaveDimensions;
     private int _autoSaveDimensionIndex;
@@ -49,6 +52,10 @@ public sealed class World : IDisposable, Tickable {
     /// </summary>
     public ulong TickValue { get; set; }
 
+    public long DayTime { get; private set; }
+
+    public int CurrentDayTime => (int)(DayTime % DayLength);
+
     /// <summary>
     /// The amount of milliseconds the last tick took.
     /// </summary>
@@ -73,6 +80,7 @@ public sealed class World : IDisposable, Tickable {
         Name = name;
         Provider = provider ?? new InMemoryProvider();
         Persistence = new WorldPersistence(Provider);
+        (DayTime, TickValue) = Provider.LoadWorldTime();
     }
 
     public static void ConfigurePersistence(string dataPath) {
@@ -168,10 +176,30 @@ public sealed class World : IDisposable, Tickable {
     public void Tick() {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("World.Tick") : default;
         TickValue++;
+        if (GetDimension(DimensionId.Overworld)?.Gamerules.DaylightCycle != false) {
+            DayTime++;
+        }
+
+        if (TickValue % 20 == 0) {
+            SendTime();
+        }
+
         Scheduler?.Tick();
         foreach (Dimension dimension in _dimensions.Values) {
             using var _ = Profiler.Enabled ? Profiler.BeginZone($"Dimension.Tick({dimension.Identifier})") : default;
             dimension.Tick(TickValue, 1);
+        }
+    }
+
+    public void SetDayTime(long time) {
+        DayTime = time;
+        SendTime();
+    }
+
+    private void SendTime() {
+        int time = unchecked((int)DayTime);
+        foreach (Dimension dimension in _dimensions.Values) {
+            dimension.Broadcast(new SetTimePacket { Time = time });
         }
     }
 
