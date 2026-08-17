@@ -501,6 +501,8 @@ public static class PlayerAuthInput {
         player.BreakingBlock = blockPosition;
         int breakTimeTicks = GetBreakTimeTicksForAnimation(player, blockPosition);
 
+        BlockPermutation? block = player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+
         // Logger.Warn(
         //     "StartBreak player:{0} pos:{1},{2},{3} duration:{4} tick:{5}",
         //     player.Username,
@@ -513,11 +515,13 @@ public static class PlayerAuthInput {
             ? Math.Min(65535, 65535 / breakTimeTicks)
             : 65535;
 
-        player.Dimension?.Broadcast(new LevelEventPacket {
-            EventId = (int)LevelEvent.StartBlockCracking,
-            Position = CenterOf(blockPosition),
-            Data = Math.Max(1, crackSpeed)
-        });
+        if (block?.Type.Hardness > 0f) {
+            player.Dimension?.Broadcast(new LevelEventPacket {
+                EventId = (int)LevelEvent.StartBlockCracking,
+                Position = CenterOf(blockPosition),
+                Data = Math.Max(1, crackSpeed)
+            });
+        }
     }
 
     private static void CrackBlock(Player.Player player, BlockPos blockPosition, ulong tick) {
@@ -695,11 +699,13 @@ public static class PlayerAuthInput {
             customDrops = signal.Drops;
         }
 
-        player.Dimension.Broadcast(new LevelEventPacket {
-            EventId = (int)LevelEvent.ParticlesDestroyBlock,
-            Position = CenterOf(blockPosition),
-            Data = block.NetworkId
-        });
+        if (block.Type.Hardness > 0f) {
+            player.Dimension.Broadcast(new LevelEventPacket {
+                EventId = (int)LevelEvent.ParticlesDestroyBlock,
+                Position = CenterOf(blockPosition),
+                Data = block.NetworkId
+            });
+        }
 
         Basalt.Core.Blocks.BlockPermutation air = Basalt.Core.Blocks.BlockType
             .GetOrAir("minecraft:air")
@@ -764,6 +770,11 @@ public static class PlayerAuthInput {
     }
 
     private static void StopCrackBlock(Player.Player player, BlockPos blockPosition) {
+        BlockPermutation? block = player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
+        if (block?.Type.Hardness <= 0f) {
+            return;
+        }
+
         player.Dimension?.Broadcast(new LevelEventPacket {
             EventId = (int)LevelEvent.StopBlockCracking,
             Position = CenterOf(blockPosition),
