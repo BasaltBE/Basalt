@@ -43,7 +43,11 @@ public sealed class SetScorePacket : Packet {
                     }
                     variantValue1000_0.ScoreboardId.Read(reader);
                     if (reader.ReadBool()) {
-                        variantValue1000_0.ObjectiveName = reader.ReadVarString();
+                        if (reader.ReadBool()) {
+                            variantValue1000_0.ObjectiveName = reader.ReadVarString();
+                        } else {
+                            variantValue1000_0.ObjectiveName = default;
+                        }
                     } else {
                         variantValue1000_0.ObjectiveName = default;
                     }
@@ -104,6 +108,7 @@ public sealed class SetScorePacket : Packet {
                     writer.WriteVarUInt(0u);
                     writer.WriteVarString("remove");
                     variantValue0.ScoreboardId.Write(writer);
+                    writer.WriteBool(true);
                     writer.WriteBool(variantValue0.ObjectiveName is not null);
                     if (variantValue0.ObjectiveName is { } optionalValue4000) {
                         writer.WriteVarString(optionalValue4000);
