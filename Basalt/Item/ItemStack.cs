@@ -92,13 +92,6 @@ public sealed class ItemStack {
             writer.WriteVarUInt(0);
             writer.WriteVarUInt(0);
             nbt = writer.GetProcessedBytes().ToArray();
-        } else {
-            using BinaryStream stream = BinaryStream.Rent(16);
-            BinaryWriter writer = stream;
-            writer.WriteInt16(-1, true);
-            writer.WriteVarUInt(0);
-            writer.WriteVarUInt(0);
-            nbt = writer.GetProcessedBytes().ToArray();
         }
 
         return new NetworkItemStackDescriptor {

@@ -11,89 +11,89 @@ public sealed class CustomItemTypeOptions {
     /// <summary>
     /// The namespaced identifier (e.g. "mynamespace:ruby").
     /// </summary>
-    public required string Identifier { get; init; }
+    public required string Identifier { get; set; }
 
     /// <summary>
     /// Maximum stack size. Defaults to 64.
     /// </summary>
-    public int MaxStackSize { get; init; } = 64;
+    public int MaxStackSize { get; set; } = 64;
 
     /// <summary>
     /// Display name shown in the UI.
     /// </summary>
-    public string? DisplayName { get; init; }
+    public string? DisplayName { get; set; }
 
     /// <summary>
     /// Texture name for the item icon (matches a resource pack texture key).
     /// </summary>
-    public string? Icon { get; init; }
+    public string? Icon { get; set; }
 
     /// <summary>
     /// Tags to associate with this item (e.g. "minecraft:is_sword").
     /// </summary>
-    public IReadOnlyList<string>? Tags { get; init; }
+    public IReadOnlyList<string>? Tags { get; set; }
 
     /// <summary>
     /// Whether the item renders held like a tool.
     /// </summary>
-    public bool HandEquipped { get; init; }
+    public bool HandEquipped { get; set; }
 
     /// <summary>
     /// Maximum durability. Zero means no durability component.
     /// </summary>
-    public int MaxDurability { get; init; }
+    public int MaxDurability { get; set; }
 
     /// <summary>
     /// Creative inventory category name (construction, nature, equipment, items).
     /// Null means the item won't appear in creative.
     /// </summary>
-    public string? CreativeCategory { get; init; }
+    public string? CreativeCategory { get; set; }
 
     /// <summary>
     /// Creative inventory group name.
     /// </summary>
-    public string? CreativeGroup { get; init; }
+    public string? CreativeGroup { get; set; }
 
     /// <summary>
     /// Creative inventory group icon identifier.
     /// </summary>
-    public string? CreativeGroupIcon { get; init; }
+    public string? CreativeGroupIcon { get; set; }
 
     /// <summary>
     /// Block placed by this item. Null means this is a regular item.
     /// </summary>
-    public BlockType? BlockType { get; init; }
+    public BlockType? BlockType { get; set; }
 
     /// <summary>
     /// Whether this item can destroy blocks in creative mode.
     /// </summary>
-    public bool CanDestroyInCreative { get; init; } = true;
+    public bool CanDestroyInCreative { get; set; } = true;
 
     /// <summary>
     /// Digger component defining block destruction speeds.
     /// Null means no digger behavior.
     /// </summary>
-    public CustomItemDiggerOptions? Digger { get; init; }
+    public CustomItemDiggerOptions? Digger { get; set; }
 
     /// <summary>
     /// Allow burn time (seconds) for use as fuel. Zero means not fuel.
     /// </summary>
-    public float FuelDuration { get; init; }
+    public float FuelDuration { get; set; }
 
     /// <summary>
     /// Food component options. Null means not edible.
     /// </summary>
-    public CustomItemFoodOptions? Food { get; init; }
+    public CustomItemFoodOptions? Food { get; set; }
 
     /// <summary>
     /// Base attack damage dealt by this item. Zero means use the default tag-based lookup.
     /// </summary>
-    public float AttackDamage { get; init; }
+    public float AttackDamage { get; set; }
 
     /// <summary>
     /// Wearable component options. Null means this item is not wearable armor.
     /// </summary>
-    public CustomItemWearableOptions? Wearable { get; init; }
+    public CustomItemWearableOptions? Wearable { get; set; }
 }
 
 /// <summary>
@@ -159,6 +159,10 @@ public sealed class CustomItemDiggerOptions {
 /// </summary>
 public static class CustomItemType {
     private static int _nextNetworkId = 20000;
+
+    public static CustomItemTypeBuilder Create() {
+        return new CustomItemTypeBuilder();
+    }
 
     /// <summary>
     /// Creates and registers a new custom item type.
