@@ -26,6 +26,7 @@ public sealed class Scoreboard {
 
     private readonly Player.Player _player;
     private readonly Dictionary<string, ScoreboardLine> _lines = new(StringComparer.Ordinal);
+    private Dictionary<string, ScoreboardLine>? _updatingLines;
     private readonly string _objectiveName;
 
     public DisplaySlotType Slot { get; }
@@ -112,7 +113,7 @@ public sealed class Scoreboard {
 
             _lines[text] = updated;
 
-            if (Visible) {
+            if (Visible && _updatingLines is null) {
                 SendChangeEntry(updated.Id, text, updated.Score);
             }
 
@@ -126,7 +127,7 @@ public sealed class Scoreboard {
             Score: score
         );
 
-        if (Visible) {
+        if (Visible && _updatingLines is null) {
             SendChangeEntry(id, text, score);
         }
     }
@@ -136,11 +137,41 @@ public sealed class Scoreboard {
             return false;
         }
 
-        if (Visible) {
+        if (Visible && _updatingLines is null) {
             SendRemoveEntry(line.Id);
         }
 
         return true;
+    }
+
+    public void BeginUpdate() {
+        _updatingLines = new Dictionary<string, ScoreboardLine>(_lines, StringComparer.Ordinal);
+    }
+
+    public void EndUpdate() {
+        if (_updatingLines is null)
+            return;
+
+        Dictionary<string, ScoreboardLine> previous = _updatingLines;
+        _updatingLines = null;
+
+        if (!Visible)
+            return;
+
+        List<SetScoreScoreInfoVariant> entries = new(previous.Count + _lines.Count);
+        foreach ((string text, ScoreboardLine line) in previous) {
+            if (!_lines.TryGetValue(text, out ScoreboardLine current) || current.Id != line.Id)
+                entries.Add(CreateRemoveEntry(line.Id));
+        }
+
+        foreach ((string text, ScoreboardLine line) in _lines) {
+            if (!previous.TryGetValue(text, out ScoreboardLine old) ||
+                old.Id != line.Id || old.Score != line.Score)
+                entries.Add(CreateChangeEntry(line.Id, text, line.Score));
+        }
+
+        if (entries.Count > 0)
+            _player.Send(new SetScorePacket { ScoreInfo = entries });
     }
 
     public void ClearLines() {
@@ -148,7 +179,7 @@ public sealed class Scoreboard {
             return;
         }
 
-        if (Visible) {
+        if (Visible && _updatingLines is null) {
             List<SetScoreScoreInfoVariant> entries = new(_lines.Count);
 
             foreach ((_, ScoreboardLine line) in _lines) {
@@ -165,18 +196,18 @@ public sealed class Scoreboard {
 
     private void SendChangeEntry(long id, string text, int score) {
         _player.Send(new SetScorePacket {
-            ScoreInfo = [
-                new ChangeFakePlayerScore {
-                    Action = ScorePacketEntryAction.ChangeFakePlayer,
-                    FakePlayerName = text,
-                    ObjectiveName = _objectiveName,
-                    ScoreValue = score,
-                    ScoreboardId = new ScoreboardId {
-                        Value = id
-                    }
-                }
-            ]
+            ScoreInfo = [CreateChangeEntry(id, text, score)]
         });
+    }
+
+    private ChangeFakePlayerScore CreateChangeEntry(long id, string text, int score) {
+        return new ChangeFakePlayerScore {
+            Action = ScorePacketEntryAction.ChangeFakePlayer,
+            FakePlayerName = text,
+            ObjectiveName = _objectiveName,
+            ScoreValue = score,
+            ScoreboardId = new ScoreboardId { Value = id }
+        };
     }
 
     private void SendRemoveEntry(long id) {
