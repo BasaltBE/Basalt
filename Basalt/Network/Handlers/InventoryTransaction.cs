@@ -672,6 +672,8 @@ public static class InventoryTransaction {
                     if (!signal.Emit()) {
                         return;
                     }
+
+                    target.OnInteract(player, Basalt.Core.Entities.Traits.Enums.EntityInteractMethod.Attack);
                 }
 
                 if (heldItem is not null) {
