@@ -489,7 +489,7 @@ public class Player : Entities.Entity {
                 ActorUniqueID = new ActorUniqueID() {
                     Value = UniqueId,
                 },
-                BuildPlatform = BuildPlatform.Unknown,
+                BuildPlatform = DeviceOS,
                 IsHost = false,
                 IsSubClient = false,
                 IsTeacher = false,
@@ -537,7 +537,9 @@ public class Player : Entities.Entity {
                 FloatEntriesList = [],
                 IntEntriesList = []
             },
-            EntityData = CreateActorDataPacket(tick).ActorData,
+            EntityData = new SynchedActorDataList {
+                Data = []
+            },
             PlayerGameType = Gamemode,
             CarriedItem = carriedItem,
             Rotation = new Vec2 {

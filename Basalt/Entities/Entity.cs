@@ -188,8 +188,12 @@ public class Entity {
 
         using (Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn.ActorData") : default) {
             SetActorDataPacket actorData = CreateActorDataPacket(Dimension.World is Tickable tickable ? tickable.TickValue : 0);
-            if (this is Player player) {
+            if (this is Player player && player.Xuid.Length > 0) {
                 Dimension.Broadcast(actorData, new BroadcastOptions { Except = [player] });
+                return;
+            }
+
+            if (this is Player) {
                 return;
             }
 
@@ -500,7 +504,11 @@ public class Entity {
         return GetEyePosition();
     }
 
-    public Vec3 GetPosition() {
+    public virtual Vec3 GetPosition() {
+        if (this is not Player) {
+            return Position;
+        }
+
         return new Vec3 {
             X = Position.X,
             Y = Position.Y - 1.62f,

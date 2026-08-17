@@ -386,12 +386,16 @@ public sealed class NetworkHandler {
             BedrockProtocol.Packets.Packet packet = enumerator.Current
                 ?? throw new ArgumentException("Packet collections cannot contain null values.", nameof(packets));
 
-            // if (packet is InventoryContentPacket) return; // 1st Unknown Error occured
-            // if (packet is SetActorDataPacket) return;  // 2nd Unknown Error occured
+            // if (packet is InventoryContentPacket) return; 
+            // if (packet is SetActorDataPacket) return;  
+            // if (packet is BlockActorDataPacket) return;  
+            // if (packet is RemoveActorPacket) return;  
+            // if (packet is AddActorPacket) return;  
             // if (packet is NetworkChunkPublisherUpdatePacket) return;
             // if (packet is UpdateAbilitiesPacket) return;
             // if (packet is ChunkRadiusUpdatedPacket) return;
             // if (packet is PlayerListPacket) return;
+            // if (packet is AddPlayerPacket) return;
 
             if (packet is not LevelChunkPacket)
                 Logger.Info($"SEnding packet {packet}");
@@ -528,7 +532,13 @@ public sealed class NetworkHandler {
                 BinaryWriter writer = packetStream;
                 SerializeOutgoingPacket(outgoing.Packet!, writer);
                 ReadOnlySpan<byte> packet = writer.GetProcessedBytes();
-                
+                if (outgoing.Packet is AddPlayerPacket) {
+                    Logger.Warn($"AddPlayer raw bytes: {Convert.ToHexString(packet)}");
+                }
+                if (outgoing.Packet is PlayerListPacket) {
+                    Logger.Warn($"PlayerList raw bytes: {Convert.ToHexString(packet)}");
+                }
+
                 byte[] payload = ArrayPool<byte>.Shared.Rent(packet.Length);
                 packet.CopyTo(payload);
                 serialized[count] = new SerializedOutgoing(
