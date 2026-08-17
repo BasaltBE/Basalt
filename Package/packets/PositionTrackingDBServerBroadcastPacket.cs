@@ -25,7 +25,7 @@ namespace BedrockProtocol.Packets;
 public sealed class PositionTrackingDBServerBroadcastPacket : Packet {
     public const int PacketId = 153;
 
-    public PositionTrackingDBServerBroadcastPacketPayloadAction Action = new();
+    public PositionTrackingDBServerBroadcastPacketPayloadAction Action;
     public PositionTrackingId Id = new();
     public object PositionTrackingData = null!;
 

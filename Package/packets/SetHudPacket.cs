@@ -25,7 +25,7 @@ namespace BedrockProtocol.Packets;
 public sealed class SetHudPacket : Packet {
     public const int PacketId = 308;
 
-    public List<HudElement> HudElement = [];
+    public List<HudElement> HudElement;
     public HudVisibility HudVisible;
 
     public override void Deserialize(BinaryReader reader) {

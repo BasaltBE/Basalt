@@ -8,7 +8,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BedrockProtocol.Types;
 
 public sealed class EnchantmentInstance {
-    public EnchantType EnchantType = new();
+    public EnchantType EnchantType;
     public byte EnchantLevel;
 
     public void Read(BinaryReader reader) {

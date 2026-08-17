@@ -10,6 +10,8 @@ namespace BedrockProtocol.Types;
 public sealed class ResourcePackClientResponseResourcePackStackFinished : ResourcePackClientResponseVariant {
     public ResourcePackResponse ResponseType = global::BedrockProtocol.Enums.ResourcePackResponse.ResourcePackStackFinished;
 
+    #pragma warning disable CA1822
+
     public void Read(BinaryReader reader) {
         global::BedrockProtocol.Enums.ResourcePackResponse constValue0 = (global::BedrockProtocol.Enums.ResourcePackResponse)reader.ReadInt8();
         if (constValue0 != global::BedrockProtocol.Enums.ResourcePackResponse.ResourcePackStackFinished) {
@@ -20,4 +22,6 @@ public sealed class ResourcePackClientResponseResourcePackStackFinished : Resour
     public void Write(BinaryWriter writer) {
         writer.WriteInt8((sbyte)global::BedrockProtocol.Enums.ResourcePackResponse.ResourcePackStackFinished);
     }
+
+    #pragma warning restore CA1822
 }

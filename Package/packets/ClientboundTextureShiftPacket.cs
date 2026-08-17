@@ -25,7 +25,7 @@ namespace BedrockProtocol.Packets;
 public sealed class ClientboundTextureShiftPacket : Packet {
     public const int PacketId = 336;
 
-    public ClientboundTextureShiftPacketPayloadAction ActionID = new();
+    public ClientboundTextureShiftPacketPayloadAction ActionID;
     public string CollectionName = string.Empty;
     public string FromStep = string.Empty;
     public string ToStep = string.Empty;

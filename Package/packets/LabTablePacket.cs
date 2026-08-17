@@ -25,7 +25,7 @@ namespace BedrockProtocol.Packets;
 public sealed class LabTablePacket : Packet {
     public const int PacketId = 109;
 
-    public LabTablePacketPayloadType Type = new();
+    public LabTablePacketPayloadType Type;
     public BlockPos Position = new();
     public LabTableReactionType Reaction;
 

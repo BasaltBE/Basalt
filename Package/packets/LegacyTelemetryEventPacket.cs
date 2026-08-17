@@ -26,7 +26,7 @@ public sealed class LegacyTelemetryEventPacket : Packet {
     public const int PacketId = 65;
 
     public ActorUniqueID TargetActorID = new();
-    public LegacyTelemetryEventPacketPayloadType EventType = new();
+    public LegacyTelemetryEventPacketPayloadType EventType;
     public bool UsePlayerID;
     public LegacyTelemetryEventEventDataVariant EventData = null!;
 

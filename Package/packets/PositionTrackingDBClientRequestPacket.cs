@@ -25,7 +25,7 @@ namespace BedrockProtocol.Packets;
 public sealed class PositionTrackingDBClientRequestPacket : Packet {
     public const int PacketId = 154;
 
-    public PositionTrackingDBClientRequestPacketPayloadAction Action = new();
+    public PositionTrackingDBClientRequestPacketPayloadAction Action;
     public PositionTrackingId Id = new();
 
     public override void Deserialize(BinaryReader reader) {

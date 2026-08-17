@@ -10,9 +10,13 @@ namespace BedrockProtocol.Types;
 public sealed class InventoryMismatchData : InventoryTransactionVariant {
     public InventoryTransaction Actions = new();
 
+    #pragma warning disable CA1822
+
     public void Read(BinaryReader reader) {
     }
 
     public void Write(BinaryWriter writer) {
     }
+
+    #pragma warning restore CA1822
 }

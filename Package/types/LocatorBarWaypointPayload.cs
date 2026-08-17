@@ -10,7 +10,7 @@ namespace BedrockProtocol.Types;
 public sealed class LocatorBarWaypointPayload {
     public WaypointHandle GroupHandle = new();
     public Payload ServerWaypointPayload = new();
-    public ServerWaypointGroupAction ActionFlag = new();
+    public ServerWaypointGroupAction ActionFlag;
 
     public void Read(BinaryReader reader) {
         GroupHandle.Read(reader);

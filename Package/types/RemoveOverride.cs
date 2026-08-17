@@ -10,6 +10,8 @@ namespace BedrockProtocol.Types;
 public sealed class RemoveOverride : PlayerUpdateEntityOverridesUpdateVariant {
     public UpdateType Type = global::BedrockProtocol.Enums.UpdateType.RemoveOverride;
 
+    #pragma warning disable CA1822
+
     public void Read(BinaryReader reader) {
         global::BedrockProtocol.Enums.UpdateType constValue0 = (global::BedrockProtocol.Enums.UpdateType)reader.ReadUInt8();
         if (constValue0 != global::BedrockProtocol.Enums.UpdateType.RemoveOverride) {
@@ -20,4 +22,6 @@ public sealed class RemoveOverride : PlayerUpdateEntityOverridesUpdateVariant {
     public void Write(BinaryWriter writer) {
         writer.WriteUInt8((byte)global::BedrockProtocol.Enums.UpdateType.RemoveOverride);
     }
+
+    #pragma warning restore CA1822
 }

@@ -24,7 +24,8 @@ namespace BedrockProtocol.Packets;
 /// <summary>
 /// Add Player
 /// </summary>
-public sealed class AddPlayerPacket : Packet {
+public sealed class AddPlayerPacket : Packet
+{
     public const int PacketId = 12;
 
     private static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
@@ -46,7 +47,8 @@ public sealed class AddPlayerPacket : Packet {
     public string DeviceId = string.Empty;
     public BuildPlatform BuildPlatform;
 
-    public override void Deserialize(BinaryReader reader) {
+    public override void Deserialize(BinaryReader reader)
+    {
         UUID.Read(reader);
         PlayerName = reader.ReadVarString();
         TargetRuntimeID.Read(reader);
@@ -62,7 +64,8 @@ public sealed class AddPlayerPacket : Packet {
         AbilitiesData.Read(reader);
         int count26 = checked((int)reader.ReadVarUInt());
         ActorLinks = new List<ActorLink>(count26);
-        for (int i26 = 0; i26 < count26; i26++) {
+        for (int i26 = 0; i26 < count26; i26++)
+        {
             ActorLink item26 = default!;
             ActorLink readValue1026 = new();
             readValue1026.Read(reader);
@@ -73,7 +76,8 @@ public sealed class AddPlayerPacket : Packet {
         BuildPlatform = (global::BedrockProtocol.Enums.BuildPlatform)reader.ReadInt32(true);
     }
 
-    public override void Serialize(BinaryWriter writer) {
+    public override void Serialize(BinaryWriter writer)
+    {
         UUID.Write(writer);
         writer.WriteVarString(PlayerName);
         TargetRuntimeID.Write(writer);
@@ -84,11 +88,30 @@ public sealed class AddPlayerPacket : Packet {
         writer.WriteF32(YHeadRotation, true);
         CarriedItem.Write(writer);
         writer.WriteZigZag((int)PlayerGameType);
-        EntityData.Write(writer);
+        writer.WriteVarUInt(checked((uint)EntityData.Data.Count));
+        EntityData.Data.Sort(static (left, right) => left.ID.CompareTo(right.ID));
+        foreach (DataItemEntry entry in EntityData.Data)
+        {
+            writer.WriteVarUInt(entry.ID);
+            switch (entry.Payload)
+            {
+                case DataItemBytePayload value: writer.WriteVarUInt(0); writer.WriteUInt8(0); writer.WriteInt8(value.Value); break;
+                case DataItemShortPayload value: writer.WriteVarUInt(1); writer.WriteUInt8(1); writer.WriteInt16(value.Value, true); break;
+                case DataItemIntPayload value: writer.WriteVarUInt(2); writer.WriteUInt8(2); writer.WriteZigZag(value.Value); break;
+                case DataItemFloatPayload value: writer.WriteVarUInt(3); writer.WriteUInt8(3); writer.WriteF32(value.Value, true); break;
+                case DataItemStringPayload value: writer.WriteVarUInt(4); writer.WriteUInt8(4); writer.WriteVarString(value.Value); break;
+                case DataItemCompoundTagPayload value: writer.WriteVarUInt(5); writer.WriteUInt8(5); NBT.WriteTag(writer, value.Value, NetworkNbtOptions); break;
+                case DataItemPosPayload value: writer.WriteVarUInt(6); writer.WriteUInt8(6); value.Value.Write(writer); break;
+                case DataItemInt64Payload value: writer.WriteVarUInt(7); writer.WriteUInt8(7); writer.WriteZigZong(value.Value); break;
+                case DataItemVec3Payload value: writer.WriteVarUInt(8); writer.WriteUInt8(8); value.Value.Write(writer); break;
+                default: throw new InvalidOperationException("Unsupported AddPlayer actor-data payload.");
+            }
+        }
         SynchedProperties.Write(writer);
         AbilitiesData.Write(writer);
         writer.WriteVarUInt(checked((uint)ActorLinks.Count));
-        foreach (var item27 in ActorLinks) {
+        foreach (var item27 in ActorLinks)
+        {
             item27.Write(writer);
         }
         writer.WriteVarString(DeviceId);

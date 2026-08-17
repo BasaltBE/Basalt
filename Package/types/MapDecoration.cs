@@ -8,7 +8,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BedrockProtocol.Types;
 
 public sealed class MapDecoration {
-    public MapDecorationType ImageType = new();
+    public MapDecorationType ImageType;
     public byte Rotation;
     public byte X;
     public byte Y;

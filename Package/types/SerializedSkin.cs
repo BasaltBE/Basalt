@@ -20,7 +20,7 @@ public sealed class SerializedSkin {
     public string AnimationData = string.Empty;
     public string CapeID = string.Empty;
     public string FullID = string.Empty;
-    public personaArmSizeType ArmSize = new();
+    public personaArmSizeType ArmSize;
     public Color SkinColor = new();
     public List<SerializedPersonaPieceHandle> PersonaPieces = [];
     public Dictionary<string, TintMapColor> PieceTintColors = [];

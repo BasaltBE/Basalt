@@ -10,6 +10,8 @@ namespace BedrockProtocol.Types;
 public sealed class EmptyItemDescriptor : ItemStackRequestNetworkItemInstanceDescriptorItemDescriptorVariant, RecipeIngredientItemDescriptorVariant {
     public ItemDescriptorType DescriptorType = global::BedrockProtocol.Enums.ItemDescriptorType.Empty;
 
+    #pragma warning disable CA1822
+
     public void Read(BinaryReader reader) {
         global::BedrockProtocol.Enums.ItemDescriptorType constValue0 = (global::BedrockProtocol.Enums.ItemDescriptorType)reader.ReadUInt8();
         if (constValue0 != global::BedrockProtocol.Enums.ItemDescriptorType.Empty) {
@@ -20,4 +22,6 @@ public sealed class EmptyItemDescriptor : ItemStackRequestNetworkItemInstanceDes
     public void Write(BinaryWriter writer) {
         writer.WriteUInt8((byte)(byte)global::BedrockProtocol.Enums.ItemDescriptorType.Empty);
     }
+
+    #pragma warning restore CA1822
 }

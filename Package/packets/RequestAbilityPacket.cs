@@ -25,7 +25,7 @@ public sealed class RequestAbilityPacket : Packet {
     public const int PacketId = 184;
 
     public int Ability;
-    public RequestAbilityPacketPayloadType ValueType = new();
+    public RequestAbilityPacketPayloadType ValueType;
     public bool Bool;
     public float Float;
 
