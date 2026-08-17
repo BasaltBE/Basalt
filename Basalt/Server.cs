@@ -101,7 +101,12 @@ public sealed class Server {
     public Server(Properties? properties = null) {
         long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
-        _raknet = new NetworkServer(new RaknetServerOptions(MaxMtu: Properties.Mtu, Port: Properties.Port));
+        _raknet = new NetworkServer(new RaknetServerOptions(
+            MaxMtu: Properties.Mtu,
+            Port: Properties.Port,
+            IPv6Port: Properties.IPv6Port));
+        _raknet.GetAdvertisement = () =>
+            $"MCPE;{Properties.Motd};{Constants.ProtocolVersion};{Constants.MinecraftVersion};{Players.Count};{Properties.MaxPlayers};{_raknet.ServerGuid};Bedrock level;Survival;1;{Properties.Port};{Properties.IPv6Port};";
         if (Properties.RconPort != 0 && Properties.RconPassword.Length > 0) {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
@@ -232,7 +237,7 @@ public sealed class Server {
         }, _tickCancellation.Token);
 
         Emit(new ServerStartSignal());
-        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
+        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port}, [::]:{Properties.IPv6Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
     }
 
     public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal {
