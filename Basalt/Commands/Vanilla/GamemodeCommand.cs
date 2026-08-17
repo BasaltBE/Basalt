@@ -27,7 +27,7 @@ public static class GamemodeCommand {
     public static readonly CommandDefinition Definition = new() {
         Name = "gamemode",
         Description = "Changes the game mode for a player.",
-        Aliases = ["gm"],
+        Aliases = [],
         Permissions = ["basalt.op"],
         Overloads =
         [
