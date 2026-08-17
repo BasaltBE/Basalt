@@ -1417,7 +1417,7 @@ public sealed class Dimension : IDisposable {
                 entity.Spawn(this, new EntitySpawnOptions(InitialSpawn: true));
             }
             catch (Exception exception) {
-                Logger.Warn($"Failed materializing entity {stored.Key} in chunk {chunk.X},{chunk.Z}: {exception.Message}");
+                Logger.Warn($"Failed materializing entity {stored.Key} in chunk {chunk.X},{chunk.Z}: {exception}");
             }
         }
     }
