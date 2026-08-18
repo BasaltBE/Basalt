@@ -84,7 +84,6 @@ public static class ResourcePackClientResponse {
                         Toggles = [],
                     },
                 };
-                Logger.Info($"ResourcePackStackPacket: Required={stack.TexturePackRequired}, Packs={string.Join(",", stack.TexturePackList.Select(static pack => $"{pack.PackID}/{pack.Version}/{pack.SubPackName}"))}, Base={stack.BaseGameVersion}, Experiments={stack.Experiments.Toggles.Count}, EverToggled={stack.Experiments.ExperimentsEverToggled}, IncludeEditorPacks={stack.IncludeEditorPacks}");
                 server.Network.QueuePacket(connection, stack);
                 return;
 
