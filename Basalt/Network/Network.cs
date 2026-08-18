@@ -46,34 +46,34 @@ public sealed class NetworkHandler {
 
 
         /// Packets ported to new Protocol
-        On<BedrockProtocol.Packets.RequestNetworkSettingsPacket>((connection, packet) => RequestNetworkSettings.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.LoginPacket>((connection, packet) => LoginHandler.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ResourcePackClientResponsePacket>((connection, packet) => ResourcePackClientResponse.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.AnimatePacket>((connection, packet) => Animate.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.PlayerActionPacket>((connection, packet) => PlayerAction.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.InteractPacket>((connection, packet) => Interact.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.RespawnPacket>((connection, packet) => Respawn.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.RequestChunkRadiusPacket>((connection, packet) => RequestChunkRadius.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ResourcePackChunkRequestPacket>((connection, packet) => ResourcePackChunkRequest.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.TextPacket>((connection, packet) => Text.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.PlayerSkinPacket>((connection, packet) => PlayerSkin.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ServerboundDataStorePacket>((connection, packet) => ServerboundDataStore.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ContainerClosePacket>((connection, packet) => ContainerClose.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ModalFormResponsePacket>((connection, packet) => ModalFormResponse.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ClientCacheStatusPacket>((connection, packet) => ClientCacheStatus.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.MobEquipmentPacket>((connection, packet) => MobEquipment.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.CommandRequestPacket>((connection, packet) => CommandRequest.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.SetLocalPlayerAsInitializedPacket>((connection, packet) => SetLocalPlayerAsInitialized.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.PlayerAuthInputPacket>((connection, packet) => PlayerAuthInput.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.ItemStackRequestPacket>((connection, packet) => ItemStackRequest.Handle(_server, connection, packet));
-        On<BedrockProtocol.Packets.InventoryTransactionPacket>((connection, packet) => InventoryTransaction.Handle(_server, connection, packet));
+        On<RequestNetworkSettingsPacket>((connection, packet) => RequestNetworkSettings.Handle(_server, connection, packet));
+        On<LoginPacket>((connection, packet) => LoginHandler.Handle(_server, connection, packet));
+        On<ResourcePackClientResponsePacket>((connection, packet) => ResourcePackClientResponse.Handle(_server, connection, packet));
+        On<AnimatePacket>((connection, packet) => Animate.Handle(_server, connection, packet));
+        On<PlayerActionPacket>((connection, packet) => PlayerAction.Handle(_server, connection, packet));
+        On<InteractPacket>((connection, packet) => Interact.Handle(_server, connection, packet));
+        On<RespawnPacket>((connection, packet) => Respawn.Handle(_server, connection, packet));
+        On<RequestChunkRadiusPacket>((connection, packet) => RequestChunkRadius.Handle(_server, connection, packet));
+        On<ResourcePackChunkRequestPacket>((connection, packet) => ResourcePackChunkRequest.Handle(_server, connection, packet));
+        On<TextPacket>((connection, packet) => Text.Handle(_server, connection, packet));
+        On<PlayerSkinPacket>((connection, packet) => PlayerSkin.Handle(_server, connection, packet));
+        On<ServerboundDataStorePacket>((connection, packet) => ServerboundDataStore.Handle(_server, connection, packet));
+        On<ContainerClosePacket>((connection, packet) => ContainerClose.Handle(_server, connection, packet));
+        On<ModalFormResponsePacket>((connection, packet) => ModalFormResponse.Handle(_server, connection, packet));
+        On<ClientCacheStatusPacket>((connection, packet) => ClientCacheStatus.Handle(_server, connection, packet));
+        On<MobEquipmentPacket>((connection, packet) => MobEquipment.Handle(_server, connection, packet));
+        On<CommandRequestPacket>((connection, packet) => CommandRequest.Handle(_server, connection, packet));
+        On<SetLocalPlayerAsInitializedPacket>((connection, packet) => SetLocalPlayerAsInitialized.Handle(_server, connection, packet));
+        On<PlayerAuthInputPacket>((connection, packet) => PlayerAuthInput.Handle(_server, connection, packet));
+        On<ItemStackRequestPacket>((connection, packet) => ItemStackRequest.Handle(_server, connection, packet));
+        On<InventoryTransactionPacket>((connection, packet) => InventoryTransaction.Handle(_server, connection, packet));
 
     }
 
     /// <summary>
     /// Adds a typed packet listener that runs on the main server thread.
     /// </summary>
-    public void On<TPacket>(Action<NetworkConnection, TPacket> listener) where TPacket : BedrockProtocol.Packets.Packet {
+    public void On<TPacket>(Action<NetworkConnection, TPacket> listener) where TPacket : Packet {
         ArgumentNullException.ThrowIfNull(listener);
         lock (_packetListenersLock) {
             Type packetType = typeof(TPacket);
@@ -89,7 +89,7 @@ public sealed class NetworkHandler {
     /// <summary>
     /// Removes a typed packet listener.
     /// </summary>
-    public void Off<TPacket>(Action<NetworkConnection, TPacket> listener) where TPacket : BedrockProtocol.Packets.Packet {
+    public void Off<TPacket>(Action<NetworkConnection, TPacket> listener) where TPacket : Packet {
         ArgumentNullException.ThrowIfNull(listener);
         lock (_packetListenersLock) {
             if (!_packetListeners.TryGetValue(typeof(TPacket), out List<PacketListener>? listeners)) {
@@ -166,7 +166,7 @@ public sealed class NetworkHandler {
         }
 
         _server.Broadcast(
-            new BedrockProtocol.Packets.PlayerListPacket() {
+            new PlayerListPacket() {
                 Entries = [player.CreatePlayerListEntry(false)],
             }
         );
@@ -204,7 +204,7 @@ public sealed class NetworkHandler {
                     try {
                         if (!TryDeserializePacket(
                             packetBuffer,
-                            out BedrockProtocol.Packets.Packet? packet,
+                            out Packet? packet,
                             out int packetId)) {
                             continue;
                         }
@@ -265,7 +265,7 @@ public sealed class NetworkHandler {
 
     public void QueuePacket(
         NetworkConnection connection,
-        BedrockProtocol.Packets.Packet packet,
+        Packet packet,
         CompressionMethod? compression = null) {
         ArgumentNullException.ThrowIfNull(packet);
 
@@ -361,29 +361,29 @@ public sealed class NetworkHandler {
         }
     }
 
-    public void SendPackets(NetworkConnection connection, IEnumerable<BedrockProtocol.Packets.Packet> packets, CompressionMethod? compression = null) {
+    public void SendPackets(NetworkConnection connection, IEnumerable<Packet> packets, CompressionMethod? compression = null) {
         QueuePackets(connection, packets, compression, true, true);
     }
 
-    public void QueuePackets(NetworkConnection connection, IEnumerable<BedrockProtocol.Packets.Packet> packets, CompressionMethod? compression = null) {
+    public void QueuePackets(NetworkConnection connection, IEnumerable<Packet> packets, CompressionMethod? compression = null) {
         QueuePackets(connection, packets, compression, false, false);
     }
 
     private void QueuePackets(
         NetworkConnection connection,
-        IEnumerable<BedrockProtocol.Packets.Packet> packets,
+        IEnumerable<Packet> packets,
         CompressionMethod? compression,
         bool immediate,
         bool wait) {
         ArgumentNullException.ThrowIfNull(packets);
-        using IEnumerator<BedrockProtocol.Packets.Packet> enumerator = packets.GetEnumerator();
+        using IEnumerator<Packet> enumerator = packets.GetEnumerator();
 
         if (!enumerator.MoveNext()) {
             return;
         }
 
         while (true) {
-            BedrockProtocol.Packets.Packet packet = enumerator.Current
+            Packet packet = enumerator.Current
                 ?? throw new ArgumentException("Packet collections cannot contain null values.", nameof(packets));
 
             // if (packet is InventoryContentPacket) return; 
@@ -416,7 +416,7 @@ public sealed class NetworkHandler {
 
     private void QueueOutgoing(
         NetworkConnection connection,
-        BedrockProtocol.Packets.Packet? packet,
+        Packet? packet,
         ReadOnlySpan<byte> serialized,
         CompressionMethod? compression,
         bool immediate,
@@ -532,12 +532,12 @@ public sealed class NetworkHandler {
                 BinaryWriter writer = packetStream;
                 SerializeOutgoingPacket(outgoing.Packet!, writer);
                 ReadOnlySpan<byte> packet = writer.GetProcessedBytes();
-                if (outgoing.Packet is AddPlayerPacket) {
-                    Logger.Warn($"AddPlayer raw bytes: {Convert.ToHexString(packet)}");
-                }
-                if (outgoing.Packet is PlayerListPacket) {
-                    Logger.Warn($"PlayerList raw bytes: {Convert.ToHexString(packet)}");
-                }
+                // if (outgoing.Packet is AddPlayerPacket) {
+                //     Logger.Warn($"AddPlayer raw bytes: {Convert.ToHexString(packet)}");
+                // }
+                // if (outgoing.Packet is PlayerListPacket) {
+                //     Logger.Warn($"PlayerList raw bytes: {Convert.ToHexString(packet)}");
+                // }
 
                 byte[] payload = ArrayPool<byte>.Shared.Rent(packet.Length);
                 packet.CopyTo(payload);
@@ -614,7 +614,8 @@ public sealed class NetworkHandler {
         }
     }
 
-    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate) {
+    // A queue for packets + a queue for raknet kinda makes it a bit slow?
+    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate = true) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.SendFrame") : default;
         CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
         byte[] compressedBuffer = ArrayPool<byte>.Shared.Rent(
@@ -641,7 +642,7 @@ public sealed class NetworkHandler {
     }
 
     private readonly record struct OutgoingPacket(
-        BedrockProtocol.Packets.Packet? Packet,
+        Packet? Packet,
         byte[]? Payload,
         int Length,
         CompressionMethod? Compression,
@@ -660,21 +661,21 @@ public sealed class NetworkHandler {
 
     private readonly record struct IncomingPacket(
         NetworkConnection Connection,
-        BedrockProtocol.Packets.Packet Packet,
+        Packet Packet,
         int Id,
         ReadOnlyMemory<byte> PacketBuffer);
 
     private abstract class PacketListener {
         public abstract void Invoke(
             NetworkConnection connection,
-            BedrockProtocol.Packets.Packet packet
+            Packet packet
         );
 
         public abstract bool Matches(Delegate listener);
     }
 
     private sealed class PacketListener<TPacket> : PacketListener
-        where TPacket : BedrockProtocol.Packets.Packet {
+        where TPacket : Packet {
 
         private readonly Action<NetworkConnection, TPacket> _listener;
 
@@ -686,7 +687,7 @@ public sealed class NetworkHandler {
 
         public override void Invoke(
             NetworkConnection connection,
-            BedrockProtocol.Packets.Packet packet
+            Packet packet
         ) {
             if (packet is not TPacket typedPacket) {
                 throw new InvalidOperationException(
@@ -705,7 +706,7 @@ public sealed class NetworkHandler {
     }
 
     private static void SerializeOutgoingPacket(
-        BedrockProtocol.Packets.Packet packet,
+        Packet packet,
         BinaryWriter writer) {
         int packetId = _generatedPacketIds.GetOrAdd(
             packet.GetType(),
@@ -736,7 +737,7 @@ public sealed class NetworkHandler {
 
     private static bool TryDeserializePacket(
         ReadOnlySpan<byte> packetBuffer,
-        out BedrockProtocol.Packets.Packet? packet,
+        out Packet? packet,
         out int packetId) {
         int offset = 0;
         BinaryReader reader = new(packetBuffer, ref offset);

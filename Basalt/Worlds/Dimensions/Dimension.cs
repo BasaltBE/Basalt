@@ -1472,8 +1472,8 @@ public sealed class Dimension : IDisposable {
             case MoveActorDeltaPacket moveActorDelta:
                 return new Vec3() {
                     X = moveActorDelta.MoveData.NewPositionX ?? 0,
-                    Y = moveActorDelta.MoveData.NewPositionX ?? 0,
-                    Z = moveActorDelta.MoveData.NewPositionX ?? 0,
+                    Y = moveActorDelta.MoveData.NewPositionY ?? 0,
+                    Z = moveActorDelta.MoveData.NewPositionZ ?? 0,
                 };
 
             default:

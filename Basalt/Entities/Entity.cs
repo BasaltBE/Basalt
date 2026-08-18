@@ -504,22 +504,12 @@ public class Entity {
         return GetEyePosition();
     }
 
-    public virtual Vec3 GetPosition() {
-        if (this is not Player) {
-            return Position;
-        }
-
-        return new Vec3 {
-            X = Position.X,
-            Y = Position.Y - 1.62f,
-            Z = Position.Z
-        };
-    }
+    public virtual Vec3 GetPosition() => Position;
 
     public Vec3 GetEyePosition() {
         return new Vec3 {
             X = Position.X,
-            Y = Position.Y,
+            Y = this is Player ? Position.Y + 1.62f : Position.Y,
             Z = Position.Z
         };
     }

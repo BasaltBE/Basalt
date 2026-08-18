@@ -62,6 +62,8 @@ public static class PlayerAuthInput {
                 return;
             }
 
+            player.Grounded = packet.InputData?.Contains(PlayerAuthInputData.VerticalCollision) == true;
+
             if (!player.InitialAttributesSynced) {
                 Logger.Info($"First PlayerAuthInput: unique={player.UniqueId}, runtime={player.RuntimeId}, clientTick={packet.ClientTick.InputTick}");
                 player.Attributes.Send();
@@ -366,8 +368,29 @@ public static class PlayerAuthInput {
     }
 
     private static bool MovedTooFar(Player.Player player, PlayerAuthInputPacket packet, out ulong rawTickDelta) {
-        float deltaX = packet.Position.X - player.Location.X;
-        float deltaZ = packet.Position.Z - player.Location.Z;
+        bool missingPosition =
+            packet.Position.X == 0f &&
+            packet.Position.Y == 0f &&
+            packet.Position.Z == 0f;
+
+        bool hasDelta =
+            packet.PosDelta.X != 0f ||
+            packet.PosDelta.Y != 0f ||
+            packet.PosDelta.Z != 0f;
+
+        float positionX = missingPosition && hasDelta
+            ? player.Location.X + packet.PosDelta.X
+            : missingPosition
+                ? player.Location.X
+                : packet.Position.X;
+        float positionZ = missingPosition && hasDelta
+            ? player.Location.Z + packet.PosDelta.Z
+            : missingPosition
+                ? player.Location.Z
+                : packet.Position.Z;
+
+        float deltaX = positionX - player.Location.X;
+        float deltaZ = positionZ - player.Location.Z;
         float movedDistanceSquared = deltaX * deltaX + deltaZ * deltaZ;
 
         ulong previousTick = LastInputTickByRuntimeId.GetOrAdd(player.RuntimeId, packet.ClientTick.InputTick);

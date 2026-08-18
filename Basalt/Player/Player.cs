@@ -36,6 +36,7 @@ public class Player : Entities.Entity {
     public GameType Gamemode { get; private set; } = GameType.Survival;
     public bool IsOperator { get; internal set; }
     public bool Spawned { get; internal set; }
+    public bool Grounded;
     public bool InitialAttributesSynced { get; internal set; }
     public float Pitch;
     public float Yaw;
@@ -510,7 +511,7 @@ public class Player : Entities.Entity {
     }
 
     public override void SpawnTo(Player player, ulong tick, Vec3? position = null) {
-        Vec3 spawnPosition = position ?? Location;
+        Vec3 spawnPosition = position ?? Position;
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
         Item.ItemStack? held = inventory?.GetHeldItem();
 
@@ -537,9 +538,7 @@ public class Player : Entities.Entity {
                 FloatEntriesList = [],
                 IntEntriesList = []
             },
-            EntityData = new SynchedActorDataList {
-                Data = []
-            },
+            EntityData = CreateActorDataPacket(tick).ActorData,
             PlayerGameType = Gamemode,
             CarriedItem = carriedItem,
             Rotation = new Vec2 {

@@ -18,6 +18,7 @@ using BedrockProtocol.Enums;
 using Basalt.Core.Blocks;
 
 public static class InventoryTransaction {
+    private const float EntityAttackReach = 3f;
     private const uint UseItemActionClickBlock = 0;
     private const uint UseItemActionClickAir = 1;
     private const uint UseItemTriggerInitial = 1;
@@ -666,6 +667,10 @@ public static class InventoryTransaction {
                 break;
 
             case ItemUseOnActorActionType.Attack:
+                if (!WithinAttackReach(player, target)) {
+                    return;
+                }
+
                 if (player.Dimension.World?.Server is Server server) {
                     PlayerAttackEntitySignal signal = new(player, target);
                     server.Emit(signal);
@@ -707,6 +712,28 @@ public static class InventoryTransaction {
                 }
                 break;
         }
+    }
+
+    private static bool WithinAttackReach(Player.Player player, Basalt.Core.Entities.Entity target) {
+        if (!target.IsAlive || target.Dimension != player.Dimension || ReferenceEquals(player, target)) {
+            return false;
+        }
+
+        EntityCollisionTrait? targetCollision = target.GetTrait<EntityCollisionTrait>();
+        float targetWidth = targetCollision?.Width ?? EntityCollisionTrait.DefaultWidth;
+        float targetHeight = targetCollision?.Height ?? EntityCollisionTrait.DefaultHeight;
+        Vec3 targetFeet = target is Player.Player targetPlayer ? targetPlayer.GetPosition() : target.Position;
+        Vec3 eye = player.GetEyePosition();
+
+        float halfWidth = targetWidth * 0.5f;
+        float closestX = Math.Clamp(eye.X, targetFeet.X - halfWidth, targetFeet.X + halfWidth);
+        float closestY = Math.Clamp(eye.Y, targetFeet.Y, targetFeet.Y + targetHeight);
+        float closestZ = Math.Clamp(eye.Z, targetFeet.Z - halfWidth, targetFeet.Z + halfWidth);
+        float deltaX = eye.X - closestX;
+        float deltaY = eye.Y - closestY;
+        float deltaZ = eye.Z - closestZ;
+
+        return deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ <= EntityAttackReach * EntityAttackReach;
     }
 
     private static ItemStack? GetHeldItem(EntityInventoryTrait inventory, int hotBarSlot) {
@@ -803,7 +830,7 @@ public static class InventoryTransaction {
         }
 
         float startX = player.Location.X;
-        float startY = player.Location.Y + 1.62f;
+        float startY = player.GetEyePosition().Y;
         float startZ = player.Location.Z;
 
         int previousX = (int)MathF.Floor(startX);

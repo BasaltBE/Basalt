@@ -23,7 +23,7 @@ public class Properties {
     [ServerProperties.PropertyCategory("Network")]
     [ServerProperties.PropertyKey("raknet-mtu")]
     [ServerProperties.PropertyComment("Maximum transmission unit for RakNet.")]
-    public ushort Mtu { get; set; } = 1024;
+    public ushort Mtu { get; set; } = 1492;
 
     [ServerProperties.PropertyOrder(5)]
     [ServerProperties.PropertyCategory("Network")]

@@ -180,7 +180,7 @@ public sealed class World : IDisposable, Tickable {
             DayTime++;
         }
 
-        if (TickValue % 20 == 0) {
+        if (TickValue % 100 == 0) {
             SendTime();
         }
 

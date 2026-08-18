@@ -293,21 +293,13 @@ public sealed class EntityMovementTrait : EntityTrait {
                 ActorRuntimeID = new ActorRuntimeID {
                     Value = Entity.RuntimeId
                 },
-
                 NewPositionX = details.To.X,
                 NewPositionY = details.To.Y,
                 NewPositionZ = details.To.Z,
-
                 RotationX = PackRotation(details.ToRotation.Pitch),
                 RotationY = PackRotation(details.ToRotation.Yaw),
                 RotationYHead = PackRotation(details.ToRotation.HeadYaw),
-
-                IsOnGround = IsGrounded(
-                    details.To.X,
-                    details.To.Y,
-                    details.To.Z
-                ),
-
+                IsOnGround = IsGrounded(details.To.X, details.To.Y, details.To.Z),
                 ForceMove = false,
                 ForceMoveLocalEntity = false,
                 ForceCompletion = false
