@@ -28,14 +28,26 @@ public sealed class AnimatePacket : Packet {
     public AnimatePacketPayloadAction Action;
     public ActorRuntimeID TargetActorRuntimeID = new();
     public float Data;
-    public ActorSwingSource? SwingSource;
+    public global::BedrockProtocol.Enums.ActorSwingSource? SwingSource;
 
     public override void Deserialize(BinaryReader reader) {
         Action = (global::BedrockProtocol.Enums.AnimatePacketPayloadAction)reader.ReadUInt8();
         TargetActorRuntimeID.Read(reader);
         Data = reader.ReadF32(true);
         if (reader.ReadBool()) {
-            SwingSource = (global::BedrockProtocol.Enums.ActorSwingSource)reader.ReadUInt8();
+            string enumText6 = reader.ReadVarString();
+            SwingSource = enumText6 switch {
+                "none" => global::BedrockProtocol.Enums.ActorSwingSource.None,
+                "build" => global::BedrockProtocol.Enums.ActorSwingSource.Build,
+                "mine" => global::BedrockProtocol.Enums.ActorSwingSource.Mine,
+                "interact" => global::BedrockProtocol.Enums.ActorSwingSource.Interact,
+                "attack" => global::BedrockProtocol.Enums.ActorSwingSource.Attack,
+                "useitem" => global::BedrockProtocol.Enums.ActorSwingSource.UseItem,
+                "throwitem" => global::BedrockProtocol.Enums.ActorSwingSource.ThrowItem,
+                "dropitem" => global::BedrockProtocol.Enums.ActorSwingSource.DropItem,
+                "event" => global::BedrockProtocol.Enums.ActorSwingSource.Event,
+                _ => throw new InvalidOperationException($"Unknown ActorSwingSource wire value: {enumText6}"),
+            };
         } else {
             SwingSource = default;
         }
@@ -47,7 +59,18 @@ public sealed class AnimatePacket : Packet {
         writer.WriteF32(Data, true);
         writer.WriteBool(SwingSource is not null);
         if (SwingSource is { } optionalValue7) {
-            writer.WriteUInt8((byte)optionalValue7);
+            writer.WriteVarString(optionalValue7 switch {
+                global::BedrockProtocol.Enums.ActorSwingSource.None => "none",
+                global::BedrockProtocol.Enums.ActorSwingSource.Build => "build",
+                global::BedrockProtocol.Enums.ActorSwingSource.Mine => "mine",
+                global::BedrockProtocol.Enums.ActorSwingSource.Interact => "interact",
+                global::BedrockProtocol.Enums.ActorSwingSource.Attack => "attack",
+                global::BedrockProtocol.Enums.ActorSwingSource.UseItem => "useitem",
+                global::BedrockProtocol.Enums.ActorSwingSource.ThrowItem => "throwitem",
+                global::BedrockProtocol.Enums.ActorSwingSource.DropItem => "dropitem",
+                global::BedrockProtocol.Enums.ActorSwingSource.Event => "event",
+                _ => throw new InvalidOperationException($"Unknown ActorSwingSource value: {optionalValue7}"),
+            });
         }
     }
 }
