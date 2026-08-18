@@ -23,6 +23,8 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<(NetworkConnection Connection, byte[] Payload)> _incomingFrames = new();
     private readonly ConcurrentQueue<IncomingPacket> _incomingPackets = new();
     private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
+    private readonly ConcurrentQueue<NetworkConnection> _pendingDisconnects = new();
+    private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
@@ -115,11 +117,23 @@ public sealed class NetworkHandler {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.Tick") : default;
         _threadId = Environment.CurrentManagedThreadId;
 
+        while (_readyDisconnects.TryDequeue(out NetworkConnection? connection)) {
+            connection.Disconnect();
+        }
+
         while (_incomingFrames.TryDequeue(out var frame)) {
             DeserializeFrame(frame.Connection, frame.Payload);
         }
 
         FlushOutgoing();
+
+        while (_pendingDisconnects.TryDequeue(out NetworkConnection? connection)) {
+            _readyDisconnects.Enqueue(connection);
+        }
+    }
+
+    internal void Disconnect(NetworkConnection connection) {
+        _pendingDisconnects.Enqueue(connection);
     }
 
     internal void ProcessIncoming() {

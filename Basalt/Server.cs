@@ -74,6 +74,7 @@ public sealed class Server {
     public CommandRegistry Commands = new();
     public PermissionStore PermissionStore { get; }
     public PlayerDataStore PlayerData { get; }
+    public BanStore Bans { get; }
     public PluginManager Plugins { get; }
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
@@ -113,9 +114,12 @@ public sealed class Server {
         Network = new NetworkHandler(this);
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
+        Bans = new BanStore("banned-players.json");
         Plugins = new PluginManager(this);
         WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
         Scheduler = new TaskScheduler(WorkerPool);
+
+        DefaultCommands.Register(Commands);
 
         RegisterProvider<LevelDbProvider>("leveldb");
         RegisterProvider<InMemoryProvider>("memory");
@@ -147,7 +151,6 @@ public sealed class Server {
         }
         WorldInstance.ConfigurePersistence(defaultWorldPath);
 
-        DefaultCommands.Register(Commands);
         Crafting.CraftingLoader.Load();
 
         _startupElapsed = Stopwatch.GetElapsedTime(startTimestamp);
@@ -429,6 +432,45 @@ public sealed class Server {
         foreach (PlayerInstance player in Players.Values) {
             SavePlayer(player);
         }
+    }
+
+    public void BanPlayer(PlayerInstance player, DateTimeOffset? until = null, string reason = "") {
+        BanPlayer(player.Xuid, player.Username, until, reason);
+        KickPlayer(player, string.IsNullOrWhiteSpace(reason) ? "You are banned from this server." : reason);
+    }
+
+    public void BanPlayer(string identifier, DateTimeOffset? until = null, string reason = "") {
+        BanPlayer(identifier, string.Empty, until, reason);
+    }
+
+    public bool UnBanPlayer(string identifier) {
+        return Bans.Remove(identifier);
+    }
+
+    public bool UnBanPlayer(PlayerInstance player) {
+        return Bans.Remove(player.Xuid) || Bans.Remove(player.Username);
+    }
+
+    public bool IsBanned(string identifier) {
+        return Bans.IsBanned(identifier, out _);
+    }
+
+    public bool IsBanned(PlayerInstance player) {
+        return Bans.IsBanned(player.Xuid, player.Username, out _);
+    }
+
+    public void KickPlayer(PlayerInstance player, string reason = "") {
+        player.Disconnect(reason, true);
+    }
+
+    private void BanPlayer(string xuid, string username, DateTimeOffset? until, string reason) {
+        Bans.Ban(new BanEntry {
+            Identifier = string.IsNullOrEmpty(xuid) ? username : xuid,
+            Username = username,
+            Xuid = xuid,
+            Until = until?.ToUnixTimeSeconds() ?? 0,
+            Reason = reason
+        });
     }
 
     public void RegisterProvider<TProvider>(string identifier) where TProvider : WorldProvider {

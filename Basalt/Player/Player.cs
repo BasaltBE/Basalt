@@ -266,7 +266,7 @@ public class Player : Entities.Entity {
         else {
             Network.QueuePacket(Connection, disconnect);
         }
-        Connection.Disconnect();
+        Network.Disconnect(Connection);
     }
 
 

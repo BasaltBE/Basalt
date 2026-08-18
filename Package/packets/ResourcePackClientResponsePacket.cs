@@ -30,7 +30,6 @@ public sealed class ResourcePackClientResponsePacket : Packet {
 
     public override void Deserialize(BinaryReader reader) {
         ResourcePackResponse variant0 = (global::BedrockProtocol.Enums.ResourcePackResponse)reader.ReadInt8();
-        Console.WriteLine($"ResourcePackClientResponse raw status: {(int)variant0}");
         switch (variant0) {
             case global::BedrockProtocol.Enums.ResourcePackResponse.Cancel: {
                 ResourcePackClientResponseCancel variantValue0_0 = new();

@@ -22,5 +22,8 @@ public static class DefaultCommands {
         registry.Register(FillCommand.Definition);
         registry.Register(SetBlockCommand.Definition);
         registry.Register(KillCommand.Definition);
+        registry.Register(BanCommand.Definition);
+        registry.Register(UnBanCommand.Definition);
+        registry.Register(KickCommand.Definition);
     }
 }

@@ -22,6 +22,19 @@ public sealed class CommandRegistry {
         }
     }
 
+    public bool Unregister(string name) {
+        if (!_commands.TryGetValue(name.TrimStart('/'), out CommandDefinition? definition)) {
+            return false;
+        }
+
+        _definitions.Remove(definition);
+        foreach (string key in _commands.Where(pair => ReferenceEquals(pair.Value, definition)).Select(pair => pair.Key).ToArray()) {
+            _commands.Remove(key);
+        }
+
+        return true;
+    }
+
     /// <summary>
     /// Finds a command definition by name or alias. Returns null if not found.
     /// </summary>

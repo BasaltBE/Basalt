@@ -10,6 +10,7 @@ using BedrockProtocol.Nbt;
 // using Basalt.Protocol.Types;
 using Basalt.RakNet;
 using PermissionEntry = Basalt.Core.Player.PermissionEntry;
+using BanEntry = Basalt.Core.Player.BanEntry;
 
 using BedrockProtocol.Packets;
 using System.Text;
@@ -27,6 +28,7 @@ internal sealed class LoginTask : ServerTask {
     private ClientData _clientData;
     private Player.Player? _player;
     private string? _rejectMessage;
+    private bool _banned;
 
     public LoginTask(Server server, NetworkConnection connection, LoginPacket packet) {
         _server = server;
@@ -77,6 +79,15 @@ internal sealed class LoginTask : ServerTask {
             !_server.Properties.OnlineMode);
         string playerXuid = ResolvePlayerXuid(_identity.Xuid, _identity.Username);
 
+        if (_server.Bans.IsBanned(playerXuid, _identity.Username, out BanEntry? ban)) {
+            _rejectMessage = string.IsNullOrWhiteSpace(ban?.Reason)
+                ? "You are banned from this server."
+                : ban.Reason;
+            _banned = true;
+
+            return;
+        }
+
         _player = new Player.Player(_identity.Username, playerXuid, playerUuid);
 
         CompoundTag? savedPlayer = _server.PlayerData.Load(playerXuid) ?? LoadPlayerDataCompat(
@@ -112,16 +123,28 @@ internal sealed class LoginTask : ServerTask {
         }
 
         if (_rejectMessage is not null) {
-            DisconnectPacket disconnect = new() {
-                Reason = DisconnectFailReason.Disconnected,
-                Messages = new() {
-                    FilteredMessage = _rejectMessage,
-                    Message = _rejectMessage,
-                }
-                // Message = _rejectMessage,
-                // FilteredMessage = _rejectMessage
+            if (_banned) {
+                DisconnectPacket disconnect = new() {
+                    Reason = DisconnectFailReason.NotAllowed,
+                    Messages = new() {
+                        Message = _rejectMessage,
+                        FilteredMessage = _rejectMessage,
+                    }
+                };
+                _server.Network.QueuePacket(
+                    _connection,
+                    disconnect,
+                    Protocol.Enums.CompressionMethod.NotPresent);
+                return;
+            }
+
+            PlayStatusPacket status = new() {
+                Status = PlayStatus.LoginFailed_InvalidTenant,
             };
-            _server.Network.QueuePacket(_connection, disconnect, Protocol.Enums.CompressionMethod.NotPresent);
+            _server.Network.QueuePacket(
+                _connection,
+                status,
+                Protocol.Enums.CompressionMethod.NotPresent);
             return;
         }
 
