@@ -89,7 +89,7 @@ public static class ResourcePackClientResponse {
 
             case ResourcePackClientResponseResourcePackStackFinished:
                 if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
-                    Console.WriteLine("Resource pack flow completed, but no player session was found.");
+                    Logger.Error("Resource pack flow completed, but no player session was found.");
                     DisconnectPacket missingSessionDisconnect = new() {
                         Reason = DisconnectFailReason.Disconnected,
                         Messages = new() {
