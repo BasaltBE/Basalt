@@ -195,7 +195,7 @@ public sealed class EntityAttributes {
         AttributeData? saturation = GetAttribute(AttributeName.PlayerSaturation);
         AttributeData? exhaustion = GetAttribute(AttributeName.PlayerExhaustion);
 
-        Logger.Info($"Attributes send: unique={player.UniqueId}, runtime={player.RuntimeId}, hunger={hunger?.CurrentValue}/{hunger?.MaxValue}, saturation={saturation?.CurrentValue}/{saturation?.MaxValue}, exhaustion={exhaustion?.CurrentValue}/{exhaustion?.MaxValue}, tick=0");
+        // Logger.Info($"Attributes send: unique={player.UniqueId}, runtime={player.RuntimeId}, hunger={hunger?.CurrentValue}/{hunger?.MaxValue}, saturation={saturation?.CurrentValue}/{saturation?.MaxValue}, exhaustion={exhaustion?.CurrentValue}/{exhaustion?.MaxValue}, tick=0");
 
         List<AttributeData> foodAttributes = [
             hunger!,

@@ -435,12 +435,16 @@ public sealed class Server {
     }
 
     public void BanPlayer(PlayerInstance player, DateTimeOffset? until = null, string reason = "") {
-        BanPlayer(player.Xuid, player.Username, until, reason);
+        StoreBan(player.Xuid, player.Username, until, reason);
         KickPlayer(player, string.IsNullOrWhiteSpace(reason) ? "You are banned from this server." : reason);
     }
 
     public void BanPlayer(string identifier, DateTimeOffset? until = null, string reason = "") {
-        BanPlayer(identifier, string.Empty, until, reason);
+        StoreBan(identifier, string.Empty, until, reason);
+    }
+
+    public void BanPlayer(string xuid, string username, DateTimeOffset? until = null, string reason = "") {
+        StoreBan(xuid, username, until, reason);
     }
 
     public bool UnBanPlayer(string identifier) {
@@ -463,7 +467,7 @@ public sealed class Server {
         player.Disconnect(reason, true);
     }
 
-    private void BanPlayer(string xuid, string username, DateTimeOffset? until, string reason) {
+    void StoreBan(string xuid, string username, DateTimeOffset? until, string reason) {
         Bans.Ban(new BanEntry {
             Identifier = string.IsNullOrEmpty(xuid) ? username : xuid,
             Username = username,

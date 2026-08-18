@@ -195,11 +195,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             BlockProperties = BlockPalette.GetCustomBlockEntries(),
         };
 
-        Logger.Info($"Spawn IDs: unique={_player.UniqueId}, runtime={_player.RuntimeId}, startGameEntity={startGame.EntityID.Value}, startGameRuntime={startGame.RuntimeID.Value}");
-
-
-
-
+        // Logger.Info($"Spawn IDs: unique={_player.UniqueId}, runtime={_player.RuntimeId}, startGameEntity={startGame.EntityID.Value}, startGameRuntime={startGame.RuntimeID.Value}");
         _startGamePayload = SerializePacket(startGame);
 
         PlayStatusPacket spawnStatus = new PlayStatusPacket() {

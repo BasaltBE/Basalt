@@ -775,7 +775,7 @@ public sealed class NetworkHandler {
             string responseDetails = resourcePackResponse.Response is BedrockProtocol.Types.ResourcePackClientResponseDownloading downloading
                 ? $"{resourcePackResponse.Response.GetType().Name} [{string.Join(",", downloading.DownloadingPacks)}]"
                 : resourcePackResponse.Response.GetType().Name;
-            Logger.Info($"ResourcePackClientResponse decoded: {responseDetails}");
+            // Logger.Info($"ResourcePackClientResponse decoded: {responseDetails}");
         }
 
         return true;

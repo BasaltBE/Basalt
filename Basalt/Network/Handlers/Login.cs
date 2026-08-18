@@ -9,16 +9,16 @@ using BedrockProtocol.Enums;
 public static class LoginHandler {
     public static void Handle(Server server, NetworkConnection connection, LoginPacket packet) {
         if (packet.ClientNetworkVersion != Constants.ProtocolVersion) {
-            DisconnectFailReason reason = packet.ClientNetworkVersion < Constants.ProtocolVersion
-                ? DisconnectFailReason.OutdatedClient
-                : DisconnectFailReason.OutdatedServer;
+            PlayStatus status = packet.ClientNetworkVersion < Constants.ProtocolVersion
+                ? PlayStatus.LoginFailed_ClientOld
+                : PlayStatus.LoginFailed_ServerOld;
 
-            DisconnectPacket disconnect = new() {
-                Reason = reason,
+            PlayStatusPacket playStatus = new() {
+                Status = status,
             };
 
-            Logger.Warn($"Session failed due to {reason.ToString()}");
-            server.Network.QueuePacket(connection, disconnect, Protocol.Enums.CompressionMethod.NotPresent);
+            Logger.Warn($"Session failed due to {status}");
+            server.Network.QueuePacket(connection, playStatus, Protocol.Enums.CompressionMethod.NotPresent);
             return;
         }
 
