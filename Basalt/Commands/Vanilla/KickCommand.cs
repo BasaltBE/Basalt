@@ -20,7 +20,7 @@ public static class KickCommand {
         Player[] players = target.GetPlayers().ToArray();
         if (players.Length == 0) return CommandResult.Error("No player found matching the target selector.");
         string reason = ctx.Get<StringEnum>("reason")?.Value ?? "Kicked by an operator.";
-        foreach (Player player in players) ctx.Server.KickPlayer(player, reason);
+        foreach (Player player in players) Server.KickPlayer(player, reason);
         string suffix = players.Length == 1 ? string.Empty : "s";
         return CommandResult.OkMessage($"Kicked {players.Length} player{suffix}.");
     }
