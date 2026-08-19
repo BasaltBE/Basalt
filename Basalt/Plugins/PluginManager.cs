@@ -26,12 +26,22 @@ public sealed class PluginManager {
         }
 
         int count = 0;
+        string temporaryDirectory = Path.Combine(absoluteDirectory, ".temp");
+        Directory.CreateDirectory(temporaryDirectory);
 
         foreach (string subDir in Directory.GetDirectories(absoluteDirectory)) {
             string pluginName = Path.GetFileName(subDir);
+            if (pluginName.Equals(".temp", StringComparison.OrdinalIgnoreCase)) {
+                continue;
+            }
+
             string pluginDll = Path.Combine(subDir, $"{pluginName}.dll");
             if (File.Exists(pluginDll)) {
-                Load(pluginDll);
+                string stagedPluginDirectory = Path.Combine(temporaryDirectory, pluginName, Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(stagedPluginDirectory);
+                CopyPluginFiles(subDir, stagedPluginDirectory);
+                string stagedPluginDll = Path.Combine(stagedPluginDirectory, Path.GetFileName(pluginDll));
+                Load(stagedPluginDll);
                 count += 1;
             }
         }
@@ -131,5 +141,24 @@ public sealed class PluginManager {
         }
 
         return entries[0];
+    }
+
+    private static void CopyPluginFiles(string sourceDirectory, string destinationDirectory) {
+        foreach (string file in Directory.GetFiles(sourceDirectory, "*.dll", SearchOption.AllDirectories)) {
+            string destination = Path.Combine(destinationDirectory, Path.GetRelativePath(sourceDirectory, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(file, destination);
+        }
+
+        string resourcesDirectory = Path.Combine(sourceDirectory, "resources");
+        if (!Directory.Exists(resourcesDirectory)) {
+            return;
+        }
+
+        foreach (string file in Directory.GetFiles(resourcesDirectory, "*", SearchOption.AllDirectories)) {
+            string destination = Path.Combine(destinationDirectory, Path.GetRelativePath(sourceDirectory, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(file, destination);
+        }
     }
 }
