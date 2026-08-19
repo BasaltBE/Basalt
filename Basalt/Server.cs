@@ -463,7 +463,7 @@ public sealed class Server {
         return Bans.IsBanned(player.Xuid, player.Username, out _);
     }
 
-    public void KickPlayer(PlayerInstance player, string reason = "") {
+    public static void KickPlayer(PlayerInstance player, string reason = "") {
         player.Disconnect(reason, true);
     }
 
