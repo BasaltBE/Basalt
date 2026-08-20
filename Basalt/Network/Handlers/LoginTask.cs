@@ -8,7 +8,6 @@ using Basalt.Core.Tasks;
 using BedrockProtocol.Nbt;
 // using Basalt.Protocol.Packets;
 // using Basalt.Protocol.Types;
-using Basalt.RakNet;
 using PermissionEntry = Basalt.Core.Player.PermissionEntry;
 using BanEntry = Basalt.Core.Player.BanEntry;
 

@@ -1,7 +1,7 @@
 namespace Basalt.Core.Events;
 
 using Basalt.Core.Player;
-using Basalt.RakNet;
+using Basalt.Core.Network;
 
 using BedrockProtocol.Packets;
 

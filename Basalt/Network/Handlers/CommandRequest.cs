@@ -4,7 +4,6 @@ using Basalt.Core;
 using Basalt.Core.Commands;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
-using Basalt.RakNet;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Packets;
 using BedrockProtocol.Types;

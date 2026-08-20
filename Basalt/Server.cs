@@ -5,11 +5,13 @@ using System.Diagnostics;
 using Basalt.Core.Commands;
 using Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Network;
+using Basalt.Core.Network.Nethernet;
 using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
-using Basalt.RakNet;
+using RaknetServerOptions = Basalt.RakNet.RaknetServerOptions;
+using RakNetNetworkServer = Basalt.RakNet.NetworkServer;
 using Basalt.Core.Events;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
@@ -33,7 +35,8 @@ public sealed class Server {
     /// <summary>
     /// Raknet server
     /// </summary>
-    private readonly NetworkServer _raknet;
+    private readonly RakNetNetworkServer _raknet;
+    private readonly NetherNetServerTransport? _nethernet;
     private readonly RconServer? _rcon;
     /// <summary>
     /// Registry for dimension generators
@@ -102,7 +105,7 @@ public sealed class Server {
     public Server(Properties? properties = null) {
         long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
-        _raknet = new NetworkServer(new RaknetServerOptions(
+        _raknet = new RakNetNetworkServer(new RaknetServerOptions(
             MaxMtu: Properties.Mtu,
             Port: Properties.Port,
             IPv6Port: Properties.IPv6Port));
@@ -112,6 +115,9 @@ public sealed class Server {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
         Network = new NetworkHandler(this);
+        _nethernet = Properties.NetherNetEnabled
+            ? new NetherNetServerTransport(Network, Properties.Port)
+            : null;
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
         Bans = new BanStore("banned-players.json");
@@ -176,6 +182,8 @@ public sealed class Server {
         _networkLoopTask = Task.Run(async () => {
             await _raknet.Start();
         }, runCancellation.Token);
+
+        _nethernet?.Start(runCancellation.Token);
 
         Thread raknetThread = new(() => {
             Profiler.SetThreadName("RakNet");
@@ -304,6 +312,8 @@ public sealed class Server {
 
         runCancellation?.Cancel();
         cancellation?.Cancel();
+
+        _nethernet?.Dispose();
 
         try {
             raknetThread?.Join(1000);

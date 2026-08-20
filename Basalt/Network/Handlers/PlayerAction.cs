@@ -1,7 +1,6 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.RakNet;
 
 using BedrockProtocol.Packets;
 using BedrockProtocol.Enums;

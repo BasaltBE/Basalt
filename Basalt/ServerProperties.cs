@@ -71,7 +71,11 @@ public class ServerProperties {
 
             string key = new(line[..indexOf].Trim());
             ReadOnlySpan<char> rawValue = line[(indexOf + 1)..].Trim();
-            if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double nv)) {
+            bool preserveLargeInteger =
+                ulong.TryParse(rawValue, NumberStyles.None, CultureInfo.InvariantCulture, out ulong integerValue) &&
+                integerValue > 9007199254740991UL;
+            if (!preserveLargeInteger &&
+                double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double nv)) {
                 props.NumericalProperties[key] = nv;
                 props.BooleanProperties.Remove(key);
                 props.StringProperties.Remove(key);

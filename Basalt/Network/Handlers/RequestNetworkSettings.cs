@@ -1,7 +1,6 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
-using Basalt.RakNet;
 
 using BedrockProtocol.Enums;
 using BedrockProtocol.Packets;
@@ -17,7 +16,7 @@ public static class RequestNetworkSettings {
                 Reason = reason,
             };
 
-            Logger.Warn($"Session failed due to {reason.ToString()}");
+            Logger.Warn($"Session(0) failed due to {reason.ToString()}");
             server.Network.QueuePacket(connection, disconnect, Protocol.Enums.CompressionMethod.NotPresent);
             return;
         }
@@ -33,6 +32,7 @@ public static class RequestNetworkSettings {
         };
 
         server.Network.QueuePacket(connection, response, Protocol.Enums.CompressionMethod.NotPresent);
+        connection.NetherNetCompression = true;
     }
 }
 

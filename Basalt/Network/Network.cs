@@ -7,7 +7,7 @@ using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
 using Basalt.Core.Profiling;
 using Basalt.Protocol.Enums;
-using Basalt.RakNet;
+using RakNetConnection = Basalt.RakNet.NetworkConnection;
 using Basalt.RakNet.Packets.Enums;
 using BedrockProtocol.Packets;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -25,6 +25,7 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
     private readonly ConcurrentQueue<NetworkConnection> _pendingDisconnects = new();
     private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
+    private readonly ConcurrentDictionary<RakNetConnection, NetworkConnection> _rakNetConnections = new();
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
@@ -109,8 +110,24 @@ public sealed class NetworkHandler {
         _incomingFrames.Enqueue((connection, payload.ToArray()));
     }
 
+    internal void EnqueueFrame(RakNetConnection connection, ReadOnlyMemory<byte> payload) {
+        EnqueueFrame(GetRakNetConnection(connection), payload);
+    }
+
     internal void EnqueueDisconnection(NetworkConnection connection) {
         _disconnections.Enqueue(connection);
+    }
+
+    internal void EnqueueDisconnection(RakNetConnection connection) {
+        if (_rakNetConnections.TryGetValue(connection, out NetworkConnection? wrapped)) {
+            EnqueueDisconnection(wrapped);
+        }
+    }
+
+    private NetworkConnection GetRakNetConnection(RakNetConnection connection) {
+        return _rakNetConnections.GetOrAdd(connection, static connection => new NetworkConnection(
+            (payload, reliability, immediate) => connection.SendPacket(payload, reliability, immediate),
+            connection.Disconnect));
     }
 
     internal void Tick() {
@@ -194,14 +211,40 @@ public sealed class NetworkHandler {
         byte[]? decompressedBuffer = null;
 
         try {
-            decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
-            int decompressedLength;
-            using (Profiler.Enabled ? Profiler.BeginZone("Network.Unframe") : default) {
-                decompressedLength = Protocol.Io.Packet.Unframe(packetData, decompressedBuffer, out _);
+            ReadOnlySpan<byte> frame;
+            if (connection.NetherNet) {
+                if (!connection.NetherNetCompression) {
+                    frame = packetData;
+                }
+                else if (packetData.Length == 0) {
+                    return;
+                }
+                else {
+                    CompressionMethod compression = (CompressionMethod)packetData[0];
+                    ReadOnlySpan<byte> compressed = packetData[1..];
+                    if (compression == CompressionMethod.Zlib) {
+                        decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
+                        int decompressedLength = Protocol.Io.Packet.Decompress(compressed, decompressedBuffer);
+                        frame = decompressedBuffer.AsSpan(0, decompressedLength);
+                    }
+                    else if (compression == CompressionMethod.None) {
+                        frame = compressed;
+                    }
+                    else {
+                        Logger.Warn($"Unsupported NetherNet compression method: {compression}");
+                        return;
+                    }
+                }
             }
-            if (decompressedLength == 0) return;
-
-            ReadOnlySpan<byte> frame = decompressedBuffer.AsSpan(0, decompressedLength);
+            else {
+                decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
+                int decompressedLength;
+                using (Profiler.Enabled ? Profiler.BeginZone("Network.Unframe") : default) {
+                    decompressedLength = Protocol.Io.Packet.Unframe(packetData, decompressedBuffer, out _);
+                }
+                if (decompressedLength == 0) return;
+                frame = decompressedBuffer.AsSpan(0, decompressedLength);
+            }
 
             int offset = 0;
             BinaryReader frameReader = new(frame, ref offset);
@@ -562,6 +605,18 @@ public sealed class NetworkHandler {
                     outgoing.Immediate);
             }
 
+            if (connection.NetherNet) {
+                for (int index = 0; index < count; index++) {
+                    SendNetherNetPacket(
+                        connection,
+                        serialized[index],
+                        _server.Properties.CompressionMethod,
+                        _server.Properties.CompressionThreshold);
+                }
+
+                return;
+            }
+
             int start = 0;
             while (start < count) {
                 start = SendBatch(connection, serialized, start, count);
@@ -576,6 +631,42 @@ public sealed class NetworkHandler {
 
             serialized.AsSpan(0, count).Clear();
             ArrayPool<SerializedOutgoing>.Shared.Return(serialized);
+        }
+    }
+
+    private static void SendNetherNetPacket(
+        NetworkConnection connection,
+        SerializedOutgoing packet,
+        string? serverCompressionMethod = null,
+        int compressionThreshold = 0) {
+        int batchCapacity = packet.Length + 5;
+        byte[] batch = ArrayPool<byte>.Shared.Rent(batchCapacity);
+        byte[] frame = ArrayPool<byte>.Shared.Rent(batchCapacity + (batchCapacity >> 12) + (batchCapacity >> 14) + (batchCapacity >> 25) + 16);
+        try {
+            int offset = 0;
+            BinaryWriter writer = new(batch, ref offset);
+            writer.WriteVarUInt((uint)packet.Length);
+            writer.WriteBytes(packet.Payload.AsSpan(0, packet.Length));
+
+            CompressionMethod compression = packet.Compression ?? GetCompressionMethod(serverCompressionMethod);
+            int frameLength = offset;
+            if (connection.NetherNetCompression && compression != CompressionMethod.NotPresent) {
+                frameLength = Protocol.Io.Packet.Compress(
+                    batch.AsSpan(0, offset),
+                    frame,
+                    compression == CompressionMethod.Zlib && offset < compressionThreshold
+                        ? CompressionMethod.None
+                        : compression);
+            }
+            else {
+                batch.AsSpan(0, offset).CopyTo(frame);
+            }
+
+            connection.SendPacket(frame.AsSpan(0, frameLength), Reliability.ReliableOrdered, packet.Immediate);
+        }
+        finally {
+            ArrayPool<byte>.Shared.Return(batch);
+            ArrayPool<byte>.Shared.Return(frame);
         }
     }
 

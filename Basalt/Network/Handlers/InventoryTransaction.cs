@@ -10,7 +10,6 @@ using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
-using Basalt.RakNet;
 
 using BedrockProtocol.Types;
 using BedrockProtocol.Packets;

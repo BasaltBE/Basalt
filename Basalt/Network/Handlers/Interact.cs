@@ -4,7 +4,6 @@ using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits.Types;
-using Basalt.RakNet;
 
 using BedrockProtocol.Packets;
 using BedrockProtocol.Enums;

@@ -2,7 +2,6 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 using Basalt.Core.Player;
-using Basalt.RakNet;
 
 using BedrockProtocol.Packets;
 using BedrockProtocol.Types;

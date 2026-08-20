@@ -15,7 +15,6 @@ using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Profiling;
 
-using Basalt.RakNet;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Nbt;
 using BedrockProtocol.Packets;

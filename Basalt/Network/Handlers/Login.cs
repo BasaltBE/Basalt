@@ -1,7 +1,5 @@
 namespace Basalt.Core.Network.Handlers;
 
-using Basalt.Protocol.Io;
-using Basalt.RakNet;
 
 using BedrockProtocol.Packets;
 using BedrockProtocol.Enums;
@@ -17,7 +15,7 @@ public static class LoginHandler {
                 Status = status,
             };
 
-            Logger.Warn($"Session failed due to {status}");
+            Logger.Warn($"Session(!) failed due to {status} {packet.ClientNetworkVersion} != {Constants.ProtocolVersion}");
             server.Network.QueuePacket(connection, playStatus, Protocol.Enums.CompressionMethod.NotPresent);
             return;
         }

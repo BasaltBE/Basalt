@@ -3,7 +3,6 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Player.Traits;
-using Basalt.RakNet;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds;
 

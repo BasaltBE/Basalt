@@ -2,7 +2,6 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
-using Basalt.RakNet;
 using BedrockProtocol.Packets;
 
 public static class ResourcePackChunkRequest {

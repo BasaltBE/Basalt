@@ -1,6 +1,5 @@
 namespace Basalt.Core.Network.Handlers;
 
-using Basalt.RakNet;
 using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 

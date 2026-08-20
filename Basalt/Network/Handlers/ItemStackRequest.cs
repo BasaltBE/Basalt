@@ -4,7 +4,6 @@ using Basalt.Core.Containers;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
 using Basalt.Core.Player.Traits;
-using Basalt.RakNet;
 
 using BedrockProtocol.Packets;
 using BedrockProtocol.Types;

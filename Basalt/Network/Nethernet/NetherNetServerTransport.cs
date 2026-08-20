@@ -1,0 +1,118 @@
+using System.Collections.Concurrent;
+using Basalt.Core.Nethernet;
+
+namespace Basalt.Core.Network.Nethernet;
+
+internal sealed class NetherNetServerTransport : IDisposable {
+    private readonly NetworkHandler _network;
+    private readonly ServerIdentity _identity;
+    private readonly NetherNetSignalingServer _signaling;
+    private readonly ConcurrentDictionary<NetherNetPeer, NetworkConnection> _peers = new();
+    private readonly ConcurrentQueue<(NetherNetConnection Connection, byte[] Payload)> _outgoing = new();
+    private readonly ConcurrentQueue<Action> _commands = new();
+    private readonly CancellationTokenSource _cancellation = new();
+    private readonly Thread _thread;
+    private bool _started;
+
+    public NetherNetServerTransport(NetworkHandler network, ushort port) {
+        _network = network ?? throw new ArgumentNullException(nameof(network));
+        _identity = ServerIdentity.LoadOrGenerate("nethernet-identity.pem");
+        _signaling = new NetherNetSignalingServer(port, CreateAnswerAsync);
+        _thread = new Thread(Run) { IsBackground = true, Name = "NetherNet" };
+    }
+
+    public void Start(CancellationToken cancellationToken) {
+        if (_started) {
+            throw new InvalidOperationException("The NetherNet transport is already running.");
+        }
+
+        _started = true;
+        _signaling.Start(cancellationToken);
+        _thread.Start();
+    }
+
+    public void Dispose() {
+        if (!_started) {
+            _identity.Dispose();
+            _signaling.Dispose();
+            _cancellation.Dispose();
+            return;
+        }
+
+        _cancellation.Cancel();
+        _thread.Join(1000);
+        _signaling.StopAsync().GetAwaiter().GetResult();
+        foreach (NetherNetPeer peer in _peers.Keys) {
+            peer.Dispose();
+        }
+
+        _peers.Clear();
+        _identity.Dispose();
+        _signaling.Dispose();
+        _cancellation.Dispose();
+        _started = false;
+    }
+
+    private async Task<string?> CreateAnswerAsync(string _, string offer, CancellationToken cancellationToken) {
+        NetherNetPeer peer = new(_identity);
+        try {
+            peer.ChannelOpened += connection => Attach(peer, connection);
+            peer.Closed += () => Close(peer);
+            string answer = await peer.AcceptOfferAsync(offer, cancellationToken).ConfigureAwait(false);
+            return answer;
+        }
+        catch {
+            peer.Dispose();
+            throw;
+        }
+    }
+
+    private void Attach(NetherNetPeer peer, NetherNetConnection netherConnection) {
+        if (netherConnection.Channel != NetherNetChannel.Reliable) {
+            if (_peers.TryGetValue(peer, out NetworkConnection? existing)) {
+                netherConnection.MessageReceived += payload => _network.EnqueueFrame(existing, payload);
+                netherConnection.Closed += () => _network.EnqueueDisconnection(existing);
+            }
+
+            return;
+        }
+
+        NetworkConnection connection = new(
+            (payload, _, _) => _outgoing.Enqueue((netherConnection, payload.ToArray())),
+            () => _commands.Enqueue(peer.Dispose),
+            netherNet: true);
+        _peers[peer] = connection;
+        netherConnection.MessageReceived += payload => _network.EnqueueFrame(connection, payload);
+        netherConnection.Closed += () => _network.EnqueueDisconnection(connection);
+    }
+
+    private void Close(NetherNetPeer peer) {
+        if (_peers.TryRemove(peer, out NetworkConnection? connection)) {
+            _network.EnqueueDisconnection(connection);
+        }
+    }
+
+    private void Run() {
+        while (!_cancellation.IsCancellationRequested) {
+            while (_commands.TryDequeue(out Action? command)) {
+                try {
+                    command();
+                }
+                catch (Exception exception) {
+                    Logger.Warn($"NetherNet command failed: {exception.Message}");
+                }
+            }
+
+            while (_outgoing.TryDequeue(out (NetherNetConnection Connection, byte[] Payload) outgoing)) {
+                try {
+                    outgoing.Connection.Send(outgoing.Payload);
+                }
+                catch (Exception exception) {
+                    Logger.Warn($"NetherNet send failed: {exception.Message}");
+                }
+            }
+
+            _cancellation.Token.WaitHandle.WaitOne(1);
+        }
+    }
+}

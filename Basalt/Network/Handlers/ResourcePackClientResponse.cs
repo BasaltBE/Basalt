@@ -3,7 +3,6 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
-using Basalt.RakNet;
 using BedrockProtocol.Packets;
 using BedrockProtocol.Enums;
 using BedrockProtocol.Types;

@@ -1,7 +1,6 @@
 namespace Basalt.Core.Player;
 
 using Basalt.Core.Network;
-using Basalt.RakNet;
 using Basalt.Core.Containers;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
