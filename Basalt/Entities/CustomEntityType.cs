@@ -116,6 +116,16 @@ public sealed class CustomEntityTypeOptions {
     /// Additional trait types to register for this entity type.
     /// </summary>
     public IReadOnlyList<Type>? Traits { get; init; }
+
+    /// <summary>
+    /// Additional Bedrock component identifiers required by registered traits.
+    /// </summary>
+    public IReadOnlyList<string>? AdditionalComponents { get; init; }
+
+    /// <summary>
+    /// Additional Bedrock component properties keyed by component identifier.
+    /// </summary>
+    public IReadOnlyDictionary<string, JsonElement>? AdditionalComponentProperties { get; init; }
 }
 
 /// <summary>
@@ -142,7 +152,8 @@ public static class CustomEntityType {
           options.Identifier,
           components,
           propertiesPayload,
-          options.LootTable);
+          options.LootTable,
+          options.HasGravity);
 
         if (options.Traits is { Count: > 0 }) {
             for (int i = 0; i < options.Traits.Count; i++) {
@@ -174,6 +185,22 @@ public static class CustomEntityType {
             components.Add("minecraft:rideable");
         }
 
+        if (options.AdditionalComponents is { Count: > 0 }) {
+            foreach (string component in options.AdditionalComponents) {
+                if (!string.IsNullOrWhiteSpace(component) && !components.Contains(component, StringComparer.Ordinal)) {
+                    components.Add(component);
+                }
+            }
+        }
+
+        if (options.AdditionalComponentProperties is { Count: > 0 }) {
+            foreach (string component in options.AdditionalComponentProperties.Keys) {
+                if (!string.IsNullOrWhiteSpace(component) && !components.Contains(component, StringComparer.Ordinal)) {
+                    components.Add(component);
+                }
+            }
+        }
+
         if (options.HasMovement) {
             components.Add("minecraft:movement.basic");
         }
@@ -198,6 +225,12 @@ public static class CustomEntityType {
 
         if (options.Rideable is not null) {
             componentProperties["minecraft:rideable"] = BuildRideableElement(options.Rideable);
+        }
+
+        if (options.AdditionalComponentProperties is { Count: > 0 }) {
+            foreach ((string component, JsonElement properties) in options.AdditionalComponentProperties) {
+                componentProperties[component] = properties;
+            }
         }
 
         return new EntityPropertiesPayloadData {

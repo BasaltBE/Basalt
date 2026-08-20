@@ -74,7 +74,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
-        if (!Entity.Flags.GetActorFlag(Entities.ActorFlag.HasGravity)) {
+        if (Entity.Type.HasGravity != false && !Entity.Flags.GetActorFlag(Entities.ActorFlag.HasGravity)) {
             Entity.Flags.SetActorFlag(Entities.ActorFlag.HasGravity, true);
         }
 

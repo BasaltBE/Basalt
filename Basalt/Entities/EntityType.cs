@@ -15,6 +15,7 @@ public sealed class EntityType {
     public int NetworkId { get; }
     public IReadOnlyList<string> Components { get; }
     public string? LootTablePath { get; }
+    public bool? HasGravity { get; }
     public IReadOnlyDictionary<string, JsonElement> ComponentProperties => _componentProperties;
     public IReadOnlyDictionary<string, Dictionary<string, JsonElement>> ComponentGroupProperties => _componentGroupProperties;
     public IReadOnlyDictionary<string, Type> Traits => _traits;
@@ -22,11 +23,12 @@ public sealed class EntityType {
     public AvoidMobTypeBehavior? AvoidMobType { get; }
     public static IReadOnlyDictionary<string, EntityType> Types => Registry;
 
-    public EntityType(string identifier, IEnumerable<string>? components, EntityPropertiesPayloadData? propertiesPayload = null, string? lootTablePath = null) {
+    public EntityType(string identifier, IEnumerable<string>? components, EntityPropertiesPayloadData? propertiesPayload = null, string? lootTablePath = null, bool? hasGravity = null) {
         Identifier = identifier;
         NetworkId = ++_nextNetworkId;
         Components = components is null ? [] : [.. components];
         LootTablePath = string.IsNullOrWhiteSpace(lootTablePath) ? null : lootTablePath;
+        HasGravity = hasGravity;
         _componentProperties = propertiesPayload?.Components is null
             ? []
             : new Dictionary<string, JsonElement>(propertiesPayload.Components, StringComparer.Ordinal);
