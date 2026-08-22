@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 
 namespace Basalt.Core.Nethernet;
@@ -30,6 +31,8 @@ public sealed class NetherNetSignalingServer : IDisposable {
 
         _cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         WebApplicationBuilder builder = WebApplication.CreateSlimBuilder();
+        builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Critical);
+        builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", Microsoft.Extensions.Logging.LogLevel.Critical);
         builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(_port));
         WebApplication application = builder.Build();
         application.MapGet("/v1/join", static () => Results.NoContent());

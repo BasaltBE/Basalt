@@ -11,15 +11,20 @@ public sealed class NetherNetPeer : IDisposable {
 
     private readonly RTCPeerConnection _peerConnection;
     private readonly ServerIdentity? _identity;
+    private readonly ClientIdentity? _clientIdentity;
     private readonly ConcurrentDictionary<NetherNetChannel, NetherNetConnection> _connections = new();
+    private readonly TaskCompletionSource _channelsOpened = new(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _openedChannels;
     private bool _disposed;
 
     public event Action<NetherNetConnection>? ChannelOpened;
 
     public event Action? Closed;
 
-    public NetherNetPeer(ServerIdentity? identity = null) {
+    public NetherNetPeer(ServerIdentity? identity = null, ClientIdentity? clientIdentity = null) {
         _identity = identity;
+        _clientIdentity = clientIdentity;
         RTCConfiguration configuration = new() {
             iceServers = [],
             iceTransportPolicy = RTCIceTransportPolicy.all,
@@ -39,11 +44,12 @@ public sealed class NetherNetPeer : IDisposable {
         EnsureNotDisposed();
 
         await CreateChannels().ConfigureAwait(false);
-        RTCSessionDescriptionInit offer = _peerConnection.createOffer(
+        RTCSessionDescriptionInit offerDescription = _peerConnection.createOffer(
             new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
-        await _peerConnection.setLocalDescription(offer).ConfigureAwait(false);
+        await _peerConnection.setLocalDescription(offerDescription).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        return _peerConnection.localDescription.sdp.ToString();
+        string offer = _peerConnection.localDescription.sdp.ToString();
+        return _clientIdentity?.AddIdentity(offer) ?? offer;
     }
 
     public async Task<string> AcceptOfferAsync(
@@ -90,6 +96,11 @@ public sealed class NetherNetPeer : IDisposable {
             : throw new InvalidOperationException($"The {channel} data channel is not open.");
     }
 
+    public async Task WaitForChannelsAsync(CancellationToken cancellationToken = default) {
+        EnsureNotDisposed();
+        await _channelsOpened.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public void Dispose() {
         if (_disposed) {
             return;
@@ -98,6 +109,7 @@ public sealed class NetherNetPeer : IDisposable {
         _disposed = true;
         _peerConnection.ondatachannel -= HandleDataChannel;
         _peerConnection.onconnectionstatechange -= HandleConnectionState;
+        _channelsOpened.TrySetException(new ObjectDisposedException(nameof(NetherNetPeer)));
         foreach (NetherNetConnection connection in _connections.Values) {
             connection.Dispose();
         }
@@ -147,7 +159,12 @@ public sealed class NetherNetPeer : IDisposable {
         }
 
         channel.onmessage += (_, _, payload) => connection.Receive(payload);
-        channel.onopen += () => Logger.Info($"NetherNet {netherNetChannel} data channel opened.");
+        channel.onopen += () => {
+            Logger.Info($"NetherNet {netherNetChannel} data channel opened.");
+            if (Interlocked.Increment(ref _openedChannels) == 2) {
+                _channelsOpened.TrySetResult();
+            }
+        };
         channel.onclose += connection.Close;
         ChannelOpened?.Invoke(connection);
     }
@@ -155,6 +172,8 @@ public sealed class NetherNetPeer : IDisposable {
     private void HandleConnectionState(RTCPeerConnectionState state) {
         Logger.Info($"NetherNet peer connection state: {state}.");
         if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.failed) {
+            _channelsOpened.TrySetException(
+                new InvalidOperationException($"NetherNet peer connection failed: {state}."));
             Closed?.Invoke();
         }
     }
