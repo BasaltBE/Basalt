@@ -2,11 +2,11 @@ namespace Basalt.Core.Crafting;
 
 using System.Buffers.Binary;
 using Basalt.Core.Item;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
-using ProtocolRecipeIngredient = BedrockProtocol.Types.RecipeIngredient_1164730002;
+using ProtocolRecipeIngredient = Basalt.BedrockProtocol.Types.RecipeIngredient;
 
 public sealed class CraftingRegistry {
     private static CraftingRegistry? _instance;
@@ -149,8 +149,8 @@ public sealed class CraftingRegistry {
         }
 
         CraftingDataPacket packet = new() {
-            ShapedRecipes = shapedRecipes,
-            ShapelessRecipes = shapelessRecipes,
+            ShapedRecipes = shapedRecipes.ToArray(),
+            ShapelessRecipes = shapelessRecipes.ToArray(),
 
             MultiRecipes = [],
             UserDataShapelessRecipes = [],
@@ -234,21 +234,19 @@ public sealed class CraftingRegistry {
             RecipeId = recipe.Identifier,
             Width = width,
             Height = height,
-            Ingredients = ingredients,
+            Ingredients = ingredients.ToArray(),
             Results = [BuildResultItem(resultType, recipe.Result)],
-            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Uuid = CreateProtocolUuid(Guid.NewGuid()),
             Tag = ResolveBlock(recipe.Tags),
             Priority = recipe.Priority,
             AssumeSymmetry = true,
 
             UnlockingRequirement = new RecipeUnlockingRequirement {
-                UnlockingContext = RecipeUnlockingContext.AlwaysUnlocked,
+                UnlockingContext = 1,
                 UnlockingIngredients = null
             },
 
-            NetId = new RecipeNetId {
-                RawId = networkId
-            }
+            NetId = networkId
         };
     }
 
@@ -287,20 +285,18 @@ public sealed class CraftingRegistry {
 
         return new ShapelessRecipePayload {
             RecipeId = recipe.Identifier,
-            Ingredients = ingredients,
+            Ingredients = ingredients.ToArray(),
             Results = [BuildResultItem(resultType, recipe.Result)],
-            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Uuid = CreateProtocolUuid(Guid.NewGuid()),
             Tag = ResolveBlock(recipe.Tags),
             Priority = recipe.Priority,
 
             UnlockingRequirement = new RecipeUnlockingRequirement {
-                UnlockingContext = RecipeUnlockingContext.AlwaysUnlocked,
+                UnlockingContext = 1,
                 UnlockingIngredients = null
             },
 
-            NetId = new RecipeNetId {
-                RawId = networkId
-            }
+            NetId = networkId
         };
     }
 
@@ -330,8 +326,8 @@ public sealed class CraftingRegistry {
         }
 
         ProtocolRecipeIngredient input = new() {
-            DescriptorType = ItemDescriptorType.ItemName,
-            Text = inputType.Identifier,
+            Descriptor = "name",
+            DescriptorValue = inputType.Identifier,
             AuxValue = 0x7FFF,
             StackSize = 1
         };
@@ -345,30 +341,28 @@ public sealed class CraftingRegistry {
             RecipeId = recipe.Identifier,
             Ingredients = [input],
             Results = [BuildResultItem(outputType, result)],
-            UUID = CreateProtocolUuid(Guid.NewGuid()),
+            Uuid = CreateProtocolUuid(Guid.NewGuid()),
             Tag = block,
             Priority = 0,
 
             UnlockingRequirement = new RecipeUnlockingRequirement {
-                UnlockingContext = RecipeUnlockingContext.None,
+                UnlockingContext = 0,
                 UnlockingIngredients = [input]
             },
 
-            NetId = new RecipeNetId {
-                RawId = networkId
-            }
+            NetId = networkId
         };
     }
 
     private static ProtocolRecipeIngredient? BuildDescriptor(
         RecipeIngredient ingredient) {
 
-        int stackSize = Math.Max(1, ingredient.Count);
+        int stackSize = Math.Clamp(ingredient.Count, 1, 64);
 
         if (ingredient.Tag is not null) {
             return new ProtocolRecipeIngredient {
-                DescriptorType = ItemDescriptorType.ItemTag,
-                Text = ingredient.Tag,
+                Descriptor = "item_tag",
+                DescriptorValue = ingredient.Tag,
                 AuxValue = 0x7FFF,
                 StackSize = stackSize
             };
@@ -384,8 +378,8 @@ public sealed class CraftingRegistry {
         }
 
         return new ProtocolRecipeIngredient {
-            DescriptorType = ItemDescriptorType.ItemName,
-            Text = type.Identifier,
+            Descriptor = "name",
+            DescriptorValue = type.Identifier,
             AuxValue = 0x7FFF,
             StackSize = stackSize
         };
@@ -393,13 +387,14 @@ public sealed class CraftingRegistry {
 
     private static ProtocolRecipeIngredient CreateEmptyIngredient() {
         return new ProtocolRecipeIngredient {
-            DescriptorType = ItemDescriptorType.Empty,
+            Descriptor = string.Empty,
+            DescriptorValue = string.Empty,
             AuxValue = 0x7FFF,
             StackSize = 1
         };
     }
 
-    private static NetworkItemInstanceDescriptorData BuildResultItem(
+    private static NetworkItemInstanceDescriptor BuildResultItem(
         ItemType type,
         RecipeResult result) {
 
@@ -412,12 +407,12 @@ public sealed class CraftingRegistry {
             blockRuntimeId = type.BlockType.Permutations[0].NetworkId;
         }
 
-        return new NetworkItemInstanceDescriptorData {
+        return new NetworkItemInstanceDescriptor {
             Id = type.NetworkId,
             StackSize = checked((ushort)result.Count),
             AuxValue = unchecked((uint)result.Data),
             BlockRuntimeId = blockRuntimeId,
-            UserDataBuffer = []
+            UserDataBuffer = string.Empty
         };
     }
 
@@ -487,7 +482,7 @@ public sealed class CraftingRegistry {
                 int offset = 0;
                 BinaryWriter writer = new(buffer, ref offset);
 
-                packet.Serialize(writer);
+                packet.Serialize(ref writer);
 
                 return writer.GetProcessedBytes().ToArray();
             }

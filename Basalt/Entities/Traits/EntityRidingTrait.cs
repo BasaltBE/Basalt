@@ -1,7 +1,7 @@
 namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 /// <summary>
 /// Applied to an entity that is currently riding another entity.

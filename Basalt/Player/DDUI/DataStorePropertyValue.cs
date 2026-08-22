@@ -1,4 +1,3 @@
-using Basalt.Protocol.Enums;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 

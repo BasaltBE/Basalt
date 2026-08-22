@@ -2,9 +2,9 @@ using System.Buffers;
 using System.Buffers.Binary;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 

@@ -1,11 +1,9 @@
-using BedrockProtocol.Enums;
-
 namespace Basalt.Core.Network.Login.Data;
 
 public readonly record struct ClientData(
     string DeviceModel,
     string DeviceId,
-    BuildPlatform DeviceOs,
+    int DeviceOs,
     long ClientRandomId,
     bool CompatibleWithClientSideChunkGen,
     int CurrentInputMode,

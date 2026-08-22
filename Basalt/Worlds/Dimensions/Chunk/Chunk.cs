@@ -5,8 +5,8 @@ using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
-using BedrockProtocol.Types;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
 
 
 namespace Basalt.Core.Worlds.Dimensions.Chunk;

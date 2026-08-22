@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Basalt.Core.Player;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 public abstract class Form<TResponse> {
     private static readonly JsonSerializerOptions JsonOptions = new() {
@@ -29,8 +29,8 @@ public abstract class Form<TResponse> {
         });
 
         player.Send(new ModalFormRequestPacket {
-            FormID = checked((uint)FormId),
-            FormUIJSON = Encoding.UTF8.GetBytes(ToJson())
+            FormId = checked((uint)FormId),
+            FormUiJson = ToJson()
         });
     }
 

@@ -1,7 +1,7 @@
 namespace Basalt.Core.Item;
 
 using Basalt.Core.Blocks;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 
 /// <summary>

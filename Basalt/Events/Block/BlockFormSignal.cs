@@ -2,7 +2,7 @@ namespace Basalt.Core.Events;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 /// <summary>
 /// Emitted when a block forms naturally (e.g. cobblestone from lava+water).

@@ -6,7 +6,7 @@ using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 

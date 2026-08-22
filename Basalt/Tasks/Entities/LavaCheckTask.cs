@@ -8,8 +8,8 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Enums;
 using Basalt.Core.Player;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 
 internal sealed class LavaCheckTask : ServerTask {
     private readonly Entity _entity;

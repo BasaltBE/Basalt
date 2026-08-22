@@ -1,8 +1,7 @@
 using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Worlds.Dimensions.Generation.Features.Enums;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using Basalt.BedrockProtocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Generation.Features;

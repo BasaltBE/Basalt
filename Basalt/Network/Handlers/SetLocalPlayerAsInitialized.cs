@@ -6,7 +6,7 @@ using Basalt.Core.Player.Traits;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds;
 
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 public static class SetLocalPlayerAsInitialized {
     public static void Handle(Server server, NetworkConnection connection, SetLocalPlayerAsInitializedPacket packet) {

@@ -1,7 +1,7 @@
 namespace Basalt.Core.Tasks;
 
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 internal sealed class BlockTickTask : DelayedTask {
     private readonly Dimension _dimension;

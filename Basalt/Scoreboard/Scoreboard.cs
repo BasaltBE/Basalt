@@ -1,6 +1,6 @@
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Scoreboard;
 
@@ -158,7 +158,7 @@ public sealed class Scoreboard {
         if (!Visible)
             return;
 
-        List<SetScoreScoreInfoVariant> entries = new(previous.Count + _lines.Count);
+        List<ScoreEntry> entries = new(previous.Count + _lines.Count);
         foreach ((string text, ScoreboardLine line) in previous) {
             if (!_lines.TryGetValue(text, out ScoreboardLine current) || current.Id != line.Id)
                 entries.Add(CreateRemoveEntry(line.Id));
@@ -171,7 +171,7 @@ public sealed class Scoreboard {
         }
 
         if (entries.Count > 0)
-            _player.Send(new SetScorePacket { ScoreInfo = entries });
+            _player.Send(new SetScorePacket { Entries = [.. entries] });
     }
 
     public void ClearLines() {
@@ -180,14 +180,14 @@ public sealed class Scoreboard {
         }
 
         if (Visible && _updatingLines is null) {
-            List<SetScoreScoreInfoVariant> entries = new(_lines.Count);
+            List<ScoreEntry> entries = new(_lines.Count);
 
             foreach ((_, ScoreboardLine line) in _lines) {
                 entries.Add(CreateRemoveEntry(line.Id));
             }
 
             _player.Send(new SetScorePacket {
-                ScoreInfo = entries
+                Entries = [.. entries]
             });
         }
 
@@ -196,12 +196,12 @@ public sealed class Scoreboard {
 
     private void SendChangeEntry(long id, string text, int score) {
         _player.Send(new SetScorePacket {
-            ScoreInfo = [CreateChangeEntry(id, text, score)]
+            Entries = [CreateChangeEntry(id, text, score)]
         });
     }
 
-    private ChangeFakePlayerScore CreateChangeEntry(long id, string text, int score) {
-        return new ChangeFakePlayerScore {
+    private ScoreEntry CreateChangeEntry(long id, string text, int score) {
+        return new ScoreEntry {
             Action = ScorePacketEntryAction.ChangeFakePlayer,
             FakePlayerName = text,
             ObjectiveName = _objectiveName,
@@ -212,14 +212,14 @@ public sealed class Scoreboard {
 
     private void SendRemoveEntry(long id) {
         _player.Send(new SetScorePacket {
-            ScoreInfo = [
+            Entries = [
                 CreateRemoveEntry(id)
             ]
         });
     }
 
-    private RemoveScore CreateRemoveEntry(long id) {
-        return new RemoveScore {
+    private ScoreEntry CreateRemoveEntry(long id) {
+        return new ScoreEntry {
             Action = ScorePacketEntryAction.Remove,
             ObjectiveName = _objectiveName,
             ScoreboardId = new ScoreboardId {
@@ -229,10 +229,10 @@ public sealed class Scoreboard {
     }
 
     private void SendAllEntries() {
-        List<SetScoreScoreInfoVariant> entries = new(_lines.Count);
+        List<ScoreEntry> entries = new(_lines.Count);
 
         foreach ((string text, ScoreboardLine line) in _lines) {
-            entries.Add(new ChangeFakePlayerScore {
+            entries.Add(new ScoreEntry {
                 Action = ScorePacketEntryAction.ChangeFakePlayer,
                 FakePlayerName = text,
                 ObjectiveName = _objectiveName,
@@ -244,7 +244,7 @@ public sealed class Scoreboard {
         }
 
         _player.Send(new SetScorePacket {
-            ScoreInfo = entries
+            Entries = [.. entries]
         });
     }
 }

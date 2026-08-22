@@ -4,9 +4,9 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Item.Traits;
 
@@ -70,7 +70,7 @@ public sealed class ItemStackBoneMealTrait : ItemTrait {
         foreach (BlockPos particlePosition in particlePositions) {
             dimension.Broadcast(new SpawnParticleEffectPacket {
                 DimensionId = (byte)dimension.Type,
-                ActorId = new ActorUniqueID { Value = -1 },
+                ActorId = -1 ,
                 Position = new Vec3 {
                     X = particlePosition.X + 0.5f,
                     Y = particlePosition.Y + 0.5f,

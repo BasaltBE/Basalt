@@ -4,9 +4,9 @@ using Basalt.Core.Containers;
 using Basalt.Core.Worlds.Dimensions;
 
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class BlockContainer : Container {
     public Action<BlockContainer, Basalt.Core.Player.Player>? OnViewerAddedEvent { get; set; }
@@ -23,14 +23,14 @@ public sealed class BlockContainer : Container {
     public override void Update() {
         OnContainerUpdated?.Invoke(this);
         if (Type == ContainerType.WORKBENCH) {
-            foreach ((Basalt.Core.Player.Player player, ContainerID _) in occupants) {
+            foreach ((Basalt.Core.Player.Player player, ContainerId _) in occupants) {
                 if (!player.Spawned) {
                     continue;
                 }
 
                 for (int slot = 0; slot < GetSize(); slot++) {
                     player.Send(new InventorySlotPacket {
-                        ContainerId = (byte)ContainerID.CONTAINER_ID_PLAYER_ONLY_UI,
+                        ContainerId = ContainerId.PlayerOnlyUi,
                         Slot = (uint)(slot + 32),
                         Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
                     });
@@ -49,13 +49,13 @@ public sealed class BlockContainer : Container {
                 return;
             }
 
-            foreach ((Basalt.Core.Player.Player player, ContainerID _) in occupants) {
+            foreach ((Basalt.Core.Player.Player player, ContainerId _) in occupants) {
                 if (!player.Spawned) {
                     continue;
                 }
 
                 player.Send(new InventorySlotPacket {
-                    ContainerId = (byte)ContainerID.CONTAINER_ID_PLAYER_ONLY_UI,
+                    ContainerId = ContainerId.PlayerOnlyUi,
                     Slot = (uint)(slot + 32),
                     Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
                 });
@@ -70,21 +70,21 @@ public sealed class BlockContainer : Container {
         return Position;
     }
 
-    protected override ContainerEnumName GetFullContainerID() {
+    protected override ContainerEnumName GetFullContainerId() {
         return Type == ContainerType.WORKBENCH
             ? ContainerEnumName.CraftingInputContainer
-            : base.GetFullContainerID();
+            : base.GetFullContainerId();
     }
 
     protected override int GetNetworkSlot(int slot) {
         return Type == ContainerType.WORKBENCH ? slot + 32 : slot;
     }
 
-    protected override void OnViewerAdded(Basalt.Core.Player.Player player, ContainerID containerId) {
+    protected override void OnViewerAdded(Basalt.Core.Player.Player player, ContainerId containerId) {
         OnViewerAddedEvent?.Invoke(this, player);
     }
 
-    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, ContainerID containerId) {
+    protected override void OnViewerRemoved(Basalt.Core.Player.Player player, ContainerId containerId) {
         OnViewerRemovedEvent?.Invoke(this, player);
     }
 }

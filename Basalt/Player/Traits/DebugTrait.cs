@@ -10,9 +10,9 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Traits;
 using Basalt.Core.Entities;
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class DebugTrait : PlayerTrait {
     private const double TargetTps = 20.0;
@@ -75,8 +75,8 @@ public sealed class DebugTrait : PlayerTrait {
                 $"§8| §aChunks: §f{chunksLoaded}";
 
             TextPacket packet = new() {
-                Body = new MessageOnly {
-                    MessageType = TextPacketType.tip,
+                Body = new TextPacketBody {
+                    MessageType = TextPacketType.Tip,
                     Message = message
                 },
                 Localize = false,

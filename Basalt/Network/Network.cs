@@ -6,10 +6,11 @@ using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
 using Basalt.Core.Profiling;
-using Basalt.Protocol.Enums;
 using RakNetConnection = Basalt.RakNet.NetworkConnection;
 using Basalt.RakNet.Packets.Enums;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -64,6 +65,7 @@ public sealed class NetworkHandler {
         On<ContainerClosePacket>((connection, packet) => ContainerClose.Handle(_server, connection, packet));
         On<ModalFormResponsePacket>((connection, packet) => ModalFormResponse.Handle(_server, connection, packet));
         On<ClientCacheStatusPacket>((connection, packet) => ClientCacheStatus.Handle(_server, connection, packet));
+        On<PacketViolationWarningPacket>((connection, packet) => PacketViolationWarning.Handle(_server, connection, packet));
         On<MobEquipmentPacket>((connection, packet) => MobEquipment.Handle(_server, connection, packet));
         On<CommandRequestPacket>((connection, packet) => CommandRequest.Handle(_server, connection, packet));
         On<SetLocalPlayerAsInitializedPacket>((connection, packet) => SetLocalPlayerAsInitialized.Handle(_server, connection, packet));
@@ -198,7 +200,8 @@ public sealed class NetworkHandler {
 
         _server.Broadcast(
             new PlayerListPacket() {
-                Entries = [player.CreatePlayerListEntry(false)],
+                Action = PlayerListPacketType.Remove,
+                RemoveEntries = [NetworkIo.FromGuid(player.Uuid)],
             }
         );
 
@@ -224,7 +227,7 @@ public sealed class NetworkHandler {
                     ReadOnlySpan<byte> compressed = packetData[1..];
                     if (compression == CompressionMethod.Zlib) {
                         decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
-                        int decompressedLength = Protocol.Io.Packet.Decompress(compressed, decompressedBuffer);
+                        int decompressedLength = PacketCompression.Decompress(compressed, decompressedBuffer);
                         frame = decompressedBuffer.AsSpan(0, decompressedLength);
                     }
                     else if (compression == CompressionMethod.None) {
@@ -240,7 +243,7 @@ public sealed class NetworkHandler {
                 decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
                 int decompressedLength;
                 using (Profiler.Enabled ? Profiler.BeginZone("Network.Unframe") : default) {
-                    decompressedLength = Protocol.Io.Packet.Unframe(packetData, decompressedBuffer, out _);
+                    decompressedLength = PacketCompression.Unframe(packetData, decompressedBuffer, out _);
                 }
                 if (decompressedLength == 0) return;
                 frame = decompressedBuffer.AsSpan(0, decompressedLength);
@@ -364,7 +367,7 @@ public sealed class NetworkHandler {
         using BinaryStream packetBufferStream = BinaryStream.Rent(packetPayload.Length + 16);
 
         BinaryWriter packetWriter = packetBufferStream;
-        packetWriter.WriteVarInt(packetId);
+        packetWriter.WriteVarUInt(checked((uint)packetId));
         packetWriter.WriteBytes(packetPayload);
 
         QueueOutgoing(
@@ -384,7 +387,7 @@ public sealed class NetworkHandler {
         using BinaryStream packetBufferStream = BinaryStream.Rent(packetPayload.Length + 16);
 
         BinaryWriter packetWriter = packetBufferStream;
-        packetWriter.WriteVarInt(packetId);
+        packetWriter.WriteVarUInt(checked((uint)packetId));
         packetWriter.WriteBytes(packetPayload);
 
         QueueOutgoing(
@@ -405,7 +408,7 @@ public sealed class NetworkHandler {
         foreach ((int id, byte[] payload) in packets) {
             packetBufferStream.Offset = 0;
             BinaryWriter packetWriter = packetBufferStream;
-            packetWriter.WriteVarInt(id);
+            packetWriter.WriteVarUInt(checked((uint)id));
             packetWriter.WriteBytes(payload);
 
             QueueOutgoing(
@@ -443,21 +446,8 @@ public sealed class NetworkHandler {
             Packet packet = enumerator.Current
                 ?? throw new ArgumentException("Packet collections cannot contain null values.", nameof(packets));
 
-            // if (packet is InventoryContentPacket) return; 
-            // if (packet is SetActorDataPacket) return;  
-            // if (packet is BlockActorDataPacket) return;  
-            // if (packet is RemoveActorPacket) return;  
-            // if (packet is AddActorPacket) return;  
-            // if (packet is NetworkChunkPublisherUpdatePacket) return;
-            // if (packet is UpdateAbilitiesPacket) return;
-            // if (packet is ChunkRadiusUpdatedPacket) return;
-            // if (packet is PlayerListPacket) return;
-            // if (packet is AddPlayerPacket) return;
-
-            if (packet is not LevelChunkPacket)
-                Logger.Info($"SEnding packet {packet}");
-
             bool last = !enumerator.MoveNext();
+
             QueueOutgoing(
                 connection,
                 packet,
@@ -589,6 +579,7 @@ public sealed class NetworkHandler {
                 BinaryWriter writer = packetStream;
                 SerializeOutgoingPacket(outgoing.Packet!, writer);
                 ReadOnlySpan<byte> packet = writer.GetProcessedBytes();
+
                 // if (outgoing.Packet is AddPlayerPacket) {
                 //     Logger.Warn($"AddPlayer raw bytes: {Convert.ToHexString(packet)}");
                 // }
@@ -651,7 +642,7 @@ public sealed class NetworkHandler {
             CompressionMethod compression = packet.Compression ?? GetCompressionMethod(serverCompressionMethod);
             int frameLength = offset;
             if (connection.NetherNetCompression && compression != CompressionMethod.NotPresent) {
-                frameLength = Protocol.Io.Packet.Compress(
+                frameLength = PacketCompression.Compress(
                     batch.AsSpan(0, offset),
                     frame,
                     compression == CompressionMethod.Zlib && offset < compressionThreshold
@@ -706,7 +697,7 @@ public sealed class NetworkHandler {
 
             int frameLength;
             using (Profiler.Enabled ? Profiler.BeginZone("Network.FrameBatch") : default) {
-                frameLength = Protocol.Io.Packet.Frame(payloads.AsSpan(0, packetCount), frame);
+                frameLength = PacketCompression.Frame(payloads.AsSpan(0, packetCount), frame);
             }
             SendFrame(connection, frame.AsSpan(0, frameLength), compression, immediate);
             Interlocked.Add(ref _sentPackets, packetCount);
@@ -724,12 +715,12 @@ public sealed class NetworkHandler {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.SendFrame") : default;
         CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
         byte[] compressedBuffer = ArrayPool<byte>.Shared.Rent(
-            Protocol.Io.Packet.GetFrameCapacity(frame.Length, method));
+            PacketCompression.GetFrameCapacity(frame.Length, method));
 
         try {
             int frameLength;
             using (Profiler.Enabled ? Profiler.BeginZone("Network.CompressFrame") : default) {
-                frameLength = Protocol.Io.Packet.Frame(
+                frameLength = PacketCompression.Frame(
                     frame,
                     compressedBuffer,
                     method,
@@ -816,28 +807,20 @@ public sealed class NetworkHandler {
         int packetId = _generatedPacketIds.GetOrAdd(
             packet.GetType(),
             static packetType => {
-                System.Reflection.FieldInfo? field = packetType.GetField(
-                    "PacketId",
-                    System.Reflection.BindingFlags.Public |
-                    System.Reflection.BindingFlags.Static |
-                    System.Reflection.BindingFlags.FlattenHierarchy);
+                PacketIdAttribute? attribute = packetType.GetCustomAttributes(typeof(PacketIdAttribute), false)
+                    .Cast<PacketIdAttribute>()
+                    .SingleOrDefault();
 
-                if (field is null || !field.IsLiteral) {
+                if (attribute is null) {
                     throw new InvalidOperationException(
-                        $"Packet type {packetType.FullName} does not expose a public const int PacketId.");
+                        $"Packet type {packetType.FullName} does not have a PacketId attribute.");
                 }
 
-                object? value = field.GetRawConstantValue();
-                if (value is not int id) {
-                    throw new InvalidOperationException(
-                        $"Packet type {packetType.FullName}.PacketId is not an int.");
-                }
-
-                return id;
+                return attribute.Id;
             });
 
         writer.WriteVarUInt(checked((uint)packetId));
-        packet.Serialize(writer);
+        packet.Serialize(ref writer);
     }
 
     private static bool TryDeserializePacket(
@@ -851,23 +834,19 @@ public sealed class NetworkHandler {
         int id = checked((int)(header & 0x3FF));
         packetId = id;
 
-        if (!PacketPool.TryCreate(id, out packet) || packet is null) {
+        if (!PacketPool.TryGetPacketType(id, out Type? packetType)) {
             Logger.Debug("Ignoring unsupported packet ID {0}.", id);
+            packet = null;
             return false;
         }
+
+        packet = (Packet)Activator.CreateInstance(packetType!)!;
 
         // if (packet is ResourcePackClientResponsePacket) {
         //     Logger.Info($"ResourcePackClientResponse bytes: {Convert.ToHexString(packetBuffer)}");
         // }
 
-        packet.Deserialize(reader);
-
-        if (packet is ResourcePackClientResponsePacket resourcePackResponse) {
-            string responseDetails = resourcePackResponse.Response is BedrockProtocol.Types.ResourcePackClientResponseDownloading downloading
-                ? $"{resourcePackResponse.Response.GetType().Name} [{string.Join(",", downloading.DownloadingPacks)}]"
-                : resourcePackResponse.Response.GetType().Name;
-            // Logger.Info($"ResourcePackClientResponse decoded: {responseDetails}");
-        }
+        packet.Deserialize(ref reader);
 
         return true;
     }

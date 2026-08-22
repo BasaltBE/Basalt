@@ -1,8 +1,9 @@
 namespace Basalt.Core.Network.Handlers;
 
+using System.Text;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 public static class ResourcePackChunkRequest {
     public static void Handle(Server server, NetworkConnection connection, ResourcePackChunkRequestPacket packet) {
@@ -27,9 +28,9 @@ public static class ResourcePackChunkRequest {
 
         ResourcePackChunkDataPacket response = new() {
             ResourceName = pack.Uuid.ToString(),
-            ChunkID = (uint)packet.Chunk,
+            ChunkId = (uint)packet.Chunk,
             ByteOffset = dataOffset,
-            ChunkData = pack.Data.AsSpan((int)dataOffset, length).ToArray(),
+            ChunkData = Encoding.Latin1.GetString(pack.Data.AsSpan((int)dataOffset, length)),
         };
 
         server.Network.QueuePacket(connection, response);

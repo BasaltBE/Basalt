@@ -1,7 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
-using Basalt.Protocol.Enums;
-using Basalt.Protocol.Types;
+using Basalt.Core.Worlds.Dimensions;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 

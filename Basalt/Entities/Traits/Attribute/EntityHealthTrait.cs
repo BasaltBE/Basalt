@@ -10,10 +10,10 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Worlds;
 using System.Text.Json;
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
 
 public sealed class EntityHealthTrait : EntityAttributeTrait {
     public new static string Identifier => "health";
@@ -104,10 +104,8 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         }
         if (Entity.Dimension is not null) {
             ActorEventPacket packet = new() {
-                TargetRuntimeID = new ActorRuntimeID() {
-                    Value = Entity.RuntimeId,
-                },
-                EventID = ActorEvent.HURT,
+                ActorRuntimeId = Entity.RuntimeId,
+                EventId = 2,
                 Data = (int)(signal.Cause ?? ActorDamageCause.Fall)
             };
             Entity.Dimension.Broadcast(packet);
@@ -115,12 +113,9 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
             if (knockbackApplied) {
                 Entity.Dimension.Broadcast(new SetActorMotionPacket {
                     Motion = Entity.Velocity,
-                    TargetRuntimeID = new ActorRuntimeID {
-                        Value = Entity.RuntimeId
-                    },
-                    Tick = new PlayerInputTick {
-                        InputTick = knockbackTick
-                    }
+                    ActorRuntimeId = Entity.RuntimeId
+                    ,
+                    Tick = knockbackTick
                 });
             }
         }
@@ -149,9 +144,7 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                 player.Send(new RespawnPacket {
                     Position = player.Dimension?.SpawnPosition ?? player.Location,
                     State = PlayerRespawnState.SearchingForSpawn,
-                    PlayerRuntimeId = new() {
-                        Value = player.RuntimeId,
-                    }
+                    PlayerRuntimeId = player.RuntimeId
                 });
             }
             else {
@@ -163,12 +156,12 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     public override void OnAdd() {
         AttributeProperties properties = GetHealthProperties();
         if (Entity.Attributes.GetAttribute(Attribute) is AttributeData attribute) {
-            attribute.MinValue = properties.MinimumValue ?? attribute.MinValue;
-            attribute.MaxValue = properties.MaximumValue ?? attribute.MaxValue;
-            attribute.DefaultMinValue = properties.MinimumValue ?? attribute.DefaultMinValue;
-            attribute.DefaultMaxValue = properties.MaximumValue ?? attribute.DefaultMaxValue;
-            attribute.DefaultValue = properties.DefaultValue ?? attribute.DefaultValue;
-            attribute.CurrentValue = properties.CurrentValue ?? attribute.CurrentValue;
+            attribute.Minimum = properties.MinimumValue ?? attribute.Minimum;
+            attribute.Maximum = properties.MaximumValue ?? attribute.Maximum;
+            attribute.DefaultMinimum = properties.MinimumValue ?? attribute.DefaultMinimum;
+            attribute.DefaultMaximum = properties.MaximumValue ?? attribute.DefaultMaximum;
+            attribute.Default = properties.DefaultValue ?? attribute.Default;
+            attribute.Current = properties.CurrentValue ?? attribute.Current;
             Entity.Attributes.SetAttribute(attribute);
             Entity.AttributesDirty = true;
             return;

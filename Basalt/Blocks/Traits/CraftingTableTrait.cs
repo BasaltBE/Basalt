@@ -5,7 +5,7 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Containers;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 
 public sealed class CraftingTableTrait : BlockTrait {
     public override bool Interactable => true;

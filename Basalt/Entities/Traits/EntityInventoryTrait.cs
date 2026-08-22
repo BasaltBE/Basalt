@@ -7,10 +7,10 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Item;
 using Basalt.Core.Worlds;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using Player = Player.Player;
 using Basalt.Core.Traits;
 using Basalt.Core.Enums;
@@ -31,7 +31,7 @@ public sealed class EntityInventoryTrait : EntityTrait {
             entity,
             playerInventory ? ContainerType.INVENTORY : ContainerType.CONTAINER,
             playerInventory ? 36 : 27) {
-            Identifier = ContainerID.CONTAINER_ID_INVENTORY
+            Identifier = ContainerId.Inventory
         };
     }
 
@@ -53,19 +53,14 @@ public sealed class EntityInventoryTrait : EntityTrait {
         }
 
         InventoryContentPacket packet = new() {
-            ContainerId = unchecked((uint)(int)(
-                Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY
-            )),
-            FullContainerName = new FullContainerName {
+            ContainerId = Container.Identifier ?? ContainerId.Inventory,
+            Container = new FullContainerName {
                 ContainerName = ContainerEnumName.InventoryContainer,
-                DynamicID = 0
+                DynamicId = 0
             },
             Slots = Enumerable
-                .Repeat(
-                    new NetworkItemStackDescriptor(),
-                    Container.GetSize()
-                )
-                .ToList(),
+                .Repeat(new NetworkItemStackDescriptor(), Container.GetSize())
+                .ToArray(),
             StorageItem = new NetworkItemStackDescriptor()
         };
 
@@ -85,11 +80,11 @@ public sealed class EntityInventoryTrait : EntityTrait {
     public override void OnAdd() {
         // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, DataItemType.Byte, (sbyte)Container.Type);
         // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, DataItemType.Int, Container.GetSize());
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new DataItemBytePayload() {
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new ActorDataItem() {
             Type = DataItemType.Byte,
             Value = (sbyte)Container.Type
         });
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new DataItemIntPayload() {
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new ActorDataItem() {
             Type = DataItemType.Int,
             Value = Container.GetSize(),
         });
@@ -111,11 +106,11 @@ public sealed class EntityInventoryTrait : EntityTrait {
     public override void OnRemove() {
         // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, ActorDataType.Byte, (sbyte)ContainerType.None);
         // Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, ActorDataType.Int, 0);
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new DataItemBytePayload() {
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerType, new ActorDataItem() {
             Type = DataItemType.Byte,
             Value = (sbyte)ContainerType.NONE,
         });
-        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new DataItemIntPayload() {
+        Entity.Metadata.SetActorMetadata(ActorDataId.ContainerSize, new ActorDataItem() {
             Type = DataItemType.Int,
             Value = 0,
         });
@@ -253,25 +248,16 @@ public sealed class EntityInventoryTrait : EntityTrait {
         }
 
         InventoryContentPacket packet = new() {
-            ContainerId = unchecked((uint)(int)(
-                Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY
-            )),
-            FullContainerName = new FullContainerName {
+            ContainerId = Container.Identifier ?? ContainerId.Inventory,
+            Container = new FullContainerName {
                 ContainerName = ContainerEnumName.InventoryContainer,
-                DynamicID = 0
+                DynamicId = 0
             },
-            Slots = new List<NetworkItemStackDescriptor>(
-                Container.GetSize()
-            ),
+            Slots = Enumerable.Range(0, Container.GetSize())
+                .Select(i => Container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor())
+                .ToArray(),
             StorageItem = new NetworkItemStackDescriptor()
         };
-
-        for (int i = 0; i < Container.GetSize(); i++) {
-            packet.Slots.Add(
-                Container.GetItem(i)?.ToNetworkStackDescriptor()
-                ?? new NetworkItemStackDescriptor()
-            );
-        }
 
         player.Send(packet);
     }

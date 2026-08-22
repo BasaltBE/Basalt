@@ -1,6 +1,6 @@
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Player;
 
@@ -98,26 +98,22 @@ public sealed class PlayerAbilities {
     ) {
         return new UpdateAbilitiesPacket {
             Data = new() {
-                CommandPermissions = isOperator
-                    ? CommandPermissionLevel.Admin
-                    : CommandPermissionLevel.Any,
+                CommandPermissions = isOperator ? (byte)2 : (byte)0,
 
                 Layers = [
                     ToLayer()
                 ],
 
-                PlayerPermissions = isOperator
-                    ? PlayerPermissionLevel.Operator
-                    : PlayerPermissionLevel.Member,
+                PlayerPermissions = (sbyte)(isOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member),
 
                 TargetPlayerRawId = entityUniqueId
             }
         };
     }
 
-    public SerializedAbilitiesDataSerializedLayer ToLayer() {
-        return new SerializedAbilitiesDataSerializedLayer {
-            SerializedLayer = 1,
+    public SerializedAbilitiesLayer ToLayer() {
+        return new SerializedAbilitiesLayer {
+            Layer = 1,
             AbilitiesSet = CreateMask(_controlled)
                 | (1U << (int)PlayerAbility.FlySpeed)
                 | (1U << (int)PlayerAbility.WalkSpeed)

@@ -5,8 +5,8 @@ using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 
 using Basalt.Binary;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStack {
     private static int _nextNetworkStackId;
@@ -100,7 +100,7 @@ public sealed class ItemStack {
             BlockRuntimeId = 0,
             NetIdVariant = NetworkStackId,
             StackSize = StackSize,
-            UserDataBuffer = nbt,
+            UserDataBuffer = Convert.ToBase64String(nbt),
             // NetworkId = Type.NetworkId,
             // Count = StackSize,
             // Metadata = Metadata,
@@ -120,7 +120,7 @@ public sealed class ItemStack {
         CompoundTag? nbt = null;
 
         if (descriptor.UserDataBuffer.Length > 0) {
-            byte[] data = descriptor.UserDataBuffer;
+            byte[] data = Convert.FromBase64String(descriptor.UserDataBuffer);
             int offset = 0;
             BinaryReader reader = new(data, ref offset);
             nbt = NBT.ReadTag<CompoundTag>(reader);

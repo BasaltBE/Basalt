@@ -5,7 +5,7 @@ using Basalt.Core.Pathfinding;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityAvoidMobTypeTrait : EntityTrait {
     public new static string Identifier => "avoid_mob_type";

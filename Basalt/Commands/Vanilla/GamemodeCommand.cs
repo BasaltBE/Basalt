@@ -1,6 +1,6 @@
 namespace Basalt.Core.Commands.Vanilla;
 
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 using Player = Player.Player;
 
 public sealed class GamemodeEnum : CustomEnum {

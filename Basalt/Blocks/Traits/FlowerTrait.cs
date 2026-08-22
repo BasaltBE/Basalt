@@ -2,7 +2,7 @@ namespace Basalt.Core.Blocks.Traits;
 
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class FlowerTrait : BlockTrait {
     public new static readonly string Identifier = "minecraft:flower";

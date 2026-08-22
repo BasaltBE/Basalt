@@ -1,4 +1,4 @@
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 namespace Basalt.Core.Traits;
 

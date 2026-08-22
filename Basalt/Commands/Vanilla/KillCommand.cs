@@ -3,7 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 using Player = Player.Player;
 
 public static class KillCommand {

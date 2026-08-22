@@ -12,9 +12,9 @@ using Basalt.Core.Item;
 using Basalt.Core.Loot;
 using Basalt.Core.Worlds;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
 
 public sealed class Block {
     private readonly List<BlockTrait> _traits = [];

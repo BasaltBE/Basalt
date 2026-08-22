@@ -4,7 +4,7 @@ using Basalt.Core.Entities;
 using Basalt.Core.Entities.Container;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 using Entity = Basalt.Core.Entities.Entity;
 
 /// <summary>

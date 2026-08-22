@@ -3,8 +3,8 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core;
 using Basalt.Core.Events;
 
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public static class Text {
     public static void Handle(Server server, NetworkConnection connection, TextPacket packet) {
@@ -13,11 +13,7 @@ public static class Text {
             return;
         }
 
-        string? rawMessage = packet.Body switch {
-            MessageOnly body => body.Message,
-            AuthorAndMessage body => body.Message,
-            _ => null
-        };
+        string? rawMessage = packet.Body.Message;
         if(rawMessage is null) return;
 
         string message = $"<{sender.Username}> {rawMessage}";

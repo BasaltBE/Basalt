@@ -2,9 +2,9 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using System.Text.Json;
 using Player = Basalt.Core.Player.Player;
 
@@ -68,13 +68,11 @@ public sealed class EntityRideableTrait : EntityTrait {
 
         SetActorLinkPacket packet = new() {
             Link = new ActorLink {
-                TargetA = new ActorUniqueID {
-                    Value = Entity.UniqueId
-                },
-                TargetB = new ActorUniqueID {
-                    Value = rider.UniqueId
-                },
-                Type = ActorLinkType.Riding,
+                TargetA = Entity.UniqueId
+                ,
+                TargetB = rider.UniqueId
+                ,
+                Type = 1,
                 Immediate = true,
                 PassengerInitiated = true,
                 VehicleAngularVelocity = 0f
@@ -94,13 +92,11 @@ public sealed class EntityRideableTrait : EntityTrait {
     public void RemoveRider(Entity rider) {
         SetActorLinkPacket packet = new() {
             Link = new ActorLink {
-                TargetA = new ActorUniqueID {
-                    Value = Entity.UniqueId
-                },
-                TargetB = new ActorUniqueID {
-                    Value = rider.UniqueId
-                },
-                Type = ActorLinkType.None,
+                TargetA = Entity.UniqueId
+                ,
+                TargetB = rider.UniqueId
+                ,
+                Type = 0,
                 Immediate = true,
                 PassengerInitiated = true,
                 VehicleAngularVelocity = 0f

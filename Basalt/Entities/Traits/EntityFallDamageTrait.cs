@@ -6,8 +6,8 @@ using Basalt.Core.Item;
 using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Player;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityFallDamageTrait : EntityTrait {
     public new static string Identifier => "fall_damage";

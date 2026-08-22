@@ -1,6 +1,6 @@
 namespace Basalt.Core.Item.Traits.Types;
 
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 using Player = Basalt.Core.Player.Player;
 
 

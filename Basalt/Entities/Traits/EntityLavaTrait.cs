@@ -5,7 +5,7 @@ using Basalt.Core.Item;
 using Basalt.Core.Tasks;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityLavaTrait : EntityTrait {
     internal const float Damage = 4f;

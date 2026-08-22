@@ -4,7 +4,7 @@ using System.Globalization;
 using Player = Player.Player;
 using EntityInstance = Entities.Entity;
 using ServerInstance = Server;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 /// <summary>
 /// Identifies who sent the command.

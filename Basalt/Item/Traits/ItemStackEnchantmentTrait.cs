@@ -1,7 +1,7 @@
 namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Item.Enchantment;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 /// <summary>
 /// Holds enchantments on an item stack.

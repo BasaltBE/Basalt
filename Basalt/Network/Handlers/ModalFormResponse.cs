@@ -1,8 +1,8 @@
 namespace Basalt.Core.Network.Handlers;
 
 using System.Text;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
 
 public static class ModalFormResponse {
     public static void Handle(Server server, NetworkConnection connection, ModalFormResponsePacket packet) {
@@ -11,7 +11,7 @@ public static class ModalFormResponse {
             return;
         }
 
-        if (!player.PendingForms.Remove(packet.FormID, out Player.PendingForm? participant)) {
+        if (!player.PendingForms.Remove(packet.FormId, out Player.PendingForm? participant)) {
             return;
         }
         var canceled = false;
@@ -21,7 +21,7 @@ public static class ModalFormResponse {
         ) canceled = true;
 
         participant.Complete(
-            packet.JSONResponse is null ? null : Encoding.UTF8.GetString(packet.JSONResponse),
+            packet.JsonResponse,
             canceled
         );
     }

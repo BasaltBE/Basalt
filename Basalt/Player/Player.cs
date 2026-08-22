@@ -12,10 +12,10 @@ using Basalt.Core.DDUI;
 using Basalt.Core.Scoreboard;
 using Basalt.Core.Entities;
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.NBT;
 using Basalt.Core.Enums;
 
 public class Player : Entities.Entity {
@@ -46,7 +46,7 @@ public class Player : Entities.Entity {
     public BlockPos? LastActionResultPosition { get; set; }
     public int LastActionFace { get; set; }
     public ulong BucketCooldownTick;
-    public Dictionary<ContainerID, Container> openedContainers = [];
+    public Dictionary<ContainerId, Container> openedContainers = [];
     internal Dictionary<uint, PendingForm> PendingForms = [];
     internal Dictionary<string, DataDrivenScreen> Screens = [];
 
@@ -69,21 +69,21 @@ public class Player : Entities.Entity {
         Flags.SetActorFlag(ActorFlag.CanClimb, true);
         Metadata.SetActorMetadata(
             ActorDataId.Name,
-            new DataItemStringPayload {
+            new ActorDataItem {
                 Type = DataItemType.String,
                 Value = Username
             }
         );
         Metadata.SetActorMetadata(
             ActorDataId.NametagAlwaysShow,
-            new DataItemBytePayload {
+            new ActorDataItem {
                 Type = DataItemType.Byte,
                 Value = 1
             }
         );
         Metadata.SetActorMetadata(
             ActorDataId.PlayerFlags,
-            new DataItemBytePayload {
+            new ActorDataItem {
                 Type = DataItemType.Byte,
                 Value = 0
             }
@@ -97,7 +97,7 @@ public class Player : Entities.Entity {
     public void SetDisplayName(string displayName) {
         Metadata.SetActorMetadata(
             ActorDataId.Name,
-            new DataItemStringPayload {
+            new ActorDataItem {
                 Type = DataItemType.String,
                 Value = displayName
             }
@@ -108,13 +108,10 @@ public class Player : Entities.Entity {
         Gamemode = gamemode;
 
         UpdatePlayerGameTypePacket gamemodePacket = new() {
-            PlayerGameType = gamemode,
-            TargetPlayer = new ActorUniqueID {
-                Value = UniqueId
-            },
-            Tick = new PlayerInputTick {
-                InputTick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0
-            }
+            PlayerGameType = (int)gamemode,
+            TargetPlayer = UniqueId
+            ,
+            Tick = Dimension?.World is Tickable tickable ? tickable.TickValue : 0
         };
         Abilities.SetGamemode(gamemode);
 
@@ -125,7 +122,7 @@ public class Player : Entities.Entity {
         if (Dimension?.World?.Server is Server server) {
             foreach ((NetworkConnection connection, Player player) in server.Players) {
                 if (ReferenceEquals(player, this)) {
-                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { PlayerGameType = gamemode });
+                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { PlayerGameType = (int)gamemode });
                     server.Network.QueuePacket(connection, abilitiesPacket);
                     break;
                 }
@@ -251,12 +248,11 @@ public class Player : Entities.Entity {
             Reason = string.IsNullOrEmpty(reason)
                 ? DisconnectFailReason.Disconnected
                 : DisconnectFailReason.Kicked,
-            Messages = string.IsNullOrEmpty(reason)
-                ? null
-                : new DisconnectPacketMessages {
-                    Message = reason,
-                    FilteredMessage = string.Empty
-                }
+            MessageSkipped = string.IsNullOrEmpty(reason),
+            Messages = new DisconnectPacketMessages {
+                Message = reason,
+                FilteredMessage = string.Empty
+            }
         };
 
         if (immediate) {
@@ -309,8 +305,8 @@ public class Player : Entities.Entity {
 
         ulong tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0;
         dimension.Broadcast(new ActorEventPacket {
-            TargetRuntimeID = new ActorRuntimeID { Value = RuntimeId },
-            EventID = ActorEvent.SPAWN_ALIVE,
+            ActorRuntimeId = RuntimeId ,
+                EventId = 1,
             Data = 0
         }, new BroadcastOptions { Center = spawnPosition });
         Send(CreateActorDataPacket(tick));
@@ -341,7 +337,7 @@ public class Player : Entities.Entity {
                         continue;
                     }
 
-                    Send(new RemoveActorPacket { TargetActorID = new ActorUniqueID() { Value = other.UniqueId } });
+                    Send(new RemoveActorPacket { ActorUniqueId = other.UniqueId  });
                 }
             }
 
@@ -355,7 +351,7 @@ public class Player : Entities.Entity {
 
         if (changedDimensionType) {
             Send(new ChangeDimensionPacket {
-                DimensionID = new DimensionType() { Value = (int)targetDimension.Type },
+                DimensionId = (int)targetDimension.Type,
                 Position = position,
                 Respawn = true,
                 LoadingScreenId = 0
@@ -363,31 +359,25 @@ public class Player : Entities.Entity {
         }
 
         MovePlayerPacket movePlayer = new() {
-            PlayerRuntimeID = new ActorRuntimeID {
-                Value = RuntimeId
-            },
+            ActorRuntimeId = RuntimeId
+            ,
             Position = position,
             Rotation = new Vec2 {
                 X = Pitch,
                 Y = Yaw
             },
-            YHeadRotation = HeadYaw,
-            PositionMode = changedDimension
-                ? PositionMode.Respawn
-                : PositionMode.Teleport,
+            HeadRotation = HeadYaw,
+            PositionMode = changedDimension ? (byte)1 : (byte)2,
             OnGround = false,
-            RidingRuntimeID = new ActorRuntimeID {
-                Value = 0
-            },
+            RidingRuntimeId = 0
+            ,
             TeleportData = changedDimension
                 ? null
                 : new MovePlayerTeleportData {
                     TeleportationCause = (int)TeleportCause.Command,
                     SourceActorType = 0
                 },
-            Tick = new PlayerInputTick {
-                InputTick = tick
-            }
+            Tick = tick
         };
         Send(movePlayer);
 
@@ -409,11 +399,11 @@ public class Player : Entities.Entity {
 
 
 
-    public void RegisterOpenContainer(ContainerID containerId, Container container) {
+    public void RegisterOpenContainer(ContainerId containerId, Container container) {
         openedContainers[containerId] = container;
     }
 
-    public bool TryGetOpenContainer(ContainerID containerId, out Container? container) {
+    public bool TryGetOpenContainer(ContainerId containerId, out Container? container) {
         return openedContainers.TryGetValue(containerId, out container);
     }
 
@@ -443,7 +433,7 @@ public class Player : Entities.Entity {
         }
 
         if (name.ContainerName == ContainerEnumName.CraftingInputContainer) {
-            foreach ((ContainerID _, Container candidate) in openedContainers) {
+            foreach ((ContainerId _, Container candidate) in openedContainers) {
                 if (candidate.Type == ContainerType.WORKBENCH) {
                     return candidate;
                 }
@@ -457,12 +447,12 @@ public class Player : Entities.Entity {
             or ContainerEnumName.LevelEntityContainer
             or ContainerEnumName.DynamicContainer) {
 
-            if (name.DynamicID is uint dynamicId && dynamicId != 0 &&
-                TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)dynamicId), out Container? containerById)) {
+            if (name.DynamicId is uint dynamicId && dynamicId != 0 &&
+                TryGetOpenContainer((ContainerId)unchecked((sbyte)(byte)dynamicId), out Container? containerById)) {
                 return containerById;
             }
 
-            foreach ((ContainerID _, Container candidate) in openedContainers) {
+            foreach ((ContainerId _, Container candidate) in openedContainers) {
                 if (candidate.Type != ContainerType.INVENTORY) {
                     return candidate;
                 }
@@ -473,41 +463,14 @@ public class Player : Entities.Entity {
                 : null;
         }
 
-        if (name.DynamicID is uint otherDynamicId && otherDynamicId != 0 &&
-            TryGetOpenContainer((ContainerID)unchecked((sbyte)(byte)otherDynamicId), out Container? container)) {
+        if (name.DynamicId is uint otherDynamicId && otherDynamicId != 0 &&
+            TryGetOpenContainer((ContainerId)unchecked((sbyte)(byte)otherDynamicId), out Container? container)) {
             return container;
         }
 
         return null;
     }
 
-
-    public PlayerListEntryVariant CreatePlayerListEntry(bool add = true) {
-        if (add) {
-            return new PlayerListAddEntry {
-                Action = PlayerListPacketType.Add,
-                ActorUniqueID = new ActorUniqueID() {
-                    Value = UniqueId,
-                },
-                BuildPlatform = DeviceOS,
-                IsHost = false,
-                IsSubClient = false,
-                IsTeacher = false,
-                PlatformOnlineID = "",
-                PlayerColor = new Color() {
-                    Value = 0,
-                },
-                PlayerName = Username,
-                UUID = GetUUID(),
-                XBLXUID = "",
-                SerializedSkin = Skin,
-            };
-        }
-        return new PlayerListRemoveEntry {
-            Action = PlayerListPacketType.Remove,
-            UUID = GetUUID(),
-        };
-    }
 
     public override void SpawnTo(Player player, ulong tick, Vec3? position = null) {
         Vec3 spawnPosition = position ?? Position;
@@ -518,27 +481,23 @@ public class Player : Entities.Entity {
             held?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
 
         player.Send(new AddPlayerPacket {
-            BuildPlatform = DeviceOS,
+            BuildPlatform = (int)DeviceOS,
             DeviceId = string.Empty,
             ActorLinks = [],
             AbilitiesData = new SerializedAbilitiesData {
-                CommandPermissions = IsOperator
-                    ? CommandPermissionLevel.Admin
-                    : CommandPermissionLevel.Any,
+                    CommandPermissions = IsOperator ? (byte)2 : (byte)0,
                 Layers = [
                     Abilities.ToLayer()
                 ],
-                PlayerPermissions = IsOperator
-                    ? PlayerPermissionLevel.Operator
-                    : PlayerPermissionLevel.Member,
+                PlayerPermissions = (sbyte)(IsOperator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member),
                 TargetPlayerRawId = UniqueId
             },
             SynchedProperties = new PropertySyncData {
-                FloatEntriesList = [],
-                IntEntriesList = []
+                FloatEntries = [],
+                IntEntries = []
             },
             EntityData = CreateActorDataPacket(tick).ActorData,
-            PlayerGameType = Gamemode,
+            PlayerGameType = (int)Gamemode,
             CarriedItem = carriedItem,
             Rotation = new Vec2 {
                 X = Pitch,
@@ -547,19 +506,18 @@ public class Player : Entities.Entity {
             Velocity = new Vec3(),
             Position = spawnPosition,
             PlatformChatId = string.Empty,
-            TargetRuntimeID = new ActorRuntimeID {
-                Value = RuntimeId
-            },
+            ActorRuntimeId = RuntimeId
+            ,
             PlayerName = Username,
-            UUID = GetUUID(),
-            YHeadRotation = HeadYaw
+            Uuid = GetUUID(),
+            HeadRotation = HeadYaw
         });
     }
 
     public void SendMessage(string message) {
         TextPacket packet = new() {
-            Body = new MessageOnly {
-                MessageType = TextPacketType.raw,
+            Body = new TextPacketBody {
+                MessageType = TextPacketType.Raw,
                 Message = message
             }
         };
@@ -567,7 +525,7 @@ public class Player : Entities.Entity {
         Send(packet);
     }
 
-    public BedrockProtocol.Types.UUID GetUUID() {
+    public Basalt.BedrockProtocol.Types.Uuid GetUUID() {
         return NetworkIo.FromGuid(Uuid);
     }
 }

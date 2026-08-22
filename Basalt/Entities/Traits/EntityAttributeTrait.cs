@@ -2,7 +2,7 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public abstract class EntityAttributeTrait : EntityTrait {
     private readonly AttributeProperties? _initialProperties;
@@ -12,60 +12,60 @@ public abstract class EntityAttributeTrait : EntityTrait {
     public bool Sync { get; set; } = true;
 
     public float MinimumValue {
-        get => GetAttribute().MinValue;
+        get => GetAttribute().Minimum;
         set {
             AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.MinValue == next) {
+            if (attribute.Minimum == next) {
                 return;
             }
 
-            attribute.MinValue = next;
+            attribute.Minimum = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float MaximumValue {
-        get => GetAttribute().MaxValue;
+        get => GetAttribute().Maximum;
         set {
             AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.MaxValue == next) {
+            if (attribute.Maximum == next) {
                 return;
             }
 
-            attribute.MaxValue = next;
+            attribute.Maximum = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float DefaultValue {
-        get => GetAttribute().DefaultValue;
+        get => GetAttribute().Default;
         set {
             AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.DefaultValue == next) {
+            if (attribute.Default == next) {
                 return;
             }
 
-            attribute.DefaultValue = next;
+            attribute.Default = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
     }
 
     public float CurrentValue {
-        get => GetAttribute().CurrentValue;
+        get => GetAttribute().Current;
         set {
             AttributeData attribute = GetAttribute();
             float next = Truncate4(value);
-            if (attribute.CurrentValue == next) {
+            if (attribute.Current == next) {
                 return;
             }
 
-            attribute.CurrentValue = next;
+            attribute.Current = next;
             Entity.Attributes.SetAttribute(attribute);
             MarkDirty();
         }
@@ -99,12 +99,12 @@ public abstract class EntityAttributeTrait : EntityTrait {
         float current = Truncate4(properties.CurrentValue ?? @default);
 
         Entity.Attributes.SetAttribute(new AttributeData() {
-            CurrentValue = current,
-            DefaultMaxValue = max,
-            DefaultMinValue = min,
-            DefaultValue = @default,
-            MaxValue = max,
-            MinValue = min,
+            Current = current,
+            DefaultMaximum = max,
+            DefaultMinimum = min,
+            Default = @default,
+            Maximum = max,
+            Minimum = min,
             Name = Attribute.ToProtocolString(),
         });
         MarkDirty();

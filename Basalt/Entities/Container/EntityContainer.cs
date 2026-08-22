@@ -4,9 +4,9 @@ using Basalt.Core.Containers;
 using Basalt.Core.Player.Traits;
 
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityContainer : Containers.Container {
     public Entity Entity { get; }
@@ -33,9 +33,8 @@ public sealed class EntityContainer : Containers.Container {
         if (Entity is Player.Player player && player.Spawned) {
             bool playerCraftingGrid = Identifier is null && Type == ContainerType.NONE;
             if (playerCraftingGrid) {
-                Logger.Info($"[Container] Player crafting slot {slot} -> UI slot {PlayerCraftingGridTrait.SlotOffset + slot}");
                 player.Send(new InventorySlotPacket {
-                    ContainerId = (byte)ContainerID.CONTAINER_ID_PLAYER_ONLY_UI,
+                    ContainerId = ContainerId.PlayerOnlyUi,
                     Slot = (uint)(PlayerCraftingGridTrait.SlotOffset + slot),
                     Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
                 });
@@ -44,7 +43,7 @@ public sealed class EntityContainer : Containers.Container {
 
             if (Identifier is { } identifier) {
                 player.Send(new InventorySlotPacket {
-                    ContainerId = (byte)identifier,
+                    ContainerId = identifier,
                     Slot = (uint)slot,
                     Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
                 });
@@ -60,9 +59,8 @@ public sealed class EntityContainer : Containers.Container {
 
         if (Entity is Player.Player player && player.Spawned && Identifier is null && Type == ContainerType.NONE) {
             for (int slot = 0; slot < GetSize(); slot++) {
-                Logger.Info($"[Container] Player crafting resync slot {slot} -> UI slot {PlayerCraftingGridTrait.SlotOffset + slot}");
                 player.Send(new InventorySlotPacket {
-                    ContainerId = (byte)ContainerID.CONTAINER_ID_PLAYER_ONLY_UI,
+                    ContainerId = ContainerId.PlayerOnlyUi,
                     Slot = (uint)(PlayerCraftingGridTrait.SlotOffset + slot),
                     Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
                 });
@@ -72,15 +70,11 @@ public sealed class EntityContainer : Containers.Container {
 
         if (Entity is Player.Player playerWithIdentifier && Identifier is { } identifier && playerWithIdentifier.Spawned) {
             InventoryContentPacket packet = new() {
-                ContainerId = (byte)identifier,
-                Slots = new List<NetworkItemStackDescriptor>(GetSize()),
-                FullContainerName = GetFullContainerName((ContainerID)identifier),
+                ContainerId = identifier,
+                Slots = Enumerable.Range(0, GetSize()).Select(i => GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()).ToArray(),
+                Container = GetFullContainerName((ContainerId)identifier),
                 StorageItem = new NetworkItemStackDescriptor()
             };
-
-            for (int i = 0; i < GetSize(); i++) {
-                packet.Slots.Add(GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
-            }
 
             playerWithIdentifier.Send(packet);
             return;
@@ -113,12 +107,12 @@ public sealed class EntityContainer : Containers.Container {
         };
     }
 
-    protected override bool CanOpen(Player.Player player, ContainerID containerId) {
+    protected override bool CanOpen(Player.Player player, ContainerId containerId) {
         return true;
     }
 
-    protected override ContainerEnumName GetFullContainerID() {
-        if (Identifier == ContainerID.CONTAINER_ID_PLAYER_ONLY_UI) {
+    protected override ContainerEnumName GetFullContainerId() {
+        if (Identifier == ContainerId.PlayerOnlyUi) {
             return ContainerEnumName.BarrelContainer;
         }
 
@@ -126,6 +120,6 @@ public sealed class EntityContainer : Containers.Container {
             return ContainerEnumName.ArmorContainer;
         }
 
-        return base.GetFullContainerID();
+        return base.GetFullContainerId();
     }
 }

@@ -7,7 +7,7 @@ using Basalt.Core.Blocks.Components;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class BlockPalette {
     private const string AirIdentifier = "minecraft:air";

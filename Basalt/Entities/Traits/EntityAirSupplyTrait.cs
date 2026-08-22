@@ -5,8 +5,8 @@ using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Enums;
 using Basalt.Core.Traits;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityAirSupplyTrait : EntityTrait {
     private const int MaxAirTicks = 300;

@@ -6,9 +6,9 @@ using Basalt.Core.Blocks.Types;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStackSeedTrait : ItemTrait {
     public new static string Identifier => "seed_plant";
@@ -83,7 +83,7 @@ public sealed class ItemStackSeedTrait : ItemTrait {
 
         CropTrait.ScheduleCropTick(dimension, cropPos);
 
-        dimension.PlaySound(LevelSoundEvent.place.ToProtoString(), new Vec3 {
+        dimension.PlaySound("place", new Vec3 {
                 X = cropPos.X + 0.5f,
                 Y = cropPos.Y + 0.5f,
                 Z = cropPos.Z + 0.5f

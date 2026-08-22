@@ -20,10 +20,10 @@ using ChunkColumn = Chunk.Chunk;
 
 using Entity = Entities.Entity;
 
-using BedrockProtocol.Types;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
 
 public sealed class Dimension : IDisposable {
     private const int CompletedChunkLimit = 128;
@@ -547,8 +547,8 @@ public sealed class Dimension : IDisposable {
 
         if (broadcast) {
             Broadcast(new UpdateBlockPacket {
-                BlockPosition = position,
-                BlockRuntimeID = (uint)permutation.NetworkId,
+                Position = position,
+                BlockRuntimeId = (uint)permutation.NetworkId,
                 Flags = (uint)(
                     UpdateBlockFlagsType.Neighbors |
                     UpdateBlockFlagsType.Network
@@ -758,14 +758,14 @@ public sealed class Dimension : IDisposable {
                     }
 
                     entries.Add(new UpdateSubChunkNetworkBlockInfo {
-                        Pos = new BlockPos() {
+                        Position = new BlockPos() {
                             X = x,
                             Y = y,
                             Z = z,
                         },
                         RuntimeId = (uint)permutation.NetworkId,
-                        SyncMessageEntityUniqueID = 0,
-                        SyncMessageMessage = 0,
+                        EntityUniqueId = 0,
+                        Message = 0,
                         UpdateFlags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Neighbors),
                     });
                 }
@@ -781,8 +781,8 @@ public sealed class Dimension : IDisposable {
                     Z = scz,
                 },
                 BlocksChanged = new UpdateSubChunkBlocksChangedInfo() {
-                    BlocksChangedStandards = entries,
-                    BlocksChangedExtras = new List<UpdateSubChunkNetworkBlockInfo>()
+                    Standards = entries.ToArray(),
+                    Extras = []
                 },
 
                 // SubChunkX = scx,
@@ -1452,16 +1452,16 @@ public sealed class Dimension : IDisposable {
     private static Vec3? GetPacketPosition(Packet packet) {
         switch (packet) {
             case UpdateBlockPacket updateBlock:
-                return ToVec3(updateBlock.BlockPosition.X, updateBlock.BlockPosition.Y, updateBlock.BlockPosition.Z);
+                return ToVec3(updateBlock.Position.X, updateBlock.Position.Y, updateBlock.Position.Z);
 
             case BlockActorDataPacket blockActor:
-                return ToVec3(blockActor.BlockPosition.X, blockActor.BlockPosition.Y, blockActor.BlockPosition.Z);
+                return ToVec3(blockActor.Position.X, blockActor.Position.Y, blockActor.Position.Z);
 
             case LevelEventPacket levelEvent:
                 return levelEvent.Position;
 
             case BlockEventPacket blockEvent:
-                return ToVec3(blockEvent.BlockPosition.X, blockEvent.BlockPosition.Y, blockEvent.BlockPosition.Z);
+                return ToVec3(blockEvent.Position.X, blockEvent.Position.Y, blockEvent.Position.Z);
 
             case LevelSoundEventPacket levelSoundEvent:
                 return levelSoundEvent.Position;
@@ -1471,9 +1471,9 @@ public sealed class Dimension : IDisposable {
 
             case MoveActorDeltaPacket moveActorDelta:
                 return new Vec3() {
-                    X = moveActorDelta.MoveData.NewPositionX ?? 0,
-                    Y = moveActorDelta.MoveData.NewPositionY ?? 0,
-                    Z = moveActorDelta.MoveData.NewPositionZ ?? 0,
+                    X = moveActorDelta.PositionX ?? 0,
+                    Y = moveActorDelta.PositionY ?? 0,
+                    Z = moveActorDelta.PositionZ ?? 0,
                 };
 
             default:

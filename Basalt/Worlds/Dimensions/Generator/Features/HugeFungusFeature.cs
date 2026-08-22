@@ -1,6 +1,5 @@
 using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Types;
-using Basalt.Protocol.Enums;
 
 namespace Basalt.Core.Worlds.Dimensions.Generation.Features;
 

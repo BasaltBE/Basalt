@@ -1,7 +1,5 @@
-using Basalt.Protocol.Enums;
-using BedrockProtocol.Nbt;
-using Basalt.Protocol.Types;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;

@@ -5,8 +5,8 @@ using System.Text.Json;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Loot;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
 
 public sealed class EntityPalette {
     private const string PlayerIdentifier = "minecraft:player";
@@ -72,22 +72,9 @@ public sealed class EntityPalette {
         Basalt.Binary.BinaryWriter writer = stream;
 
         AvailableActorIdentifiersPacket packet = new() {
-            IdentifierList = data,
-            WriteIdentifierList = static (nbtWriter, value) => {
-                if (value is not CompoundTag tag) {
-                    throw new InvalidOperationException(
-                        $"Expected {nameof(CompoundTag)}, got {value?.GetType().FullName ?? "null"}."
-                    );
-                }
-
-                NBT.WriteTag(
-                    nbtWriter,
-                    tag,
-                    new TagOptions(VarInt: true)
-                );
-            }
+            IdentifierList = data
         };
-        packet.Serialize(writer);
+        packet.Serialize(ref writer);
 
         _actorIdentifiersPayload = writer.GetProcessedBytes().ToArray();
         return _actorIdentifiersPayload;

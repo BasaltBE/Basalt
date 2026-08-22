@@ -1,10 +1,11 @@
 namespace Basalt.Core.Network.Handlers;
 
+using System.Buffers.Binary;
 using Basalt.Core;
 using Basalt.Core.Player;
 
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public static class PlayerSkin {
     public static void Handle(Server server, NetworkConnection connection, PlayerSkinPacket packet) {
@@ -12,20 +13,29 @@ public static class PlayerSkin {
             return;
         }
 
-        if (packet.SerializedSkin.FullID == player.LastRequestedFullSkinId) {
+        if (packet.SerializedSkin.FullId == player.LastRequestedFullSkinId) {
             return;
         }
 
-        player.LastRequestedFullSkinId = packet.SerializedSkin.FullID;
+        player.LastRequestedFullSkinId = packet.SerializedSkin.FullId;
         
         player.Skin = packet.SerializedSkin;
 
         PlayerSkinPacket skinPacket = new() {
-            UUID = player.GetUUID(),
+            Uuid = FromGuid(player.Uuid),
             SerializedSkin = packet.SerializedSkin,
             LocalizedNewSkinName = string.Empty,
             LocalizedOldSkinName = string.Empty,
         };
         server.Broadcast(skinPacket);
+    }
+
+    private static Uuid FromGuid(Guid guid) {
+        Span<byte> bytes = stackalloc byte[16];
+        guid.TryWriteBytes(bytes, bigEndian: true, out _);
+        return new Uuid {
+            MostSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(bytes[..8]),
+            LeastSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(bytes[8..])
+        };
     }
 }

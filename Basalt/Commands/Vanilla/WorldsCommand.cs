@@ -3,7 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Generation;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
 using Player = Player.Player;
 

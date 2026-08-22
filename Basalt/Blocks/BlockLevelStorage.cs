@@ -8,11 +8,11 @@ using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
-using BedrockProtocol.Types;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
 
-// using IntTag = BedrockProtocol.Nbt.IntTag;
-// using StringTag = BedrockProtocol.Nbt.StringTag;
+// using IntTag = Basalt.BedrockProtocol.NBT.IntTag;
+// using StringTag = Basalt.BedrockProtocol.NBT.StringTag;
 
 [Tag(TagType.Compound)]
 public sealed class BlockLevelStorage : CompoundTag {
@@ -228,7 +228,6 @@ public sealed class BlockLevelStorage : CompoundTag {
     }
 
     public static ReadOnlySpan<byte> Write(BlockLevelStorage storage, BinaryWriter writer) {
-        // Protocol.Io.NBT.WriteTag(writer, storage, );
         var options = new TagOptions(Name: true, Type: true, VarInt: false);
 
         if (options.Type)

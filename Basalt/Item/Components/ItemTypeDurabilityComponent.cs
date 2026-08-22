@@ -1,6 +1,6 @@
 namespace Basalt.Core.Item.Components;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 
 public sealed class ItemTypeDurabilityComponent : ItemTypeComponent {

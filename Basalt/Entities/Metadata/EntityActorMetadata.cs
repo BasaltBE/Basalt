@@ -1,43 +1,27 @@
 using Basalt.Core.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Entities.Metadata;
 
 public sealed class EntityActorMetadata {
     private readonly Entity _entity;
-
-    private readonly Dictionary<ActorDataId, DataItemEntryPayloadVariant> _metadata = [];
+    private readonly Dictionary<ActorDataId, ActorDataItem> _metadata = [];
 
     public EntityActorMetadata(Entity entity) {
         _entity = entity;
     }
 
-    public bool HasActorMetadata(ActorDataId id) {
-        return _metadata.ContainsKey(id);
+    public bool HasActorMetadata(ActorDataId id) => _metadata.ContainsKey(id);
+
+    public ActorDataItem? GetActorMetadata(ActorDataId id) {
+        return _metadata.TryGetValue(id, out ActorDataItem? payload) ? payload : null;
     }
 
-    public T? GetActorMetadata<T>(ActorDataId id)
-        where T : class, DataItemEntryPayloadVariant {
-
-        if (!_metadata.TryGetValue(id, out DataItemEntryPayloadVariant? payload)) {
-            return null;
-        }
-
-        return payload as T;
-    }
-
-    public void SetActorMetadata(
-        ActorDataId id,
-        DataItemEntryPayloadVariant payload
-    ) {
+    public void SetActorMetadata(ActorDataId id, ActorDataItem payload) {
         ArgumentNullException.ThrowIfNull(payload);
 
-        bool changed = true;
-
-        if (_metadata.TryGetValue(id, out DataItemEntryPayloadVariant? previous)) {
-            changed = !Equals(previous, payload);
-        }
-
+        bool changed = !_metadata.TryGetValue(id, out ActorDataItem? previous) || !Equals(previous.Value, payload.Value) ||
+            previous.Type != payload.Type;
         _metadata[id] = payload;
 
         if (changed) {
@@ -45,14 +29,11 @@ public sealed class EntityActorMetadata {
         }
     }
 
-    public List<DataItemEntry> GetAll() {
-        List<DataItemEntry> metadata = new(_metadata.Count);
-
-        foreach ((ActorDataId id, DataItemEntryPayloadVariant payload) in _metadata.OrderBy(static entry => entry.Key)) {
-            metadata.Add(new DataItemEntry {
-                ID = (uint)id,
-                Payload = payload
-            });
+    public List<ActorDataItem> GetAll() {
+        List<ActorDataItem> metadata = new(_metadata.Count);
+        foreach ((ActorDataId id, ActorDataItem payload) in _metadata.OrderBy(static entry => entry.Key)) {
+            payload.Id = (uint)id;
+            metadata.Add(payload);
         }
 
         return metadata;

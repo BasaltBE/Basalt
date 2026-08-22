@@ -7,7 +7,7 @@ using Basalt.Core.Tasks;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
 
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 public enum FluidKind {
     Water,

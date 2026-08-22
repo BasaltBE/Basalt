@@ -1,7 +1,7 @@
 namespace Basalt.Core.Item.Components;
 
 using System.Diagnostics.CodeAnalysis;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 using System.Reflection;
 
 

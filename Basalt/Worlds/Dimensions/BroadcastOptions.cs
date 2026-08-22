@@ -1,5 +1,4 @@
-using Basalt.Protocol.Types;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Worlds.Dimensions;
 

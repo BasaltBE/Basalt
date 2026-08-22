@@ -1,6 +1,6 @@
 namespace Basalt.Core.Blocks.Components;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 public abstract class BlockComponent {
     public static string Identifier => string.Empty;

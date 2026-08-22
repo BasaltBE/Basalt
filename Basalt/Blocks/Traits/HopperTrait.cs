@@ -9,10 +9,10 @@ using Basalt.Core.Item;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class HopperTrait : BlockTrait {
     public override bool Interactable => true;
@@ -159,27 +159,19 @@ public sealed class HopperTrait : BlockTrait {
 
         player.Send(
           new BlockActorDataPacket {
-              BlockPosition = position,
-              ActorDataTags = storage,
-              WriteActorDataTags = static (writer, value) => {
-                  if (value is not CompoundTag tag) {
-                      throw new InvalidOperationException(
-                          $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
-                      );
-                  }
-
-                  NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
-              }
+              Position = position,
+              ActorData = storage,
+              
           },
           new UpdateBlockPacket {
-              BlockPosition = position,
-              BlockRuntimeID = 0,
+              Position = position,
+              BlockRuntimeId = 0,
               Flags = (uint)UpdateBlockFlagsType.None,
               Layer = (uint)UpdateBlockLayerType.Normal
           },
           new UpdateBlockPacket {
-              BlockPosition = position,
-              BlockRuntimeID = networkId,
+              Position = position,
+              BlockRuntimeId = networkId,
               Flags = (uint)UpdateBlockFlagsType.None,
               Layer = (uint)UpdateBlockLayerType.Normal
           });

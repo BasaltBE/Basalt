@@ -3,8 +3,8 @@ namespace Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Types;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
 
 /// <summary>
 /// Options for defining a custom block type.

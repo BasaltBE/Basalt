@@ -2,9 +2,9 @@ namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Item.Traits.Types;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStackHoeTrait : ItemTrait {
     public new static string Identifier => "hoe_till";
@@ -67,13 +67,13 @@ public sealed class ItemStackHoeTrait : ItemTrait {
         }
 
         dimension.Broadcast(new UpdateBlockPacket {
-            BlockPosition = pos,
-            BlockRuntimeID = (uint)resultPermutation.NetworkId,
+            Position = pos,
+            BlockRuntimeId = (uint)resultPermutation.NetworkId,
             Flags = (uint)UpdateBlockFlagsType.Network,
             Layer = (uint)UpdateBlockLayerType.Normal
         });
 
-        dimension.PlaySound(LevelSoundEvent.item_use_on.ToProtoString(), new Vec3 {
+        dimension.PlaySound("item.use_on", new Vec3 {
                 X = pos.X + 0.5f,
                 Y = pos.Y + 0.5f,
                 Z = pos.Z + 0.5f

@@ -5,9 +5,9 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits.Types;
 
-using BedrockProtocol.Packets;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 
 public static class Interact {
     public static void Handle(Server server, NetworkConnection connection, InteractPacket packet) {
@@ -15,7 +15,7 @@ public static class Interact {
             return;
         }
 
-        if (packet.Action == InteractPacketPayloadAction.StopRiding) {
+        if (packet.Action == InteractAction.StopRiding) {
             EntityRidingTrait? riding = player.GetTrait<EntityRidingTrait>();
             if (riding is not null) {
                 EntityRideableTrait? rideable = riding.Vehicle.GetTrait<EntityRideableTrait>();
@@ -24,7 +24,7 @@ public static class Interact {
             return;
         }
 
-        if (packet.Action  == InteractPacketPayloadAction.OpenInventory) {
+        if (packet.Action  == InteractAction.OpenInventory) {
             EntityInventoryTrait? playerInventory = player.GetTrait<EntityInventoryTrait>();
             if (playerInventory is null) {
                 return;
@@ -34,7 +34,7 @@ public static class Interact {
             return;
         }
 
-        if (packet.Action == InteractPacketPayloadAction.InteractUpdate) {
+        if (packet.Action == InteractAction.InteractUpdate) {
             EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
             if (inventory is null) {
                 return;
@@ -46,7 +46,7 @@ public static class Interact {
             }
 
             foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities) {
-                if (entity.RuntimeId != packet.TargetRuntimeID.Value) {
+                if (entity.RuntimeId != packet.TargetRuntimeId) {
                     continue;
                 }
 

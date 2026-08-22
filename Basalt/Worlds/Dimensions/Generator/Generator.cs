@@ -1,4 +1,3 @@
-using Basalt.Protocol.Enums;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Generation;

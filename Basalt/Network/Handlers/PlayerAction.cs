@@ -2,8 +2,8 @@ namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
 
-using BedrockProtocol.Packets;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
 
 public static class PlayerAction {
     public static void Handle(Server server, NetworkConnection connection, PlayerActionPacket packet) {
@@ -11,7 +11,7 @@ public static class PlayerAction {
             return;
         }
 
-        if (packet.PlayerRuntimeID.Value != player.RuntimeId) {
+        if (packet.PlayerRuntimeId != player.RuntimeId) {
             return;
         }
 
@@ -22,6 +22,6 @@ public static class PlayerAction {
 
         player.LastActionFace = packet.Face;
         player.LastActionBlockPosition = packet.BlockPosition;
-        player.LastActionResultPosition = packet.ResultPos;
+        player.LastActionResultPosition = packet.ResultPosition;
     }
 }

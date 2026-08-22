@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Text.Json;
 using Basalt.Core.Network.Login.Data;
-using BedrockProtocol.Enums;
 
 namespace Basalt.Core.Network.Login;
 
@@ -64,10 +63,8 @@ public static class LoginPayload {
         );
     }
 
-    private static BuildPlatform GetDeviceOs(JsonElement payload) =>
-      Enum.IsDefined((BuildPlatform)JsonValue.GetInt64(payload, "DeviceOS"))
-          ? (BuildPlatform)JsonValue.GetInt64(payload, "DeviceOS")
-          : BuildPlatform.Unknown;
+    private static int GetDeviceOs(JsonElement payload) =>
+        (int)JsonValue.GetInt64(payload, "DeviceOS");
 
     private static int GetPlatformType(JsonElement payload) =>
         JsonValue.GetInt32(payload, "PlatformType") is int p and not 0 ? p : JsonValue.GetInt32(payload, "PlayformType");

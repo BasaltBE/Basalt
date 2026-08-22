@@ -3,8 +3,8 @@ namespace Basalt.Core.Entities.Metadata;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Worlds;
 
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityAttributes {
     private readonly Dictionary<AttributeName, AttributeData> _attributes = [];
@@ -15,124 +15,124 @@ public sealed class EntityAttributes {
 
         SetAttribute(new AttributeData {
             Name = "minecraft:absorption",
-            MinValue = 0f,
-            MaxValue = float.MaxValue,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = float.MaxValue,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = float.MaxValue,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = float.MaxValue,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:player.hunger",
-            MinValue = 0f,
-            MaxValue = 20f,
-            CurrentValue = 20f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 20f,
-            DefaultValue = 20f,
+            Minimum = 0f,
+            Maximum = 20f,
+            Current = 20f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 20f,
+            Default = 20f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:knockback_resistance",
-            MinValue = 0f,
-            MaxValue = 1f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 1f,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = 1f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 1f,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:health",
-            MinValue = 0f,
-            MaxValue = 20f,
-            CurrentValue = 20f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 20f,
-            DefaultValue = 20f,
+            Minimum = 0f,
+            Maximum = 20f,
+            Current = 20f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 20f,
+            Default = 20f,
             Modifiers = []
         });
         RegisterWithCurrent(AttributeName.Movement, 0f, float.MaxValue, 0.1f, 0.1f);
         SetAttribute(new AttributeData {
             Name = "minecraft:player.saturation",
-            MinValue = 0f,
-            MaxValue = 20f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 20f,
-            DefaultValue = 20f,
+            Minimum = 0f,
+            Maximum = 20f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 20f,
+            Default = 20f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:player.exhaustion",
-            MinValue = 0f,
-            MaxValue = 5f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 5f,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = 5f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 5f,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:player.level",
-            MinValue = 0f,
-            MaxValue = 24791f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 24791f,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = 24791f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 24791f,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:player.experience",
-            MinValue = 0f,
-            MaxValue = 1f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 1f,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = 1f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 1f,
+            Default = 0f,
             Modifiers = []
         });
         RegisterWithCurrent(AttributeName.UnderwaterMovement, 0f, float.MaxValue, 0.02f, 0.02f);
         SetAttribute(new AttributeData {
             Name = "minecraft:luck",
-            MinValue = -1024f,
-            MaxValue = 1024f,
-            CurrentValue = 0f,
-            DefaultMinValue = -1024f,
-            DefaultMaxValue = 1024f,
-            DefaultValue = 0f,
+            Minimum = -1024f,
+            Maximum = 1024f,
+            Current = 0f,
+            DefaultMinimum = -1024f,
+            DefaultMaximum = 1024f,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:fall_damage",
-            MinValue = 0f,
-            MaxValue = float.MaxValue,
-            CurrentValue = 1f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = float.MaxValue,
-            DefaultValue = 1f,
+            Minimum = 0f,
+            Maximum = float.MaxValue,
+            Current = 1f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = float.MaxValue,
+            Default = 1f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:horse.jump_strength",
-            MinValue = 0f,
-            MaxValue = 2f,
-            CurrentValue = 0.7f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 2f,
-            DefaultValue = 0.7f,
+            Minimum = 0f,
+            Maximum = 2f,
+            Current = 0.7f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 2f,
+            Default = 0.7f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
             Name = "minecraft:zombie.spawn_reinforcements",
-            MinValue = 0f,
-            MaxValue = 1f,
-            CurrentValue = 0f,
-            DefaultMinValue = 0f,
-            DefaultMaxValue = 1f,
-            DefaultValue = 0f,
+            Minimum = 0f,
+            Maximum = 1f,
+            Current = 0f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 1f,
+            Default = 0f,
             Modifiers = []
         });
         RegisterWithCurrent(AttributeName.LavaMovement, 0f, float.MaxValue, 0.02f, 0.02f);
@@ -147,12 +147,12 @@ public sealed class EntityAttributes {
     ) {
         SetAttribute(new AttributeData {
             Name = name.ToProtocolString(),
-            MinValue = min,
-            MaxValue = max,
-            CurrentValue = current,
-            DefaultMinValue = min,
-            DefaultMaxValue = max,
-            DefaultValue = @default,
+            Minimum = min,
+            Maximum = max,
+            Current = current,
+            DefaultMinimum = min,
+            DefaultMaximum = max,
+            Default = @default,
             Modifiers = []
         });
     }
@@ -195,7 +195,7 @@ public sealed class EntityAttributes {
         AttributeData? saturation = GetAttribute(AttributeName.PlayerSaturation);
         AttributeData? exhaustion = GetAttribute(AttributeName.PlayerExhaustion);
 
-        // Logger.Info($"Attributes send: unique={player.UniqueId}, runtime={player.RuntimeId}, hunger={hunger?.CurrentValue}/{hunger?.MaxValue}, saturation={saturation?.CurrentValue}/{saturation?.MaxValue}, exhaustion={exhaustion?.CurrentValue}/{exhaustion?.MaxValue}, tick=0");
+        // Logger.Info($"Attributes send: unique={player.UniqueId}, runtime={player.RuntimeId}, hunger={hunger?.Current}/{hunger?.Maximum}, saturation={saturation?.Current}/{saturation?.Maximum}, exhaustion={exhaustion?.Current}/{exhaustion?.Maximum}, tick=0");
 
         List<AttributeData> foodAttributes = [
             hunger!,
@@ -203,13 +203,9 @@ public sealed class EntityAttributes {
             exhaustion!,
         ];
         UpdateAttributesPacket foodPacket = new() {
-            TargetRuntimeID = new ActorRuntimeID() {
-                Value = player.RuntimeId,
-            },
-            Tick = new PlayerInputTick() {
-                InputTick = 0,
-            },
-            AttributeList = foodAttributes,
+            ActorRuntimeId = player.RuntimeId,
+            Tick = 0,
+            Attributes = foodAttributes.ToArray(),
         };
         List<AttributeData> playerAttributes = [
             GetAttribute(AttributeName.Absorption)!,
@@ -219,13 +215,9 @@ public sealed class EntityAttributes {
             GetAttribute(AttributeName.Movement)!,
         ];
         UpdateAttributesPacket packet = new() {
-            TargetRuntimeID = new ActorRuntimeID() {
-                Value = player.RuntimeId,
-            },
-            Tick = new PlayerInputTick() {
-                InputTick = 0,
-            },
-            AttributeList = playerAttributes,
+            ActorRuntimeId = player.RuntimeId,
+            Tick = 0,
+            Attributes = playerAttributes.ToArray(),
         };
 
         if (immediate) {
@@ -235,7 +227,7 @@ public sealed class EntityAttributes {
             player.Network.QueuePacket(player.Connection, foodPacket);
         }
 
-        if (packet.AttributeList.Count > 0) {
+        if (packet.Attributes.Length > 0) {
             if (immediate) {
                 player.Network.SendPacket(player.Connection, packet);
             }
@@ -247,7 +239,6 @@ public sealed class EntityAttributes {
         player.AttributesDirty = false;
     }
 }
-
 
 
 

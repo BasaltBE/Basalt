@@ -53,7 +53,7 @@ internal sealed class DduiProperty {
     }
 
     public DataStorePropertyValue ToValue() {
-        if (Value.Type != Protocol.Enums.DataStorePropertyValueType.Type)
+        if (Value.Type != DataStorePropertyValueType.Type)
             return Value;
 
         Dictionary<string, DataStorePropertyValue> properties = [];

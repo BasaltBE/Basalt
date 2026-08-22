@@ -11,18 +11,17 @@ using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
 
-using BedrockProtocol.Types;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Enums;
+
 using Basalt.Core.Blocks;
+using ActorDamageCause = Basalt.BedrockProtocol.Enums.ActorDamageCause;
+using ContainerId = Basalt.BedrockProtocol.Enums.ContainerId;
 
 public static class InventoryTransaction {
     private const float EntityAttackReach = 3f;
-    private const uint UseItemActionClickBlock = 0;
-    private const uint UseItemActionClickAir = 1;
-    private const uint UseItemTriggerInitial = 1;
-    private const uint UseItemTriggerRepeat = 2;
-    private const uint UseItemClientPredictionPlace = 1;
+    private const ItemUseActionType UseItemActionClickBlock = ItemUseActionType.Place;
 
     private static readonly HashSet<string> ReplaceableBlocks =
     [
@@ -55,25 +54,57 @@ public static class InventoryTransaction {
             return;
         }
 
+        Logger.Warn(
+            "InventoryTransaction player:{0} type:{1} actions:{2}",
+            player.Username,
+            packet.TransactionType,
+            packet.Actions.Length);
 
-        switch (packet.Transaction) {
-            case NormalTransactionData normal:
-                HandleInventoryActions(player, inventory, normal.Actions.Actions, packet.LegacySetItemSlots ?? []);
+        if (packet.TransactionType == InventoryTransactionType.ItemUseOnActor) {
+            Logger.Warn(
+                "InventoryTransaction entity player:{0} runtime:{1} action:{2} slot:{3}",
+                player.Username,
+                packet.ItemUseOnActorTransaction.RuntimeId,
+                packet.ItemUseOnActorTransaction.ActionType,
+                packet.ItemUseOnActorTransaction.Slot);
+        }
+
+        if (packet.TransactionType == InventoryTransactionType.ItemUse) {
+            Logger.Warn(
+                "InventoryTransaction block player:{0} action:{1} trigger:{2} prediction:{3} slot:{4} pos:{5},{6},{7} face:{8} target:{9} item:{10} count:{11}",
+                player.Username,
+                packet.ItemUseTransaction.ActionType,
+                packet.ItemUseTransaction.TriggerType,
+                packet.ItemUseTransaction.ClientInteractPrediction,
+                packet.ItemUseTransaction.Slot,
+                packet.ItemUseTransaction.Position.X,
+                packet.ItemUseTransaction.Position.Y,
+                packet.ItemUseTransaction.Position.Z,
+                packet.ItemUseTransaction.Face,
+                packet.ItemUseTransaction.TargetBlockId,
+                packet.ItemUseTransaction.Item.Id,
+                packet.ItemUseTransaction.Item.StackSize);
+        }
+
+
+        switch (packet.TransactionType) {
+            case InventoryTransactionType.Normal:
+                HandleInventoryActions(player, inventory, packet.Actions, packet.LegacySetItemSlots ?? []);
                 break;
 
-            case ItemUseInventoryTransaction useItem:
-                HandleUseItem(player, inventory, useItem, useItem.Actions.Actions);
+            case InventoryTransactionType.ItemUse:
+                HandleUseItem(player, inventory, packet.ItemUseTransaction, packet.Actions);
                 break;
 
-            case ItemUseOnActorInventoryTransaction useItemOnEntity:
-                HandleUseItemOnEntity(player, inventory, useItemOnEntity);
+            case InventoryTransactionType.ItemUseOnActor:
+                HandleUseItemOnEntity(player, inventory, packet.ItemUseOnActorTransaction);
                 break;
 
-            case ItemReleaseInventoryTransaction:
+            case InventoryTransactionType.ItemRelease:
                 PlayerAuthInput.CancelPendingItemUse(player);
                 break;
 
-            case InventoryMismatchData:
+            case InventoryTransactionType.InventoryMismatch:
                 break;
         }
 
@@ -81,7 +112,7 @@ public static class InventoryTransaction {
 
     public static void HandleUseItemFromAuthInput(
         Player.Player player,
-        PackedItemUseLegacyInventoryTransaction data,
+        PackedItemUseLegacyInventoryTransactionData data,
         float pitch,
         float yaw,
         Vec3 cameraOrientation
@@ -95,20 +126,20 @@ public static class InventoryTransaction {
         player.Yaw = yaw;
         player.HeadYaw = yaw;
 
-        ItemUseInventoryTransaction transaction = data.ItemUseTransaction;
+        ItemUseInventoryTransactionData transaction = data.ItemUseTransaction;
 
 
-        bool missingBlockPosition =
+        bool missingPosition =
             transaction.Position.X == 0 &&
             transaction.Position.Y == 0 &&
             transaction.Position.Z == 0 &&
             transaction.TargetBlockId == 0;
 
-        if (missingBlockPosition && FindBlockFromView(player, pitch, yaw, cameraOrientation, out BlockPos viewedBlock, out int viewedFace)) {
+        if (missingPosition && FindBlockFromView(player, pitch, yaw, cameraOrientation, out BlockPos viewedBlock, out int viewedFace)) {
             transaction.Position = viewedBlock;
             transaction.Face = (byte)viewedFace;
         }
-        else if (missingBlockPosition) {
+        else if (missingPosition) {
             transaction.Position = new BlockPos {
                 X = (int)MathF.Floor(player.Location.X),
                 Y = (int)MathF.Floor(player.Location.Y - 1f),
@@ -120,17 +151,17 @@ public static class InventoryTransaction {
             }
         }
 
-        HandleUseItem(player, inventory, transaction, []);
+        HandleUseItem(player, inventory, transaction, data.Actions);
     }
 
     private static void HandleInventoryActions(
         Player.Player player,
         EntityInventoryTrait inventory,
-        List<InventoryAction> actions,
-        List<LegacySetSlot> legacySetItemSlots) {
-        for (int i = 0; i < actions.Count; i++) {
-            InventoryAction action = actions[i];
-            if (action.Source.SourceType != InventorySourceType.WorldInteraction) {
+        InventoryActionData[] actions,
+        LegacySetSlot[] legacySetItemSlots) {
+        for (int i = 0; i < actions.Length; i++) {
+            InventoryActionData action = actions[i];
+            if (action.Source.Type != InventorySourceType.WorldInteraction) {
                 continue;
             }
 
@@ -140,29 +171,29 @@ public static class InventoryTransaction {
             }
         }
 
-        foreach (InventoryAction action in actions) {
-            if (action.Source.SourceType == InventorySourceType.WorldInteraction) {
+        foreach (InventoryActionData action in actions) {
+            if (action.Source.Type == InventorySourceType.WorldInteraction) {
                 continue;
             }
 
-            if (action.Source.SourceType != (uint)InventorySourceType.ContainerInventory) {
+            if (action.Source.Type != InventorySourceType.ContainerInventory) {
                 continue;
             }
-            if (action.Source.ContainerID is null) continue;
+            if (action.Source.ContainerId is null) continue;
 
-            ContainerID sourceContainerId = (ContainerID)action.Source.ContainerID;
+            ContainerId sourceContainerId = action.Source.ContainerId.Value;
             int slot = (int)action.Slot;
             PlayerCraftingGridTrait? craftingGrid = player.GetTrait<PlayerCraftingGridTrait>();
 
             Containers.Container? container = null;
-            if (sourceContainerId == ContainerID.CONTAINER_ID_INVENTORY &&
+            if (sourceContainerId == ContainerId.Inventory &&
                 slot >= PlayerCraftingGridTrait.SlotOffset &&
                 slot < PlayerCraftingGridTrait.SlotOffset + PlayerCraftingGridTrait.GridSize &&
                 craftingGrid is not null) {
                 container = craftingGrid.Container;
                 slot = PlayerCraftingGridTrait.MapSlot(slot);
             }
-            else if (sourceContainerId == (inventory.Container.Identifier ?? ContainerID.CONTAINER_ID_INVENTORY)) {
+            else if (sourceContainerId == (inventory.Container.Identifier ?? ContainerId.Inventory)) {
                 container = inventory.Container;
             }
             else if (player.TryGetOpenContainer(sourceContainerId, out Containers.Container? opened)) {
@@ -194,12 +225,12 @@ public static class InventoryTransaction {
 
     private static int ResolveWorldActionSlot(
         EntityInventoryTrait inventory,
-        InventoryAction action,
-        List<InventoryAction> actions,
-        List<LegacySetSlot> legacySetItemSlots) {
-        for (int i = 0; i < legacySetItemSlots.Count; i++) {
+        InventoryActionData action,
+        InventoryActionData[] actions,
+        LegacySetSlot[] legacySetItemSlots) {
+        for (int i = 0; i < legacySetItemSlots.Length; i++) {
             LegacySetSlot legacy = legacySetItemSlots[i];
-            if (legacy.Slots.Count == 0) {
+            if (legacy.Slots.Length == 0) {
                 continue;
             }
 
@@ -208,9 +239,9 @@ public static class InventoryTransaction {
             }
         }
 
-        for (int i = 0; i < actions.Count; i++) {
-            InventoryAction candidate = actions[i];
-            if (candidate.Source.SourceType != (uint)InventorySourceType.ContainerInventory || candidate.Source.ContainerID != 0) {
+        for (int i = 0; i < actions.Length; i++) {
+            InventoryActionData candidate = actions[i];
+            if (candidate.Source.Type != InventorySourceType.ContainerInventory || candidate.Source.ContainerId != 0) {
                 continue;
             }
 
@@ -242,15 +273,15 @@ public static class InventoryTransaction {
     private static bool SpawnWorldDrop(
         Player.Player player,
         EntityInventoryTrait inventory,
-        InventoryAction action,
-        List<InventoryAction> actions) {
+        InventoryActionData action,
+        InventoryActionData[] actions) {
         if (player.Dimension is null) {
             Logger.Error("Drop failed: player has no dimension");
             return false;
         }
 
-        for (int i = 0; i < actions.Count; i++) {
-            InventoryAction source = actions[i];
+        for (int i = 0; i < actions.Length; i++) {
+            InventoryActionData source = actions[i];
 
             int slot = (int)source.Slot;
             if (slot < 0 || slot >= inventory.Container.GetSize()) {
@@ -276,10 +307,8 @@ public static class InventoryTransaction {
     private static void HandleUseItem(
         Player.Player player,
         EntityInventoryTrait inventory,
-        ItemUseInventoryTransaction transaction,
-        List<InventoryAction> actions) {
-        // Logger.Info($"HandleUseItem ActionType:{transaction.ActionType} Trigger:{transaction.TriggerType} Prediction:{transaction.ClientPrediction} Pos:({transaction.BlockPosition.X},{transaction.BlockPosition.Y},{transaction.BlockPosition.Z}) Face:{transaction.BlockFace} actions:{actions.Count}");
-
+        ItemUseInventoryTransactionData transaction,
+        InventoryActionData[] actions) {
         if (transaction.ActionType == ItemUseActionType.Use) {
             ItemStack? airHeldItem = GetHeldItem(inventory, transaction.Slot);
             if (airHeldItem is null) {
@@ -332,10 +361,50 @@ public static class InventoryTransaction {
                 player.Dimension.GetPermutation(transaction.Position.X, transaction.Position.Y, transaction.Position.Z);
 
             if ((uint)serverPermutation.NetworkId != transaction.TargetBlockId) {
+                Logger.Warn(
+                    "InventoryTransaction block id mismatch player:{0} pos:{1},{2},{3} client:{4} server:{5}",
+                    player.Username,
+                    transaction.Position.X,
+                    transaction.Position.Y,
+                    transaction.Position.Z,
+                    transaction.TargetBlockId,
+                    serverPermutation.NetworkId);
                 SendBlockUpdate(player, transaction.Position, serverPermutation.NetworkId);
-                return;
             }
         }
+
+        ItemStack? heldItem = GetHeldItem(inventory, transaction.Slot);
+        if (heldItem is null && transaction.Item.Id != 0 && transaction.Item.StackSize != 0) {
+            for (int slot = 0; slot < 9; slot++) {
+                ItemStack? candidate = inventory.Container.GetItem(slot);
+                if (candidate is null || candidate.Type.NetworkId != transaction.Item.Id || candidate.Metadata != transaction.Item.AuxValue) {
+                    continue;
+                }
+
+                transaction.Slot = slot;
+                inventory.SetHeldItem(slot);
+                heldItem = candidate;
+                break;
+            }
+        }
+
+        if (heldItem is null && transaction.Item.Id != 0 && transaction.Item.StackSize != 0 && transaction.Slot >= 0) {
+            ItemType? transactionItemType = ItemType.GetByNetwork(transaction.Item.Id);
+            if (transactionItemType is not null) {
+                heldItem = new ItemStack(
+                    transactionItemType,
+                    transaction.Item.StackSize,
+                    transaction.Item.AuxValue);
+                inventory.Container.SetItem(transaction.Slot, heldItem);
+            }
+        }
+
+        Logger.Warn(
+            "InventoryTransaction held player:{0} slot:{1} selected:{2} item:{3}",
+            player.Username,
+            transaction.Slot,
+            inventory.SelectedSlot,
+            heldItem?.Identifier ?? "null");
 
         if (transaction.TriggerType == ItemUseTriggerType.SimulationTick) {
             ItemStack? repeatItem = GetHeldItem(inventory, transaction.Slot);
@@ -344,6 +413,14 @@ public static class InventoryTransaction {
             }
 
             if (transaction.ClientInteractPrediction != ItemUsePredictedResult.Success) {
+                bool predictionPlaceableBlock = repeatItem.Type.BlockType is not null
+                    || Basalt.Core.Blocks.BlockType.Get(repeatItem.Identifier) is not null;
+
+                if (predictionPlaceableBlock) {
+                    UseItemOnBlock(player, inventory, repeatItem, transaction);
+                    return;
+                }
+
                 if (player.Dimension is null || !CanUseItem(player, repeatItem)) {
                     return;
                 }
@@ -406,6 +483,14 @@ public static class InventoryTransaction {
                 return;
             }
 
+            bool placeableBlock = usedItem.Type.BlockType is not null
+                || Basalt.Core.Blocks.BlockType.Get(usedItem.Identifier) is not null;
+
+            if (placeableBlock) {
+                UseItemOnBlock(player, inventory, usedItem, transaction);
+                return;
+            }
+
             usedItem.OnUseOnBlock(new ItemUseOnBlockDetails(
                 player,
                 transaction.Slot,
@@ -425,6 +510,13 @@ public static class InventoryTransaction {
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
             if (block is not null && block.Interactable && !player.IsSneaking) {
+                Logger.Warn(
+                    "InventoryTransaction interaction branch player:{0} block:{1} pos:{2},{3},{4}",
+                    player.Username,
+                    block.Type.Identifier,
+                    blockPosition.X,
+                    blockPosition.Y,
+                    blockPosition.Z);
                 if (!CanInteractBlock(player, blockPosition)) {
                     return;
                 }
@@ -439,14 +531,17 @@ public static class InventoryTransaction {
             }
         }
 
-        ItemStack? heldItem = GetHeldItem(inventory, transaction.Slot);
         if (heldItem is null) {
+            Logger.Warn(
+                "InventoryTransaction placement rejected empty held item player:{0} slot:{1}",
+                player.Username,
+                transaction.Slot);
             return;
         }
 
         if (player.Gamemode == GameType.Survival &&
             transaction.TriggerType == ItemUseTriggerType.PlayerInput &&
-            actions.Count == 0) {
+            actions.Length == 0) {
             if (heldItem.Type.BlockType is null && Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier) is null) {
                 if (!CanUseItem(player, heldItem)) {
                     return;
@@ -470,15 +565,13 @@ public static class InventoryTransaction {
         Player.Player player,
         EntityInventoryTrait inventory,
         ItemStack heldItem,
-        ItemUseInventoryTransaction transaction) {
+        ItemUseInventoryTransactionData transaction) {
         if (player.Dimension is null) {
             return;
         }
 
         BlockPos clickedPosition = transaction.Position;
         int clickedFace = transaction.Face;
-
-        // Logger.Info($"UseItemOnBlock pos:({clickedPosition.X},{clickedPosition.Y},{clickedPosition.Z}) face:{clickedFace} item:{heldItem.Identifier}");
 
         if (IsEmptyPosition(clickedPosition) && transaction.TargetBlockId == 0 && player.LastActionBlockPosition is not null) {
             clickedPosition = player.LastActionBlockPosition;
@@ -516,6 +609,19 @@ public static class InventoryTransaction {
         }
 
         Basalt.Core.Blocks.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier);
+
+        Logger.Warn(
+            "InventoryTransaction placement player:{0} held:{1} itemId:{2} block:{3} clicked:{4},{5},{6} place:{7},{8},{9}",
+            player.Username,
+            heldItem.Identifier,
+            heldItem.Type.NetworkId,
+            blockType?.Identifier ?? "null",
+            clickedPosition.X,
+            clickedPosition.Y,
+            clickedPosition.Z,
+            placePosition.X,
+            placePosition.Y,
+            placePosition.Z);
 
         if (blockType is null || blockType.Identifier == "minecraft:air") {
             if (!CanUseItem(player, heldItem)) {
@@ -583,13 +689,13 @@ public static class InventoryTransaction {
         SendBlockUpdate(player, placePosition, placedPermutation.NetworkId);
 
         player.Dimension.Broadcast(new UpdateBlockPacket {
-            BlockPosition = placePosition,
-            BlockRuntimeID = (uint)placedPermutation.NetworkId,
-            Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
-            Layer = (uint)UpdateBlockLayerType.Normal
+            Position = placePosition,
+            BlockRuntimeId = (uint)placedPermutation.NetworkId,
+            Flags = (uint)(Basalt.Core.Blocks.UpdateBlockFlagsType.Neighbors | Basalt.Core.Blocks.UpdateBlockFlagsType.Network),
+            Layer = (uint)Basalt.Core.Blocks.UpdateBlockLayerType.Normal
         });
 
-        player.Dimension.PlaySound(LevelSoundEvent.place.ToProtocolString(), new Vec3 {
+        player.Dimension.PlaySound("place", new Vec3 {
             X = placePosition.X + 0.5f,
             Y = placePosition.Y + 0.5f,
             Z = placePosition.Z + 0.5f
@@ -625,7 +731,7 @@ public static class InventoryTransaction {
     private static void HandleUseItemOnEntity(
         Player.Player player,
         EntityInventoryTrait inventory,
-        ItemUseOnActorInventoryTransaction transaction) {
+        ItemUseOnActorInventoryTransactionData transaction) {
         if (player.Dimension is null) {
             return;
         }
@@ -635,7 +741,7 @@ public static class InventoryTransaction {
         Basalt.Core.Entities.Entity? target = null;
 
         foreach (Basalt.Core.Entities.Entity entity in player.Dimension.Entities) {
-            if (entity.RuntimeId == transaction.RuntimeId.Value) {
+            if (entity.RuntimeId == transaction.RuntimeId) {
                 target = entity;
                 break;
             }
@@ -666,6 +772,7 @@ public static class InventoryTransaction {
                 break;
 
             case ItemUseOnActorActionType.Attack:
+            case ItemUseOnActorActionType.ItemInteract:
                 if (!WithinAttackReach(player, target)) {
                     return;
                 }
@@ -737,7 +844,7 @@ public static class InventoryTransaction {
 
     private static ItemStack? GetHeldItem(EntityInventoryTrait inventory, int hotBarSlot) {
         if (hotBarSlot is < 0 or >= 9) {
-            hotBarSlot = 0;
+            return null;
         }
 
         inventory.SetHeldItem(hotBarSlot);
@@ -768,10 +875,10 @@ public static class InventoryTransaction {
 
     private static void SendBlockUpdate(Player.Player player, BlockPos position, int networkId) {
         player.Send(new UpdateBlockPacket {
-            BlockPosition = position,
-            BlockRuntimeID = (uint)networkId,
-            Flags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
-            Layer = (uint)UpdateBlockLayerType.Normal
+            Position = position,
+            BlockRuntimeId = (uint)networkId,
+            Flags = (uint)(Basalt.Core.Blocks.UpdateBlockFlagsType.Neighbors | Basalt.Core.Blocks.UpdateBlockFlagsType.Network),
+            Layer = (uint)Basalt.Core.Blocks.UpdateBlockLayerType.Normal
         });
     }
 

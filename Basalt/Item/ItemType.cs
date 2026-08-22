@@ -4,7 +4,7 @@ using Basalt.Core.Blocks;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 /// <summary>
 /// Catalog metadata for an item's creative menu placement.
@@ -33,7 +33,7 @@ public sealed class ItemCatalog {
     public string? GroupIcon { get; }
 
     public ItemCatalog(string categoryName, string? groupName, string? groupIcon) {
-        Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 0;
+        Category = CategoryMap.TryGetValue(categoryName, out int id) ? id : 5;
         GroupName = string.IsNullOrEmpty(groupName) ? null : StripMinecraftPrefix(groupName);
         GroupIcon = string.IsNullOrEmpty(groupIcon) ? null : groupIcon;
     }

@@ -5,9 +5,9 @@ using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStackBucketFillTrait : ItemTrait {
     public new static string Identifier => "bucket_fill";
@@ -44,8 +44,8 @@ public sealed class ItemStackBucketFillTrait : ItemTrait {
             world.TickValue + Player.Player.BucketCooldownTicks;
 
         string soundEvent = kind.Value == FluidKind.Water
-          ? LevelSoundEvent.bucket_fill_water.ToProtocolString()
-          : LevelSoundEvent.bucket_fill_lava.ToProtocolString();
+          ? "bucket.fill_water"
+          : "bucket.fill_lava";
 
         dimension.PlaySound(soundEvent, new Vec3 {
                 X = clickedPos.X + 0.5f,

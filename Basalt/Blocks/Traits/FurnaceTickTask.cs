@@ -3,7 +3,7 @@ namespace Basalt.Core.Blocks.Traits;
 using Basalt.Core.Tasks;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 internal sealed class FurnaceTickTask : DelayedTask {
     private readonly Dimension _dimension;

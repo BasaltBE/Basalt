@@ -5,10 +5,10 @@ using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Containers;
 using Basalt.Core.Item;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public class BarrelTrait : BlockTrait {
     public override bool Interactable => true;
@@ -138,27 +138,19 @@ public class BarrelTrait : BlockTrait {
 
         player.Send(
         new BlockActorDataPacket {
-            BlockPosition = position,
-            ActorDataTags = storage,
-            WriteActorDataTags = static (writer, value) => {
-                if (value is not CompoundTag tag) {
-                    throw new InvalidOperationException(
-                        $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
-                    );
-                }
-
-                NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
-            }
+            Position = position,
+            ActorData = storage,
+            
         },
         new UpdateBlockPacket {
-            BlockPosition = position,
-            BlockRuntimeID = 0,
+            Position = position,
+            BlockRuntimeId = 0,
             Flags = (uint)UpdateBlockFlagsType.None,
             Layer = (uint)UpdateBlockLayerType.Normal
         },
         new UpdateBlockPacket {
-            BlockPosition = position,
-            BlockRuntimeID = networkId,
+            Position = position,
+            BlockRuntimeId = networkId,
             Flags = (uint)UpdateBlockFlagsType.None,
             Layer = (uint)UpdateBlockLayerType.Normal
         });
@@ -168,7 +160,7 @@ public class BarrelTrait : BlockTrait {
         SetOpen(true);
 
         if (!silent) {
-            BroadcastSound(LevelSoundEvent.block_barrel_open.ToProtoString());
+            BroadcastSound("block.barrel.open");
         }
     }
 
@@ -176,7 +168,7 @@ public class BarrelTrait : BlockTrait {
         SetOpen(false);
 
         if (!silent) {
-            BroadcastSound(LevelSoundEvent.block_barrel_close.ToProtoString());
+            BroadcastSound("block.barrel.close");
         }
     }
 

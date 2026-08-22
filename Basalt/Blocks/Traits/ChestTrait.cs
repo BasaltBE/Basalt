@@ -6,10 +6,10 @@ using Basalt.Core.Blocks.Types;
 using Basalt.Core.Enums;
 using Basalt.Core.Item;
 using Basalt.Core.Worlds;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public class ChestTrait : BlockTrait {
     public override bool Interactable => true;
@@ -269,27 +269,19 @@ public class ChestTrait : BlockTrait {
 
         player.Send(
             new BlockActorDataPacket {
-                BlockPosition = position,
-                ActorDataTags = storage,
-                WriteActorDataTags = static (writer, value) => {
-                    if (value is not CompoundTag tag) {
-                        throw new InvalidOperationException(
-                            $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
-                        );
-                    }
-
-                    NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
-                }
+                Position = position,
+                ActorData = storage,
+                
             },
             new UpdateBlockPacket {
-                BlockPosition = position,
-                BlockRuntimeID = 0,
+                Position = position,
+                BlockRuntimeId = 0,
                 Flags = (uint)UpdateBlockFlagsType.None,
                 Layer = (uint)UpdateBlockLayerType.Normal
             },
             new UpdateBlockPacket {
-                BlockPosition = position,
-                BlockRuntimeID = networkId,
+                Position = position,
+                BlockRuntimeId = networkId,
                 Flags = (uint)UpdateBlockFlagsType.None,
                 Layer = (uint)UpdateBlockLayerType.Normal
             }
@@ -613,10 +605,10 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        BroadcastState(1, LevelSoundEvent.chest_open.ToProtocolString(), container.Position);
+        BroadcastState(1, "chest.open", container.Position);
 
         if (GetPairPosition(container.Position.Y, out BlockPos pairPosition)) {
-            BroadcastState(1, LevelSoundEvent.chest_open.ToProtocolString(), pairPosition);
+            BroadcastState(1, "chest.open", pairPosition);
         }
     }
 
@@ -625,10 +617,10 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        BroadcastState(0, LevelSoundEvent.chest_closed.ToProtocolString(), container.Position);
+        BroadcastState(0, "chest.closed", container.Position);
 
         if (GetPairPosition(container.Position.Y, out BlockPos pairPosition)) {
-            BroadcastState(0, LevelSoundEvent.chest_closed.ToProtocolString(), pairPosition);
+            BroadcastState(0, "chest.closed", pairPosition);
         }
     }
 
@@ -661,8 +653,30 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
+        var chunk = Container.Dimension.GetChunk(position.X >> 4, position.Z >> 4);
+        BlockLevelStorage? storage = chunk?.GetBlockStorage(position);
+        if (storage is null) {
+            WriteStorage(Container.Dimension, position.X, position.Y, position.Z);
+            storage = chunk?.GetBlockStorage(position);
+        }
+
+        if (storage is not null) {
+            Container.Dimension.Broadcast(new BlockActorDataPacket {
+                Position = position,
+                ActorData = storage
+            });
+        }
+
+        Logger.Warn(
+            "Chest block event position:{0},{1},{2} type:{3} value:{4}",
+            position.X,
+            position.Y,
+            position.Z,
+            BlockEventType.ChangeState,
+            state);
+
         Container.Dimension.Broadcast(new BlockEventPacket {
-            BlockPosition = position,
+            Position = position,
             EventType = (int)BlockEventType.ChangeState,
             EventValue = state
         });

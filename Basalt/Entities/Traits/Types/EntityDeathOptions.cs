@@ -1,4 +1,4 @@
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 
 namespace Basalt.Core.Entities.Traits.Types;
 

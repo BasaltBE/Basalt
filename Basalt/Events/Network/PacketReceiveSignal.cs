@@ -3,7 +3,7 @@ namespace Basalt.Core.Events;
 using Basalt.Core.Player;
 using Basalt.Core.Network;
 
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 /// <summary>
 /// Emitted when a packet is received from a client, before it is handled.

@@ -1,9 +1,9 @@
 namespace Basalt.Core.Commands;
 
 using System.Diagnostics.CodeAnalysis;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
 using Player = Player.Player;
 using ServerInstance = Server;
 using Basalt.Core.Enums;
@@ -158,8 +158,8 @@ public sealed class CommandRegistry {
             EnumValues = [],
             ChainedSubcommandValues = [],
             PostFixes = [],
-            EnumData = [],
-            ChainedSubcommandData = [],
+            Enums = [],
+            ChainedSubcommands = [],
             Commands = [],
             SoftEnums = [],
             Constraints = []
@@ -176,22 +176,20 @@ public sealed class CommandRegistry {
                 continue;
             }
 
-            packet.Commands.Add(new AvailableCommandsPacketCommandData {
+            packet.Commands = [.. packet.Commands, new AvailableCommandsCommandData {
                 Name = def.Name,
                 Description = def.Description,
                 Flags = 0,
-                PermissionLevel = def.Permissions.Length == 0
-                    ? CommandPermissionLevel.Any
-                    : CommandPermissionLevel.GameDirectors,
+                PermissionLevel = "any",
                 AliasEnum = GetAliasesOffset(packet, enumValueOffsets, def),
-                CommandDataChainedSubcommandIndexes = [],
+                ChainedSubcommandIndexes = [],
                 Overloads = BuildOverloads(
                     packet,
                     enumValueOffsets,
                     enumOffsets,
                     def
-                )
-            });
+                ).ToArray()
+            }];
         }
 
         return packet;
@@ -202,22 +200,23 @@ public sealed class CommandRegistry {
             return;
         }
 
+        AvailableCommandsPacket packet = BuildAvailableCommandsPacket(player);
         server.Network.QueuePacket(
             player.Connection,
-            BuildAvailableCommandsPacket(player)
+            packet
         );
     }
 
-    static List<AvailableCommandsPacketOverloadData> BuildOverloads(
+    static List<AvailableCommandsOverloadData> BuildOverloads(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<System.Type, int> enumOffsets,
         CommandDefinition def
     ) {
-        List<AvailableCommandsPacketOverloadData> overloads = [];
+        List<AvailableCommandsOverloadData> overloads = [];
 
         foreach (OverloadDefinition overload in def.Overloads) {
-            List<AvailableCommandsPacketParamData> parameters = [];
+            List<AvailableCommandsParamData> parameters = [];
 
             foreach (ParameterDefinition param in overload.Parameters) {
                 parameters.Add(
@@ -230,16 +229,16 @@ public sealed class CommandRegistry {
                 );
             }
 
-            overloads.Add(new AvailableCommandsPacketOverloadData {
+            overloads.Add(new AvailableCommandsOverloadData {
                 IsChaining = false,
-                ParameterData = parameters
+                Parameters = [.. parameters]
             });
         }
 
         return overloads;
     }
 
-    static AvailableCommandsPacketParamData BuildParameter(
+    static AvailableCommandsParamData BuildParameter(
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<System.Type, int> enumOffsets,
@@ -261,23 +260,23 @@ public sealed class CommandRegistry {
                 type
             );
 
-            return new AvailableCommandsPacketParamData {
+            return new AvailableCommandsParamData {
                 Name = param.Name,
                 ParseSymbol =
                     (uint)CommandParameterTypeFlag.Valid |
                     (uint)CommandParameterTypeFlag.Enum |
                     unchecked((uint)enumOffset),
-                IsOptional = param.Optional,
+                Optional = param.Optional,
                 Options = 0
             };
         }
 
-        return new AvailableCommandsPacketParamData {
+        return new AvailableCommandsParamData {
             Name = param.Name,
             ParseSymbol =
                 (uint)CommandParameterTypeFlag.Valid |
                 (uint)GetParameterType(type),
-            IsOptional = param.Optional,
+            Optional = param.Optional,
             Options = 0
         };
     }
@@ -368,12 +367,12 @@ public sealed class CommandRegistry {
             );
         }
 
-        int offset = packet.EnumData.Count;
+        int offset = packet.Enums.Length;
 
-        packet.EnumData.Add(new AvailableCommandsPacketEnumData {
+        packet.Enums = [.. packet.Enums, new AvailableCommandsEnumData {
             Name = name,
-            Values = valueIndices
-        });
+            Values = valueIndices.ToArray()
+        }];
 
         return offset;
     }
@@ -387,9 +386,9 @@ public sealed class CommandRegistry {
             return offset;
         }
 
-        offset = checked((uint)packet.EnumValues.Count);
+        offset = checked((uint)packet.EnumValues.Length);
         enumValueOffsets[value] = offset;
-        packet.EnumValues.Add(value);
+        packet.EnumValues = [.. packet.EnumValues, value];
         return offset;
     }
 

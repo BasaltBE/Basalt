@@ -4,7 +4,7 @@ using Basalt.Core;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds.Dimensions;
 
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 public static class RequestChunkRadius {
     public static void Handle(Server server, NetworkConnection connection, RequestChunkRadiusPacket packet) {
@@ -16,12 +16,6 @@ public static class RequestChunkRadius {
 
         int maxChebyshev = ChunkViewMath.MaxChebyshevForClientCircle(clientMax);
         int radius = Math.Clamp(requestedRadius, 4, Math.Min(maxViewDistance, maxChebyshev));
-        int bedrockRadius = ChunkViewMath.SquareToCircle(radius);
-
-        server.Network.SendPacket(connection, new ChunkRadiusUpdatedPacket {
-            ChunkRadius = bedrockRadius
-        });
-
         if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
             return;
         }

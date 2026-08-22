@@ -1,13 +1,13 @@
 namespace Basalt.Core.Player.Traits;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Traits;
 using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 
 public sealed class PlayerHungerTrait : EntityAttributeTrait {
     public new static string Identifier => "hunger";

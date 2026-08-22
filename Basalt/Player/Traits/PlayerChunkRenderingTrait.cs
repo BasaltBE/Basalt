@@ -10,8 +10,8 @@ using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     private const float EntityVisibilityRadiusSquared = 64f * 64f;
@@ -41,6 +41,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
     private int _publisherChunkX = int.MinValue;
     private int _publisherChunkZ = int.MinValue;
+    private bool _publisherSent;
 
     private int _ringRadius;
     private int _ringIndex;
@@ -76,7 +77,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
 
             UpdateTrackedChunkPosition();
             UnloadChunks(Player.Dimension, clearClient: true);
-            SendPublisherUpdate();
+            _publisherSent = false;
         }
     }
 
@@ -87,7 +88,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             ResetChunkRequests();
             UpdateTrackedChunkPosition();
             ResetRingScan();
-            SendPublisherUpdate();
+            _publisherSent = false;
 
             if (Player.Dimension is not null) {
                 SendChunks(Player.Dimension);
@@ -123,7 +124,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             int chunkZ = WorldToChunk(details.To.Z);
             if (UpdateChunkPosition(chunkX, chunkZ)) {
                 UnloadChunks(dimension, clearClient: true);
-                SendPublisherUpdate();
+                _publisherSent = false;
                 UpdateVisibleChunks(dimension);
             }
         }
@@ -144,7 +145,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             if (UpdateChunkPosition(chunkX, chunkZ)) {
                 UnloadChunks(dimension, clearClient: true);
                 UpdateVisibleChunks(dimension);
-                SendPublisherUpdate();
+                _publisherSent = false;
             }
         }
 
@@ -169,7 +170,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             bool changedChunk = UpdateChunkPosition(chunkX, chunkZ);
             UnloadChunks(dimension, clearClient: true);
             if (changedChunk) {
-                SendPublisherUpdate();
+                _publisherSent = false;
                 UpdateVisibleChunks(dimension);
             }
 
@@ -240,6 +241,11 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             return;
         }
 
+        bool sendPublisher = !_publisherSent && Player.Location.Y >= 0;
+        if (sendPublisher) {
+            _sendBuffer.Add(CreateChunkPublisherPacket());
+        }
+
         Player.Send([.. _sendBuffer]);
 
         foreach ((long hash, int x, int z) in _sentChunkBuffer) {
@@ -248,6 +254,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             }
 
             SendChunkChestVisualUpdates(dimension, x, z);
+        }
+
+        if (sendPublisher) {
+            _publisherChunkX = ChunkX;
+            _publisherChunkZ = ChunkZ;
+            _publisherSent = true;
         }
     }
 
@@ -279,14 +291,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                     X = chunk.X,
                     Z = chunk.Z
                 },
-                DimensionId = new DimensionType {
-                    Value = (int)chunk.Type
-                },
+                DimensionId = (int)chunk.Type,
                 SubChunksCount = (uint)chunk.GetSubChunkSendCount(),
                 ClientRequestSubChunkLimit = null,
                 CacheEnabled = false,
                 CacheMetadata = [],
-                SerializedChunkData = payload
+                RawPayload = payload
             });
 
             _sentChunkBuffer.Add((chunk.Hash, chunk.X, chunk.Z));
@@ -313,14 +323,12 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                         X = x,
                         Z = z
                     },
-                    DimensionId = new DimensionType {
-                        Value = (int)dimension.Type
-                    },
+                    DimensionId = (int)dimension.Type,
                     SubChunksCount = 0,
                     ClientRequestSubChunkLimit = null,
                     CacheEnabled = false,
                     CacheMetadata = [],
-                    SerializedChunkData = []
+                    RawPayload = []
                 });
             }
 
@@ -450,20 +458,25 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
     }
 
     private void SendPublisherUpdate() {
+        if (_loadedChunks.Count == 0 || Player.Location.Y < 0) {
+            return;
+        }
+
         Player.Send(CreateChunkPublisherPacket());
         _publisherChunkX = ChunkX;
         _publisherChunkZ = ChunkZ;
+        _publisherSent = true;
     }
 
     private NetworkChunkPublisherUpdatePacket CreateChunkPublisherPacket() {
         return new NetworkChunkPublisherUpdatePacket {
-            NewPositionForView = new BlockPos {
+            Position = new BlockPos {
                 X = (int)MathF.Floor(Player.Location.X),
                 Y = (int)MathF.Floor(Player.Location.Y),
                 Z = (int)MathF.Floor(Player.Location.Z)
             },
-            NewRadiusForView = (uint)ChunkViewMath.PublisherRadiusBlocks(ViewDistance),
-            ServerBuiltChunksList = []
+            Radius = (uint)ChunkViewMath.PublisherRadiusBlocks(ViewDistance),
+            ServerBuiltChunks = []
         };
     }
 
@@ -572,14 +585,14 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
         }
 
         Player.Send(new RemoveActorPacket {
-            TargetActorID = new ActorUniqueID() { Value = uniqueId, }
+            ActorUniqueId = uniqueId
         });
     }
 
     private void HideAllVisibleEntities() {
         foreach ((_, long uniqueId) in VisibleActorIds) {
             Player.Send(new RemoveActorPacket {
-                TargetActorID = new ActorUniqueID() { Value = uniqueId, }
+                ActorUniqueId = uniqueId
             });
         }
     }

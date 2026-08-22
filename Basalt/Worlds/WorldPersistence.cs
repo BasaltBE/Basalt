@@ -5,9 +5,8 @@ using System.Threading.Channels;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Chunk;
 using Basalt.Core.Worlds.Dimensions.Provider;
-using Basalt.Protocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
 
 internal sealed class WorldPersistence : IDisposable {
     private readonly WorldProvider _provider;

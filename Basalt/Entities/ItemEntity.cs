@@ -1,16 +1,18 @@
 namespace Basalt.Core.Entities;
 
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
 using Player = Basalt.Core.Player.Player;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemEntity : Entity {
     public ItemStack Item { get; }
     private ulong _nextMergeTick;
+    private ulong _nextPickupLogTick;
     public ulong MergeLockedUntilTick { get; private set; }
     public ulong PickupLockedUntilTick { get; private set; }
 
@@ -46,13 +48,13 @@ public sealed class ItemEntity : Entity {
 
     private AddItemActorPacket CreateAddItemActorPacket() {
         return new AddItemActorPacket {
-            TargetActorID = new BedrockProtocol.Types.ActorUniqueID() { Value = UniqueId },
-            TargetRuntimeID = new BedrockProtocol.Types.ActorRuntimeID() { Value = RuntimeId },
+            ActorUniqueId = UniqueId ,
+            ActorRuntimeId = RuntimeId ,
             Item = Item.ToNetworkStackDescriptor(),
             Position = Position,
             Velocity = Velocity,
             EntityData = CreateActorDataPacket(Dimension?.World is Basalt.Core.Worlds.Tickable tickable ? tickable.TickValue : 0).ActorData,
-            IsFromFishing = false,
+            FromFishing = false,
         };
     }
 
@@ -130,18 +132,26 @@ public sealed class ItemEntity : Entity {
             return;
         }
 
-        const float pickupRadiusSquared = 1.5f * 1.5f;
+        const float pickupRadius = 2.5f;
+        const float pickupRadiusSquared = pickupRadius * pickupRadius;
+        const float pickupVerticalTolerance = 2f;
 
         foreach ((_, var player) in server.Players) {
             if (player.Dimension != Dimension || !player.IsAlive || !player.Spawned) {
                 continue;
             }
 
-            Vec3 feetPos = player.GetPosition();
+            float playerHeight = player.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
+            Vec3 eyePos = player.GetEyePosition();
+            Vec3 feetPos = new() {
+                X = eyePos.X,
+                Y = eyePos.Y - playerHeight,
+                Z = eyePos.Z
+            };
             float dx = feetPos.X - Position.X;
             float dy = feetPos.Y - Position.Y;
             float dz = feetPos.Z - Position.Z;
-            if ((dx * dx) + (dy * dy) + (dz * dz) > pickupRadiusSquared) {
+            if (MathF.Abs(dy) > pickupVerticalTolerance || (dx * dx) + (dz * dz) > pickupRadiusSquared) {
                 continue;
             }
 
@@ -153,15 +163,21 @@ public sealed class ItemEntity : Entity {
 
             ushort moved = player.CollectItem(Item);
             if (moved == 0) {
+                if (currentTick >= _nextPickupLogTick) {
+                    _nextPickupLogTick = currentTick + 20;
+                    Logger.Warn("Item pickup rejected player:{0} item:{1} count:{2} inventoryFullOrMismatch:true", player.Username, Item.Identifier, Item.StackSize);
+                }
                 continue;
             }
 
             ushort after = Item.StackSize;
 
             Dimension.Broadcast(new TakeItemActorPacket {
-                ItemRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
-                ActorRuntimeID = new ActorRuntimeID() { Value = player.RuntimeId }
+                ItemRuntimeId = RuntimeId ,
+                ActorRuntimeId = player.RuntimeId 
             });
+
+            Logger.Info("Item picked up player:{0} item:{1} count:{2} moved:{3}", player.Username, Item.Identifier, after, moved);
 
             if (after == 0) {
                 Despawn(new EntityDespawnOptions());
@@ -211,7 +227,7 @@ public sealed class ItemEntity : Entity {
         }
 
         Dimension.Broadcast(new RemoveActorPacket {
-            TargetActorID = new ActorUniqueID() { Value = UniqueId }
+            ActorUniqueId = UniqueId 
         });
         Dimension.Broadcast(CreateAddItemActorPacket());
     }

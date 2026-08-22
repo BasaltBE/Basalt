@@ -5,8 +5,8 @@ using Basalt.Core.Player;
 using Basalt.Core.Profiling;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 

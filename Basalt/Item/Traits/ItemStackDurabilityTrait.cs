@@ -4,10 +4,10 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStackDurabilityTrait : ItemTrait {
     public new static string Identifier => "durability";
@@ -130,7 +130,7 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
             inventory?.Container.ClearSlot(slot);
 
             player.Dimension?.PlaySound(
-                LevelSoundEvent.Break.ToProtocolString(),
+                "break",
                 player.Position);
             return;
         }

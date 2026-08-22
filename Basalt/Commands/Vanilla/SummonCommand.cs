@@ -3,7 +3,7 @@ namespace Basalt.Core.Commands.Vanilla;
 using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 using Player = Player.Player;
 
 public static class SummonCommand {

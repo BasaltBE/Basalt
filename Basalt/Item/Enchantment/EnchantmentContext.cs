@@ -2,7 +2,7 @@ namespace Basalt.Core.Item.Enchantment;
 
 using Basalt.Core.Entities;
 using Basalt.Core.Player;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 /// <summary>
 /// Context passed to enchantments when a block is broken.

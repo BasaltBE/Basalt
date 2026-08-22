@@ -1,5 +1,4 @@
 using Basalt.Core.Blocks;
-using Basalt.Protocol.Enums;
 using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 namespace Basalt.Core.Worlds.Dimensions.Generation;
@@ -9,7 +8,7 @@ public sealed class SuperFlatGenerator : Generator {
 
     public override string Identifier => "superflat";
 
-    public SuperFlatGenerator() : this(-64) {
+    public SuperFlatGenerator() : this(64) {
     }
 
     public SuperFlatGenerator(int baseY) {

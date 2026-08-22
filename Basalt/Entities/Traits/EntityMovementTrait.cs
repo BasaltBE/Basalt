@@ -9,8 +9,8 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using System.Text.Json;
 
 public sealed class EntityMovementTrait : EntityTrait {
@@ -289,37 +289,29 @@ public sealed class EntityMovementTrait : EntityTrait {
         }
 
         Entity.Dimension.Broadcast(new MoveActorDeltaPacket {
-            MoveData = new MoveActorDeltaData {
-                ActorRuntimeID = new ActorRuntimeID {
-                    Value = Entity.RuntimeId
-                },
-                NewPositionX = details.To.X,
-                NewPositionY = details.To.Y,
-                NewPositionZ = details.To.Z,
-                RotationX = PackRotation(details.ToRotation.Pitch),
-                RotationY = PackRotation(details.ToRotation.Yaw),
-                RotationYHead = PackRotation(details.ToRotation.HeadYaw),
-                IsOnGround = IsGrounded(details.To.X, details.To.Y, details.To.Z),
-                ForceMove = false,
-                ForceMoveLocalEntity = false,
-                ForceCompletion = false
-            }
+            ActorRuntimeId = Entity.RuntimeId,
+            PositionX = details.To.X,
+            PositionY = details.To.Y,
+            PositionZ = details.To.Z,
+            RotationX = PackRotation(details.ToRotation.Pitch),
+            RotationY = PackRotation(details.ToRotation.Yaw),
+            RotationYHead = PackRotation(details.ToRotation.HeadYaw),
+            OnGround = IsGrounded(details.To.X, details.To.Y, details.To.Z),
+            ForceMove = false,
+            ForceMoveLocalEntity = false,
+            ForceCompletion = false
         }, new BroadcastOptions {
             Except = Entity.IsPlayer() ? [Entity] : null
         });
 
         if (!Entity.IsPlayer()) {
             Entity.Dimension.Broadcast(new MoveActorAbsolutePacket {
-                MoveData = new MoveActorAbsoluteData {
-                    ActorRuntimeID = new ActorRuntimeID {
-                        Value = Entity.RuntimeId
-                    },
-                    Header = 0,
-                    Position = details.To,
-                    RotationX = unchecked((byte)PackRotation(details.ToRotation.Pitch)),
-                    RotationY = unchecked((byte)PackRotation(details.ToRotation.Yaw)),
-                    RotationYHead = unchecked((byte)PackRotation(details.ToRotation.HeadYaw))
-                }
+                ActorRuntimeId = Entity.RuntimeId,
+                Header = 0,
+                Position = details.To,
+                RotationX = unchecked((byte)PackRotation(details.ToRotation.Pitch)),
+                RotationY = unchecked((byte)PackRotation(details.ToRotation.Yaw)),
+                RotationYHead = unchecked((byte)PackRotation(details.ToRotation.HeadYaw))
             });
         }
     }
@@ -350,22 +342,22 @@ public sealed class EntityMovementTrait : EntityTrait {
 
         AttributeData attribute = Entity.Attributes.GetAttribute(name)
             ?? new AttributeData {
-                CurrentValue = current,
-                DefaultMaxValue = max,
-                DefaultMinValue = min,
-                DefaultValue = @default,
-                MaxValue = max,
-                MinValue = min,
-                Modifiers = new List<AttributeModifier>() { },
+                Current = current,
+                DefaultMaximum = max,
+                DefaultMinimum = min,
+                Default = @default,
+                Maximum = max,
+                Minimum = min,
+                Modifiers = [],
                 Name = name.ToProtocolString(),
             }; // (min, max, current, @default, name);
 
-        attribute.MinValue = min;
-        attribute.MaxValue = max;
-        attribute.DefaultMinValue = min;
-        attribute.DefaultMaxValue = max;
-        attribute.DefaultValue = @default;
-        attribute.CurrentValue = current;
+        attribute.Minimum = min;
+        attribute.Maximum = max;
+        attribute.DefaultMinimum = min;
+        attribute.DefaultMaximum = max;
+        attribute.Default = @default;
+        attribute.Current = current;
         Entity.Attributes.SetAttribute(attribute);
     }
 

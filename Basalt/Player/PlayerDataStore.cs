@@ -6,7 +6,7 @@ using Basalt.Binary;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
 public sealed class PlayerDataStore {
     private static readonly TagOptions NbtOptions = new(Name: true, Type: true, VarInt: false);

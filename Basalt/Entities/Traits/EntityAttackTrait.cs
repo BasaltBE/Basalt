@@ -2,8 +2,8 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Traits;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 using System.Text.Json;
 
 public sealed class EntityAttackTrait : EntityTrait {

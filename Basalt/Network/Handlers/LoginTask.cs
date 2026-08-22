@@ -4,17 +4,14 @@ using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
-// using Basalt.Protocol.Enums;s
-using BedrockProtocol.Nbt;
-// using Basalt.Protocol.Packets;
-// using Basalt.Protocol.Types;
+using Basalt.BedrockProtocol.NBT;
 using PermissionEntry = Basalt.Core.Player.PermissionEntry;
 using BanEntry = Basalt.Core.Player.BanEntry;
 
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 using System.Text;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 using Basalt.Core.Network.Login.Data;
 using Basalt.Core.Network.Login;
 
@@ -38,17 +35,15 @@ internal sealed class LoginTask : ServerTask {
     public override void Execute() {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("LoginTask.Execute") : default;
 
-        byte[] bytes = Encoding.Latin1.GetBytes(_packet.ConnectionRequest);
+        byte[] bytes = _packet.ConnectionRequest;
         ReadOnlySpan<byte> data = bytes;
-
         int offset = 0;
         BinaryReader reader = new(data, ref offset);
 
-        string identity = reader.ReadString32(true);
-        int declaredClientLength = reader.ReadInt32(true);
-
-        ReadOnlySpan<byte> clientBytes =
-            reader.ReadBytes(reader.Remaining);
+        int identityLength = reader.ReadInt32(true);
+        string identity = Encoding.UTF8.GetString(reader.ReadBytes(identityLength));
+        int clientLength = reader.ReadInt32(true);
+        ReadOnlySpan<byte> clientBytes = reader.ReadBytes(clientLength);
 
         string client = Encoding.UTF8.GetString(clientBytes);
 
@@ -111,7 +106,7 @@ internal sealed class LoginTask : ServerTask {
             _player.SetOperator(false, syncClient: false);
         }
 
-        _player.Skin = FromClientData(clientData); //(Protocol.Types.Skin.FromClientData(clientData));
+        _player.Skin = FromClientData(clientData);
     }
 
     public override void Complete() {
@@ -133,17 +128,17 @@ internal sealed class LoginTask : ServerTask {
                 _server.Network.QueuePacket(
                     _connection,
                     disconnect,
-                    Protocol.Enums.CompressionMethod.NotPresent);
+                    CompressionMethod.NotPresent);
                 return;
             }
 
             PlayStatusPacket status = new() {
-                Status = PlayStatus.LoginFailed_InvalidTenant,
+                Status = PlayStatus.LoginFailedInvalidTenant,
             };
             _server.Network.QueuePacket(
                 _connection,
                 status,
-                Protocol.Enums.CompressionMethod.NotPresent);
+                CompressionMethod.NotPresent);
             return;
         }
 
@@ -173,7 +168,7 @@ internal sealed class LoginTask : ServerTask {
                         FilteredMessage = "Logged in from another location."
                     }
                 };
-                _server.Network.QueuePacket(existingSession.Value.Key, duplicateDisconnect, Protocol.Enums.CompressionMethod.NotPresent);
+                _server.Network.QueuePacket(existingSession.Value.Key, duplicateDisconnect, CompressionMethod.NotPresent);
                 existingSession.Value.Key.Disconnect();
             }
         }
@@ -189,7 +184,7 @@ internal sealed class LoginTask : ServerTask {
                         FilteredMessage = "Server force closed the connection."
                     }
                 };
-                _server.Network.QueuePacket(_connection, disconnect, Protocol.Enums.CompressionMethod.NotPresent);
+                _server.Network.QueuePacket(_connection, disconnect, CompressionMethod.NotPresent);
                 _connection.Disconnect();
                 return;
             }
@@ -198,7 +193,7 @@ internal sealed class LoginTask : ServerTask {
         using (Profiler.Enabled ? Profiler.BeginZone("Login.RegisterPlayer") : default) {
             player.Connection = _connection;
             player.Network = _server.Network;
-            player.DeviceOS = _clientData.DeviceOs;
+            player.DeviceOS = (BuildPlatform)_clientData.DeviceOs;
             _server.Players[_connection] = player;
         }
 
@@ -213,27 +208,23 @@ internal sealed class LoginTask : ServerTask {
                 HasScripts = false,
                 ForceDisableVibrantVisuals = false,
                 WorldTemplateIdAndVersion = new() {
-                    PackUUID = new() { },
-                    PackVersion = new() { Version = "" },
+                    PackUuid = new(),
+                    PackVersion = string.Empty,
                 },
                 ResourcePacks = _server.ResourcePacks.Packs.Select(static pack => new PackInfoData {
-                    CDNURL = "",
+                    CdnUrl = "",
                     IsAddonPack = false,
                     IsRayTracingCapable = true,
                     PackIdVersion = new() {
-                        PackUUID = FromGuid(pack.Uuid),
-                        PackVersion = new() {
-                            Version = pack.VersionString,
-                        },
+                        PackUuid = FromGuid(pack.Uuid),
+                        PackVersion = pack.VersionString,
                     },
                     PackSize = pack.Size,
                     SubpackName = "",
                     ContentKey = "",
-                    ContentIdentity = new() {
-                        Identity = "",
-                    },
+                    ContentIdentity = string.Empty,
                     HasScripts = false,
-                }).ToList()
+                }).ToArray()
             };
 
             _server.Network.QueuePackets(_connection, [status, resources]);
@@ -346,11 +337,11 @@ internal sealed class LoginTask : ServerTask {
         return null;
     }
 
-    private static UUID FromGuid(Guid guid) {
+    private static Uuid FromGuid(Guid guid) {
         Span<byte> bytes = stackalloc byte[16];
         guid.TryWriteBytes(bytes, bigEndian: true, out _);
 
-        return new UUID {
+        return new Uuid {
             MostSignificantBits = System.Buffers.Binary.BinaryPrimitives
                 .ReadUInt64BigEndian(bytes[..8]),
 
@@ -411,9 +402,9 @@ internal sealed class LoginTask : ServerTask {
             };
         }
 
-        static PieceType ParsePieceType(string value) {
+        static PersonaPieceType ParsePieceType(string value) {
             if (string.IsNullOrWhiteSpace(value)) {
-                return PieceType.Skeleton;
+                return PersonaPieceType.Skeleton;
             }
 
             ReadOnlySpan<char> span = value.AsSpan();
@@ -425,21 +416,21 @@ internal sealed class LoginTask : ServerTask {
             return Enum.TryParse(
                 span,
                 true,
-                out PieceType result
+                out PersonaPieceType result
             )
                 ? result
-                : PieceType.Skeleton;
+                : PersonaPieceType.Skeleton;
         }
 
-        static UUID ParseUuid(string value) {
+        static Uuid ParseUuid(string value) {
             if (!Guid.TryParse(value, out Guid guid)) {
-                return new UUID();
+                return new Uuid();
             }
 
             Span<byte> bytes = stackalloc byte[16];
             guid.TryWriteBytes(bytes, bigEndian: true, out _);
 
-            return new UUID {
+            return new Uuid {
                 MostSignificantBits =
                     System.Buffers.Binary.BinaryPrimitives
                         .ReadUInt64BigEndian(bytes),
@@ -450,9 +441,9 @@ internal sealed class LoginTask : ServerTask {
             };
         }
 
-        static Color ParseColor(string value) {
+        static int ParseColor(string value) {
             if (string.IsNullOrWhiteSpace(value)) {
-                return new Color();
+                return 0;
             }
 
             ReadOnlySpan<char> span = value.AsSpan().Trim();
@@ -467,10 +458,8 @@ internal sealed class LoginTask : ServerTask {
                 System.Globalization.CultureInfo.InvariantCulture,
                 out uint color
             )
-                ? new Color {
-                    Value = unchecked((int)color)
-                }
-                : new Color();
+                ? unchecked((int)color)
+                : 0;
         }
 
         var animations = new List<AnimatedImageData>(
@@ -504,7 +493,7 @@ internal sealed class LoginTask : ServerTask {
                 PieceId = piece.PieceId,
                 PieceType = ParsePieceType(piece.PieceType),
                 PackId = ParseUuid(piece.PackId),
-                IsDefaultPiece = piece.IsDefault,
+                DefaultPiece = piece.IsDefault,
                 ProductId = piece.ProductId
             });
         }
@@ -526,9 +515,9 @@ internal sealed class LoginTask : ServerTask {
             };
         }
         return new SerializedSkin {
-            ID = data.SkinId,
-            FullID = data.SkinId,
-            PlayFabID = data.PlayFabId,
+            Id = data.SkinId,
+            FullId = data.SkinId,
+            PlayFabId = data.PlayFabId,
 
             ProfileHash = string.Empty,
 
@@ -546,10 +535,10 @@ internal sealed class LoginTask : ServerTask {
                 data.CapeImageHeight
             ),
 
-            AnimatedImageData = animations,
+            AnimatedImageData = animations.ToArray(),
 
             GeometryData =
-                DecodeBase64(data.SkinGeometryData),
+                DecodeString(data.SkinGeometryData),
 
             GeometryDataMinEngineVersion =
                 DecodeString(data.SkinGeometryDataEngineVersion),
@@ -557,26 +546,26 @@ internal sealed class LoginTask : ServerTask {
             AnimationData =
                 DecodeString(data.SkinAnimationData),
 
-            CapeID = data.CapeId,
+            CapeId = data.CapeId,
 
             ArmSize = default,
 
             SkinColor =
                 ParseColor(data.SkinColor),
 
-            PersonaPieces = pieces,
+            PersonaPieces = pieces.ToArray(),
             PieceTintColors = tints,
 
-            IsPremium =
+            Premium =
                 data.PremiumSkin,
 
-            IsPersona =
+            Persona =
                 data.PersonaSkin,
 
-            IsPersonaCapeOnClassicSkin =
+            PersonaCapeOnClassicSkin =
                 data.CapeOnClassicSkin,
 
-            IsPrimaryUser = true,
+            PrimaryUser = true,
 
             OverridesPlayerAppearance =
                 data.OverrideSkin,

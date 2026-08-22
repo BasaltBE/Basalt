@@ -1,5 +1,6 @@
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
 
 namespace Basalt.Core.DDUI;
 
@@ -42,12 +43,15 @@ public abstract class DataDrivenScreen {
             player.Send(new ClientboundDataStorePacket {
                 Updates =
                 [
-                    new DataStoreChange
+                    new ClientboundDataStoreUpdate {
+                        Type = ClientboundDataStoreUpdateType.Change,
+                        Change = new DataStoreChange
                     {
                         DataStoreName = StoreName,
                         Property = existing.Property,
                         UpdateCount = existing._updateCount + 1,
-                        TheNewPropertyValue = Root.ToValue()
+                        ValueType = DataStoreValueType.String, StringValue = string.Empty
+                    }
                     }
                 ]
             });
@@ -106,12 +110,15 @@ public abstract class DataDrivenScreen {
         player.Send(new ClientboundDataStorePacket {
             Updates =
             [
-                new DataStoreChange
+                new ClientboundDataStoreUpdate {
+                    Type = ClientboundDataStoreUpdateType.Change,
+                    Change = new DataStoreChange
                 {
                     DataStoreName = StoreName,
                     Property = registeredProperty,
                     UpdateCount = ++updateCount,
-                    TheNewPropertyValue = emptyRoot.ToValue()
+                    ValueType = DataStoreValueType.String, StringValue = string.Empty
+                }
                 }
             ]
         });
@@ -163,12 +170,15 @@ public abstract class DataDrivenScreen {
         return new ClientboundDataStorePacket {
             Updates =
             [
-                new DataStoreChange
+                new ClientboundDataStoreUpdate {
+                    Type = ClientboundDataStoreUpdateType.Change,
+                    Change = new DataStoreChange
                 {
                     DataStoreName = StoreName,
                     Property = Property,
                     UpdateCount = ++_updateCount,
-                    TheNewPropertyValue = Root.ToValue()
+                    ValueType = DataStoreValueType.String, StringValue = string.Empty
+                }
                 }
             ]
         };
@@ -178,12 +188,15 @@ public abstract class DataDrivenScreen {
         return new ClientboundDataStorePacket {
             Updates =
             [
-                new DataStoreChange
+                new ClientboundDataStoreUpdate {
+                    Type = ClientboundDataStoreUpdateType.Change,
+                    Change = new DataStoreChange
                 {
                     DataStoreName = StoreName,
                     Property = Property,
                     UpdateCount = ++_updateCount,
-                    TheNewPropertyValue = DataStorePropertyValue.Null()
+                    ValueType = DataStoreValueType.String, StringValue = string.Empty
+                }
                 }
             ]
         };

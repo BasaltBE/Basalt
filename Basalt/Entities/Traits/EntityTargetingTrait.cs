@@ -9,8 +9,8 @@ using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Player;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 using System.Text.Json;
 
 public sealed class EntityTargetingTrait : EntityTrait {

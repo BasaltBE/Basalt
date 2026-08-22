@@ -9,10 +9,10 @@ using Basalt.Core.Item;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds.Dimensions;
 
-using BedrockProtocol.Nbt;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
 
 public sealed class FurnaceTrait : BlockTrait {
     public override bool Interactable => true;
@@ -132,27 +132,19 @@ public sealed class FurnaceTrait : BlockTrait {
 
         player.Send(
           new BlockActorDataPacket {
-              BlockPosition = position,
-              ActorDataTags = storage,
-              WriteActorDataTags = static (writer, value) => {
-                  if (value is not CompoundTag tag) {
-                      throw new InvalidOperationException(
-                          $"Expected {nameof(CompoundTag)} actor data, got {value?.GetType().FullName ?? "null"}."
-                      );
-                  }
-
-                  NBT.WriteTag(writer, tag, new TagOptions(VarInt: true));
-              }
+              Position = position,
+              ActorData = storage,
+              
           },
           new UpdateBlockPacket {
-              BlockPosition = position,
-              BlockRuntimeID = 0,
+              Position = position,
+              BlockRuntimeId = 0,
               Flags = (uint)UpdateBlockFlagsType.None,
               Layer = (uint)UpdateBlockLayerType.Normal
           },
           new UpdateBlockPacket {
-              BlockPosition = position,
-              BlockRuntimeID = networkId,
+              Position = position,
+              BlockRuntimeId = networkId,
               Flags = (uint)UpdateBlockFlagsType.None,
               Layer = (uint)UpdateBlockLayerType.Normal
           });
@@ -288,7 +280,7 @@ public sealed class FurnaceTrait : BlockTrait {
     private void SyncProgressToViewers() {
         if (_container is null) return;
 
-        foreach ((Player.Player player, ContainerID containerId) in _container.GetAllOccupants()) {
+        foreach ((Player.Player player, ContainerId containerId) in _container.GetAllOccupants()) {
             if (!player.Spawned) continue;
             SendProgress(player, containerId);
         }
@@ -296,14 +288,14 @@ public sealed class FurnaceTrait : BlockTrait {
 
     private void SendProgressToPlayer(Player.Player player) {
         if (_container is null) return;
-        if (!_container.occupants.TryGetValue(player, out ContainerID containerId)) return;
+        if (!_container.occupants.TryGetValue(player, out ContainerId containerId)) return;
         SendProgress(player, containerId);
     }
 
-    private void SendProgress(Player.Player player, ContainerID containerId) {
+    private void SendProgress(Player.Player player, ContainerId containerId) {
         player.Send(new ContainerSetDataPacket {
-            ContainerID = unchecked((byte)(sbyte)containerId),
-            ID = FurnaceTickCountProperty,
+            ContainerId = containerId,
+            Property = FurnaceTickCountProperty,
             Value = _cookTime
         });
 
@@ -312,8 +304,8 @@ public sealed class FurnaceTrait : BlockTrait {
           : 0;
 
         player.Send(new ContainerSetDataPacket {
-            ContainerID = unchecked((byte)(sbyte)containerId),
-            ID = FurnaceLitTimeProperty,
+            ContainerId = containerId,
+            Property = FurnaceLitTimeProperty,
             Value = litTime
         });
     }
@@ -341,8 +333,8 @@ public sealed class FurnaceTrait : BlockTrait {
         chunk.SetPermutation(lx, pos.Y, lz, target, layer: 0, dirty: true);
 
         dimension.Broadcast(new UpdateBlockPacket {
-            BlockPosition = pos,
-            BlockRuntimeID = (uint)target.NetworkId,
+            Position = pos,
+            BlockRuntimeId = (uint)target.NetworkId,
             Flags = (uint)UpdateBlockFlagsType.Network,
             Layer = (uint)UpdateBlockLayerType.Normal
         });

@@ -4,9 +4,9 @@ using Basalt.Core;
 using Basalt.Core.Commands;
 using Basalt.Core.Events;
 using Basalt.Core.Profiling;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public static class CommandRequest {
     public static void Handle(Server server, NetworkConnection connection, CommandRequestPacket packet) {
@@ -44,15 +44,15 @@ public static class CommandRequest {
         List<CommandOutputMessage> messages = [];
         if (result.Message is not null) {
             messages.Add(new CommandOutputMessage {
-                MessageID = result.Message,
+                MessageId = result.Message,
                 Parameters = [],
                 Successful = result.Success,
             });
         }
 
         CommandOutputPacket response = new() {
-            Output = new BedrockProtocol.Types.CommandOutput() {
-                OutputMessages = messages,
+            Output = new CommandOutput() {
+                Messages = messages.ToArray(),
                 DataSet = string.Empty,
                 OutputType = CommandOutputType.AllOutput,
                 SuccessCount = result.Success ? 1U : 0U,

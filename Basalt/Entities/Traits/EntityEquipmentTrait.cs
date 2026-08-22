@@ -4,11 +4,11 @@ using Basalt.Core.Containers;
 using Basalt.Core.Entities.Container;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class EntityEquipmentTrait : EntityTrait {
     public static new readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
@@ -19,11 +19,11 @@ public sealed class EntityEquipmentTrait : EntityTrait {
 
     public EntityEquipmentTrait(Entity entity) : base(entity) {
         Armor = new EntityContainer(entity, ContainerType.ARMOR, 4) {
-            Identifier = ContainerID.CONTAINER_ID_ARMOR
+            Identifier = ContainerId.Armor
         };
 
         Offhand = new EntityContainer(entity, ContainerType.INVENTORY, 1) {
-            Identifier = ContainerID.CONTAINER_ID_OFFHAND
+            Identifier = ContainerId.Offhand
         };
     }
 
@@ -54,15 +54,13 @@ public sealed class EntityEquipmentTrait : EntityTrait {
 
     private static void SendContainerContent(Player.Player player, EntityContainer container) {
         InventoryContentPacket packet = new() {
-            ContainerId = (uint?)container.Identifier ?? unchecked((uint)ContainerID.CONTAINER_ID_NONE),
-            Slots = new List<NetworkItemStackDescriptor>(container.GetSize()),
-            FullContainerName = new FullContainerName { ContainerName = 0 },
+            ContainerId = container.Identifier ?? ContainerId.None,
+            Slots = Enumerable.Range(0, container.GetSize())
+                .Select(i => container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor())
+                .ToArray(),
+            Container = new FullContainerName { ContainerName = 0 },
             StorageItem = new NetworkItemStackDescriptor()
         };
-
-        for (int i = 0; i < container.GetSize(); i++) {
-            packet.Slots.Add(container.GetItem(i)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor());
-        }
 
         player.Send(packet);
     }

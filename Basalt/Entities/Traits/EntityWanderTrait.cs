@@ -6,8 +6,8 @@ using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits.Attribute;
-using BedrockProtocol.Types;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
 using System.Text.Json;
 
 public sealed class EntityWanderTrait : EntityTrait {

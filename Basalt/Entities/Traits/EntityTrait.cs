@@ -3,7 +3,7 @@ namespace Basalt.Core.Entities.Traits;
 using Basalt.Core.Commands;
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 using Basalt.Core.Worlds.Dimensions;
 using System.Reflection;
 using Player = Player.Player;

@@ -4,7 +4,7 @@ using Basalt.Core;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Worlds.Dimensions;
 
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 
 public static class MobEquipment {
     public static void Handle(Server server, NetworkConnection connection, MobEquipmentPacket packet) {
@@ -12,7 +12,7 @@ public static class MobEquipment {
             return;
         }
 
-        if (packet.TargetRuntimeID.Value != 0 && packet.TargetRuntimeID.Value != player.RuntimeId) {
+        if (packet.TargetRuntimeId != 0 && packet.TargetRuntimeId != player.RuntimeId) {
             return;
         }
 
@@ -26,7 +26,7 @@ public static class MobEquipment {
         }
 
         inventory.SetHeldItem(packet.Slot);
-        packet.TargetRuntimeID.Value = player.RuntimeId;
+        packet.TargetRuntimeId = player.RuntimeId;
         packet.Item = inventory.GetHeldItem()?.ToNetworkStackDescriptor() ?? new();
 
         player.Dimension?.Broadcast(packet, new BroadcastOptions {

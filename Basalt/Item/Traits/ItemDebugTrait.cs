@@ -1,9 +1,9 @@
 namespace Basalt.Core.Item.Traits;
 
 using Basalt.Core.Item.Traits.Types;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using Player = Basalt.Core.Player.Player;
 
 
@@ -35,8 +35,8 @@ public sealed class ItemDebugTrait : ItemTrait {
 
     private static void Send(Player player, string message) {
         TextPacket packet = new() {
-            Body = new MessageOnly {
-                MessageType = TextPacketType.tip,
+            Body = new TextPacketBody {
+                MessageType = TextPacketType.Tip,
                 Message = $"ItemDebugTrait: {message}"
             },
             Localize = false,

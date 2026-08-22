@@ -17,10 +17,10 @@ using Basalt.Core.Traits;
 using Basalt.Core.Loot;
 using Basalt.Core.Events;
 
-using BedrockProtocol.Types;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Packets;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.NBT;
 using System.Security.Cryptography.X509Certificates;
 using Basalt.Core.Enums;
 
@@ -252,8 +252,8 @@ public class Entity {
         IsAlive = false;
         if (dimension is not null) {
             dimension.Broadcast(new ActorEventPacket {
-                TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
-                EventID = ActorEvent.DEATH,
+                ActorRuntimeId = RuntimeId ,
+                EventId = 3,
                 Data = 0
             });
         }
@@ -330,7 +330,6 @@ public class Entity {
     //     const float min = 0f;
     //     const float max = float.MaxValue;
 
-    //     Protocol.Types.Attribute attribute = Attributes.GetAttribute(name) ?? new Protocol.Types.Attribute(min, max, current, @default, name);
     //     attribute.Min = min;
     //     attribute.Max = max;
     //     attribute.DefaultMin = min;
@@ -557,31 +556,17 @@ public class Entity {
         }
 
         SetActorDataPacket packet = new() {
-            TargetRuntimeID = new ActorRuntimeID() {
-                Value = RuntimeId,
-            },
-            Tick = new PlayerInputTick() { InputTick = Dimension.World is Tickable tickable ? tickable.TickValue : 0 },
-            ActorData = new SynchedActorDataList() {
-                Data = new List<DataItemEntry> {
-                    new DataItemEntry() {
-                        ID = (uint)ActorDataId.Reserved0,
-                        Payload = new DataItemInt64Payload() {
-                            Type = DataItemType.Int64,
-                            Value = Flags.Lower64(),
-                        }
-                    },
-                    new DataItemEntry() {
-                        ID = (uint)ActorDataId.Reserved092,
-                        Payload = new DataItemInt64Payload() {
-                            Type = DataItemType.Int64,
-                            Value = Flags.Upper64(),
-                        }
-                    },
-                },
+            ActorRuntimeId = RuntimeId,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
+            ActorData = new ActorDataList {
+                Items = [
+                    new ActorDataItem { Id = (uint)ActorDataId.Reserved0, Type = DataItemType.Int64, Value = Flags.Lower64() },
+                    new ActorDataItem { Id = (uint)ActorDataId.Reserved092, Type = DataItemType.Int64, Value = Flags.Upper64() },
+                ]
             },
             SynchedProperties = new PropertySyncData() {
-                FloatEntriesList = new List<PropertySyncFloatEntry>(),
-                IntEntriesList = new List<PropertySyncIntEntry>(),
+                FloatEntries = [],
+                IntEntries = [],
             },
         };
 
@@ -589,44 +574,31 @@ public class Entity {
     }
 
     public SetActorDataPacket CreateActorDataPacket(ulong tick) {
-        List<DataItemEntry> metadata = Metadata.GetAll();
-
-        metadata.Add(
-            new DataItemEntry() {
-                ID = (uint)ActorDataId.Reserved0,
-                Payload = new DataItemInt64Payload() {
-                    Type = DataItemType.Int64,
-                    Value = Flags.Lower64(),
-                }
-            }
-        );
-        metadata.Add(
-            new DataItemEntry() {
-                ID = (uint)ActorDataId.Reserved092,
-                Payload = new DataItemInt64Payload() {
-                    Type = DataItemType.Int64,
-                    Value = Flags.Upper64(),
-                }
-            }
-        );
+        List<ActorDataItem> metadata = Metadata.GetAll();
+        metadata.Add(new ActorDataItem {
+            Id = (uint)ActorDataId.Reserved0,
+            Type = DataItemType.Int64,
+            Value = Flags.Lower64()
+        });
+        metadata.Add(new ActorDataItem {
+            Id = (uint)ActorDataId.Reserved092,
+            Type = DataItemType.Int64,
+            Value = Flags.Upper64()
+        });
+        metadata.Sort(static (left, right) => left.Id.CompareTo(right.Id));
 
         return new SetActorDataPacket {
-            TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
-            Tick = new PlayerInputTick() { InputTick = tick },
-            ActorData = new SynchedActorDataList() {
-                Data = metadata,
-            },
-            SynchedProperties = new PropertySyncData() {
-                FloatEntriesList = new List<PropertySyncFloatEntry>(),
-                IntEntriesList = new List<PropertySyncIntEntry>(),
-            },
+            ActorRuntimeId = RuntimeId,
+            Tick = tick,
+            ActorData = new ActorDataList { Items = [.. metadata] },
+            SynchedProperties = new PropertySyncData()
         };
     }
 
     public virtual void SpawnTo(Player player, ulong tick, Vec3? position = null) {
         player.Send(new AddActorPacket {
-            TargetActorID = new ActorUniqueID() { Value = UniqueId, },
-            TargetRuntimeID = new ActorRuntimeID() { Value = RuntimeId },
+            ActorUniqueId = UniqueId,
+            ActorRuntimeId = RuntimeId,
             ActorType = Identifier,
             Position = position ?? Position,
             Velocity = new Vec3(),
@@ -634,17 +606,14 @@ public class Entity {
                 X = Rotation.X,
                 Y = Rotation.Y,
             },
-            YBodyRotation = Rotation.Y,
-            YHeadRotation = Rotation.Z,
-            AttributesList = new List<SyncedAttribute> { },
+            BodyRotation = Rotation.Y,
+            HeadRotation = Rotation.Z,
+            Attributes = [],
             ActorData = CreateActorDataPacket(tick).ActorData,
             // EntityProperties = new EntityProperties(),
             // EntityLinks = []
-            ActorLinks = new List<ActorLink>() { },
-            SynchedProperties = new PropertySyncData() {
-                FloatEntriesList = new List<PropertySyncFloatEntry>(),
-                IntEntriesList = new List<PropertySyncIntEntry>(),
-            },
+            ActorLinks = [],
+            SynchedProperties = new PropertySyncData()
         });
     }
 
@@ -655,17 +624,12 @@ public class Entity {
         }
 
         Dimension.Broadcast(new MoveActorAbsolutePacket {
-            // EntityRuntimeId = RuntimeId,
-            // Position = Position,
-            // Rotation = rotation
-            MoveData = new MoveActorAbsoluteData() {
-                ActorRuntimeID = new ActorRuntimeID() { Value = RuntimeId, },
-                Position = Position,
-                RotationX = (byte)Rotation.X,
-                RotationY = (byte)Rotation.Y,
-                RotationYHead = (byte)Rotation.Z,
-                Header = 0,
-            }
+            ActorRuntimeId = RuntimeId,
+            Position = Position,
+            RotationX = (byte)Rotation.X,
+            RotationY = (byte)Rotation.Y,
+            RotationYHead = (byte)Rotation.Z,
+            Header = 0
         });
     }
 
@@ -674,36 +638,18 @@ public class Entity {
 
     internal void SendActorMetadataUpdate(
        ActorDataId id,
-       DataItemEntryPayloadVariant payload
+       ActorDataItem payload
    ) {
         if (Dimension is null) {
             return;
         }
 
+        payload.Id = (uint)id;
         SetActorDataPacket packet = new() {
-            TargetRuntimeID = new ActorRuntimeID {
-                Value = RuntimeId
-            },
-
-            Tick = new PlayerInputTick {
-                InputTick = Dimension.World is Tickable tickable
-                    ? tickable.TickValue
-                    : 0
-            },
-
-            ActorData = new SynchedActorDataList {
-                Data = [
-                    new DataItemEntry {
-                    ID = (uint)id,
-                    Payload = payload
-                }
-                ]
-            },
-
-            SynchedProperties = new PropertySyncData {
-                FloatEntriesList = [],
-                IntEntriesList = []
-            }
+            ActorRuntimeId = RuntimeId,
+            Tick = Dimension.World is Tickable tickable ? tickable.TickValue : 0,
+            ActorData = new ActorDataList { Items = [payload] },
+            SynchedProperties = new PropertySyncData()
         };
 
         Dimension.Broadcast(packet);

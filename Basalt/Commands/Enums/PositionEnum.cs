@@ -1,4 +1,4 @@
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Types;
 
 namespace Basalt.Core.Commands;
 

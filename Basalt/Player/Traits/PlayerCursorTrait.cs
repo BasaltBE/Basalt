@@ -1,7 +1,7 @@
 namespace Basalt.Core.Player.Traits;
 
 using Basalt.Core.Entities.Container;
-using BedrockProtocol.Nbt;
+using Basalt.BedrockProtocol.NBT;
 using Basalt.Core.Containers;
 using Basalt.Core.Player;
 
@@ -9,7 +9,7 @@ using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Entities;
-using BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Enums;
 
 
 
@@ -25,7 +25,7 @@ public sealed class PlayerCursorTrait : PlayerTrait {
 
     public PlayerCursorTrait(Entity entity) : base(entity) {
         Container = new EntityContainer(Player, ContainerType.INVENTORY, 1) {
-            Identifier = ContainerID.CONTAINER_ID_PLAYER_ONLY_UI
+            Identifier = ContainerId.PlayerOnlyUi
         };
     }
 

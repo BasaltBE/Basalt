@@ -7,8 +7,8 @@ using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Dimension = Dimensions.Dimension;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Types;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Packets;
 
 public sealed class World : IDisposable, Tickable {
     public const long DayLength = 24000;
@@ -122,7 +122,7 @@ public sealed class World : IDisposable, Tickable {
         dimension.SpawnPosition = spawnPosition;
 
         Vec3? stored = Provider.LoadSpawnPosition(type);
-        if (stored is not null) {
+        if (stored is { Y: >= 0 }) {
             dimension.SpawnPosition = stored;
         }
 

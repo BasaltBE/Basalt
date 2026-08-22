@@ -20,7 +20,7 @@ using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
-using BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Packets;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Rcon;
 

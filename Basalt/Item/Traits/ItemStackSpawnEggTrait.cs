@@ -7,8 +7,8 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item.Components;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Worlds.Dimensions;
-using BedrockProtocol.Enums;
-using BedrockProtocol.Types;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Types;
 
 public sealed class ItemStackSpawnEggTrait : ItemTrait {
     public new static string Identifier => "spawn_egg";
