@@ -1,6 +1,25 @@
 [
   {
     "type": "shaped",
+    "identifier": "minecraft:crafting_table",
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "##",
+      "##"
+    ],
+    "key": {
+      "#": {
+        "item": "minecraft:oak_planks"
+      }
+    },
+    "result": {
+      "item": "minecraft:crafting_table"
+    }
+  },
+  {
+    "type": "shaped",
     "identifier": "minecraft:acacia_boat",
     "tags": [
       "crafting_table"

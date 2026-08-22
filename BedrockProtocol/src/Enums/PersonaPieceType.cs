@@ -1,0 +1,33 @@
+namespace Basalt.BedrockProtocol.Enums;
+
+public enum PersonaPieceType : uint {
+    Unknown,
+    Skeleton,
+    Body,
+    Skin,
+    Bottom,
+    Feet,
+    Dress,
+    Top,
+    HighPants,
+    Hands,
+    Outerwear,
+    FacialHair,
+    Mouth,
+    Eyes,
+    Hair,
+    Hood,
+    Back,
+    FaceAccessory,
+    Head,
+    Legs,
+    LeftLeg,
+    RightLeg,
+    Arms,
+    LeftArm,
+    RightArm,
+    Capes,
+    ClassicSkin,
+    Emote,
+    Unsupported
+}

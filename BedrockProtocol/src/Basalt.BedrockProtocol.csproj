@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Basalt.BedrockProtocol</RootNamespace>
+    <AssemblyName>Basalt.BedrockProtocol</AssemblyName>
+    <PackageId>Basalt.BedrockProtocol</PackageId>
+    <Description>Bedrock protocol library for Minecraft 1.26.50.</Description>
+    <Authors>Basalt</Authors>
+    <PackageTags>minecraft;bedrock;protocol</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Basalt.Binary" Version="0.1.0" />
+  </ItemGroup>
+
+</Project>
