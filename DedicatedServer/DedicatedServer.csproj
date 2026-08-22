@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Basalt\Basalt.csproj" />
-    <ProjectReference Include="..\Protocol\Protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>
