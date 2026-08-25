@@ -35,36 +35,27 @@ public static class CraftingLoader {
                 return;
             }
 
-            int loaded = 0;
-            int furnaceLoaded = 0;
-            int skipped = 0;
-
             foreach (JsonElement element in document.RootElement.EnumerateArray()) {
                 string type = ReadString(element, "type");
 
                 if (type == "furnace") {
                     FurnaceRecipe? furnace = ParseFurnaceRecipe(element);
                     if (furnace is null) {
-                        skipped++;
                         continue;
                     }
 
                     FurnaceRegistry.Instance.Register(furnace);
-                    furnaceLoaded++;
                     continue;
                 }
 
                 CraftingRecipe? recipe = ParseRecipe(element);
                 if (recipe is null) {
-                    skipped++;
                     continue;
                 }
 
                 CraftingRegistry.Instance.AddRecipe(recipe);
-                loaded++;
             }
 
-            Logger.Debug($"Crafting: {loaded} recipes, {furnaceLoaded} furnace ({skipped} skipped).");
         }
     }
 

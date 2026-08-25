@@ -1,6 +1,7 @@
 namespace Basalt.Core.Entities;
 
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using System.Text.Json;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Loot;
@@ -13,6 +14,7 @@ public sealed class EntityPalette {
     private const string RideableComponent = "minecraft:rideable";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
+    internal static TimeSpan LoadElapsed { get; private set; }
 
 #pragma warning disable CA2255
     [ModuleInitializer]
@@ -90,6 +92,8 @@ public sealed class EntityPalette {
                 return;
             }
 
+            long startTimestamp = Stopwatch.GetTimestamp();
+
             List<EntityTypeData> types;
             if (!string.IsNullOrWhiteSpace(dataDirectory)) {
                 string typesPath = Path.Combine(dataDirectory, "entity_types.json");
@@ -130,6 +134,7 @@ public sealed class EntityPalette {
             }
 
             _vanillaLoaded = true;
+            LoadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
         }
     }
 

@@ -1,6 +1,6 @@
 namespace Basalt.Core.Commands;
 
-public sealed class IntEnum : CommandEnum {
+public class IntEnum : CommandEnum {
     public int? Value { get; private set; }
 
     public IntEnum() : base("int") { }
