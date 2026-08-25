@@ -127,27 +127,6 @@ public sealed class ItemType {
         NetworkRegistry.EnsureCapacity(capacity);
     }
 
-    // public static LegacyItem ToNetworkStack(ItemType type, ushort stackSize = 1, uint metadata = 0) {
-    //     int networkBlockId = 0;
-    //     if (type.BlockType is not null && type.BlockType.Permutations.Count > 0) {
-    //         networkBlockId = type.BlockType.Permutations[0].NetworkId;
-    //     }
-
-    //     return new LegacyItem {
-    //         NetworkId = type.NetworkId,
-    //         StackSize = stackSize,
-    //         Metadata = unchecked((int)metadata),
-    //         ItemStackId = null,
-    //         NetworkBlockId = networkBlockId,
-    //         ExtraData = new ItemInstanceUserData {
-    //             Nbt = null,
-    //             CanPlaceOn = [],
-    //             CanDestroy = [],
-    //             Ticking = null
-    //         }
-    //     };
-    // }
-
     private static readonly float[] SwordDamage = [4, 5, 5, 6, 4, 7, 8];
     private static readonly float[] AxeDamage = [3, 4, 4, 5, 3, 6, 7];
     private static readonly float[] PickaxeDamage = [2, 3, 3, 4, 2, 5, 6];

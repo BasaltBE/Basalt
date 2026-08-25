@@ -4,6 +4,7 @@ using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
 using System.Runtime.CompilerServices;
 using System.Reflection;
+using System.Diagnostics;
 using System.Text.Json;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -16,6 +17,7 @@ public sealed class ItemPalette {
     private const string AirIdentifier = "minecraft:air";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
+    internal static TimeSpan LoadElapsed { get; private set; }
     private static byte[]? _itemRegistryPayload;
     private static byte[]? _creativeContentPayload;
     private static Dictionary<uint, ItemStack>? _creativeItems;
@@ -189,6 +191,8 @@ public sealed class ItemPalette {
                 return;
             }
 
+            long startTimestamp = Stopwatch.GetTimestamp();
+
             List<ItemTypeData> types;
             if (!string.IsNullOrWhiteSpace(dataDirectory)) {
                 string typesPath = Path.Combine(dataDirectory, "item_types.json");
@@ -234,6 +238,7 @@ public sealed class ItemPalette {
             _ = ItemType.Get(AirIdentifier) ?? new ItemType(AirIdentifier, 0, 64, [], true, 1);
             EnchantmentType.Load(dataDirectory);
             _vanillaLoaded = true;
+            LoadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
         }
     }
 

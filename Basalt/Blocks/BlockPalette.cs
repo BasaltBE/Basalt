@@ -5,6 +5,7 @@ using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Components;
 
 using System.Reflection;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Basalt.BedrockProtocol.Types;
@@ -13,6 +14,12 @@ public sealed class BlockPalette {
     private const string AirIdentifier = "minecraft:air";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
+    internal static TimeSpan LoadElapsed { get; private set; }
+    internal static TimeSpan ReadElapsed { get; private set; }
+    internal static TimeSpan BuildElapsed { get; private set; }
+    internal static TimeSpan TypesBuildElapsed { get; private set; }
+    internal static TimeSpan PermutationsBuildElapsed { get; private set; }
+    internal static TimeSpan DropsBuildElapsed { get; private set; }
 
 #pragma warning disable CA2255
     [ModuleInitializer]
@@ -91,28 +98,35 @@ public sealed class BlockPalette {
         }
 
         lock (LoadLock) {
-            // TODO: Make this multi threaded when multi threading is in place.
             if (_vanillaLoaded) {
                 return;
             }
+
+            long startTimestamp = Stopwatch.GetTimestamp();
+            List<BlockTypeData> types;
+            List<BlockPermutationData> permutations;
+            List<BlockDropData> drops;
 
             if (!string.IsNullOrWhiteSpace(dataDirectory)) {
                 string typesPath = Path.Combine(dataDirectory, "block_types.json");
                 string permutationsPath = Path.Combine(dataDirectory, "block_permutations.json");
                 string dropsPath = Path.Combine(dataDirectory, "block_drops.json");
-                List<BlockTypeData> types = ReadTypesFromFile(typesPath);
-                List<BlockPermutationData> permutations = ReadPermutationsFromFile(permutationsPath);
-                List<BlockDropData> drops = ReadDropsFromFile(dropsPath);
-                LoadRegistries(types, permutations, drops);
+                types = ReadTypesFromFile(typesPath);
+                permutations = ReadPermutationsFromFile(permutationsPath);
+                drops = ReadDropsFromFile(dropsPath);
             }
             else {
-                List<BlockTypeData> types = ReadTypes("block_types.json");
-                List<BlockPermutationData> permutations = ReadPermutations("block_permutations.json");
-                List<BlockDropData> drops = ReadDrops("block_drops.json");
-                LoadRegistries(types, permutations, drops);
+                types = ReadTypes("block_types.json");
+                permutations = ReadPermutations("block_permutations.json");
+                drops = ReadDrops("block_drops.json");
             }
 
+            long buildTimestamp = Stopwatch.GetTimestamp();
+            ReadElapsed = Stopwatch.GetElapsedTime(startTimestamp, buildTimestamp);
+            LoadRegistries(types, permutations, drops);
+            BuildElapsed = Stopwatch.GetElapsedTime(buildTimestamp);
             _vanillaLoaded = true;
+            LoadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
         }
     }
 
@@ -162,6 +176,7 @@ public sealed class BlockPalette {
     private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockDropData> drops) {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
+        long startTimestamp = Stopwatch.GetTimestamp();
 
         for (int i = 0; i < types.Count; i++) {
             string identifier = types[i].Identifier;
@@ -216,8 +231,11 @@ public sealed class BlockPalette {
             }
         }
 
+        TypesBuildElapsed = Stopwatch.GetElapsedTime(startTimestamp);
+
         _ = BlockType.Get(AirIdentifier) ?? new BlockType(AirIdentifier);
 
+        startTimestamp = Stopwatch.GetTimestamp();
         for (int i = 0; i < permutations.Count; i++) {
             BlockPermutationData entry = permutations[i];
             if (string.IsNullOrEmpty(entry.Identifier) || BlockPermutation.Permutations.ContainsKey(entry.Hash)) {
@@ -231,7 +249,11 @@ public sealed class BlockPalette {
             type.RegisterPermutation(permutation);
         }
 
+        PermutationsBuildElapsed = Stopwatch.GetElapsedTime(startTimestamp);
+
+        startTimestamp = Stopwatch.GetTimestamp();
         BlockDropRegistry.Load(drops);
+        DropsBuildElapsed = Stopwatch.GetElapsedTime(startTimestamp);
     }
 
     private static BlockState ParseState(Dictionary<string, object> source) {

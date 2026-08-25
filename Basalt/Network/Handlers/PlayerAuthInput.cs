@@ -1,6 +1,7 @@
 namespace Basalt.Core.Network.Handlers;
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Basalt.Core;
 using Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Traits.Types;
@@ -54,10 +55,24 @@ public static class PlayerAuthInput {
     }
 
     public static void Handle(Server server, NetworkConnection connection, PlayerAuthInputPacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(() => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        PlayerAuthInputPacket packet) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("PlayerAuthInput.Handle") : default;
+        long startTimestamp = Stopwatch.GetTimestamp();
 
         try {
-            if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
+            if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+                !ReferenceEquals(current, player)) {
                 return;
             }
 
@@ -125,9 +140,6 @@ public static class PlayerAuthInput {
                     HandleBlockAction(player, action, packet.ClientTick);
                 }
             }
-            else if (packet.InputData?.Contains(PlayerAuthInputData.PerformBlockActions) == true) {
-
-            }
 
             if (packet.InputData?.Contains(PlayerAuthInputData.StartSprinting) == true) {
                 player.IsSprinting = true;
@@ -165,6 +177,12 @@ public static class PlayerAuthInput {
         }
         catch (Exception exception) {
             Logger.Warn("PlayerAuthInput handler failed: {0}", exception);
+        }
+        finally {
+            if (player is not null) {
+                player.LastInputProcessingMilliseconds =
+                    Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            }
         }
     }
 
@@ -442,16 +460,6 @@ public static class PlayerAuthInput {
     }
 
     private static void HandleBlockAction(Player.Player player, PlayerBlockActionData action, ulong tick) {
-        Logger.Debug(
-            "BlockAction player:{0} action:{1} pos:{2},{3},{4} face:{5} tick:{6}",
-            player.Username,
-            action.ActionType,
-            action.Position.X,
-            action.Position.Y,
-            action.Position.Z,
-            action.Facing,
-            tick);
-
         switch (action.ActionType) {
             case PlayerActionType.StartDestroyBlock:
                 StartBreakBlock(player, action.Position, tick);
@@ -516,15 +524,6 @@ public static class PlayerAuthInput {
         int breakTimeTicks = GetBreakTimeTicksForAnimation(player, blockPosition);
 
         BlockPermutation? block = player.Dimension?.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
-
-        Logger.Debug(
-            "StartBreak player:{0} pos:{1},{2},{3} duration:{4} tick:{5}",
-            player.Username,
-            blockPosition.X,
-            blockPosition.Y,
-            blockPosition.Z,
-            breakTimeTicks,
-            tick);
 
         BreakStates[player.RuntimeId] = new BreakState(blockPosition, tick, (uint)breakTimeTicks);
 
@@ -635,12 +634,6 @@ public static class PlayerAuthInput {
         }
 
         if (!valid) {
-            Logger.Debug(
-                "Block break correction sent player:{0} pos:{1},{2},{3}",
-                player.Username,
-                blockPosition.X,
-                blockPosition.Y,
-                blockPosition.Z);
             player.BreakingBlock = null;
             StopCrackBlock(player, blockPosition);
             SendRevertBlock(player, blockPosition);
@@ -784,18 +777,6 @@ public static class PlayerAuthInput {
             Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Water, player.Dimension, blockPosition);
             Basalt.Core.Blocks.Traits.FluidTrait.NotifyFluidNeighbors(Basalt.Core.Blocks.Traits.FluidKind.Lava, player.Dimension, blockPosition);
         }
-
-        Basalt.Core.Blocks.BlockPermutation after =
-            player.Dimension.GetPermutation(blockPosition.X, blockPosition.Y, blockPosition.Z);
-
-        // Logger.Warn(
-        //     "PlayerAuthInput destroy result player:{0} pos:{1},{2},{3} after:{4} network:{5}",
-        //     player.Username,
-        //     blockPosition.X,
-        //     blockPosition.Y,
-        //     blockPosition.Z,
-        //     after.Type.Identifier,
-        //     after.NetworkId);
 
         player.Dimension.Broadcast(new UpdateBlockPacket {
             Position = blockPosition,

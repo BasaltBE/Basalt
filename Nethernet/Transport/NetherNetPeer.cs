@@ -35,8 +35,6 @@ public sealed class NetherNetPeer : IDisposable {
         _peerConnection.ondatachannel += HandleDataChannel;
         _peerConnection.oniceconnectionstatechange += state =>
             Logger.Info($"NetherNet ICE state: {state}.");
-        _peerConnection.onicegatheringstatechange += state =>
-            Logger.Debug($"NetherNet ICE gathering state: {state}.");
         _peerConnection.onconnectionstatechange += HandleConnectionState;
     }
 

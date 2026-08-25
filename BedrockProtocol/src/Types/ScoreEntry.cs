@@ -16,7 +16,13 @@ public sealed class ScoreEntry : DataType {
 
     public override void Write(ref BinaryWriter writer) {
         writer.WriteVarUInt((uint)Action);
-        writer.WriteVarString(Action == ScorePacketEntryAction.Remove ? "remove" : "change");
+        writer.WriteVarString(Action switch {
+            ScorePacketEntryAction.Remove => "remove",
+            ScorePacketEntryAction.ChangePlayer => "changeplayer",
+            ScorePacketEntryAction.ChangeEntity => "changeentity",
+            ScorePacketEntryAction.ChangeFakePlayer => "changefakeplayer",
+            _ => throw new InvalidOperationException($"Unsupported score entry action: {Action}")
+        });
         ScoreboardId.Write(ref writer);
         if (Action == ScorePacketEntryAction.Remove) {
             writer.WriteBool(ObjectiveName.Length != 0);

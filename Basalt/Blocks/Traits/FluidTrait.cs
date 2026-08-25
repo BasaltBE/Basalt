@@ -241,7 +241,6 @@ public class FluidTrait : BlockTrait {
         BlockPermutation? perm = GetBlock(dimension, pos);
         if (perm is null) { Logger.Warn($"[FluidTrait] TickFluid ({x},{y},{z}) perm is null"); return; }
         if (!IsFluid(kind, perm)) {
-            // Logger.Warn($"[FluidTrait] TickFluid ({x},{y},{z}) not fluid: {perm.Type.Identifier} liquid:{perm.Type.Liquid}");
             return;
         }
 
@@ -530,7 +529,6 @@ public class FluidTrait : BlockTrait {
                 scheduled++;
             }
         }
-        // Logger.Warn($"[FluidTrait] NotifyFluidNeighbors at ({pos.X},{pos.Y},{pos.Z}) scheduled {scheduled} ticks");
 
         if (kind == FluidKind.Water) {
             NotifyNearbyFarmland(dimension, pos);

@@ -9,7 +9,9 @@ using System.Text;
 
 
 public sealed class BlockPermutation {
-    public static ConcurrentDictionary<int, BlockPermutation> Permutations { get; } = [];
+    private static ConcurrentDictionary<int, BlockPermutation> _permutations = [];
+
+    public static ConcurrentDictionary<int, BlockPermutation> Permutations => _permutations;
     private const string AirIdentifier = "minecraft:air";
 
     public const uint HashOffset = 0x811C9DC5;
@@ -88,6 +90,11 @@ public sealed class BlockPermutation {
 
     public static void EnsureRegistryCapacity(int capacity) {
         ArgumentOutOfRangeException.ThrowIfNegative(capacity);
+        if (_permutations.IsEmpty) {
+            _permutations = new ConcurrentDictionary<int, BlockPermutation>(
+                concurrencyLevel: 1,
+                capacity: capacity);
+        }
     }
 
     public static CompoundTag ToCompound(BlockPermutation permutation) {

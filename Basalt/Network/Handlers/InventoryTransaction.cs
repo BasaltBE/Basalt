@@ -45,7 +45,20 @@ public static class InventoryTransaction {
     ];
 
     public static void Handle(Server server, NetworkConnection connection, InventoryTransactionPacket packet) {
-        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(() => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        InventoryTransactionPacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
             return;
         }
 
@@ -54,36 +67,36 @@ public static class InventoryTransaction {
             return;
         }
 
-        Logger.Warn(
-            "InventoryTransaction player:{0} type:{1} actions:{2}",
-            player.Username,
-            packet.TransactionType,
-            packet.Actions.Length);
+        // Logger.Warn(
+        //     "InventoryTransaction player:{0} type:{1} actions:{2}",
+        //     player.Username,
+        //     packet.TransactionType,
+        //     packet.Actions.Length);
 
         if (packet.TransactionType == InventoryTransactionType.ItemUseOnActor) {
-            Logger.Warn(
-                "InventoryTransaction entity player:{0} runtime:{1} action:{2} slot:{3}",
-                player.Username,
-                packet.ItemUseOnActorTransaction.RuntimeId,
-                packet.ItemUseOnActorTransaction.ActionType,
-                packet.ItemUseOnActorTransaction.Slot);
+            // Logger.Warn(
+                // "InventoryTransaction entity player:{0} runtime:{1} action:{2} slot:{3}",
+                // player.Username,
+                // packet.ItemUseOnActorTransaction.RuntimeId,
+                // packet.ItemUseOnActorTransaction.ActionType,
+                // packet.ItemUseOnActorTransaction.Slot);
         }
 
         if (packet.TransactionType == InventoryTransactionType.ItemUse) {
-            Logger.Warn(
-                "InventoryTransaction block player:{0} action:{1} trigger:{2} prediction:{3} slot:{4} pos:{5},{6},{7} face:{8} target:{9} item:{10} count:{11}",
-                player.Username,
-                packet.ItemUseTransaction.ActionType,
-                packet.ItemUseTransaction.TriggerType,
-                packet.ItemUseTransaction.ClientInteractPrediction,
-                packet.ItemUseTransaction.Slot,
-                packet.ItemUseTransaction.Position.X,
-                packet.ItemUseTransaction.Position.Y,
-                packet.ItemUseTransaction.Position.Z,
-                packet.ItemUseTransaction.Face,
-                packet.ItemUseTransaction.TargetBlockId,
-                packet.ItemUseTransaction.Item.Id,
-                packet.ItemUseTransaction.Item.StackSize);
+            // Logger.Warn(
+            //     "InventoryTransaction block player:{0} action:{1} trigger:{2} prediction:{3} slot:{4} pos:{5},{6},{7} face:{8} target:{9} item:{10} count:{11}",
+            //     player.Username,
+            //     packet.ItemUseTransaction.ActionType,
+            //     packet.ItemUseTransaction.TriggerType,
+            //     packet.ItemUseTransaction.ClientInteractPrediction,
+            //     packet.ItemUseTransaction.Slot,
+            //     packet.ItemUseTransaction.Position.X,
+            //     packet.ItemUseTransaction.Position.Y,
+            //     packet.ItemUseTransaction.Position.Z,
+            //     packet.ItemUseTransaction.Face,
+            //     packet.ItemUseTransaction.TargetBlockId,
+            //     packet.ItemUseTransaction.Item.Id,
+            //     packet.ItemUseTransaction.Item.StackSize);
         }
 
 
@@ -361,14 +374,14 @@ public static class InventoryTransaction {
                 player.Dimension.GetPermutation(transaction.Position.X, transaction.Position.Y, transaction.Position.Z);
 
             if ((uint)serverPermutation.NetworkId != transaction.TargetBlockId) {
-                Logger.Warn(
-                    "InventoryTransaction block id mismatch player:{0} pos:{1},{2},{3} client:{4} server:{5}",
-                    player.Username,
-                    transaction.Position.X,
-                    transaction.Position.Y,
-                    transaction.Position.Z,
-                    transaction.TargetBlockId,
-                    serverPermutation.NetworkId);
+                // Logger.Warn(
+                //     "InventoryTransaction block id mismatch player:{0} pos:{1},{2},{3} client:{4} server:{5}",
+                //     player.Username,
+                //     transaction.Position.X,
+                //     transaction.Position.Y,
+                //     transaction.Position.Z,
+                //     transaction.TargetBlockId,
+                //     serverPermutation.NetworkId);
                 SendBlockUpdate(player, transaction.Position, serverPermutation.NetworkId);
             }
         }
@@ -399,12 +412,12 @@ public static class InventoryTransaction {
             }
         }
 
-        Logger.Warn(
-            "InventoryTransaction held player:{0} slot:{1} selected:{2} item:{3}",
-            player.Username,
-            transaction.Slot,
-            inventory.SelectedSlot,
-            heldItem?.Identifier ?? "null");
+        // Logger.Warn(
+        //     "InventoryTransaction held player:{0} slot:{1} selected:{2} item:{3}",
+        //     player.Username,
+        //     transaction.Slot,
+        //     inventory.SelectedSlot,
+        //     heldItem?.Identifier ?? "null");
 
         if (transaction.TriggerType == ItemUseTriggerType.SimulationTick) {
             ItemStack? repeatItem = GetHeldItem(inventory, transaction.Slot);
@@ -510,13 +523,13 @@ public static class InventoryTransaction {
 
             Basalt.Core.Blocks.Block? block = player.Dimension.GetBlock(blockPosition.X, blockPosition.Y, blockPosition.Z);
             if (block is not null && block.Interactable && !player.IsSneaking) {
-                Logger.Warn(
-                    "InventoryTransaction interaction branch player:{0} block:{1} pos:{2},{3},{4}",
-                    player.Username,
-                    block.Type.Identifier,
-                    blockPosition.X,
-                    blockPosition.Y,
-                    blockPosition.Z);
+                // Logger.Warn(
+                //     "InventoryTransaction interaction branch player:{0} block:{1} pos:{2},{3},{4}",
+                //     player.Username,
+                //     block.Type.Identifier,
+                //     blockPosition.X,
+                //     blockPosition.Y,
+                //     blockPosition.Z);
                 if (!CanInteractBlock(player, blockPosition)) {
                     return;
                 }
@@ -532,10 +545,10 @@ public static class InventoryTransaction {
         }
 
         if (heldItem is null) {
-            Logger.Warn(
-                "InventoryTransaction placement rejected empty held item player:{0} slot:{1}",
-                player.Username,
-                transaction.Slot);
+            // Logger.Warn(
+            //     "InventoryTransaction placement rejected empty held item player:{0} slot:{1}",
+            //     player.Username,
+            //     transaction.Slot);
             return;
         }
 
@@ -610,18 +623,18 @@ public static class InventoryTransaction {
 
         Basalt.Core.Blocks.BlockType? blockType = heldItem.Type.BlockType ?? Basalt.Core.Blocks.BlockType.Get(heldItem.Identifier);
 
-        Logger.Warn(
-            "InventoryTransaction placement player:{0} held:{1} itemId:{2} block:{3} clicked:{4},{5},{6} place:{7},{8},{9}",
-            player.Username,
-            heldItem.Identifier,
-            heldItem.Type.NetworkId,
-            blockType?.Identifier ?? "null",
-            clickedPosition.X,
-            clickedPosition.Y,
-            clickedPosition.Z,
-            placePosition.X,
-            placePosition.Y,
-            placePosition.Z);
+        // Logger.Warn(
+        //     "InventoryTransaction placement player:{0} held:{1} itemId:{2} block:{3} clicked:{4},{5},{6} place:{7},{8},{9}",
+        //     player.Username,
+        //     heldItem.Identifier,
+        //     heldItem.Type.NetworkId,
+        //     blockType?.Identifier ?? "null",
+        //     clickedPosition.X,
+        //     clickedPosition.Y,
+        //     clickedPosition.Z,
+        //     placePosition.X,
+        //     placePosition.Y,
+        //     placePosition.Z);
 
         if (blockType is null || blockType.Identifier == "minecraft:air") {
             if (!CanUseItem(player, heldItem)) {

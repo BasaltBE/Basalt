@@ -7,7 +7,20 @@ using Basalt.BedrockProtocol.Enums;
 
 public static class PlayerAction {
     public static void Handle(Server server, NetworkConnection connection, PlayerActionPacket packet) {
-        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(() => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        PlayerActionPacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
             return;
         }
 
