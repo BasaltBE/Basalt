@@ -84,11 +84,28 @@ jobs:
             zip -r "../${name}-${{ steps.tag.outputs.tag }}.zip" "$dir"
           done
 
+      - name: Generate release metadata
+        run: |
+          version=$(grep -oPm1 '(?<=<Version>)[^<]+' Basalt/Basalt.csproj)
+          minecraft_version=$(grep -oPm1 '(?<=MinecraftVersion = ")[^"]+' Basalt/Constants.cs)
+          protocol_version=$(grep -oPm1 '(?<=ProtocolVersion = )[^;]+' Basalt/Constants.cs)
+
+          cat > release-notes.md <<EOF
+          ## Basalt development build
+
+          - Basalt version: $version
+          - Minecraft: $minecraft_version
+          - Minecraft protocol: $protocol_version
+          - Commit: ${{ github.sha }}
+
+          EOF
+
       - name: Create GitHub Pre-Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.name }}
+          body_path: release-notes.md
           prerelease: true
           generate_release_notes: true
           files: "*.zip"
