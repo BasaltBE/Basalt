@@ -65,20 +65,11 @@ public sealed class PlayerAbilities {
 
         Enable(BaseAbilities);
 
-        if (gamemode is GameType.Creative or GameType.Spectator) {
-            Enable(
-                PlayerAbility.MayFly,
-                PlayerAbility.InstantBuild
-            );
-        }
-
-        if (gamemode == GameType.Spectator) {
-            Enable(
-                PlayerAbility.Invulnerable,
-                PlayerAbility.Flying,
-                PlayerAbility.NoClip
-            );
-        }
+        SetAbility(PlayerAbility.MayFly, gamemode is GameType.Creative or GameType.Spectator);
+        SetAbility(PlayerAbility.InstantBuild, gamemode is GameType.Creative or GameType.Spectator);
+        SetAbility(PlayerAbility.Invulnerable, gamemode == GameType.Spectator);
+        SetAbility(PlayerAbility.Flying, gamemode == GameType.Spectator);
+        SetAbility(PlayerAbility.NoClip, gamemode == GameType.Spectator);
     }
 
     public void SetOperator(bool isOperator) {
