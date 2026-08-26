@@ -36,6 +36,9 @@ public class Player : Entities.Entity {
     public bool IsOperator { get; internal set; }
     public bool Spawned { get; internal set; }
     public bool Grounded;
+    public double LastInputQueueWaitMilliseconds { get; internal set; }
+    public double LastInputProcessingMilliseconds { get; internal set; }
+    private bool _applyingQueuedTeleport;
     public bool InitialAttributesSynced { get; internal set; }
     public float Pitch;
     public float Yaw;
@@ -119,14 +122,9 @@ public class Player : Entities.Entity {
 
         Dimension?.Broadcast(gamemodePacket, new BroadcastOptions { Except = [this] });
 
-        if (Dimension?.World?.Server is Server server) {
-            foreach ((NetworkConnection connection, Player player) in server.Players) {
-                if (ReferenceEquals(player, this)) {
-                    server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { PlayerGameType = (int)gamemode });
-                    server.Network.QueuePacket(connection, abilitiesPacket);
-                    break;
-                }
-            }
+        if (Dimension?.World?.Server is Server server && Connection is { } connection) {
+            server.Network.QueuePacket(connection, new SetPlayerGameTypePacket { PlayerGameType = (int)gamemode });
+            server.Network.QueuePacket(connection, abilitiesPacket);
         }
     }
 
@@ -322,6 +320,12 @@ public class Player : Entities.Entity {
         bool changedDimension = previousDimension != targetDimension;
         bool changedDimensionType = previousDimension is not null && previousDimension.Type != targetDimension.Type;
 
+        if (changedDimension && !_applyingQueuedTeleport &&
+            previousDimension?.World?.Server is Server server) {
+            server.QueuePlayerTransfer(this, previousDimension, targetDimension, position);
+            return;
+        }
+
         Location = position;
         Velocity = new Vec3();
 
@@ -331,13 +335,11 @@ public class Player : Entities.Entity {
         OnTeleport(new EntityTeleportOptions(previousPosition, position, changedDimension));
 
         if (changedDimension) {
-            if (previousDimension?.World?.Server is Server dimServer) {
-                foreach ((_, Player other) in dimServer.Players) {
-                    if (ReferenceEquals(other, this) || other.Dimension != previousDimension) {
-                        continue;
+            if (previousDimension is not null) {
+                foreach (Player other in previousDimension.GetPlayers()) {
+                    if (!ReferenceEquals(other, this)) {
+                        Send(new RemoveActorPacket { ActorUniqueId = other.UniqueId });
                     }
-
-                    Send(new RemoveActorPacket { ActorUniqueId = other.UniqueId  });
                 }
             }
 
@@ -395,6 +397,16 @@ public class Player : Entities.Entity {
         }
 
         Attributes.Send();
+    }
+
+    internal void ApplyQueuedTeleport(Vec3 position, Dimension targetDimension) {
+        _applyingQueuedTeleport = true;
+        try {
+            Teleport(position, targetDimension);
+        }
+        finally {
+            _applyingQueuedTeleport = false;
+        }
     }
 
 

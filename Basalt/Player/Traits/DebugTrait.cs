@@ -3,6 +3,7 @@ namespace Basalt.Core.Player.Traits;
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Worlds;
+using Basalt.Core.Worlds.Dimensions;
 
 using Entity = Basalt.Core.Entities.Entity;
 using Basalt.Core.Entities.Traits.Types;
@@ -51,9 +52,9 @@ public sealed class DebugTrait : PlayerTrait {
                 Player.Dimension?.World?.Server?.Tps
                 ?? TargetTps;
 
-            double mspt =
-                Player.Dimension?.World?.Server?.TickWork
-                ?? 0;
+            Dimension? dimension = Player.Dimension;
+            double mspt = dimension?.World?.Server?.TickWork ?? 0;
+            double dimensionMspt = dimension?.TickWork ?? 0;
 
             _averageMspt =
                 _averageMspt == 0
@@ -71,6 +72,7 @@ public sealed class DebugTrait : PlayerTrait {
                 $"§aTPS: §f{tps:0.0}§8/§f{TargetTps:0.0} " +
                 $"§8| §aMSPT: §f{mspt:0.00} " +
                 $"§8| §aA/MSPT: §f{_averageMspt:0.00} " +
+                $"§8| §aD/MSPT: §f{dimensionMspt:0.00} " +
                 $"§8| §aRAM: §f{workingSetMb:0.0}MB " +
                 $"§8| §aChunks: §f{chunksLoaded}";
 
