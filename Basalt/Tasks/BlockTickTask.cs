@@ -15,6 +15,7 @@ internal sealed class BlockTickTask : DelayedTask {
         BlockIdentifier = blockIdentifier;
         DelayTicks = delay;
         RunOnMainThread = true;
+        ExecutionMailbox = dimension.Mailbox;
     }
 
     public override void Execute() {

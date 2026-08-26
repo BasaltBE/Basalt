@@ -13,22 +13,25 @@ public sealed class ChunkGenerationTask : ServerTask {
     private readonly int _x;
     private readonly int _z;
     private readonly long _hash;
+    private readonly Task _saveCompletion;
     private readonly Action<long, ChunkColumn?> _onComplete;
 
     public ChunkColumn? Result { get; private set; }
 
-    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionId dimensionType, int x, int z, long hash, Action<long, ChunkColumn?> onComplete) {
+    public ChunkGenerationTask(WorldProvider provider, Generator generator, DimensionId dimensionType, int x, int z, long hash, Task saveCompletion, Action<long, ChunkColumn?> onComplete) {
         _provider = provider;
         _generator = generator;
         _dimensionType = dimensionType;
         _x = x;
         _z = z;
         _hash = hash;
+        _saveCompletion = saveCompletion;
         _onComplete = onComplete;
     }
 
     public override void Execute() {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("ChunkGen.Execute") : default;
+        _saveCompletion.GetAwaiter().GetResult();
         ChunkColumn? loaded = _provider.LoadChunk(_dimensionType, _x, _z);
         if (loaded is null) {
             loaded = _generator.Generate(_dimensionType, _x, _z);

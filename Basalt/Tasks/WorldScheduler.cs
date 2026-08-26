@@ -6,10 +6,13 @@ using Basalt.Core.Worlds;
 
 public sealed class WorldScheduler {
     private const int WheelSize = 1200;
+    private const int DeferredDomainCapacity = 4096;
 
     private readonly World _world;
     private readonly TaskWorkerPool _workerPool;
     private readonly ConcurrentQueue<ServerTask> _incoming = new();
+    private readonly Queue<ServerTask> _deferredWorkerTasks = new();
+    private readonly Queue<ServerTask> _deferredDomainTasks = new();
     private readonly TickWheelSlot[] _wheel = new TickWheelSlot[WheelSize];
     private RepeatingTask[] _repeating = new RepeatingTask[16];
     private int _repeatingCount;
@@ -17,6 +20,8 @@ public sealed class WorldScheduler {
     private volatile bool _stopped;
 
     public bool IsStopped => _stopped;
+    public int PendingDeferredWorkCount => _deferredWorkerTasks.Count;
+    public int PendingDeferredDomainWorkCount => _deferredDomainTasks.Count;
 
     public WorldScheduler(World world, TaskWorkerPool workerPool) {
         _world = world;
@@ -29,7 +34,6 @@ public sealed class WorldScheduler {
             return;
         }
 
-        task.OwnerThreadId = Environment.CurrentManagedThreadId;
         _incoming.Enqueue(task);
     }
 
@@ -39,7 +43,6 @@ public sealed class WorldScheduler {
             return;
         }
 
-        task.OwnerThreadId = Environment.CurrentManagedThreadId;
         task.ExecutionTick = _world.TickValue + task.DelayTicks;
         _incoming.Enqueue(task);
     }
@@ -50,7 +53,6 @@ public sealed class WorldScheduler {
             return;
         }
 
-        task.OwnerThreadId = Environment.CurrentManagedThreadId;
         task.NextExecutionTick = _world.TickValue + task.IntervalTicks;
         _incoming.Enqueue(task);
     }
@@ -60,6 +62,33 @@ public sealed class WorldScheduler {
 
         using var _ = Profiler.Enabled ? Profiler.BeginZone("WorldScheduler.Tick") : default;
         ulong currentTick = _world.TickValue;
+
+        while (_deferredWorkerTasks.Count > 0 &&
+               _workerPool.TryEnqueue(_deferredWorkerTasks.Peek())) {
+            _deferredWorkerTasks.Dequeue();
+        }
+
+        while (_deferredDomainTasks.Count > 0) {
+            ServerTask task = _deferredDomainTasks.Peek();
+            if (task.ExecutionMailbox is not { } mailbox) {
+                _deferredDomainTasks.Dequeue();
+                task.Cancel();
+                task.IsCompleted = true;
+                continue;
+            }
+
+            if (!mailbox.TryEnqueue(task.ExecuteOnDomain, task.Cancel)) {
+                if (mailbox.IsCompleted) {
+                    _deferredDomainTasks.Dequeue();
+                    task.Cancel();
+                    task.IsCompleted = true;
+                    continue;
+                }
+                break;
+            }
+
+            _deferredDomainTasks.Dequeue();
+        }
 
         DrainIncoming(currentTick);
         DispatchReadyTasks(currentTick);
@@ -92,6 +121,18 @@ public sealed class WorldScheduler {
             task.OnStop();
             task.Cancel();
         }
+
+        while (_deferredWorkerTasks.Count > 0) {
+            ServerTask deferred = _deferredWorkerTasks.Dequeue();
+            deferred.OnStop();
+            deferred.Cancel();
+        }
+
+        while (_deferredDomainTasks.Count > 0) {
+            ServerTask deferred = _deferredDomainTasks.Dequeue();
+            deferred.OnStop();
+            deferred.Cancel();
+        }
     }
 
     private void DrainIncoming(ulong currentTick) {
@@ -111,10 +152,18 @@ public sealed class WorldScheduler {
             }
             else {
                 // Immediate task: dispatch right away.
-                if (task.RunOnMainThread)
+                if (task.ExecutionMailbox is { } mailbox) {
+                    if (!mailbox.TryEnqueue(task.ExecuteOnDomain, task.Cancel)) {
+                        if (!TryDeferDomain(task)) {
+                            task.Cancel();
+                        }
+                    }
+                }
+                else if (task.RunOnMainThread)
                     ExecuteMainThread(task);
-                else
-                    _workerPool.Enqueue(task);
+                else if (!_workerPool.TryEnqueue(task) && !task.IsCancelled) {
+                    _deferredWorkerTasks.Enqueue(task);
+                }
             }
         }
     }
@@ -148,7 +197,14 @@ public sealed class WorldScheduler {
                 continue;
             }
 
-            if (task.RunOnMainThread) {
+            if (task.ExecutionMailbox is { } mailbox) {
+                if (!mailbox.TryEnqueue(task.ExecuteOnDomain, task.Cancel)) {
+                    if (!TryDeferDomain(task)) {
+                        task.Cancel();
+                    }
+                }
+            }
+            else if (task.RunOnMainThread) {
                 task.NextInSlot = mainHead;
                 mainHead = task;
             }
@@ -166,8 +222,12 @@ public sealed class WorldScheduler {
         int workerCount = _workerBatch.Count;
         if (workerCount > 0) {
             using (Profiler.Enabled ? Profiler.BeginZone("WorkerDispatch") : default) {
-                for (int i = 0; i < workerCount; i++)
-                    _workerPool.Enqueue(_workerBatch[i]);
+                for (int i = 0; i < workerCount; i++) {
+                    ServerTask workerTask = _workerBatch[i];
+                    if (!_workerPool.TryEnqueue(workerTask) && !workerTask.IsCancelled) {
+                        _deferredWorkerTasks.Enqueue(workerTask);
+                    }
+                }
             }
             _workerBatch.Clear();
         }
@@ -185,6 +245,15 @@ public sealed class WorldScheduler {
         }
     }
 
+    private bool TryDeferDomain(ServerTask task) {
+        if (_deferredDomainTasks.Count >= DeferredDomainCapacity) {
+            return false;
+        }
+
+        _deferredDomainTasks.Enqueue(task);
+        return true;
+    }
+
     private void ProcessRepeatingTasks(ulong currentTick) {
         for (int i = _repeatingCount - 1; i >= 0; i--) {
             RepeatingTask rt = _repeating[i];
@@ -197,11 +266,16 @@ public sealed class WorldScheduler {
 
             rt.NextExecutionTick = currentTick + rt.IntervalTicks;
 
-            if (rt.RunOnMainThread) {
+            if (rt.ExecutionMailbox is { } mailbox) {
+                if (!mailbox.TryEnqueue(rt.ExecuteOnDomain, rt.Cancel)) {
+                    _deferredDomainTasks.Enqueue(rt);
+                }
+            }
+            else if (rt.RunOnMainThread) {
                 ExecuteMainThread(rt);
             }
-            else {
-                _workerPool.Enqueue(rt);
+            else if (!_workerPool.TryEnqueue(rt) && !rt.IsCancelled) {
+                _deferredWorkerTasks.Enqueue(rt);
             }
         }
     }
@@ -213,22 +287,27 @@ public sealed class WorldScheduler {
     }
 
     private static void ExecuteMainThread(ServerTask task) {
+        bool succeeded = true;
         using (Profiler.Enabled ? Profiler.BeginZone($"MainThread:{task.GetType().Name}") : default) {
             try {
                 task.Execute();
             }
             catch (Exception ex) {
+                succeeded = false;
+                task.ExecutionFailed = true;
                 Logger.Warn($"Main thread task execution failed: {ex}");
             }
         }
 
         task.IsExecuted = true;
 
-        try {
-            task.Complete();
-        }
-        catch (Exception ex) {
-            Logger.Warn($"Main thread task Complete() failed: {ex}");
+        if (succeeded) {
+            try {
+                task.Complete();
+            }
+            catch (Exception ex) {
+                Logger.Warn($"Main thread task Complete() failed: {ex}");
+            }
         }
 
         task.IsCompleted = true;
