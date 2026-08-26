@@ -33,8 +33,8 @@ public sealed class NetherNetPeer : IDisposable {
         };
         _peerConnection = new RTCPeerConnection(configuration);
         _peerConnection.ondatachannel += HandleDataChannel;
-        _peerConnection.oniceconnectionstatechange += state =>
-            Logger.Info($"NetherNet ICE state: {state}.");
+        _peerConnection.oniceconnectionstatechange += state => {};
+            // Logger.Info($"NetherNet ICE state: {state}.");
         _peerConnection.onconnectionstatechange += HandleConnectionState;
     }
 
@@ -138,7 +138,7 @@ public sealed class NetherNetPeer : IDisposable {
     }
 
     private void AttachDataChannel(RTCDataChannel channel) {
-        Logger.Info($"NetherNet data channel received: {channel.label}.");
+        // Logger.Info($"NetherNet data channel received: {channel.label}.");
         NetherNetChannel netherNetChannel = channel.label switch {
             ReliableDataChannel => NetherNetChannel.Reliable,
             UnreliableDataChannel => NetherNetChannel.Unreliable,
@@ -158,7 +158,7 @@ public sealed class NetherNetPeer : IDisposable {
 
         channel.onmessage += (_, _, payload) => connection.Receive(payload);
         channel.onopen += () => {
-            Logger.Info($"NetherNet {netherNetChannel} data channel opened.");
+            // Logger.Info($"NetherNet {netherNetChannel} data channel opened.");
             if (Interlocked.Increment(ref _openedChannels) == 2) {
                 _channelsOpened.TrySetResult();
             }
@@ -168,7 +168,7 @@ public sealed class NetherNetPeer : IDisposable {
     }
 
     private void HandleConnectionState(RTCPeerConnectionState state) {
-        Logger.Info($"NetherNet peer connection state: {state}.");
+        // Logger.Info($"NetherNet peer connection state: {state}.");
         if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.failed) {
             _channelsOpened.TrySetException(
                 new InvalidOperationException($"NetherNet peer connection failed: {state}."));
