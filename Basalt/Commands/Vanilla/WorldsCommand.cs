@@ -72,20 +72,20 @@ public static class WorldsCommand {
         }
 
         if (allNames.Count == 0) {
-            return CommandResult.OkMessage("\u00a77No worlds found.");
+            return CommandResult.OkMessage("§7No worlds found.");
         }
 
-        StringBuilder message = new($"\u00a7r\u00a77Worlds (\u00a7a{allNames.Count}\u00a77)\n");
+        StringBuilder message = new($"§r§7Worlds (§a{allNames.Count}§7)\n");
         foreach (string worldName in allNames) {
             if (!worldsByName.TryGetValue(worldName, out World? world)) {
-                message.Append($"\u00a77` {worldName} (\u00a7cUnloaded\u00a77)\n");
+                message.Append($"§7` {worldName} (§cUnloaded§7)\n");
                 continue;
             }
 
             int entityCount = world.Dimensions.Sum(dimension => dimension.GetEntitiesSnapshot().Length);
-            message.Append($"\u00a77` {world.Name} (\u00a7aLoaded\u00a77, \u00a7a{world.TickWork:0.00} ms\u00a77, \u00a7a{entityCount} entities\u00a77)\n");
+            message.Append($"§7` {world.Name} (§aLoaded§7, §a{world.TickWork:0.00} ms§7, §a{entityCount} entities§7)\n");
             foreach (Dimension dimension in world.Dimensions) {
-                message.Append($"\u00a77  ` {dimension.Identifier} (\u00a7a{dimension.TickWork:0.00} ms\u00a77, \u00a7a{dimension.GetEntitiesSnapshot().Length} entities\u00a77, \u00a7a{dimension.ChunkCount} chunks\u00a77)\n");
+                message.Append($"§7  ` {dimension.Identifier} (§a{dimension.TickWork:0.00} ms§7, §a{dimension.GetEntitiesSnapshot().Length} entities§7, §a{dimension.ChunkCount} chunks§7)\n");
             }
         }
 
@@ -104,7 +104,7 @@ public static class WorldsCommand {
 
             string worldPath = Path.Combine(worldsDirectory, name);
             if (Directory.Exists(worldPath)) {
-                return CommandResult.OkMessage($"\u00a7r\u00a77World '\u00a7a{name}\u00a77' exists but is \u00a7cunloaded\u00a77.");
+                return CommandResult.OkMessage($"§r§7World '§a{name}§7' exists but is §cunloaded§7.");
             }
 
             return CommandResult.Error($"World '{name}' not found.");
@@ -118,16 +118,16 @@ public static class WorldsCommand {
             int dimensionEntityCount = dimension.GetEntitiesSnapshot().Length;
             entityCount += dimensionEntityCount;
             chunkCount += dimension.ChunkCount;
-            dimensionList.Append($"\u00a77  ` {dimension.Identifier} (\u00a7a{dimensionEntityCount}\u00a77 entities, \u00a7a{dimension.ChunkCount}\u00a77 chunks)\n");
+            dimensionList.Append($"§7  ` {dimension.Identifier} (§a{dimensionEntityCount}§7 entities, §a{dimension.ChunkCount}§7 chunks)\n");
         }
 
         StringBuilder message = new();
-        message.Append($"\u00a7r\u00a77World '\u00a7a{world.Name}\u00a77' (\u00a7aLoaded\u00a77)\n");
-        message.Append($"\u00a77` Tick (\u00a7a{world.TickValue}\u00a77)\n");
-        message.Append($"\u00a77` Dimensions (\u00a7a{world.DimensionCount}\u00a77)\n");
+        message.Append($"§r§7World '§a{world.Name}§7' (§aLoaded§7)\n");
+        message.Append($"§7` Tick (§a{world.TickValue}§7)\n");
+        message.Append($"§7` Dimensions (§a{world.DimensionCount}§7)\n");
         message.Append(dimensionList);
-        message.Append($"\u00a77` Total Entities (\u00a7a{entityCount}\u00a77)\n");
-        message.Append($"\u00a77` Total Chunks (\u00a7a{chunkCount}\u00a77)\n");
+        message.Append($"§7` Total Entities (§a{entityCount}§7)\n");
+        message.Append($"§7` Total Chunks (§a{chunkCount}§7)\n");
 
         return CommandResult.OkMessage(message.ToString());
     }
@@ -166,6 +166,6 @@ public static class WorldsCommand {
         }
 
         player.Teleport(targetDimension.SpawnPosition, targetDimension);
-        return CommandResult.OkMessage($"\u00a77Teleported to world '\u00a7a{world.Name}\u00a77'.");
+        return CommandResult.OkMessage($"§7Teleported to world '§a{world.Name}§7'.");
     }
 }
