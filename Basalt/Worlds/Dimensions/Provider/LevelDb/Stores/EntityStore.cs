@@ -102,7 +102,11 @@ internal sealed class EntityStore {
     private HashSet<long> ReadSavedEntityIds(DimensionId dimensionType, int x, int z) {
         HashSet<long> ids = [];
 
-        AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildDigpKey(dimensionType, x, z)), dimensionType, x, z, rawIds: true);
+        byte[]? entityList = _database.Get(LevelDbKeyBuilder.BuildDigpKey(dimensionType, x, z));
+        AddEntityIds(ids, entityList, dimensionType, x, z, rawIds: true);
+        if (entityList is { Length: > 0 }) {
+            return ids;
+        }
 
         AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(dimensionType, x, z)), dimensionType, x, z, rawIds: false);
         AddEntityIds(ids, _database.Get(LevelDbKeyBuilder.BuildLegacyEntityListKey(x, z)), dimensionType, x, z, rawIds: false);
