@@ -11,13 +11,13 @@ public sealed class UpdatePlayerGameTypePacket : DataPacket {
     public ulong Tick;
 
     public override void Serialize(ref BinaryWriter writer) {
-        writer.WriteVarInt(PlayerGameType);
+        writer.WriteZigZag(PlayerGameType);
         writer.WriteVarLong(TargetPlayer);
         writer.WriteVarULong(Tick);
     }
 
     public override void Deserialize(ref BinaryReader reader) {
-        PlayerGameType = reader.ReadVarInt();
+        PlayerGameType = reader.ReadZigZag();
         TargetPlayer = reader.ReadVarLong();
         Tick = reader.ReadVarULong();
     }

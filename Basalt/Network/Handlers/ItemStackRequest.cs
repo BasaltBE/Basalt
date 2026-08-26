@@ -75,12 +75,25 @@ public static class ItemStackRequest {
         ItemStackRequestActionType.Swap => Swap(player, action, changes),
         ItemStackRequestActionType.Drop => Drop(player, action, changes),
         ItemStackRequestActionType.Destroy or ItemStackRequestActionType.Consume => Remove(player, action, changes),
+        ItemStackRequestActionType.CraftCreative => CreateCreativeItem(player, action),
         ItemStackRequestActionType.Create or ItemStackRequestActionType.CraftResults or
         ItemStackRequestActionType.CraftNonImplemented => true,
         ItemStackRequestActionType.CraftRecipe or ItemStackRequestActionType.CraftRecipeAuto =>
             PrepareRecipeOutput(player, action),
         _ => false
     };
+
+    private static bool CreateCreativeItem(Player.Player player, ItemStackRequestAction action) {
+        if (player.Gamemode != GameType.Creative ||
+            player.GetTrait<Basalt.Core.Player.Traits.PlayerCursorTrait>() is not { } cursor ||
+            cursor.Container.GetItem(0) is not null ||
+            ItemPalette.GetCreativeItem(action.CreativeItemNetId) is not { } item) {
+            return false;
+        }
+
+        cursor.Container.SetItem(0, item);
+        return true;
+    }
 
     private static bool Transfer(Player.Player player, ItemStackRequestAction action,
         Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes) {

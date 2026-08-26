@@ -232,11 +232,11 @@ public sealed class PluginManager {
                 plugin.OnLoad();
 
             double onLoadMilliseconds = Stopwatch.GetElapsedTime(loadStart).TotalMilliseconds;
-            Logger.Info(
-                $"Plugin {container.Description.Name}: loader~{prepared.LoaderMilliseconds:0}ms, " +
-                $"assembly~{prepared.AssemblyMilliseconds:0}ms, " +
-                $"reflection~{prepared.ReflectionMilliseconds:0}ms, " +
-                $"OnLoad~{onLoadMilliseconds:0}ms.");
+            // Logger.Info(
+            //     $"Plugin {container.Description.Name}: loader~{prepared.LoaderMilliseconds:0}ms, " +
+            //     $"assembly~{prepared.AssemblyMilliseconds:0}ms, " +
+            //     $"reflection~{prepared.ReflectionMilliseconds:0}ms, " +
+            //     $"OnLoad~{onLoadMilliseconds:0}ms.");
 
             _plugins.Add(container);
             return true;

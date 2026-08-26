@@ -8,6 +8,6 @@ namespace Basalt.BedrockProtocol.Packets;
 public sealed class SetPlayerGameTypePacket : DataPacket {
     public int PlayerGameType;
 
-    public override void Serialize(ref BinaryWriter writer) => writer.WriteVarInt(PlayerGameType);
-    public override void Deserialize(ref BinaryReader reader) => PlayerGameType = reader.ReadVarInt();
+    public override void Serialize(ref BinaryWriter writer) => writer.WriteZigZag(PlayerGameType);
+    public override void Deserialize(ref BinaryReader reader) => PlayerGameType = reader.ReadZigZag();
 }
