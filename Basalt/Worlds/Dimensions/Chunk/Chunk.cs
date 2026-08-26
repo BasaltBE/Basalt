@@ -27,6 +27,7 @@ public sealed class Chunk {
     public byte[]? Cache;
     public bool Dirty;
     public bool Simulated;
+    public bool Empty;
 
     public Chunk(int x, int z, DimensionId type, SubChunk?[]? subChunks = null) {
         X = x;
@@ -34,6 +35,7 @@ public sealed class Chunk {
         Type = type;
         Hash = ((long)x << 32) | (uint)z;
         SubChunks = subChunks ?? new SubChunk?[MaxSubChunks];
+        RefreshEmpty();
     }
 
     public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0) {
@@ -54,6 +56,9 @@ public sealed class Chunk {
             Dirty = true;
         }
 
+        Empty = permutation.NetworkId == BlockStorage.Air
+            ? CalculateEmpty()
+            : false;
         Cache = null;
     }
 
@@ -137,6 +142,7 @@ public sealed class Chunk {
         }
 
         SubChunks[index + offset] = subChunk;
+        RefreshEmpty();
         Cache = null;
     }
 
@@ -243,7 +249,9 @@ public sealed class Chunk {
         }
     }
 
-    public bool IsEmpty() {
+    public bool IsEmpty() => Empty;
+
+    private bool CalculateEmpty() {
         for (int i = 0; i < SubChunks.Length; i++) {
             SubChunk? subChunk = SubChunks[i];
             if (subChunk is not null && !subChunk.IsEmpty()) {
@@ -252,6 +260,10 @@ public sealed class Chunk {
         }
 
         return true;
+    }
+
+    private void RefreshEmpty() {
+        Empty = CalculateEmpty();
     }
 
 
@@ -263,6 +275,7 @@ public sealed class Chunk {
         _entities.Clear();
         Array.Clear(SubChunks, 0, SubChunks.Length);
         Dirty = false;
+        Empty = true;
     }
 
     public Chunk Insert(Chunk source) {
@@ -278,6 +291,7 @@ public sealed class Chunk {
 
         Dirty = source.Dirty;
         Cache = source.Cache;
+        Empty = source.Empty;
 
         foreach ((var key, BlockLevelStorage value) in source._blocks) {
             _blocks[key] = value;
