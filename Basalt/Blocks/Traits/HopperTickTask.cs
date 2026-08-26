@@ -14,6 +14,7 @@ internal sealed class HopperTickTask : DelayedTask {
         _position = position;
         DelayTicks = 1;
         RunOnMainThread = true;
+        ExecutionMailbox = dimension.Mailbox;
     }
 
     public override void Execute() {

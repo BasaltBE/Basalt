@@ -42,14 +42,14 @@ public sealed class GrassBlockTrait : BlockTrait {
                 y += source.Next(-1, 2) * source.Next(3) / 2;
                 z += source.Next(-1, 2);
 
-                if (dimension.GetPermutation(x, y - 1, z).Type.Identifier !=
+                if (dimension.GetLoadedPermutationOrAir(x, y - 1, z).Type.Identifier !=
                     "minecraft:grass_block") {
                     break;
                 }
             }
 
-            if (!dimension.GetPermutation(x, y, z).Type.Air ||
-                dimension.GetPermutation(x, y - 1, z).Type.Identifier !=
+            if (!dimension.GetLoadedPermutationOrAir(x, y, z).Type.Air ||
+                dimension.GetLoadedPermutationOrAir(x, y - 1, z).Type.Identifier !=
                 "minecraft:grass_block") {
                 continue;
             }

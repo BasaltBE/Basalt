@@ -39,8 +39,8 @@ public sealed class FlowerTrait : BlockTrait {
             int y = position.Y + source.Next(-1, 2);
             int z = position.Z + source.Next(-3, 4);
 
-            if (!dimension.GetPermutation(x, y, z).Type.Air ||
-                dimension.GetPermutation(x, y - 1, z).Type.Identifier !=
+            if (!dimension.GetLoadedPermutationOrAir(x, y, z).Type.Air ||
+                dimension.GetLoadedPermutationOrAir(x, y - 1, z).Type.Identifier !=
                 BlockIdentifier.GrassBlock.ToIdentifier()) {
                 continue;
             }

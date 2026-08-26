@@ -86,14 +86,14 @@ public sealed class MobSpawnerTrait : BlockTrait {
         ScheduleTick(dimension, position);
 
         BlockLevelStorage? storage = dimension
-            .GetChunk(x >> 4, z >> 4)
+            .GetLoadedChunk(x >> 4, z >> 4)
             ?.GetBlockStorage(position);
 
         if (storage is null) {
             return;
         }
 
-        uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
+        uint networkId = (uint)dimension.GetLoadedPermutationOrAir(x, y, z).NetworkId;
 
         player.Send(
             new BlockActorDataPacket {
@@ -183,7 +183,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
 
     private static void BroadcastUpdate(Dimension dimension, BlockPos position, bool refreshBlock = false) {
         BlockLevelStorage? storage = dimension
-            .GetChunk(position.X >> 4, position.Z >> 4)
+            .GetLoadedChunk(position.X >> 4, position.Z >> 4)
             ?.GetBlockStorage(position);
 
         if (storage is null) {
@@ -200,7 +200,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
             return;
         }
 
-        uint networkId = (uint)dimension.GetPermutation(position.X, position.Y, position.Z).NetworkId;
+        uint networkId = (uint)dimension.GetLoadedPermutationOrAir(position.X, position.Y, position.Z).NetworkId;
         dimension.Broadcast(new UpdateBlockPacket {
             Position = position,
             BlockRuntimeId = 0,
@@ -304,7 +304,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    if (dimension.GetPermutation(x, y, z).Type.Solid) {
+                    if (dimension.GetLoadedPermutationOrAir(x, y, z).Type.Solid) {
                         return false;
                     }
                 }
@@ -325,7 +325,7 @@ public sealed class MobSpawnerTrait : BlockTrait {
     }
 
     private void WriteStorage(Dimension dimension, BlockPos position) {
-        var chunk = dimension.GetChunk(position.X >> 4, position.Z >> 4);
+        var chunk = dimension.GetLoadedChunk(position.X >> 4, position.Z >> 4);
         if (chunk is null) {
             return;
         }

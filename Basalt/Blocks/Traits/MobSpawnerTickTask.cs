@@ -14,6 +14,7 @@ internal sealed class MobSpawnerTickTask : DelayedTask {
         _position = position;
         DelayTicks = delayTicks;
         RunOnMainThread = true;
+        ExecutionMailbox = dimension.Mailbox;
     }
 
     public override void Execute() {

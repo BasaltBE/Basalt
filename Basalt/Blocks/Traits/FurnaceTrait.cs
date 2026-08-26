@@ -123,12 +123,12 @@ public sealed class FurnaceTrait : BlockTrait {
 
         BlockPos position = new() { X = x, Y = y, Z = z };
         BlockLevelStorage? storage = dimension
-          .GetChunk(x >> 4, z >> 4)
+          .GetLoadedChunk(x >> 4, z >> 4)
           ?.GetBlockStorage(position);
 
         if (storage is null) return;
 
-        uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
+        uint networkId = (uint)dimension.GetLoadedPermutationOrAir(x, y, z).NetworkId;
 
         player.Send(
           new BlockActorDataPacket {
@@ -316,7 +316,7 @@ public sealed class FurnaceTrait : BlockTrait {
         Dimension dimension = _container.Dimension;
         BlockPos pos = _container.Position;
 
-        var chunk = dimension.GetChunk(pos.X >> 4, pos.Z >> 4);
+        var chunk = dimension.GetLoadedChunk(pos.X >> 4, pos.Z >> 4);
         if (chunk is null) return;
 
         int lx = pos.X & 0xF;
@@ -409,7 +409,7 @@ public sealed class FurnaceTrait : BlockTrait {
     private void OnContainerUpdated(BlockContainer container) {
         if (container.Dimension is null) return;
 
-        var chunk = container.Dimension.GetChunk(container.Position.X >> 4, container.Position.Z >> 4);
+        var chunk = container.Dimension.GetLoadedChunk(container.Position.X >> 4, container.Position.Z >> 4);
         if (chunk is not null) {
             chunk.Dirty = true;
         }
@@ -430,7 +430,7 @@ public sealed class FurnaceTrait : BlockTrait {
     }
 
     private void WriteStorage(Dimension dimension, int x, int y, int z) {
-        var chunk = dimension.GetChunk(x >> 4, z >> 4);
+        var chunk = dimension.GetLoadedChunk(x >> 4, z >> 4);
         if (chunk is null) return;
 
         BlockPos position = new() { X = x, Y = y, Z = z };

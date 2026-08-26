@@ -92,7 +92,7 @@ public class FarmlandTrait : BlockTrait {
                 if (cpx != lastChunkX || cpz != lastChunkZ) {
                     lastChunkX = cpx;
                     lastChunkZ = cpz;
-                    lastChunk = dimension.GetChunk(cpx, cpz);
+                    lastChunk = dimension.GetLoadedChunk(cpx, cpz);
                 }
 
                 if (lastChunk is null) continue;
@@ -114,9 +114,10 @@ public class FarmlandTrait : BlockTrait {
     }
 
     private static void TickFarmland(Dimension dimension, BlockPos pos) {
-        BlockPermutation? perm;
-        try { perm = dimension.GetPermutation(pos.X, pos.Y, pos.Z, 0); }
-        catch { return; }
+        if (!dimension.TryGetLoadedPermutation(pos.X, pos.Y, pos.Z, out BlockPermutation? perm) ||
+            perm is null) {
+            return;
+        }
 
         if (!string.Equals(perm.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal))
             return;

@@ -101,18 +101,20 @@ public class CropTrait : BlockTrait {
     }
 
     private static void TickCrop(Dimension dimension, BlockPos pos) {
-        BlockPermutation perm;
-        try { perm = dimension.GetPermutation(pos.X, pos.Y, pos.Z, 0); }
-        catch { return; }
+        if (!dimension.TryGetLoadedPermutation(pos.X, pos.Y, pos.Z, out BlockPermutation? perm) ||
+            perm is null) {
+            return;
+        }
 
         if (!perm.State.TryGetValue("growth", out BlockStateValue growthVal))
             return;
 
         int currentGrowth = growthVal.Kind == 0 ? (int)growthVal.AsNumber() : 0;
 
-        BlockPermutation below;
-        try { below = dimension.GetPermutation(pos.X, pos.Y - 1, pos.Z, 0); }
-        catch { return; }
+        if (!dimension.TryGetLoadedPermutation(pos.X, pos.Y - 1, pos.Z, out BlockPermutation? below) ||
+            below is null) {
+            return;
+        }
 
         if (!string.Equals(below.Type.Identifier, BlockIdentifier.Farmland.ToIdentifier(), StringComparison.Ordinal)) {
             BlockPermutation air = BlockPermutation.Resolve("minecraft:air");

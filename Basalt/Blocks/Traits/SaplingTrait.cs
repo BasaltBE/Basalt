@@ -101,7 +101,7 @@ public sealed class SaplingTrait : BlockTrait {
 
                 for (int x2 = 0; x2 < 2 && matches; x2++) {
                     for (int z2 = 0; z2 < 2; z2++) {
-                        if (dimension.GetPermutation(x + x2, position.Y, z + z2)
+                        if (dimension.GetLoadedPermutationOrAir(x + x2, position.Y, z + z2)
                             .Type.Identifier != identifier) {
                             matches = false;
                             break;

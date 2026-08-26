@@ -143,7 +143,7 @@ public class ChestTrait : BlockTrait {
             int z = details.BlockPosition.Z + offsets[i][1];
             int y = details.BlockPosition.Y;
 
-            BlockPermutation neighborPermutation = dimension.GetPermutation(x, y, z);
+            BlockPermutation neighborPermutation = dimension.GetLoadedPermutationOrAir(x, y, z);
             if (neighborPermutation.Type.Identifier != Block.Type.Identifier) {
                 continue;
             }
@@ -258,14 +258,14 @@ public class ChestTrait : BlockTrait {
         WriteStorage(dimension, x, y, z);
 
         BlockLevelStorage? storage = dimension
-            .GetChunk(x >> 4, z >> 4)
+            .GetLoadedChunk(x >> 4, z >> 4)
             ?.GetBlockStorage(position);
 
         if (storage is null) {
             return;
         }
 
-        uint networkId = (uint)dimension.GetPermutation(x, y, z).NetworkId;
+        uint networkId = (uint)dimension.GetLoadedPermutationOrAir(x, y, z).NetworkId;
 
         player.Send(
             new BlockActorDataPacket {
@@ -315,7 +315,7 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        if (dimension.GetChunk(_pairX.Value >> 4, _pairZ.Value >> 4) is null) {
+        if (dimension.GetLoadedChunk(_pairX.Value >> 4, _pairZ.Value >> 4) is null) {
             _sharedContainer = null;
             return;
         }
@@ -552,7 +552,7 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        var chunk = container.Dimension.GetChunk(container.Position.X >> 4, container.Position.Z >> 4);
+        var chunk = container.Dimension.GetLoadedChunk(container.Position.X >> 4, container.Position.Z >> 4);
         if (chunk is not null) {
             chunk.Dirty = true;
         }
@@ -653,7 +653,7 @@ public class ChestTrait : BlockTrait {
             return;
         }
 
-        var chunk = Container.Dimension.GetChunk(position.X >> 4, position.Z >> 4);
+        var chunk = Container.Dimension.GetLoadedChunk(position.X >> 4, position.Z >> 4);
         BlockLevelStorage? storage = chunk?.GetBlockStorage(position);
         if (storage is null) {
             WriteStorage(Container.Dimension, position.X, position.Y, position.Z);
@@ -681,7 +681,7 @@ public class ChestTrait : BlockTrait {
             EventValue = state
         });
 
-        int runtimeId = Container.Dimension.GetPermutation(position.X, position.Y, position.Z).NetworkId;
+        int runtimeId = Container.Dimension.GetLoadedPermutationOrAir(position.X, position.Y, position.Z).NetworkId;
 
         Container.Dimension.PlaySound(soundEvent, new Vec3 {
                 X = position.X + 0.5f,

@@ -108,8 +108,9 @@ public class FluidTrait : BlockTrait {
     }
 
     private static BlockPermutation? GetBlock(Dimension dimension, BlockPos pos) {
-        try { return dimension.GetPermutation(pos.X, pos.Y, pos.Z, 0); }
-        catch { return null; }
+        return dimension.TryGetLoadedPermutation(pos.X, pos.Y, pos.Z, out BlockPermutation? permutation)
+            ? permutation
+            : null;
     }
 
     public static bool IsReplaceable(Dimension dimension, BlockPos pos) {
@@ -547,8 +548,9 @@ public class FluidTrait : BlockTrait {
                     int bz = pos.Z + dz;
 
                     BlockPermutation? perm;
-                    try { perm = dimension.GetPermutation(bx, by, bz, 0); }
-                    catch { continue; }
+                    if (!dimension.TryGetLoadedPermutation(bx, by, bz, out perm, 0) || perm is null) {
+                        continue;
+                    }
 
                     if (string.Equals(perm.Type.Identifier, farmlandId, StringComparison.Ordinal)) {
                         BlockPos farmPos = new() { X = bx, Y = by, Z = bz };
@@ -572,6 +574,7 @@ public class FluidTrait : BlockTrait {
             _kind = kind;
             _generation = generation;
             RunOnMainThread = true;
+            ExecutionMailbox = dimension.Mailbox;
         }
 
         public override void Execute() {

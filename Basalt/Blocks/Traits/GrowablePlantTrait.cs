@@ -42,7 +42,7 @@ public sealed class GrowablePlantTrait : BlockTrait {
             return false;
         }
 
-        if (dimension.GetPermutation(
+        if (dimension.GetLoadedPermutationOrAir(
             position.X,
             position.Y - 1,
             position.Z).Type.Identifier != baseBlock) {
