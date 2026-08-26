@@ -10,7 +10,7 @@ public static class MobEquipment {
     public static void Handle(Server server, NetworkConnection connection, MobEquipmentPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
             player.Dimension is not { } dimension ||
-            !dimension.TryEnqueue(() => Process(server, connection, player, packet))) {
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, packet))) {
             return;
         }
     }

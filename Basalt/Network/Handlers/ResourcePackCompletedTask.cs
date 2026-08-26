@@ -32,18 +32,22 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
     private Worlds.Dimensions.Dimension? _dimension;
     private Vec3 _playerPosition = new();
 
-    public ResourcePackCompletedTask(Server server, NetworkConnection connection, Player.Player player) {
+    public ResourcePackCompletedTask(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        Dimension? dimension) {
         _server = server;
         _connection = connection;
         _player = player;
+        _dimension = dimension;
+        CompletionMailbox = dimension?.Mailbox;
     }
 
     public override void Execute() {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("ResourcePackCompleted.Execute") : default;
 
-        _dimension = ResolvePlayerDimension(_server, _player);
-
-        _playerListPackets = _server.Players.Values.Select(static online => new PlayerListPacket {
+        _playerListPackets = _server.CurrentPlayersSnapshot.Select(static online => new PlayerListPacket {
             Action = PlayerListPacketType.Add,
             AddEntries = [CreatePlayerListEntry(online)]
         }).ToList();
@@ -312,7 +316,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         };
     }
 
-    private static Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
+    internal static Dimension? ResolvePlayerDimension(Server server, Player.Player player) {
         if (player.SavedWorldName is not null && player.SavedDimensionIdentifier is not null) {
             Worlds.World? world = server.Worlds.FirstOrDefault(world =>
                 string.Equals(world.Name, player.SavedWorldName, StringComparison.OrdinalIgnoreCase));

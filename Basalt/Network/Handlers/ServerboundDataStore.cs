@@ -10,6 +10,22 @@ public static class ServerboundDataStore {
             return;
         }
 
+        if (player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        ServerboundDataStorePacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
+            return;
+        }
+
         if (!player.Screens.TryGetValue(packet.Update.Property, out DataDrivenScreen? screen)) {
             return;
         }

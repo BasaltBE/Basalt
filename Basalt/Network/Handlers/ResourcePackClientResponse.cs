@@ -40,7 +40,7 @@ public static class ResourcePackClientResponse {
                     return;
                 }
 
-                server.Scheduler.Schedule(new ResourcePackCompletedTask(server, connection, player));
+                server.Scheduler.Schedule(new ResourcePackCoordinatorTask(server, connection, player));
                 return;
         }
     }

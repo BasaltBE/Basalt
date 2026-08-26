@@ -9,16 +9,29 @@ using Basalt.Core.Containers;
 
 public static class ContainerClose {
     public static void Handle(Server server, NetworkConnection connection, ContainerClosePacket packet) {
-        if (server.Players.TryGetValue(connection, out Player.Player? player)) {
-            ArgumentNullException.ThrowIfNull(player);
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
 
-            EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
-            if (inventory is not null && packet.ContainerId == (ContainerId)(inventory.Container.Identifier ?? ContainerId.Inventory)) {
-                inventory.Container.RemoveViewer(player, false);
-            }
-            else if (player.TryGetOpenContainer(packet.ContainerId, out Containers.Container? openContainer) && openContainer is not null) {
-                openContainer.RemoveViewer(player, false);
-            }
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        ContainerClosePacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
+            return;
+        }
+
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        if (inventory is not null && packet.ContainerId == (ContainerId)(inventory.Container.Identifier ?? ContainerId.Inventory)) {
+            inventory.Container.RemoveViewer(player, false);
+        }
+        else if (player.TryGetOpenContainer(packet.ContainerId, out Containers.Container? openContainer) && openContainer is not null) {
+            openContainer.RemoveViewer(player, false);
         }
 
         ContainerClosePacket response = new() {

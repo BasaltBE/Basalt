@@ -30,6 +30,7 @@ internal sealed class LoginTask : ServerTask {
         _server = server;
         _connection = connection;
         _packet = packet;
+        MainThreadCompletion = true;
     }
 
     public override void Execute() {

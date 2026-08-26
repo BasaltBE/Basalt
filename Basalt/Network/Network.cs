@@ -2,6 +2,7 @@ namespace Basalt.Core.Network;
 
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
@@ -19,10 +20,15 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 public sealed class NetworkHandler {
     private const int MaxPacketBatchSize = 1024 * 1024 * 8;
     private const int MaxPacketSize = 1024 * 1024 * 4;
+    internal const int MaxIncomingFramesPerTick = 256;
+    internal const int MaxIncomingPacketsPerTick = 2048;
+    internal const int MaxOutgoingPacketsPerTick = 4096;
+    private const int MaxPriorityIncomingPacketsPerTick = MaxIncomingPacketsPerTick / 2;
 
     private readonly Server _server;
     private readonly ConcurrentQueue<(NetworkConnection Connection, byte[] Payload)> _incomingFrames = new();
     private readonly ConcurrentQueue<IncomingPacket> _incomingPackets = new();
+    private readonly ConcurrentQueue<IncomingPacket> _priorityIncomingPackets = new();
     private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
     private readonly ConcurrentQueue<NetworkConnection> _pendingDisconnects = new();
     private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
@@ -32,18 +38,28 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
     private readonly Dictionary<NetworkConnection, List<OutgoingPacket>> _outgoingBuffer = [];
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
+    private readonly AutoResetEvent _wake = new(false);
     private static readonly ConcurrentDictionary<Type, int> _generatedPacketIds = new();
     private int _threadId;
     private long _sentBytes;
     private long _sentPackets;
     private long _sentFrames;
+    private long _incomingQueueWaitTicks;
+    private long _incomingQueueWaitCount;
 
     public int PendingIncomingFrameCount => _incomingFrames.Count;
-    public int PendingIncomingPacketCount => _incomingPackets.Count;
+    public int PendingIncomingPacketCount => _incomingPackets.Count + _priorityIncomingPackets.Count;
     public int PendingOutgoingPacketCount => _outgoingPackets.Count;
     public long SentBytes => Interlocked.Read(ref _sentBytes);
     public long SentPackets => Interlocked.Read(ref _sentPackets);
     public long SentFrames => Interlocked.Read(ref _sentFrames);
+    public double AverageIncomingQueueWaitMilliseconds =>
+        Interlocked.Read(ref _incomingQueueWaitCount) == 0
+            ? 0
+            : Interlocked.Read(ref _incomingQueueWaitTicks) * 1000.0 /
+              Stopwatch.Frequency /
+              Interlocked.Read(ref _incomingQueueWaitCount);
+    internal WaitHandle WakeHandle => _wake;
 
     public NetworkHandler(Server server) {
         _server = server;
@@ -110,6 +126,7 @@ public sealed class NetworkHandler {
 
     internal void EnqueueFrame(NetworkConnection connection, ReadOnlyMemory<byte> payload) {
         _incomingFrames.Enqueue((connection, payload.ToArray()));
+        _wake.Set();
     }
 
     internal void EnqueueFrame(RakNetConnection connection, ReadOnlyMemory<byte> payload) {
@@ -118,6 +135,7 @@ public sealed class NetworkHandler {
 
     internal void EnqueueDisconnection(NetworkConnection connection) {
         _disconnections.Enqueue(connection);
+        _wake.Set();
     }
 
     internal void EnqueueDisconnection(RakNetConnection connection) {
@@ -140,8 +158,10 @@ public sealed class NetworkHandler {
             connection.Disconnect();
         }
 
-        while (_incomingFrames.TryDequeue(out var frame)) {
+        int frames = 0;
+        while (frames < MaxIncomingFramesPerTick && _incomingFrames.TryDequeue(out var frame)) {
             DeserializeFrame(frame.Connection, frame.Payload);
+            frames++;
         }
 
         FlushOutgoing();
@@ -170,8 +190,16 @@ public sealed class NetworkHandler {
         }
 
         using (Profiler.Enabled ? Profiler.BeginZone("Network.ProcessPackets") : default) {
-            while (_incomingPackets.TryDequeue(out var packet)) {
+            int processed = 0;
+            int priorityProcessed = 0;
+            while (processed < MaxIncomingPacketsPerTick &&
+                   TryDequeueIncoming(ref priorityProcessed, out IncomingPacket packet)) {
+                Interlocked.Add(
+                    ref _incomingQueueWaitTicks,
+                    Stopwatch.GetTimestamp() - packet.QueuedTimestamp);
+                Interlocked.Increment(ref _incomingQueueWaitCount);
                 DispatchPacket(packet);
+                processed++;
             }
         }
     }
@@ -190,7 +218,7 @@ public sealed class NetworkHandler {
 
 
         string leaveMessage = $"§e{player.Username} left the server.";
-        foreach (Player.Player target in _server.Players.Values) {
+        foreach (Player.Player target in _server.CurrentPlayersSnapshot) {
             target.SendMessage(leaveMessage);
         }
 
@@ -269,16 +297,22 @@ public sealed class NetworkHandler {
                             continue;
                         }
 
-                        _incomingPackets.Enqueue(new IncomingPacket(
+                        IncomingPacket incoming = new(
                             connection,
                             packet!,
                             packetId,
+                            Stopwatch.GetTimestamp(),
                             _server.HasListeners(ServerEvent.PacketReceive)
                                 ? packetBuffer.ToArray()
-                                : ReadOnlyMemory<byte>.Empty));
+                                : ReadOnlyMemory<byte>.Empty);
+                        if (IsPriorityPacket(packet)) {
+                            _priorityIncomingPackets.Enqueue(incoming);
+                        }
+                        else {
+                            _incomingPackets.Enqueue(incoming);
+                        }
                     }
                     catch (Exception exception) {
-                        Logger.Warn($"Packet raw bytes: {Convert.ToHexString(packetBuffer)}");
                         Logger.Warn($"Packet decode error ({packetBuffer.Length} bytes): {exception}");
                     }
                 }
@@ -295,6 +329,12 @@ public sealed class NetworkHandler {
     }
 
     private void DispatchPacket(IncomingPacket incoming) {
+        if (incoming.Packet is PlayerAuthInputPacket &&
+            _server.Players.TryGetValue(incoming.Connection, out Player.Player? player)) {
+            player.LastInputQueueWaitMilliseconds =
+                (Stopwatch.GetTimestamp() - incoming.QueuedTimestamp) * 1000.0 / Stopwatch.Frequency;
+        }
+
         if (_server.HasListeners(ServerEvent.PacketReceive)) {
             _server.Players.TryGetValue(incoming.Connection, out Player.Player? packetPlayer);
             PacketReceiveSignal receiveSignal = new(
@@ -492,6 +532,10 @@ public sealed class NetworkHandler {
                     completion)));
         }
 
+        if (Environment.CurrentManagedThreadId != _threadId) {
+            _wake.Set();
+        }
+
         if (wait) {
             if (Environment.CurrentManagedThreadId == _threadId) {
                 FlushOutgoing();
@@ -510,7 +554,7 @@ public sealed class NetworkHandler {
         }
 
         Dictionary<NetworkConnection, List<OutgoingPacket>> outgoing = _outgoingBuffer;
-        int remaining = _outgoingPackets.Count;
+        int remaining = Math.Min(_outgoingPackets.Count, MaxOutgoingPacketsPerTick - 1);
         using (Profiler.Enabled ? Profiler.BeginZone("Network.TakeOutgoing") : default) {
             do {
                 if (!outgoing.TryGetValue(queued.Connection, out List<OutgoingPacket>? packets)) {
@@ -558,6 +602,33 @@ public sealed class NetworkHandler {
         }
     }
 
+    private bool TryDequeueIncoming(ref int priorityProcessed, out IncomingPacket packet) {
+        if (priorityProcessed < MaxPriorityIncomingPacketsPerTick &&
+            _priorityIncomingPackets.TryDequeue(out packet)) {
+            priorityProcessed++;
+            return true;
+        }
+
+        if (_incomingPackets.TryDequeue(out packet)) {
+            return true;
+        }
+
+        if (_priorityIncomingPackets.TryDequeue(out packet)) {
+            priorityProcessed++;
+            return true;
+        }
+
+        return false;
+    }
+
+    internal static bool IsPriorityPacket(Packet? packet) {
+        return packet is PlayerAuthInputPacket;
+    }
+
+    internal void Dispose() {
+        _wake.Dispose();
+    }
+
     private void Send(NetworkConnection connection, List<OutgoingPacket> packets) {
         SerializedOutgoing[] serialized = ArrayPool<SerializedOutgoing>.Shared.Rent(packets.Count);
         int count = 0;
@@ -571,7 +642,8 @@ public sealed class NetworkHandler {
                         outgoing.Payload,
                         outgoing.Length,
                         outgoing.Compression,
-                        outgoing.Immediate);
+                        outgoing.Immediate,
+                        IsUnreliable(outgoing.Packet));
                     continue;
                 }
 
@@ -580,20 +652,14 @@ public sealed class NetworkHandler {
                 SerializeOutgoingPacket(outgoing.Packet!, writer);
                 ReadOnlySpan<byte> packet = writer.GetProcessedBytes();
 
-                // if (outgoing.Packet is AddPlayerPacket) {
-                //     Logger.Warn($"AddPlayer raw bytes: {Convert.ToHexString(packet)}");
-                // }
-                // if (outgoing.Packet is PlayerListPacket) {
-                //     Logger.Warn($"PlayerList raw bytes: {Convert.ToHexString(packet)}");
-                // }
-
                 byte[] payload = ArrayPool<byte>.Shared.Rent(packet.Length);
                 packet.CopyTo(payload);
                 serialized[count] = new SerializedOutgoing(
                     payload,
                     packet.Length,
                     outgoing.Compression,
-                    outgoing.Immediate);
+                    outgoing.Immediate,
+                    IsUnreliable(outgoing.Packet));
             }
 
             if (connection.NetherNet) {
@@ -653,7 +719,10 @@ public sealed class NetworkHandler {
                 batch.AsSpan(0, offset).CopyTo(frame);
             }
 
-            connection.SendPacket(frame.AsSpan(0, frameLength), Reliability.ReliableOrdered, packet.Immediate);
+            connection.SendPacket(
+                frame.AsSpan(0, frameLength),
+                packet.Unreliable ? Reliability.Unreliable : Reliability.ReliableOrdered,
+                packet.Immediate);
         }
         finally {
             ArrayPool<byte>.Shared.Return(batch);
@@ -753,12 +822,14 @@ public sealed class NetworkHandler {
         byte[] Payload,
         int Length,
         CompressionMethod? Compression,
-        bool Immediate);
+        bool Immediate,
+        bool Unreliable);
 
     private readonly record struct IncomingPacket(
         NetworkConnection Connection,
         Packet Packet,
         int Id,
+        long QueuedTimestamp,
         ReadOnlyMemory<byte> PacketBuffer);
 
     private abstract class PacketListener {
@@ -823,6 +894,10 @@ public sealed class NetworkHandler {
         packet.Serialize(ref writer);
     }
 
+    private static bool IsUnreliable(Packet? packet) {
+        return packet is MoveActorAbsolutePacket or MoveActorDeltaPacket or SetActorMotionPacket;
+    }
+
     private static bool TryDeserializePacket(
         ReadOnlySpan<byte> packetBuffer,
         out Packet? packet,
@@ -835,16 +910,11 @@ public sealed class NetworkHandler {
         packetId = id;
 
         if (!PacketPool.TryGetPacketType(id, out Type? packetType)) {
-            Logger.Debug("Ignoring unsupported packet ID {0}.", id);
             packet = null;
             return false;
         }
 
         packet = (Packet)Activator.CreateInstance(packetType!)!;
-
-        // if (packet is ResourcePackClientResponsePacket) {
-        //     Logger.Info($"ResourcePackClientResponse bytes: {Convert.ToHexString(packetBuffer)}");
-        // }
 
         packet.Deserialize(ref reader);
 

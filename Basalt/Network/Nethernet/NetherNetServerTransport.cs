@@ -8,8 +8,11 @@ internal sealed class NetherNetServerTransport : IDisposable {
     private readonly ServerIdentity _identity;
     private readonly NetherNetSignalingServer _signaling;
     private readonly ConcurrentDictionary<NetherNetPeer, NetworkConnection> _peers = new();
-    private readonly ConcurrentQueue<(NetherNetConnection Connection, byte[] Payload)> _outgoing = new();
+    private readonly ConcurrentDictionary<NetherNetPeer, NetherNetConnection> _unreliableChannels = new();
+    private readonly BlockingCollection<(NetherNetConnection Connection, byte[] Payload)> _outgoing =
+        new(new ConcurrentQueue<(NetherNetConnection Connection, byte[] Payload)>(), 4096);
     private readonly ConcurrentQueue<Action> _commands = new();
+    private readonly AutoResetEvent _wake = new(false);
     private readonly CancellationTokenSource _cancellation = new();
     private readonly Thread _thread;
     private bool _started;
@@ -36,10 +39,14 @@ internal sealed class NetherNetServerTransport : IDisposable {
             _identity.Dispose();
             _signaling.Dispose();
             _cancellation.Dispose();
+            _outgoing.Dispose();
+            _wake.Dispose();
             return;
         }
 
+        _outgoing.CompleteAdding();
         _cancellation.Cancel();
+        _wake.Set();
         _thread.Join(1000);
         _signaling.StopAsync().GetAwaiter().GetResult();
         foreach (NetherNetPeer peer in _peers.Keys) {
@@ -50,6 +57,8 @@ internal sealed class NetherNetServerTransport : IDisposable {
         _identity.Dispose();
         _signaling.Dispose();
         _cancellation.Dispose();
+        _outgoing.Dispose();
+        _wake.Dispose();
         _started = false;
     }
 
@@ -69,27 +78,64 @@ internal sealed class NetherNetServerTransport : IDisposable {
 
     private void Attach(NetherNetPeer peer, NetherNetConnection netherConnection) {
         if (netherConnection.Channel != NetherNetChannel.Reliable) {
+            _unreliableChannels[peer] = netherConnection;
             if (_peers.TryGetValue(peer, out NetworkConnection? existing)) {
                 netherConnection.MessageReceived += payload => _network.EnqueueFrame(existing, payload);
-                netherConnection.Closed += () => _network.EnqueueDisconnection(existing);
             }
 
             return;
         }
 
-        NetworkConnection connection = new(
-            (payload, _, _) => _outgoing.Enqueue((netherConnection, payload.ToArray())),
-            () => _commands.Enqueue(peer.Dispose),
-            netherNet: true);
+        NetworkConnection? connection = null;
+        connection = new NetworkConnection(
+            (payload, _, _) => {
+                EnqueueOutgoing(peer, netherConnection, payload);
+            },
+            () => {
+                _commands.Enqueue(peer.Dispose);
+                _wake.Set();
+            },
+            netherNet: true,
+            unreliableSend: (payload, _, _) => {
+                if (_unreliableChannels.TryGetValue(peer, out NetherNetConnection? unreliableChannel)) {
+                    EnqueueOutgoing(peer, unreliableChannel, payload);
+                }
+            });
         _peers[peer] = connection;
         netherConnection.MessageReceived += payload => _network.EnqueueFrame(connection, payload);
         netherConnection.Closed += () => _network.EnqueueDisconnection(connection);
+        if (_unreliableChannels.TryGetValue(peer, out NetherNetConnection? unreliable)) {
+            unreliable.MessageReceived += payload => _network.EnqueueFrame(connection, payload);
+        }
     }
 
     private void Close(NetherNetPeer peer) {
         if (_peers.TryRemove(peer, out NetworkConnection? connection)) {
             _network.EnqueueDisconnection(connection);
         }
+
+        _unreliableChannels.TryRemove(peer, out _);
+    }
+
+    private void EnqueueOutgoing(
+        NetherNetPeer peer,
+        NetherNetConnection connection,
+        ReadOnlySpan<byte> payload) {
+        try {
+            if (_outgoing.TryAdd((connection, payload.ToArray()))) {
+                _wake.Set();
+                return;
+            }
+        }
+        catch (InvalidOperationException) when (_outgoing.IsAddingCompleted) {
+            return;
+        }
+        catch (ObjectDisposedException) {
+            return;
+        }
+
+        _commands.Enqueue(peer.Dispose);
+        _wake.Set();
     }
 
     private void Run() {
@@ -103,7 +149,7 @@ internal sealed class NetherNetServerTransport : IDisposable {
                 }
             }
 
-            while (_outgoing.TryDequeue(out (NetherNetConnection Connection, byte[] Payload) outgoing)) {
+            while (_outgoing.TryTake(out (NetherNetConnection Connection, byte[] Payload) outgoing)) {
                 try {
                     outgoing.Connection.Send(outgoing.Payload);
                 }
@@ -112,7 +158,9 @@ internal sealed class NetherNetServerTransport : IDisposable {
                 }
             }
 
-            _cancellation.Token.WaitHandle.WaitOne(1);
+            if (_commands.IsEmpty && _outgoing.Count == 0) {
+                _wake.WaitOne();
+            }
         }
     }
 }

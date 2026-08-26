@@ -20,6 +20,22 @@ public static class RequestChunkRadius {
             return;
         }
 
+        if (player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, radius))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        int radius) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
+            return;
+        }
+
         PlayerChunkRenderingTrait? chunkRendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (chunkRendering is null) {
             return;

@@ -9,7 +9,20 @@ using Basalt.BedrockProtocol.Types;
 
 public static class PlayerSkin {
     public static void Handle(Server server, NetworkConnection connection, PlayerSkinPacket packet) {
-        if (!server.Players.TryGetValue(connection, out Player? player)) {
+        if (!server.Players.TryGetValue(connection, out Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, packet))) {
+            return;
+        }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player player,
+        PlayerSkinPacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player? current) ||
+            !ReferenceEquals(current, player)) {
             return;
         }
 

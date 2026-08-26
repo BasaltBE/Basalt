@@ -10,10 +10,24 @@ using Basalt.BedrockProtocol.Packets;
 
 public static class SetLocalPlayerAsInitialized {
     public static void Handle(Server server, NetworkConnection connection, SetLocalPlayerAsInitializedPacket packet) {
-        if (!server.Players.TryGetValue(connection, out Player.Player? player)) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
+            player.Dimension is not { } dimension ||
+            !dimension.TryEnqueue(player, () => Process(server, connection, player, packet))) {
             Logger.Warn("SetLocalPlayerAsInitialized received for unknown player session.");
             return;
         }
+    }
+
+    private static void Process(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        SetLocalPlayerAsInitializedPacket packet) {
+        if (!server.Players.TryGetValue(connection, out Player.Player? current) ||
+            !ReferenceEquals(current, player)) {
+            return;
+        }
+
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
         Logger.Info($"Local player initialized: unique={player.UniqueId}, runtime={player.RuntimeId}, tick={tick}");
@@ -49,7 +63,7 @@ public static class SetLocalPlayerAsInitialized {
         player.AttributesDirty = true;
 
         string joinMessage = $"§e{player.Username} joined the server.";
-        foreach (Player.Player target in server.Players.Values) {
+        foreach (Player.Player target in server.CurrentPlayersSnapshot) {
             // target.SendMessage(joinMessage);
         }
 

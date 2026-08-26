@@ -14,19 +14,22 @@ public static class Text {
         }
 
         string? rawMessage = packet.Body.Message;
-        if(rawMessage is null) return;
-
-        string message = $"<{sender.Username}> {rawMessage}";
-
-        PlayerChatSignal signal = new(sender, rawMessage, message);
-        server.Emit(signal);
-        if (!signal.Emit()) {
+        if (rawMessage is null || sender.Dimension is not { } dimension) {
             return;
         }
 
-        foreach (Player.Player player in server.Players.Values) {
-            player.SendMessage(signal.Message);
-        }
+        string message = $"<{sender.Username}> {rawMessage}";
+        dimension.TryEnqueue(sender, () => {
+            PlayerChatSignal signal = new(sender, rawMessage, message);
+            server.Emit(signal);
+            if (!signal.Emit()) {
+                return;
+            }
+
+            foreach (Player.Player player in server.CurrentPlayersSnapshot) {
+                player.SendMessage(signal.Message);
+            }
+        });
     }
 }
 

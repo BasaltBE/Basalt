@@ -15,6 +15,7 @@ using Basalt.Core.Item.Traits;
 using Basalt.Core.Item.Traits.Types;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Profiling;
+using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
 
 using Basalt.BedrockProtocol.Enums;
 using Basalt.BedrockProtocol.NBT;
@@ -57,9 +58,53 @@ public static class PlayerAuthInput {
     public static void Handle(Server server, NetworkConnection connection, PlayerAuthInputPacket packet) {
         if (!server.Players.TryGetValue(connection, out Player.Player? player) ||
             player.Dimension is not { } dimension ||
-            !dimension.TryEnqueue(() => Process(server, connection, player, packet))) {
+            !Enqueue(server, connection, player, dimension, packet)) {
             return;
         }
+    }
+
+    private static bool Enqueue(
+        Server server,
+        NetworkConnection connection,
+        Player.Player player,
+        Dimension dimension,
+        PlayerAuthInputPacket packet) {
+        Action command = () => {
+            if (ReferenceEquals(player.Dimension, dimension)) {
+                Process(server, connection, player, packet);
+            }
+        };
+
+        return IsCoalescable(packet)
+            ? dimension.TryEnqueueCoalesced(player, command)
+            : dimension.TryEnqueue(player, command);
+    }
+
+    private static bool IsCoalescable(PlayerAuthInputPacket packet) {
+        if (packet.ItemUseTransaction is not null ||
+            packet.ItemStackRequest is not null ||
+            packet.PlayerBlockActions is { Length: > 0 }) {
+            return false;
+        }
+
+        foreach (PlayerAuthInputData input in packet.InputData) {
+            if (input is PlayerAuthInputData.StartUsingItem or
+                PlayerAuthInputData.PerformItemInteraction or
+                PlayerAuthInputData.PerformItemStackRequest or
+                PlayerAuthInputData.PerformBlockActions or
+                PlayerAuthInputData.StartSprinting or
+                PlayerAuthInputData.StopSprinting or
+                PlayerAuthInputData.StartSneaking or
+                PlayerAuthInputData.StopSneaking or
+                PlayerAuthInputData.StartSwimming or
+                PlayerAuthInputData.StopSwimming or
+                PlayerAuthInputData.StartCrawling or
+                PlayerAuthInputData.StopCrawling) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static void Process(
