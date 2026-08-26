@@ -2,6 +2,7 @@ namespace Basalt.Core.Plugins;
 
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Loader;
 using Basalt.Core.Profiling;
 using McMaster.NETCore.Plugins;
 
@@ -41,21 +42,31 @@ public sealed class PluginManager {
                 Directory.CreateDirectory(stagedPluginDirectory);
                 CopyPluginFiles(subDir, stagedPluginDirectory);
                 string stagedPluginDll = Path.Combine(stagedPluginDirectory, Path.GetFileName(pluginDll));
+                int loadedBefore = _plugins.Count;
                 Load(stagedPluginDll);
-                count += 1;
+                if (_plugins.Count > loadedBefore) {
+                    count += 1;
+                }
             }
         }
 
         TimeSpan LoadPluginsElapsed = Stopwatch.GetElapsedTime(LoadPluginsTimeStamp);
-        Logger.Info($"Loaded {count} plugins in {LoadPluginsElapsed.Milliseconds}ms.");
+        Logger.Info($"Loaded {count} plugins in {LoadPluginsElapsed.TotalMilliseconds:0}ms.");
     }
 
     public void Load(string assemblyPath) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Plugin.Load({Path.GetFileName(assemblyPath)})") : default;
         try {
+            string hostDependency = Path.Combine(AppContext.BaseDirectory, "Tmds.LibC.dll");
+            if (File.Exists(hostDependency) && !AssemblyLoadContext.Default.Assemblies.Any(assembly =>
+                    string.Equals(assembly.GetName().Name, "Tmds.LibC", StringComparison.OrdinalIgnoreCase))) {
+                AssemblyLoadContext.Default.LoadFromAssemblyPath(hostDependency);
+            }
+
             var loader = PluginLoader.CreateFromAssemblyFile(
                 assemblyPath,
-                sharedTypes: [typeof(Plugin), typeof(Server)]
+                sharedTypes: [typeof(Plugin), typeof(Server)],
+                configure: config => config.PrivateAssemblies.Add(new AssemblyName("Tmds.LibC"))
             );
 
             Assembly assembly = loader.LoadDefaultAssembly();
@@ -144,8 +155,15 @@ public sealed class PluginManager {
     }
 
     private static void CopyPluginFiles(string sourceDirectory, string destinationDirectory) {
-        foreach (string file in Directory.GetFiles(sourceDirectory, "*.dll", SearchOption.AllDirectories)) {
-            string destination = Path.Combine(destinationDirectory, Path.GetRelativePath(sourceDirectory, file));
+        foreach (string file in Directory.GetFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly)) {
+            string fileName = Path.GetFileName(file);
+            if (!fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                !fileName.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) &&
+                !fileName.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase)) {
+                continue;
+            }
+
+            string destination = Path.Combine(destinationDirectory, fileName);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination);
         }
