@@ -246,11 +246,12 @@ public class Player : Entities.Entity {
             Reason = string.IsNullOrEmpty(reason)
                 ? DisconnectFailReason.Disconnected
                 : DisconnectFailReason.Kicked,
-            MessageSkipped = string.IsNullOrEmpty(reason),
-            Messages = new DisconnectPacketMessages {
-                Message = reason,
-                FilteredMessage = string.Empty
-            }
+            Messages = string.IsNullOrEmpty(reason)
+                ? null
+                : new DisconnectPacketMessages {
+                    Message = reason,
+                    FilteredMessage = string.Empty
+                }
         };
 
         if (immediate) {

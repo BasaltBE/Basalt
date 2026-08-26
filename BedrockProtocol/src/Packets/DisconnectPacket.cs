@@ -9,24 +9,26 @@ namespace Basalt.BedrockProtocol.Packets;
 [PacketId(5)]
 public sealed class DisconnectPacket : DataPacket {
     public DisconnectFailReason Reason;
-    public bool MessageSkipped;
-    public DisconnectPacketMessages Messages = new();
+    public DisconnectPacketMessages? Messages;
 
     public override void Serialize(ref BinaryWriter writer) {
-        writer.WriteVarInt((int)Reason);
-        writer.WriteVarUInt(MessageSkipped ? 1u : 0u);
+        writer.WriteZigZag((int)Reason);
+        writer.WriteBool(Messages is null);
 
-        if (!MessageSkipped) {
+        if (Messages is not null) {
             Messages.Write(ref writer);
         }
     }
 
     public override void Deserialize(ref BinaryReader reader) {
-        Reason = (DisconnectFailReason)reader.ReadVarInt();
-        MessageSkipped = reader.ReadVarUInt() != 0;
+        Reason = (DisconnectFailReason)reader.ReadZigZag();
 
-        if (!MessageSkipped) {
+        if (!reader.ReadBool()) {
+            Messages = new();
             Messages.Read(ref reader);
+        }
+        else {
+            Messages = null;
         }
     }
 }
