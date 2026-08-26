@@ -30,7 +30,7 @@ public static class SetLocalPlayerAsInitialized {
 
         ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0;
 
-        Logger.Info($"Local player initialized: unique={player.UniqueId}, runtime={player.RuntimeId}, tick={tick}");
+        // Logger.Info($"Local player initialized: unique={player.UniqueId}, runtime={player.RuntimeId}, tick={tick}");
 
         player.Attributes.Send(true);
 
