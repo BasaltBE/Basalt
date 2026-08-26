@@ -178,7 +178,7 @@ public sealed class ItemEntity : Entity {
                 ActorRuntimeId = player.RuntimeId 
             });
 
-            Logger.Info("Item picked up player:{0} item:{1} count:{2} moved:{3}", player.Username, Item.Identifier, after, moved);
+            // Logger.Info("Item picked up player:{0} item:{1} count:{2} moved:{3}", player.Username, Item.Identifier, after, moved);
 
             if (after == 0) {
                 Despawn(new EntityDespawnOptions());
