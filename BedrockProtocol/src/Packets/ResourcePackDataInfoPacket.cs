@@ -10,7 +10,7 @@ public sealed class ResourcePackDataInfoPacket : DataPacket {
     public uint ChunkSize;
     public uint NumberOfChunks;
     public ulong FileSize;
-    public string FileHash = string.Empty;
+    public byte[] FileHash = [];
     public bool IsPremiumPack;
     public byte PackType;
 
@@ -19,7 +19,8 @@ public sealed class ResourcePackDataInfoPacket : DataPacket {
         writer.WriteUInt32(ChunkSize, true);
         writer.WriteUInt32(NumberOfChunks, true);
         writer.WriteUInt64(FileSize, true);
-        writer.WriteVarString(FileHash);
+        writer.WriteVarUInt((uint)FileHash.Length);
+        writer.WriteBytes(FileHash);
         writer.WriteBool(IsPremiumPack);
         writer.WriteUInt8(PackType);
     }
@@ -29,7 +30,8 @@ public sealed class ResourcePackDataInfoPacket : DataPacket {
         ChunkSize = reader.ReadUInt32(true);
         NumberOfChunks = reader.ReadUInt32(true);
         FileSize = reader.ReadUInt64(true);
-        FileHash = reader.ReadVarString();
+        int hashLength = checked((int)reader.ReadVarUInt());
+        FileHash = reader.ReadBytes(hashLength).ToArray();
         IsPremiumPack = reader.ReadBool();
         PackType = reader.ReadUInt8();
     }

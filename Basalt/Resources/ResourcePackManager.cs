@@ -9,7 +9,7 @@ using Basalt.Core.Profiling;
 /// Each subfolder with a valid manifest.json is treated as a resource pack.
 /// </summary>
 public sealed class ResourcePackManager {
-    private const uint DefaultChunkSize = 1048576; // 1 MB
+    private const uint DefaultChunkSize = 131072;
 
     private readonly List<ResourcePack> _packs = [];
 

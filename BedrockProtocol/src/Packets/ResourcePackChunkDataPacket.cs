@@ -9,19 +9,21 @@ public sealed class ResourcePackChunkDataPacket : DataPacket {
     public string ResourceName = string.Empty;
     public uint ChunkId;
     public ulong ByteOffset;
-    public string ChunkData = string.Empty;
+    public byte[] ChunkData = [];
 
     public override void Serialize(ref BinaryWriter writer) {
         writer.WriteVarString(ResourceName);
         writer.WriteUInt32(ChunkId, true);
         writer.WriteUInt64(ByteOffset, true);
-        writer.WriteVarString(ChunkData);
+        writer.WriteVarUInt((uint)ChunkData.Length);
+        writer.WriteBytes(ChunkData);
     }
 
     public override void Deserialize(ref BinaryReader reader) {
         ResourceName = reader.ReadVarString();
         ChunkId = reader.ReadUInt32(true);
         ByteOffset = reader.ReadUInt64(true);
-        ChunkData = reader.ReadVarString();
+        int length = checked((int)reader.ReadVarUInt());
+        ChunkData = reader.ReadBytes(length).ToArray();
     }
 }

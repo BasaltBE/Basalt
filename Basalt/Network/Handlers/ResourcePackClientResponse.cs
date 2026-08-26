@@ -55,7 +55,7 @@ public static class ResourcePackClientResponse {
 
             uint chunkSize = server.ResourcePacks.ChunkSize;
             server.Network.QueuePacket(connection, new ResourcePackDataInfoPacket {
-                FileHash = Convert.ToHexString(pack.Hash),
+                FileHash = pack.Hash,
                 FileSize = pack.Size,
                 IsPremiumPack = false,
                 NumberOfChunks = pack.ChunkCount(chunkSize),
@@ -76,7 +76,7 @@ public static class ResourcePackClientResponse {
         packs.AddRange(server.ResourcePacks.Packs.Select(static pack => new PackInstanceId {
             PackId = pack.Uuid.ToString(),
             Version = pack.VersionString,
-            SubPackName = "Education Edition Resource Pack"
+            SubPackName = string.Empty
         }));
 
         server.Network.QueuePacket(connection, new ResourcePackStackPacket {
