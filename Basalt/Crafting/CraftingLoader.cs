@@ -4,10 +4,13 @@ using System.Text.Json;
 using Basalt.Core.Profiling;
 
 public static class CraftingLoader {
+    private static readonly object SyncRoot = new();
+
     public static void Load(string? dataDirectory = null) {
-        using var _ = Profiler.Enabled ? Profiler.BeginZone("Crafting.Load") : default;
-        CraftingRegistry.Initialize();
-        FurnaceRegistry.Initialize();
+        lock (SyncRoot) {
+            using var _ = Profiler.Enabled ? Profiler.BeginZone("Crafting.Load") : default;
+            CraftingRegistry.Initialize();
+            FurnaceRegistry.Initialize();
 
         Stream? stream;
         if (!string.IsNullOrWhiteSpace(dataDirectory)) {
@@ -56,6 +59,7 @@ public static class CraftingLoader {
                 CraftingRegistry.Instance.AddRecipe(recipe);
             }
 
+            }
         }
     }
 
