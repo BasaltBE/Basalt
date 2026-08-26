@@ -1,5 +1,7 @@
 namespace Basalt.Core.Tasks;
 
+using Basalt.Core.Plugins;
+
 public abstract class ServerTask {
     public bool RunOnMainThread { get; init; }
     public TaskPriority Priority { get; init; } = TaskPriority.Normal;
@@ -13,6 +15,10 @@ public abstract class ServerTask {
     public bool IsCancelled { get; private set; }
     internal long QueuedTimestamp;
     internal ServerTask? NextInSlot { get; set; }
+    internal PluginContainer? Owner { get; set; }
+    internal Action<PluginContainer?, string, Exception>? RuntimeErrorHandler { get; set; }
+    internal Action<ServerTask>? CompletionHandler { get; set; }
+    private int _completionNotified;
 
     public abstract void Execute();
 
@@ -28,7 +34,7 @@ public abstract class ServerTask {
         catch (Exception exception) {
             succeeded = false;
             ExecutionFailed = true;
-            Logger.Warn($"Domain task execution failed: {exception}");
+            ReportFailure("task execution", exception);
         }
 
         IsExecuted = true;
@@ -37,16 +43,38 @@ public abstract class ServerTask {
                 Complete();
             }
             catch (Exception exception) {
-                Logger.Warn($"Domain task completion failed: {exception}");
+                ReportFailure("task completion", exception);
             }
         }
 
-        IsCompleted = true;
+        MarkCompleted();
     }
 
     public void Cancel() {
         IsCancelled = true;
+        MarkCompleted();
+    }
+
+    internal void Stop() {
+        try {
+            OnStop();
+        }
+        catch (Exception exception) {
+            ReportFailure("task stop", exception);
+        }
+    }
+
+    internal void ReportFailure(string callback, Exception exception) {
+        if (RuntimeErrorHandler is { } handler)
+            handler(Owner, $"{GetType().Name} {callback}", exception);
+        else
+            Logger.Warn($"{GetType().Name} {callback} failed: {exception}");
+    }
+
+    internal void MarkCompleted() {
         IsCompleted = true;
+        if (Interlocked.Exchange(ref _completionNotified, 1) == 0)
+            CompletionHandler?.Invoke(this);
     }
 
     internal void Reset() {
@@ -54,6 +82,7 @@ public abstract class ServerTask {
         IsExecuted = false;
         IsCompleted = false;
         ExecutionFailed = false;
+        _completionNotified = 0;
         WorkerAffinity = -1;
         NextInSlot = null;
     }

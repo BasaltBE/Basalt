@@ -7,14 +7,19 @@ using Basalt.BedrockProtocol.Enums;
 using Player = Player.Player;
 using ServerInstance = Server;
 using Basalt.Core.Enums;
+using Basalt.Core.Plugins;
 
 public sealed class CommandRegistry {
     readonly Dictionary<string, CommandDefinition> _commands = new(StringComparer.OrdinalIgnoreCase);
     readonly List<CommandDefinition> _definitions = [];
+    internal Func<PluginContainer?>? PluginOwnerProvider { get; set; }
+    internal Func<PluginContainer?, IDisposable>? PluginScopeProvider { get; set; }
+    internal Action<PluginContainer?, string, Exception>? PluginErrorHandler { get; set; }
 
     public IEnumerable<CommandDefinition> Definitions => _definitions;
 
     public void Register(CommandDefinition definition) {
+        definition.Owner = PluginOwnerProvider?.Invoke();
         _definitions.Add(definition);
         _commands[definition.Name] = definition;
         foreach (string alias in definition.Aliases) {
@@ -80,7 +85,29 @@ public sealed class CommandRegistry {
             ctx.Arguments.AddRange(matched);
         }
 
-        return definition.Handler.Execute(ctx);
+        try {
+            using (PluginScopeProvider?.Invoke(definition.Owner) ?? EmptyScope.Instance)
+                return definition.Handler.Execute(ctx);
+        }
+        catch (Exception exception) {
+            PluginErrorHandler?.Invoke(definition.Owner, $"command /{definition.Name}", exception);
+            return CommandResult.Error("§cThe command failed while executing.");
+        }
+    }
+
+    internal void RemovePluginCommands(PluginContainer plugin) {
+        foreach (CommandDefinition definition in _definitions
+            .Where(definition => ReferenceEquals(definition.Owner, plugin))
+            .ToArray()) {
+            Unregister(definition.Name);
+        }
+    }
+
+    private sealed class EmptyScope : IDisposable {
+        public static EmptyScope Instance { get; } = new();
+
+        public void Dispose() {
+        }
     }
 
     static List<CommandArgument>? MatchOverloads(CommandContext ctx, CommandDefinition definition, string[] rawArgs) {

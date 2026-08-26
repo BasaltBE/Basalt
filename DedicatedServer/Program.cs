@@ -39,9 +39,7 @@ sealed class Program {
         if (!props.HasProperty("max-players")) props.SetNumericalProperty("max-players", 10);
         if (!props.HasProperty("online-mode")) props.SetBoolProperty("online-mode", true);
         if (!props.HasProperty("server-port")) props.SetNumericalProperty("server-port", 19132);
-        if (!props.HasProperty("server-ipv6-port")) props.SetNumericalProperty("server-ipv6-port", 19133);
         if (!props.HasProperty("motd")) props.SetStringProperty("motd", "Basalt");
-        if (!props.HasProperty("raknet-mtu")) props.SetNumericalProperty("raknet-mtu", 1024);
         if (!props.HasProperty("default-world")) props.SetStringProperty("default-world", "world");
         if (!props.HasProperty("world-provider")) props.SetStringProperty("world-provider", "leveldb");
         if (!props.HasProperty("world-path")) props.SetStringProperty("world-path", "worlds");

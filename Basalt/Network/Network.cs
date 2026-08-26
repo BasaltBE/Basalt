@@ -7,10 +7,6 @@ using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
 using Basalt.Core.Profiling;
-using RakNetServerOptions = Basalt.RakNet.RaknetServerOptions;
-using RakNetConnection = Basalt.RakNet.NetworkConnection;
-using RakNetNetworkServer = Basalt.RakNet.NetworkServer;
-using Basalt.RakNet.Packets.Enums;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Enums;
 using Basalt.BedrockProtocol;
@@ -20,10 +16,6 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
 public sealed class NetworkHandler {
-    private static readonly long RakNetTickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
-
-    private readonly RakNetNetworkServer _rakNet;
-    private const int MaxPacketBatchSize = 1024 * 1024 * 8;
     private const int MaxPacketSize = 1024 * 1024 * 4;
     internal const int MaxIncomingFramesPerTick = 256;
     internal const int MaxIncomingPacketsPerTick = 2048;
@@ -37,7 +29,6 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<NetworkConnection> _disconnections = new();
     private readonly ConcurrentQueue<NetworkConnection> _pendingDisconnects = new();
     private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
-    private readonly ConcurrentDictionary<RakNetConnection, NetworkConnection> _rakNetConnections = new();
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
@@ -45,8 +36,7 @@ public sealed class NetworkHandler {
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
     private readonly AutoResetEvent _wake = new(false);
     private static readonly ConcurrentDictionary<Type, int> _generatedPacketIds = new();
-    private Task? _rakNetTask;
-    private Thread? _rakNetThread;
+    private Thread? _networkThread;
     private int _threadId;
     private long _sentBytes;
     private long _sentPackets;
@@ -70,14 +60,6 @@ public sealed class NetworkHandler {
 
     public NetworkHandler(Server server) {
         _server = server;
-        _rakNet = new RakNetNetworkServer(new RakNetServerOptions(
-            MaxMtu: server.Properties.Mtu,
-            Port: server.Properties.Port,
-            IPv6Port: server.Properties.IPv6Port));
-        _rakNet.GetAdvertisement = () =>
-            $"MCPE;{server.Properties.Motd};{Constants.ProtocolVersion};{Constants.MinecraftVersion};{server.Players.Count};{server.Properties.MaxPlayers};{_rakNet.ServerGuid};Bedrock level;Survival;1;{server.Properties.Port};{server.Properties.IPv6Port};";
-
-
         /// Packets ported to new Protocol
         On<RequestNetworkSettingsPacket>((connection, packet) => RequestNetworkSettings.Handle(_server, connection, packet));
         On<LoginPacket>((connection, packet) => LoginHandler.Handle(_server, connection, packet));
@@ -142,25 +124,9 @@ public sealed class NetworkHandler {
         _wake.Set();
     }
 
-    internal void EnqueueFrame(RakNetConnection connection, ReadOnlyMemory<byte> payload) {
-        EnqueueFrame(GetRakNetConnection(connection), payload);
-    }
-
     internal void EnqueueDisconnection(NetworkConnection connection) {
         _disconnections.Enqueue(connection);
         _wake.Set();
-    }
-
-    internal void EnqueueDisconnection(RakNetConnection connection) {
-        if (_rakNetConnections.TryGetValue(connection, out NetworkConnection? wrapped)) {
-            EnqueueDisconnection(wrapped);
-        }
-    }
-
-    private NetworkConnection GetRakNetConnection(RakNetConnection connection) {
-        return _rakNetConnections.GetOrAdd(connection, static connection => new NetworkConnection(
-            (payload, reliability, immediate) => connection.SendPacket(payload, reliability, immediate),
-            connection.Disconnect));
     }
 
     internal void Tick() {
@@ -256,38 +222,27 @@ public sealed class NetworkHandler {
 
         try {
             ReadOnlySpan<byte> frame;
-            if (connection.NetherNet) {
-                if (!connection.NetherNetCompression) {
-                    frame = packetData;
-                }
-                else if (packetData.Length == 0) {
-                    return;
-                }
-                else {
-                    CompressionMethod compression = (CompressionMethod)packetData[0];
-                    ReadOnlySpan<byte> compressed = packetData[1..];
-                    if (compression == CompressionMethod.Zlib) {
-                        decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
-                        int decompressedLength = PacketCompression.Decompress(compressed, decompressedBuffer);
-                        frame = decompressedBuffer.AsSpan(0, decompressedLength);
-                    }
-                    else if (compression == CompressionMethod.None) {
-                        frame = compressed;
-                    }
-                    else {
-                        Logger.Warn($"Unsupported NetherNet compression method: {compression}");
-                        return;
-                    }
-                }
+            if (!connection.NetherNetCompression) {
+                frame = packetData;
             }
             else {
-                decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
-                int decompressedLength;
-                using (Profiler.Enabled ? Profiler.BeginZone("Network.Unframe") : default) {
-                    decompressedLength = PacketCompression.Unframe(packetData, decompressedBuffer, out _);
+                if (packetData.Length == 0) {
+                    return;
                 }
-                if (decompressedLength == 0) return;
-                frame = decompressedBuffer.AsSpan(0, decompressedLength);
+                CompressionMethod compression = (CompressionMethod)packetData[0];
+                ReadOnlySpan<byte> compressed = packetData[1..];
+                if (compression == CompressionMethod.Zlib) {
+                    decompressedBuffer = ArrayPool<byte>.Shared.Rent(MaxPacketSize);
+                    int decompressedLength = PacketCompression.Decompress(compressed, decompressedBuffer);
+                    frame = decompressedBuffer.AsSpan(0, decompressedLength);
+                }
+                else if (compression == CompressionMethod.None) {
+                    frame = compressed;
+                }
+                else {
+                    Logger.Warn($"Unsupported NetherNet compression method: {compression}");
+                    return;
+                }
             }
 
             int offset = 0;
@@ -616,58 +571,35 @@ public sealed class NetworkHandler {
     }
 
     internal void Start(CancellationToken cancellationToken) {
-        _rakNet.OnMessage += EnqueueFrame;
-        _rakNet.OnDisconnected += EnqueueDisconnection;
-        _rakNetTask = Task.Run(async () => await _rakNet.Start(), cancellationToken);
-
-        Thread rakNetThread = new(() => {
-            Profiler.SetThreadName("RakNet");
-            long nextTick = Stopwatch.GetTimestamp();
+        Thread networkThread = new(() => {
+            Profiler.SetThreadName("Network");
             WaitHandle[] wakeHandles = [cancellationToken.WaitHandle, WakeHandle];
-
             while (!cancellationToken.IsCancellationRequested) {
                 try {
                     Tick();
-                    long currentTimestamp = Stopwatch.GetTimestamp();
-                    if (currentTimestamp >= nextTick) {
-                        using (Profiler.Enabled ? Profiler.BeginZone("RakNet.Tick") : default) {
-                            _rakNet.Tick();
-                        }
-
-                        nextTick = currentTimestamp + RakNetTickDurationTicks;
-                    }
                 }
                 catch (Exception exception) {
-                    Logger.Error($"Unhandled RakNet tick error: {exception}");
+                    Logger.Error($"Unhandled network tick error: {exception}");
                 }
 
-                if ((PendingOutgoingPacketCount > 0 || PendingIncomingFrameCount > 0) &&
-                    Stopwatch.GetTimestamp() < nextTick) {
+                if (PendingOutgoingPacketCount > 0 || PendingIncomingFrameCount > 0) {
                     continue;
                 }
 
-                long remaining = nextTick - Stopwatch.GetTimestamp();
-                if (remaining > 0) {
-                    WaitHandle.WaitAny(
-                        wakeHandles,
-                        TimeSpan.FromSeconds((double)remaining / Stopwatch.Frequency));
-                }
+                WaitHandle.WaitAny(wakeHandles);
             }
         }) {
-            Name = "RakNet",
+            Name = "Network",
             IsBackground = true
         };
-        _rakNetThread = rakNetThread;
-        rakNetThread.Start();
+        _networkThread = networkThread;
+        networkThread.Start();
     }
 
     internal void Stop() {
-        Thread? rakNetThread = _rakNetThread;
-        Task? rakNetTask = _rakNetTask;
-        _rakNetThread = null;
-        _rakNetTask = null;
-        rakNetThread?.Join(1000);
-        rakNetTask?.Wait(250);
+        Thread? networkThread = _networkThread;
+        _networkThread = null;
+        networkThread?.Join(1000);
     }
 
     private bool TryDequeueIncoming(ref int priorityProcessed, out IncomingPacket packet) {
@@ -730,21 +662,12 @@ public sealed class NetworkHandler {
                     IsUnreliable(outgoing.Packet));
             }
 
-            if (connection.NetherNet) {
-                for (int index = 0; index < count; index++) {
-                    SendNetherNetPacket(
-                        connection,
-                        serialized[index],
-                        _server.Properties.CompressionMethod,
-                        _server.Properties.CompressionThreshold);
-                }
-
-                return;
-            }
-
-            int start = 0;
-            while (start < count) {
-                start = SendBatch(connection, serialized, start, count);
+            for (int index = 0; index < count; index++) {
+                SendNetherNetPacket(
+                    connection,
+                    serialized[index],
+                    _server.Properties.CompressionMethod,
+                    _server.Properties.CompressionThreshold);
             }
         }
         finally {
@@ -759,7 +682,7 @@ public sealed class NetworkHandler {
         }
     }
 
-    private static void SendNetherNetPacket(
+    private void SendNetherNetPacket(
         NetworkConnection connection,
         SerializedOutgoing packet,
         string? serverCompressionMethod = null,
@@ -789,88 +712,15 @@ public sealed class NetworkHandler {
 
             connection.SendPacket(
                 frame.AsSpan(0, frameLength),
-                packet.Unreliable ? Reliability.Unreliable : Reliability.ReliableOrdered,
+                packet.Unreliable,
                 packet.Immediate);
+            Interlocked.Add(ref _sentBytes, frameLength);
+            Interlocked.Increment(ref _sentPackets);
+            Interlocked.Increment(ref _sentFrames);
         }
         finally {
             ArrayPool<byte>.Shared.Return(batch);
             ArrayPool<byte>.Shared.Return(frame);
-        }
-    }
-
-    private int SendBatch(
-        NetworkConnection connection,
-        SerializedOutgoing[] packets,
-        int start,
-        int count) {
-        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.SendBatch") : default;
-        CompressionMethod? compression = packets[start].Compression;
-        int end = start;
-        int frameCapacity = 0;
-        bool immediate = false;
-
-        while (end < count && packets[end].Compression == compression) {
-            int packetCapacity = packets[end].Length + 5;
-            if (frameCapacity != 0 && frameCapacity + packetCapacity > MaxPacketBatchSize) {
-                break;
-            }
-
-            frameCapacity += packetCapacity;
-            immediate |= packets[end].Immediate;
-            end++;
-        }
-
-        int packetCount = end - start;
-        ReadOnlyMemory<byte>[] payloads = ArrayPool<ReadOnlyMemory<byte>>.Shared.Rent(packetCount);
-        byte[] frame = ArrayPool<byte>.Shared.Rent(frameCapacity);
-
-        try {
-            using (Profiler.Enabled ? Profiler.BeginZone("Network.BuildBatch") : default) {
-                for (int i = 0; i < packetCount; i++) {
-                    SerializedOutgoing packet = packets[start + i];
-                    payloads[i] = packet.Payload.AsMemory(0, packet.Length);
-                }
-            }
-
-            int frameLength;
-            using (Profiler.Enabled ? Profiler.BeginZone("Network.FrameBatch") : default) {
-                frameLength = PacketCompression.Frame(payloads.AsSpan(0, packetCount), frame);
-            }
-            SendFrame(connection, frame.AsSpan(0, frameLength), compression, immediate);
-            Interlocked.Add(ref _sentPackets, packetCount);
-            return end;
-        }
-        finally {
-            payloads.AsSpan(0, packetCount).Clear();
-            ArrayPool<ReadOnlyMemory<byte>>.Shared.Return(payloads);
-            ArrayPool<byte>.Shared.Return(frame);
-        }
-    }
-
-    // A queue for packets + a queue for raknet kinda makes it a bit slow?
-    private void SendFrame(NetworkConnection connection, ReadOnlySpan<byte> frame, CompressionMethod? compression, bool immediate = true) {
-        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.SendFrame") : default;
-        CompressionMethod method = compression ?? GetCompressionMethod(_server.Properties.CompressionMethod);
-        byte[] compressedBuffer = ArrayPool<byte>.Shared.Rent(
-            PacketCompression.GetFrameCapacity(frame.Length, method));
-
-        try {
-            int frameLength;
-            using (Profiler.Enabled ? Profiler.BeginZone("Network.CompressFrame") : default) {
-                frameLength = PacketCompression.Frame(
-                    frame,
-                    compressedBuffer,
-                    method,
-                    _server.Properties.CompressionThreshold);
-            }
-            using (Profiler.Enabled ? Profiler.BeginZone("Network.RakNetSend") : default) {
-                connection.SendPacket(compressedBuffer.AsSpan(0, frameLength), Reliability.ReliableOrdered, immediate);
-            }
-            Interlocked.Add(ref _sentBytes, frameLength);
-            Interlocked.Increment(ref _sentFrames);
-        }
-        finally {
-            ArrayPool<byte>.Shared.Return(compressedBuffer);
         }
     }
 

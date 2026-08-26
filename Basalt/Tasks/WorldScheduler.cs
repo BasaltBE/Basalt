@@ -3,6 +3,7 @@ namespace Basalt.Core.Tasks;
 using System.Collections.Concurrent;
 using Basalt.Core.Profiling;
 using Basalt.Core.Worlds;
+using Basalt.Core.Plugins;
 
 public sealed class WorldScheduler {
     private const int WheelSize = 1200;
@@ -18,17 +19,26 @@ public sealed class WorldScheduler {
     private int _repeatingCount;
     private readonly List<ServerTask> _workerBatch = new(64);
     private volatile bool _stopped;
+    private readonly Func<PluginContainer?>? _ownerProvider;
+    private readonly Action<ServerTask, PluginContainer?>? _taskConfigurator;
 
     public bool IsStopped => _stopped;
     public int PendingDeferredWorkCount => _deferredWorkerTasks.Count;
     public int PendingDeferredDomainWorkCount => _deferredDomainTasks.Count;
 
-    public WorldScheduler(World world, TaskWorkerPool workerPool) {
+    public WorldScheduler(
+        World world,
+        TaskWorkerPool workerPool,
+        Func<PluginContainer?>? ownerProvider = null,
+        Action<ServerTask, PluginContainer?>? taskConfigurator = null) {
         _world = world;
         _workerPool = workerPool;
+        _ownerProvider = ownerProvider;
+        _taskConfigurator = taskConfigurator;
     }
 
     public void Schedule(ServerTask task) {
+        ConfigureTask(task);
         if (_stopped) {
             task.Cancel();
             return;
@@ -38,6 +48,7 @@ public sealed class WorldScheduler {
     }
 
     public void Schedule(DelayedTask task) {
+        ConfigureTask(task);
         if (_stopped) {
             task.Cancel();
             return;
@@ -48,6 +59,7 @@ public sealed class WorldScheduler {
     }
 
     public void Schedule(RepeatingTask task) {
+        ConfigureTask(task);
         if (_stopped) {
             task.Cancel();
             return;
@@ -73,7 +85,7 @@ public sealed class WorldScheduler {
             if (task.ExecutionMailbox is not { } mailbox) {
                 _deferredDomainTasks.Dequeue();
                 task.Cancel();
-                task.IsCompleted = true;
+                task.MarkCompleted();
                 continue;
             }
 
@@ -81,7 +93,7 @@ public sealed class WorldScheduler {
                 if (mailbox.IsCompleted) {
                     _deferredDomainTasks.Dequeue();
                     task.Cancel();
-                    task.IsCompleted = true;
+                    task.MarkCompleted();
                     continue;
                 }
                 break;
@@ -104,33 +116,33 @@ public sealed class WorldScheduler {
             while (task is not null) {
                 ServerTask? next = task.NextInSlot;
                 task.NextInSlot = null;
-                task.OnStop();
+                task.Stop();
                 task.Cancel();
                 task = next;
             }
         }
 
         for (int i = _repeatingCount - 1; i >= 0; i--) {
-            _repeating[i].OnStop();
+            _repeating[i].Stop();
             _repeating[i].Cancel();
             _repeating[i] = null!;
         }
         _repeatingCount = 0;
 
         while (_incoming.TryDequeue(out ServerTask? task)) {
-            task.OnStop();
+            task.Stop();
             task.Cancel();
         }
 
         while (_deferredWorkerTasks.Count > 0) {
             ServerTask deferred = _deferredWorkerTasks.Dequeue();
-            deferred.OnStop();
+            deferred.Stop();
             deferred.Cancel();
         }
 
         while (_deferredDomainTasks.Count > 0) {
             ServerTask deferred = _deferredDomainTasks.Dequeue();
-            deferred.OnStop();
+            deferred.Stop();
             deferred.Cancel();
         }
     }
@@ -295,7 +307,7 @@ public sealed class WorldScheduler {
             catch (Exception ex) {
                 succeeded = false;
                 task.ExecutionFailed = true;
-                Logger.Warn($"Main thread task execution failed: {ex}");
+                task.ReportFailure("task execution", ex);
             }
         }
 
@@ -306,11 +318,16 @@ public sealed class WorldScheduler {
                 task.Complete();
             }
             catch (Exception ex) {
-                Logger.Warn($"Main thread task Complete() failed: {ex}");
+                task.ReportFailure("task completion", ex);
             }
         }
 
-        task.IsCompleted = true;
+        task.MarkCompleted();
+    }
+
+    private void ConfigureTask(ServerTask task) {
+        PluginContainer? owner = task.Owner ?? _ownerProvider?.Invoke();
+        _taskConfigurator?.Invoke(task, owner);
     }
 
     internal struct TickWheelSlot {

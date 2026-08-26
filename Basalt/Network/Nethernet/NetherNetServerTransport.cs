@@ -95,7 +95,6 @@ internal sealed class NetherNetServerTransport : IDisposable {
                 _commands.Enqueue(peer.Dispose);
                 _wake.Set();
             },
-            netherNet: true,
             unreliableSend: (payload, _, _) => {
                 if (_unreliableChannels.TryGetValue(peer, out NetherNetConnection? unreliableChannel)) {
                     EnqueueOutgoing(peer, unreliableChannel, payload);

@@ -11,29 +11,11 @@ public class Properties {
 
     [ServerProperties.PropertyOrder(2)]
     [ServerProperties.PropertyCategory("Network")]
-    [ServerProperties.PropertyKey("server-ipv6-port")]
-    [ServerProperties.PropertyComment("IPv6 port the server should listen to.")]
-    public ushort IPv6Port { get; set; } = 19133;
-
-    [ServerProperties.PropertyOrder(3)]
-    [ServerProperties.PropertyCategory("Network")]
     [ServerProperties.PropertyKey("motd")]
     [ServerProperties.PropertyComment("Message shown in the server list.")]
     public string Motd { get; set; } = "Basalt";
 
-    [ServerProperties.PropertyOrder(4)]
-    [ServerProperties.PropertyCategory("Network")]
-    [ServerProperties.PropertyKey("raknet-mtu")]
-    [ServerProperties.PropertyComment("Maximum transmission unit for RakNet.")]
-    public ushort Mtu { get; set; } = 1492;
-
-    [ServerProperties.PropertyOrder(5)]
-    [ServerProperties.PropertyCategory("Network")]
-    [ServerProperties.PropertyKey("nethernet-enabled")]
-    [ServerProperties.PropertyComment("If true, also accept NetherNet WebRTC connections.")]
-    public bool NetherNetEnabled { get; set; } = false;
-
-    [ServerProperties.PropertyOrder(6)]
+    [ServerProperties.PropertyOrder(3)]
     [ServerProperties.PropertyCategory("Network")]
     [ServerProperties.PropertyKey("online-mode")]
     [ServerProperties.PropertyComment("If true all connected players must be authenticated.")]

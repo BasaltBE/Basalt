@@ -34,10 +34,12 @@ public sealed class Server {
     private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
     private static readonly long SpinThresholdTicks = (long)(2.0 / 1000.0 * Stopwatch.Frequency);
 
-    private readonly NetherNetServerTransport? _nethernet;
+    private readonly NetherNetServerTransport _nethernet;
     private readonly RconServer? _rcon;
     private readonly Dictionary<string, Type> _generatorRegistry = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _providerRegistry = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PluginContainer> _generatorOwners = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PluginContainer> _providerOwners = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, WorldInstance> _worlds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _worldsLock = new();
     private WorldInstance[] _worldsSnapshot = [];
@@ -154,15 +156,20 @@ public sealed class Server {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
         Network = new NetworkHandler(this);
-        _nethernet = Properties.NetherNetEnabled
-            ? new NetherNetServerTransport(Network, Properties.Port)
-            : null;
+        _nethernet = new NetherNetServerTransport(Network, Properties.Port);
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
         Bans = new BanStore("banned-players.json");
         Plugins = new PluginManager(this);
+        Commands.PluginOwnerProvider = () => Plugins.CurrentRegistrationPlugin;
+        Commands.PluginScopeProvider = Plugins.EnterRegistrationScope;
+        Commands.PluginErrorHandler = (plugin, callback, exception) =>
+            Plugins.RecordRuntimeFailure(plugin, callback, exception);
         WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
-        Scheduler = new TaskScheduler(WorkerPool);
+        Scheduler = new TaskScheduler(
+            WorkerPool,
+            () => Plugins.CurrentRegistrationPlugin,
+            Plugins.ConfigureTask);
 
         DefaultCommands.Register(Commands);
 
@@ -212,7 +219,7 @@ public sealed class Server {
         CancellationTokenSource networkCancellation = new();
         _networkCancellation = networkCancellation;
         Network.Start(networkCancellation.Token);
-        _nethernet?.Start(networkCancellation.Token);
+        _nethernet.Start(networkCancellation.Token);
 
         CancellationTokenSource tickCancellation = new();
         _tickCancellation = tickCancellation;
@@ -250,7 +257,7 @@ public sealed class Server {
             EntityPalette.LoadElapsed;
         TimeSpan processStartupElapsed = registryElapsed + _startupElapsed;
         Logger.Info(
-            $"Basalt listening on 0.0.0.0:{Properties.Port}, [::]:{Properties.IPv6Port} " +
+            $"Basalt NetherNet signaling on port {Properties.Port} " +
             $"startup~{processStartupElapsed.TotalMilliseconds:0}ms,");
     }
 
@@ -261,7 +268,7 @@ public sealed class Server {
             _signalHandlers[@event] = handlers;
         }
 
-        handlers.Add(new TypedSignalHandler<TSignal>(handler));
+        handlers.Add(new TypedSignalHandler<TSignal>(handler, Plugins.CurrentRegistrationPlugin));
     }
 
     public void Emit(ServerEvent @event, ISignal signal) {
@@ -270,8 +277,16 @@ public sealed class Server {
             return;
         }
 
-        for (int i = 0; i < handlers.Count; i++) {
-            handlers[i].Invoke(signal);
+        SignalHandler[] snapshot = [.. handlers];
+        for (int i = 0; i < snapshot.Length; i++) {
+            SignalHandler handler = snapshot[i];
+            try {
+                using (Plugins.EnterRegistrationScope(handler.Plugin))
+                    handler.Invoke(signal);
+            }
+            catch (Exception exception) {
+                Plugins.RecordRuntimeFailure(handler.Plugin, @event, exception);
+            }
         }
     }
 
@@ -311,7 +326,7 @@ public sealed class Server {
         networkCancellation?.Cancel();
         cancellation?.Cancel();
 
-        _nethernet?.Dispose();
+        _nethernet.Dispose();
 
         try {
             tickLoopTask?.Wait();
@@ -445,6 +460,29 @@ public sealed class Server {
         return true;
     }
 
+    internal void RemovePluginHandlers(PluginContainer plugin) {
+        foreach (List<SignalHandler> handlers in _signalHandlers.Values)
+            handlers.RemoveAll(handler => ReferenceEquals(handler.Plugin, plugin));
+    }
+
+    internal void RemovePluginRegistrations(PluginContainer plugin) {
+        foreach (string identifier in _generatorOwners
+            .Where(pair => ReferenceEquals(pair.Value, plugin))
+            .Select(pair => pair.Key)
+            .ToArray()) {
+            _generatorOwners.Remove(identifier);
+            _generatorRegistry.Remove(identifier);
+        }
+
+        foreach (string identifier in _providerOwners
+            .Where(pair => ReferenceEquals(pair.Value, plugin))
+            .Select(pair => pair.Key)
+            .ToArray()) {
+            _providerOwners.Remove(identifier);
+            _providerRegistry.Remove(identifier);
+        }
+    }
+
     private void UnloadWorldNow(string identifier) {
         WorldInstance? world;
         lock (_worldsLock) {
@@ -538,6 +576,8 @@ public sealed class Server {
         }
 
         _providerRegistry[identifier] = typeof(TProvider);
+        if (Plugins.CurrentRegistrationPlugin is { } plugin)
+            _providerOwners[identifier] = plugin;
     }
 
     public void RegisterGenerator<TGenerator>(string identifier) where TGenerator : Generator {
@@ -546,6 +586,8 @@ public sealed class Server {
         }
 
         _generatorRegistry[identifier] = typeof(TGenerator);
+        if (Plugins.CurrentRegistrationPlugin is { } plugin)
+            _generatorOwners[identifier] = plugin;
     }
 
     private int _ticking;

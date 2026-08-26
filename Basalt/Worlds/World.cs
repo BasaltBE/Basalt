@@ -43,7 +43,11 @@ public sealed class World : IDisposable, Tickable {
         internal set {
             _server = value;
             if (value is not null && Scheduler is null)
-                Scheduler = new WorldScheduler(this, value.WorkerPool);
+                Scheduler = new WorldScheduler(
+                    this,
+                    value.WorkerPool,
+                    () => value.Plugins.CurrentRegistrationPlugin,
+                    value.Plugins.ConfigureTask);
             if (value is not null)
                 PublishPlayersSnapshot();
         }

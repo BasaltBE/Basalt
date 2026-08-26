@@ -62,7 +62,7 @@ public sealed class TaskWorkerPool : IDisposable {
             if (task.CompletionMailbox is { } mailbox) {
                 if (!mailbox.TryEnqueue(() => CompleteTask(task), task.Cancel)) {
                     if (mailbox.IsCompleted) {
-                        task.IsCompleted = true;
+                        task.MarkCompleted();
                     }
                     else {
                         _completionQueue.Enqueue(task);
@@ -80,8 +80,11 @@ public sealed class TaskWorkerPool : IDisposable {
         try {
             task.Complete();
         }
+        catch (Exception exception) {
+            task.ReportFailure("task completion", exception);
+        }
         finally {
-            task.IsCompleted = true;
+            task.MarkCompleted();
         }
     }
 
@@ -108,19 +111,19 @@ public sealed class TaskWorkerPool : IDisposable {
                 catch (Exception ex) {
                     succeeded = false;
                     task.ExecutionFailed = true;
-                    Logger.Warn($"Task execution failed: {ex}");
+                    task.ReportFailure("task execution", ex);
                 }
             }
 
             task.IsExecuted = true;
 
             if (!succeeded) {
-                task.IsCompleted = true;
+                task.MarkCompleted();
             }
             else if (task.CompletionMailbox is { } mailbox) {
                 if (!mailbox.TryEnqueue(() => CompleteTask(task), task.Cancel)) {
                     if (mailbox.IsCompleted) {
-                        task.IsCompleted = true;
+                        task.MarkCompleted();
                     }
                     else {
                         _completionQueue.Enqueue(task);
@@ -131,7 +134,7 @@ public sealed class TaskWorkerPool : IDisposable {
                 _completionQueue.Enqueue(task);
             }
             else {
-                task.IsCompleted = true;
+                task.MarkCompleted();
             }
         }
     }

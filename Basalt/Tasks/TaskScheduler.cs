@@ -1,6 +1,7 @@
 namespace Basalt.Core.Tasks;
 
 using System.Collections.Concurrent;
+using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
 
 public sealed class TaskScheduler {
@@ -13,16 +14,24 @@ public sealed class TaskScheduler {
     private readonly List<DelayedTask> _delayedTasks = [];
     private readonly List<RepeatingTask> _repeatingTasks = [];
     private readonly object _scheduleLock = new();
+    private readonly Func<PluginContainer?>? _ownerProvider;
+    private readonly Action<ServerTask, PluginContainer?>? _taskConfigurator;
     private int _deferredDomainCount;
 
     public int PendingDeferredWorkCount => _deferredWorkerQueue.Count;
     public int PendingDeferredDomainWorkCount => Volatile.Read(ref _deferredDomainCount);
 
-    public TaskScheduler(TaskWorkerPool workerPool) {
+    public TaskScheduler(
+        TaskWorkerPool workerPool,
+        Func<PluginContainer?>? ownerProvider = null,
+        Action<ServerTask, PluginContainer?>? taskConfigurator = null) {
         _workerPool = workerPool;
+        _ownerProvider = ownerProvider;
+        _taskConfigurator = taskConfigurator;
     }
 
     public void Schedule(ServerTask task) {
+        ConfigureTask(task);
         if (task.ExecutionMailbox is { } mailbox) {
             if (!mailbox.TryEnqueue(task.ExecuteOnDomain, task.Cancel)) {
                 if (!TryDeferDomain(task)) {
@@ -39,6 +48,7 @@ public sealed class TaskScheduler {
     }
 
     public void Schedule(DelayedTask task, ulong currentTick) {
+        ConfigureTask(task);
         task.ExecutionTick = currentTick + task.DelayTicks;
 
         lock (_scheduleLock) {
@@ -47,6 +57,7 @@ public sealed class TaskScheduler {
     }
 
     public void Schedule(RepeatingTask task, ulong currentTick) {
+        ConfigureTask(task);
         task.NextExecutionTick = currentTick + task.IntervalTicks;
 
         lock (_scheduleLock) {
@@ -67,7 +78,7 @@ public sealed class TaskScheduler {
             if (deferred.ExecutionMailbox is not { } mailbox) {
                 DequeueDeferredDomain(out ServerTask? discarded);
                 discarded!.Cancel();
-                discarded.IsCompleted = true;
+                discarded.MarkCompleted();
                 continue;
             }
 
@@ -75,7 +86,7 @@ public sealed class TaskScheduler {
                 if (mailbox.IsCompleted) {
                     DequeueDeferredDomain(out ServerTask? discarded);
                     discarded!.Cancel();
-                    discarded.IsCompleted = true;
+                    discarded.MarkCompleted();
                     continue;
                 }
                 break;
@@ -123,7 +134,7 @@ public sealed class TaskScheduler {
                 catch (Exception ex) {
                     succeeded = false;
                     task.ExecutionFailed = true;
-                    Logger.Warn($"Main thread task execution failed: {ex}");
+                    task.ReportFailure("task execution", ex);
                 }
             }
 
@@ -132,14 +143,19 @@ public sealed class TaskScheduler {
                 _mainThreadCompletionQueue.Enqueue(task);
             }
             else {
-                task.IsCompleted = true;
+                task.MarkCompleted();
             }
         }
 
         while (_mainThreadCompletionQueue.TryDequeue(out ServerTask? task)) {
             if (task.IsCancelled) continue;
-            task.Complete();
-            task.IsCompleted = true;
+            try {
+                task.Complete();
+            }
+            catch (Exception exception) {
+                task.ReportFailure("task completion", exception);
+            }
+            task.MarkCompleted();
         }
 
         _workerPool.DrainCompletions();
@@ -159,6 +175,11 @@ public sealed class TaskScheduler {
         else if (!_workerPool.TryEnqueue(task)) {
             _deferredWorkerQueue.Enqueue(task);
         }
+    }
+
+    private void ConfigureTask(ServerTask task) {
+        PluginContainer? owner = task.Owner ?? _ownerProvider?.Invoke();
+        _taskConfigurator?.Invoke(task, owner);
     }
 
     private bool TryDeferDomain(ServerTask task) {

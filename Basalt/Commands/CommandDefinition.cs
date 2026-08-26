@@ -1,6 +1,7 @@
 namespace Basalt.Core.Commands;
 
 using System.Diagnostics.CodeAnalysis;
+using Basalt.Core.Plugins;
 
 /// <summary>
 /// Defines a single parameter in a command overload.
@@ -31,4 +32,5 @@ public sealed class CommandDefinition {
     public string[] Permissions { get; init; } = [];
     public required OverloadDefinition[] Overloads { get; init; }
     public required CommandHandler Handler { get; init; }
+    internal PluginContainer? Owner;
 }
