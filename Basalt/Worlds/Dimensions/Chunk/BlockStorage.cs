@@ -31,7 +31,17 @@ public sealed class BlockStorage {
     }
 
     public bool IsEmpty() {
-        return Palette.Count == 1 && Palette[0] == Air;
+        for (int i = 0; i < Blocks.Length; i++) {
+            int paletteIndex = Blocks[i];
+            int state = (uint)paletteIndex < (uint)Palette.Count
+                ? Palette[paletteIndex]
+                : Air;
+            if (state != Air) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public int GetState(int bx, int by, int bz) {
