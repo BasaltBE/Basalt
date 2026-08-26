@@ -15,7 +15,8 @@ Waterfall/Program2.cs
 Waterfall
 LoadTests
 Client
-
+Basalt.Tests/*
+Basalt.Benchmarks/*
 
 /worlds/
 server.properties

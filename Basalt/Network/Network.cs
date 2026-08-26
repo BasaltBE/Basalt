@@ -7,7 +7,9 @@ using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
 using Basalt.Core.Profiling;
+using RakNetServerOptions = Basalt.RakNet.RaknetServerOptions;
 using RakNetConnection = Basalt.RakNet.NetworkConnection;
+using RakNetNetworkServer = Basalt.RakNet.NetworkServer;
 using Basalt.RakNet.Packets.Enums;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Enums;
@@ -18,6 +20,9 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 
 public sealed class NetworkHandler {
+    private static readonly long RakNetTickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
+
+    private readonly RakNetNetworkServer _rakNet;
     private const int MaxPacketBatchSize = 1024 * 1024 * 8;
     private const int MaxPacketSize = 1024 * 1024 * 4;
     internal const int MaxIncomingFramesPerTick = 256;
@@ -40,6 +45,8 @@ public sealed class NetworkHandler {
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
     private readonly AutoResetEvent _wake = new(false);
     private static readonly ConcurrentDictionary<Type, int> _generatedPacketIds = new();
+    private Task? _rakNetTask;
+    private Thread? _rakNetThread;
     private int _threadId;
     private long _sentBytes;
     private long _sentPackets;
@@ -63,6 +70,12 @@ public sealed class NetworkHandler {
 
     public NetworkHandler(Server server) {
         _server = server;
+        _rakNet = new RakNetNetworkServer(new RakNetServerOptions(
+            MaxMtu: server.Properties.Mtu,
+            Port: server.Properties.Port,
+            IPv6Port: server.Properties.IPv6Port));
+        _rakNet.GetAdvertisement = () =>
+            $"MCPE;{server.Properties.Motd};{Constants.ProtocolVersion};{Constants.MinecraftVersion};{server.Players.Count};{server.Properties.MaxPlayers};{_rakNet.ServerGuid};Bedrock level;Survival;1;{server.Properties.Port};{server.Properties.IPv6Port};";
 
 
         /// Packets ported to new Protocol
@@ -600,6 +613,61 @@ public sealed class NetworkHandler {
             }
             outgoing.Clear();
         }
+    }
+
+    internal void Start(CancellationToken cancellationToken) {
+        _rakNet.OnMessage += EnqueueFrame;
+        _rakNet.OnDisconnected += EnqueueDisconnection;
+        _rakNetTask = Task.Run(async () => await _rakNet.Start(), cancellationToken);
+
+        Thread rakNetThread = new(() => {
+            Profiler.SetThreadName("RakNet");
+            long nextTick = Stopwatch.GetTimestamp();
+            WaitHandle[] wakeHandles = [cancellationToken.WaitHandle, WakeHandle];
+
+            while (!cancellationToken.IsCancellationRequested) {
+                try {
+                    Tick();
+                    long currentTimestamp = Stopwatch.GetTimestamp();
+                    if (currentTimestamp >= nextTick) {
+                        using (Profiler.Enabled ? Profiler.BeginZone("RakNet.Tick") : default) {
+                            _rakNet.Tick();
+                        }
+
+                        nextTick = currentTimestamp + RakNetTickDurationTicks;
+                    }
+                }
+                catch (Exception exception) {
+                    Logger.Error($"Unhandled RakNet tick error: {exception}");
+                }
+
+                if ((PendingOutgoingPacketCount > 0 || PendingIncomingFrameCount > 0) &&
+                    Stopwatch.GetTimestamp() < nextTick) {
+                    continue;
+                }
+
+                long remaining = nextTick - Stopwatch.GetTimestamp();
+                if (remaining > 0) {
+                    WaitHandle.WaitAny(
+                        wakeHandles,
+                        TimeSpan.FromSeconds((double)remaining / Stopwatch.Frequency));
+                }
+            }
+        }) {
+            Name = "RakNet",
+            IsBackground = true
+        };
+        _rakNetThread = rakNetThread;
+        rakNetThread.Start();
+    }
+
+    internal void Stop() {
+        Thread? rakNetThread = _rakNetThread;
+        Task? rakNetTask = _rakNetTask;
+        _rakNetThread = null;
+        _rakNetTask = null;
+        rakNetThread?.Join(1000);
+        rakNetTask?.Wait(250);
     }
 
     private bool TryDequeueIncoming(ref int priorityProcessed, out IncomingPacket packet) {

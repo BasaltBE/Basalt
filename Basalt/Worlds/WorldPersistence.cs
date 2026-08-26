@@ -1,19 +1,33 @@
 namespace Basalt.Core.Worlds;
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Chunk;
 using Basalt.Core.Worlds.Dimensions.Provider;
 using Basalt.BedrockProtocol.NBT;
 using Basalt.BedrockProtocol.Types;
+using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 
 internal sealed class WorldPersistence : IDisposable {
     private readonly WorldProvider _provider;
     private readonly Channel<PersistenceWork> _queue;
     private readonly ConcurrentDictionary<ChunkSaveKey, TaskCompletionSource> _chunkSaves = new();
+    private readonly ConcurrentDictionary<ChunkSaveKey, ChunkColumn> _pendingChunks = new();
     private readonly ConcurrentDictionary<string, CompoundTag> _playerSaves = new(StringComparer.Ordinal);
     private readonly Task _worker;
+    private int _pendingWorkCount;
+    private long _chunkWriteTicks;
+    private long _chunkWriteCount;
+
+    public int PendingWorkCount => Volatile.Read(ref _pendingWorkCount);
+    public double AverageChunkWriteMilliseconds =>
+        Volatile.Read(ref _chunkWriteCount) == 0
+            ? 0
+            : Volatile.Read(ref _chunkWriteTicks) * 1000.0 /
+              Stopwatch.Frequency /
+              Volatile.Read(ref _chunkWriteCount);
 
     public WorldPersistence(WorldProvider provider) {
         _provider = provider;
@@ -30,13 +44,16 @@ internal sealed class WorldPersistence : IDisposable {
 
     public void SaveChunk(Chunk chunk) {
         ChunkSaveKey key = new(chunk.Type, chunk.X, chunk.Z);
+        ChunkColumn snapshot = chunk.CreatePersistenceSnapshot();
         TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         _chunkSaves[key] = completion;
+        _pendingChunks[key] = snapshot;
         try {
-            Write(new ChunkWork(chunk, key, completion));
+            Write(new ChunkWork(snapshot, key, completion));
         }
         catch {
             _chunkSaves.TryRemove(new KeyValuePair<ChunkSaveKey, TaskCompletionSource>(key, completion));
+            _pendingChunks.TryRemove(new KeyValuePair<ChunkSaveKey, ChunkColumn>(key, snapshot));
             throw;
         }
     }
@@ -64,6 +81,18 @@ internal sealed class WorldPersistence : IDisposable {
         return _playerSaves.TryGetValue(xuid, out CompoundTag? data) ? data : null;
     }
 
+    internal Task GetChunkSaveTask(DimensionId type, int x, int z) {
+        return _chunkSaves.TryGetValue(new ChunkSaveKey(type, x, z), out TaskCompletionSource? completion)
+            ? completion.Task
+            : Task.CompletedTask;
+    }
+
+    internal ChunkColumn? GetPendingChunk(DimensionId type, int x, int z) {
+        return _pendingChunks.TryGetValue(new ChunkSaveKey(type, x, z), out ChunkColumn? chunk)
+            ? chunk
+            : null;
+    }
+
     public void Flush() {
         TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Write(new FlushWork(completion));
@@ -77,30 +106,38 @@ internal sealed class WorldPersistence : IDisposable {
 
     private async Task Loop() {
         await foreach (PersistenceWork work in _queue.Reader.ReadAllAsync()) {
-            switch (work) {
-                case ChunkWork chunk:
-                    WriteChunk(chunk.Chunk, chunk.Key, chunk.Completion);
-                    break;
-                case PlayerWork player:
-                    WritePlayerData(player.Xuid, player.Data);
-                    break;
-                case SpawnWork spawn:
-                    WriteSpawnPosition(spawn);
-                    break;
-                case FlushWork flush:
-                    flush.Completion.TrySetResult();
-                    break;
+            try {
+                switch (work) {
+                    case ChunkWork chunk:
+                        WriteChunk(chunk.Chunk, chunk.Key, chunk.Completion);
+                        break;
+                    case PlayerWork player:
+                        WritePlayerData(player.Xuid, player.Data);
+                        break;
+                    case SpawnWork spawn:
+                        WriteSpawnPosition(spawn);
+                        break;
+                    case FlushWork flush:
+                        flush.Completion.TrySetResult();
+                        break;
+                }
+            }
+            finally {
+                Interlocked.Decrement(ref _pendingWorkCount);
             }
         }
     }
 
     private void Write(PersistenceWork work) {
+        Interlocked.Increment(ref _pendingWorkCount);
         if (!_queue.Writer.TryWrite(work)) {
+            Interlocked.Decrement(ref _pendingWorkCount);
             throw new ObjectDisposedException(nameof(WorldPersistence));
         }
     }
 
     private void WriteChunk(Chunk chunk, ChunkSaveKey key, TaskCompletionSource completion) {
+        long start = Stopwatch.GetTimestamp();
         try {
             _provider.SaveChunk(chunk);
             completion.TrySetResult();
@@ -110,7 +147,10 @@ internal sealed class WorldPersistence : IDisposable {
             completion.TrySetException(exception);
         }
         finally {
+            Interlocked.Add(ref _chunkWriteTicks, Stopwatch.GetTimestamp() - start);
+            Interlocked.Increment(ref _chunkWriteCount);
             _chunkSaves.TryRemove(new KeyValuePair<ChunkSaveKey, TaskCompletionSource>(key, completion));
+            _pendingChunks.TryRemove(new KeyValuePair<ChunkSaveKey, ChunkColumn>(key, chunk));
         }
     }
 

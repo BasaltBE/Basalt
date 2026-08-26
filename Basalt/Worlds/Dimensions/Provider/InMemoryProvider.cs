@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 public sealed class InMemoryProvider : WorldProvider {
     private readonly ConcurrentDictionary<(DimensionId, long), ChunkColumn> _chunks = [];
     public override string Identifier => "memory";
+    public override bool SupportsConcurrentDimensions => true;
     public override bool HasChunk(DimensionId dimensionType, int x, int z) => _chunks.ContainsKey((dimensionType, HashChunk(x, z)));
 
     public override ChunkColumn? LoadChunk(DimensionId dimensionType, int x, int z) {

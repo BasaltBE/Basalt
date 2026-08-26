@@ -1,36 +1,44 @@
-namespace Basalt.Core.Worlds.Dimensions;
-
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
+using System.Diagnostics;
+using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.NBT;
+using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using Basalt.Core.Blocks;
+using Basalt.Core.Blocks.Components;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Traits.Types;
 using Basalt.Core.Blocks.Types;
-using Basalt.Core.Blocks.Components;
-using Basalt.Core.Entities.Traits.Types;
-using Basalt.Core.Entities.Traits.Attribute;
+using Basalt.Core.Enums;
 using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits.Attribute;
+using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Item;
+using Basalt.Core.Network;
+using Basalt.Core.Pathfinding;
+using Basalt.Core.Player.Traits;
 using Basalt.Core.Profiling;
 using Basalt.Core.Tasks;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
-using Basalt.Core.Player.Traits;
-using Basalt.Core.Pathfinding;
-using ChunkColumn = Chunk.Chunk;
+using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
+using Entity = Basalt.Core.Entities.Entity;
+using Path = Basalt.Core.Pathfinding.Path;
+using TaskScheduler = Basalt.Core.Tasks.TaskScheduler;
 
-using Entity = Entities.Entity;
-
-using Basalt.BedrockProtocol.Types;
-using Basalt.BedrockProtocol.Packets;
-using Basalt.BedrockProtocol.Enums;
-using Basalt.BedrockProtocol.NBT;
+namespace Basalt.Core.Worlds.Dimensions;
 
 public sealed class Dimension : IDisposable {
+    internal const int DefaultRegionChunkSize = 8;
     private const int CompletedChunkLimit = 128;
+    private const int DomainMailboxCapacity = 4096;
+    private const int MaxDomainCommandsPerTick = 512;
+    private const int MaxPendingChunkRequests = 512;
     private const float VoidY = -64f;
     private const ulong VoidDamageCooldownTicks = 20;
 
-    private static readonly Dictionary<string, string> BlockActorIds = new() {
+    private static readonly FrozenDictionary<string, string> BlockActorIds = new Dictionary<string, string> {
         ["minecraft:barrel"] = "Barrel",
         ["minecraft:chest"] = "Chest",
         ["minecraft:trapped_chest"] = "Chest",
@@ -42,54 +50,76 @@ public sealed class Dimension : IDisposable {
         ["minecraft:smoker"] = "Smoker",
         ["minecraft:lit_smoker"] = "Smoker",
         ["minecraft:mob_spawner"] = "MobSpawner"
-    };
+    }.ToFrozenDictionary(StringComparer.Ordinal);
+    private static readonly BlockPermutation AirPermutation = BlockPermutation.Resolve("minecraft:air");
 
     private readonly Dictionary<long, ChunkColumn> _chunks;
-    private readonly object _chunkAccessLock = new();
     private readonly Dictionary<long, int> _chunkViewers;
     private readonly HashSet<long> _pendingUnloads = [];
-    private readonly HashSet<Entity> _entities;
     private readonly Dictionary<Entity, long> _entityChunks = [];
-    private readonly Dictionary<Entity, long> _entityChunkIndexes = [];
-    private readonly Dictionary<long, HashSet<Entity>> _chunkEntities = [];
-    private readonly List<Entity> _tickEntityBuffer = [];
-    private readonly List<long> _chunkSweepBuffer = [];
+    private readonly Dictionary<Entity, EntityChunkIndex> _entityChunkIndexes = [];
+    private readonly Dictionary<long, List<Entity>> _chunkEntities = [];
+    private readonly Dictionary<Player.Player, long> _playerChunks = [];
+    private readonly Dictionary<long, HashSet<Player.Player>> _playersByChunk = [];
+    private readonly Dictionary<RegionCoordinate, List<Entity>> _tickRegionBuffers = [];
+    private readonly Dictionary<Player.Player, long> _simulationPlayerChunks = [];
+    private readonly Dictionary<long, int> _simulationChunkReferences = [];
+    private readonly Dictionary<(int X, int Y, int Z), BlockTickTask> _blockTicks = [];
+    private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
+
+    private readonly HashSet<Entity> _entities;
+    private readonly HashSet<Player.Player> _players;
+    private readonly HashSet<Player.Player> _visibilityPlayerBuffer = [];
     private readonly HashSet<Entity> _pendingEntityAdds = [];
     private readonly HashSet<Entity> _pendingEntityRemoves = [];
-    private readonly Dictionary<Player.Player, long> _simulationPlayerChunks = [];
     private readonly HashSet<Player.Player> _simulationPlayerBuffer = [];
-    private readonly List<Player.Player> _simulationPlayerRemovalBuffer = [];
     private readonly HashSet<long> _simulatedChunks = [];
-    private readonly HashSet<long> _simulationChunkBuffer = [];
-    private readonly Dictionary<(int X, int Y, int Z), BlockTickTask> _blockTicks = [];
-    private readonly Lock _chunkRequestLock = new();
-    private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
+
+    private readonly List<Entity> _tickEntityBuffer = [];
+    private readonly List<Entity> _tickOwnedEntities = [];
+    private readonly List<long> _chunkSweepBuffer = [];
+    private readonly List<Player.Player> _simulationPlayerRemovalBuffer = [];
+
+    private readonly ConcurrentDictionary<Entity, byte> _parallelEntityAdds = [];
+    private readonly ConcurrentDictionary<Entity, byte> _parallelStorageUpdates = [];
+    private readonly ConcurrentDictionary<Entity, byte> _parallelVisibilityUpdates = [];
+    private readonly ConcurrentDictionary<Entity, byte> _parallelHiddenEntities = [];
+    private readonly ConcurrentQueue<(Entity Entity, bool Complete)> _parallelEntityRemoves = new();
     private readonly ConcurrentQueue<ChunkRequestCallback> _chunkRequestCallbacks = new();
+
+    private readonly object _chunkAccessLock = new();
+    private readonly Lock _chunkRequestLock = new();
+    private readonly ExecutionDomainMailbox _mailbox;
     private readonly WorldProvider _provider;
     private readonly Generator _generator;
+
+    private Entity[] _entitiesSnapshot = [];
+    private Player.Player[] _playersSnapshot = [];
+    private ChunkColumn[]? _autoSaveChunks;
     private Vec3 _spawnPosition = new() {
         X = 0,
         Y = 80,
         Z = 0,
     };
-    private ChunkColumn[]? _autoSaveChunks;
-    private int _autoSaveIndex;
-    private int _simulationDistance = -1;
+
+    private World? _world;
     private bool _tickingEntities;
     private bool _disposed;
+    private int _simulationDistance = -1;
+    private int _ownerThreadId;
+    private int _activePlayerCount;
+    private int _activeEntityCount;
+    private int _autoSaveIndex;
+    private double _tickWork;
+    private int _parallelRegionTicking;
+
+    internal int RegionChunkSize { get; set; } = DefaultRegionChunkSize;
+
+    #region Properties
 
     public string Identifier { get; }
     public DimensionId Type { get; }
     public Difficulty Difficulty { get; set; } = Difficulty.Normal;
-    public Vec3 SpawnPosition {
-        get => _spawnPosition;
-        set {
-            _spawnPosition = value;
-            if (World is not null) {
-                GetOrCreateChunk(WorldToChunk(value.X), WorldToChunk(value.Z));
-            }
-        }
-    }
     public World? World {
         get => _world;
         internal set {
@@ -99,17 +129,20 @@ public sealed class Dimension : IDisposable {
             }
         }
     }
-    private World? _world;
     public DimensionGameRules Gamerules { get; } = new();
 
-    public bool IsDay() {
-        int time = World?.CurrentDayTime ?? 0;
-        return time < 12000;
+    public Vec3 SpawnPosition {
+        get => _spawnPosition;
+        set {
+            _spawnPosition = value;
+            if (World is not null) {
+                GetOrCreateChunk(WorldToChunk(value.X), WorldToChunk(value.Z));
+            }
+        }
     }
 
-    public bool IsNight() {
-        return !IsDay();
-    }
+    public bool IsDay() => (World?.CurrentDayTime ?? 0) < 12000;
+    public bool IsNight() => !IsDay();
 
     public Dimension(string identifier, DimensionId type, WorldProvider provider, Generator? generator = null) {
         Identifier = identifier;
@@ -117,12 +150,29 @@ public sealed class Dimension : IDisposable {
         _chunks = [];
         _chunkViewers = [];
         _entities = [];
+        _players = [];
+        _mailbox = new ExecutionDomainMailbox(DomainMailboxCapacity);
         _provider = provider;
         _generator = generator ?? new VoidGenerator();
     }
 
-    public int ChunkCount => _chunks.Count;
-    public int ChunkViewerCount => _chunkViewers.Count;
+    public int ChunkCount {
+        get {
+            lock (_chunkAccessLock) {
+                return _chunks.Count;
+            }
+        }
+    }
+
+    public int ChunkViewerCount {
+        get {
+            lock (_chunkRequestLock) {
+                return _chunkViewers.Count;
+            }
+        }
+    }
+    public int ActivePlayerCount => Volatile.Read(ref _activePlayerCount);
+    public int ActiveEntityCount => Volatile.Read(ref _activeEntityCount);
     public int PendingChunkRequestCount {
         get {
             lock (_chunkRequestLock) {
@@ -131,16 +181,143 @@ public sealed class Dimension : IDisposable {
         }
     }
     public int PendingChunkCallbackCount => _chunkRequestCallbacks.Count;
-    public IReadOnlyCollection<Entity> Entities => _entities;
+    public double TickWork => Volatile.Read(ref _tickWork);
+
+    #endregion
+
+    #region Execution
+
+    internal IReadOnlyCollection<Entity> Entities => _entities;
+    public Entity[] GetEntitiesSnapshot() => Volatile.Read(ref _entitiesSnapshot);
+    public IReadOnlyCollection<Player.Player> GetPlayers() => Volatile.Read(ref _playersSnapshot);
+    public Player.Player[] GetPlayersSnapshot() => [.. Volatile.Read(ref _playersSnapshot)];
+
+    private void PublishPlayersSnapshot() {
+        Volatile.Write(ref _entitiesSnapshot, [.. _entities]);
+        Volatile.Write(ref _playersSnapshot, [.. _players]);
+        World?.MarkPlayersSnapshotDirty();
+        PublishCounts();
+    }
+
+    public bool TryEnqueue(Action command) {
+        ArgumentNullException.ThrowIfNull(command);
+        if (_disposed) {
+            return false;
+        }
+
+        return _mailbox.TryEnqueue(command);
+    }
+
+    public bool TryEnqueue(Player.Player player, Action command) {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(command);
+        return TryEnqueue(() => {
+            if (ReferenceEquals(player.Dimension, this)) {
+                command();
+            }
+        });
+    }
+
+    internal bool TryEnqueueRegion(Entity entity, RegionCoordinate region, Action command) {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(command);
+        return TryEnqueue(() => {
+            if (entity.Dimension != this ||
+                GetRegionCoordinate(
+                    WorldToChunk(entity.Position.X),
+                    WorldToChunk(entity.Position.Z),
+                    RegionChunkSize) != region) {
+                return;
+            }
+
+            command();
+        });
+    }
+
+    internal bool TryEnqueueCoalesced(object key, Action command) {
+        return !_disposed && _mailbox.TryEnqueueCoalesced(key, command);
+    }
+
+    internal bool IsOwnerThread => Volatile.Read(ref _ownerThreadId) == Environment.CurrentManagedThreadId;
+
+    #endregion
+
+    #region Chunk Management
+
+    [Conditional("DEBUG")]
+    private void AssertOwner() {
+        int ownerThreadId = Volatile.Read(ref _ownerThreadId);
+        if (ownerThreadId != 0) {
+            Debug.Assert(
+                ownerThreadId == Environment.CurrentManagedThreadId,
+                $"Dimension {Identifier} was changed outside its owner thread.");
+        }
+    }
+
+    internal ExecutionDomainMailbox Mailbox => _mailbox;
 
     internal IReadOnlyCollection<Entity> GetEntities(int x, int z) {
-        return _chunkEntities.TryGetValue(HashChunk(x, z), out HashSet<Entity>? entities)
+        return _chunkEntities.TryGetValue(HashChunk(x, z), out List<Entity>? entities)
             ? entities
             : Array.Empty<Entity>();
     }
 
     internal bool ChunkLoaded(int x, int z) {
-        return _chunks.ContainsKey(HashChunk(x, z));
+        return TryGetLoadedChunk(x, z, out _);
+    }
+
+    internal Entity[] GetEntitiesInRegionSnapshot(RegionCoordinate region) {
+        HashSet<Entity> entities = [];
+        int startX = region.X * RegionChunkSize;
+        int startZ = region.Z * RegionChunkSize;
+        for (int x = startX; x < startX + RegionChunkSize; x++) {
+            for (int z = startZ; z < startZ + RegionChunkSize; z++) {
+                if (_chunkEntities.TryGetValue(HashChunk(x, z), out List<Entity>? chunkEntities)) {
+                    entities.UnionWith(chunkEntities);
+                }
+            }
+        }
+
+        return [.. entities];
+    }
+
+    internal Player.Player[] GetPlayersInRegionSnapshot(RegionCoordinate region) {
+        HashSet<Player.Player> players = [];
+        int startX = region.X * RegionChunkSize;
+        int startZ = region.Z * RegionChunkSize;
+        for (int x = startX; x < startX + RegionChunkSize; x++) {
+            for (int z = startZ; z < startZ + RegionChunkSize; z++) {
+                if (_playersByChunk.TryGetValue(HashChunk(x, z), out HashSet<Player.Player>? chunkPlayers)) {
+                    players.UnionWith(chunkPlayers);
+                }
+            }
+        }
+
+        return [.. players];
+    }
+
+    internal static RegionCoordinate GetRegionCoordinate(
+        int chunkX,
+        int chunkZ,
+        int regionChunkSize = DefaultRegionChunkSize) {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(regionChunkSize);
+        int regionX = chunkX / regionChunkSize;
+        int regionZ = chunkZ / regionChunkSize;
+        if (chunkX < 0 && chunkX % regionChunkSize != 0) {
+            regionX--;
+        }
+
+        if (chunkZ < 0 && chunkZ % regionChunkSize != 0) {
+            regionZ--;
+        }
+
+        return new(regionX, regionZ);
+    }
+
+    public bool TryGetLoadedChunk(int x, int z, out ChunkColumn? chunk) {
+        lock (_chunkAccessLock) {
+            return _chunks.TryGetValue(HashChunk(x, z), out chunk);
+        }
     }
 
     public bool HasChunk(int x, int z) {
@@ -150,8 +327,13 @@ public sealed class Dimension : IDisposable {
             _provider.HasChunk(Type, x, z);
     }
 
+    [Obsolete("Use GetLoadedChunk for reads or RequestChunks for loading.")]
     public ChunkColumn? GetChunk(int x, int z) {
-        return GetOrLoadChunk(x, z);
+        return GetLoadedChunk(x, z);
+    }
+
+    public ChunkColumn? GetLoadedChunk(int x, int z) {
+        return TryGetLoadedChunk(x, z, out ChunkColumn? chunk) ? chunk : null;
     }
 
     public ChunkColumn GetOrCreateChunk(int x, int z) {
@@ -165,9 +347,6 @@ public sealed class Dimension : IDisposable {
 
         if (_provider.HasChunk(Type, x, z)) {
             Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
-        }
-        else {
-            // Logger.Warn($"Chunk {x},{z} in '{Identifier}' NOT in provider, generating fresh!");
         }
 
         chunk = _generator.Generate(Type, x, z);
@@ -183,9 +362,9 @@ public sealed class Dimension : IDisposable {
     }
 
     public void SetChunk(ChunkColumn chunk) {
+        World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
         lock (_chunkAccessLock) {
             long hash = HashChunk(chunk.X, chunk.Z);
-            World?.Persistence.WaitForChunk(Type, chunk.X, chunk.Z);
             chunk.Simulated = _simulatedChunks.Contains(hash);
             _chunks[hash] = chunk;
             MaterializeEntities(chunk);
@@ -193,16 +372,22 @@ public sealed class Dimension : IDisposable {
                 RestoreBlockTicks(chunk);
             }
             SyncEntitiesToStorage(chunk);
-            _provider.SaveChunk(chunk);
+            if (World is { } world) {
+                world.Persistence.SaveChunk(chunk);
+            }
+            else {
+                _provider.SaveChunk(chunk);
+            }
         }
     }
 
-    public void RequestChunks(ReadOnlySpan<(int X, int Z)> chunks, Action<ChunkColumn> ready) {
+    public int RequestChunks(ReadOnlySpan<(int X, int Z)> chunks, Action<ChunkColumn> ready) {
         if (_disposed) {
-            return;
+            return 0;
         }
 
         TaskScheduler? scheduler = World?.Server?.Scheduler;
+        int accepted = 0;
 
         for (int i = 0; i < chunks.Length; i++) {
             (int x, int z) = chunks[i];
@@ -210,19 +395,26 @@ public sealed class Dimension : IDisposable {
 
             if (_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
                 _chunkRequestCallbacks.Enqueue(new ChunkRequestCallback(chunk, ready));
+                accepted++;
                 continue;
             }
 
-            World?.Persistence.WaitForChunk(Type, x, z);
+            Task saveCompletion = World?.Persistence.GetChunkSaveTask(Type, x, z) ?? Task.CompletedTask;
 
             lock (_chunkRequestLock) {
                 if (_pendingChunkRequests.TryGetValue(hash, out PendingChunkRequest? request)) {
                     request.Callbacks.Add(ready);
+                    accepted++;
                     continue;
+                }
+
+                if (_pendingChunkRequests.Count >= MaxPendingChunkRequests) {
+                    break;
                 }
 
                 _pendingChunkRequests[hash] = new PendingChunkRequest(ready);
                 _chunkViewers[hash] = _chunkViewers.TryGetValue(hash, out int count) ? count + 1 : 1;
+                accepted++;
             }
 
             if (scheduler is null) {
@@ -232,13 +424,26 @@ public sealed class Dimension : IDisposable {
                     _generator.Populate(loaded);
                     loaded.Dirty = true;
                 }
-                HandleChunkCompleted(hash, loaded);
+                if (!_mailbox.TryEnqueue(() => HandleChunkCompleted(hash, loaded))) {
+                    CancelChunkRequest(hash);
+                    return accepted - 1;
+                }
             }
             else {
-                ChunkGenerationTask task = new(_provider, _generator, Type, x, z, hash, HandleChunkCompleted);
+                ChunkGenerationTask task = new(
+                    _provider,
+                    _generator,
+                    Type,
+                    x,
+                    z,
+                    hash,
+                    saveCompletion,
+                    HandleChunkCompleted);
+                task.CompletionMailbox = _mailbox;
                 scheduler.Schedule(task);
             }
         }
+        return accepted;
     }
 
     public bool RemoveChunk(int x, int z) {
@@ -246,10 +451,13 @@ public sealed class Dimension : IDisposable {
             if (HashChunk(x, z) == HashChunk(WorldToChunk(SpawnPosition.X), WorldToChunk(SpawnPosition.Z))) {
                 return false;
             }
+        }
 
         World?.Persistence.WaitForChunk(Type, x, z);
         _provider.DeleteChunk(Type, x, z);
         long hash = HashChunk(x, z);
+
+        lock (_chunkAccessLock) {
             return _chunks.Remove(hash);
         }
     }
@@ -257,7 +465,12 @@ public sealed class Dimension : IDisposable {
     public void SaveDirtyChunks() {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.SaveDirtyChunks") : default;
 
-        _provider.SaveSpawnPosition(Type, SpawnPosition);
+        if (World is { } persistenceWorld) {
+            persistenceWorld.Persistence.SaveSpawnPosition(Type, SpawnPosition);
+        }
+        else {
+            _provider.SaveSpawnPosition(Type, SpawnPosition);
+        }
 
         foreach (ChunkColumn loadedChunk in _chunks.Values) {
             SyncBlockActorsToStorages(loadedChunk);
@@ -270,7 +483,12 @@ public sealed class Dimension : IDisposable {
             }
 
             try {
-                _provider.SaveChunk(chunk);
+                if (World is not null) {
+                    World.Persistence.SaveChunk(chunk);
+                }
+                else {
+                    _provider.SaveChunk(chunk);
+                }
                 chunk.Dirty = false;
             }
             catch (Exception exception) {
@@ -287,7 +505,12 @@ public sealed class Dimension : IDisposable {
         SyncBlockActorsToStorages(chunk);
         SyncEntitiesToStorage(chunk);
         try {
-            _provider.SaveChunk(chunk);
+            if (World is { } world) {
+                world.Persistence.SaveChunk(chunk);
+            }
+            else {
+                _provider.SaveChunk(chunk);
+            }
             chunk.Dirty = false;
         }
         catch (Exception exception) {
@@ -460,6 +683,10 @@ public sealed class Dimension : IDisposable {
         return new PathfindingSnapshot(minX, minY, minZ, width, height, depth, walkable);
     }
 
+    #endregion
+
+    #region Blocks and Pathfinding
+
     private static bool HasFullHeightSupport(BlockPermutation permutation) {
         foreach (CollisionBox box in BlockCollisionShape.GetBoxes(permutation)) {
             if (box.OriginY + box.SizeY >= 16f) {
@@ -480,7 +707,9 @@ public sealed class Dimension : IDisposable {
         float maxDistance = 32f) {
         ArgumentNullException.ThrowIfNull(completion);
         PathfindingSnapshot snapshot = CreatePathfindingSnapshot(start, target, radius, verticalRange);
-        PathfindingTask task = new(snapshot, start, target, completion, maxVisitedNodes, maxDistance);
+        PathfindingTask task = new(snapshot, start, target, completion, maxVisitedNodes, maxDistance) {
+            CompletionMailbox = _mailbox
+        };
 
         if (World?.Scheduler is { } scheduler) {
             scheduler.Schedule(task);
@@ -503,7 +732,15 @@ public sealed class Dimension : IDisposable {
         }
     }
 
+    public BlockPermutation GetLoadedPermutationOrAir(int x, int y, int z, int layer = 0) {
+        return TryGetLoadedPermutation(x, y, z, out BlockPermutation? permutation, layer) &&
+            permutation is not null
+            ? permutation
+            : AirPermutation;
+    }
+
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true, bool broadcast = true) {
+        AssertOwner();
         lock (_chunkAccessLock) {
             SetPermutationLocked(x, y, z, permutation, layer, dirty, broadcast);
         }
@@ -569,8 +806,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public Block? GetBlock(int x, int y, int z) {
-        ChunkColumn? chunk = GetChunk(x >> 4, z >> 4);
-        if (chunk is null) {
+        if (!TryGetLoadedChunk(x >> 4, z >> 4, out ChunkColumn? chunk) || chunk is null) {
             return null;
         }
 
@@ -634,7 +870,7 @@ public sealed class Dimension : IDisposable {
         _blockTicks.Remove(key);
 
         long chunkHash = HashChunk(position.X >> 4, position.Z >> 4);
-        if (!_chunks.TryGetValue(chunkHash, out ChunkColumn? chunk) || !chunk.Simulated) {
+        if (!_chunks.TryGetValue(chunkHash, out ChunkColumn? chunk) || !chunk.Simulated || chunk.Empty) {
             return;
         }
 
@@ -648,6 +884,10 @@ public sealed class Dimension : IDisposable {
     }
 
     private void RestoreBlockTicks(ChunkColumn chunk) {
+        if (chunk.Empty) {
+            return;
+        }
+
         int subChunkOffset = Type == DimensionId.Overworld ? 4 : 0;
 
         for (int subChunkIndex = 0; subChunkIndex < chunk.SubChunks.Length; subChunkIndex++) {
@@ -715,7 +955,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public void RemoveBlock(int x, int y, int z) {
-        ChunkColumn? chunk = GetChunk(x >> 4, z >> 4);
+        ChunkColumn? chunk = GetLoadedChunk(x >> 4, z >> 4);
         if (chunk is null) {
             return;
         }
@@ -804,12 +1044,18 @@ public sealed class Dimension : IDisposable {
 
     public void Dispose() {
         _disposed = true;
+        _mailbox.Complete();
         foreach (BlockTickTask task in _blockTicks.Values) {
             task.Cancel();
         }
         _blockTicks.Clear();
         FlushCompletedChunkRequests(int.MaxValue);
-        _provider.SaveSpawnPosition(Type, SpawnPosition);
+        if (World is not null) {
+            World.Persistence.SaveSpawnPosition(Type, SpawnPosition);
+        }
+        else {
+            _provider.SaveSpawnPosition(Type, SpawnPosition);
+        }
 
         foreach (ChunkColumn chunk in _chunks.Values) {
             SyncBlockActorsToStorages(chunk);
@@ -828,10 +1074,60 @@ public sealed class Dimension : IDisposable {
         }
 
         _chunks.Clear();
+        _playersByChunk.Clear();
+        _playerChunks.Clear();
+        Volatile.Write(ref _playersSnapshot, []);
+    }
+
+    #endregion
+
+    #region Lifecycle and Ticking
+
+    private void AddSimulationArea(long playerChunk, int simulationDistance) {
+        int chunkX = (int)(playerChunk >> 32);
+        int chunkZ = (int)playerChunk;
+
+        for (int dx = -simulationDistance; dx <= simulationDistance; dx++) {
+            for (int dz = -simulationDistance; dz <= simulationDistance; dz++) {
+                long hash = HashChunk(chunkX + dx, chunkZ + dz);
+                _simulationChunkReferences[hash] =
+                    _simulationChunkReferences.TryGetValue(hash, out int count) ? count + 1 : 1;
+            }
+        }
+    }
+
+    private void RemoveSimulationArea(long playerChunk, int simulationDistance) {
+        int chunkX = (int)(playerChunk >> 32);
+        int chunkZ = (int)playerChunk;
+
+        for (int dx = -simulationDistance; dx <= simulationDistance; dx++) {
+            for (int dz = -simulationDistance; dz <= simulationDistance; dz++) {
+                long hash = HashChunk(chunkX + dx, chunkZ + dz);
+                if (!_simulationChunkReferences.TryGetValue(hash, out int count)) {
+                    continue;
+                }
+
+                if (count <= 1) {
+                    _simulationChunkReferences.Remove(hash);
+                }
+                else {
+                    _simulationChunkReferences[hash] = count - 1;
+                }
+            }
+        }
     }
 
     public void Tick(ulong currentTick, uint deltaTick) {
+        if (Interlocked.CompareExchange(ref _ownerThreadId, Environment.CurrentManagedThreadId, 0) != 0) {
+            return;
+        }
+
+        long startTimestamp = Stopwatch.GetTimestamp();
+        try {
         using var __tick = Profiler.Enabled ? Profiler.BeginZone("Dimension.Tick") : default;
+
+        _mailbox.Drain(MaxDomainCommandsPerTick, exception =>
+            Logger.Warn($"Dimension mailbox command failed in {Identifier}: {exception}"));
 
         using (Profiler.Enabled ? Profiler.BeginZone("FlushCompletedChunks") : default) {
             FlushCompletedChunkRequests(CompletedChunkLimit);
@@ -871,17 +1167,14 @@ public sealed class Dimension : IDisposable {
         }
 
         bool simulationChanged = false;
+        bool simulationDistanceChanged = false;
         int simulationDistance = 0;
         _simulationPlayerBuffer.Clear();
 
         if (World?.Server is Server server) {
             simulationDistance = Math.Clamp(server.Properties.SimulationDistance, 0, 120);
 
-            foreach ((_, var player) in server.Players) {
-                if (player.Dimension != this) {
-                    continue;
-                }
-
+            foreach (Player.Player player in _players) {
                 _simulationPlayerBuffer.Add(player);
                 long hash = HashChunk(
                     WorldToChunk(player.Position.X),
@@ -889,7 +1182,12 @@ public sealed class Dimension : IDisposable {
                 );
 
                 if (!_simulationPlayerChunks.TryGetValue(player, out long previous) || previous != hash) {
+                    if (_simulationPlayerChunks.TryGetValue(player, out previous)) {
+                        RemoveSimulationArea(previous, _simulationDistance < 0 ? simulationDistance : _simulationDistance);
+                    }
+
                     _simulationPlayerChunks[player] = hash;
+                    AddSimulationArea(hash, simulationDistance);
                     simulationChanged = true;
                 }
             }
@@ -904,7 +1202,10 @@ public sealed class Dimension : IDisposable {
             }
 
             for (int i = 0; i < _simulationPlayerRemovalBuffer.Count; i++) {
-                _simulationPlayerChunks.Remove(_simulationPlayerRemovalBuffer[i]);
+                Player.Player player = _simulationPlayerRemovalBuffer[i];
+                if (_simulationPlayerChunks.Remove(player, out long previous)) {
+                    RemoveSimulationArea(previous, _simulationDistance < 0 ? simulationDistance : _simulationDistance);
+                }
             }
 
             simulationChanged = true;
@@ -912,32 +1213,34 @@ public sealed class Dimension : IDisposable {
 
         if (_simulationDistance != simulationDistance) {
             _simulationDistance = simulationDistance;
+            simulationDistanceChanged = true;
             simulationChanged = true;
         }
 
         if (simulationChanged) {
             using var simulationZone = Profiler.Enabled ? Profiler.BeginZone("Dimension.UpdateSimulation") : default;
-            _simulationChunkBuffer.Clear();
-
-            foreach (long playerChunk in _simulationPlayerChunks.Values) {
-                int currentChunkX = (int)(playerChunk >> 32);
-                int currentChunkZ = (int)playerChunk;
-
-                for (int dx = -simulationDistance; dx <= simulationDistance; dx++) {
-                    for (int dz = -simulationDistance; dz <= simulationDistance; dz++) {
-                        _simulationChunkBuffer.Add(HashChunk(currentChunkX + dx, currentChunkZ + dz));
-                    }
+            if (simulationDistanceChanged) {
+                _simulationChunkReferences.Clear();
+                foreach (long playerChunk in _simulationPlayerChunks.Values) {
+                    AddSimulationArea(playerChunk, simulationDistance);
                 }
             }
 
+            _chunkSweepBuffer.Clear();
             foreach (long hash in _simulatedChunks) {
-                if (!_simulationChunkBuffer.Contains(hash) &&
-                    _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
+                if (!_simulationChunkReferences.ContainsKey(hash)) {
+                    _chunkSweepBuffer.Add(hash);
+                }
+            }
+
+            for (int i = 0; i < _chunkSweepBuffer.Count; i++) {
+                long hash = _chunkSweepBuffer[i];
+                if (_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
                     chunk.Simulated = false;
                 }
             }
 
-            foreach (long hash in _simulationChunkBuffer) {
+            foreach (long hash in _simulationChunkReferences.Keys) {
                 if (!_simulatedChunks.Contains(hash) &&
                     _chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
                     chunk.Simulated = true;
@@ -946,41 +1249,191 @@ public sealed class Dimension : IDisposable {
             }
 
             _simulatedChunks.Clear();
-            _simulatedChunks.UnionWith(_simulationChunkBuffer);
+            _simulatedChunks.UnionWith(_simulationChunkReferences.Keys);
         }
 
         _tickEntityBuffer.Clear();
         foreach (long hash in _simulatedChunks) {
-            if (_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+            if (_chunkEntities.TryGetValue(hash, out List<Entity>? entities)) {
                 _tickEntityBuffer.AddRange(entities);
             }
         }
 
-        _tickingEntities = true;
-        using (Profiler.Enabled ? Profiler.BeginZone("Dimension.TickEntities") : default) {
-            foreach (Entity entity in _tickEntityBuffer) {
-                if (entity.PendingDespawn || entity.Dimension != this) {
-                    _pendingEntityRemoves.Add(entity);
-                    continue;
+        bool regionMode = World?.Server is { } adaptiveServer &&
+            (adaptiveServer.Properties.TickMode == TickMode.Region ||
+             adaptiveServer.Properties.TickMode == TickMode.Adaptive &&
+             adaptiveServer.WorkerPool.WorkerCount > 1 &&
+             !TaskWorkerPool.WorkerThread);
+        if (regionMode) {
+            _tickRegionBuffers.Clear();
+            for (int i = 0; i < _tickEntityBuffer.Count; i++) {
+                Entity entity = _tickEntityBuffer[i];
+                RegionCoordinate region = GetRegionCoordinate(
+                    WorldToChunk(entity.Position.X),
+                    WorldToChunk(entity.Position.Z),
+                    RegionChunkSize);
+                if (!_tickRegionBuffers.TryGetValue(region, out List<Entity>? regionEntities)) {
+                    regionEntities = [];
+                    _tickRegionBuffers[region] = regionEntities;
                 }
 
-                if (entity.Position.Y < VoidY) {
-                    if (entity is ItemEntity) {
-                        entity.Despawn(new EntityDespawnOptions());
-                    }
-                    else if (currentTick >= entity.NextVoidDamageTick && entity.GetTrait<EntityHealthTrait>() is { } health) {
-                        entity.NextVoidDamageTick = currentTick + VoidDamageCooldownTicks;
-                        health.ApplyDamage(float.MaxValue, null, ActorDamageCause.Void);
-                    }
-
-                    continue;
-                }
-
-                entity.Tick(currentTick, deltaTick);
+                regionEntities.Add(entity);
             }
         }
-        _tickingEntities = false;
+
+        _tickingEntities = true;
+        try {
+            using (Profiler.Enabled ? Profiler.BeginZone("Dimension.TickEntities") : default) {
+                if (regionMode) {
+                    if (_tickRegionBuffers.Count > 1 &&
+                        World?.Server?.WorkerPool is { } workerPool &&
+                        workerPool.WorkerCount > 1) {
+                        TickRegionsParallel(workerPool, currentTick, deltaTick);
+                    }
+                    else {
+                        foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
+                            TickEntities(regionEntities, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves);
+                        }
+                    }
+                }
+                else {
+                    TickEntities(_tickEntityBuffer, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves);
+                }
+            }
+        }
+        finally {
+            _tickingEntities = false;
+            for (int i = 0; i < _tickOwnedEntities.Count; i++) {
+                _tickOwnedEntities[i].ReleaseTickOwner(this);
+            }
+
+            _tickOwnedEntities.Clear();
+            if (regionMode) {
+                foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
+                    regionEntities.Clear();
+                }
+
+                _tickRegionBuffers.Clear();
+            }
+        }
         FlushPendingEntityChanges();
+        }
+        finally {
+            Volatile.Write(ref _tickWork, (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency);
+            Volatile.Write(ref _ownerThreadId, 0);
+        }
+    }
+
+    #endregion
+
+    #region Networking and Entities
+
+    private void TickRegionsParallel(TaskWorkerPool workerPool, ulong currentTick, uint deltaTick) {
+        Volatile.Write(ref _parallelRegionTicking, 1);
+        List<(RegionTickTask Task, ManualResetEventSlim Completed, List<Entity> Owned, HashSet<Entity> Removes)> tasks = [];
+
+        try {
+            foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
+                List<Entity> owned = [];
+                HashSet<Entity> removes = [];
+                ManualResetEventSlim completed = new();
+                RegionTickTask task = new(
+                    () => TickEntities(regionEntities, currentTick, deltaTick, owned, removes),
+                    completed);
+
+                if (workerPool.TryEnqueue(task)) {
+                    tasks.Add((task, completed, owned, removes));
+                }
+                else {
+                    completed.Dispose();
+                    TickEntities(regionEntities, currentTick, deltaTick, owned, removes);
+                    _tickOwnedEntities.AddRange(owned);
+                    _pendingEntityRemoves.UnionWith(removes);
+                }
+            }
+
+            for (int i = 0; i < tasks.Count; i++) {
+                (RegionTickTask task, ManualResetEventSlim completed, List<Entity> owned, HashSet<Entity> removes) = tasks[i];
+                completed.Wait();
+                completed.Dispose();
+                _tickOwnedEntities.AddRange(owned);
+                _pendingEntityRemoves.UnionWith(removes);
+                if (task.Error is not null) {
+                    Logger.Warn($"Region tick failed in {Identifier}: {task.Error}");
+                }
+            }
+        }
+        finally {
+            Volatile.Write(ref _parallelRegionTicking, 0);
+            ApplyParallelRegionChanges();
+        }
+    }
+
+    private void TickEntities(
+        List<Entity> entities,
+        ulong currentTick,
+        uint deltaTick,
+        List<Entity> ownedEntities,
+        HashSet<Entity> pendingRemoves) {
+        for (int i = 0; i < entities.Count; i++) {
+            Entity entity = entities[i];
+            if (!entity.TryClaimTickOwner(this)) {
+                continue;
+            }
+
+            ownedEntities.Add(entity);
+            if (entity.PendingDespawn || entity.Dimension != this) {
+                pendingRemoves.Add(entity);
+                continue;
+            }
+
+            if (entity.Position.Y < VoidY) {
+                if (entity is ItemEntity) {
+                    entity.Despawn(new EntityDespawnOptions());
+                }
+                else if (currentTick >= entity.NextVoidDamageTick && entity.GetTrait<EntityHealthTrait>() is { } health) {
+                    entity.NextVoidDamageTick = currentTick + VoidDamageCooldownTicks;
+                    health.ApplyDamage(float.MaxValue, null, ActorDamageCause.Void);
+                }
+
+                continue;
+            }
+
+            entity.Tick(currentTick, deltaTick);
+            if (entity.PendingDespawn || entity.Dimension != this) {
+                pendingRemoves.Add(entity);
+            }
+        }
+    }
+
+    private void ApplyParallelRegionChanges() {
+        while (_parallelEntityRemoves.TryDequeue(out (Entity Entity, bool Complete) removal)) {
+            RemoveEntity(removal.Entity, removal.Complete);
+        }
+
+        foreach (Entity entity in _parallelEntityAdds.Keys) {
+            if (_parallelEntityAdds.TryRemove(entity, out _)) {
+                AddEntity(entity);
+            }
+        }
+
+        foreach (Entity entity in _parallelStorageUpdates.Keys) {
+            if (_parallelStorageUpdates.TryRemove(entity, out _)) {
+                UpdateEntityStorage(entity);
+            }
+        }
+
+        foreach (Entity entity in _parallelVisibilityUpdates.Keys) {
+            if (_parallelVisibilityUpdates.TryRemove(entity, out _)) {
+                UpdateEntityVisibility(entity);
+            }
+        }
+
+        foreach (Entity entity in _parallelHiddenEntities.Keys) {
+            if (_parallelHiddenEntities.TryRemove(entity, out _)) {
+                HideEntity(entity);
+            }
+        }
     }
 
     public void Broadcast(Packet packet, BroadcastOptions? options = null) {
@@ -993,8 +1446,9 @@ public sealed class Dimension : IDisposable {
         resolved.Center ??= GetPacketPosition(packet);
         float radiusSquared = resolved.Radius * resolved.Radius;
 
-        foreach ((var connection, var player) in server.Players) {
-            if (player.Dimension != this) {
+        foreach (Player.Player player in _players) {
+            NetworkConnection? connection = player.Connection;
+            if (connection is null) {
                 continue;
             }
 
@@ -1044,6 +1498,12 @@ public sealed class Dimension : IDisposable {
     }
 
     internal void AddEntity(Entity entity) {
+        if (Volatile.Read(ref _parallelRegionTicking) != 0 && !IsOwnerThread) {
+            _parallelEntityAdds.TryAdd(entity, 0);
+            return;
+        }
+
+        AssertOwner();
         if (_tickingEntities) {
             _pendingEntityRemoves.Remove(entity);
             _pendingEntityAdds.Add(entity);
@@ -1052,12 +1512,25 @@ public sealed class Dimension : IDisposable {
         }
 
         _entities.Add(entity);
+        if (entity is Player.Player player) {
+            _players.Add(player);
+            IndexPlayer(player);
+            PublishPlayersSnapshot();
+        }
         IndexEntity(entity);
         UpdateEntityStorage(entity);
         UpdateEntityVisibility(entity);
+        Volatile.Write(ref _entitiesSnapshot, [.. _entities]);
+        PublishCounts();
     }
 
     internal void RemoveEntity(Entity entity, bool complete = true) {
+        if (Volatile.Read(ref _parallelRegionTicking) != 0 && !IsOwnerThread) {
+            _parallelEntityRemoves.Enqueue((entity, complete));
+            return;
+        }
+
+        AssertOwner();
         if (_tickingEntities) {
             _pendingEntityAdds.Remove(entity);
             _pendingEntityRemoves.Add(entity);
@@ -1070,17 +1543,23 @@ public sealed class Dimension : IDisposable {
             entity.CompleteDespawn();
         }
         _entities.Remove(entity);
+        if (entity is Player.Player player) {
+            _players.Remove(player);
+            UnindexPlayer(player);
+            PublishPlayersSnapshot();
+        }
+
+        Volatile.Write(ref _entitiesSnapshot, [.. _entities]);
+        PublishCounts();
     }
 
     public void AddPlayer(Player.Player joining) {
-        if (World?.Server is not Server server) {
-            return;
-        }
-
         ulong tick = World is Tickable tickable ? tickable.TickValue : 0;
         PlayerChunkRenderingTrait? joiningRenderer = joining.GetTrait<PlayerChunkRenderingTrait>();
-        foreach ((_, Player.Player other) in server.Players) {
-            if (ReferenceEquals(other, joining) || other.Dimension != this || !other.IsAlive ||
+        _visibilityPlayerBuffer.Clear();
+        CollectPlayersNear(joining.Location);
+        foreach (Player.Player other in _visibilityPlayerBuffer) {
+            if (ReferenceEquals(other, joining) || !other.IsAlive ||
                 !InEntityVisibilityRange(joining.Location, other.Location)) {
                 continue;
             }
@@ -1100,14 +1579,17 @@ public sealed class Dimension : IDisposable {
         HideEntity(leaving);
     }
 
-    internal void UpdatePlayerVisibility(Player.Player moving) {
-        if (World?.Server is not Server server) {
-            return;
+    internal void UpdatePlayerVisibility(Player.Player moving, Vec3? previousPosition = null) {
+        UpdatePlayerChunk(moving);
+        PlayerChunkRenderingTrait? movingRenderer = moving.GetTrait<PlayerChunkRenderingTrait>();
+        _visibilityPlayerBuffer.Clear();
+        CollectPlayersNear(moving.Location);
+        if (previousPosition is { } previous) {
+            CollectPlayersNear(previous);
         }
 
-        PlayerChunkRenderingTrait? movingRenderer = moving.GetTrait<PlayerChunkRenderingTrait>();
-        foreach (Player.Player other in server.Players.Values) {
-            if (ReferenceEquals(other, moving) || other.Dimension != this) {
+        foreach (Player.Player other in _visibilityPlayerBuffer) {
+            if (ReferenceEquals(other, moving)) {
                 continue;
             }
 
@@ -1131,6 +1613,57 @@ public sealed class Dimension : IDisposable {
         return (int)MathF.Floor(coordinate) >> 4;
     }
 
+    private void IndexPlayer(Player.Player player) {
+        long hash = HashChunk(WorldToChunk(player.Position.X), WorldToChunk(player.Position.Z));
+        _playerChunks[player] = hash;
+        if (!_playersByChunk.TryGetValue(hash, out HashSet<Player.Player>? players)) {
+            players = [];
+            _playersByChunk[hash] = players;
+        }
+
+        players.Add(player);
+    }
+
+    private void UpdatePlayerChunk(Player.Player player) {
+        long hash = HashChunk(WorldToChunk(player.Position.X), WorldToChunk(player.Position.Z));
+        if (_playerChunks.TryGetValue(player, out long previous) && previous == hash) {
+            return;
+        }
+
+        UnindexPlayer(player);
+        IndexPlayer(player);
+    }
+
+    private void UnindexPlayer(Player.Player player) {
+        if (!_playerChunks.Remove(player, out long hash) ||
+            !_playersByChunk.TryGetValue(hash, out HashSet<Player.Player>? players)) {
+            return;
+        }
+
+        players.Remove(player);
+        if (players.Count == 0) {
+            _playersByChunk.Remove(hash);
+        }
+    }
+
+    private void CollectPlayersNear(Vec3 position) {
+        int chunkX = WorldToChunk(position.X);
+        int chunkZ = WorldToChunk(position.Z);
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                if (_playersByChunk.TryGetValue(HashChunk(chunkX + dx, chunkZ + dz), out HashSet<Player.Player>? players)) {
+                    _visibilityPlayerBuffer.UnionWith(players);
+                }
+            }
+        }
+    }
+
+    internal Player.Player[] GetPlayersNearSnapshot(Vec3 position) {
+        _visibilityPlayerBuffer.Clear();
+        CollectPlayersNear(position);
+        return [.. _visibilityPlayerBuffer];
+    }
+
     private ChunkColumn? GetOrLoadChunk(int x, int z) {
         lock (_chunkAccessLock) {
             long hash = HashChunk(x, z);
@@ -1138,7 +1671,18 @@ public sealed class Dimension : IDisposable {
                 return chunk;
             }
 
-            World?.Persistence.WaitForChunk(Type, x, z);
+            ChunkColumn? pending = World?.Persistence.GetPendingChunk(Type, x, z);
+            if (pending is not null) {
+                pending.Simulated = _simulatedChunks.Contains(hash);
+                _chunks[hash] = pending;
+                MaterializeEntities(pending);
+                if (pending.Simulated) {
+                    RestoreBlockTicks(pending);
+                }
+
+                return pending;
+            }
+
             chunk = _provider.LoadChunk(Type, x, z);
             if (chunk is not null) {
                 chunk.Simulated = _simulatedChunks.Contains(hash);
@@ -1166,6 +1710,10 @@ public sealed class Dimension : IDisposable {
                     entity.CompleteDespawn();
                 }
                 _entities.Remove(entity);
+                if (entity is Player.Player player) {
+                    _players.Remove(player);
+                    UnindexPlayer(player);
+                }
             }
 
             _pendingEntityRemoves.Clear();
@@ -1174,12 +1722,23 @@ public sealed class Dimension : IDisposable {
         if (_pendingEntityAdds.Count > 0) {
             foreach (Entity entity in _pendingEntityAdds) {
                 _entities.Add(entity);
+                if (entity is Player.Player player) {
+                    _players.Add(player);
+                    IndexPlayer(player);
+                }
                 IndexEntity(entity);
                 UpdateEntityVisibility(entity);
             }
 
             _pendingEntityAdds.Clear();
         }
+
+        PublishPlayersSnapshot();
+    }
+
+    private void PublishCounts() {
+        Volatile.Write(ref _activePlayerCount, _players.Count);
+        Volatile.Write(ref _activeEntityCount, _entities.Count);
     }
 
     private static BlockLevelStorage GetOrCreateBlockStorage(ChunkColumn chunk, BlockPos position, string blockIdentifier) {
@@ -1210,6 +1769,11 @@ public sealed class Dimension : IDisposable {
     }
 
     internal void UpdateEntityStorage(Entity entity) {
+        if (Volatile.Read(ref _parallelRegionTicking) != 0 && !IsOwnerThread) {
+            _parallelStorageUpdates.TryAdd(entity, 0);
+            return;
+        }
+
         if (entity.Dimension != this) {
             return;
         }
@@ -1272,76 +1836,93 @@ public sealed class Dimension : IDisposable {
 
     private void IndexEntity(Entity entity) {
         long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
-        _entityChunkIndexes[entity] = hash;
 
-        if (!_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+        if (!_chunkEntities.TryGetValue(hash, out List<Entity>? entities)) {
             entities = [];
             _chunkEntities[hash] = entities;
         }
 
+        int index = entities.Count;
         entities.Add(entity);
+        _entityChunkIndexes[entity] = new EntityChunkIndex(hash, index);
     }
 
     private bool UpdateEntityIndex(Entity entity) {
         long hash = HashChunk(WorldToChunk(entity.Position.X), WorldToChunk(entity.Position.Z));
-        if (_entityChunkIndexes.TryGetValue(entity, out long previousHash)) {
-            if (previousHash == hash) {
+        if (_entityChunkIndexes.TryGetValue(entity, out EntityChunkIndex previous)) {
+            if (previous.Hash == hash) {
                 return false;
             }
 
-            if (_chunkEntities.TryGetValue(previousHash, out HashSet<Entity>? previousEntities)) {
-                previousEntities.Remove(entity);
-                if (previousEntities.Count == 0) {
-                    _chunkEntities.Remove(previousHash);
-                }
-            }
+            RemoveEntityFromChunk(previous);
         }
 
-        _entityChunkIndexes[entity] = hash;
-        if (!_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+        if (!_chunkEntities.TryGetValue(hash, out List<Entity>? entities)) {
             entities = [];
             _chunkEntities[hash] = entities;
         }
 
+        int index = entities.Count;
         entities.Add(entity);
+        _entityChunkIndexes[entity] = new EntityChunkIndex(hash, index);
         return true;
     }
 
     private void UnindexEntity(Entity entity) {
-        if (!_entityChunkIndexes.Remove(entity, out long hash) ||
-            !_chunkEntities.TryGetValue(hash, out HashSet<Entity>? entities)) {
+        if (!_entityChunkIndexes.Remove(entity, out EntityChunkIndex index)) {
             return;
         }
 
-        entities.Remove(entity);
+        RemoveEntityFromChunk(index);
+    }
+
+    private void RemoveEntityFromChunk(EntityChunkIndex index) {
+        if (!_chunkEntities.TryGetValue(index.Hash, out List<Entity>? entities)) {
+            return;
+        }
+
+        int lastIndex = entities.Count - 1;
+        if (index.Index < lastIndex) {
+            Entity moved = entities[lastIndex];
+            entities[index.Index] = moved;
+            _entityChunkIndexes[moved] = new EntityChunkIndex(index.Hash, index.Index);
+        }
+
+        entities.RemoveAt(lastIndex);
         if (entities.Count == 0) {
-            _chunkEntities.Remove(hash);
+            _chunkEntities.Remove(index.Hash);
         }
     }
 
     internal void UpdateEntityVisibility(Entity entity) {
-        if (World?.Server is not Server server) {
+        if (Volatile.Read(ref _parallelRegionTicking) != 0 && !IsOwnerThread) {
+            _parallelVisibilityUpdates.TryAdd(entity, 0);
             return;
         }
 
-        foreach (Player.Player player in server.Players.Values) {
-            if (player.Dimension == this) {
-                player.GetTrait<PlayerChunkRenderingTrait>()?.UpdateVisibleEntity(entity);
-            }
+        _visibilityPlayerBuffer.Clear();
+        CollectPlayersNear(entity.Position);
+        foreach (Player.Player player in _visibilityPlayerBuffer) {
+            player.GetTrait<PlayerChunkRenderingTrait>()?.UpdateVisibleEntity(entity);
         }
     }
 
     internal void HideEntity(Entity entity) {
-        if (World?.Server is not Server server) {
+        if (Volatile.Read(ref _parallelRegionTicking) != 0 && !IsOwnerThread) {
+            _parallelHiddenEntities.TryAdd(entity, 0);
             return;
         }
 
-        foreach (Player.Player player in server.Players.Values) {
-            if (player.Dimension == this) {
-                player.GetTrait<PlayerChunkRenderingTrait>()?.HideVisibleEntity(entity);
-            }
+        _visibilityPlayerBuffer.Clear();
+        CollectPlayersNear(entity.Position);
+        foreach (Player.Player player in _visibilityPlayerBuffer) {
+            player.GetTrait<PlayerChunkRenderingTrait>()?.HideVisibleEntity(entity);
         }
     }
+
+    #endregion
+
+    #region Entity Storage
 
     private void SyncEntitiesToStorage(ChunkColumn chunk) {
         foreach (Entity entity in _entities) {
@@ -1534,6 +2115,26 @@ public sealed class Dimension : IDisposable {
         }
     }
 
+    #endregion
+
+    #region Persistence
+
+    private void CancelChunkRequest(long hash) {
+        lock (_chunkRequestLock) {
+            _pendingChunkRequests.Remove(hash);
+            if (!_chunkViewers.TryGetValue(hash, out int viewers)) {
+                return;
+            }
+
+            if (viewers <= 1) {
+                _chunkViewers.Remove(hash);
+            }
+            else {
+                _chunkViewers[hash] = viewers - 1;
+            }
+        }
+    }
+
     private sealed class PendingChunkRequest {
         public readonly List<Action<ChunkColumn>> Callbacks;
 
@@ -1577,15 +2178,16 @@ public sealed class Dimension : IDisposable {
             }
 
             try {
-                ChunkColumn snapshot = chunk.CreatePersistenceSnapshot();
                 chunk.Dirty = false;
                 if (World is { } world) {
-                    world.Persistence.SaveChunk(snapshot);
+                    world.Persistence.SaveChunk(chunk);
                 }
                 else {
-                    _provider.SaveChunk(snapshot);
-                }
-            }
+                    _provider.SaveChunk(chunk);
+    }
+
+    #endregion
+}
             catch (Exception exception) {
                 Logger.Err($"Failed to save chunk {chunk.X},{chunk.Z}: {exception.Message}");
             }
@@ -1597,6 +2199,8 @@ public sealed class Dimension : IDisposable {
 
         return processed;
     }
+
+    private readonly record struct EntityChunkIndex(long Hash, int Index);
 }
 
 [Flags]

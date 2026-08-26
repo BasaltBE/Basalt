@@ -15,6 +15,7 @@ internal static class LevelDbKeyBuilder {
     private static readonly byte[] DigpBytes = "digp"u8.ToArray();
     private static readonly byte[] LocalPlayerBytes = "~local_player"u8.ToArray();
     private static readonly byte[] PlayerServerBytes = "player_server_"u8.ToArray();
+    private static readonly byte[] SpawnPositionBytes = "spawn_position_"u8.ToArray();
 
     private const byte LegacyPrefixChunk = 0x2F;
     private const byte LegacyPrefixBlockList = 0x31;
@@ -92,6 +93,13 @@ internal static class LevelDbKeyBuilder {
 
     public static byte[] BuildLegacySpawnPositionKey(DimensionId dimensionType) {
         return [LegacyPrefixSpawnPosition, (byte)dimensionType];
+    }
+
+    public static byte[] BuildSpawnPositionKey(DimensionId dimensionType) {
+        byte[] key = new byte[SpawnPositionBytes.Length + 1];
+        SpawnPositionBytes.CopyTo(key, 0);
+        key[^1] = (byte)dimensionType;
+        return key;
     }
 
 

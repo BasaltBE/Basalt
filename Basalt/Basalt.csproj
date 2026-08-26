@@ -28,6 +28,7 @@
   <ItemGroup>
     <PackageReference Include="Basalt.Binary" Version="0.1.0" />
     <PackageReference Include="Basalt.RakNet" Version="0.1.1" />
+    <PackageReference Include="Tmds.LibC" Version="0.2.0" />
     <PackageReference Include="conmaster.compression.spanzlib" Version="1.1.0" />
     <PackageReference Include="SIPSorcery" Version="10.0.16" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
@@ -38,6 +39,18 @@
 
   <ItemGroup>
     <Compile Include="..\Nethernet\**\*.cs" Link="Nethernet\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(NuGetPackageRoot)tmds.libc\0.2.0\ref\netstandard2.0\Tmds.LibC.dll"
+          Link="Tmds.LibC.dll"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          Condition="Exists('$(NuGetPackageRoot)tmds.libc\0.2.0\ref\netstandard2.0\Tmds.LibC.dll')" />
+    <Reference Include="Tmds.LibC">
+      <HintPath>$(NuGetPackageRoot)tmds.libc\0.2.0\ref\netstandard2.0\Tmds.LibC.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

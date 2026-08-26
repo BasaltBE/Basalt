@@ -5,6 +5,8 @@ using ChunkColumn = Basalt.Core.Worlds.Dimensions.Chunk.Chunk;
 namespace Basalt.Core.Worlds.Dimensions.Provider;
 
 public abstract class WorldProvider : IDisposable {
+    public virtual bool SupportsConcurrentDimensions => false;
+
     /// <summary>
     /// A unique identifier for the provider, used for saving and loading dimensions.
     /// </summary>

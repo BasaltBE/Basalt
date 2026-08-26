@@ -15,8 +15,13 @@ public sealed class LevelDbProvider : WorldProvider {
     private readonly ChunkStore _chunks;
     private readonly string _path;
     public override string Identifier => "leveldb";
+    public override bool SupportsConcurrentDimensions => true;
 
     public string DatabasePath => _path;
+    public long DatabaseReadCount => _database.ReadCount;
+    public long DatabaseWriteCount => _database.WriteCount;
+    public double AverageDatabaseReadMilliseconds => _database.AverageReadMilliseconds;
+    public double AverageDatabaseWriteMilliseconds => _database.AverageWriteMilliseconds;
 
     public LevelDbProvider(string path) {
         _path = ResolveDatabasePath(path);
@@ -149,13 +154,26 @@ public sealed class LevelDbProvider : WorldProvider {
     }
 
     public override Vec3? LoadSpawnPosition(DimensionId dimensionType) {
-        // Try legacy key first (for migration).
+        byte[] currentKey = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
         byte[] legacyKey = LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType);
-        byte[]? data = _database.Get(legacyKey);
+        byte[]? data = _database.Get(currentKey);
+        bool legacy = false;
+        if (data is null || data.Length == 0) {
+            data = _database.Get(legacyKey);
+            legacy = data is { Length: > 0 };
+        }
+
         if (data is { Length: 12 }) {
             float lx = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(0, 4));
             float ly = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(4, 4));
             float lz = BinaryPrimitives.ReadSingleLittleEndian(data.AsSpan(8, 4));
+            if (legacy) {
+                LevelDbWriteBatch batch = new();
+                batch.Put(currentKey, data);
+                batch.Delete(legacyKey);
+                _database.Write(batch);
+            }
+
             return new Vec3() {
                 X = lx,
                 Y = ly,
@@ -171,7 +189,11 @@ public sealed class LevelDbProvider : WorldProvider {
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(0, 4), position.X);
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(4, 4), position.Y);
         BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(8, 4), position.Z);
-        _database.Put(LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType), data);
+        byte[] currentKey = LevelDbKeyBuilder.BuildSpawnPositionKey(dimensionType);
+        LevelDbWriteBatch batch = new();
+        batch.Put(currentKey, data);
+        batch.Delete(LevelDbKeyBuilder.BuildLegacySpawnPositionKey(dimensionType));
+        _database.Write(batch);
     }
 
     public override void WriteLevelDat(World world) {

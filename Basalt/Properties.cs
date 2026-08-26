@@ -1,5 +1,7 @@
 namespace Basalt.Core;
 
+using Basalt.Core.Enums;
+
 public class Properties {
     [ServerProperties.PropertyOrder(1)]
     [ServerProperties.PropertyCategory("Network")]
@@ -126,6 +128,24 @@ public class Properties {
     [ServerProperties.PropertyKey("worker-threads")]
     [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
     public int WorkerThreads { get; set; } = 4;
+
+    [ServerProperties.PropertyOrder(25)]
+    [ServerProperties.PropertyCategory("Performance")]
+    [ServerProperties.PropertyKey("tick-mode")]
+    [ServerProperties.PropertyComment("Tick execution mode. Values: single, world, dimension, region, adaptive, group.")]
+    public TickMode TickMode { get; set; } = TickMode.Single;
+
+    [ServerProperties.PropertyOrder(26)]
+    [ServerProperties.PropertyCategory("Performance")]
+    [ServerProperties.PropertyKey("tick-groups")]
+    [ServerProperties.PropertyComment("Number of parallel world groups in Group tick mode. Zero uses worker count.")]
+    public int TickGroups { get; set; }
+
+    [ServerProperties.PropertyOrder(27)]
+    [ServerProperties.PropertyCategory("Performance")]
+    [ServerProperties.PropertyKey("region-chunk-size")]
+    [ServerProperties.PropertyComment("Chunk width and depth of a region. The default is 8.")]
+    public int RegionChunkSize { get; set; } = 8;
 
     [ServerProperties.PropertyOrder(22)]
     [ServerProperties.PropertyCategory("Resource Packs")]

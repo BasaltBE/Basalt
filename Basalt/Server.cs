@@ -4,14 +4,15 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Basalt.Core.Commands;
 using Basalt.Core.Commands.Vanilla;
+using Basalt.Core.Blocks;
+using Basalt.Core.Entities;
+using Basalt.Core.Item;
 using Basalt.Core.Network;
 using Basalt.Core.Network.Nethernet;
 using Basalt.Core.Plugins;
 using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
-using RaknetServerOptions = Basalt.RakNet.RaknetServerOptions;
-using RakNetNetworkServer = Basalt.RakNet.NetworkServer;
 using Basalt.Core.Events;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
@@ -21,42 +22,30 @@ using Basalt.Core.Player;
 using PlayerInstance = Player.Player;
 using WorldInstance = Worlds.World;
 using Basalt.BedrockProtocol.Packets;
+using Basalt.BedrockProtocol.Types;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Rcon;
 
 public sealed class Server {
+    private const double AdaptiveHotWorldMilliseconds = 2.0;
     private const ulong TpsUpdateIntervalTicks = 20;
-    private const ulong AutoSaveIntervalTicks = 6000; // 5 minutes at 20 TPS
+    private const ulong AutoSaveIntervalTicks = 6000;
     private const int AutoSaveChunksPerTick = 2;
     private static readonly long TickDurationTicks = (long)(50.0 / 1000.0 * Stopwatch.Frequency);
-    private static readonly long RakNetTickDurationTicks = TickDurationTicks;
     private static readonly long SpinThresholdTicks = (long)(2.0 / 1000.0 * Stopwatch.Frequency);
 
-    /// <summary>
-    /// Raknet server
-    /// </summary>
-    private readonly RakNetNetworkServer _raknet;
     private readonly NetherNetServerTransport? _nethernet;
     private readonly RconServer? _rcon;
-    /// <summary>
-    /// Registry for dimension generators
-    /// </summary>
     private readonly Dictionary<string, Type> _generatorRegistry = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>
-    /// Registry for world providers
-    /// </summary>
     private readonly Dictionary<string, Type> _providerRegistry = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, WorldInstance> _worlds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Lock _worldsLock = new();
+    private WorldInstance[] _worldsSnapshot = [];
     private readonly Queue<WorldInstance> _autoSaveWorlds = [];
-    /// <summary>
-    /// Cancellation source for the main network loop
-    /// </summary>
-    private CancellationTokenSource? _runCancellation;
-    /// <summary>
-    /// Task for the main network loop
-    /// </summary>
-    private Task? _networkLoopTask;
-    private Thread? _raknetThread;
+    private readonly ConcurrentQueue<string> _pendingWorldUnloads = new();
+    private readonly ConcurrentDictionary<PlayerInstance, PendingPlayerTransfer> _pendingPlayerTransfers = new();
+    private int _pendingTickGroups = -1;
+    private CancellationTokenSource? _networkCancellation;
     /// <summary>
     /// Cancellation source for the tick loop
     /// </summary>
@@ -71,10 +60,16 @@ public sealed class Server {
     private double _tickWorkTotal;
     private double _tickWorkMaximum;
     private int _tickWorkSamples;
+    private long _tickAllocatedBytesTotal;
+    private double _tps = 20.0;
+    private double _tickWork;
+    private double _tickWorkAverage;
+    private double _tickWorkMaximumPublished;
     private TimeSpan _startupElapsed;
-    private readonly Dictionary<ServerEvent, List<SignalHandler>> _signalHandlers = new(ServerEventComparer.Instance);
-    public readonly ConcurrentDictionary<NetworkConnection, PlayerInstance> Players = new();
-    public CommandRegistry Commands = new();
+    private readonly Dictionary<ServerEvent, List<SignalHandler>> _signalHandlers = new();
+    public ConcurrentDictionary<NetworkConnection, PlayerInstance> Players { get; } = new();
+    private PlayerInstance[] _playersSnapshot = [];
+    public CommandRegistry Commands { get; } = new();
     public PermissionStore PermissionStore { get; }
     public PlayerDataStore PlayerData { get; }
     public BanStore Bans { get; }
@@ -84,33 +79,77 @@ public sealed class Server {
     public ResourcePackManager ResourcePacks { get; } = new();
     public TaskWorkerPool WorkerPool { get; private set; } = null!;
     public TaskScheduler Scheduler { get; private set; } = null!;
-    public IEnumerable<WorldInstance> Worlds => _worlds.Values;
+    public IEnumerable<WorldInstance> Worlds => Volatile.Read(ref _worldsSnapshot);
+
+    public IEnumerable<PlayerInstance> GetPlayers() {
+        foreach (WorldInstance world in Worlds) {
+            foreach (PlayerInstance player in world.GetPlayers()) {
+                yield return player;
+            }
+        }
+    }
+
+    public PlayerInstance[] GetPlayersSnapshot() => [.. Volatile.Read(ref _playersSnapshot)];
+
+    internal IReadOnlyList<PlayerInstance> CurrentPlayersSnapshot => Volatile.Read(ref _playersSnapshot);
+
+    private void RefreshPlayersSnapshot() {
+        Volatile.Write(ref _playersSnapshot, [.. GetPlayers()]);
+    }
+
+    private void RefreshWorldsSnapshot() {
+        lock (_worldsLock) {
+            Volatile.Write(ref _worldsSnapshot, [.. _worlds.Values]);
+        }
+    }
+
+    internal void QueuePlayerTransfer(
+        PlayerInstance player,
+        Dimension source,
+        Dimension target,
+        Vec3 position) {
+        _pendingPlayerTransfers[player] = new PendingPlayerTransfer(source, target, position);
+    }
+
+    internal void ApplyPlayerTransfers() {
+        foreach ((PlayerInstance player, PendingPlayerTransfer transfer) in _pendingPlayerTransfers) {
+            if (!_pendingPlayerTransfers.TryRemove(player, out PendingPlayerTransfer pending) ||
+                player.Dimension != pending.Source ||
+                player.PendingDespawn) {
+                continue;
+            }
+
+            player.ApplyQueuedTeleport(pending.Position, pending.Target);
+        }
+    }
 
     public string DefaultWorldIdentifier { get; }
 
     /// <summary>
     /// Ticks per second on average.
     /// </summary>
-    public double Tps { get; private set; } = 20.0;
+    public double Tps => Volatile.Read(ref _tps);
 
     /// <summary>
     /// Milliseconds the last server tick took.
     /// </summary>
-    public double TickWork { get; private set; }
+    public double TickWork {
+        get => Volatile.Read(ref _tickWork);
+        private set => Volatile.Write(ref _tickWork, value);
+    }
 
-    public double TickWorkAverage { get; private set; }
+    public double TickWorkAverage => Volatile.Read(ref _tickWorkAverage);
 
-    public double TickWorkMaximum { get; private set; }
+    public double TickWorkMaximum => Volatile.Read(ref _tickWorkMaximumPublished);
+    internal int LastAdaptiveGroupCount { get; private set; }
+
+    public long TickAllocatedBytes { get; private set; }
+
+    public double TickAllocatedBytesAverage { get; private set; }
 
     public Server(Properties? properties = null) {
         long startTimestamp = Stopwatch.GetTimestamp();
         Properties = properties ?? new Properties();
-        _raknet = new RakNetNetworkServer(new RaknetServerOptions(
-            MaxMtu: Properties.Mtu,
-            Port: Properties.Port,
-            IPv6Port: Properties.IPv6Port));
-        _raknet.GetAdvertisement = () =>
-            $"MCPE;{Properties.Motd};{Constants.ProtocolVersion};{Constants.MinecraftVersion};{Players.Count};{Properties.MaxPlayers};{_raknet.ServerGuid};Bedrock level;Survival;1;{Properties.Port};{Properties.IPv6Port};";
         if (Properties.RconPort != 0 && Properties.RconPassword.Length > 0) {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
@@ -135,10 +174,7 @@ public sealed class Server {
 
         Plugins.LoadAll(Properties.PluginsDirectory);
 
-        // long LoadReourcePacksTimeStamp = Stopwatch.GetTimestamp();
         ResourcePacks.Load(Properties.ResourcePacksPath);
-        // TimeSpan LoadReourcePacksElapsed = Stopwatch.GetElapsedTime(LoadReourcePacksTimeStamp);
-        // Logger.Info($"Loaded ReourcePacks in ({LoadReourcePacksElapsed.Milliseconds}ms)");
 
         DefaultWorldIdentifier = Properties.DefaultWorldIdentifier;
         string defaultWorldPath = Path.Combine(Properties.WorldPath, DefaultWorldIdentifier);
@@ -173,49 +209,10 @@ public sealed class Server {
         _lastTpsTimestamp = Stopwatch.GetTimestamp();
         _lastTpsTick = GetWorld().TickValue;
 
-        CancellationTokenSource runCancellation = new();
-        _runCancellation = runCancellation;
-
-        _raknet.OnMessage += Network.EnqueueFrame;
-        _raknet.OnDisconnected += Network.EnqueueDisconnection;
-
-        _networkLoopTask = Task.Run(async () => {
-            await _raknet.Start();
-        }, runCancellation.Token);
-
-        _nethernet?.Start(runCancellation.Token);
-
-        Thread raknetThread = new(() => {
-            Profiler.SetThreadName("RakNet");
-            CancellationToken token = runCancellation.Token;
-            long nextTick = Stopwatch.GetTimestamp();
-
-            while (!token.IsCancellationRequested) {
-                try {
-                    Network.Tick();
-                    using (Profiler.Enabled ? Profiler.BeginZone("Raknet.Tick") : default) {
-                        _raknet.Tick();
-                    }
-                }
-                catch (Exception exception) {
-                    Logger.Error($"Unhandled RakNet tick error: {exception}");
-                }
-
-                nextTick += RakNetTickDurationTicks;
-                long remaining = nextTick - Stopwatch.GetTimestamp();
-                if (remaining <= 0) {
-                    nextTick = Stopwatch.GetTimestamp();
-                    continue;
-                }
-
-                token.WaitHandle.WaitOne(TimeSpan.FromSeconds((double)remaining / Stopwatch.Frequency));
-            }
-        }) {
-            Name = "RakNet",
-            IsBackground = true
-        };
-        _raknetThread = raknetThread;
-        raknetThread.Start();
+        CancellationTokenSource networkCancellation = new();
+        _networkCancellation = networkCancellation;
+        Network.Start(networkCancellation.Token);
+        _nethernet?.Start(networkCancellation.Token);
 
         CancellationTokenSource tickCancellation = new();
         _tickCancellation = tickCancellation;
@@ -248,7 +245,13 @@ public sealed class Server {
         }, _tickCancellation.Token);
 
         Emit(new ServerStartSignal());
-        Logger.Info($"Basalt listening on 0.0.0.0:{Properties.Port}, [::]:{Properties.IPv6Port} ({_startupElapsed.TotalMilliseconds:0}ms)");
+        TimeSpan registryElapsed = BlockPalette.LoadElapsed +
+            ItemPalette.LoadElapsed +
+            EntityPalette.LoadElapsed;
+        TimeSpan processStartupElapsed = registryElapsed + _startupElapsed;
+        Logger.Info(
+            $"Basalt listening on 0.0.0.0:{Properties.Port}, [::]:{Properties.IPv6Port} " +
+            $"startup~{processStartupElapsed.TotalMilliseconds:0}ms,");
     }
 
     public void On<TSignal>(ServerEvent @event, Action<TSignal> handler) where TSignal : ISignal {
@@ -258,7 +261,7 @@ public sealed class Server {
             _signalHandlers[@event] = handlers;
         }
 
-        handlers.Add(new SignalHandler<TSignal>(handler));
+        handlers.Add(new TypedSignalHandler<TSignal>(handler));
     }
 
     public void Emit(ServerEvent @event, ISignal signal) {
@@ -268,7 +271,7 @@ public sealed class Server {
         }
 
         for (int i = 0; i < handlers.Count; i++) {
-            handlers[i].TryInvoke(signal);
+            handlers[i].Invoke(signal);
         }
     }
 
@@ -283,19 +286,14 @@ public sealed class Server {
     public void Stop() {
         _rcon?.Stop();
         Plugins.DisableAll();
-        CancellationTokenSource? runCancellation = _runCancellation;
-        Task? networkLoopTask = _networkLoopTask;
-        Thread? raknetThread = _raknetThread;
-        _runCancellation = null;
-        _networkLoopTask = null;
-        _raknetThread = null;
-
+        CancellationTokenSource? networkCancellation = _networkCancellation;
+        _networkCancellation = null;
         CancellationTokenSource? cancellation = _tickCancellation;
         Task? tickLoopTask = _tickLoopTask;
         _tickCancellation = null;
         _tickLoopTask = null;
 
-        if (runCancellation is null && cancellation is null) {
+        if (networkCancellation is null && cancellation is null) {
             return;
         }
 
@@ -310,24 +308,24 @@ public sealed class Server {
             }
         }
 
-        runCancellation?.Cancel();
+        networkCancellation?.Cancel();
         cancellation?.Cancel();
 
         _nethernet?.Dispose();
 
         try {
-            raknetThread?.Join(1000);
-            networkLoopTask?.Wait(250);
             tickLoopTask?.Wait();
         }
         catch (AggregateException exception) when (exception.InnerExceptions.All(static inner => inner is TaskCanceledException)) { }
         finally {
-            runCancellation?.Dispose();
+            networkCancellation?.Dispose();
             cancellation?.Dispose();
             WorkerPool.Dispose();
+            Network.Stop();
+            Network.Dispose();
         }
 
-        foreach (WorldInstance world in _worlds.Values) {
+        foreach (WorldInstance world in Worlds) {
             world.Dispose();
         }
 
@@ -335,8 +333,14 @@ public sealed class Server {
     }
 
     public WorldInstance CreateWorld(string name, string providerIdentifier, params object[] providerArgs) {
-        if (_worlds.ContainsKey(name)) {
-            throw new InvalidOperationException($"World '{name}' already exists.");
+        if (Volatile.Read(ref _ticking) != 0 && !IsCoordinatorThread) {
+            throw new InvalidOperationException("World creation must run on the server coordinator.");
+        }
+
+        lock (_worldsLock) {
+            if (_worlds.ContainsKey(name)) {
+                throw new InvalidOperationException($"World '{name}' already exists.");
+            }
         }
 
         if (string.IsNullOrWhiteSpace(providerIdentifier)) {
@@ -358,11 +362,23 @@ public sealed class Server {
 
         WorldInstance world = new(name, provider);
         world.Server = this;
-        _worlds[name] = world;
+        lock (_worldsLock) {
+            if (_worlds.ContainsKey(name)) {
+                world.Dispose();
+                throw new InvalidOperationException($"World '{name}' already exists.");
+            }
+
+            _worlds[name] = world;
+        }
+        RefreshWorldsSnapshot();
         return world;
     }
 
     public WorldInstance? LoadWorld(string name, string providerIdentifier, params object[] providerArgs) {
+        if (Volatile.Read(ref _ticking) != 0 && !IsCoordinatorThread) {
+            throw new InvalidOperationException("World loading must run on the server coordinator.");
+        }
+
         if (string.IsNullOrWhiteSpace(providerIdentifier)) {
             throw new ArgumentException("Provider identifier cannot be empty.", nameof(providerIdentifier));
         }
@@ -393,7 +409,15 @@ public sealed class Server {
 
         WorldInstance world = new(name, provider);
         world.Server = this;
-        _worlds[name] = world;
+        lock (_worldsLock) {
+            if (_worlds.ContainsKey(name)) {
+                world.Dispose();
+                throw new InvalidOperationException($"World '{name}' already exists.");
+            }
+
+            _worlds[name] = world;
+        }
+        RefreshWorldsSnapshot();
         return world;
     }
 
@@ -406,13 +430,32 @@ public sealed class Server {
             throw new InvalidOperationException("Cannot unload the default world.");
         }
 
-        if (!_worlds.Remove(identifier, out WorldInstance? world)) {
-            return false;
+        lock (_worldsLock) {
+            if (!_worlds.ContainsKey(identifier)) {
+                return false;
+            }
+        }
+
+        if (Volatile.Read(ref _ticking) != 0) {
+            _pendingWorldUnloads.Enqueue(identifier);
+            return true;
+        }
+
+        UnloadWorldNow(identifier);
+        return true;
+    }
+
+    private void UnloadWorldNow(string identifier) {
+        WorldInstance? world;
+        lock (_worldsLock) {
+            if (!_worlds.Remove(identifier, out world)) {
+                return;
+            }
         }
 
         world.Server = null;
         world.Dispose();
-        return true;
+        RefreshWorldsSnapshot();
     }
 
     public WorldInstance GetWorld() {
@@ -420,8 +463,10 @@ public sealed class Server {
     }
 
     public WorldInstance GetWorld(string identifier) {
-        if (_worlds.TryGetValue(identifier, out WorldInstance? world)) {
-            return world;
+        lock (_worldsLock) {
+            if (_worlds.TryGetValue(identifier, out WorldInstance? world)) {
+                return world;
+            }
         }
 
         throw new KeyNotFoundException($"World '{identifier}' was not found.");
@@ -429,7 +474,7 @@ public sealed class Server {
 
     public void SaveAll() {
         SavePlayers();
-        foreach (WorldInstance world in _worlds.Values) {
+        foreach (WorldInstance world in Worlds) {
             world.Save();
         }
     }
@@ -477,7 +522,7 @@ public sealed class Server {
         player.Disconnect(reason, true);
     }
 
-    void StoreBan(string xuid, string username, DateTimeOffset? until, string reason) {
+    private void StoreBan(string xuid, string username, DateTimeOffset? until, string reason) {
         Bans.Ban(new BanEntry {
             Identifier = string.IsNullOrEmpty(xuid) ? username : xuid,
             Username = username,
@@ -503,9 +548,36 @@ public sealed class Server {
         _generatorRegistry[identifier] = typeof(TGenerator);
     }
 
+    private int _ticking;
+    private int _coordinatorThreadId;
+
+    internal bool IsCoordinatorThread => Volatile.Read(ref _coordinatorThreadId) == Environment.CurrentManagedThreadId;
+
     public void Tick() {
+        if (Interlocked.Exchange(ref _ticking, 1) != 0) {
+            return;
+        }
+
+        Volatile.Write(ref _coordinatorThreadId, Environment.CurrentManagedThreadId);
+        try {
+            TickCore();
+        }
+        finally {
+            Volatile.Write(ref _ticking, 0);
+            while (_pendingWorldUnloads.TryDequeue(out string? identifier)) {
+                UnloadWorldNow(identifier);
+            }
+
+            Volatile.Write(ref _coordinatorThreadId, 0);
+        }
+    }
+
+    private void TickCore() {
         using var _ = Profiler.Enabled ? Profiler.BeginZone("Server.Tick") : default;
         long startTimestamp = Stopwatch.GetTimestamp();
+        long allocatedStart = GC.GetAllocatedBytesForCurrentThread();
+
+        ApplyPendingTickGroups();
 
         using (Profiler.Enabled ? Profiler.BeginZone("Server.Network") : default) {
             Network.ProcessIncoming();
@@ -516,20 +588,33 @@ public sealed class Server {
         }
 
         using (Profiler.Enabled ? Profiler.BeginZone("Server.Worlds") : default) {
-            foreach (WorldInstance world in _worlds.Values) {
-                using var worldZone = Profiler.Enabled ? Profiler.BeginZone($"World.Tick({world.Name})") : default;
-                long worldStartTimestamp = Stopwatch.GetTimestamp();
-                world.Tick();
-                long worldEndTimestamp = Stopwatch.GetTimestamp();
-                ((Tickable)world).TickWork = (worldEndTimestamp - worldStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+            WorldInstance[] worlds = [.. Worlds];
+            switch (Properties.TickMode) {
+                case Enums.TickMode.World:
+                    TickWorldsParallel(worlds);
+                    break;
+                case Enums.TickMode.Group:
+                    TickWorldGroupsParallel(worlds);
+                    break;
+                case Enums.TickMode.Adaptive when worlds.Length > 1 && WorkerPool.WorkerCount > 1:
+                    TickWorldGroupsParallel(worlds, GetAdaptiveGroupCount(worlds));
+                    break;
+                default:
+                    for (int i = 0; i < worlds.Length; i++) {
+                        TickWorld(worlds[i]);
+                    }
+                    break;
             }
         }
+
+        ApplyPlayerTransfers();
+        RefreshPlayersSnapshot();
 
         ulong currentTick = GetWorld().TickValue;
         if (currentTick - _lastAutoSaveTick >= AutoSaveIntervalTicks) {
             _lastAutoSaveTick = currentTick;
             SavePlayers();
-            foreach (WorldInstance world in _worlds.Values) {
+            foreach (WorldInstance world in Worlds) {
                 if (world.AutoSaving) {
                     continue;
                 }
@@ -557,12 +642,133 @@ public sealed class Server {
 
         long endTimestamp = Stopwatch.GetTimestamp();
         TickWork = (endTimestamp - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+        TickAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedStart;
+        _tickAllocatedBytesTotal += TickAllocatedBytes;
         _tickWorkTotal += TickWork;
         _tickWorkMaximum = Math.Max(_tickWorkMaximum, TickWork);
         _tickWorkSamples++;
+        TickAllocatedBytesAverage = (double)_tickAllocatedBytesTotal / _tickWorkSamples;
         UpdateTps(endTimestamp);
         Profiler.FrameMark();
     }
+
+    public void RequestTickGroups(int groupCount) {
+        ArgumentOutOfRangeException.ThrowIfNegative(groupCount);
+        Volatile.Write(ref _pendingTickGroups, groupCount);
+    }
+
+    private void ApplyPendingTickGroups() {
+        int groupCount = Interlocked.Exchange(ref _pendingTickGroups, -1);
+        if (groupCount >= 0) {
+            Properties.TickGroups = groupCount;
+        }
+    }
+
+    private static void TickWorld(WorldInstance world) {
+        long startTimestamp = Stopwatch.GetTimestamp();
+        world.Tick();
+        ((Tickable)world).TickWork = (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+    }
+
+    private void TickWorldsParallel(WorldInstance[] worlds) {
+        if (worlds.Length < 2) {
+            for (int i = 0; i < worlds.Length; i++) {
+                TickWorld(worlds[i]);
+            }
+
+            return;
+        }
+
+        List<(WorldInstance World, WorldTickTask Task, ManualResetEventSlim Completed)> tasks = [];
+        for (int i = 0; i < worlds.Length; i++) {
+            WorldInstance world = worlds[i];
+            ManualResetEventSlim completed = new();
+            WorldTickTask task = new(world, completed);
+            if (WorkerPool.TryEnqueue(task)) {
+                tasks.Add((world, task, completed));
+            }
+            else {
+                completed.Dispose();
+                TickWorld(world);
+            }
+        }
+
+        for (int i = 0; i < tasks.Count; i++) {
+            (WorldInstance world, WorldTickTask task, ManualResetEventSlim completed) = tasks[i];
+            completed.Wait();
+            completed.Dispose();
+            ((Tickable)world).TickWork = task.ElapsedMilliseconds;
+            if (task.Error is not null) {
+                Logger.Warn($"World tick failed: {task.Error}");
+            }
+        }
+    }
+
+    private void TickWorldGroupsParallel(WorldInstance[] worlds, int? requestedGroupCount = null) {
+        if (worlds.Length < 2) {
+            for (int i = 0; i < worlds.Length; i++) {
+                TickWorld(worlds[i]);
+            }
+
+            return;
+        }
+
+        int groupCount = requestedGroupCount ?? (Properties.TickGroups > 0
+            ? Properties.TickGroups
+            : WorkerPool.WorkerCount);
+        groupCount = Math.Clamp(groupCount, 1, worlds.Length);
+        List<WorldInstance>[] groups = new List<WorldInstance>[groupCount];
+        for (int i = 0; i < groupCount; i++) {
+            groups[i] = [];
+        }
+
+        for (int i = 0; i < worlds.Length; i++) {
+            groups[i % groupCount].Add(worlds[i]);
+        }
+
+        List<(WorldGroupTickTask Task, ManualResetEventSlim Completed)> tasks = [];
+        for (int i = 0; i < groups.Length; i++) {
+            ManualResetEventSlim completed = new();
+            WorldGroupTickTask task = new([.. groups[i]], completed);
+            if (WorkerPool.TryEnqueue(task)) {
+                tasks.Add((task, completed));
+            }
+            else {
+                completed.Dispose();
+                for (int worldIndex = 0; worldIndex < groups[i].Count; worldIndex++) {
+                    TickWorld(groups[i][worldIndex]);
+                }
+            }
+        }
+
+        for (int i = 0; i < tasks.Count; i++) {
+            (WorldGroupTickTask task, ManualResetEventSlim completed) = tasks[i];
+            completed.Wait();
+            completed.Dispose();
+            if (task.Error is not null) {
+                Logger.Warn($"World group tick failed: {task.Error}");
+            }
+        }
+    }
+
+    private int GetAdaptiveGroupCount(WorldInstance[] worlds) {
+        if (Properties.TickGroups > 0) {
+            LastAdaptiveGroupCount = Math.Clamp(Properties.TickGroups, 1, worlds.Length);
+            return LastAdaptiveGroupCount;
+        }
+
+        bool hotWorld = worlds.Any(static world => world.TickWork >= AdaptiveHotWorldMilliseconds);
+        int groupCount = hotWorld
+            ? Math.Min(WorkerPool.WorkerCount, worlds.Length)
+            : Math.Max(1, (worlds.Length + 1) / 2);
+        LastAdaptiveGroupCount = Math.Min(groupCount, WorkerPool.WorkerCount);
+        return LastAdaptiveGroupCount;
+    }
+
+    private readonly record struct PendingPlayerTransfer(
+        Dimension Source,
+        Dimension Target,
+        Vec3 Position);
 
     public void UpdateTps(long timestamp) {
         if (_lastTpsTimestamp == 0) {
@@ -583,9 +789,10 @@ public sealed class Server {
 
         double elapsedSeconds = (double)timestampDelta / Stopwatch.Frequency;
         double currentTps = Math.Min(20.0, tickDelta / elapsedSeconds);
-        Tps = Tps == 0 ? currentTps : Tps + ((currentTps - Tps) * 0.2);
-        TickWorkAverage = _tickWorkSamples == 0 ? 0 : _tickWorkTotal / _tickWorkSamples;
-        TickWorkMaximum = _tickWorkMaximum;
+        double previousTps = Tps;
+        Volatile.Write(ref _tps, previousTps == 0 ? currentTps : previousTps + ((currentTps - previousTps) * 0.2));
+        Volatile.Write(ref _tickWorkAverage, _tickWorkSamples == 0 ? 0 : _tickWorkTotal / _tickWorkSamples);
+        Volatile.Write(ref _tickWorkMaximumPublished, _tickWorkMaximum);
         _tickWorkTotal = 0;
         _tickWorkMaximum = 0;
         _tickWorkSamples = 0;
@@ -611,30 +818,6 @@ public sealed class Server {
             }
 
             Network.QueuePacket(connection, packet);
-        }
-    }
-}
-
-internal sealed class ServerEventComparer : IEqualityComparer<ServerEvent> {
-    public static readonly ServerEventComparer Instance = new();
-    public bool Equals(ServerEvent x, ServerEvent y) => x == y;
-    public int GetHashCode(ServerEvent obj) => (int)obj;
-}
-
-internal abstract class SignalHandler {
-    public abstract void TryInvoke(ISignal signal);
-}
-
-internal sealed class SignalHandler<TSignal> : SignalHandler where TSignal : ISignal {
-    private readonly Action<TSignal> _handler;
-
-    public SignalHandler(Action<TSignal> handler) {
-        _handler = handler;
-    }
-
-    public override void TryInvoke(ISignal signal) {
-        if (signal is TSignal typed) {
-            _handler(typed);
         }
     }
 }
