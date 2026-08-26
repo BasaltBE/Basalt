@@ -90,7 +90,7 @@ public sealed class EntityAirSupplyTrait : EntityTrait {
         }
 
         BlockType block = Entity.Dimension
-            .GetPermutation(
+            .GetLoadedPermutationOrAir(
                 (int)MathF.Floor(head.X),
                 (int)MathF.Floor(head.Y),
                 (int)MathF.Floor(head.Z))

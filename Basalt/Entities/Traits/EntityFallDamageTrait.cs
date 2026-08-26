@@ -100,7 +100,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         int blockZ = (int)MathF.Floor(landingPosition.Z);
 
         if (Entity.Dimension is not null) {
-            string landedBlock = Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type.Identifier;
+            string landedBlock = Entity.Dimension.GetLoadedPermutationOrAir(blockX, blockY, blockZ).Type.Identifier;
             float blockModifier = GetBlockDamageModifier(landedBlock);
 
             if (blockModifier <= 0f) return;
@@ -133,7 +133,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
 
         for (int blockX = minX; blockX <= maxX; blockX++) {
             for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
-                var block = Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type;
+                var block = Entity.Dimension.GetLoadedPermutationOrAir(blockX, blockY, blockZ).Type;
                 if (block.Solid && !block.Air && !block.Liquid) return true;
             }
         }
@@ -147,7 +147,7 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         int blockX = (int)MathF.Floor(position.X);
         int blockY = (int)MathF.Floor(position.Y);
         int blockZ = (int)MathF.Floor(position.Z);
-        return Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type.Liquid;
+        return Entity.Dimension.GetLoadedPermutationOrAir(blockX, blockY, blockZ).Type.Liquid;
     }
 
     private static float GetBlockDamageModifier(string blockIdentifier) {

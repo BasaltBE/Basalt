@@ -435,7 +435,10 @@ public sealed class EntityMovementTrait : EntityTrait {
             return [];
         }
 
-        return BlockCollisionShape.GetBoxes(Entity.Dimension.GetPermutation(x, y, z));
+        return Entity.Dimension.TryGetLoadedPermutation(x, y, z, out BlockPermutation? permutation) &&
+            permutation is not null
+            ? BlockCollisionShape.GetBoxes(permutation)
+            : [];
     }
 
     private bool IsInLava(Vec3 position) {
@@ -461,7 +464,12 @@ public sealed class EntityMovementTrait : EntityTrait {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    string identifier = Entity.Dimension.GetPermutation(x, y, z).Type.Identifier;
+                    if (!Entity.Dimension.TryGetLoadedPermutation(x, y, z, out BlockPermutation? permutation) ||
+                        permutation is null) {
+                        continue;
+                    }
+
+                    string identifier = permutation.Type.Identifier;
                     if (fluidIdentifiers.Contains(identifier, StringComparer.Ordinal)) {
                         return true;
                     }
@@ -480,7 +488,12 @@ public sealed class EntityMovementTrait : EntityTrait {
         int blockX = (int)MathF.Floor(x);
         int blockY = (int)MathF.Floor(y - CollisionEpsilon);
         int blockZ = (int)MathF.Floor(z);
-        BlockType type = Entity.Dimension.GetPermutation(blockX, blockY, blockZ).Type;
+        if (!Entity.Dimension.TryGetLoadedPermutation(blockX, blockY, blockZ, out BlockPermutation? permutation) ||
+            permutation is null) {
+            return GroundFriction;
+        }
+
+        BlockType type = permutation.Type;
         if (type.Liquid || type.Air) {
             return GroundFriction;
         }

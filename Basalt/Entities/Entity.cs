@@ -28,6 +28,7 @@ public class Entity {
     private static long _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
     private long _uniqueId;
+    private Dimension? _tickOwner;
 
     public EntityType Type { get; }
     public string Identifier => Type.Identifier;
@@ -129,6 +130,18 @@ public class Entity {
 
     public bool HasTrait<T>() where T : EntityTrait {
         return GetTrait<T>() is not null;
+    }
+
+    internal bool TryClaimTickOwner(Dimension owner) {
+        return Interlocked.CompareExchange(ref _tickOwner, owner, null) is null;
+    }
+
+    internal bool TickOwnedBy(Dimension owner) {
+        return ReferenceEquals(Volatile.Read(ref _tickOwner), owner);
+    }
+
+    internal void ReleaseTickOwner(Dimension owner) {
+        Interlocked.CompareExchange(ref _tickOwner, null, owner);
     }
 
     public void Tick(ulong currentTick, uint deltaTick) {

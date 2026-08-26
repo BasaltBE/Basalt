@@ -1,5 +1,6 @@
 namespace Basalt.Core.Entities;
 
+using Basalt.Core.Blocks;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
@@ -136,8 +137,8 @@ public sealed class ItemEntity : Entity {
         const float pickupRadiusSquared = pickupRadius * pickupRadius;
         const float pickupVerticalTolerance = 2f;
 
-        foreach ((_, var player) in server.Players) {
-            if (player.Dimension != Dimension || !player.IsAlive || !player.Spawned) {
+        foreach (Player player in Dimension.GetPlayers()) {
+            if (!player.IsAlive || !player.Spawned) {
                 continue;
             }
 
@@ -204,11 +205,16 @@ public sealed class ItemEntity : Entity {
             return false;
         }
 
-        string identifier = Dimension.GetPermutation(
-            (int)MathF.Floor(position.X),
-            (int)MathF.Floor(position.Y - 0.001f),
-            (int)MathF.Floor(position.Z)
-        ).Type.Identifier;
+        if (!Dimension.TryGetLoadedPermutation(
+                (int)MathF.Floor(position.X),
+                (int)MathF.Floor(position.Y - 0.001f),
+                (int)MathF.Floor(position.Z),
+                out BlockPermutation? permutation) ||
+            permutation is null) {
+            return false;
+        }
+
+        string identifier = permutation.Type.Identifier;
 
         if (string.Equals(identifier, "minecraft:air", StringComparison.Ordinal)) {
             return false;

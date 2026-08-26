@@ -405,7 +405,12 @@ public sealed class EntityTargetingTrait : EntityTrait {
             int blockY = (int)MathF.Floor(y);
             int blockZ = (int)MathF.Floor(z);
 
-            foreach (CollisionBox box in BlockCollisionShape.GetBoxes(dimension.GetPermutation(blockX, blockY, blockZ))) {
+            if (!dimension.TryGetLoadedPermutation(blockX, blockY, blockZ, out BlockPermutation? permutation) ||
+                permutation is null) {
+                continue;
+            }
+
+            foreach (CollisionBox box in BlockCollisionShape.GetBoxes(permutation)) {
                 float minX = blockX + (box.OriginX + 8f) / 16f;
                 float minY = blockY + box.OriginY / 16f;
                 float minZ = blockZ + (box.OriginZ + 8f) / 16f;

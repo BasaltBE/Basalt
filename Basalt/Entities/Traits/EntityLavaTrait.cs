@@ -60,7 +60,7 @@ public sealed class EntityLavaTrait : EntityTrait {
         int minZ = (int)MathF.Floor(Entity.Position.Z - width * 0.5f);
         int maxZ = (int)MathF.Floor(Entity.Position.Z + width * 0.5f);
 
-        dimension.World?.Server?.Scheduler.Schedule(new LavaCheckTask(
+        LavaCheckTask task = new(
             Entity,
             Entity.Position,
             dimension,
@@ -70,7 +70,10 @@ public sealed class EntityLavaTrait : EntityTrait {
             maxY,
             minZ,
             maxZ
-        ));
+        ) {
+            CompletionMailbox = dimension.Mailbox
+        };
+        dimension.World?.Server?.Scheduler.Schedule(task);
     }
 
     public override EntityTrait Clone(Entity entity) {
