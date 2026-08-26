@@ -1,9 +1,10 @@
 namespace Basalt.Core.Commands.Vanilla;
 
+using System.Text;
+using Basalt.BedrockProtocol.Types;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Worlds.Dimensions.Generation;
-using Basalt.BedrockProtocol.Types;
 using Dimension = Basalt.Core.Worlds.Dimensions.Dimension;
 using Player = Player.Player;
 
@@ -11,20 +12,15 @@ public static class WorldsCommand {
     public static readonly CommandDefinition Definition = new() {
         Name = "worlds",
         Description = "Lists, inspects, or teleports to worlds.",
-        Aliases = ["world"],
+        Aliases = [],
         Permissions = ["basalt.op"],
         Overloads =
         [
-            // /worlds
             new OverloadDefinition { Parameters = [] },
-            // /worlds <name>
-            new OverloadDefinition
-            {
+            new OverloadDefinition {
                 Parameters = [new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }]
             },
-            // /worlds tp <name>
-            new OverloadDefinition
-            {
+            new OverloadDefinition {
                 Parameters =
                 [
                     new ParameterDefinition { Name = "action", Type = typeof(StringEnum) },
@@ -43,6 +39,7 @@ public static class WorldsCommand {
             if (string.IsNullOrWhiteSpace(name)) {
                 return CommandResult.Error("Usage: /worlds tp <name>");
             }
+
             return TeleportToWorld(ctx, name);
         }
 
@@ -50,8 +47,7 @@ public static class WorldsCommand {
             return ListWorlds(ctx);
         }
 
-        string worldName = name ?? action!;
-        return ShowWorld(ctx, worldName);
+        return ShowWorld(ctx, name ?? action!);
     }
 
     private static CommandResult ListWorlds(CommandContext ctx) {
@@ -60,44 +56,45 @@ public static class WorldsCommand {
             worldsDirectory = "worlds";
         }
 
-        HashSet<string> loadedNames = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, World> worldsByName = new(StringComparer.OrdinalIgnoreCase);
         foreach (World world in ctx.Server.Worlds) {
-            loadedNames.Add(world.Name);
+            worldsByName[world.Name] = world;
         }
 
-        HashSet<string> allNames = new(loadedNames, StringComparer.OrdinalIgnoreCase);
-
+        HashSet<string> allNames = new(worldsByName.Keys, StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(worldsDirectory)) {
-            foreach (string dir in Directory.GetDirectories(worldsDirectory)) {
-                string dirName = Path.GetFileName(dir);
-                if (!string.IsNullOrWhiteSpace(dirName)) {
-                    allNames.Add(dirName);
+            foreach (string directory in Directory.GetDirectories(worldsDirectory)) {
+                string directoryName = Path.GetFileName(directory);
+                if (!string.IsNullOrWhiteSpace(directoryName)) {
+                    allNames.Add(directoryName);
                 }
             }
         }
 
         if (allNames.Count == 0) {
-            return CommandResult.OkMessage("§7No worlds found.");
+            return CommandResult.OkMessage("\u00a77No worlds found.");
         }
 
-        string message = $"§r§7Worlds (§a{allNames.Count}§7)\n";
+        StringBuilder message = new($"\u00a7r\u00a77Worlds (\u00a7a{allNames.Count}\u00a77)\n");
         foreach (string worldName in allNames) {
-            bool loaded = loadedNames.Contains(worldName);
-            string status = loaded ? "§aLoaded" : "§cUnloaded";
-            message += $"§7` {worldName} ({status}§7)\n";
+            if (!worldsByName.TryGetValue(worldName, out World? world)) {
+                message.Append($"\u00a77` {worldName} (\u00a7cUnloaded\u00a77)\n");
+                continue;
+            }
+
+            int entityCount = world.Dimensions.Sum(dimension => dimension.GetEntitiesSnapshot().Length);
+            message.Append($"\u00a77` {world.Name} (\u00a7aLoaded\u00a77, \u00a7a{world.TickWork:0.00} ms\u00a77, \u00a7a{entityCount} entities\u00a77)\n");
+            foreach (Dimension dimension in world.Dimensions) {
+                message.Append($"\u00a77  ` {dimension.Identifier} (\u00a7a{dimension.TickWork:0.00} ms\u00a77, \u00a7a{dimension.GetEntitiesSnapshot().Length} entities\u00a77, \u00a7a{dimension.ChunkCount} chunks\u00a77)\n");
+            }
         }
 
-        return CommandResult.OkMessage(message);
+        return CommandResult.OkMessage(message.ToString());
     }
 
     private static CommandResult ShowWorld(CommandContext ctx, string name) {
-        World? world = null;
-        foreach (World w in ctx.Server.Worlds) {
-            if (string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)) {
-                world = w;
-                break;
-            }
-        }
+        World? world = ctx.Server.Worlds.FirstOrDefault(world =>
+            string.Equals(world.Name, name, StringComparison.OrdinalIgnoreCase));
 
         if (world is null) {
             string worldsDirectory = ctx.Server.Properties.WorldPath;
@@ -107,31 +104,32 @@ public static class WorldsCommand {
 
             string worldPath = Path.Combine(worldsDirectory, name);
             if (Directory.Exists(worldPath)) {
-                return CommandResult.OkMessage($"§r§7World '§a{name}§7' exists but is §cunloaded§7.");
+                return CommandResult.OkMessage($"\u00a7r\u00a77World '\u00a7a{name}\u00a77' exists but is \u00a7cunloaded\u00a77.");
             }
 
             return CommandResult.Error($"World '{name}' not found.");
         }
 
-        int dimensionCount = world.DimensionCount;
         int entityCount = 0;
         int chunkCount = 0;
+        StringBuilder dimensionList = new();
 
-        string dimensionList = "";
-        foreach (Dimension dim in world.Dimensions) {
-            entityCount += dim.Entities.Count;
-            chunkCount += dim.ChunkCount;
-            dimensionList += $"§7  ` {dim.Identifier} (§a{dim.Entities.Count}§7 entities, §a{dim.ChunkCount}§7 chunks)\n";
+        foreach (Dimension dimension in world.Dimensions) {
+            int dimensionEntityCount = dimension.GetEntitiesSnapshot().Length;
+            entityCount += dimensionEntityCount;
+            chunkCount += dimension.ChunkCount;
+            dimensionList.Append($"\u00a77  ` {dimension.Identifier} (\u00a7a{dimensionEntityCount}\u00a77 entities, \u00a7a{dimension.ChunkCount}\u00a77 chunks)\n");
         }
 
-        string message = $"§r§7World '§a{world.Name}§7' (§aLoaded§7)\n" +
-                         $"§7` Tick (§a{world.TickValue}§7)\n" +
-                         $"§7` Dimensions (§a{dimensionCount}§7)\n" +
-                         dimensionList +
-                         $"§7` Total Entities (§a{entityCount}§7)\n" +
-                         $"§7` Total Chunks (§a{chunkCount}§7)\n";
+        StringBuilder message = new();
+        message.Append($"\u00a7r\u00a77World '\u00a7a{world.Name}\u00a77' (\u00a7aLoaded\u00a77)\n");
+        message.Append($"\u00a77` Tick (\u00a7a{world.TickValue}\u00a77)\n");
+        message.Append($"\u00a77` Dimensions (\u00a7a{world.DimensionCount}\u00a77)\n");
+        message.Append(dimensionList);
+        message.Append($"\u00a77` Total Entities (\u00a7a{entityCount}\u00a77)\n");
+        message.Append($"\u00a77` Total Chunks (\u00a7a{chunkCount}\u00a77)\n");
 
-        return CommandResult.OkMessage(message);
+        return CommandResult.OkMessage(message.ToString());
     }
 
     private static CommandResult TeleportToWorld(CommandContext ctx, string name) {
@@ -140,13 +138,8 @@ public static class WorldsCommand {
             return error!;
         }
 
-        World? world = null;
-        foreach (World w in ctx.Server.Worlds) {
-            if (string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)) {
-                world = w;
-                break;
-            }
-        }
+        World? world = ctx.Server.Worlds.FirstOrDefault(world =>
+            string.Equals(world.Name, name, StringComparison.OrdinalIgnoreCase));
 
         if (world is null) {
             string worldsDirectory = ctx.Server.Properties.WorldPath;
@@ -172,9 +165,7 @@ public static class WorldsCommand {
             return CommandResult.Error($"World '{name}' has no dimensions.");
         }
 
-        Vec3 spawnPosition = targetDimension.SpawnPosition;
-        player.Teleport(spawnPosition, targetDimension);
-
-        return CommandResult.OkMessage($"§7Teleported to world '§a{world.Name}§7'.");
+        player.Teleport(targetDimension.SpawnPosition, targetDimension);
+        return CommandResult.OkMessage($"\u00a77Teleported to world '\u00a7a{world.Name}\u00a77'.");
     }
 }

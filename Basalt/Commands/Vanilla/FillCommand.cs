@@ -91,6 +91,7 @@ public static class FillCommand {
           int maxX, int maxY, int maxZ,
           BlockPermutation permutation) {
             RunOnMainThread = true;
+            ExecutionMailbox = dimension.Mailbox;
             _dimension = dimension;
             _minX = minX; _minY = minY; _minZ = minZ;
             _maxX = maxX; _maxY = maxY; _maxZ = maxZ;

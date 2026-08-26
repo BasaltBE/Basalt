@@ -62,7 +62,9 @@ public static class GamemodeCommand {
             Player? player = target.GetSinglePlayer(out CommandResult? error);
             if (player is null) return error!;
 
-            player.SetGamemode(mode);
+            if (!ctx.QueueOnOwner(player, () => player.SetGamemode(mode)))
+                return CommandResult.Error("Target has no active dimension.");
+
             return CommandResult.OkMessage($"Set {player.Username}'s game mode to {gamemode.Value}.");
         }
 

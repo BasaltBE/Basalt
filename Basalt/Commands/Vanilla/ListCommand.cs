@@ -1,5 +1,7 @@
 namespace Basalt.Core.Commands.Vanilla;
 
+using Player = Basalt.Core.Player.Player;
+
 public static class ListCommand {
     public static readonly CommandDefinition Definition = new() {
         Name = "list",
@@ -9,7 +11,7 @@ public static class ListCommand {
     };
 
     static CommandResult Execute(CommandContext ctx) {
-        var players = ctx.Server.Players.Values.ToArray();
+        Player[] players = ctx.Server.GetPlayersSnapshot();
         int count = players.Length;
 
         string message = $"§r§7There are (§a{count}§7) Players Online.";

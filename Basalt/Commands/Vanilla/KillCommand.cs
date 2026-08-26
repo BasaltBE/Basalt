@@ -41,13 +41,15 @@ public static class KillCommand {
 
         for (int i = 0; i < entities.Length; i++) {
             Entity entity = entities[i];
-            if (entity is Player player) {
-                EntityHealthTrait? health = player.GetTrait<EntityHealthTrait>();
-                health?.ApplyDamage(MathF.Max(health.CurrentValue, 1f), null, ActorDamageCause.SelfDestruct);
-            }
-            else {
-                entity.Kill(new EntityDeathOptions(DamageCause: ActorDamageCause.SelfDestruct));
-            }
+            ctx.QueueOnOwner(entity, () => {
+                if (entity is Player player) {
+                    EntityHealthTrait? health = player.GetTrait<EntityHealthTrait>();
+                    health?.ApplyDamage(MathF.Max(health.CurrentValue, 1f), null, ActorDamageCause.SelfDestruct);
+                }
+                else {
+                    entity.Kill(new EntityDeathOptions(DamageCause: ActorDamageCause.SelfDestruct));
+                }
+            });
         }
 
         string suffix = entities.Length == 1 ? "y" : "ies";

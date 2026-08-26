@@ -50,18 +50,22 @@ public static class GiveCommand {
         if (players.Count == 0)
             return CommandResult.Error("No player found matching the target selector.");
 
-        int totalGiven = 0;
+        int queued = 0;
         foreach (Player player in players) {
-            totalGiven += GiveToPlayer(player, item.Type, amount);
+            if (!ctx.QueueOnOwner(player, () => GiveToPlayer(player, item.Type, amount))) {
+                continue;
+            }
+
+            queued++;
         }
 
-        if (totalGiven == 0)
-            return CommandResult.Error("Player's inventory is full.");
+        if (queued == 0)
+            return CommandResult.Error("No target has an active dimension.");
 
         if (players.Count == 1)
-            return CommandResult.OkMessage($"§7Given §a{totalGiven} §7of §a{item.Raw} §7to §a{players[0].Username}§7.");
+            return CommandResult.OkMessage($"§7Give queued for §a{players[0].Username}§7.");
 
-        return CommandResult.OkMessage($"§7Given §a{totalGiven} §7of §a{item.Raw} §7to §a{players.Count} players§7.");
+        return CommandResult.OkMessage($"§7Give queued for §a{queued} players§7.");
     }
 
     static int GiveToPlayer(Player player, ItemType type, int amount) {

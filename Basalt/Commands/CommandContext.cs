@@ -55,7 +55,7 @@ public sealed class CommandContext {
             return context is null ? [] : [context];
 
         if (selector == "@a")
-            return Server.Players.Values.ToArray<EntityInstance>();
+            return Server.GetPlayersSnapshot().ToArray<EntityInstance>();
 
         if (selector.StartsWith("@e", StringComparison.Ordinal)) {
             string? type = null;
@@ -86,7 +86,7 @@ public sealed class CommandContext {
                 : $"minecraft:{type}";
             IEnumerable<EntityInstance> entities = context?.Dimension is not null
                 ? context.Dimension.Entities
-                : Server.Worlds.SelectMany(w => w.Dimensions).SelectMany(d => d.Entities);
+                : Server.Worlds.SelectMany(w => w.Dimensions).SelectMany(d => d.GetEntitiesSnapshot());
 
             return entities
                 .Where(entity => (identifier is null || string.Equals(entity.Identifier, identifier, StringComparison.OrdinalIgnoreCase)) &&
@@ -97,7 +97,7 @@ public sealed class CommandContext {
         if (selector == "@p") {
             Player? nearest = null;
             float nearestDist = float.MaxValue;
-            foreach (Player candidate in Server.Players.Values) {
+            foreach (Player candidate in Server.CurrentPlayersSnapshot) {
                 if (context is not null && candidate.Dimension != context.Dimension)
                     continue;
 
@@ -114,13 +114,13 @@ public sealed class CommandContext {
         }
 
         if (selector == "@r") {
-            Player[] all = Server.Players.Values.ToArray();
+            Player[] all = [.. Server.CurrentPlayersSnapshot];
             if (all.Length == 0) return [];
             return [all[Random.Shared.Next(all.Length)]];
         }
 
         // Try by username
-        foreach (Player candidate in Server.Players.Values) {
+        foreach (Player candidate in Server.CurrentPlayersSnapshot) {
             if (string.Equals(candidate.Username, selector, StringComparison.OrdinalIgnoreCase))
                 return [candidate];
         }
@@ -146,6 +146,44 @@ public sealed class CommandContext {
         }
         error = null;
         return player;
+    }
+
+    public bool QueueOnOwner(Player player, Action action) {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(action);
+
+        if (player.Dimension is not { } dimension) {
+            return false;
+        }
+
+        Player? sender = Sender.AsPlayer();
+        if (dimension.IsOwnerThread && ReferenceEquals(sender?.Dimension, dimension)) {
+            action();
+            return true;
+        }
+
+        return dimension.TryEnqueue(player, action);
+    }
+
+    public bool QueueOnOwner(EntityInstance entity, Action action) {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(action);
+
+        if (entity.Dimension is not { } dimension) {
+            return false;
+        }
+
+        Player? sender = Sender.AsPlayer();
+        if (dimension.IsOwnerThread && ReferenceEquals(sender?.Dimension, dimension)) {
+            action();
+            return true;
+        }
+
+        return dimension.TryEnqueue(() => {
+            if (ReferenceEquals(entity.Dimension, dimension)) {
+                action();
+            }
+        });
     }
 }
 
