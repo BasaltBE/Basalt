@@ -44,7 +44,7 @@ public sealed class RconMetricsTask : ServerTask {
             _lastCpuTimestamp = cpuTimestamp;
             _lastCpuTime = cpuTime;
 
-            object[] players = _server.Players.Values
+        object[] players = _server.CurrentPlayersSnapshot
                 .Select(player => (object)new {
                     name = player.Username,
                     ip = player.Connection is { } connection &&
