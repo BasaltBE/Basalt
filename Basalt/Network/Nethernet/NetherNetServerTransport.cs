@@ -17,10 +17,10 @@ internal sealed class NetherNetServerTransport : IDisposable {
     private readonly Thread _thread;
     private bool _started;
 
-    public NetherNetServerTransport(NetworkHandler network, ushort port) {
+    public NetherNetServerTransport(NetworkHandler network, ushort ipv4Port, ushort ipv6Port) {
         _network = network ?? throw new ArgumentNullException(nameof(network));
         _identity = ServerIdentity.LoadOrGenerate("nethernet-identity.pem");
-        _signaling = new NetherNetSignalingServer(port, CreateAnswerAsync);
+        _signaling = new NetherNetSignalingServer(ipv4Port, ipv6Port, CreateAnswerAsync);
         _thread = new Thread(Run) { IsBackground = true, Name = "NetherNet" };
     }
 

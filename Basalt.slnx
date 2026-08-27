@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/plugins/" />
   <Project Path="Basalt/Basalt.csproj" />
+  <Project Path="Basalt.Benchmarks/Basalt.Benchmarks.csproj" />
+  <Project Path="Basalt.Tests/Basalt.Tests.csproj" />
   <Project Path="BedrockProtocol/src/Basalt.BedrockProtocol.csproj" />
   <Project Path="DedicatedServer/DedicatedServer.csproj" Id="90561e7b-e40d-432e-8776-74cade28e0a2" />
   <Project Path="Client/Client.csproj" />

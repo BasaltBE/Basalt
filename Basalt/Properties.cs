@@ -11,6 +11,12 @@ public class Properties {
 
     [ServerProperties.PropertyOrder(2)]
     [ServerProperties.PropertyCategory("Network")]
+    [ServerProperties.PropertyKey("server-ipv6-port")]
+    [ServerProperties.PropertyComment("IPv6 port the server should listen to.")]
+    public ushort Ipv6Port { get; set; } = 19133;
+
+    [ServerProperties.PropertyOrder(3)]
+    [ServerProperties.PropertyCategory("Network")]
     [ServerProperties.PropertyKey("motd")]
     [ServerProperties.PropertyComment("Message shown in the server list.")]
     public string Motd { get; set; } = "Basalt";

@@ -3,24 +3,31 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
+using System.Net;
 
 namespace Basalt.Core.Nethernet;
 
 public sealed class NetherNetSignalingServer : IDisposable {
-    private readonly ushort _port;
+    private readonly ushort _ipv4Port;
+    private readonly ushort _ipv6Port;
     private readonly Func<string, string, CancellationToken, Task<string?>> _createAnswer;
     private CancellationTokenSource? _cancellation;
     private Task? _loop;
     private WebApplication? _application;
 
     public NetherNetSignalingServer(
-        ushort port,
+        ushort ipv4Port,
+        ushort ipv6Port,
         Func<string, string, CancellationToken, Task<string?>> createAnswer) {
-        if (port == 0) {
-            throw new ArgumentOutOfRangeException(nameof(port));
+        if (ipv4Port == 0) {
+            throw new ArgumentOutOfRangeException(nameof(ipv4Port));
+        }
+        if (ipv6Port == 0) {
+            throw new ArgumentOutOfRangeException(nameof(ipv6Port));
         }
 
-        _port = port;
+        _ipv4Port = ipv4Port;
+        _ipv6Port = ipv6Port;
         _createAnswer = createAnswer ?? throw new ArgumentNullException(nameof(createAnswer));
     }
 
@@ -33,7 +40,10 @@ public sealed class NetherNetSignalingServer : IDisposable {
         WebApplicationBuilder builder = WebApplication.CreateSlimBuilder();
         builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Critical);
         builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", Microsoft.Extensions.Logging.LogLevel.Critical);
-        builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(_port));
+        builder.WebHost.ConfigureKestrel(options => {
+            options.Listen(IPAddress.Any, _ipv4Port);
+            options.Listen(IPAddress.IPv6Any, _ipv6Port);
+        });
         WebApplication application = builder.Build();
         application.MapGet("/v1/join", static () => Results.NoContent());
         application.MapPost("/v1/join/{networkId}", Handle);

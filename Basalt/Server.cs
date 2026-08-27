@@ -156,7 +156,7 @@ public sealed class Server {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
         Network = new NetworkHandler(this);
-        _nethernet = new NetherNetServerTransport(Network, Properties.Port);
+        _nethernet = new NetherNetServerTransport(Network, Properties.Port, Properties.Ipv6Port);
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
         Bans = new BanStore("banned-players.json");
@@ -257,7 +257,7 @@ public sealed class Server {
             EntityPalette.LoadElapsed;
         TimeSpan processStartupElapsed = registryElapsed + _startupElapsed;
         Logger.Info(
-            $"Basalt NetherNet signaling on port {Properties.Port} " +
+            $"Basalt NetherNet signaling on IPv4 port {Properties.Port} and IPv6 port {Properties.Ipv6Port} " +
             $"startup~{processStartupElapsed.TotalMilliseconds:0}ms,");
     }
 
