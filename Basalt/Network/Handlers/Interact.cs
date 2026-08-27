@@ -1,7 +1,9 @@
 namespace Basalt.Core.Network.Handlers;
 
 using Basalt.Core;
+using Basalt.Core.Entities;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Enums;
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits.Types;
 
@@ -33,6 +35,15 @@ public static class Interact {
             if (riding is not null) {
                 EntityRideableTrait? rideable = riding.Vehicle.GetTrait<EntityRideableTrait>();
                 rideable?.RemoveRider(player);
+
+                if (player.GetTrait<EntityRidingTrait>() is not null) {
+                    player.RemoveTrait(riding);
+                    player.Flags.SetActorFlag(ActorFlag.Riding, false);
+                    player.Metadata.SetActorMetadata(ActorDataId.SeatPosition, new ActorDataItem {
+                        Type = DataItemType.Vec3,
+                        Value = new Vec3()
+                    });
+                }
             }
             return;
         }

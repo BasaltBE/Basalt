@@ -2,6 +2,7 @@ namespace Basalt.Core.Entities.Traits;
 
 using Basalt.Core.Entities.Traits.Enums;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Enums;
 using Basalt.BedrockProtocol.Enums;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
@@ -57,7 +58,7 @@ public sealed class EntityRideableTrait : EntityTrait {
     }
 
     public bool AddRider(Entity rider) {
-        if (!HasAvailableSeats()) {
+        if (!HasAvailableSeats() || !IsAllowedRider(rider)) {
             return false;
         }
 
@@ -85,6 +86,11 @@ public sealed class EntityRideableTrait : EntityTrait {
         EntityRidingTrait riding = new(rider, Entity, seat);
         rider.AddTrait(riding);
         rider.Flags.SetActorFlag(ActorFlag.Riding, true);
+        rider.Metadata.SetActorMetadata(ActorDataId.SeatPosition, new ActorDataItem {
+            Type = DataItemType.Vec3,
+            Value = riding.GetSeatPosition()
+        });
+        riding.UpdatePosition();
 
         return true;
     }
@@ -113,6 +119,10 @@ public sealed class EntityRideableTrait : EntityTrait {
         }
 
         rider.Flags.SetActorFlag(ActorFlag.Riding, false);
+        rider.Metadata.SetActorMetadata(ActorDataId.SeatPosition, new ActorDataItem {
+            Type = DataItemType.Vec3,
+            Value = new Vec3()
+        });
 
         EntityRidingTrait? riding = rider.GetTrait<EntityRidingTrait>();
         if (riding is not null) {
@@ -318,5 +328,36 @@ public sealed class EntityRideableTrait : EntityTrait {
         }
 
         return null;
+    }
+
+    private bool IsAllowedRider(Entity rider) {
+        if (!Entity.Type.TryGetComponentProperties("minecraft:rideable", out JsonElement rideable) ||
+            !rideable.TryGetProperty("family_types", out JsonElement families) ||
+            families.ValueKind != JsonValueKind.Array) {
+            return true;
+        }
+
+        string identifier = rider.Identifier.StartsWith("minecraft:", StringComparison.Ordinal)
+            ? rider.Identifier[10..]
+            : rider.Identifier;
+
+        foreach (JsonElement family in families.EnumerateArray()) {
+            if (family.ValueKind != JsonValueKind.String) {
+                continue;
+            }
+
+            string? familyName = family.GetString();
+            if (string.IsNullOrEmpty(familyName)) {
+                continue;
+            }
+
+            if (familyName == "player" && rider is Player ||
+                string.Equals(identifier, familyName, StringComparison.Ordinal) ||
+                identifier.StartsWith(familyName + "_", StringComparison.Ordinal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -473,6 +473,16 @@ public static class PlayerAuthInput {
         player.Yaw = packet.PlayerRotation.Y;
         player.HeadYaw = packet.PlayerHeadRotation;
 
+        if (player.GetTrait<EntityRidingTrait>() is EntityRidingTrait riding) {
+            if (riding.Vehicle.IsAlive && ReferenceEquals(riding.Vehicle.Dimension, player.Dimension)) {
+                riding.UpdatePosition();
+                return;
+            }
+
+            player.RemoveTrait(riding);
+            player.Flags.SetActorFlag(ActorFlag.Riding, false);
+        }
+
         bool missingPosition =
             packet.Position.X == 0f &&
             packet.Position.Y == 0f &&
