@@ -18,13 +18,13 @@ public static class WorldsCommand {
         [
             new OverloadDefinition { Parameters = [] },
             new OverloadDefinition {
-                Parameters = [new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }]
+                Parameters = [new ParameterDefinition { Name = "name", Type = typeof(WorldNameEnum) }]
             },
             new OverloadDefinition {
                 Parameters =
                 [
-                    new ParameterDefinition { Name = "action", Type = typeof(StringEnum) },
-                    new ParameterDefinition { Name = "name", Type = typeof(StringEnum) }
+                    new ParameterDefinition { Name = "action", Type = typeof(WorldActionEnum) },
+                    new ParameterDefinition { Name = "name", Type = typeof(WorldNameEnum) }
                 ]
             }
         ],
@@ -32,8 +32,8 @@ public static class WorldsCommand {
     };
 
     private static CommandResult Execute(CommandContext ctx) {
-        string? action = ctx.Get<StringEnum>("action")?.Value;
-        string? name = ctx.Get<StringEnum>("name")?.Value;
+        string? action = ctx.Get<WorldActionEnum>("action")?.Value;
+        string? name = ctx.Get<WorldNameEnum>("name")?.Value;
 
         if (string.Equals(action, "tp", StringComparison.OrdinalIgnoreCase)) {
             if (string.IsNullOrWhiteSpace(name)) {

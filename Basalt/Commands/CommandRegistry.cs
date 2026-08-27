@@ -194,6 +194,8 @@ public sealed class CommandRegistry {
 
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
         Dictionary<System.Type, int> enumOffsets = new();
+        Dictionary<System.Type, int> softEnumOffsets = new();
+        ServerInstance? commandServer = player?.Dimension?.World?.Server;
 
         foreach (CommandDefinition def in _definitions) {
             if (
@@ -214,6 +216,8 @@ public sealed class CommandRegistry {
                     packet,
                     enumValueOffsets,
                     enumOffsets,
+                    softEnumOffsets,
+                    commandServer,
                     def
                 ).ToArray()
             }];
@@ -238,6 +242,8 @@ public sealed class CommandRegistry {
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<System.Type, int> enumOffsets,
+        Dictionary<System.Type, int> softEnumOffsets,
+        ServerInstance? server,
         CommandDefinition def
     ) {
         List<AvailableCommandsOverloadData> overloads = [];
@@ -251,6 +257,8 @@ public sealed class CommandRegistry {
                         packet,
                         enumValueOffsets,
                         enumOffsets,
+                        softEnumOffsets,
+                        server,
                         param
                     )
                 );
@@ -269,6 +277,8 @@ public sealed class CommandRegistry {
         AvailableCommandsPacket packet,
         Dictionary<string, uint> enumValueOffsets,
         Dictionary<System.Type, int> enumOffsets,
+        Dictionary<System.Type, int> softEnumOffsets,
+        ServerInstance? server,
         ParameterDefinition param
     ) {
         System.Type type = param.Type;
@@ -293,6 +303,31 @@ public sealed class CommandRegistry {
                     (uint)CommandParameterTypeFlag.Valid |
                     (uint)CommandParameterTypeFlag.Enum |
                     unchecked((uint)enumOffset),
+                Optional = param.Optional,
+                Options = 0
+            };
+        }
+
+        if (typeof(SoftEnum).IsAssignableFrom(type)) {
+            if (server is null || Activator.CreateInstance(type) is not SoftEnum instance) {
+                throw new InvalidOperationException($"Could not create soft enum instance for '{type.FullName}'.");
+            }
+
+            if (!softEnumOffsets.TryGetValue(type, out int softEnumOffset)) {
+                softEnumOffset = packet.SoftEnums.Length;
+                packet.SoftEnums = [.. packet.SoftEnums, new AvailableCommandsSoftEnumData {
+                    Name = instance.Identifier,
+                    Options = instance.GetOptions(server)
+                }];
+                softEnumOffsets[type] = softEnumOffset;
+            }
+
+            return new AvailableCommandsParamData {
+                Name = param.Name,
+                ParseSymbol =
+                    (uint)CommandParameterTypeFlag.Valid |
+                    (uint)CommandParameterTypeFlag.SoftEnum |
+                    unchecked((uint)softEnumOffset),
                 Optional = param.Optional,
                 Options = 0
             };
