@@ -21,10 +21,13 @@ public sealed class BlockPermutation {
     public int Index { get; }
     public BlockState State { get; }
     public BlockType Type { get; }
-    public string Query { get; }
-    // This is todo, for future components
-    public BlockTypeComponentCollection Components { get; }
-    public CompoundTag Nbt { get; } = new();
+    private string? _query;
+    private BlockTypeComponentCollection? _components;
+    private CompoundTag? _nbt;
+
+    public string Query => _query ??= BuildQuery(State);
+    public BlockTypeComponentCollection Components => _components ??= new BlockTypeComponentCollection(this);
+    public CompoundTag Nbt => _nbt ??= new CompoundTag();
 
     public bool IsComponentBased => Components.Values.Count > 0;
 
@@ -33,8 +36,7 @@ public sealed class BlockPermutation {
         State = state;
         Type = type;
         Index = type.Permutations.Count;
-        Components = new BlockTypeComponentCollection(this);
-        Query = string.IsNullOrEmpty(query) ? BuildQuery(state) : query;
+        _query = query;
     }
 
     public bool Matches(BlockState state) {
