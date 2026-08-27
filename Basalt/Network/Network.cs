@@ -32,6 +32,7 @@ public sealed class NetworkHandler {
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
+    private readonly ConcurrentQueue<QueuedOutgoing> _lowPriorityOutgoingPackets = new();
     private readonly Dictionary<NetworkConnection, List<OutgoingPacket>> _outgoingBuffer = [];
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
     private readonly AutoResetEvent _wake = new(false);
@@ -46,7 +47,7 @@ public sealed class NetworkHandler {
 
     public int PendingIncomingFrameCount => _incomingFrames.Count;
     public int PendingIncomingPacketCount => _incomingPackets.Count + _priorityIncomingPackets.Count;
-    public int PendingOutgoingPacketCount => _outgoingPackets.Count;
+    public int PendingOutgoingPacketCount => _outgoingPackets.Count + _lowPriorityOutgoingPackets.Count;
     public long SentBytes => Interlocked.Read(ref _sentBytes);
     public long SentPackets => Interlocked.Read(ref _sentPackets);
     public long SentFrames => Interlocked.Read(ref _sentFrames);
@@ -489,7 +490,7 @@ public sealed class NetworkHandler {
         }
 
         using (Profiler.Enabled ? Profiler.BeginZone("Network.EnqueueOutgoing") : default) {
-            _outgoingPackets.Enqueue(new QueuedOutgoing(
+            QueuedOutgoing queued = new(
                 connection,
                 new OutgoingPacket(
                     packet,
@@ -497,7 +498,14 @@ public sealed class NetworkHandler {
                     serialized.Length,
                     compression,
                     immediate,
-                    completion)));
+                    completion));
+
+            if (IsLowPriorityPacket(packet)) {
+                _lowPriorityOutgoingPackets.Enqueue(queued);
+            }
+            else {
+                _outgoingPackets.Enqueue(queued);
+            }
         }
 
         if (Environment.CurrentManagedThreadId != _threadId) {
@@ -517,12 +525,12 @@ public sealed class NetworkHandler {
 
     private void FlushOutgoing() {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Network.FlushOutgoing") : default;
-        if (!_outgoingPackets.TryDequeue(out QueuedOutgoing queued)) {
+        if (!TryDequeueOutgoing(out QueuedOutgoing queued)) {
             return;
         }
 
         Dictionary<NetworkConnection, List<OutgoingPacket>> outgoing = _outgoingBuffer;
-        int remaining = Math.Min(_outgoingPackets.Count, MaxOutgoingPacketsPerTick - 1);
+        int remaining = Math.Min(PendingOutgoingPacketCount, MaxOutgoingPacketsPerTick - 1);
         using (Profiler.Enabled ? Profiler.BeginZone("Network.TakeOutgoing") : default) {
             do {
                 if (!outgoing.TryGetValue(queued.Connection, out List<OutgoingPacket>? packets)) {
@@ -532,7 +540,7 @@ public sealed class NetworkHandler {
 
                 packets.Add(queued.Packet);
             }
-            while (remaining-- > 0 && _outgoingPackets.TryDequeue(out queued));
+            while (remaining-- > 0 && TryDequeueOutgoing(out queued, remaining == 0));
         }
 
         Exception? failure = null;
@@ -621,8 +629,24 @@ public sealed class NetworkHandler {
         return false;
     }
 
+    private bool TryDequeueOutgoing(out QueuedOutgoing queued, bool reserveLowPriority = false) {
+        if (reserveLowPriority && _lowPriorityOutgoingPackets.TryDequeue(out queued)) {
+            return true;
+        }
+
+        if (_outgoingPackets.TryDequeue(out queued)) {
+            return true;
+        }
+
+        return _lowPriorityOutgoingPackets.TryDequeue(out queued);
+    }
+
     internal static bool IsPriorityPacket(Packet? packet) {
         return packet is PlayerAuthInputPacket;
+    }
+
+    internal static bool IsLowPriorityPacket(Packet? packet) {
+        return packet is LevelChunkPacket;
     }
 
     internal void Dispose() {
