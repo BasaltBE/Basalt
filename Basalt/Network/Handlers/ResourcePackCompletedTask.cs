@@ -251,7 +251,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             _player.Spawn(_dimension, spawnSignal.Options);
         }
 
-        AvailableCommandsPacket availableCommands = _server.Commands.BuildAvailableCommandsPacket(_player);
+        AvailableCommandsPacket availableCommands = _server.Commands.BuildAvailableCommandsPacket(_player, _server);
 
         _server.Network.SendSerializedPackets(_connection, [
             (GetPacketId<JigsawStructureDataPacket>(), SerializePacket(new JigsawStructureDataPacket {

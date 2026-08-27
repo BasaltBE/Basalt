@@ -180,7 +180,7 @@ public sealed class CommandRegistry {
         return false;
     }
 
-    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null) {
+    public AvailableCommandsPacket BuildAvailableCommandsPacket(Player? player = null, ServerInstance? server = null) {
         AvailableCommandsPacket packet = new() {
             EnumValues = [],
             ChainedSubcommandValues = [],
@@ -195,7 +195,7 @@ public sealed class CommandRegistry {
         Dictionary<string, uint> enumValueOffsets = new(StringComparer.Ordinal);
         Dictionary<System.Type, int> enumOffsets = new();
         Dictionary<System.Type, int> softEnumOffsets = new();
-        ServerInstance? commandServer = player?.Dimension?.World?.Server;
+        ServerInstance? commandServer = server ?? player?.Dimension?.World?.Server;
 
         foreach (CommandDefinition def in _definitions) {
             if (
@@ -231,7 +231,7 @@ public sealed class CommandRegistry {
             return;
         }
 
-        AvailableCommandsPacket packet = BuildAvailableCommandsPacket(player);
+        AvailableCommandsPacket packet = BuildAvailableCommandsPacket(player, server);
         server.Network.QueuePacket(
             player.Connection,
             packet
