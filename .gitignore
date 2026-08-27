@@ -2,7 +2,9 @@
 .vscode
 .vs
 */bin/**/*
+*/*/bin/**/*
 */obj/**/*
+*/*/obj/**/*
 */artifacts/**/*
 *.lscache
 artifacts
@@ -10,12 +12,10 @@ artifacts
 !.github
 !.editorconfig
 publish
-Tests/
 Waterfall/Program2.cs
 Waterfall
 LoadTests
 Client
-Basalt.Tests/*
 Basalt.Benchmarks/*
 
 /worlds/
