@@ -279,15 +279,15 @@ public sealed class EntityInventoryTrait : EntityTrait {
             }
         }
 
-        Vec3 feet = Entity.Position;
+        Vec3 head = player.GetHeadLocation();
         float yaw = MathF.PI / 180f * player.Yaw;
         float pitch = MathF.PI / 180f * player.Pitch;
 
         ItemEntity drop = new(item) {
             Position = new Vec3 {
-                X = feet.X,
-                Y = feet.Y - 0.18f,
-                Z = feet.Z
+                X = head.X,
+                Y = head.Y - 0.18f,
+                Z = head.Z
             },
             Velocity = new Vec3 {
                 X = -MathF.Sin(yaw) * MathF.Cos(pitch) * 0.4f,
