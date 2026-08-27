@@ -9,6 +9,7 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Player;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
 using System.Text.Json;
@@ -29,6 +30,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     private float _fallDistance;
     public float GravityPerTick { get; set; } = 0.08f;
     public float Drag { get; set; } = 0.98f;
+    public bool DragBeforeGravity;
     public float TerminalVelocity { get; set; } = -3.92f;
     public float GroundFriction { get; set; } = 0.6f;
     public float MinHorizontalVelocity { get; set; } = 0.01f;
@@ -57,6 +59,12 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     public override void OnAdd() {
+        if (Entity is ItemEntity) {
+            GravityPerTick = 0.04f;
+            Drag = 0.98f;
+            DragBeforeGravity = true;
+        }
+
         float movementSpeed = BaseMovementSpeed;
         if (Entity.Type.TryGetComponentProperties("minecraft:movement", out JsonElement properties) &&
             properties.TryGetProperty("value", out JsonElement value)) {
@@ -142,17 +150,24 @@ public sealed class EntityMovementTrait : EntityTrait {
                 float gravity = InLava
                     ? GravityPerTick * 0.25f
                     : Entity.IsInWater ? GravityPerTick * 0.25f : GravityPerTick;
-                Entity.Velocity = new Vec3 {
-                    X = Entity.Velocity.X,
-                    Y = Entity.Velocity.Y - gravity,
-                    Z = Entity.Velocity.Z
-                };
                 float fluidDrag = InLava ? 0.5f : Entity.IsInWater ? 0.8f : Drag;
+                float velocityY = Entity.Velocity.Y;
+                if (DragBeforeGravity) {
+                    velocityY *= fluidDrag;
+                }
+
                 Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X,
-                    Y = Entity.Velocity.Y * fluidDrag,
+                    Y = velocityY - gravity,
                     Z = Entity.Velocity.Z
                 };
+                if (!DragBeforeGravity) {
+                    Entity.Velocity = new Vec3 {
+                        X = Entity.Velocity.X,
+                        Y = Entity.Velocity.Y * fluidDrag,
+                        Z = Entity.Velocity.Z
+                    };
+                }
                 Entity.Velocity = new Vec3 {
                     X = Entity.Velocity.X * fluidDrag,
                     Y = Entity.Velocity.Y,
@@ -288,11 +303,15 @@ public sealed class EntityMovementTrait : EntityTrait {
             return;
         }
 
+        Vec3 networkPosition = Entity is Player player
+            ? player.GetEyePosition()
+            : details.To;
+
         Entity.Dimension.Broadcast(new MoveActorDeltaPacket {
             ActorRuntimeId = Entity.RuntimeId,
-            PositionX = details.To.X,
-            PositionY = details.To.Y,
-            PositionZ = details.To.Z,
+            PositionX = networkPosition.X,
+            PositionY = networkPosition.Y,
+            PositionZ = networkPosition.Z,
             RotationX = PackRotation(details.ToRotation.Pitch),
             RotationY = PackRotation(details.ToRotation.Yaw),
             RotationYHead = PackRotation(details.ToRotation.HeadYaw),
@@ -329,6 +348,7 @@ public sealed class EntityMovementTrait : EntityTrait {
             Speed = Speed,
             GravityPerTick = GravityPerTick,
             Drag = Drag,
+            DragBeforeGravity = DragBeforeGravity,
             TerminalVelocity = TerminalVelocity,
             GroundFriction = GroundFriction,
             MinHorizontalVelocity = MinHorizontalVelocity,
@@ -546,7 +566,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     private float? FindGroundSurface(float x, float fromY, float toY, float z) {
-        int startBlockY = (int)MathF.Floor(fromY - CollisionEpsilon);
+        int startBlockY = (int)MathF.Floor(fromY + CollisionEpsilon);
         int endBlockY = (int)MathF.Floor(toY - CollisionEpsilon);
 
         float halfWidth = CollisionWidth() * 0.5f;
@@ -561,7 +581,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 for (int bz = minZ; bz <= maxZ && !solid; bz++) {
                     foreach (CollisionBox box in GetCollisionBoxes(bx, blockY, bz)) {
                         float top = blockY + (box.OriginY + box.SizeY) / 16f;
-                        if (fromY >= top - CollisionEpsilon && toY <= top + CollisionEpsilon &&
+                        if (fromY <= top + CollisionEpsilon && toY <= top + CollisionEpsilon &&
                             OverlapsHorizontal(x, z, CollisionWidth(), bx, bz, box)) {
                             solid = true;
                             break;

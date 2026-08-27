@@ -185,9 +185,30 @@ public sealed class Block {
             if (MeetsToolTierRequirement(details.Player)) {
                 ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
                 List<ItemStack> drops = GetDrops();
+                List<ItemStack> mergedDrops = [];
 
                 for (int i = 0; i < drops.Count; i++) {
-                    ItemEntity drop = new(drops[i]) {
+                    ItemStack drop = drops[i];
+                    for (int j = 0; j < mergedDrops.Count && drop.StackSize > 0; j++) {
+                        ItemStack merged = mergedDrops[j];
+                        if (!merged.CanStackWith(drop) || merged.StackSize >= merged.Type.MaxStackSize) {
+                            continue;
+                        }
+
+                        ushort amount = (ushort)Math.Min(
+                            drop.StackSize,
+                            merged.Type.MaxStackSize - merged.StackSize);
+                        merged.IncrementStack(amount);
+                        drop.DecrementStack(amount);
+                    }
+
+                    if (drop.StackSize > 0) {
+                        mergedDrops.Add(drop);
+                    }
+                }
+
+                for (int i = 0; i < mergedDrops.Count; i++) {
+                    ItemEntity drop = new(mergedDrops[i]) {
                         Position = new Vec3 {
                             X = details.BlockPosition.X + 0.5f,
                             Y = details.BlockPosition.Y + 0.5f,
@@ -195,15 +216,13 @@ public sealed class Block {
                         }
                     };
 
-                    if (HasTrait<CropTrait>()) {
-                        float angle = Random.Shared.NextSingle() * MathF.Tau;
-                        float horizontalSpeed = 0.07f + Random.Shared.NextSingle() * 0.06f;
-                        drop.Velocity = new Vec3() {
-                            X = MathF.Cos(angle) * horizontalSpeed,
-                            Y = 0.16f + Random.Shared.NextSingle() * 0.08f,
-                            Z = MathF.Sin(angle) * horizontalSpeed
-                        };
-                    }
+                    float angle = Random.Shared.NextSingle() * MathF.Tau;
+                    float horizontalSpeed = 0.07f + Random.Shared.NextSingle() * 0.06f;
+                    drop.Velocity = new Vec3() {
+                        X = MathF.Cos(angle) * horizontalSpeed,
+                        Y = 0.16f + Random.Shared.NextSingle() * 0.08f,
+                        Z = MathF.Sin(angle) * horizontalSpeed
+                    };
 
                     drop.LockPickupUntil(currentTick + 10);
                     drop.Spawn(dimension, new EntitySpawnOptions(InitialSpawn: false));

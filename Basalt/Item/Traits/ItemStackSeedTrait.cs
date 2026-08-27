@@ -83,6 +83,11 @@ public sealed class ItemStackSeedTrait : ItemTrait {
 
         CropTrait.ScheduleCropTick(dimension, cropPos);
 
+        dimension.Broadcast(new AnimatePacket {
+            Action = AnimateAction.Swing,
+            TargetActorRuntimeId = details.Player.RuntimeId
+        });
+
         dimension.PlaySound("place", new Vec3 {
                 X = cropPos.X + 0.5f,
                 Y = cropPos.Y + 0.5f,

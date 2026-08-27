@@ -9,6 +9,7 @@ using Basalt.Core.Enums;
 using Basalt.Core.Player;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.BedrockProtocol.Enums;
+using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
 
 internal sealed class LavaCheckTask : ServerTask {
@@ -73,10 +74,7 @@ internal sealed class LavaCheckTask : ServerTask {
     }
 
     public override void Complete() {
-        if (!_entity.IsAlive || _entity.PendingDespawn ||
-            MathF.Abs(_entity.Position.X - _position.X) > 0.25f ||
-            MathF.Abs(_entity.Position.Y - _position.Y) > 0.25f ||
-            MathF.Abs(_entity.Position.Z - _position.Z) > 0.25f) {
+        if (!_entity.IsAlive || _entity.PendingDespawn) {
             return;
         }
 
@@ -91,6 +89,11 @@ internal sealed class LavaCheckTask : ServerTask {
 
         if (_entity is ItemEntity item) {
             if (!EntityLavaTrait.IsLavaProof(item)) {
+                _dimension.Broadcast(new LevelEventPacket {
+                    EventId = (int)Basalt.Core.Enums.LevelEvent.SoundFizz,
+                    Position = _position,
+                    Data = 0
+                });
                 item.Despawn(new EntityDespawnOptions());
             }
 

@@ -34,9 +34,15 @@ public class Entity {
     public string Identifier => Type.Identifier;
     public ulong RuntimeId { get; }
     public long UniqueId => _uniqueId;
+    /// <summary>
+    /// Returns the feet position
+    /// </summary>
     public Vec3 Position = new();
+    /// <summary>
+    /// Returns the feet position
+    /// </summary>
     public Vec3 Location {
-        get => GetPosition();
+        get => GetFeetPosition();
         set => Position = value;
     }
     public Vec3 Velocity = new();
@@ -518,12 +524,10 @@ public class Entity {
 
     public virtual Vec3 GetPosition() => Position;
 
-    public Vec3 GetEyePosition() {
-        return new Vec3 {
-            X = Position.X,
-            Y = this is Player ? Position.Y + 1.62f : Position.Y,
-            Z = Position.Z
-        };
+    public virtual Vec3 GetFeetPosition() => GetPosition();
+
+    public virtual Vec3 GetEyePosition() {
+        return Position;
     }
 
     public bool HasEffect(EffectType effectType) {
@@ -638,7 +642,7 @@ public class Entity {
 
         Dimension.Broadcast(new MoveActorAbsolutePacket {
             ActorRuntimeId = RuntimeId,
-            Position = Position,
+            Position = this is Player player ? player.GetEyePosition() : Position,
             RotationX = (byte)Rotation.X,
             RotationY = (byte)Rotation.Y,
             RotationYHead = (byte)Rotation.Z,

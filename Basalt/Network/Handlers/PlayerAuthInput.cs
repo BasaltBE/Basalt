@@ -483,13 +483,20 @@ public static class PlayerAuthInput {
             packet.PosDelta.Y != 0f ||
             packet.PosDelta.Z != 0f;
 
-        player.Location = missingPosition && hasDelta
+        Vec3 nextPosition = missingPosition && hasDelta
             ? new Vec3 {
                 X = previousPosition.X + packet.PosDelta.X,
                 Y = previousPosition.Y + packet.PosDelta.Y,
                 Z = previousPosition.Z + packet.PosDelta.Z
             }
             : packet.Position;
+
+        if (!missingPosition) {
+            float height = player.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
+            nextPosition.Y -= height;
+        }
+
+        player.Position = nextPosition;
 
         if (previousPosition.X == player.Location.X &&
             previousPosition.Y == player.Location.Y &&
@@ -790,7 +797,10 @@ public static class PlayerAuthInput {
                 Position = CenterOf(blockPosition),
                 Data = block.NetworkId
             });
+
         }
+
+        player.Dimension.PlaySound("break", CenterOf(blockPosition), data: block.NetworkId);
 
         Basalt.Core.Blocks.BlockPermutation air = Basalt.Core.Blocks.BlockType
             .GetOrAir("minecraft:air")

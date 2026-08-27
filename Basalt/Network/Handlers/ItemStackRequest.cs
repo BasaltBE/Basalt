@@ -231,7 +231,16 @@ public static class ItemStackRequest {
             }
 
             int count = recipe.Result.Count * Math.Max(1, (int)action.NumberOfRequestedCrafts);
-            ItemStack result = new(recipe.Result.Item, (ushort)count, (uint)recipe.Result.Data);
+            ItemType? resultType = ItemType.Get(recipe.Result.Item);
+            if (resultType is null && !recipe.Result.Item.Contains(':')) {
+                resultType = ItemType.Get("minecraft:" + recipe.Result.Item);
+            }
+
+            if (resultType is null) {
+                return false;
+            }
+
+            ItemStack result = new(resultType, (ushort)count, (uint)recipe.Result.Data);
             ItemStack? existing = cursor.Container.GetItem(0);
             if (existing is null) {
                 cursor.Container.SetItem(0, result);

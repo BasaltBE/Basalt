@@ -290,9 +290,9 @@ public sealed class EntityInventoryTrait : EntityTrait {
                 Z = feet.Z
             },
             Velocity = new Vec3 {
-                X = -MathF.Sin(yaw) * MathF.Cos(pitch) / 3f,
-                Y = -MathF.Sin(pitch) / 2f + 0.2f,
-                Z = MathF.Cos(yaw) * MathF.Cos(pitch) / 3f
+                X = -MathF.Sin(yaw) * MathF.Cos(pitch) * 0.4f,
+                Y = -MathF.Sin(pitch) * 0.4f,
+                Z = MathF.Cos(yaw) * MathF.Cos(pitch) * 0.4f
             }
         };
 

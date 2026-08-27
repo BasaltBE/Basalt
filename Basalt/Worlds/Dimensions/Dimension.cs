@@ -1473,6 +1473,28 @@ public sealed class Dimension : IDisposable {
     }
 
     public void PlaySound(
+        SoundIdentifier soundEvent,
+        Vec3 position,
+        float radius = 64f,
+        int data = 0,
+        string actorIdentifier = "",
+        bool babyMob = false,
+        bool disableRelativeVolume = false,
+        long uniqueActorId = 0,
+        Vec3? fireAtPosition = null) {
+        PlaySound(
+            soundEvent.ToProtocolString(),
+            position,
+            radius,
+            data,
+            actorIdentifier,
+            babyMob,
+            disableRelativeVolume,
+            uniqueActorId,
+            fireAtPosition);
+    }
+
+    public void PlaySound(
         string soundEvent,
         Vec3 position,
         float radius = 64f,

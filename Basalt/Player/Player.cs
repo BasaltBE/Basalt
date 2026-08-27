@@ -18,8 +18,16 @@ using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.NBT;
 using Basalt.Core.Enums;
 
-public class Player : Entities.Entity {
+public class Player : Entity {
     public const ulong BucketCooldownTicks = 5;
+
+    public override Vec3 GetEyePosition() {
+        return new Vec3 {
+            X = Position.X,
+            Y = Position.Y + 1.62f,
+            Z = Position.Z
+        };
+    }
 
     public readonly string Username;
     public readonly string Xuid;
@@ -207,6 +215,26 @@ public class Player : Entities.Entity {
     }
 
     public void PlaySound(
+        SoundIdentifier soundEvent,
+        Vec3? position = null,
+        int data = 0,
+        string actorIdentifier = "",
+        bool babyMob = false,
+        bool disableRelativeVolume = false,
+        long uniqueActorId = 0,
+        Vec3? fireAtPosition = null) {
+        PlaySound(
+            soundEvent.ToProtocolString(),
+            position,
+            data,
+            actorIdentifier,
+            babyMob,
+            disableRelativeVolume,
+            uniqueActorId,
+            fireAtPosition);
+    }
+
+    public void PlaySound(
         string soundEvent,
         Vec3? position = null,
         int data = 0,
@@ -330,6 +358,8 @@ public class Player : Entities.Entity {
         Location = position;
         Velocity = new Vec3();
 
+        Vec3 eyePosition = GetEyePosition();
+
         ulong teleportTick = targetDimension.World is Tickable tp ? tp.TickValue : 0;
         LastTeleportTick = teleportTick;
 
@@ -355,7 +385,7 @@ public class Player : Entities.Entity {
         if (changedDimensionType) {
             Send(new ChangeDimensionPacket {
                 DimensionId = (int)targetDimension.Type,
-                Position = position,
+                Position = eyePosition,
                 Respawn = true,
                 LoadingScreenId = 0
             });
@@ -364,7 +394,7 @@ public class Player : Entities.Entity {
         MovePlayerPacket movePlayer = new() {
             ActorRuntimeId = RuntimeId
             ,
-            Position = position,
+            Position = eyePosition,
             Rotation = new Vec2 {
                 X = Pitch,
                 Y = Yaw
@@ -486,7 +516,7 @@ public class Player : Entities.Entity {
 
 
     public override void SpawnTo(Player player, ulong tick, Vec3? position = null) {
-        Vec3 spawnPosition = position ?? Position;
+        Vec3 spawnPosition = position ?? GetEyePosition();
         EntityInventoryTrait? inventory = GetTrait<EntityInventoryTrait>();
         Item.ItemStack? held = inventory?.GetHeldItem();
 

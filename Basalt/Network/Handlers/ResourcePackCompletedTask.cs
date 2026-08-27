@@ -60,7 +60,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
         Vec3 spawnPosition = _dimension?.SpawnPosition ?? new Vec3 { X = 0f, Y = -57f, Z = 0f };
         _playerPosition = new Vec3 {
             X = spawnPosition.X,
-            Y = spawnPosition.Y + EntityCollisionTrait.DefaultHeight,
+            Y = spawnPosition.Y,
             Z = spawnPosition.Z
         };
         int dimensionId = 0;
@@ -102,7 +102,7 @@ internal sealed class ResourcePackCompletedTask : ServerTask {
             },
             Position = new Vec3() {
                 X = _playerPosition.X,
-                Y = _playerPosition.Y,
+                Y = _playerPosition.Y + EntityCollisionTrait.DefaultHeight,
                 Z = _playerPosition.Z,
             },
             Rotation = new Vec2() {

@@ -52,17 +52,18 @@ public sealed class EntityLavaTrait : EntityTrait {
         EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
         float width = collision?.Width ?? EntityCollisionTrait.DefaultWidth;
         float height = collision?.Height ?? EntityCollisionTrait.DefaultHeight;
-        float feetY = Entity is Player.Player ? Entity.GetPosition().Y : Entity.Position.Y;
-        int minX = (int)MathF.Floor(Entity.Position.X - width * 0.5f);
-        int maxX = (int)MathF.Floor(Entity.Position.X + width * 0.5f);
-        int minY = (int)MathF.Floor(feetY);
-        int maxY = (int)MathF.Floor(feetY + height - 0.001f);
-        int minZ = (int)MathF.Floor(Entity.Position.Z - width * 0.5f);
-        int maxZ = (int)MathF.Floor(Entity.Position.Z + width * 0.5f);
+        Vec3 location = Entity.GetFeetPosition();
+        const float epsilon = 0.001f;
+        int minX = (int)MathF.Floor(location.X - width * 0.5f + epsilon);
+        int maxX = (int)MathF.Floor(location.X + width * 0.5f - epsilon);
+        int minY = (int)MathF.Floor(location.Y - epsilon);
+        int maxY = (int)MathF.Floor(location.Y + height - epsilon);
+        int minZ = (int)MathF.Floor(location.Z - width * 0.5f + epsilon);
+        int maxZ = (int)MathF.Floor(location.Z + width * 0.5f - epsilon);
 
         LavaCheckTask task = new(
             Entity,
-            Entity.Position,
+            location,
             dimension,
             minX,
             maxX,
