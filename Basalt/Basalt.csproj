@@ -48,10 +48,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\Protocol\Data\**\*.json">
-      <Link>Protocol\Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <LogicalName>Protocol.Data.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
+    <ProtocolDataSource Include="..\Protocol\Data\**\*.json" />
+    <EmbeddedResource Include="$(IntermediateOutputPath)protocol_data.bin"
+                      LogicalName="Protocol.Data.protocol_data.bin" />
   </ItemGroup>
+
+  <Target Name="GenerateProtocolData"
+          BeforeTargets="PrepareResourceNames"
+          Inputs="@(ProtocolDataSource)"
+          Outputs="$(IntermediateOutputPath)protocol_data.bin">
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\Tools\ProtocolDataGenerator\ProtocolDataGenerator.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)..\Protocol\Data&quot; &quot;$(IntermediateOutputPath)protocol_data.bin&quot;" />
+  </Target>
 
 </Project>
