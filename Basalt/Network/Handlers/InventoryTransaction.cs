@@ -75,11 +75,11 @@ public static class InventoryTransaction {
 
         if (packet.TransactionType == InventoryTransactionType.ItemUseOnActor) {
             // Logger.Warn(
-                // "InventoryTransaction entity player:{0} runtime:{1} action:{2} slot:{3}",
-                // player.Username,
-                // packet.ItemUseOnActorTransaction.RuntimeId,
-                // packet.ItemUseOnActorTransaction.ActionType,
-                // packet.ItemUseOnActorTransaction.Slot);
+            // "InventoryTransaction entity player:{0} runtime:{1} action:{2} slot:{3}",
+            // player.Username,
+            // packet.ItemUseOnActorTransaction.RuntimeId,
+            // packet.ItemUseOnActorTransaction.ActionType,
+            // packet.ItemUseOnActorTransaction.Slot);
         }
 
         if (packet.TransactionType == InventoryTransactionType.ItemUse) {
@@ -636,7 +636,11 @@ public static class InventoryTransaction {
         //     placePosition.Y,
         //     placePosition.Z);
 
-        if (blockType is null || blockType.Identifier == "minecraft:air") {
+        if (
+            blockType is null ||
+            blockType.Identifier == "minecraft:air" ||
+            transaction.ClientInteractPrediction == ItemUsePredictedResult.Failure
+        ) {
             if (!CanUseItem(player, heldItem)) {
                 return;
             }
