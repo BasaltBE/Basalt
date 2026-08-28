@@ -7,7 +7,7 @@ namespace Basalt.DedicatedServer;
 
 sealed class Program {
     static void Main() {
-        // Profiler.Enabled = true;
+        Profiler.Enabled = true;
 
         Logger.Init();
         const string serverPropertiesPath = "server.properties";

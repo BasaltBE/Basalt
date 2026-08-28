@@ -14,6 +14,7 @@ using Basalt.Core.Profiling;
 using Basalt.Core.Resources;
 using Basalt.Core.Tasks;
 using Basalt.Core.Events;
+using Basalt.Core.Enums;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions.Generation;
 using Basalt.Core.Worlds.Dimensions.Provider;
@@ -79,7 +80,9 @@ public sealed class Server {
     public NetworkHandler Network { get; }
     public Properties Properties { get; }
     public ResourcePackManager ResourcePacks { get; } = new();
-    public TaskWorkerPool WorkerPool { get; private set; } = null!;
+    public TaskWorkerPool TickWorkerPool { get; private set; } = null!;
+    public TaskWorkerPool BackgroundWorkerPool { get; private set; } = null!;
+    public TaskWorkerPool WorkerPool => BackgroundWorkerPool;
     public TaskScheduler Scheduler { get; private set; } = null!;
     public IEnumerable<WorldInstance> Worlds => Volatile.Read(ref _worldsSnapshot);
 
@@ -165,9 +168,18 @@ public sealed class Server {
         Commands.PluginScopeProvider = Plugins.EnterRegistrationScope;
         Commands.PluginErrorHandler = (plugin, callback, exception) =>
             Plugins.RecordRuntimeFailure(plugin, callback, exception);
-        WorkerPool = new TaskWorkerPool(Properties.WorkerThreads);
+        int tickWorkerCount = Properties.TickWorkerThreads > 0
+            ? Properties.TickWorkerThreads
+            : Properties.WorkerThreads > 0
+                ? Properties.WorkerThreads
+                : Math.Min(Math.Max(1, Environment.ProcessorCount - 2), 12);
+        int backgroundWorkerCount = Properties.BackgroundWorkerThreads > 0
+            ? Properties.BackgroundWorkerThreads
+            : Math.Clamp(Environment.ProcessorCount / 4, 1, 4);
+        TickWorkerPool = new TaskWorkerPool(WorkerKind.Tick, Math.Max(1, tickWorkerCount));
+        BackgroundWorkerPool = new TaskWorkerPool(WorkerKind.Background, Math.Max(1, backgroundWorkerCount));
         Scheduler = new TaskScheduler(
-            WorkerPool,
+            BackgroundWorkerPool,
             () => Plugins.CurrentRegistrationPlugin,
             Plugins.ConfigureTask);
 
@@ -335,7 +347,8 @@ public sealed class Server {
         finally {
             networkCancellation?.Dispose();
             cancellation?.Dispose();
-            WorkerPool.Dispose();
+            TickWorkerPool.Dispose();
+            BackgroundWorkerPool.Dispose();
             Network.Stop();
             Network.Dispose();
         }
@@ -638,7 +651,7 @@ public sealed class Server {
                 case Enums.TickMode.Group:
                     TickWorldGroupsParallel(worlds);
                     break;
-                case Enums.TickMode.Adaptive when worlds.Length > 1 && WorkerPool.WorkerCount > 1:
+                case Enums.TickMode.Adaptive when worlds.Length > 1 && TickWorkerPool.WorkerCount > 1:
                     TickWorldGroupsParallel(worlds, GetAdaptiveGroupCount(worlds));
                     break;
                 default:
@@ -726,7 +739,7 @@ public sealed class Server {
             WorldInstance world = worlds[i];
             ManualResetEventSlim completed = new();
             WorldTickTask task = new(world, completed);
-            if (WorkerPool.TryEnqueue(task)) {
+            if (TickWorkerPool.TryEnqueue(task)) {
                 tasks.Add((world, task, completed));
             }
             else {
@@ -757,7 +770,7 @@ public sealed class Server {
 
         int groupCount = requestedGroupCount ?? (Properties.TickGroups > 0
             ? Properties.TickGroups
-            : WorkerPool.WorkerCount);
+            : TickWorkerPool.WorkerCount);
         groupCount = Math.Clamp(groupCount, 1, worlds.Length);
         List<WorldInstance>[] groups = new List<WorldInstance>[groupCount];
         for (int i = 0; i < groupCount; i++) {
@@ -772,7 +785,7 @@ public sealed class Server {
         for (int i = 0; i < groups.Length; i++) {
             ManualResetEventSlim completed = new();
             WorldGroupTickTask task = new([.. groups[i]], completed);
-            if (WorkerPool.TryEnqueue(task)) {
+            if (TickWorkerPool.TryEnqueue(task)) {
                 tasks.Add((task, completed));
             }
             else {
@@ -801,9 +814,9 @@ public sealed class Server {
 
         bool hotWorld = worlds.Any(static world => world.TickWork >= AdaptiveHotWorldMilliseconds);
         int groupCount = hotWorld
-            ? Math.Min(WorkerPool.WorkerCount, worlds.Length)
+            ? Math.Min(TickWorkerPool.WorkerCount, worlds.Length)
             : Math.Max(1, (worlds.Length + 1) / 2);
-        LastAdaptiveGroupCount = Math.Min(groupCount, WorkerPool.WorkerCount);
+        LastAdaptiveGroupCount = Math.Min(groupCount, TickWorkerPool.WorkerCount);
         return LastAdaptiveGroupCount;
     }
 

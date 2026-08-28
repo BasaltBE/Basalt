@@ -3,6 +3,7 @@ namespace Basalt.Core.Tasks;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Basalt.Core.Enums;
 using Basalt.Core.Profiling;
 
 public sealed class TaskWorkerPool : IDisposable {
@@ -11,7 +12,10 @@ public sealed class TaskWorkerPool : IDisposable {
     private static bool _workerThread;
     [ThreadStatic]
     private static int _workerIndex;
+    [ThreadStatic]
+    private static WorkerKind _workerKind;
 
+    private readonly WorkerKind _kind;
     private readonly Thread[] _workers;
     private readonly PriorityTaskQueue _workQueue;
     private readonly ConcurrentQueue<ServerTask> _completionQueue = new();
@@ -19,6 +23,7 @@ public sealed class TaskWorkerPool : IDisposable {
     private long _queueWaitSamples;
 
     public int WorkerCount => _workers.Length;
+    public WorkerKind Kind => _kind;
     public int PendingWorkCount => _workQueue.Count;
     public int PendingCompletionCount => _completionQueue.Count;
     public double AverageQueueWaitMilliseconds =>
@@ -28,16 +33,21 @@ public sealed class TaskWorkerPool : IDisposable {
               Stopwatch.Frequency /
               Volatile.Read(ref _queueWaitSamples);
     internal static bool WorkerThread => _workerThread;
+    internal static bool TickWorkerThread => _workerThread && _workerKind == WorkerKind.Tick;
     internal static int CurrentWorkerIndex => _workerIndex;
 
-    public TaskWorkerPool(int workerCount = 4) {
+    public TaskWorkerPool(int workerCount = 4)
+        : this(WorkerKind.Background, workerCount) { }
+
+    public TaskWorkerPool(WorkerKind kind, int workerCount) {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(workerCount);
+        _kind = kind;
         _workQueue = new PriorityTaskQueue(workerCount * WorkItemsPerWorker, workerCount);
         _workers = new Thread[workerCount];
         for (int i = 0; i < workerCount; i++) {
             int index = i;
             _workers[i] = new Thread(() => WorkerLoop(index)) {
-                Name = $"BasaltWorker-{i}",
+                Name = $"Basalt{kind}-{i}",
                 IsBackground = true
             };
             _workers[i].Start();
@@ -91,7 +101,8 @@ public sealed class TaskWorkerPool : IDisposable {
     private void WorkerLoop(int index) {
         _workerThread = true;
         _workerIndex = index;
-        Profiler.SetThreadName($"BasaltWorker-{index}");
+        _workerKind = _kind;
+        Profiler.SetThreadName($"Basalt{_kind}-{index}");
         while (_workQueue.TryTake(index, out ServerTask task)) {
             if (task.IsCancelled) {
                 continue;

@@ -45,7 +45,7 @@ public sealed class World : IDisposable, Tickable {
             if (value is not null && Scheduler is null)
                 Scheduler = new WorldScheduler(
                     this,
-                    value.WorkerPool,
+                    value.BackgroundWorkerPool,
                     () => value.Plugins.CurrentRegistrationPlugin,
                     value.Plugins.ConfigureTask);
             if (value is not null)
@@ -280,7 +280,7 @@ public sealed class World : IDisposable, Tickable {
     }
 
     internal void TickDimensionsParallel() {
-        if (Server?.WorkerPool is not { } workerPool) {
+        if (Server?.TickWorkerPool is not { } workerPool) {
             foreach (Dimension dimension in _dimensions.Values) {
                 dimension.Tick(TickValue, 1);
             }

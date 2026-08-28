@@ -337,13 +337,12 @@ public sealed class Dimension : IDisposable {
     }
 
     public ChunkColumn GetOrCreateChunk(int x, int z) {
-        lock (_chunkAccessLock) {
-            ChunkColumn? chunk = GetOrLoadChunk(x, z);
-            if (chunk is not null) {
-                return chunk;
-            }
+        ChunkColumn? chunk = GetOrLoadChunk(x, z);
+        if (chunk is not null) {
+            return chunk;
+        }
 
-            long hash = HashChunk(x, z);
+        long hash = HashChunk(x, z);
 
         if (_provider.HasChunk(Type, x, z)) {
             Logger.Warn($"Chunk {x},{z} exists in storage but failed to load; regenerating.");
@@ -352,13 +351,19 @@ public sealed class Dimension : IDisposable {
         chunk = _generator.Generate(Type, x, z);
         _generator.Populate(chunk);
         chunk.Dirty = true;
-        chunk.Simulated = _simulatedChunks.Contains(hash);
-        _chunks[hash] = chunk;
-        if (chunk.Simulated) {
-            RestoreBlockTicks(chunk);
+        lock (_chunkAccessLock) {
+            if (_chunks.TryGetValue(hash, out ChunkColumn? existing)) {
+                return existing;
+            }
+
+            chunk.Simulated = _simulatedChunks.Contains(hash);
+            _chunks[hash] = chunk;
+            if (chunk.Simulated) {
+                RestoreBlockTicks(chunk);
+            }
         }
-            return chunk;
-        }
+
+        return chunk;
     }
 
     public void SetChunk(ChunkColumn chunk) {
@@ -1262,8 +1267,8 @@ public sealed class Dimension : IDisposable {
         bool regionMode = World?.Server is { } adaptiveServer &&
             (adaptiveServer.Properties.TickMode == TickMode.Region ||
              adaptiveServer.Properties.TickMode == TickMode.Adaptive &&
-             adaptiveServer.WorkerPool.WorkerCount > 1 &&
-             !TaskWorkerPool.WorkerThread);
+             adaptiveServer.TickWorkerPool.WorkerCount > 1 &&
+             !TaskWorkerPool.TickWorkerThread);
         if (regionMode) {
             _tickRegionBuffers.Clear();
             for (int i = 0; i < _tickEntityBuffer.Count; i++) {
@@ -1286,7 +1291,7 @@ public sealed class Dimension : IDisposable {
             using (Profiler.Enabled ? Profiler.BeginZone("Dimension.TickEntities") : default) {
                 if (regionMode) {
                     if (_tickRegionBuffers.Count > 1 &&
-                        World?.Server?.WorkerPool is { } workerPool &&
+                        World?.Server?.TickWorkerPool is { } workerPool &&
                         workerPool.WorkerCount > 1) {
                         TickRegionsParallel(workerPool, currentTick, deltaTick);
                     }
@@ -1687,10 +1692,10 @@ public sealed class Dimension : IDisposable {
     }
 
     private ChunkColumn? GetOrLoadChunk(int x, int z) {
+        long hash = HashChunk(x, z);
         lock (_chunkAccessLock) {
-            long hash = HashChunk(x, z);
-            if (_chunks.TryGetValue(hash, out ChunkColumn? chunk)) {
-                return chunk;
+            if (_chunks.TryGetValue(hash, out ChunkColumn? loaded)) {
+                return loaded;
             }
 
             ChunkColumn? pending = World?.Persistence.GetPendingChunk(Type, x, z);
@@ -1704,9 +1709,15 @@ public sealed class Dimension : IDisposable {
 
                 return pending;
             }
+        }
 
-            chunk = _provider.LoadChunk(Type, x, z);
-            if (chunk is not null) {
+        ChunkColumn? chunk = _provider.LoadChunk(Type, x, z);
+        if (chunk is not null) {
+            lock (_chunkAccessLock) {
+                if (_chunks.TryGetValue(hash, out ChunkColumn? existing)) {
+                    return existing;
+                }
+
                 chunk.Simulated = _simulatedChunks.Contains(hash);
                 _chunks[hash] = chunk;
                 MaterializeEntities(chunk);
@@ -1714,9 +1725,9 @@ public sealed class Dimension : IDisposable {
                     RestoreBlockTicks(chunk);
                 }
             }
-
-            return chunk;
         }
+
+        return chunk;
     }
 
     private static int GetChunkLocal(int value) {

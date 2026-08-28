@@ -40,7 +40,8 @@ public static class StatusCommand {
                          $"§7` Loaded Chunks (§a{chunkCount}§7)\n" +
                          $"§7` Pending Chunks (§a{pendingChunkRequests} requests, {pendingChunkCallbacks} callbacks§7)\n" +
                          $"§7` Active Domains (§a{activeDomains}, {slowestDimension:0.00} ms slowest§7)\n" +
-                         $"§7` Worker Queue (§a{ctx.Server.WorkerPool.PendingWorkCount} work, {ctx.Server.WorkerPool.PendingCompletionCount} completions, {ctx.Server.WorkerPool.AverageQueueWaitMilliseconds:0.00} ms wait§7)\n" +
+                         $"§7` Tick Queue (§a{ctx.Server.TickWorkerPool.PendingWorkCount} work, {ctx.Server.TickWorkerPool.AverageQueueWaitMilliseconds:0.00} ms wait§7)\n" +
+                         $"§7` Background Queue (§a{ctx.Server.BackgroundWorkerPool.PendingWorkCount} work, {ctx.Server.BackgroundWorkerPool.PendingCompletionCount} completions, {ctx.Server.BackgroundWorkerPool.AverageQueueWaitMilliseconds:0.00} ms wait§7)\n" +
                          $"§7` Network Queue (§a{network.PendingIncomingFrameCount} frames, {network.PendingIncomingPacketCount} packets in, {network.PendingOutgoingPacketCount} packets out§7)\n" +
                          $"§7` Network Sent (§a{sentMb:0.0} MB, {network.SentPackets} packets, {network.SentFrames} frames§7)\n" +
                          $"§7` Heap (§a{heapMb:0.0} MB§7)\n" +

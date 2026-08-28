@@ -114,8 +114,20 @@ public class Properties {
     [ServerProperties.PropertyOrder(21)]
     [ServerProperties.PropertyCategory("Performance")]
     [ServerProperties.PropertyKey("worker-threads")]
-    [ServerProperties.PropertyComment("Number of worker threads for async task processing.")]
-    public int WorkerThreads { get; set; } = 4;
+    [ServerProperties.PropertyComment("Compatibility count for worker threads. Zero enables automatic sizing.")]
+    public int WorkerThreads { get; set; }
+
+    [ServerProperties.PropertyOrder(22)]
+    [ServerProperties.PropertyCategory("Performance")]
+    [ServerProperties.PropertyKey("tick-worker-threads")]
+    [ServerProperties.PropertyComment("Number of tick workers. Zero enables automatic sizing.")]
+    public int TickWorkerThreads { get; set; }
+
+    [ServerProperties.PropertyOrder(23)]
+    [ServerProperties.PropertyCategory("Performance")]
+    [ServerProperties.PropertyKey("background-worker-threads")]
+    [ServerProperties.PropertyComment("Number of background workers. Zero enables automatic sizing.")]
+    public int BackgroundWorkerThreads { get; set; }
 
     [ServerProperties.PropertyOrder(25)]
     [ServerProperties.PropertyCategory("Performance")]

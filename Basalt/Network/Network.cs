@@ -32,6 +32,7 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
+    private readonly ConcurrentQueue<QueuedOutgoing> _priorityOutgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _lowPriorityOutgoingPackets = new();
     private readonly Dictionary<NetworkConnection, List<OutgoingPacket>> _outgoingBuffer = [];
@@ -48,7 +49,8 @@ public sealed class NetworkHandler {
 
     public int PendingIncomingFrameCount => _incomingFrames.Count;
     public int PendingIncomingPacketCount => _incomingPackets.Count + _priorityIncomingPackets.Count;
-    public int PendingOutgoingPacketCount => _outgoingPackets.Count + _lowPriorityOutgoingPackets.Count;
+    public int PendingOutgoingPacketCount =>
+        _priorityOutgoingPackets.Count + _outgoingPackets.Count + _lowPriorityOutgoingPackets.Count;
     public long SentBytes => Interlocked.Read(ref _sentBytes);
     public long SentPackets => Interlocked.Read(ref _sentPackets);
     public long SentFrames => Interlocked.Read(ref _sentFrames);
@@ -508,7 +510,10 @@ public sealed class NetworkHandler {
                     immediate,
                     completion));
 
-            if (IsLowPriorityPacket(packet)) {
+            if (IsPriorityPacket(packet)) {
+                _priorityOutgoingPackets.Enqueue(queued);
+            }
+            else if (IsLowPriorityPacket(packet)) {
                 _lowPriorityOutgoingPackets.Enqueue(queued);
             }
             else {
@@ -642,6 +647,10 @@ public sealed class NetworkHandler {
             return true;
         }
 
+        if (_priorityOutgoingPackets.TryDequeue(out queued)) {
+            return true;
+        }
+
         if (_outgoingPackets.TryDequeue(out queued)) {
             return true;
         }
@@ -650,11 +659,19 @@ public sealed class NetworkHandler {
     }
 
     internal static bool IsPriorityPacket(Packet? packet) {
-        return packet is PlayerAuthInputPacket;
+        return packet is PlayerAuthInputPacket
+            or AddActorPacket
+            or RemoveActorPacket
+            or SetActorDataPacket
+            or CommandOutputPacket
+            or TextPacket;
     }
 
     internal static bool IsLowPriorityPacket(Packet? packet) {
-        return packet is LevelChunkPacket;
+        return packet is LevelChunkPacket
+            or MoveActorAbsolutePacket
+            or MoveActorDeltaPacket
+            or SetActorMotionPacket;
     }
 
     internal void Dispose() {
