@@ -1450,6 +1450,14 @@ public sealed class Dimension : IDisposable {
         BroadcastOptions resolved = options ?? new BroadcastOptions();
         resolved.Center ??= GetPacketPosition(packet);
         float radiusSquared = resolved.Radius * resolved.Radius;
+        ulong? actorRuntimeId = packet switch {
+            ActorEventPacket actorEvent => actorEvent.ActorRuntimeId,
+            MoveActorAbsolutePacket moveActorAbsolute => moveActorAbsolute.ActorRuntimeId,
+            MoveActorDeltaPacket moveActorDelta => moveActorDelta.ActorRuntimeId,
+            SetActorDataPacket setActorData => setActorData.ActorRuntimeId,
+            SetActorMotionPacket setActorMotion => setActorMotion.ActorRuntimeId,
+            _ => null
+        };
 
         foreach (Player.Player player in _players) {
             NetworkConnection? connection = player.Connection;
@@ -1458,6 +1466,12 @@ public sealed class Dimension : IDisposable {
             }
 
             if (resolved.Except is not null && resolved.Except.Contains(player)) {
+                continue;
+            }
+
+            if (actorRuntimeId is ulong runtimeId &&
+                player.GetTrait<PlayerChunkRenderingTrait>() is { } renderer &&
+                !renderer.VisibleActorIds.ContainsKey(runtimeId)) {
                 continue;
             }
 

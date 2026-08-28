@@ -21,6 +21,7 @@ public sealed class NetworkHandler {
     internal const int MaxIncomingFramesPerTick = 256;
     internal const int MaxIncomingPacketsPerTick = 2048;
     internal const int MaxOutgoingPacketsPerTick = 4096;
+    internal const int MaxQueuedMovementPackets = 2048;
     private const int MaxPriorityIncomingPacketsPerTick = MaxIncomingPacketsPerTick / 2;
 
     private readonly Server _server;
@@ -34,6 +35,7 @@ public sealed class NetworkHandler {
     private readonly object _packetListenersLock = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _priorityOutgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
+    private readonly ConcurrentQueue<QueuedOutgoing> _movementOutgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _lowPriorityOutgoingPackets = new();
     private readonly Dictionary<NetworkConnection, List<OutgoingPacket>> _outgoingBuffer = [];
     private readonly Stack<List<OutgoingPacket>> _outgoingLists = [];
@@ -50,7 +52,10 @@ public sealed class NetworkHandler {
     public int PendingIncomingFrameCount => _incomingFrames.Count;
     public int PendingIncomingPacketCount => _incomingPackets.Count + _priorityIncomingPackets.Count;
     public int PendingOutgoingPacketCount =>
-        _priorityOutgoingPackets.Count + _outgoingPackets.Count + _lowPriorityOutgoingPackets.Count;
+        _priorityOutgoingPackets.Count +
+        _outgoingPackets.Count +
+        _movementOutgoingPackets.Count +
+        _lowPriorityOutgoingPackets.Count;
     public long SentBytes => Interlocked.Read(ref _sentBytes);
     public long SentPackets => Interlocked.Read(ref _sentPackets);
     public long SentFrames => Interlocked.Read(ref _sentFrames);
@@ -510,8 +515,15 @@ public sealed class NetworkHandler {
                     immediate,
                     completion));
 
-            if (IsPriorityPacket(packet)) {
+            if (IsHighPriorityOutgoingPacket(packet)) {
                 _priorityOutgoingPackets.Enqueue(queued);
+            }
+            else if (IsMovementPacket(packet)) {
+                if (_movementOutgoingPackets.Count >= MaxQueuedMovementPackets) {
+                    return;
+                }
+
+                _movementOutgoingPackets.Enqueue(queued);
             }
             else if (IsLowPriorityPacket(packet)) {
                 _lowPriorityOutgoingPackets.Enqueue(queued);
@@ -655,12 +667,19 @@ public sealed class NetworkHandler {
             return true;
         }
 
+        if (_movementOutgoingPackets.TryDequeue(out queued)) {
+            return true;
+        }
+
         return _lowPriorityOutgoingPackets.TryDequeue(out queued);
     }
 
     internal static bool IsPriorityPacket(Packet? packet) {
-        return packet is PlayerAuthInputPacket
-            or AddActorPacket
+        return packet is PlayerAuthInputPacket;
+    }
+
+    internal static bool IsHighPriorityOutgoingPacket(Packet? packet) {
+        return packet is AddActorPacket
             or RemoveActorPacket
             or SetActorDataPacket
             or CommandOutputPacket
@@ -668,8 +687,11 @@ public sealed class NetworkHandler {
     }
 
     internal static bool IsLowPriorityPacket(Packet? packet) {
-        return packet is LevelChunkPacket
-            or MoveActorAbsolutePacket
+        return packet is LevelChunkPacket;
+    }
+
+    internal static bool IsMovementPacket(Packet? packet) {
+        return packet is MoveActorAbsolutePacket
             or MoveActorDeltaPacket
             or SetActorMotionPacket;
     }

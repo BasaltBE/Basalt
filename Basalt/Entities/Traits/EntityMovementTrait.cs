@@ -187,7 +187,8 @@ public sealed class EntityMovementTrait : EntityTrait {
             float nextX = Entity.Position.X + velocityX;
             float nextY = Entity.Position.Y + Entity.Velocity.Y;
             float nextZ = Entity.Position.Z + velocityZ;
-            if (velocityX != 0f && CollidesWithSolidBlocks(nextX, Entity.Position.Y, Entity.Position.Z)) {
+            float horizontalCollisionY = Entity.Velocity.Y > 0f ? nextY : Entity.Position.Y;
+            if (velocityX != 0f && CollidesWithSolidBlocks(nextX, horizontalCollisionY, Entity.Position.Z)) {
                 if (collision is not null) {
                     collision.XAxisCollision = velocityX > 0f ? 1 : -1;
                 }
@@ -196,7 +197,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 velocityX = 0f;
             }
 
-            if (velocityZ != 0f && CollidesWithSolidBlocks(nextX, Entity.Position.Y, nextZ)) {
+            if (velocityZ != 0f && CollidesWithSolidBlocks(nextX, horizontalCollisionY, nextZ)) {
                 if (collision is not null) {
                     collision.ZAxisCollision = velocityZ > 0f ? 1 : -1;
                 }
@@ -307,32 +308,16 @@ public sealed class EntityMovementTrait : EntityTrait {
             ? player.GetEyePosition()
             : details.To;
 
-        Entity.Dimension.Broadcast(new MoveActorDeltaPacket {
+        Entity.Dimension.Broadcast(new MoveActorAbsolutePacket {
             ActorRuntimeId = Entity.RuntimeId,
-            PositionX = networkPosition.X,
-            PositionY = networkPosition.Y,
-            PositionZ = networkPosition.Z,
-            RotationX = PackRotation(details.ToRotation.Pitch),
-            RotationY = PackRotation(details.ToRotation.Yaw),
-            RotationYHead = PackRotation(details.ToRotation.HeadYaw),
-            OnGround = IsGrounded(details.To.X, details.To.Y, details.To.Z),
-            ForceMove = false,
-            ForceMoveLocalEntity = false,
-            ForceCompletion = false
+            Header = 0,
+            Position = networkPosition,
+            RotationX = unchecked((byte)PackRotation(details.ToRotation.Pitch)),
+            RotationY = unchecked((byte)PackRotation(details.ToRotation.Yaw)),
+            RotationYHead = unchecked((byte)PackRotation(details.ToRotation.HeadYaw))
         }, new BroadcastOptions {
             Except = Entity.IsPlayer() ? [Entity] : null
         });
-
-        if (!Entity.IsPlayer()) {
-            Entity.Dimension.Broadcast(new MoveActorAbsolutePacket {
-                ActorRuntimeId = Entity.RuntimeId,
-                Header = 0,
-                Position = details.To,
-                RotationX = unchecked((byte)PackRotation(details.ToRotation.Pitch)),
-                RotationY = unchecked((byte)PackRotation(details.ToRotation.Yaw)),
-                RotationYHead = unchecked((byte)PackRotation(details.ToRotation.HeadYaw))
-            });
-        }
     }
 
 
