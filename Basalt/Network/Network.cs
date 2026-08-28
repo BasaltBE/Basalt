@@ -3,6 +3,7 @@ namespace Basalt.Core.Network;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Basalt.Binary;
 using Basalt.Core.Events;
 using Basalt.Core.Network.Handlers;
@@ -121,7 +122,14 @@ public sealed class NetworkHandler {
     }
 
     internal void EnqueueFrame(NetworkConnection connection, ReadOnlyMemory<byte> payload) {
-        _incomingFrames.Enqueue((connection, payload.ToArray()));
+        if (MemoryMarshal.TryGetArray(payload, out ArraySegment<byte> segment) &&
+            segment.Offset == 0 &&
+            segment.Count == segment.Array!.Length) {
+            _incomingFrames.Enqueue((connection, segment.Array));
+        }
+        else {
+            _incomingFrames.Enqueue((connection, payload.ToArray()));
+        }
         _wake.Set();
     }
 
@@ -713,7 +721,7 @@ public sealed class NetworkHandler {
         int compressionThreshold = 0) {
         int batchCapacity = packet.Length + 5;
         byte[] batch = ArrayPool<byte>.Shared.Rent(batchCapacity);
-        byte[] frame = ArrayPool<byte>.Shared.Rent(batchCapacity + (batchCapacity >> 12) + (batchCapacity >> 14) + (batchCapacity >> 25) + 16);
+        byte[]? frame = ArrayPool<byte>.Shared.Rent(batchCapacity + (batchCapacity >> 12) + (batchCapacity >> 14) + (batchCapacity >> 25) + 16);
         try {
             int offset = 0;
             BinaryWriter writer = new(batch, ref offset);
@@ -734,17 +742,21 @@ public sealed class NetworkHandler {
                 batch.AsSpan(0, offset).CopyTo(frame);
             }
 
-            connection.SendPacket(
-                frame.AsSpan(0, frameLength),
-                packet.Unreliable,
-                packet.Immediate);
+            if (!connection.SendOwned(frame, frameLength, packet.Unreliable, packet.Immediate)) {
+                connection.SendPacket(frame.AsSpan(0, frameLength), packet.Unreliable, packet.Immediate);
+            }
+            else {
+                frame = null;
+            }
             Interlocked.Add(ref _sentBytes, frameLength);
             Interlocked.Increment(ref _sentPackets);
             Interlocked.Increment(ref _sentFrames);
         }
         finally {
             ArrayPool<byte>.Shared.Return(batch);
-            ArrayPool<byte>.Shared.Return(frame);
+            if (frame is not null) {
+                ArrayPool<byte>.Shared.Return(frame);
+            }
         }
     }
 
