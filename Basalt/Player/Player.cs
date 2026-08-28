@@ -340,7 +340,7 @@ public class Player : Entity {
         Attributes.Send();
     }
 
-    public void Teleport(Vec3 position, Dimension? dimension = null) {
+    public override void Teleport(Vec3 position, Dimension? dimension = null) {
         Dimension? previousDimension = Dimension;
         Dimension targetDimension = dimension ?? previousDimension ??
             throw new InvalidOperationException("Player must have a dimension to teleport without a target dimension.");

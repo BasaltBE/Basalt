@@ -34,11 +34,11 @@ public static class MobEquipment {
             return;
         }
 
-        if (packet.Slot >= 9) {
+        if (packet.SelectedSlot >= 9) {
             return;
         }
 
-        inventory.SetHeldItem(packet.Slot);
+        inventory.SetHeldItem(packet.SelectedSlot);
         packet.TargetRuntimeId = player.RuntimeId;
         packet.Item = inventory.GetHeldItem()?.ToNetworkStackDescriptor() ?? new();
 

@@ -271,7 +271,7 @@ public class ChestTrait : BlockTrait {
             new BlockActorDataPacket {
                 Position = position,
                 ActorData = storage,
-                
+
             },
             new UpdateBlockPacket {
                 Position = position,
@@ -667,13 +667,13 @@ public class ChestTrait : BlockTrait {
             });
         }
 
-        Logger.Warn(
-            "Chest block event position:{0},{1},{2} type:{3} value:{4}",
-            position.X,
-            position.Y,
-            position.Z,
-            BlockEventType.ChangeState,
-            state);
+        // Logger.Warn(
+        // "Chest block event position:{0},{1},{2} type:{3} value:{4}",
+        // position.X,
+        // position.Y,
+        // position.Z,
+        // BlockEventType.ChangeState,
+        // state);
 
         Container.Dimension.Broadcast(new BlockEventPacket {
             Position = position,
@@ -684,10 +684,10 @@ public class ChestTrait : BlockTrait {
         int runtimeId = Container.Dimension.GetLoadedPermutationOrAir(position.X, position.Y, position.Z).NetworkId;
 
         Container.Dimension.PlaySound(soundEvent, new Vec3 {
-                X = position.X + 0.5f,
-                Y = position.Y + 0.5f,
-                Z = position.Z + 0.5f
-            },
+            X = position.X + 0.5f,
+            Y = position.Y + 0.5f,
+            Z = position.Z + 0.5f
+        },
             data: runtimeId,
             uniqueActorId: -1);
     }

@@ -47,4 +47,17 @@ public sealed class TargetEnum : CommandEnum {
         error = null;
         return players[0];
     }
+
+    public EntityInstance? GetSingleEntity(out CommandResult? error) {
+        if (Entities.Length == 0) {
+            error = CommandResult.Error("No entity found matching the target selector.");
+            return null;
+        }
+        if (Entities.Length > 1) {
+            error = CommandResult.Error("Too many targets matched. Be more specific.");
+            return null;
+        }
+        error = null;
+        return Entities[0];
+    }
 }

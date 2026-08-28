@@ -1,46 +1,31 @@
 namespace Basalt.Core.Commands.Vanilla;
 
+using Basalt.Core.Entities;
 using Basalt.Core.Worlds.Dimensions;
 using Player = Player.Player;
 
 public static class TpCommand {
     public static readonly CommandDefinition Definition = new() {
         Name = "tp",
-        Description = "Teleports a player to a position or another player.",
+        Description = "Teleports an entity to a position or another entity.",
         Aliases = ["teleport"],
         Permissions = ["basalt.op"],
         Overloads =
         [
-            // /tp <destination: player>
-            new OverloadDefinition
-            {
-                Parameters =
-                [
-                    new ParameterDefinition { Name = "destination", Type = typeof(TargetEnum) }
-                ]
+            new OverloadDefinition {
+                Parameters = [new ParameterDefinition { Name = "destination", Type = typeof(TargetEnum) }]
             },
-            // /tp <victim> <destination: player>
-            new OverloadDefinition
-            {
-                Parameters =
-                [
+            new OverloadDefinition {
+                Parameters = [
                     new ParameterDefinition { Name = "victim", Type = typeof(TargetEnum) },
                     new ParameterDefinition { Name = "destination", Type = typeof(TargetEnum) }
                 ]
             },
-            // /tp <position: x y z>
-            new OverloadDefinition
-            {
-                Parameters =
-                [
-                    new ParameterDefinition { Name = "position", Type = typeof(PositionEnum) }
-                ]
+            new OverloadDefinition {
+                Parameters = [new ParameterDefinition { Name = "position", Type = typeof(PositionEnum) }]
             },
-            // /tp <victim> <position: x y z>
-            new OverloadDefinition
-            {
-                Parameters =
-                [
+            new OverloadDefinition {
+                Parameters = [
                     new ParameterDefinition { Name = "victim", Type = typeof(TargetEnum) },
                     new ParameterDefinition { Name = "position", Type = typeof(PositionEnum) }
                 ]
@@ -54,44 +39,59 @@ public static class TpCommand {
         TargetEnum? victim = ctx.Get<TargetEnum>("victim");
         TargetEnum? destination = ctx.Get<TargetEnum>("destination");
 
-        // /tp <x y z> or /tp <victim> <x y z>
         if (position is not null) {
-            Player target;
+            Entity[] targets;
             if (victim is not null) {
-                Player? resolved = victim.GetSinglePlayer(out CommandResult? err);
-                if (resolved is null) return err!;
-                target = resolved;
+                targets = victim.Entities;
             }
             else {
-                Player? self = ctx.RequirePlayer(out CommandResult? err);
-                if (self is null) return err!;
-                target = self;
+                Player? self = ctx.RequirePlayer(out CommandResult? error);
+                if (self is null) return error!;
+                targets = [self];
             }
 
-            Dimension? dim = target.Dimension;
-            target.Teleport(position.Value, dim);
-            return CommandResult.OkMessage($"§7Teleported §a{target.Username} §7to §a{position.Value.X:0.##} {position.Value.Y:0.##} {position.Value.Z:0.##}§7.");
+            if (targets.Length == 0)
+                return CommandResult.Error("No entities matched the target selector.");
+
+            int teleported = 0;
+            for (int i = 0; i < targets.Length; i++) {
+                Entity target = targets[i];
+                if (ctx.QueueOnOwner(target, () => target.Teleport(position.Value, target.Dimension)))
+                    teleported++;
+            }
+
+            return CommandResult.OkMessage($"Teleported {teleported} entities to {position.Value.X:0.##} {position.Value.Y:0.##} {position.Value.Z:0.##}.");
         }
 
-        // /tp <destination> or /tp <victim> <destination>
         if (destination is not null) {
-            Player? destPlayer = destination.GetSinglePlayer(out CommandResult? destErr);
-            if (destPlayer is null) return destErr!;
+            Entity? target = destination.GetSingleEntity(out CommandResult? destinationError);
+            if (target is null)
+                return destinationError!;
 
-            Player source;
+            Entity[] sources;
             if (victim is not null) {
-                Player? resolved = victim.GetSinglePlayer(out CommandResult? err);
-                if (resolved is null) return err!;
-                source = resolved;
+                sources = victim.Entities;
             }
             else {
-                Player? self = ctx.RequirePlayer(out CommandResult? err);
-                if (self is null) return err!;
-                source = self;
+                Player? self = ctx.RequirePlayer(out CommandResult? error);
+                if (self is null) return error!;
+                sources = [self];
             }
 
-            source.Teleport(destPlayer.Location, destPlayer.Dimension);
-            return CommandResult.OkMessage($"§7Teleported §a{source.Username} §7to §a{destPlayer.Username}§7.");
+            if (sources.Length == 0)
+                return CommandResult.Error("No entities matched the target selector.");
+
+            int teleported = 0;
+            for (int i = 0; i < sources.Length; i++) {
+                Entity source = sources[i];
+                if (source.Dimension != target.Dimension)
+                    continue;
+
+                if (ctx.QueueOnOwner(source, () => source.Teleport(target.Location, target.Dimension)))
+                    teleported++;
+            }
+
+            return CommandResult.OkMessage($"Teleported {teleported} entities to {target.Identifier}.");
         }
 
         return CommandResult.Error("Usage: /tp <destination> | /tp <x> <y> <z> | /tp <victim> <destination> | /tp <victim> <x> <y> <z>");

@@ -186,6 +186,32 @@ public class Entity {
     }
 
 
+    public virtual void Teleport(Vec3 position, Dimension? dimension = null) {
+        Dimension currentDimension = Dimension ??
+            throw new InvalidOperationException("Entity must have a dimension to teleport.");
+        if (dimension is not null && dimension != currentDimension) {
+            throw new InvalidOperationException("Entity teleport across dimensions is not supported.");
+        }
+        Vec3 previousPosition = Location;
+
+        Location = position;
+        Velocity = new Vec3();
+        OnTeleport(new EntityTeleportOptions(previousPosition, position));
+        OnMove(new EntityMoveOptions(
+            previousPosition,
+            position,
+            new MovementRotation {
+                Pitch = Rotation.X,
+                Yaw = Rotation.Y,
+                HeadYaw = Rotation.Z
+            },
+            new MovementRotation {
+                Pitch = Rotation.X,
+                Yaw = Rotation.Y,
+                HeadYaw = Rotation.Z
+            }));
+    }
+
     public virtual void Spawn(Dimension dimension, EntitySpawnOptions options) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Entity.Spawn") : default;
         ArgumentNullException.ThrowIfNull(dimension);

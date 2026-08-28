@@ -369,6 +369,8 @@ public static class InventoryTransaction {
             return;
         }
 
+        transaction.Slot = inventory.SelectedSlot;
+
         if (player.Dimension is not null && transaction.TargetBlockId != 0 && !IsEmptyPosition(transaction.Position)) {
             Basalt.Core.Blocks.BlockPermutation serverPermutation =
                 player.Dimension.GetPermutation(transaction.Position.X, transaction.Position.Y, transaction.Position.Z);
@@ -736,7 +738,6 @@ public static class InventoryTransaction {
         }
 
         heldItem.DecrementStack();
-
         if (heldItem.StackSize == 0) {
             inventory.Container.ClearSlot(inventory.SelectedSlot);
         }
