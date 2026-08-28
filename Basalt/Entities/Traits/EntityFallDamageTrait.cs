@@ -14,21 +14,27 @@ public sealed class EntityFallDamageTrait : EntityTrait {
     public new static readonly EntityIdentifier[] Types = [EntityIdentifier.Player];
     public new static readonly string[] Components = ["minecraft:health"];
 
-    private const float SafeDistance = 3f;
+    private const float SafeDistance = 3.4f;
     private const float HayBaleReduction = 0.8f;
     private const int GraceTicks = 10;
 
     private float _fallDistance;
+    private float _fallStartY;
+    private bool _falling;
     private int _teleportGraceTicks;
 
     public EntityFallDamageTrait(Entity entity) : base(entity) { }
 
     public override void OnSpawn(EntitySpawnOptions details) {
         _fallDistance = 0f;
+        _fallStartY = Entity.Position.Y;
+        _falling = false;
     }
 
     public override void OnTeleport(EntityTeleportOptions details) {
         _fallDistance = 0f;
+        _fallStartY = details.To.Y;
+        _falling = false;
         _teleportGraceTicks = GraceTicks;
     }
 
@@ -45,23 +51,27 @@ public sealed class EntityFallDamageTrait : EntityTrait {
         bool isGrounded = IsGrounded(details.To);
 
         if (wasGrounded) {
-            _fallDistance = 0f;
+            _fallStartY = details.From.Y;
+            _falling = false;
         }
 
         if (deltaY > 0.001f) {
-            _fallDistance = 0f;
             return;
         }
 
-        if (deltaY < -0.001f) {
-            if (!wasGrounded || !isGrounded) {
-                _fallDistance += -deltaY;
+        if (deltaY < -0.001f && !isGrounded) {
+            if (!_falling) {
+                _fallStartY = details.From.Y;
+                _falling = true;
             }
 
-            if (!isGrounded) return;
+            return;
         }
 
-        if (_fallDistance <= 0f) return;
+        if (!isGrounded || !_falling) return;
+
+        _fallDistance = MathF.Max(0f, _fallStartY - details.To.Y);
+        _falling = false;
 
         if (IsInLiquid(details.To)) {
             _fallDistance = 0f;
