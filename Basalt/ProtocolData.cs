@@ -27,7 +27,7 @@ internal static class ProtocolData {
     }
 
     private static byte[] LoadData() {
-        using Stream stream = DataAssembly.GetManifestResourceStream("Protocol.Data.protocol_data.bin")
+        using Stream stream = DataAssembly.GetManifestResourceStream("BedrockProtocol.Data.protocol_data.bin")
             ?? throw new FileNotFoundException("Embedded protocol data resource was not found.");
         using MemoryStream buffer = new();
         stream.CopyTo(buffer);

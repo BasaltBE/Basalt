@@ -48,9 +48,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProtocolDataSource Include="..\Protocol\Data\**\*.json" />
+    <ProtocolDataSource Include="..\BedrockProtocol\src\Data\**\*.json" />
     <EmbeddedResource Include="$(IntermediateOutputPath)protocol_data.bin"
-                      LogicalName="Protocol.Data.protocol_data.bin" />
+                      LogicalName="BedrockProtocol.Data.protocol_data.bin" />
   </ItemGroup>
 
   <Target Name="GenerateProtocolData"

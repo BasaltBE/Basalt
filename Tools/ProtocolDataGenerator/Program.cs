@@ -1,6 +1,7 @@
 using System.Text;
 
-if (args.Length != 2) {
+if (args.Length != 2)
+{
     throw new ArgumentException("Expected the data directory and output path.");
 }
 
@@ -20,7 +21,8 @@ using BinaryWriter writer = new(stream, Encoding.UTF8, leaveOpen: false);
 writer.Write(Encoding.ASCII.GetBytes("BASDATA1"));
 writer.Write(files.Length);
 
-for (int i = 0; i < files.Length; i++) {
+for (int i = 0; i < files.Length; i++)
+{
     string name = Path.GetRelativePath(dataDirectory, files[i]).Replace(Path.DirectorySeparatorChar, '/');
     byte[] nameBytes = Encoding.UTF8.GetBytes(name);
     byte[] data = File.ReadAllBytes(files[i]);
