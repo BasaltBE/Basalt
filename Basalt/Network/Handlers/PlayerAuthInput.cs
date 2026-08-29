@@ -243,6 +243,13 @@ public static class PlayerAuthInput {
             return;
         }
 
+        if (heldItem.StackSize <= 0) {
+            PendingItemUses.TryRemove(player.RuntimeId, out _);
+            LastEatSoundTick.TryRemove(player.RuntimeId, out _);
+            player.Flags.SetActorFlag(ActorFlag.UsingItem, false);
+            return;
+        }
+
         if (player.Dimension?.World?.Server is Server server) {
             PlayerUseItemSignal signal = new(player, heldItem);
             server.Emit(signal);
@@ -845,7 +852,7 @@ public static class PlayerAuthInput {
 
         player.Dimension.Broadcast(new UpdateBlockPacket {
             Position = blockPosition,
-            BlockRuntimeId = (uint)air.NetworkId,
+            BlockRuntimeId = (uint)(replacement?.NetworkId ?? air.NetworkId),
             Flags = (uint)UpdateBlockFlagsType.Network,
             Layer = (uint)UpdateBlockLayerType.Normal
         });

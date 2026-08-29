@@ -110,6 +110,10 @@ internal sealed class LavaCheckTask : ServerTask {
             return;
         }
 
+        if (_entity is Player) {
+            _dimension.PlaySound(SoundIdentifier.PlayerHurtOnFire, _position);
+        }
+
         _entity.GetTrait<EntityHealthTrait>()?.ApplyDamage(
             EntityLavaTrait.Damage,
             null,

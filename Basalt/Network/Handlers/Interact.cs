@@ -65,7 +65,7 @@ public static class Interact {
             }
 
             var heldItem = inventory.GetHeldItem();
-            if (heldItem is null || player.Dimension is null) {
+            if (heldItem is null || heldItem.StackSize <= 0 || player.Dimension is null) {
                 return;
             }
 

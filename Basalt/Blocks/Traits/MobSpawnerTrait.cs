@@ -70,6 +70,16 @@ public sealed class MobSpawnerTrait : BlockTrait {
             return;
         }
 
+        string? configuredEntity = details.Player
+            .GetTrait<EntityInventoryTrait>()
+            ?.GetHeldItem()
+            ?.Storage
+            ?.Get<StringTag>("EntityIdentifier")
+            ?.Value;
+        if (!string.IsNullOrWhiteSpace(configuredEntity)) {
+            EntityIdentifier = configuredEntity;
+        }
+
         WriteStorage(dimension, details.BlockPosition);
         BroadcastUpdate(dimension, details.BlockPosition, refreshBlock: true);
         ScheduleTick(dimension, details.BlockPosition);

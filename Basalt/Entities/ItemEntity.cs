@@ -166,7 +166,7 @@ public sealed class ItemEntity : Entity {
             if (moved == 0) {
                 if (currentTick >= _nextPickupLogTick) {
                     _nextPickupLogTick = currentTick + 20;
-                    Logger.Warn("Item pickup rejected player:{0} item:{1} count:{2} inventoryFullOrMismatch:true", player.Username, Item.Identifier, Item.StackSize);
+                    // Logger.Warn("Item pickup rejected player:{0} item:{1} count:{2} inventoryFullOrMismatch:true", player.Username, Item.Identifier, Item.StackSize);
                 }
                 continue;
             }

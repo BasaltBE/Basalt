@@ -323,6 +323,7 @@ public static class InventoryTransaction {
         ItemUseInventoryTransactionData transaction,
         InventoryActionData[] actions) {
         if (transaction.ActionType == ItemUseActionType.Use) {
+            transaction.Slot = inventory.SelectedSlot;
             ItemStack? airHeldItem = GetHeldItem(inventory, transaction.Slot);
             if (airHeldItem is null) {
                 return;
@@ -405,7 +406,7 @@ public static class InventoryTransaction {
 
         if (heldItem is null && transaction.Item.Id != 0 && transaction.Item.StackSize != 0 && transaction.Slot >= 0) {
             ItemType? transactionItemType = ItemType.GetByNetwork(transaction.Item.Id);
-            if (transactionItemType is not null) {
+            if (transactionItemType is not null && transactionItemType.Traits.Count == 0) {
                 heldItem = new ItemStack(
                     transactionItemType,
                     transaction.Item.StackSize,
@@ -882,6 +883,10 @@ public static class InventoryTransaction {
     }
 
     private static bool CanUseItem(Player.Player player, ItemStack item) {
+        if (item.StackSize <= 0) {
+            return false;
+        }
+
         if (player.Dimension?.World?.Server is not Server server) {
             return true;
         }
