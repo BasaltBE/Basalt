@@ -32,6 +32,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
     // Regen / starve
     private const ulong RegenTicks = 30UL;
     private const float RegenAt = 17f;
+    private const float RegenExhaustion = 6f;
     private const float StarveDamage = 1f;
     private const float DefaultSat = 0f;
 
@@ -142,8 +143,10 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
         if (tick % RegenTicks != 0UL)
             return;
 
-        if (CurrentValue > RegenAt)
-            health.CurrentValue = MathF.Min(health.MaximumValue, health.CurrentValue + 1f);
+        if (CurrentValue > RegenAt && health.CurrentValue < health.MaximumValue) {
+            health.CurrentValue += 1f;
+            Exhaustion += RegenExhaustion;
+        }
         else if (CurrentValue <= 0f)
             health.ApplyDamage(StarveDamage, player, ActorDamageCause.Starve);
     }

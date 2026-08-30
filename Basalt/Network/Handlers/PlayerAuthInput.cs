@@ -509,8 +509,7 @@ public static class PlayerAuthInput {
             : packet.Position;
 
         if (!missingPosition) {
-            float height = player.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
-            nextPosition.Y -= height;
+            nextPosition.Y -= 1.62f;
         }
 
         player.Position = nextPosition;

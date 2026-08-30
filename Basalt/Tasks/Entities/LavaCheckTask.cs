@@ -78,6 +78,13 @@ internal sealed class LavaCheckTask : ServerTask {
             return;
         }
 
+        Vec3 currentPosition = _entity.GetFeetPosition();
+        if (currentPosition.X != _position.X ||
+            currentPosition.Y != _position.Y ||
+            currentPosition.Z != _position.Z) {
+            return;
+        }
+
         _entity.IsInWater = _inWater;
         if (_inWater) {
             _entity.SetOnFire(0);

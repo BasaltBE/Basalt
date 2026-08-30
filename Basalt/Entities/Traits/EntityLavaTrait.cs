@@ -56,7 +56,7 @@ public sealed class EntityLavaTrait : EntityTrait {
         const float epsilon = 0.001f;
         int minX = (int)MathF.Floor(location.X - width * 0.5f + epsilon);
         int maxX = (int)MathF.Floor(location.X + width * 0.5f - epsilon);
-        int minY = (int)MathF.Floor(location.Y - epsilon);
+        int minY = (int)MathF.Floor(location.Y + epsilon);
         int maxY = (int)MathF.Floor(location.Y + height - epsilon);
         int minZ = (int)MathF.Floor(location.Z - width * 0.5f + epsilon);
         int maxZ = (int)MathF.Floor(location.Z + width * 0.5f - epsilon);

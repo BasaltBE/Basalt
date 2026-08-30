@@ -613,6 +613,12 @@ public class Entity {
             },
         };
 
+        if (this is Player player) {
+            player.Send(packet);
+            Dimension.Broadcast(packet, new BroadcastOptions { Except = [player] });
+            return;
+        }
+
         Dimension.Broadcast(packet);
     }
 
