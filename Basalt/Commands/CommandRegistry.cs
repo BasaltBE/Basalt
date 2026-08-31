@@ -344,7 +344,7 @@ public sealed class CommandRegistry {
     }
 
     static CommandParameterType GetParameterType(System.Type type) {
-        if (typeof(IntEnum).IsAssignableFrom(type))
+        if (typeof(IntEnum).IsAssignableFrom(type) || type == typeof(XpAmountEnum))
             return CommandParameterType.Int;
 
         if (type == typeof(TargetEnum))

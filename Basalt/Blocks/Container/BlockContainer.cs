@@ -22,7 +22,9 @@ public sealed class BlockContainer : Container {
 
     public override void Update() {
         OnContainerUpdated?.Invoke(this);
-        if (Type == ContainerType.WORKBENCH) {
+        if (Type is ContainerType.WORKBENCH or ContainerType.ANVIL) {
+            if (Type == ContainerType.ANVIL) return;
+
             foreach ((Basalt.Core.Player.Player player, ContainerId _) in occupants) {
                 if (!player.Spawned) {
                     continue;
@@ -44,7 +46,9 @@ public sealed class BlockContainer : Container {
 
     public override void UpdateSlot(int slot) {
         OnContainerUpdated?.Invoke(this);
-        if (Type == ContainerType.WORKBENCH) {
+        if (Type is ContainerType.WORKBENCH or ContainerType.ANVIL) {
+            if (Type == ContainerType.ANVIL) return;
+
             if (slot < 0 || slot >= GetSize()) {
                 return;
             }
