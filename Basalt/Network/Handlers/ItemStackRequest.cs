@@ -46,15 +46,17 @@ public static class ItemStackRequest {
         byte result = Success;
 
         foreach (ItemStackRequestAction action in request.Actions) {
-            if (!HandleAction(player, action, changes)) {
+            if (!HandleAction(player, action, request.StringsToFilter, changes)) {
                 Logger.Warn(
-                    "ItemStackRequest rejected player:{0} action:{1} source:{2}:{3} destination:{4}:{5}",
+                    "ItemStackRequest rejected player:{0} action:{1} source:{2}:{3} destination:{4}:{5} sourceItem:{6} destinationItem:{7}",
                     player.Username,
                     action.Type,
                     action.Source.Container.ContainerName,
                     action.Source.Slot,
                     action.Destination.Container.ContainerName,
-                    action.Destination.Slot);
+                    action.Destination.Slot,
+                    DescribeItem(player, action.Source),
+                    DescribeItem(player, action.Destination));
                 result = Error;
                 break;
             }
@@ -67,7 +69,7 @@ public static class ItemStackRequest {
         };
     }
 
-    private static bool HandleAction(Player.Player player, ItemStackRequestAction action,
+    private static bool HandleAction(Player.Player player, ItemStackRequestAction action, string[] stringsToFilter,
         Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes) => action.Type switch {
         ItemStackRequestActionType.Take or ItemStackRequestActionType.Place or
         ItemStackRequestActionType.PlaceInItemContainer or ItemStackRequestActionType.TakeFromItemContainer =>
@@ -76,12 +78,36 @@ public static class ItemStackRequest {
         ItemStackRequestActionType.Drop => Drop(player, action, changes),
         ItemStackRequestActionType.Destroy or ItemStackRequestActionType.Consume => Remove(player, action, changes),
         ItemStackRequestActionType.CraftCreative => CreateCreativeItem(player, action),
-        ItemStackRequestActionType.Create or ItemStackRequestActionType.CraftResults or
-        ItemStackRequestActionType.CraftNonImplemented => true,
+        ItemStackRequestActionType.Create or ItemStackRequestActionType.CraftResults => true,
         ItemStackRequestActionType.CraftRecipe or ItemStackRequestActionType.CraftRecipeAuto =>
             PrepareRecipeOutput(player, action),
+        ItemStackRequestActionType.CraftRepairAndDisenchant or
+        ItemStackRequestActionType.CraftRecipeOptional or
+        ItemStackRequestActionType.CraftNonImplemented => ApplyAnvilAction(player, action, stringsToFilter),
         _ => false
     };
+
+    private static bool ApplyAnvilAction(Player.Player player, ItemStackRequestAction action, string[] stringsToFilter) {
+        if (player.Dimension is not { } dimension) return false;
+
+        string name = action.FilteredStringIndex >= 0 && action.FilteredStringIndex < stringsToFilter.Length
+            ? stringsToFilter[action.FilteredStringIndex]
+            : string.Empty;
+
+        foreach (Container candidate in player.openedContainers.Values) {
+            if (candidate is not Basalt.Core.Blocks.Container.BlockContainer blockContainer ||
+                blockContainer.Type != ContainerType.ANVIL ||
+                dimension.GetBlock(blockContainer.Position.X, blockContainer.Position.Y, blockContainer.Position.Z)
+                    ?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is not { } anvil) {
+                continue;
+            }
+
+            anvil.SetRename(name);
+            return true;
+        }
+
+        return false;
+    }
 
     private static bool CreateCreativeItem(Player.Player player, ItemStackRequestAction action) {
         if (player.Gamemode != GameType.Creative ||
@@ -116,6 +142,16 @@ public static class ItemStackRequest {
             }
 
             destination.SetItem(destinationSlot, moved);
+
+            if (source is Basalt.Core.Blocks.Container.BlockContainer anvilContainer &&
+                anvilContainer.Type == ContainerType.ANVIL &&
+                sourceSlot == 2 &&
+                player.Dimension?.GetBlock(
+                    anvilContainer.Position.X,
+                    anvilContainer.Position.Y,
+                    anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is { } anvil) {
+                anvil.CompleteResult();
+            }
         }
         else {
             if (!sourceItem.CanStackWith(destinationItem)) {
@@ -189,6 +225,26 @@ public static class ItemStackRequest {
 
     private static bool ResolveSlot(Player.Player player, SlotInfoData slotInfo,
         out Container container, out int slot) {
+        if (slotInfo.Container.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+            foreach (Container candidate in player.openedContainers.Values) {
+                if (candidate is not Basalt.Core.Blocks.Container.BlockContainer anvilContainer ||
+                    anvilContainer.Type != ContainerType.ANVIL ||
+                    anvilContainer.Dimension?.GetBlock(
+                        anvilContainer.Position.X,
+                        anvilContainer.Position.Y,
+                        anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is not { } anvil) {
+                    continue;
+                }
+
+                anvil.RefreshResult();
+                if (candidate.GetItem(2) is not null) {
+                    container = candidate;
+                    slot = 2;
+                    return true;
+                }
+            }
+        }
+
         container = player.GetContainer(slotInfo.Container)!;
         slot = slotInfo.Slot;
         if (container is null) {
@@ -205,10 +261,46 @@ public static class ItemStackRequest {
         }
 
         if (slotInfo.Container.ContainerName == ContainerEnumName.CreatedOutputContainer) {
-            slot = 0;
+            if (container.Type == ContainerType.ANVIL) {
+                slot = 2;
+                if (container.GetItem(slot) is null &&
+                    container is Basalt.Core.Blocks.Container.BlockContainer anvilContainer &&
+                    anvilContainer.Dimension?.GetBlock(
+                        anvilContainer.Position.X,
+                        anvilContainer.Position.Y,
+                        anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is { } anvil) {
+                    anvil.RefreshResult();
+                }
+
+                if (container.GetItem(slot) is null &&
+                    player.GetTrait<Basalt.Core.Player.Traits.PlayerCursorTrait>() is { } cursor &&
+                    cursor.Container.GetItem(0) is not null) {
+                    container = cursor.Container;
+                    slot = 0;
+                }
+            }
+            else {
+                slot = 0;
+            }
+        }
+        else if (slotInfo.Container.ContainerName == ContainerEnumName.AnvilMaterialContainer) {
+            slot = 1;
+        }
+        else if (slotInfo.Container.ContainerName == ContainerEnumName.AnvilResultPreviewContainer) {
+            slot = 2;
         }
 
         return slot >= 0 && slot < container.GetSize();
+    }
+
+    private static string DescribeItem(Player.Player player, SlotInfoData slotInfo) {
+        if (!ResolveSlot(player, slotInfo, out Container container, out int slot)) {
+            return "invalid";
+        }
+
+        return container.GetItem(slot) is { } item
+            ? $"{item.Identifier}x{item.StackSize}"
+            : "empty";
     }
 
     private static bool PrepareRecipeOutput(Player.Player player, ItemStackRequestAction action) {

@@ -5,6 +5,7 @@ using Basalt.Core.Containers;
 using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Entities.Traits;
+using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Events;
 using Basalt.Core.Player.Traits;
@@ -43,6 +44,9 @@ public class Player : Entity {
     public GameType Gamemode { get; private set; } = GameType.Survival;
     public bool IsOperator { get; internal set; }
     public bool Spawned { get; internal set; }
+    public int ExperienceLevel { get; private set; }
+    public int Experience { get; private set; }
+    public int TotalExperience { get; private set; }
     public bool Grounded;
     public double LastInputQueueWaitMilliseconds { get; internal set; }
     public double LastInputProcessingMilliseconds { get; internal set; }
@@ -115,6 +119,82 @@ public class Player : Entity {
         );
     }
 
+    public void AddExperience(int amount, bool sound = false) {
+        if (amount < 0) {
+            RemoveExperience(-amount);
+            return;
+        }
+
+        TotalExperience = Math.Min(int.MaxValue - amount, TotalExperience) + amount;
+        int remaining = Experience + amount;
+        while (remaining >= ExperienceToNextLevel(ExperienceLevel) && ExperienceLevel < 24791) {
+            remaining -= ExperienceToNextLevel(ExperienceLevel);
+            ExperienceLevel++;
+        }
+
+        Experience = Math.Min(remaining, ExperienceToNextLevel(ExperienceLevel) - 1);
+        SyncExperience(sound);
+    }
+
+    public void RemoveExperience(int amount, bool sound = false) {
+        if (amount <= 0) return;
+
+        int total = ExperienceAtLevel(ExperienceLevel) + Experience;
+        total = Math.Max(0, total - amount);
+        ExperienceLevel = 0;
+        Experience = 0;
+
+        while (ExperienceLevel < 24791) {
+            int required = ExperienceToNextLevel(ExperienceLevel);
+            if (total < required) {
+                Experience = total;
+                break;
+            }
+
+            total -= required;
+            ExperienceLevel++;
+        }
+
+        SyncExperience(sound);
+    }
+
+    public void AddExperienceLevels(int amount, bool sound = false) {
+        ExperienceLevel = Math.Clamp(ExperienceLevel + amount, 0, 24791);
+        Experience = Math.Min(Experience, ExperienceToNextLevel(ExperienceLevel) - 1);
+        SyncExperience(sound);
+    }
+
+    public static int ExperienceToNextLevel(int level) {
+        return level switch {
+            < 16 => 7 + level * 2,
+            < 31 => 37 + (level - 15) * 5,
+            _ => 112 + (level - 30) * 9
+        };
+    }
+
+    private static int ExperienceAtLevel(int level) {
+        int total = 0;
+        for (int current = 0; current < level; current++) {
+            total += ExperienceToNextLevel(current);
+        }
+
+        return total;
+    }
+
+    private void SyncExperience(bool sound) {
+        AttributeData? level = Attributes.GetAttribute(AttributeName.PlayerLevel);
+        AttributeData? progress = Attributes.GetAttribute(AttributeName.PlayerExperience);
+        if (level is null || progress is null) return;
+
+        level.Current = ExperienceLevel;
+        progress.Current = (float)Experience / ExperienceToNextLevel(ExperienceLevel);
+        AttributesDirty = true;
+
+        if (sound && ExperienceLevel > 0 && ExperienceLevel % 5 == 0) {
+            PlaySound(SoundIdentifier.LevelUp, Position);
+        }
+    }
+
     public void SetGamemode(GameType gamemode) {
         Gamemode = gamemode;
 
@@ -174,6 +254,9 @@ public class Player : Entity {
         root.Set("xuid", new StringTag { Value = Xuid });
         root.Set("uuid", new StringTag { Value = Uuid.ToString() });
         root.Set("gamemode", new IntTag { Value = (int)Gamemode });
+        root.Set("xp_level", new IntTag { Value = ExperienceLevel });
+        root.Set("xp_progress", new IntTag { Value = Experience });
+        root.Set("xp_total", new IntTag { Value = TotalExperience });
 
         if (Dimension?.World is not null) {
             root.Set("world", new StringTag { Value = Dimension.World.Name });
@@ -189,6 +272,19 @@ public class Player : Entity {
         if (root.Get<IntTag>("gamemode") is { } gamemodeTag) {
             RestoreGamemode((GameType)gamemodeTag.Value);
         }
+
+        ExperienceLevel = Math.Clamp(
+            root.Get<IntTag>("xp_level")?.Value ?? root.Get<IntTag>("XpLevel")?.Value ?? 0,
+            0,
+            24791);
+        Experience = Math.Max(
+            0,
+            root.Get<IntTag>("xp_progress")?.Value ?? root.Get<IntTag>("XpP")?.Value ?? 0);
+        TotalExperience = Math.Max(
+            0,
+            root.Get<IntTag>("xp_total")?.Value ?? root.Get<IntTag>("XpTotal")?.Value ?? 0);
+        Experience = Math.Min(Experience, ExperienceToNextLevel(ExperienceLevel) - 1);
+        SyncExperience(false);
 
         SavedWorldName = root.Get<StringTag>("world")?.Value;
         SavedDimensionIdentifier = root.Get<StringTag>("dimension")?.Value;
@@ -470,8 +566,17 @@ public class Player : Entity {
             return inventory.Container;
         }
 
-        if (name.ContainerName == ContainerEnumName.CursorContainer
-            || name.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+        if (name.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+            foreach ((ContainerId _, Container candidate) in openedContainers) {
+                if (candidate.Type == ContainerType.ANVIL) {
+                    return candidate;
+                }
+            }
+
+            return GetTrait<PlayerCursorTrait>()?.Container;
+        }
+
+        if (name.ContainerName == ContainerEnumName.CursorContainer) {
             return GetTrait<PlayerCursorTrait>()?.Container;
         }
 
@@ -487,6 +592,9 @@ public class Player : Entity {
         }
 
         if (name.ContainerName is ContainerEnumName.BarrelContainer
+            or ContainerEnumName.AnvilInputContainer
+            or ContainerEnumName.AnvilMaterialContainer
+            or ContainerEnumName.AnvilResultPreviewContainer
             or ContainerEnumName.FurnaceFuelContainer
             or ContainerEnumName.FurnaceIngredientContainer
             or ContainerEnumName.FurnaceResultContainer
