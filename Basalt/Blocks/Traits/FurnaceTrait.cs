@@ -33,6 +33,7 @@ public sealed class FurnaceTrait : BlockTrait {
 
     private const int FurnaceTickCountProperty = 0;
     private const int FurnaceLitTimeProperty = 1;
+    private const int FurnaceLitDurationProperty = 2;
 
     private BlockContainer? _container;
     private int _burnTime;
@@ -299,14 +300,16 @@ public sealed class FurnaceTrait : BlockTrait {
             Value = _cookTime
         });
 
-        int litTime = _maxBurnTime > 0
-          ? (int)Math.Ceiling((double)_burnTime / _maxBurnTime * 200)
-          : 0;
-
         player.Send(new ContainerSetDataPacket {
             ContainerId = containerId,
             Property = FurnaceLitTimeProperty,
-            Value = litTime
+            Value = _burnTime
+        });
+
+        player.Send(new ContainerSetDataPacket {
+            ContainerId = containerId,
+            Property = FurnaceLitDurationProperty,
+            Value = _maxBurnTime
         });
     }
 

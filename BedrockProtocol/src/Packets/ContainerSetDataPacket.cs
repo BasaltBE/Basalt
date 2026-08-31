@@ -12,14 +12,14 @@ public sealed class ContainerSetDataPacket : DataPacket {
     public int Value;
 
     public override void Serialize(ref BinaryWriter writer) {
-        writer.WriteUInt8((byte)ContainerId);
-        writer.WriteVarInt(Property);
-        writer.WriteVarInt(Value);
+        writer.WriteInt8((sbyte)ContainerId);
+        writer.WriteZigZag(Property);
+        writer.WriteZigZag(Value);
     }
 
     public override void Deserialize(ref BinaryReader reader) {
-        ContainerId = (ContainerId)reader.ReadUInt8();
-        Property = reader.ReadVarInt();
-        Value = reader.ReadVarInt();
+        ContainerId = (ContainerId)reader.ReadInt8();
+        Property = reader.ReadZigZag();
+        Value = reader.ReadZigZag();
     }
 }

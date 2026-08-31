@@ -487,6 +487,11 @@ public class Player : Entity {
         }
 
         if (name.ContainerName is ContainerEnumName.BarrelContainer
+            or ContainerEnumName.FurnaceFuelContainer
+            or ContainerEnumName.FurnaceIngredientContainer
+            or ContainerEnumName.FurnaceResultContainer
+            or ContainerEnumName.BlastFurnaceIngredientContainer
+            or ContainerEnumName.SmokerIngredientContainer
             or ContainerEnumName.LevelEntityContainer
             or ContainerEnumName.DynamicContainer) {
 

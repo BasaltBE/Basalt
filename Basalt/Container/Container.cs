@@ -267,12 +267,6 @@ public class Container {
             InventorySlotPacket packet = new() {
                 ContainerId = containerId,
                 Slot = (uint)GetNetworkSlot(slot),
-                // Container = new Optional<FullContainerName> {
-                //     HasValue = true,
-                //     Value = GetFullContainerName(containerId)
-                // },
-                // NewItem = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
-                Container = GetFullContainerName(containerId),
                 Item = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor() {
                     Id = 0,
                     AuxValue = 0,

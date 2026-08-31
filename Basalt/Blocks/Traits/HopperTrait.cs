@@ -25,6 +25,7 @@ public sealed class HopperTrait : BlockTrait {
     private BlockContainer? _container;
     private int _transferCooldown;
     private bool _ticking;
+    private bool _pendingViewerUpdate;
 
     public HopperTrait(Block block) : base(block) {
     }
@@ -185,6 +186,10 @@ public sealed class HopperTrait : BlockTrait {
 
         if (_transferCooldown > 0) {
             _transferCooldown--;
+            if (_pendingViewerUpdate) {
+                _container.Update();
+                _pendingViewerUpdate = false;
+            }
             return true;
         }
 
@@ -194,6 +199,8 @@ public sealed class HopperTrait : BlockTrait {
         didWork |= TryPushToTarget();
 
         if (didWork) {
+            _container.Update();
+            _pendingViewerUpdate = true;
             _transferCooldown = TransferCooldown;
         }
 
@@ -417,6 +424,7 @@ public sealed class HopperTrait : BlockTrait {
             if (takenItem is null) continue;
 
             furnaceContainer.SetItem(targetSlot, takenItem);
+            furnaceContainer.Update();
             return true;
         }
 
