@@ -1,7 +1,8 @@
 <Solution>
   <Folder Name="/plugins/" />
-  <Project Path="Basalt/Basalt.csproj" />
-  <Project Path="BedrockProtocol/src/Basalt.BedrockProtocol.csproj" />
-  <Project Path="DedicatedServer/DedicatedServer.csproj" Id="90561e7b-e40d-432e-8776-74cade28e0a2" />
+  <Project Path="src/Basalt/Basalt.csproj" />
+  <Project Path="src/BedrockProtocol/src/Basalt.BedrockProtocol.csproj" />
+  <Project Path="src/DedicatedServer/DedicatedServer.csproj" Id="90561e7b-e40d-432e-8776-74cade28e0a2" />
+  <Project Path="scripts/ProtocolDataGenerator.csproj" />
   <Project Path="tests/Basalt.Tests/Basalt.Tests.csproj" />
 </Solution>

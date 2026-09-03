@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 env:
-  PROJECT: DedicatedServer/DedicatedServer.csproj
+  PROJECT: src/DedicatedServer/DedicatedServer.csproj
   DOTNET_VERSION: "10.0.x"
 
 jobs:
@@ -27,9 +27,9 @@ jobs:
       - name: Extract version from Basalt.csproj
         id: extract
         run: |
-          version=$(grep -oPm1 '(?<=<Version>)[^<]+' Basalt/Basalt.csproj)
-          minecraft_version=$(grep -oPm1 '(?<=MinecraftVersion = ")[^"]+' Basalt/Constants.cs)
-          protocol_version=$(grep -oPm1 '(?<=ProtocolVersion = )[^;]+' Basalt/Constants.cs)
+          version=$(grep -oPm1 '(?<=<Version>)[^<]+' src/Basalt/Basalt.csproj)
+          minecraft_version=$(grep -oPm1 '(?<=MinecraftVersion = ")[^"]+' src/Basalt/Constants.cs)
+          protocol_version=$(grep -oPm1 '(?<=ProtocolVersion = )[^;]+' src/Basalt/Constants.cs)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "minecraft_version=$minecraft_version" >> "$GITHUB_OUTPUT"
           echo "protocol_version=$protocol_version" >> "$GITHUB_OUTPUT"

@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 env:
-  PROJECT: DedicatedServer/DedicatedServer.csproj
+  PROJECT: src/DedicatedServer/DedicatedServer.csproj
   DOTNET_VERSION: "10.0.x"
 
 jobs:
@@ -86,9 +86,9 @@ jobs:
 
       - name: Generate release metadata
         run: |
-          version=$(grep -oPm1 '(?<=<Version>)[^<]+' Basalt/Basalt.csproj)
-          minecraft_version=$(grep -oPm1 '(?<=MinecraftVersion = ")[^"]+' Basalt/Constants.cs)
-          protocol_version=$(grep -oPm1 '(?<=ProtocolVersion = )[^;]+' Basalt/Constants.cs)
+          version=$(grep -oPm1 '(?<=<Version>)[^<]+' src/Basalt/Basalt.csproj)
+          minecraft_version=$(grep -oPm1 '(?<=MinecraftVersion = ")[^"]+' src/Basalt/Constants.cs)
+          protocol_version=$(grep -oPm1 '(?<=ProtocolVersion = )[^;]+' src/Basalt/Constants.cs)
 
           cat > release-notes.md <<EOF
           ## Basalt development build
