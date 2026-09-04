@@ -1,0 +1,606 @@
+[
+  {
+    "identifier": "minecraft:birch_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "birch"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "birch"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:birch_tree_with_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:birch_tree_feature",
+      "minecraft:beehive_search_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:birch_tree_with_optional_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:birch_tree_feature",
+      "minecraft:optional_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:fallen_birch_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "birch"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fallen_jungle_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fallen_oak_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fallen_spruce_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fallen_super_birch_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "birch"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fancy_oak_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:fancy_oak_tree_with_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:fancy_oak_tree_feature",
+      "minecraft:beehive_search_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:fancy_oak_tree_with_optional_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:fancy_oak_tree_feature",
+      "minecraft:optional_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:jungle_bush_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "jungle"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:jungle_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "jungle"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:jungle_tree_with_cocoa_feature",
+    "type": "sequence",
+    "features": [
+      "minecraft:jungle_tree_feature",
+      "minecraft:optional_jungle_tree_cocoa_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:mega_jungle_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "jungle"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:mega_pine_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:mega_spruce_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:noop_undecorated_jungle_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:select_undecorated_jungle_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:oak_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:oak_tree_with_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:oak_tree_feature",
+      "minecraft:beehive_search_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:oak_tree_with_optional_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:oak_tree_feature",
+      "minecraft:optional_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:oak_tree_with_vines_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:optional_fallen_birch_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:fallen_birch_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_fallen_jungle_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:fallen_jungle_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_fallen_oak_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:fallen_oak_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_fallen_spruce_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:fallen_spruce_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_fallen_super_birch_tree_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:fallen_super_birch_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_oak_tree_with_vines_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:oak_tree_with_vines_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_roofed_tree_with_vines_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:roofed_tree_with_vines_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_spruce_tree_with_vines_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:spruce_tree_with_vines_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:optional_undecorated_jungle_tree_with_vines_feature",
+    "type": "scatter",
+    "features": [
+      "minecraft:undecorated_jungle_tree_with_vines_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:pine_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:random_oak_tree_from_sapling_feature",
+    "type": "weighted_random",
+    "features": [
+      "minecraft:select_standing_oak_tree_feature",
+      "minecraft:fancy_oak_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:random_oak_tree_with_beehive_from_sapling_feature",
+    "type": "weighted_random",
+    "features": [
+      "minecraft:oak_tree_with_beehive_feature",
+      "minecraft:fancy_oak_tree_with_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:random_roofed_forest_feature",
+    "type": "weighted_random",
+    "features": [
+      "minecraft:huge_mushroom_feature",
+      "minecraft:select_roofed_tree_feature",
+      "minecraft:select_birch_tree_feature",
+      "minecraft:fancy_oak_tree_feature",
+      "minecraft:select_oak_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:random_roofed_forest_feature_with_decoration_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:random_roofed_forest_feature",
+      "minecraft:scatter_tall_grass_around_forest_foliage_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:roofed_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log2",
+      "states": {
+        "new_log_type": "dark_oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves2",
+      "states": {
+        "new_leaf_type": "dark_oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:roofed_tree_with_vines_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log2",
+      "states": {
+        "new_log_type": "dark_oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves2",
+      "states": {
+        "new_leaf_type": "dark_oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:savanna_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log2",
+      "states": {
+        "new_log_type": "acacia"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves2",
+      "states": {
+        "new_leaf_type": "acacia"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:select_birch_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_fallen_birch_tree_feature",
+      "minecraft:birch_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_jungle_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_fallen_jungle_tree_feature",
+      "minecraft:jungle_tree_with_cocoa_feature",
+      "minecraft:noop_undecorated_jungle_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_oak_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_fallen_oak_tree_feature",
+      "minecraft:select_standing_oak_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_roofed_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_roofed_tree_with_vines_feature",
+      "minecraft:roofed_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_spruce_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_fallen_spruce_tree_feature",
+      "minecraft:select_standing_spruce_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_standing_oak_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_oak_tree_with_vines_feature",
+      "minecraft:oak_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_standing_spruce_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_spruce_tree_with_vines_feature",
+      "minecraft:spruce_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_super_birch_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_fallen_super_birch_tree_feature",
+      "minecraft:super_birch_tree_with_optional_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:select_undecorated_jungle_tree_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:optional_undecorated_jungle_tree_with_vines_feature",
+      "minecraft:undecorated_jungle_tree_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:spruce_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:spruce_tree_with_vines_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "spruce"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "spruce"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:super_birch_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "birch"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "birch"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:super_birch_tree_with_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:super_birch_tree_feature",
+      "minecraft:beehive_search_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:super_birch_tree_with_optional_beehive_feature",
+    "type": "aggregate",
+    "features": [
+      "minecraft:super_birch_tree_feature",
+      "minecraft:optional_beehive_feature"
+    ]
+  },
+  {
+    "identifier": "minecraft:swamp_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "oak"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "oak"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:undecorated_jungle_tree_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "jungle"
+      }
+    }
+  },
+  {
+    "identifier": "minecraft:undecorated_jungle_tree_with_vines_feature",
+    "type": "tree",
+    "trunkBlock": {
+      "name": "minecraft:log",
+      "states": {
+        "old_log_type": "jungle"
+      }
+    },
+    "leafBlock": {
+      "name": "minecraft:leaves",
+      "states": {
+        "old_leaf_type": "jungle"
+      }
+    }
+  }
+]

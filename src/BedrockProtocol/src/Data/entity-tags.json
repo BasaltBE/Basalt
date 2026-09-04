@@ -1,0 +1,546 @@
+[
+  {
+    "identifier": "minecraft:balloon",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:goat",
+    "tags": []
+  },
+  {
+    "identifier": "editor:ruler_idle",
+    "tags": []
+  },
+  {
+    "identifier": "editor:location_pointer_selected",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:bee",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ice_bomb",
+    "tags": []
+  },
+  {
+    "identifier": "editor:location_pointer_idle",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:cushion",
+    "tags": []
+  },
+  {
+    "identifier": "editor:ruler_pointer_selected",
+    "tags": []
+  },
+  {
+    "identifier": "editor:map_marker",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:minecart",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:fox",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:turtle",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie_nautilus",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:trader_llama",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:thrown_trident",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wither_skeleton",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:sulfur_cube",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:shulker_bullet",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:egg",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:arrow",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:llama",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:horse",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:command_block_minecart",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie_horse",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:tnt_minecart",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:strider",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:agent",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:stray",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:small_fireball",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:skeleton_horse",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:husk",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:hoglin",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:skeleton",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zoglin",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:player",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:pig",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:parched",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:nautilus",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:mule",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:hopper_minecart",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:happy_ghast",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:donkey",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:bogged",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ender_dragon",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:glow_squid",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:chest_minecart",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:chest_boat",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:panda",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:camel_husk",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie_villager_v2",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:camel",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:copper_golem",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:boat",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie_pigman",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:villager_v2",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:squid",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:sheep",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:piglin",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:iron_golem",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:drowned",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:tadpole",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:sniffer",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:rabbit",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wolf",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:polar_bear",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ocelot",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:blaze",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:mooshroom",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:enderman",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:dolphin",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:cow",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:chicken",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:cat",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:axolotl",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:armadillo",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:spider",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:snow_golem",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:frog",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:cave_spider",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:allay",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wither",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:guardian",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:phantom",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ravager",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:parrot",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ghast",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:tropicalfish",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:shulker",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:salmon",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:creeper",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:pufferfish",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:cod",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:elder_guardian",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:creaking",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:vindicator",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:vex",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:silverfish",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ender_crystal",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:pillager",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:slime",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:evocation_illager",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wither_skull_dangerous",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wither_skull",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wind_charge_projectile",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:fishing_hook",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:fireball",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:dragon_fireball",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:breeze_wind_charge_projectile",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:breeze",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:wandering_trader",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:villager",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ominous_item_spawner",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:zombie_villager",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:witch",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:warden",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:piglin_brute",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:npc",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:magma_cube",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:llama_spit",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:endermite",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:bat",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:xp_orb",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:xp_bottle",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:tnt",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:splash_potion",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:lingering_potion",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:snowball",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:ender_pearl",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:armor_stand",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:lightning_bolt",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:tripod_camera",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:fireworks_rocket",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:eye_of_ender_signal",
+    "tags": []
+  },
+  {
+    "identifier": "minecraft:area_effect_cloud",
+    "tags": []
+  }
+]

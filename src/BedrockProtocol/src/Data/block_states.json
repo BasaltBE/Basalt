@@ -1,0 +1,1418 @@
+[
+  {
+    "identifier": "active",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "age",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "age_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "attached_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "attachment",
+    "type": "string",
+    "values": [
+      "hanging",
+      "multiple",
+      "side",
+      "standing"
+    ]
+  },
+  {
+    "identifier": "bamboo_leaf_size",
+    "type": "string",
+    "values": [
+      "large_leaves",
+      "no_leaves",
+      "small_leaves"
+    ]
+  },
+  {
+    "identifier": "bamboo_stalk_thickness",
+    "type": "string",
+    "values": [
+      "thick",
+      "thin"
+    ]
+  },
+  {
+    "identifier": "big_dripleaf_head",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "big_dripleaf_tilt",
+    "type": "string",
+    "values": [
+      "full_tilt",
+      "none",
+      "partial_tilt",
+      "unstable"
+    ]
+  },
+  {
+    "identifier": "bite_counter",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "identifier": "bloom",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "books_stored",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      3,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      4,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      5,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      6,
+      60,
+      61,
+      62,
+      63,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "brewing_stand_slot_a_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "brewing_stand_slot_b_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "brewing_stand_slot_c_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "brushed_progress",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "button_pressed_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "can_summon",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "candles",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "cauldron_liquid",
+    "type": "string",
+    "values": [
+      "lava",
+      "powder_snow",
+      "water"
+    ]
+  },
+  {
+    "identifier": "cluster_count",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "composter_fill_level",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  {
+    "identifier": "conditional_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "coral_direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "coral_fan_direction",
+    "type": "int",
+    "values": [
+      0,
+      1
+    ]
+  },
+  {
+    "identifier": "covered_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "cracked_state",
+    "type": "string",
+    "values": [
+      "cracked",
+      "max_cracked",
+      "no_cracks"
+    ]
+  },
+  {
+    "identifier": "crafting",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "creaking_heart_state",
+    "type": "string",
+    "values": [
+      "awake",
+      "dormant",
+      "uprooted"
+    ]
+  },
+  {
+    "identifier": "dead_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "deprecated",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "disarmed_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "door_hinge_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "drag_down",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "dripstone_thickness",
+    "type": "string",
+    "values": [
+      "base",
+      "frustum",
+      "merge",
+      "middle",
+      "tip"
+    ]
+  },
+  {
+    "identifier": "end_portal_eye_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "explode_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "extinguished",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "facing_direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "identifier": "fill_level",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "identifier": "ground_sign_direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "growing_plant_age",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "growth",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "identifier": "hanging",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "head_piece_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "height",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "identifier": "honey_level",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "identifier": "huge_mushroom_bits",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "in_wall_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "infiniburn_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "item_frame_map_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "item_frame_photo_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "kelp_age",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "lever_direction",
+    "type": "string",
+    "values": [
+      "down_east_west",
+      "down_north_south",
+      "east",
+      "north",
+      "south",
+      "up_east_west",
+      "up_north_south",
+      "west"
+    ]
+  },
+  {
+    "identifier": "liquid_depth",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "lit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "minecraft:block_face",
+    "type": "string",
+    "values": [
+      "down",
+      "east",
+      "north",
+      "south",
+      "up",
+      "west"
+    ]
+  },
+  {
+    "identifier": "minecraft:cardinal_direction",
+    "type": "string",
+    "values": [
+      "east",
+      "north",
+      "south",
+      "west"
+    ]
+  },
+  {
+    "identifier": "minecraft:connection_east",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "minecraft:connection_north",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "minecraft:connection_south",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "minecraft:connection_west",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "minecraft:corner",
+    "type": "string",
+    "values": [
+      "inner_left",
+      "inner_right",
+      "none",
+      "outer_left",
+      "outer_right"
+    ]
+  },
+  {
+    "identifier": "minecraft:facing_direction",
+    "type": "string",
+    "values": [
+      "down",
+      "east",
+      "north",
+      "south",
+      "up",
+      "west"
+    ]
+  },
+  {
+    "identifier": "minecraft:vertical_half",
+    "type": "string",
+    "values": [
+      "bottom",
+      "top"
+    ]
+  },
+  {
+    "identifier": "moisturized_amount",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "identifier": "multi_face_direction_bits",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      3,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      4,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      5,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      6,
+      60,
+      61,
+      62,
+      63,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "natural",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "occupied_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "ominous",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "open_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "orientation",
+    "type": "string",
+    "values": [
+      "down_east",
+      "down_north",
+      "down_south",
+      "down_west",
+      "east_up",
+      "north_up",
+      "south_up",
+      "up_east",
+      "up_north",
+      "up_south",
+      "up_west",
+      "west_up"
+    ]
+  },
+  {
+    "identifier": "output_lit_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "output_subtract_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "pale_moss_carpet_side_east",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "pale_moss_carpet_side_north",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "pale_moss_carpet_side_south",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "pale_moss_carpet_side_west",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "persistent_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "pillar_axis",
+    "type": "string",
+    "values": [
+      "x",
+      "y",
+      "z"
+    ]
+  },
+  {
+    "identifier": "portal_axis",
+    "type": "string",
+    "values": [
+      "unknown",
+      "x",
+      "z"
+    ]
+  },
+  {
+    "identifier": "potent_sulfur_state",
+    "type": "string",
+    "values": [
+      "continuous",
+      "dormant",
+      "dry",
+      "erupting",
+      "wet"
+    ]
+  },
+  {
+    "identifier": "powered_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "powered_shelf_type",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "propagule_stage",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "identifier": "rail_data_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "rail_direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "redstone_signal",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "rehydration_level",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "repeater_delay",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "respawn_anchor_charge",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "identifier": "rotation",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "identifier": "sculk_sensor_phase",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "identifier": "sea_grass_type",
+    "type": "string",
+    "values": [
+      "default",
+      "double_bot",
+      "double_top"
+    ]
+  },
+  {
+    "identifier": "stability",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "identifier": "stability_check",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "structure_block_type",
+    "type": "string",
+    "values": [
+      "corner",
+      "data",
+      "export",
+      "invalid",
+      "load",
+      "save"
+    ]
+  },
+  {
+    "identifier": "suspended_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "tip",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "toggle_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "torch_facing_direction",
+    "type": "string",
+    "values": [
+      "east",
+      "north",
+      "south",
+      "top",
+      "unknown",
+      "west"
+    ]
+  },
+  {
+    "identifier": "trial_spawner_state",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "identifier": "triggered_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "turtle_egg_count",
+    "type": "string",
+    "values": [
+      "four_egg",
+      "one_egg",
+      "three_egg",
+      "two_egg"
+    ]
+  },
+  {
+    "identifier": "twisting_vines_age",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "update_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "upper_block_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "upside_down_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "vault_state",
+    "type": "string",
+    "values": [
+      "active",
+      "ejecting",
+      "inactive",
+      "unlocking"
+    ]
+  },
+  {
+    "identifier": "vine_direction_bits",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "wall_connection_type_east",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "wall_connection_type_north",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "wall_connection_type_south",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "wall_connection_type_west",
+    "type": "string",
+    "values": [
+      "none",
+      "short",
+      "tall"
+    ]
+  },
+  {
+    "identifier": "wall_post_bit",
+    "type": "bool",
+    "values": [
+      false,
+      true
+    ]
+  },
+  {
+    "identifier": "weeping_vines_age",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      2,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "identifier": "weirdo_direction",
+    "type": "int",
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  }
+]
