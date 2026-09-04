@@ -310,6 +310,14 @@ public class Player : Entity {
         Network.QueuePackets(Connection, packets);
     }
 
+    public void Send(IReadOnlyList<Packet> packets) {
+        if (Connection is null || Network is null || packets.Count == 0) {
+            return;
+        }
+
+        Network.QueuePackets(Connection, packets);
+    }
+
     public void PlaySound(
         SoundIdentifier soundEvent,
         Vec3? position = null,

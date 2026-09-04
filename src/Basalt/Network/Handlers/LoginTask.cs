@@ -195,6 +195,7 @@ internal sealed class LoginTask : ServerTask {
             player.Network = _server.Network;
             player.DeviceOS = (BuildPlatform)_clientData.DeviceOs;
             _server.Players[_connection] = player;
+            _server.MarkPlayersSnapshotDirty();
         }
 
         using (Profiler.Enabled ? Profiler.BeginZone("Login.SendResponse") : default) {

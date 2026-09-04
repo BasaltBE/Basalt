@@ -183,25 +183,16 @@ public sealed class EntityAvoidMobTypeTrait : EntityTrait {
         float scale = _movementSpeed * _speedMultiplier / distance;
         float desiredX = deltaX * scale;
         float desiredZ = deltaZ * scale;
-        Entity.Velocity = new Vec3 {
-            X = Entity.Velocity.X + (desiredX - Entity.Velocity.X) * 0.35f,
-            Y = Entity.Velocity.Y,
-            Z = Entity.Velocity.Z + (desiredZ - Entity.Velocity.Z) * 0.35f
-        };
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
         float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation = new Vec3 {
-            X = Entity.Rotation.X,
-            Y = yaw,
-            Z = yaw
-        };
+        Entity.Rotation.Y = yaw;
+        Entity.Rotation.Z = yaw;
     }
 
     private void Stop() {
-        Entity.Velocity = new Vec3 {
-            X = 0f,
-            Y = Entity.Velocity.Y,
-            Z = 0f
-        };
+        Entity.Velocity.X = 0f;
+        Entity.Velocity.Z = 0f;
     }
 
     private static float DistanceSquared(Vec3 first, Vec3 second) {

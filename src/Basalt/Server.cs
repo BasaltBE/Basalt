@@ -45,6 +45,8 @@ public sealed class Server {
     private readonly Lock _worldsLock = new();
     private WorldInstance[] _worldsSnapshot = [];
     private readonly Queue<WorldInstance> _autoSaveWorlds = [];
+    private readonly List<WorldGroupTickTask> _worldGroupTasks = [];
+    private List<WorldInstance>[] _worldGroups = [];
     private readonly ConcurrentQueue<string> _pendingWorldUnloads = new();
     private readonly ConcurrentDictionary<PlayerInstance, PendingPlayerTransfer> _pendingPlayerTransfers = new();
     private int _pendingTickGroups = -1;
@@ -70,8 +72,10 @@ public sealed class Server {
     private double _tickWorkMaximumPublished;
     private TimeSpan _startupElapsed;
     private readonly Dictionary<ServerEvent, List<SignalHandler>> _signalHandlers = new();
+    private readonly Dictionary<ServerEvent, SignalHandler[]> _signalHandlerSnapshots = new();
     public ConcurrentDictionary<NetworkConnection, PlayerInstance> Players { get; } = new();
     private PlayerInstance[] _playersSnapshot = [];
+    private int _playersSnapshotDirty = 1;
     public CommandRegistry Commands { get; } = new();
     public PermissionStore PermissionStore { get; }
     public PlayerDataStore PlayerData { get; }
@@ -99,7 +103,15 @@ public sealed class Server {
     internal IReadOnlyList<PlayerInstance> CurrentPlayersSnapshot => Volatile.Read(ref _playersSnapshot);
 
     private void RefreshPlayersSnapshot() {
+        if (Interlocked.Exchange(ref _playersSnapshotDirty, 0) == 0) {
+            return;
+        }
+
         Volatile.Write(ref _playersSnapshot, [.. GetPlayers()]);
+    }
+
+    internal void MarkPlayersSnapshotDirty() {
+        Volatile.Write(ref _playersSnapshotDirty, 1);
     }
 
     private void RefreshWorldsSnapshot() {
@@ -125,6 +137,7 @@ public sealed class Server {
             }
 
             player.ApplyQueuedTeleport(pending.Position, pending.Target);
+            MarkPlayersSnapshotDirty();
         }
     }
 
@@ -268,6 +281,7 @@ public sealed class Server {
             ItemPalette.LoadElapsed +
             EntityPalette.LoadElapsed;
         TimeSpan processStartupElapsed = registryElapsed + _startupElapsed;
+        Logger.Info($"Protocol JSON data loaded and parsed in {registryElapsed.TotalMilliseconds:0.00}ms.");
         Logger.Info(
             $"Basalt NetherNet signaling on IPv4 port {Properties.Port} and IPv6 port {Properties.Ipv6Port} " +
             $"startup~{processStartupElapsed.TotalMilliseconds:0}ms,");
@@ -281,17 +295,17 @@ public sealed class Server {
         }
 
         handlers.Add(new TypedSignalHandler<TSignal>(handler, Plugins.CurrentRegistrationPlugin));
+        _signalHandlerSnapshots[@event] = [.. handlers];
     }
 
     public void Emit(ServerEvent @event, ISignal signal) {
         ArgumentNullException.ThrowIfNull(signal);
-        if (!_signalHandlers.TryGetValue(@event, out List<SignalHandler>? handlers)) {
+        if (!_signalHandlerSnapshots.TryGetValue(@event, out SignalHandler[]? handlers)) {
             return;
         }
 
-        SignalHandler[] snapshot = [.. handlers];
-        for (int i = 0; i < snapshot.Length; i++) {
-            SignalHandler handler = snapshot[i];
+        for (int i = 0; i < handlers.Length; i++) {
+            SignalHandler handler = handlers[i];
             try {
                 using (Plugins.EnterRegistrationScope(handler.Plugin))
                     handler.Invoke(signal);
@@ -307,7 +321,7 @@ public sealed class Server {
     }
 
     public bool HasListeners(ServerEvent @event) {
-        return _signalHandlers.TryGetValue(@event, out List<SignalHandler>? handlers) && handlers.Count > 0;
+        return _signalHandlerSnapshots.TryGetValue(@event, out SignalHandler[]? handlers) && handlers.Length > 0;
     }
 
     public void Stop() {
@@ -609,6 +623,7 @@ public sealed class Server {
     internal bool IsCoordinatorThread => Volatile.Read(ref _coordinatorThreadId) == Environment.CurrentManagedThreadId;
 
     public void Tick() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Server.Tick") : default;
         if (Interlocked.Exchange(ref _ticking, 1) != 0) {
             return;
         }
@@ -643,7 +658,7 @@ public sealed class Server {
         }
 
         using (Profiler.Enabled ? Profiler.BeginZone("Server.Worlds") : default) {
-            WorldInstance[] worlds = [.. Worlds];
+            WorldInstance[] worlds = Volatile.Read(ref _worldsSnapshot);
             switch (Properties.TickMode) {
                 case Enums.TickMode.World:
                     TickWorldsParallel(worlds);
@@ -720,12 +735,14 @@ public sealed class Server {
     }
 
     private static void TickWorld(WorldInstance world) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Server.TickWorld({world.Name})") : default;
         long startTimestamp = Stopwatch.GetTimestamp();
         world.Tick();
         ((Tickable)world).TickWork = (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
     }
 
     private void TickWorldsParallel(WorldInstance[] worlds) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Server.TickWorldsParallel") : default;
         if (worlds.Length < 2) {
             for (int i = 0; i < worlds.Length; i++) {
                 TickWorld(worlds[i]);
@@ -760,6 +777,7 @@ public sealed class Server {
     }
 
     private void TickWorldGroupsParallel(WorldInstance[] worlds, int? requestedGroupCount = null) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Server.TickWorldGroupsParallel") : default;
         if (worlds.Length < 2) {
             for (int i = 0; i < worlds.Length; i++) {
                 TickWorld(worlds[i]);
@@ -772,36 +790,62 @@ public sealed class Server {
             ? Properties.TickGroups
             : TickWorkerPool.WorkerCount);
         groupCount = Math.Clamp(groupCount, 1, worlds.Length);
-        List<WorldInstance>[] groups = new List<WorldInstance>[groupCount];
-        for (int i = 0; i < groupCount; i++) {
-            groups[i] = [];
+        if (groupCount == 1) {
+            for (int i = 0; i < worlds.Length; i++) {
+                TickWorld(worlds[i]);
+            }
+
+            return;
         }
+
+        List<WorldInstance>[] groups = _worldGroups;
+        if (groups.Length < groupCount) {
+            int oldLength = groups.Length;
+            Array.Resize(ref groups, groupCount);
+            for (int i = oldLength; i < groupCount; i++) {
+                groups[i] = [];
+            }
+        }
+
+        for (int i = 0; i < groups.Length; i++) {
+            groups[i]?.Clear();
+        }
+        _worldGroups = groups;
 
         for (int i = 0; i < worlds.Length; i++) {
             groups[i % groupCount].Add(worlds[i]);
         }
 
-        List<(WorldGroupTickTask Task, ManualResetEventSlim Completed)> tasks = [];
-        for (int i = 0; i < groups.Length; i++) {
-            ManualResetEventSlim completed = new();
-            WorldGroupTickTask task = new([.. groups[i]], completed);
-            if (TickWorkerPool.TryEnqueue(task)) {
-                tasks.Add((task, completed));
+        List<WorldGroupTickTask> tasks = _worldGroupTasks;
+        tasks.Clear();
+        using CountdownEvent completed = new(groupCount);
+        try {
+            for (int i = 0; i < groups.Length; i++) {
+                WorldGroupTickTask task = new(groups[i], completed);
+                if (TickWorkerPool.TryEnqueue(task)) {
+                    tasks.Add(task);
+                }
+                else {
+                    for (int worldIndex = 0; worldIndex < groups[i].Count; worldIndex++) {
+                        TickWorld(groups[i][worldIndex]);
+                    }
+
+                    completed.Signal();
+                }
             }
-            else {
-                completed.Dispose();
-                for (int worldIndex = 0; worldIndex < groups[i].Count; worldIndex++) {
-                    TickWorld(groups[i][worldIndex]);
+
+            completed.Wait();
+            for (int i = 0; i < tasks.Count; i++) {
+                WorldGroupTickTask task = tasks[i];
+                if (task.Error is not null) {
+                    Logger.Warn($"World group tick failed: {task.Error}");
                 }
             }
         }
-
-        for (int i = 0; i < tasks.Count; i++) {
-            (WorldGroupTickTask task, ManualResetEventSlim completed) = tasks[i];
-            completed.Wait();
-            completed.Dispose();
-            if (task.Error is not null) {
-                Logger.Warn($"World group tick failed: {task.Error}");
+        finally {
+            tasks.Clear();
+            for (int i = 0; i < groups.Length; i++) {
+                groups[i]?.Clear();
             }
         }
     }

@@ -1,6 +1,10 @@
 namespace Basalt.Core.Pathfinding;
 
+using Basalt.Core.Profiling;
+
 public static class GroundPathfinder {
+    private const float DiagonalDistance = 1.4142135f;
+
     private static readonly (int X, int Z)[] Directions = [
         (1, 0),
         (-1, 0),
@@ -18,6 +22,7 @@ public static class GroundPathfinder {
         PathNode target,
         int maxVisitedNodes = 4096,
         float maxDistance = 32f) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("GroundPathfinder.FindPath") : default;
         if (!snapshot.Walkable(start.X, start.Y, start.Z)) {
             return null;
         }
@@ -27,11 +32,12 @@ public static class GroundPathfinder {
         Dictionary<PathNode, PathNode> previous = [];
         HashSet<PathNode> closed = [];
         PathNode closest = start;
-        float closestDistance = Distance(start, target);
+        float closestDistanceSquared = DistanceSquared(start, target);
+        float maxDistanceSquared = maxDistance * maxDistance;
         int visited = 0;
 
         scores[start] = 0f;
-        open.Enqueue(start, closestDistance);
+        open.Enqueue(start, MathF.Sqrt(closestDistanceSquared));
 
         while (open.TryDequeue(out PathNode current, out _)) {
             visited++;
@@ -43,13 +49,13 @@ public static class GroundPathfinder {
                 continue;
             }
 
-            float distance = Distance(current, target);
-            if (distance < closestDistance) {
+            float distanceSquared = DistanceSquared(current, target);
+            if (distanceSquared < closestDistanceSquared) {
                 closest = current;
-                closestDistance = distance;
+                closestDistanceSquared = distanceSquared;
             }
 
-            if (distance == 0f) {
+            if (distanceSquared == 0f) {
                 return CreatePath(snapshot, previous, current, target, true);
             }
 
@@ -71,18 +77,18 @@ public static class GroundPathfinder {
                 }
 
                 if (!snapshot.Walkable(candidate.X, candidate.Y, candidate.Z) ||
-                    Distance(start, candidate) > maxDistance) {
+                    DistanceSquared(start, candidate) > maxDistanceSquared) {
                     return;
                 }
 
-                float score = scores[from] + Distance(from, candidate);
+                float score = scores[from] + MovementCost(from, candidate);
                 if (scores.TryGetValue(candidate, out float existing) && score >= existing) {
                     return;
                 }
 
                 scores[candidate] = score;
                 previous[candidate] = from;
-                open.Enqueue(candidate, score + Distance(candidate, target));
+                open.Enqueue(candidate, score + MathF.Sqrt(DistanceSquared(candidate, target)));
             }
         }
 
@@ -157,10 +163,18 @@ public static class GroundPathfinder {
         return true;
     }
 
-    private static float Distance(PathNode from, PathNode to) {
+    private static float MovementCost(PathNode from, PathNode to) {
+        return from.Y != to.Y
+            ? 1f
+            : from.X != to.X && from.Z != to.Z
+                ? DiagonalDistance
+                : 1f;
+    }
+
+    private static float DistanceSquared(PathNode from, PathNode to) {
         int x = from.X - to.X;
         int y = from.Y - to.Y;
         int z = from.Z - to.Z;
-        return MathF.Sqrt(x * x + y * y + z * z);
+        return x * x + y * y + z * z;
     }
 }

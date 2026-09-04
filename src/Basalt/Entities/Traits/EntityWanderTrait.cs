@@ -6,6 +6,7 @@ using Basalt.Core.Worlds;
 using Basalt.Core.Worlds.Dimensions;
 using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Entities.Traits.Attribute;
+using Basalt.Core.Profiling;
 using Basalt.BedrockProtocol.Types;
 using Basalt.BedrockProtocol.Enums;
 using System.Text.Json;
@@ -115,10 +116,10 @@ public sealed class EntityWanderTrait : EntityTrait {
             _lastHealth = health.CurrentValue;
         }
 
-        float horizontalSpeed = MathF.Sqrt(
+        float horizontalSpeedSquared =
             Entity.Velocity.X * Entity.Velocity.X +
-            Entity.Velocity.Z * Entity.Velocity.Z);
-        if (horizontalSpeed > ExternalImpulseSpeed) {
+            Entity.Velocity.Z * Entity.Velocity.Z;
+        if (horizontalSpeedSquared > ExternalImpulseSpeed * ExternalImpulseSpeed) {
             _knockbackUntil = details.CurrentTick + KnockbackPauseTicks;
             return;
         }
@@ -202,18 +203,13 @@ public sealed class EntityWanderTrait : EntityTrait {
 
         float desiredX = directionX * speed;
         float desiredZ = directionZ * speed;
-        Entity.Velocity = new Vec3 {
-            X = Entity.Velocity.X + (desiredX - Entity.Velocity.X) * 0.35f,
-            Y = velocityY,
-            Z = Entity.Velocity.Z + (desiredZ - Entity.Velocity.Z) * 0.35f
-        };
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
+        Entity.Velocity.Y = velocityY;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
 
         float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation = new Vec3 {
-            X = Entity.Rotation.X,
-            Y = RotateTowards(Entity.Rotation.Y, yaw, 18f),
-            Z = RotateTowards(Entity.Rotation.Z, yaw, 30f)
-        };
+        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 18f);
+        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, yaw, 30f);
     }
 
     public override void OnHurt(EntityHurtDetails details) {
@@ -238,6 +234,7 @@ public sealed class EntityWanderTrait : EntityTrait {
     }
 
     private void RequestWanderPath(ulong currentTick) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("EntityWander.RequestWanderPath") : default;
         Dimension dimension = Entity.Dimension!;
         int startX = (int)MathF.Floor(Entity.Position.X);
         int startY = (int)MathF.Floor(Entity.Position.Y);

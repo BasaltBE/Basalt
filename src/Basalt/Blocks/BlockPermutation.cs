@@ -2,6 +2,7 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Blocks.Types;
 using Basalt.BedrockProtocol.NBT;
+using Basalt.Core.Blocks.Components;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -24,6 +25,7 @@ public sealed class BlockPermutation {
     private string? _query;
     private BlockTypeComponentCollection? _components;
     private CompoundTag? _nbt;
+    internal CollisionBox[]? CollisionBoxes;
 
     public string Query => _query ??= BuildQuery(State);
     public BlockTypeComponentCollection Components => _components ??= new BlockTypeComponentCollection(this);

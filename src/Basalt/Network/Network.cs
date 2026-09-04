@@ -33,6 +33,7 @@ public sealed class NetworkHandler {
     private readonly ConcurrentQueue<NetworkConnection> _readyDisconnects = new();
     private readonly Dictionary<Type, List<PacketListener>> _packetListeners = [];
     private readonly object _packetListenersLock = new();
+    private Dictionary<Type, PacketListener[]> _packetListenerSnapshots = [];
     private readonly ConcurrentQueue<QueuedOutgoing> _priorityOutgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _outgoingPackets = new();
     private readonly ConcurrentQueue<QueuedOutgoing> _movementOutgoingPackets = new();
@@ -108,6 +109,7 @@ public sealed class NetworkHandler {
             }
 
             listeners.Add(new PacketListener<TPacket>(listener));
+            PublishPacketListenerSnapshot();
         }
     }
 
@@ -125,6 +127,8 @@ public sealed class NetworkHandler {
             if (listeners.Count == 0) {
                 _packetListeners.Remove(typeof(TPacket));
             }
+
+            PublishPacketListenerSnapshot();
         }
     }
 
@@ -203,6 +207,8 @@ public sealed class NetworkHandler {
         if (!_server.Players.TryRemove(connection, out Player.Player? player)) {
             return;
         }
+
+        _server.MarkPlayersSnapshotDirty();
 
         PlayerAuthInput.Cleanup(player.RuntimeId);
 
@@ -333,18 +339,23 @@ public sealed class NetworkHandler {
             }
         }
 
-        PacketListener[] listeners;
-        lock (_packetListenersLock) {
-            if (!_packetListeners.TryGetValue(incoming.Packet.GetType(), out List<PacketListener>? registered)) {
-                return;
-            }
-
-            listeners = [.. registered];
+        Dictionary<Type, PacketListener[]> snapshots = Volatile.Read(ref _packetListenerSnapshots);
+        if (!snapshots.TryGetValue(incoming.Packet.GetType(), out PacketListener[]? listeners)) {
+            return;
         }
 
         for (int i = 0; i < listeners.Length; i++) {
             listeners[i].Invoke(incoming.Connection, incoming.Packet);
         }
+    }
+
+    private void PublishPacketListenerSnapshot() {
+        Dictionary<Type, PacketListener[]> snapshot = new(_packetListeners.Count);
+        foreach ((Type type, List<PacketListener> listeners) in _packetListeners) {
+            snapshot[type] = [.. listeners];
+        }
+
+        Volatile.Write(ref _packetListenerSnapshots, snapshot);
     }
 
     public void QueuePacket(
@@ -451,6 +462,21 @@ public sealed class NetworkHandler {
 
     public void QueuePackets(NetworkConnection connection, IEnumerable<Packet> packets, CompressionMethod? compression = null) {
         QueuePackets(connection, packets, compression, false, false);
+    }
+
+    public void QueuePackets(NetworkConnection connection, IReadOnlyList<Packet> packets, CompressionMethod? compression = null) {
+        for (int i = 0; i < packets.Count; i++) {
+            Packet packet = packets[i]
+                ?? throw new ArgumentException("Packet collections cannot contain null values.", nameof(packets));
+
+            QueueOutgoing(
+                connection,
+                packet,
+                [],
+                compression,
+                immediate: false,
+                wait: false);
+        }
     }
 
     private void QueuePackets(
@@ -902,14 +928,14 @@ public sealed class NetworkHandler {
         int id = checked((int)(header & 0x3FF));
         packetId = id;
 
-        if (!PacketPool.TryGetPacketType(id, out Type? packetType)) {
+        if (!PacketPool.TryCreate(id, out DataPacket? createdPacket)) {
             packet = null;
             return false;
         }
 
-        packet = (Packet)Activator.CreateInstance(packetType!)!;
+        packet = createdPacket;
 
-        packet.Deserialize(ref reader);
+        createdPacket!.Deserialize(ref reader);
 
         return true;
     }

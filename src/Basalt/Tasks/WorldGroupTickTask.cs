@@ -4,12 +4,12 @@ using System.Diagnostics;
 using Basalt.Core.Worlds;
 
 internal sealed class WorldGroupTickTask : ServerTask {
-    private readonly World[] _worlds;
-    private readonly ManualResetEventSlim _completed;
+    private readonly List<World> _worlds;
+    private readonly CountdownEvent _completed;
 
     public Exception? Error { get; private set; }
 
-    public WorldGroupTickTask(World[] worlds, ManualResetEventSlim completed) {
+    public WorldGroupTickTask(List<World> worlds, CountdownEvent completed) {
         _worlds = worlds;
         _completed = completed;
         MainThreadCompletion = false;
@@ -17,7 +17,7 @@ internal sealed class WorldGroupTickTask : ServerTask {
 
     public override void Execute() {
         try {
-            for (int i = 0; i < _worlds.Length; i++) {
+            for (int i = 0; i < _worlds.Count; i++) {
                 World world = _worlds[i];
                 long startTimestamp = Stopwatch.GetTimestamp();
                 try {
@@ -31,7 +31,7 @@ internal sealed class WorldGroupTickTask : ServerTask {
             }
         }
         finally {
-            _completed.Set();
+            _completed.Signal();
         }
     }
 }

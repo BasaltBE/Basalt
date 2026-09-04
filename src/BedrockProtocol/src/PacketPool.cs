@@ -1,8 +1,10 @@
 using System.Reflection;
+using System.Linq.Expressions;
 namespace Basalt.BedrockProtocol;
 
 public static class PacketPool {
     private static readonly Dictionary<int, Type> PacketTypes = CreatePacketTypes();
+    private static readonly Dictionary<int, Func<DataPacket>> PacketFactories = CreatePacketFactories();
 
     public static bool TryGetPacketType(int id, out Type? packetType) {
         return PacketTypes.TryGetValue(id, out packetType);
@@ -17,7 +19,17 @@ public static class PacketPool {
     }
 
     public static DataPacket Create(int id) {
-        return (DataPacket)Activator.CreateInstance(GetPacketType(id))!;
+        return PacketFactories[id]();
+    }
+
+    public static bool TryCreate(int id, out DataPacket? packet) {
+        if (!PacketFactories.TryGetValue(id, out Func<DataPacket>? factory)) {
+            packet = null;
+            return false;
+        }
+
+        packet = factory();
+        return true;
     }
 
     private static Dictionary<int, Type> CreatePacketTypes() {
@@ -39,5 +51,14 @@ public static class PacketPool {
         }
 
         return packetTypes;
+    }
+
+    private static Dictionary<int, Func<DataPacket>> CreatePacketFactories() {
+        var factories = new Dictionary<int, Func<DataPacket>>(PacketTypes.Count);
+        foreach ((int id, Type type) in PacketTypes) {
+            factories[id] = Expression.Lambda<Func<DataPacket>>(Expression.New(type)).Compile();
+        }
+
+        return factories;
     }
 }

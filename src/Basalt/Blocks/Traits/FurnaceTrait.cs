@@ -40,6 +40,7 @@ public sealed class FurnaceTrait : BlockTrait {
     private int _maxBurnTime;
     private int _cookTime;
     private bool _ticking;
+    private bool _lit;
 
     public BlockContainer? Container => _container;
 
@@ -207,7 +208,9 @@ public sealed class FurnaceTrait : BlockTrait {
         }
 
         SyncProgressToViewers();
-        UpdateLitState(active);
+        if (active != _lit) {
+            UpdateLitState(active);
+        }
 
         _ticking = active;
         return active;
@@ -279,9 +282,9 @@ public sealed class FurnaceTrait : BlockTrait {
     }
 
     private void SyncProgressToViewers() {
-        if (_container is null) return;
+        if (_container is null || _container.occupants.Count == 0) return;
 
-        foreach ((Player.Player player, ContainerId containerId) in _container.GetAllOccupants()) {
+        foreach ((Player.Player player, ContainerId containerId) in _container.occupants) {
             if (!player.Spawned) continue;
             SendProgress(player, containerId);
         }
@@ -328,18 +331,29 @@ public sealed class FurnaceTrait : BlockTrait {
         string currentId = chunk.GetPermutation(lx, pos.Y, lz).Type.Identifier;
         string targetId = GetTargetBlockId(shouldBeLit);
 
-        if (string.Equals(currentId, targetId, StringComparison.Ordinal)) return;
+        if (string.Equals(currentId, targetId, StringComparison.Ordinal)) {
+            _lit = shouldBeLit;
+            return;
+        }
 
         BlockPermutation? target = BlockPermutation.Resolve(targetId, Block.Permutation.State);
         if (target is null) return;
 
         chunk.SetPermutation(lx, pos.Y, lz, target, layer: 0, dirty: true);
+        _lit = shouldBeLit;
 
         dimension.Broadcast(new UpdateBlockPacket {
             Position = pos,
             BlockRuntimeId = (uint)target.NetworkId,
             Flags = (uint)UpdateBlockFlagsType.Network,
             Layer = (uint)UpdateBlockLayerType.Normal
+        }, new BroadcastOptions {
+            Center = new Vec3 {
+                X = pos.X + 0.5f,
+                Y = pos.Y + 0.5f,
+                Z = pos.Z + 0.5f
+            },
+            Radius = dimension.World?.Server?.Properties.MaxViewDistance * 16 ?? 256
         });
     }
 

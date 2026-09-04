@@ -40,6 +40,7 @@ public sealed class PlayerHungerTrait : EntityAttributeTrait {
 
     public override void OnAdd() {
         EnsureAttribute(new Basalt.Core.Entities.Traits.Types.AttributeProperties(0, 20, 20, 20));
+        MaximumValue = 20f;
     }
 
     public override void OnTick(TraitOnTickDetails details) {

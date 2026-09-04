@@ -356,17 +356,10 @@ public sealed class EntityTargetingTrait : EntityTrait {
 
         float desiredX = directionX * _movementSpeed;
         float desiredZ = directionZ * _movementSpeed;
-        Entity.Velocity = new Vec3 {
-            X = Entity.Velocity.X + (desiredX - Entity.Velocity.X) * 0.35f,
-            Y = Entity.Velocity.Y,
-            Z = Entity.Velocity.Z + (desiredZ - Entity.Velocity.Z) * 0.35f
-        };
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
         float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation = new Vec3 {
-            X = Entity.Rotation.X,
-            Y = RotateTowards(Entity.Rotation.Y, yaw, 18f),
-            Z = Entity.Rotation.Z
-        };
+        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 18f);
     }
 
     private static void GatherEntities(Dimension dimension, Vec3 center, float radius, List<Entity> candidates) {
@@ -410,7 +403,7 @@ public sealed class EntityTargetingTrait : EntityTrait {
                 continue;
             }
 
-            foreach (CollisionBox box in BlockCollisionShape.GetBoxes(permutation)) {
+        foreach (CollisionBox box in BlockCollisionShape.GetBoxArray(permutation)) {
                 float minX = blockX + (box.OriginX + 8f) / 16f;
                 float minY = blockY + box.OriginY / 16f;
                 float minZ = blockZ + (box.OriginZ + 8f) / 16f;
@@ -431,11 +424,8 @@ public sealed class EntityTargetingTrait : EntityTrait {
     }
 
     private void Stop() {
-        Entity.Velocity = new Vec3 {
-            X = 0f,
-            Y = Entity.Velocity.Y,
-            Z = 0f
-        };
+        Entity.Velocity.X = 0f;
+        Entity.Velocity.Z = 0f;
     }
 
     private void LookAtTarget(Entity target) {
@@ -451,11 +441,8 @@ public sealed class EntityTargetingTrait : EntityTrait {
         float yaw = MathF.Atan2(-dx, dz) * (180f / MathF.PI);
         float pitch = -MathF.Atan2(dy, MathF.Max(horizontalDistance, 0.001f)) * (180f / MathF.PI);
 
-        Entity.Rotation = new Vec3 {
-            X = RotateTowards(Entity.Rotation.X, pitch, 28f),
-            Y = Entity.Rotation.Y,
-            Z = RotateTowards(Entity.Rotation.Z, yaw, 45f)
-        };
+        Entity.Rotation.X = RotateTowards(Entity.Rotation.X, pitch, 28f);
+        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, yaw, 45f);
     }
 
     private static Vec3 GetFeetPosition(Entity entity) {

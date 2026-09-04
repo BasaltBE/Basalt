@@ -14,8 +14,10 @@ public sealed class BlockStorage {
     public const int MaxSize = MaxX * MaxY * MaxZ;
 
     public static readonly int Air = BlockPermutation.Resolve("minecraft:air").NetworkId;
+    private static readonly BlockPermutation AirPermutation = BlockPermutation.Resolve("minecraft:air");
 
     private readonly Dictionary<int, int> _paletteIndices;
+    private BlockPermutation?[]? _permutationPalette;
 
     public List<int> Palette { get; }
     public int[] Blocks { get; }
@@ -49,11 +51,26 @@ public sealed class BlockStorage {
         return (uint)paletteIndex < (uint)Palette.Count ? Palette[paletteIndex] : Air;
     }
 
+    internal BlockPermutation GetPermutation(int bx, int by, int bz) {
+        int paletteIndex = Blocks[GetIndex(bx, by, bz)];
+        if ((uint)paletteIndex >= (uint)Palette.Count) {
+            return AirPermutation;
+        }
+
+        BlockPermutation?[] resolved = _permutationPalette ??= new BlockPermutation?[Palette.Count];
+        if (resolved.Length != Palette.Count) {
+            resolved = _permutationPalette = new BlockPermutation?[Palette.Count];
+        }
+
+        return resolved[paletteIndex] ??= BlockPermutation.Resolve(Palette[paletteIndex]);
+    }
+
     public void SetState(int bx, int by, int bz, int state) {
         if (!_paletteIndices.TryGetValue(state, out int paletteIndex)) {
             paletteIndex = Palette.Count;
             Palette.Add(state);
             _paletteIndices[state] = paletteIndex;
+            _permutationPalette = null;
         }
 
         Blocks[GetIndex(bx, by, bz)] = paletteIndex;

@@ -62,6 +62,7 @@ public sealed class Dimension : IDisposable {
     private readonly Dictionary<Player.Player, long> _playerChunks = [];
     private readonly Dictionary<long, HashSet<Player.Player>> _playersByChunk = [];
     private readonly Dictionary<RegionCoordinate, List<Entity>> _tickRegionBuffers = [];
+    private readonly Stack<List<Entity>> _tickRegionListPool = [];
     private readonly Dictionary<Player.Player, long> _simulationPlayerChunks = [];
     private readonly Dictionary<long, int> _simulationChunkReferences = [];
     private readonly Dictionary<(int X, int Y, int Z), BlockTickTask> _blockTicks = [];
@@ -651,6 +652,7 @@ public sealed class Dimension : IDisposable {
         PathNode target,
         int radius = 32,
         int verticalRange = 8) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.CreatePathfindingSnapshot") : default;
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(radius);
         ArgumentOutOfRangeException.ThrowIfNegative(verticalRange);
 
@@ -664,22 +666,47 @@ public sealed class Dimension : IDisposable {
         int height = checked(maxY - minY + 1);
         int depth = checked(maxZ - minZ + 1);
         bool[] walkable = new bool[checked(width * height * depth)];
+        bool[] supportedLevels = new bool[height + 2];
+        bool[] clearLevels = new bool[height + 2];
+        int minChunkX = minX >> 4;
+        int minChunkZ = minZ >> 4;
+        int chunkWidth = (maxX >> 4) - minChunkX + 1;
+        int chunkDepth = (maxZ >> 4) - minChunkZ + 1;
+        ChunkColumn?[] chunks = new ChunkColumn?[checked(chunkWidth * chunkDepth)];
 
-        for (int y = minY; y <= maxY; y++) {
+        lock (_chunkAccessLock) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxZ >> 4; chunkZ++) {
+                for (int chunkX = minChunkX; chunkX <= maxX >> 4; chunkX++) {
+                    _chunks.TryGetValue(HashChunk(chunkX, chunkZ), out chunks[
+                        (chunkZ - minChunkZ) * chunkWidth + chunkX - minChunkX]);
+                }
+            }
+
             for (int z = minZ; z <= maxZ; z++) {
                 for (int x = minX; x <= maxX; x++) {
-                    if (!TryGetLoadedPermutation(x, y - 1, z, out BlockPermutation? below) ||
-                        !TryGetLoadedPermutation(x, y, z, out BlockPermutation? feet) ||
-                        !TryGetLoadedPermutation(x, y + 1, z, out BlockPermutation? head)) {
+                    ChunkColumn? chunk = chunks[
+                        ((z >> 4) - minChunkZ) * chunkWidth + (x >> 4) - minChunkX];
+                    if (chunk is null) {
                         continue;
                     }
 
-                    bool supported = HasFullHeightSupport(below!);
-                    bool clear = BlockCollisionShape.GetBoxes(feet!).Count == 0 &&
-                        BlockCollisionShape.GetBoxes(head!).Count == 0;
-                    if (supported && clear) {
-                        int index = ((y - minY) * depth + z - minZ) * width + x - minX;
-                        walkable[index] = true;
+                    int localX = x & 0xF;
+                    int localZ = z & 0xF;
+                    for (int level = 0; level < supportedLevels.Length; level++) {
+                        BlockPermutation permutation = chunk.GetPermutation(localX, minY - 1 + level, localZ);
+                        CollisionBox[] boxes = BlockCollisionShape.GetBoxArray(permutation);
+                        supportedLevels[level] = HasFullHeightSupport(boxes);
+                        clearLevels[level] = boxes.Length == 0;
+                    }
+
+                    for (int y = minY; y <= maxY; y++) {
+                        int level = y - minY + 1;
+                        if (supportedLevels[level - 1] &&
+                            clearLevels[level] &&
+                            clearLevels[level + 1]) {
+                            int index = ((y - minY) * depth + z - minZ) * width + x - minX;
+                            walkable[index] = true;
+                        }
                     }
                 }
             }
@@ -692,8 +719,8 @@ public sealed class Dimension : IDisposable {
 
     #region Blocks and Pathfinding
 
-    private static bool HasFullHeightSupport(BlockPermutation permutation) {
-        foreach (CollisionBox box in BlockCollisionShape.GetBoxes(permutation)) {
+    private static bool HasFullHeightSupport(IReadOnlyList<CollisionBox> boxes) {
+        foreach (CollisionBox box in boxes) {
             if (box.OriginY + box.SizeY >= 16f) {
                 return true;
             }
@@ -711,8 +738,15 @@ public sealed class Dimension : IDisposable {
         int maxVisitedNodes = 4096,
         float maxDistance = 32f) {
         ArgumentNullException.ThrowIfNull(completion);
-        PathfindingSnapshot snapshot = CreatePathfindingSnapshot(start, target, radius, verticalRange);
-        PathfindingTask task = new(snapshot, start, target, completion, maxVisitedNodes, maxDistance) {
+        PathfindingTask task = new(
+            this,
+            start,
+            target,
+            completion,
+            radius,
+            verticalRange,
+            maxVisitedNodes,
+            maxDistance) {
             CompletionMailbox = _mailbox
         };
 
@@ -726,6 +760,16 @@ public sealed class Dimension : IDisposable {
     }
 
     public bool TryGetLoadedPermutation(int x, int y, int z, out BlockPermutation? permutation, int layer = 0) {
+        if (IsOwnerThread && Volatile.Read(ref _parallelRegionTicking) == 0) {
+            if (!_chunks.TryGetValue(HashChunk(x >> 4, z >> 4), out ChunkColumn? ownerChunk)) {
+                permutation = null;
+                return false;
+            }
+
+            permutation = ownerChunk.GetPermutation(GetChunkLocal(x), y, GetChunkLocal(z), layer);
+            return true;
+        }
+
         lock (_chunkAccessLock) {
             if (!_chunks.TryGetValue(HashChunk(x >> 4, z >> 4), out ChunkColumn? chunk)) {
                 permutation = null;
@@ -1270,6 +1314,10 @@ public sealed class Dimension : IDisposable {
              adaptiveServer.TickWorkerPool.WorkerCount > 1 &&
              !TaskWorkerPool.TickWorkerThread);
         if (regionMode) {
+            foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
+                regionEntities.Clear();
+                _tickRegionListPool.Push(regionEntities);
+            }
             _tickRegionBuffers.Clear();
             for (int i = 0; i < _tickEntityBuffer.Count; i++) {
                 Entity entity = _tickEntityBuffer[i];
@@ -1278,7 +1326,9 @@ public sealed class Dimension : IDisposable {
                     WorldToChunk(entity.Position.Z),
                     RegionChunkSize);
                 if (!_tickRegionBuffers.TryGetValue(region, out List<Entity>? regionEntities)) {
-                    regionEntities = [];
+                    regionEntities = _tickRegionListPool.Count > 0
+                        ? _tickRegionListPool.Pop()
+                        : [];
                     _tickRegionBuffers[region] = regionEntities;
                 }
 
@@ -1297,12 +1347,12 @@ public sealed class Dimension : IDisposable {
                     }
                     else {
                         foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
-                            TickEntities(regionEntities, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves);
+                            TickEntities(regionEntities, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves, atomicOwnership: true);
                         }
                     }
                 }
                 else {
-                    TickEntities(_tickEntityBuffer, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves);
+                    TickEntities(_tickEntityBuffer, currentTick, deltaTick, _tickOwnedEntities, _pendingEntityRemoves, atomicOwnership: false);
                 }
             }
         }
@@ -1316,6 +1366,7 @@ public sealed class Dimension : IDisposable {
             if (regionMode) {
                 foreach (List<Entity> regionEntities in _tickRegionBuffers.Values) {
                     regionEntities.Clear();
+                    _tickRegionListPool.Push(regionEntities);
                 }
 
                 _tickRegionBuffers.Clear();
@@ -1343,7 +1394,7 @@ public sealed class Dimension : IDisposable {
                 HashSet<Entity> removes = [];
                 ManualResetEventSlim completed = new();
                 RegionTickTask task = new(
-                    () => TickEntities(regionEntities, currentTick, deltaTick, owned, removes),
+                    () => TickEntities(regionEntities, currentTick, deltaTick, owned, removes, atomicOwnership: true),
                     completed);
 
                 if (workerPool.TryEnqueue(task)) {
@@ -1351,7 +1402,7 @@ public sealed class Dimension : IDisposable {
                 }
                 else {
                     completed.Dispose();
-                    TickEntities(regionEntities, currentTick, deltaTick, owned, removes);
+                    TickEntities(regionEntities, currentTick, deltaTick, owned, removes, atomicOwnership: true);
                     _tickOwnedEntities.AddRange(owned);
                     _pendingEntityRemoves.UnionWith(removes);
                 }
@@ -1379,18 +1430,26 @@ public sealed class Dimension : IDisposable {
         ulong currentTick,
         uint deltaTick,
         List<Entity> ownedEntities,
-        HashSet<Entity> pendingRemoves) {
+        HashSet<Entity> pendingRemoves,
+        bool atomicOwnership) {
         for (int i = 0; i < entities.Count; i++) {
             Entity entity = entities[i];
-            if (!entity.TryClaimTickOwner(this)) {
+            if (atomicOwnership) {
+                if (!entity.TryClaimTickOwner(this)) {
+                    continue;
+                }
+            }
+            else {
+                entity.ClaimTickOwner(this);
+            }
+
+            if (entity.PendingDespawn || entity.Dimension != this) {
+                ownedEntities.Add(entity);
+                pendingRemoves.Add(entity);
                 continue;
             }
 
             ownedEntities.Add(entity);
-            if (entity.PendingDespawn || entity.Dimension != this) {
-                pendingRemoves.Add(entity);
-                continue;
-            }
 
             if (entity.Position.Y < VoidY) {
                 if (entity is ItemEntity) {
@@ -1749,6 +1808,7 @@ public sealed class Dimension : IDisposable {
     }
 
     private void FlushPendingEntityChanges() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.FlushPendingEntityChanges") : default;
         if (_pendingEntityRemoves.Count > 0) {
             foreach (Entity entity in _pendingEntityRemoves) {
                 RemoveEntityStorage(entity);
@@ -2114,6 +2174,7 @@ public sealed class Dimension : IDisposable {
     }
 
     private void FlushCompletedChunkRequests(int limit) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Dimension.FlushCompletedChunkRequests") : default;
         int completed = 0;
         while (completed < limit && _chunkRequestCallbacks.TryDequeue(out ChunkRequestCallback ready)) {
             ready.Callback(ready.Chunk);

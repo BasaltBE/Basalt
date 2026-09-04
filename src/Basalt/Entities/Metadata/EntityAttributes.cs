@@ -1,6 +1,7 @@
 namespace Basalt.Core.Entities.Metadata;
 
 using Basalt.Core.Entities.Traits.Attribute;
+using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds;
 
 using Basalt.BedrockProtocol.Packets;
@@ -61,7 +62,7 @@ public sealed class EntityAttributes {
             Current = 0f,
             DefaultMinimum = 0f,
             DefaultMaximum = 20f,
-            Default = 20f,
+            Default = 0f,
             Modifiers = []
         });
         SetAttribute(new AttributeData {
@@ -194,6 +195,11 @@ public sealed class EntityAttributes {
         AttributeData? hunger = GetAttribute(AttributeName.PlayerHunger);
         AttributeData? saturation = GetAttribute(AttributeName.PlayerSaturation);
         AttributeData? exhaustion = GetAttribute(AttributeName.PlayerExhaustion);
+        PlayerHungerTrait? hungerTrait = player.GetTrait<PlayerHungerTrait>();
+        if (hungerTrait is not null) {
+            saturation!.Current = Math.Clamp(hungerTrait.Saturation, saturation.Minimum, saturation.Maximum);
+            exhaustion!.Current = Math.Clamp(hungerTrait.Exhaustion, exhaustion.Minimum, exhaustion.Maximum);
+        }
 
 
         List<AttributeData> foodAttributes = [
@@ -201,9 +207,10 @@ public sealed class EntityAttributes {
             saturation!,
             exhaustion!,
         ];
+        ulong tick = player.Dimension?.World is Tickable tickable ? tickable.TickValue : 0UL;
         UpdateAttributesPacket foodPacket = new() {
             ActorRuntimeId = player.RuntimeId,
-            Tick = 0,
+            Tick = tick,
             Attributes = foodAttributes.ToArray(),
         };
         List<AttributeData> playerAttributes = [
@@ -215,7 +222,7 @@ public sealed class EntityAttributes {
         ];
         UpdateAttributesPacket packet = new() {
             ActorRuntimeId = player.RuntimeId,
-            Tick = 0,
+            Tick = tick,
             Attributes = playerAttributes.ToArray(),
         };
 

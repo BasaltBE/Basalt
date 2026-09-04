@@ -27,6 +27,8 @@ using Basalt.Core.Enums;
 public class Entity {
     private static long _runtimeCounter;
     private readonly List<EntityTrait> _traits = [];
+    private Dictionary<Type, EntityTrait?>? _traitCache;
+    private readonly bool _player;
     private long _uniqueId;
     private Dimension? _tickOwner;
 
@@ -79,6 +81,7 @@ public class Entity {
         RuntimeId = unchecked((ulong)Interlocked.Increment(ref _runtimeCounter));
         _uniqueId = unchecked((long)RuntimeId);
         Type = EntityType.GetOrCreate(identifier);
+        _player = Type.Identifier == EntityIdentifier.Player.ToIdentifierString();
         Attributes = new EntityAttributes(this);
         Flags = new EntityActorFlags(this);
         Metadata = new EntityActorMetadata(this);
@@ -109,6 +112,7 @@ public class Entity {
         }
 
         _traits.Add(trait);
+        _traitCache?.Clear();
         trait.OnAdd();
         return trait;
     }
@@ -120,17 +124,25 @@ public class Entity {
             return false;
         }
 
+        _traitCache?.Clear();
         trait.OnRemove();
         return true;
     }
 
     public T? GetTrait<T>() where T : EntityTrait {
+        Type traitType = typeof(T);
+        if (_traitCache is not null && _traitCache.TryGetValue(traitType, out EntityTrait? cached)) {
+            return (T?)cached;
+        }
+
         for (int i = 0; i < _traits.Count; i++) {
             if (_traits[i] is T typed) {
+                (_traitCache ??= [])[traitType] = typed;
                 return typed;
             }
         }
 
+        (_traitCache ??= [])[traitType] = null;
         return null;
     }
 
@@ -142,6 +154,10 @@ public class Entity {
         return Interlocked.CompareExchange(ref _tickOwner, owner, null) is null;
     }
 
+    internal void ClaimTickOwner(Dimension owner) {
+        _tickOwner = owner;
+    }
+
     internal bool TickOwnedBy(Dimension owner) {
         return ReferenceEquals(Volatile.Read(ref _tickOwner), owner);
     }
@@ -151,7 +167,7 @@ public class Entity {
     }
 
     public void Tick(ulong currentTick, uint deltaTick) {
-        using var __zone = Profiler.Enabled ? Profiler.BeginZone($"Entity.Tick({Identifier})") : default;
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Entity.Tick") : default;
         if (OnFireTicks > 0) {
             if (HasEffect(EffectType.FireResistance) || IsInWater) {
                 SetOnFire(0);
@@ -170,8 +186,11 @@ public class Entity {
         for (int i = 0; i < _traits.Count; i++) {
             EntityTrait trait = _traits[i];
             try {
-                trait.OnTick(details);
-                if (trait.ShouldRandomTick()) {
+                if (trait.HasTickHandler) {
+                    trait.OnTick(details);
+                }
+
+                if (trait.HasRandomTickHandler && trait.ShouldRandomTick()) {
                     trait.OnRandomTick();
                 }
             }
@@ -541,7 +560,7 @@ public class Entity {
     }
 
     public bool IsPlayer() {
-        return string.Equals(Identifier, EntityIdentifier.Player.ToIdentifierString(), StringComparison.Ordinal);
+        return _player;
     }
 
     public Vec3 GetHeadLocation() {

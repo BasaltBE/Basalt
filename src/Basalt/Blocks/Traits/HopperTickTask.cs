@@ -9,10 +9,10 @@ internal sealed class HopperTickTask : DelayedTask {
     private readonly Dimension _dimension;
     private readonly BlockPos _position;
 
-    public HopperTickTask(Dimension dimension, BlockPos position) {
+    public HopperTickTask(Dimension dimension, BlockPos position, uint delayTicks = 1) {
         _dimension = dimension;
         _position = position;
-        DelayTicks = 1;
+        DelayTicks = delayTicks;
         RunOnMainThread = true;
         ExecutionMailbox = dimension.Mailbox;
     }
@@ -28,13 +28,13 @@ internal sealed class HopperTickTask : DelayedTask {
             return;
         }
 
-        bool shouldContinue = trait.Tick();
+        bool shouldContinue = trait.Tick(out uint delayTicks);
         if (!shouldContinue) {
             trait.MarkTickingStopped();
             return;
         }
 
-        _dimension.World?.Scheduler?.Schedule(new HopperTickTask(_dimension, _position));
+        _dimension.World?.Scheduler?.Schedule(new HopperTickTask(_dimension, _position, delayTicks));
     }
 
     public override void OnStop() {

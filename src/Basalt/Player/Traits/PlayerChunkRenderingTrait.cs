@@ -178,8 +178,8 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             int chunkZ = WorldToChunk(Player.Location.Z);
 
             bool changedChunk = UpdateChunkPosition(chunkX, chunkZ);
-            UnloadChunks(dimension, clearClient: true);
             if (changedChunk) {
+                UnloadChunks(dimension, clearClient: true);
                 _publisherSent = false;
                 UpdateVisibleChunks(dimension);
             }
@@ -273,7 +273,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             _sendBuffer.Add(CreateChunkPublisherPacket());
         }
 
-        Player.Send([.. _sendBuffer]);
+        Player.Send(_sendBuffer);
 
         if (_firstChunkMilliseconds == 0 && _chunkLoadStartTimestamp != 0 && _sentChunkBuffer.Count > 0) {
             _firstChunkMilliseconds = Stopwatch.GetElapsedTime(_chunkLoadStartTimestamp).TotalMilliseconds;
@@ -307,11 +307,21 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
                 continue;
             }
 
-            ChunkColumn snapshot = chunk.CreatePersistenceSnapshot();
-            _serializingChunks.Add(chunk.Hash);
             available--;
 
             int requestVersion = _chunkRequestVersion;
+            if (chunk.Cache is { } cachedPayload) {
+                _serializedChunks.Enqueue(new SerializedChunk(
+                    requestedDimension,
+                    requestVersion,
+                    chunk,
+                    cachedPayload,
+                    null));
+                continue;
+            }
+
+            ChunkColumn snapshot = chunk.CreateNetworkSnapshot();
+            _serializingChunks.Add(chunk.Hash);
             TaskScheduler? scheduler = dimension.World?.Server?.Scheduler;
             if (scheduler is null) {
                 try {
@@ -714,7 +724,7 @@ public sealed class PlayerChunkRenderingTrait : PlayerTrait {
             return;
         }
 
-        foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages()) {
+        foreach (BlockLevelStorage storage in chunk.BlockStorages.Values) {
             BlockPos position = storage.GetPosition();
             var block = dimension.GetBlock(position.X, position.Y, position.Z);
             block?.OnRender(Player, position.X, position.Y, position.Z);

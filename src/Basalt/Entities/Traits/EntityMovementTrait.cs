@@ -28,6 +28,8 @@ public sealed class EntityMovementTrait : EntityTrait {
     public float MovementSpeed => BaseMovementSpeed * Speed;
     public float AiMovementSpeed => MovementSpeed; // 0.8796f;
     private float _fallDistance;
+    private float _tickCollisionWidth = EntityCollisionTrait.DefaultWidth;
+    private float _tickCollisionHeight = EntityCollisionTrait.DefaultHeight;
     public float GravityPerTick { get; set; } = 0.08f;
     public float Drag { get; set; } = 0.98f;
     public bool DragBeforeGravity;
@@ -95,10 +97,11 @@ public sealed class EntityMovementTrait : EntityTrait {
         }
 
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("EntityMovement.OnTick") : default;
-        Entity.IsInWater = IsInFluid(Entity.Position, "minecraft:water", "minecraft:flowing_water");
-        InLava = IsInLava(Entity.Position);
-        Vec3 previousPosition = Entity.Position;
         EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
+        _tickCollisionWidth = collision?.Width ?? EntityCollisionTrait.DefaultWidth;
+        _tickCollisionHeight = collision?.Height ?? EntityCollisionTrait.DefaultHeight;
+        UpdateFluidState(Entity.Position);
+        Vec3 previousPosition = Entity.Position;
         if (collision is not null) {
             collision.XAxisCollision = 0;
             collision.YAxisCollision = 0;
@@ -109,40 +112,44 @@ public sealed class EntityMovementTrait : EntityTrait {
             float flowX = 0f;
             float flowY = 0f;
             float flowZ = 0f;
-            float halfWidth = CollisionWidth() * 0.5f;
+            float velocityX = Entity.Velocity.X;
+            float velocityY = Entity.Velocity.Y;
+            float velocityZ = Entity.Velocity.Z;
+            float halfWidth = _tickCollisionWidth * 0.5f;
             int minWaterX = (int)MathF.Floor(Entity.Position.X - halfWidth + CollisionEpsilon);
             int maxWaterX = (int)MathF.Floor(Entity.Position.X + halfWidth - CollisionEpsilon);
             int minWaterY = (int)MathF.Floor(Entity.Position.Y + CollisionEpsilon);
-            int maxWaterY = (int)MathF.Floor(Entity.Position.Y + CollisionHeight() - CollisionEpsilon);
+            int maxWaterY = (int)MathF.Floor(Entity.Position.Y + _tickCollisionHeight - CollisionEpsilon);
             int minWaterZ = (int)MathF.Floor(Entity.Position.Z - halfWidth + CollisionEpsilon);
             int maxWaterZ = (int)MathF.Floor(Entity.Position.Z + halfWidth - CollisionEpsilon);
 
             for (int waterX = minWaterX; waterX <= maxWaterX; waterX++) {
                 for (int waterY = minWaterY; waterY <= maxWaterY; waterY++) {
                     for (int waterZ = minWaterZ; waterZ <= maxWaterZ; waterZ++) {
-                        Vec3 flow = FluidTrait.GetWaterFlow(
+                        FluidTrait.GetWaterFlow(
                             Entity.Dimension,
                             new BlockPos { X = waterX, Y = waterY, Z = waterZ },
+                            out float flowBlockX,
+                            out float flowBlockY,
+                            out float flowBlockZ,
                             out float waterHeight);
 
                         if (waterHeight == 0f || Entity.Position.Y >= waterY + waterHeight) {
                             continue;
                         }
 
-                        flowX += flow.X;
-                        flowY += flow.Y;
-                        flowZ += flow.Z;
+                        flowX += flowBlockX;
+                        flowY += flowBlockY;
+                        flowZ += flowBlockZ;
                     }
                 }
             }
 
             float flowLength = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
             if (flowLength > 0f) {
-                Entity.Velocity = new Vec3 {
-                    X = Entity.Velocity.X + (flowX / flowLength * WaterCurrentForce),
-                    Y = Entity.Velocity.Y + (flowY / flowLength * WaterCurrentForce),
-                    Z = Entity.Velocity.Z + (flowZ / flowLength * WaterCurrentForce)
-                };
+                velocityX += flowX / flowLength * WaterCurrentForce;
+                velocityY += flowY / flowLength * WaterCurrentForce;
+                velocityZ += flowZ / flowLength * WaterCurrentForce;
             }
 
             bool applyGravity = Entity.Flags.GetActorFlag(ActorFlag.HasGravity) && !Entity.IsSwimming;
@@ -151,43 +158,23 @@ public sealed class EntityMovementTrait : EntityTrait {
                     ? GravityPerTick * 0.25f
                     : Entity.IsInWater ? GravityPerTick * 0.25f : GravityPerTick;
                 float fluidDrag = InLava ? 0.5f : Entity.IsInWater ? 0.8f : Drag;
-                float velocityY = Entity.Velocity.Y;
                 if (DragBeforeGravity) {
                     velocityY *= fluidDrag;
                 }
 
-                Entity.Velocity = new Vec3 {
-                    X = Entity.Velocity.X,
-                    Y = velocityY - gravity,
-                    Z = Entity.Velocity.Z
-                };
+                velocityY -= gravity;
                 if (!DragBeforeGravity) {
-                    Entity.Velocity = new Vec3 {
-                        X = Entity.Velocity.X,
-                        Y = Entity.Velocity.Y * fluidDrag,
-                        Z = Entity.Velocity.Z
-                    };
+                    velocityY *= fluidDrag;
                 }
-                Entity.Velocity = new Vec3 {
-                    X = Entity.Velocity.X * fluidDrag,
-                    Y = Entity.Velocity.Y,
-                    Z = Entity.Velocity.Z * fluidDrag
-                };
-                if (Entity.Velocity.Y < TerminalVelocity) {
-                    Entity.Velocity = new Vec3 {
-                        X = Entity.Velocity.X,
-                        Y = TerminalVelocity,
-                        Z = Entity.Velocity.Z
-                    };
-                }
+                velocityX *= fluidDrag;
+                velocityZ *= fluidDrag;
+                velocityY = MathF.Max(velocityY, TerminalVelocity);
             }
 
-            float velocityX = Entity.Velocity.X;
-            float velocityZ = Entity.Velocity.Z;
             float nextX = Entity.Position.X + velocityX;
-            float nextY = Entity.Position.Y + Entity.Velocity.Y;
+            float nextY = Entity.Position.Y + velocityY;
             float nextZ = Entity.Position.Z + velocityZ;
-            float horizontalCollisionY = Entity.Velocity.Y > 0f ? nextY : Entity.Position.Y;
+            float horizontalCollisionY = velocityY > 0f ? nextY : Entity.Position.Y;
             if (velocityX != 0f && CollidesWithSolidBlocks(nextX, horizontalCollisionY, Entity.Position.Z)) {
                 if (collision is not null) {
                     collision.XAxisCollision = velocityX > 0f ? 1 : -1;
@@ -206,7 +193,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 velocityZ = 0f;
             }
 
-            if (applyGravity && Entity.Velocity.Y <= 0f &&
+            if (applyGravity && velocityY <= 0f &&
                 FindGroundSurface(nextX, Entity.Position.Y, nextY, nextZ) is float landingY) {
                 if (collision is not null) {
                     collision.YAxisCollision = -1;
@@ -232,17 +219,13 @@ public sealed class EntityMovementTrait : EntityTrait {
                     Entity.OnFallOnBlock(new EntityFallOnBlockTraitEvent(Entity.Position, _fallDistance));
                 }
 
-                Entity.Velocity = new Vec3 {
-                    X = groundedVelocityX,
-                    Y = 0f,
-                    Z = groundedVelocityZ
-                };
+                Entity.Velocity = new Vec3 { X = groundedVelocityX, Y = 0f, Z = groundedVelocityZ };
                 _fallDistance = 0f;
                 break;
             }
 
-            if (Entity.Velocity.Y < 0f) {
-                _fallDistance += -Entity.Velocity.Y;
+            if (velocityY < 0f) {
+                _fallDistance += -velocityY;
             }
             else {
                 _fallDistance = 0f;
@@ -253,18 +236,12 @@ public sealed class EntityMovementTrait : EntityTrait {
                 Y = nextY,
                 Z = nextZ
             };
-            Entity.Velocity = new Vec3 {
-                X = velocityX,
-                Y = Entity.Velocity.Y,
-                Z = velocityZ
-            };
+            Entity.Velocity = new Vec3 { X = velocityX, Y = velocityY, Z = velocityZ };
         }
 
         if (previousPosition.X == Entity.Position.X &&
             previousPosition.Y == Entity.Position.Y &&
             previousPosition.Z == Entity.Position.Z) {
-            Entity.IsInWater = IsInFluid(Entity.Position, "minecraft:water", "minecraft:flowing_water");
-            InLava = IsInLava(Entity.Position);
             Grounded = !InLava && IsGrounded(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
             Entity.OnPhysicsTick(details.CurrentTick, Grounded);
             return;
@@ -284,8 +261,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 HeadYaw = Entity.Rotation.Z
             }));
 
-        Entity.IsInWater = IsInFluid(Entity.Position, "minecraft:water", "minecraft:flowing_water");
-        InLava = IsInLava(Entity.Position);
+        UpdateFluidState(Entity.Position);
         Grounded = !InLava && IsGrounded(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
         Entity.OnPhysicsTick(details.CurrentTick, Grounded);
     }
@@ -379,7 +355,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     private bool HasSolidBelow(float x, float y, float z) {
-        float halfWidth = CollisionWidth() * 0.5f;
+        float halfWidth = _tickCollisionWidth * 0.5f;
         int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
         int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
         int blockY = (int)MathF.Floor(y);
@@ -391,7 +367,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                 foreach (CollisionBox box in GetCollisionBoxes(blockX, blockY, blockZ)) {
                     float top = blockY + (box.OriginY + box.SizeY) / 16f;
                     if (MathF.Abs(y - top) <= 0.01f &&
-                        OverlapsHorizontal(x, z, CollisionWidth(), blockX, blockZ, box)) {
+                        OverlapsHorizontal(x, z, _tickCollisionWidth, blockX, blockZ, box)) {
                         return true;
                     }
                 }
@@ -402,11 +378,11 @@ public sealed class EntityMovementTrait : EntityTrait {
     }
 
     private bool CollidesWithSolidBlocks(float x, float y, float z) {
-        float halfWidth = CollisionWidth() * 0.5f;
+        float halfWidth = _tickCollisionWidth * 0.5f;
         int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
         int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
         int minY = (int)MathF.Floor(y + CollisionEpsilon);
-        int maxY = (int)MathF.Floor(y + CollisionHeight() - CollisionEpsilon);
+        int maxY = (int)MathF.Floor(y + _tickCollisionHeight - CollisionEpsilon);
         int minZ = (int)MathF.Floor(z - halfWidth + CollisionEpsilon);
         int maxZ = (int)MathF.Floor(z + halfWidth - CollisionEpsilon);
 
@@ -419,7 +395,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                             y,
                             z - halfWidth,
                             x + halfWidth,
-                            y + CollisionHeight(),
+                            y + _tickCollisionHeight,
                             z + halfWidth,
                             blockX,
                             blockY,
@@ -435,34 +411,31 @@ public sealed class EntityMovementTrait : EntityTrait {
         return false;
     }
 
-    private IReadOnlyList<CollisionBox> GetCollisionBoxes(int x, int y, int z) {
+    private CollisionBox[] GetCollisionBoxes(int x, int y, int z) {
         if (Entity.Dimension is null) {
             return [];
         }
 
         return Entity.Dimension.TryGetLoadedPermutation(x, y, z, out BlockPermutation? permutation) &&
             permutation is not null
-            ? BlockCollisionShape.GetBoxes(permutation)
+            ? BlockCollisionShape.GetBoxArray(permutation)
             : [];
     }
 
-    private bool IsInLava(Vec3 position) {
-        return IsInFluid(position, "minecraft:lava", "minecraft:flowing_lava");
-    }
-
-    private bool IsInFluid(Vec3 position, params string[] fluidIdentifiers) {
+    private void UpdateFluidState(Vec3 position) {
         if (Entity.Dimension is null) {
-            return false;
+            Entity.IsInWater = false;
+            InLava = false;
+            return;
         }
 
-        EntityCollisionTrait? collision = Entity.GetTrait<EntityCollisionTrait>();
-        float width = collision?.Width ?? EntityCollisionTrait.DefaultWidth;
-        float height = collision?.Height ?? EntityCollisionTrait.DefaultHeight;
-        float halfWidth = width * 0.5f;
+        bool inWater = false;
+        bool inLava = false;
+        float halfWidth = _tickCollisionWidth * 0.5f;
         int minX = (int)MathF.Floor(position.X - halfWidth + CollisionEpsilon);
         int maxX = (int)MathF.Floor(position.X + halfWidth - CollisionEpsilon);
         int minY = (int)MathF.Floor(position.Y + CollisionEpsilon);
-        int maxY = (int)MathF.Floor(position.Y + height - CollisionEpsilon);
+        int maxY = (int)MathF.Floor(position.Y + _tickCollisionHeight - CollisionEpsilon);
         int minZ = (int)MathF.Floor(position.Z - halfWidth + CollisionEpsilon);
         int maxZ = (int)MathF.Floor(position.Z + halfWidth - CollisionEpsilon);
 
@@ -474,15 +447,24 @@ public sealed class EntityMovementTrait : EntityTrait {
                         continue;
                     }
 
-                    string identifier = permutation.Type.Identifier;
-                    if (fluidIdentifiers.Contains(identifier, StringComparer.Ordinal)) {
-                        return true;
+                    if (permutation.Type.Water) {
+                        inWater = true;
+                    }
+                    else if (permutation.Type.Lava) {
+                        inLava = true;
+                    }
+
+                    if (inWater && inLava) {
+                        Entity.IsInWater = true;
+                        InLava = true;
+                        return;
                     }
                 }
             }
         }
 
-        return false;
+        Entity.IsInWater = inWater;
+        InLava = inLava;
     }
 
     private float SurfaceFriction(float x, float y, float z) {
@@ -542,19 +524,11 @@ public sealed class EntityMovementTrait : EntityTrait {
             maxZ > boxMinZ && minZ < boxMaxZ;
     }
 
-    private float CollisionWidth() {
-        return Entity.GetTrait<EntityCollisionTrait>()?.Width ?? EntityCollisionTrait.DefaultWidth;
-    }
-
-    private float CollisionHeight() {
-        return Entity.GetTrait<EntityCollisionTrait>()?.Height ?? EntityCollisionTrait.DefaultHeight;
-    }
-
     private float? FindGroundSurface(float x, float fromY, float toY, float z) {
         int startBlockY = (int)MathF.Floor(fromY + CollisionEpsilon);
         int endBlockY = (int)MathF.Floor(toY - CollisionEpsilon);
 
-        float halfWidth = CollisionWidth() * 0.5f;
+        float halfWidth = _tickCollisionWidth * 0.5f;
         int minX = (int)MathF.Floor(x - halfWidth + CollisionEpsilon);
         int maxX = (int)MathF.Floor(x + halfWidth - CollisionEpsilon);
         int minZ = (int)MathF.Floor(z - halfWidth + CollisionEpsilon);
@@ -567,7 +541,7 @@ public sealed class EntityMovementTrait : EntityTrait {
                     foreach (CollisionBox box in GetCollisionBoxes(bx, blockY, bz)) {
                         float top = blockY + (box.OriginY + box.SizeY) / 16f;
                         if (fromY <= top + CollisionEpsilon && toY <= top + CollisionEpsilon &&
-                            OverlapsHorizontal(x, z, CollisionWidth(), bx, bz, box)) {
+                            OverlapsHorizontal(x, z, _tickCollisionWidth, bx, bz, box)) {
                             solid = true;
                             break;
                         }

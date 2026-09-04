@@ -3,6 +3,7 @@ namespace Basalt.Core.Crafting;
 using System.Buffers.Binary;
 using Basalt.Core.Item;
 using Basalt.BedrockProtocol.Enums;
+using Basalt.Core.Profiling;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -90,6 +91,7 @@ public sealed class CraftingRegistry {
     public IReadOnlyList<CraftingRecipe> GetAll() => _recipes;
 
     public byte[] GetCraftingDataPayload() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("CraftingRegistry.GetCraftingDataPayload") : default;
         if (_cachedPayload is not null) {
             return _cachedPayload;
         }

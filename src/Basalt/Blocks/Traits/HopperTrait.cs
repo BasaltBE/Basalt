@@ -182,15 +182,19 @@ public sealed class HopperTrait : BlockTrait {
     /// Called each hopper tick. Returns true if the hopper should keep ticking.
     /// </summary>
     public bool Tick() {
+        return Tick(out _);
+    }
+
+    public bool Tick(out uint delayTicks) {
+        delayTicks = (uint)TransferCooldown;
         if (_container?.Dimension is null) return false;
 
         if (_transferCooldown > 0) {
-            _transferCooldown--;
+            _transferCooldown = 0;
             if (_pendingViewerUpdate) {
                 _container.Update();
                 _pendingViewerUpdate = false;
             }
-            return true;
         }
 
         bool didWork = false;
@@ -204,6 +208,7 @@ public sealed class HopperTrait : BlockTrait {
             _transferCooldown = TransferCooldown;
         }
 
+        delayTicks = (uint)TransferCooldown;
         return HasWork();
     }
 

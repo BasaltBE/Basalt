@@ -9,6 +9,7 @@ public static class Profiler {
     public static bool Enabled;
 
     private static readonly ConcurrentDictionary<string, CString> CStringCache = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<SourceLocation, ulong> SourceLocationCache = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ProfilerZone BeginZone(
@@ -19,11 +20,21 @@ public static class Profiler {
         [CallerMemberName] string? memberName = null) {
         if (!Enabled) return default;
 
-        CString fileStr = GetCachedCString(filePath, out ulong fileLn);
-        CString memberStr = GetCachedCString(memberName, out ulong memberLn);
-        CString nameStr = GetCachedCString(zoneName, out ulong nameLn);
-
-        ulong srcLocId = TracyAllocSrclocName(lineNumber, fileStr, fileLn, memberStr, memberLn, nameStr, nameLn, color);
+        SourceLocation sourceLocation = new(zoneName, filePath, memberName, lineNumber, color);
+        ulong srcLocId = SourceLocationCache.GetOrAdd(sourceLocation, static location => {
+            CString fileStr = GetCachedCString(location.FilePath, out ulong fileLn);
+            CString memberStr = GetCachedCString(location.MemberName, out ulong memberLn);
+            CString nameStr = GetCachedCString(location.Name, out ulong nameLn);
+            return TracyAllocSrclocName(
+                location.LineNumber,
+                fileStr,
+                fileLn,
+                memberStr,
+                memberLn,
+                nameStr,
+                nameLn,
+                location.Color);
+        });
         TracyCZoneCtx context = TracyEmitZoneBeginAlloc(srcLocId, 1);
         return new ProfilerZone(context);
     }
@@ -53,4 +64,11 @@ public static class Profiler {
     private static CString GetOrCreateCString(string value) {
         return CStringCache.GetOrAdd(value, static v => CString.FromString(v));
     }
+
+    private readonly record struct SourceLocation(
+        string? Name,
+        string? FilePath,
+        string? MemberName,
+        uint LineNumber,
+        uint Color);
 }

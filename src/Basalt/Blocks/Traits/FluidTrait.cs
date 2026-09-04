@@ -99,10 +99,8 @@ public class FluidTrait : BlockTrait {
     private static bool IsFluid(FluidKind kind, BlockPermutation perm) {
         if (!perm.Type.Liquid) return false;
         return kind switch {
-            FluidKind.Water => string.Equals(perm.Type.Identifier, BlockIdentifier.Water.ToIdentifier(), StringComparison.Ordinal)
-                || string.Equals(perm.Type.Identifier, BlockIdentifier.FlowingWater.ToIdentifier(), StringComparison.Ordinal),
-            FluidKind.Lava => string.Equals(perm.Type.Identifier, BlockIdentifier.Lava.ToIdentifier(), StringComparison.Ordinal)
-                || string.Equals(perm.Type.Identifier, BlockIdentifier.FlowingLava.ToIdentifier(), StringComparison.Ordinal),
+            FluidKind.Water => perm.Type.Water,
+            FluidKind.Lava => perm.Type.Lava,
             _ => false
         };
     }
@@ -164,33 +162,44 @@ public class FluidTrait : BlockTrait {
 
     public static FluidKind? GetFluidKind(BlockPermutation perm) {
         if (!perm.Type.Liquid) return null;
-        string id = perm.Type.Identifier;
-        if (string.Equals(id, BlockIdentifier.Water.ToIdentifier(), StringComparison.Ordinal)
-            || string.Equals(id, BlockIdentifier.FlowingWater.ToIdentifier(), StringComparison.Ordinal))
+        if (perm.Type.Water)
             return FluidKind.Water;
-        if (string.Equals(id, BlockIdentifier.Lava.ToIdentifier(), StringComparison.Ordinal)
-            || string.Equals(id, BlockIdentifier.FlowingLava.ToIdentifier(), StringComparison.Ordinal))
+        if (perm.Type.Lava)
             return FluidKind.Lava;
         return null;
     }
 
     public static Vec3 GetWaterFlow(Dimension dimension, BlockPos pos, out float height) {
+        GetWaterFlow(dimension, pos, out float flowX, out float flowY, out float flowZ, out height);
+        return new Vec3 {
+            X = flowX,
+            Y = flowY,
+            Z = flowZ
+        };
+    }
+
+    public static void GetWaterFlow(
+        Dimension dimension,
+        BlockPos pos,
+        out float flowX,
+        out float flowY,
+        out float flowZ,
+        out float height) {
         BlockPermutation? permutation = GetBlock(dimension, pos);
         int decay = WaterFlowDecay(permutation);
         if (decay < 0) {
             height = 0f;
-            return new Vec3() {
-                X = 0,
-                Y = 0,
-                Z = 0,
-            };
+            flowX = 0f;
+            flowY = 0f;
+            flowZ = 0f;
+            return;
         }
 
         int depth = LiquidDepth(permutation!) ?? 0;
         height = depth >= 8 ? 1f : 1f - (depth / 8f);
 
-        float flowX = 0f;
-        float flowZ = 0f;
+        flowX = 0f;
+        flowZ = 0f;
         ReadOnlySpan<(int dx, int dz)> directions = [(1, 0), (-1, 0), (0, 1), (0, -1)];
 
         foreach ((int dx, int dz) in directions) {
@@ -220,21 +229,18 @@ public class FluidTrait : BlockTrait {
             flowZ += dz * difference;
         }
 
-        float flowY = depth >= 8 ? -6f : 0f;
+        flowY = depth >= 8 ? -6f : 0f;
         float length = MathF.Sqrt((flowX * flowX) + (flowY * flowY) + (flowZ * flowZ));
         if (length == 0f) {
-            return new Vec3() {
-                X = 0,
-                Y = 0,
-                Z = 0,
-            };
+            flowX = 0f;
+            flowY = 0f;
+            flowZ = 0f;
+            return;
         }
 
-        return new Vec3 {
-            X = flowX / length,
-            Y = flowY / length,
-            Z = flowZ / length
-        };
+        flowX /= length;
+        flowY /= length;
+        flowZ /= length;
     }
 
     public static void TickFluid(FluidKind kind, Dimension dimension, int x, int y, int z) {

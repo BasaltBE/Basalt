@@ -18,6 +18,8 @@ public sealed class BlockType {
     internal readonly Lock PermutationLock = new();
 
     public string Identifier { get; }
+    public bool Water { get; }
+    public bool Lava { get; }
     public bool Air { get; internal set; }
     public bool Liquid { get; internal set; }
     public bool Solid { get; internal set; }
@@ -40,6 +42,8 @@ public sealed class BlockType {
 
     public BlockType(string identifier) {
         Identifier = identifier;
+        Water = identifier is "minecraft:water" or "minecraft:flowing_water";
+        Lava = identifier is "minecraft:lava" or "minecraft:flowing_lava";
         Registry[identifier] = this;
         BlockTraitRegistry.BindTraitsToType(this);
     }

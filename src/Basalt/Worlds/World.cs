@@ -351,6 +351,7 @@ public sealed class World : IDisposable, Tickable {
     }
 
     internal int AutoSave(int limit) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("World.AutoSave") : default;
         if (_autoSaveDimensions is null || limit <= 0) {
             return 0;
         }

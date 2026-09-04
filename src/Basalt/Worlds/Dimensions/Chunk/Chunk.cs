@@ -13,6 +13,7 @@ namespace Basalt.Core.Worlds.Dimensions.Chunk;
 
 public sealed class Chunk {
     public const int MaxSubChunks = 24;
+    private static readonly BlockPermutation AirPermutation = BlockPermutation.Resolve("minecraft:air");
 
     private readonly Dictionary<(int X, int Y, int Z), BlockLevelStorage> _blocks = [];
     private readonly Dictionary<(int X, int Y, int Z), Block> _blockActors = [];
@@ -40,12 +41,16 @@ public sealed class Chunk {
 
     public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0) {
         SubChunk? subChunk = PeekSubChunk(y >> 4);
-        if (subChunk is null) {
-            return BlockPermutation.Resolve(BlockStorage.Air);
+        if (subChunk is null || (uint)layer >= (uint)subChunk.Layers.Count) {
+            return AirPermutation;
         }
 
-        int state = subChunk.GetState(x & 0xF, y & 0xF, z & 0xF, layer);
-        return BlockPermutation.Resolve(state);
+        BlockStorage storage = subChunk.Layers[layer];
+        if (storage.Palette.Count == 1 && storage.Palette[0] == BlockStorage.Air) {
+            return AirPermutation;
+        }
+
+        return storage.GetPermutation(x & 0xF, y & 0xF, z & 0xF);
     }
 
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0, bool dirty = true) {
@@ -176,6 +181,8 @@ public sealed class Chunk {
     public List<BlockLevelStorage> GetAllBlockStorages() {
         return [.. _blocks.Values];
     }
+
+    internal Dictionary<(int X, int Y, int Z), BlockLevelStorage> BlockStorages => _blocks;
 
     public bool HasBlockStorage(BlockPos position) {
         return _blocks.ContainsKey((position.X, position.Y, position.Z));
@@ -309,6 +316,22 @@ public sealed class Chunk {
     }
 
     internal Chunk CreatePersistenceSnapshot() {
+        Chunk snapshot = CreateSnapshot();
+
+        foreach ((long uniqueId, CompoundTag data) in _entities) {
+            snapshot._entities[uniqueId] = CloneTag(data);
+        }
+
+        return snapshot;
+    }
+
+    internal Chunk CreateNetworkSnapshot() {
+        return CreateSnapshot();
+    }
+
+    private Chunk CreateSnapshot() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("Chunk.CreateSnapshot") : default;
+
         SubChunk?[] subChunks = new SubChunk?[MaxSubChunks];
         for (int i = 0; i < SubChunks.Length; i++) {
             SubChunk? source = SubChunks[i];
@@ -331,12 +354,9 @@ public sealed class Chunk {
         }
 
         Chunk snapshot = new(X, Z, Type, subChunks);
+        snapshot._blocks.EnsureCapacity(_blocks.Count);
         foreach (((int X, int Y, int Z) key, BlockLevelStorage storage) in _blocks) {
             snapshot._blocks[key] = new BlockLevelStorage(snapshot, CloneTag(storage));
-        }
-
-        foreach ((long uniqueId, CompoundTag data) in _entities) {
-            snapshot._entities[uniqueId] = CloneTag(data);
         }
 
         return snapshot;
@@ -426,9 +446,8 @@ public sealed class Chunk {
             actorEntry.Value.WriteTraits(storage);
         }
 
-        List<BlockLevelStorage> blockEntities = chunk.GetAllBlockStorages();
-        for (int i = 0; i < blockEntities.Count; i++) {
-            NBT.WriteTag(writer, blockEntities[i], new TagOptions(Name: true, Type: true, VarInt: false));
+        foreach (BlockLevelStorage blockEntity in chunk._blocks.Values) {
+            NBT.WriteTag(writer, blockEntity, new TagOptions(Name: true, Type: true, VarInt: false));
         }
 
         return writer.Offset;

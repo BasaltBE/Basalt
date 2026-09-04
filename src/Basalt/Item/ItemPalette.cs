@@ -2,6 +2,7 @@ namespace Basalt.Core.Item;
 
 using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
+using Basalt.Core.Profiling;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Diagnostics;
@@ -50,6 +51,7 @@ public sealed class ItemPalette {
     }
 
     public static byte[] GetItemRegistryPayload() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ItemPalette.GetItemRegistryPayload") : default;
         if (_itemRegistryPayload is not null) {
             return _itemRegistryPayload;
         }
@@ -75,6 +77,7 @@ public sealed class ItemPalette {
     }
 
     public static byte[] GetCreativeContentPayload() {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("ItemPalette.GetCreativeContentPayload") : default;
         if (_creativeContentPayload is not null) {
             return _creativeContentPayload;
         }
@@ -413,6 +416,7 @@ public sealed class ItemPalette {
                 : identifier;
 
             CompoundTag componentPayload =
+                properties.Get<CompoundTag>(identifier) ??
                 properties.Get<CompoundTag>(payloadKey) ??
                 properties.Get<CompoundTag>(ToCamelCase(payloadKey)) ??
                 new CompoundTag();
@@ -453,9 +457,21 @@ public sealed class ItemPalette {
     private static CompoundTag NormalizeFoodComponent(CompoundTag food) {
         CompoundTag normalized = new();
         normalized.Set("nutrition", new IntTag { Value = food.Get<IntTag>("nutrition")?.Value ?? 0 });
-        normalized.Set("saturation_modifier", new FloatTag { Value = food.Get<FloatTag>("saturationModifier")?.Value ?? 0f });
-        normalized.Set("can_always_eat", new ByteTag { Value = food.Get<ByteTag>("canAlwaysEat")?.Value ?? 0 });
-        normalized.Set("using_converts_to", new StringTag { Value = food.Get<StringTag>("usingConvertsTo")?.Value ?? string.Empty });
+        normalized.Set("saturation_modifier", new FloatTag {
+            Value = food.Get<FloatTag>("saturation_modifier")?.Value
+                ?? food.Get<FloatTag>("saturationModifier")?.Value
+                ?? 0f
+        });
+        normalized.Set("can_always_eat", new ByteTag {
+            Value = food.Get<ByteTag>("can_always_eat")?.Value
+                ?? food.Get<ByteTag>("canAlwaysEat")?.Value
+                ?? 0
+        });
+        normalized.Set("using_converts_to", new StringTag {
+            Value = food.Get<StringTag>("using_converts_to")?.Value
+                ?? food.Get<StringTag>("usingConvertsTo")?.Value
+                ?? string.Empty
+        });
         normalized.Set("cooldown_time", new IntTag { Value = 0 });
         normalized.Set("cooldown_type", new StringTag { Value = string.Empty });
         normalized.Set("on_use_action", new IntTag { Value = -1 });

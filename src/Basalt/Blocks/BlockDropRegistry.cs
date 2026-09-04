@@ -2,6 +2,7 @@ namespace Basalt.Core.Blocks;
 
 using Basalt.Core.Item;
 using Basalt.Core.Item.Traits;
+using Basalt.Core.Profiling;
 
 public static class BlockDropRegistry {
     private static readonly Dictionary<string, List<BlockDrop>> Registry = new(StringComparer.Ordinal);
@@ -52,6 +53,7 @@ public static class BlockDropRegistry {
     }
 
     public static List<ItemStack> GenerateDrops(string blockIdentifier, ItemStack? tool) {
+        using var __zone = Profiler.Enabled ? Profiler.BeginZone("BlockDropRegistry.GenerateDrops") : default;
         if (Definitions.TryGetValue(blockIdentifier, out BlockDropData? definition)) {
             string toolIdentifier = tool?.Identifier ?? "hand";
             int separator = toolIdentifier.IndexOf(':');

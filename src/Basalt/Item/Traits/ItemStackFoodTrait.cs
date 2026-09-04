@@ -45,8 +45,17 @@ public sealed class ItemStackFoodTrait : ItemTrait {
     }
 
     public override void OnRead(CompoundTag tag) {
-        Nutrition = tag.Get<IntTag>("nutrition")?.Value ?? Nutrition;
-        SaturationModifier = tag.Get<FloatTag>("saturationModifier")?.Value ?? SaturationModifier;
+        ItemTypeFoodComponent? food = ItemStack.Type.Components.GetComponent<ItemTypeFoodComponent>();
+        int componentNutrition = food?.GetNutrition() ?? Nutrition;
+        float componentSaturationModifier = food?.GetSaturationModifier() ?? SaturationModifier;
+        IntTag? nutritionTag = tag.Get<IntTag>("nutrition");
+        FloatTag? saturationModifierTag = tag.Get<FloatTag>("saturationModifier");
+        Nutrition = nutritionTag is not null && nutritionTag.Value > 0
+            ? nutritionTag.Value
+            : componentNutrition;
+        SaturationModifier = saturationModifierTag is not null && saturationModifierTag.Value > 0f
+            ? saturationModifierTag.Value
+            : componentSaturationModifier;
         CanAlwaysEat = (tag.Get<ByteTag>("canAlwaysEat")?.Value ?? (CanAlwaysEat ? (sbyte)1 : (sbyte)0)) != 0;
         UsingConvertsTo = tag.Get<StringTag>("usingConvertsTo")?.Value ?? UsingConvertsTo;
     }

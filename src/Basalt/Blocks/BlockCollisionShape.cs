@@ -5,15 +5,27 @@ using Basalt.Core.Blocks.Types;
 
 public static class BlockCollisionShape {
     private static readonly CollisionBox FullCube = new(-8f, 0f, -8f, 16f, 16f, 16f);
+    private static readonly CollisionBox[] EmptyBoxes = [];
+    private static readonly CollisionBox[] FullCubeBoxes = [FullCube];
 
     public static IReadOnlyList<CollisionBox> GetBoxes(BlockPermutation permutation) {
+        return GetBoxArray(permutation);
+    }
+
+    internal static CollisionBox[] GetBoxArray(BlockPermutation permutation) {
+        if (permutation.CollisionBoxes is { } cached) {
+            return cached;
+        }
+
+        CollisionBox[] resolved = ResolveBoxes(permutation);
+        Interlocked.CompareExchange(ref permutation.CollisionBoxes, resolved, null);
+        return permutation.CollisionBoxes!;
+    }
+
+    private static CollisionBox[] ResolveBoxes(BlockPermutation permutation) {
         BlockType type = permutation.Type;
-        if (type.Air || type.Liquid || type.Identifier is
-            "minecraft:water" or
-            "minecraft:flowing_water" or
-            "minecraft:lava" or
-            "minecraft:flowing_lava") {
-            return [];
+        if (type.Air || type.Liquid || type.Water || type.Lava) {
+            return EmptyBoxes;
         }
 
         if (type.GetComponent<CollisionBoxComponent>() is { } component) {
@@ -22,7 +34,7 @@ public static class BlockCollisionShape {
 
         if (type.Identifier.EndsWith("_double_slab", StringComparison.Ordinal) ||
             type.Identifier.EndsWith("_double_stone_slab", StringComparison.Ordinal)) {
-            return [FullCube];
+            return FullCubeBoxes;
         }
 
         if (type.Identifier.EndsWith("_slab", StringComparison.Ordinal) &&
@@ -37,7 +49,7 @@ public static class BlockCollisionShape {
             return TrapdoorBoxes(permutation);
         }
 
-        return type.Solid ? [FullCube] : [];
+        return type.Solid ? FullCubeBoxes : EmptyBoxes;
     }
 
     private static CollisionBox[] TrapdoorBoxes(BlockPermutation permutation) {
