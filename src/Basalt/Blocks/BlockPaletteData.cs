@@ -65,32 +65,47 @@ public sealed class BlockPermutationData {
     public Dictionary<string, object> State { get; set; } = [];
 }
 
-public sealed class BlockDropData {
-    [JsonPropertyName("identifier")]
-    public string Identifier { get; set; } = string.Empty;
+public sealed class BlockDropData : Dictionary<string, BlockDropToolData>;
 
-    [JsonPropertyName("drops")]
-    public List<BlockDropEntryData> Drops { get; set; } = [];
-}
+public sealed class BlockDropToolData : Dictionary<string, List<BlockDropEntryData>>;
 
 public sealed class BlockDropEntryData {
     [JsonPropertyName("identifier")]
     public string Identifier { get; set; } = string.Empty;
 
-    [JsonPropertyName("min")]
-    public int Min { get; set; } = 1;
+    [JsonPropertyName("minAmount")]
+    public int MinAmount { get; set; } = 1;
 
-    [JsonPropertyName("max")]
-    public int Max { get; set; } = 1;
+    [JsonPropertyName("maxAmount")]
+    public int MaxAmount { get; set; } = 1;
+
+    [JsonIgnore]
+    public int Min => MinAmount;
+
+    [JsonIgnore]
+    public int Max => MaxAmount;
 
     [JsonPropertyName("chance")]
     public float Chance { get; set; } = 1.0f;
+}
+
+public sealed class BlockStateData {
+    [JsonPropertyName("identifier")]
+    public string Identifier { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("values")]
+    public List<JsonElement> Values { get; set; } = [];
 }
 
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(List<BlockTypeData>))]
 [JsonSerializable(typeof(List<BlockPermutationData>))]
 [JsonSerializable(typeof(List<BlockDropData>))]
+[JsonSerializable(typeof(Dictionary<string, BlockDropData>))]
+[JsonSerializable(typeof(List<BlockStateData>))]
 internal sealed partial class BlockPaletteJsonContext : JsonSerializerContext {
 }
 

@@ -36,6 +36,16 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
         return 0;
     }
 
+    public int GetLevel(string identifier) {
+        for (int i = 0; i < _enchantments.Count; i++) {
+            if (string.Equals(_enchantments[i].Type.Identifier, identifier, StringComparison.Ordinal)) {
+                return _enchantments[i].Level;
+            }
+        }
+
+        return 0;
+    }
+
     public void AddEnchantment(EnchantmentInstance enchantment) {
         for (int i = 0; i < _enchantments.Count; i++) {
             if (_enchantments[i].Type.Id == enchantment.Type.Id) {

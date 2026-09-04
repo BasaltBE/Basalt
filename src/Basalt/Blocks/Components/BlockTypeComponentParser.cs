@@ -15,6 +15,7 @@ public static class BlockComponentParser {
             "minecraft:piston" => PistonComponent.FromJson(element),
             "minecraft:fluid_container" => FluidContainerComponent.FromJson(element),
             "minecraft:map_color" => MapColorComponent.FromJson(element),
+            "minecraft:instrument_sound" => new InstrumentSoundComponent(),
             "minecraft:record_player" => new RecordPlayerComponent(),
             "minecraft:selection_box" => SelectionBoxComponent.FromJson(element),
             "minecraft:collision_box" => CollisionBoxComponent.FromJson(element),

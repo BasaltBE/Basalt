@@ -130,6 +130,10 @@ public sealed class Block {
     /// Gets the drops for this block. 
     /// </summary>
     public List<ItemStack> GetDrops() {
+        return GetDrops(null);
+    }
+
+    public List<ItemStack> GetDrops(ItemStack? tool) {
         if (_customDrops is not null) {
             return _customDrops;
         }
@@ -141,9 +145,8 @@ public sealed class Block {
             }
         }
 
-        List<ItemStack> typeDrops = Type.GenerateDrops();
-        if (typeDrops.Count > 0) {
-            return typeDrops;
+        if (BlockDropRegistry.TryGetDrops(Identifier, out _)) {
+            return BlockDropRegistry.GenerateDrops(Identifier, tool);
         }
 
         return LootTableManager.GenerateLootFromBlock(this);
@@ -184,7 +187,9 @@ public sealed class Block {
         if (details.Player.Gamemode != GameType.Creative && details.Player.Dimension is { } dimension) {
             if (MeetsToolTierRequirement(details.Player)) {
                 ulong currentTick = dimension.World is Tickable tickable ? tickable.TickValue : 0;
-                List<ItemStack> drops = GetDrops();
+                EntityInventoryTrait? inventory = details.Player.GetTrait<EntityInventoryTrait>();
+                ItemStack? heldItem = inventory?.GetHeldItem();
+                List<ItemStack> drops = GetDrops(heldItem);
                 List<ItemStack> mergedDrops = [];
 
                 for (int i = 0; i < drops.Count; i++) {

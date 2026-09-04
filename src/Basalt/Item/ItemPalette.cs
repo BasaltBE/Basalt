@@ -363,17 +363,21 @@ public sealed class ItemPalette {
         }
 
         CompoundTag components = new();
-        CompoundTag itemProperties = new();
+        CompoundTag itemProperties = properties.Get<CompoundTag>("item_properties") ?? new();
 
-        if (properties.Get<CompoundTag>("icon") is CompoundTag iconTag) {
+        CompoundTag? iconTag = itemProperties.Get<CompoundTag>("minecraft:icon")
+            ?? properties.Get<CompoundTag>("icon");
+        if (iconTag is not null && !itemProperties.Values.ContainsKey("minecraft:icon")) {
             itemProperties.Set("minecraft:icon", iconTag);
         }
 
-        if (properties.Get<IntTag>("maxAmount") is IntTag maxStack) {
+        IntTag? maxStack = itemProperties.Get<IntTag>("max_stack_size")
+            ?? properties.Get<IntTag>("maxAmount");
+        if (maxStack is not null && !itemProperties.Values.ContainsKey("max_stack_size")) {
             itemProperties.Set("max_stack_size", new IntTag { Value = maxStack.Value });
         }
 
-        if (properties.Get<IntTag>("damage") is IntTag damage) {
+        if (properties.Get<IntTag>("damage") is IntTag damage && !itemProperties.Values.ContainsKey("damage")) {
             itemProperties.Set("damage", damage);
         }
 

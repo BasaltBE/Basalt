@@ -14,6 +14,8 @@ public sealed class BlockPalette {
     private const string AirIdentifier = "minecraft:air";
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
+    private static IReadOnlyDictionary<string, BlockStateData> _stateDefinitions =
+        new Dictionary<string, BlockStateData>(StringComparer.Ordinal);
     internal static TimeSpan LoadElapsed { get; private set; }
     internal static TimeSpan ReadElapsed { get; private set; }
     internal static TimeSpan BuildElapsed { get; private set; }
@@ -34,6 +36,7 @@ public sealed class BlockPalette {
 
     public static IReadOnlyDictionary<string, BlockType> Types => BlockType.Types;
     public static IReadOnlyDictionary<int, BlockPermutation> Permutations => BlockPermutation.Permutations;
+    public static IReadOnlyDictionary<string, BlockStateData> StateDefinitions => _stateDefinitions;
 
     public static List<BlockType> GetAllTypes() {
         return [.. Types.Values];
@@ -105,25 +108,31 @@ public sealed class BlockPalette {
             long startTimestamp = Stopwatch.GetTimestamp();
             List<BlockTypeData> types;
             List<BlockPermutationData> permutations;
-            List<BlockDropData> drops;
+            Dictionary<string, BlockDropData> drops;
+            List<BlockStateData> states;
 
             if (!string.IsNullOrWhiteSpace(dataDirectory)) {
-                string typesPath = Path.Combine(dataDirectory, "block_types.json");
+                string typesPath = Path.Combine(dataDirectory, "block-types.json");
                 string permutationsPath = Path.Combine(dataDirectory, "block_permutations.json");
-                string dropsPath = Path.Combine(dataDirectory, "block_drops.json");
+                string dropsPath = Path.Combine(dataDirectory, "block-drops.json");
                 types = ReadTypesFromFile(typesPath);
                 permutations = ReadPermutationsFromFile(permutationsPath);
                 drops = ReadDropsFromFile(dropsPath);
+                states = ReadStatesFromFile(Path.Combine(dataDirectory, "block_states.json"));
             }
             else {
-                types = ReadTypes("block_types.json");
+                types = ReadTypes("block-types.json");
                 permutations = ReadPermutations("block_permutations.json");
-                drops = ReadDrops("block_drops.json");
+                drops = ReadDrops("block-drops.json");
+                states = ReadStates("block_states.json");
             }
 
             long buildTimestamp = Stopwatch.GetTimestamp();
             ReadElapsed = Stopwatch.GetElapsedTime(startTimestamp, buildTimestamp);
             LoadRegistries(types, permutations, drops);
+            _stateDefinitions = states
+                .Where(static state => !string.IsNullOrEmpty(state.Identifier))
+                .ToDictionary(static state => state.Identifier, StringComparer.Ordinal);
             BuildElapsed = Stopwatch.GetElapsedTime(buildTimestamp);
             _vanillaLoaded = true;
             LoadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
@@ -142,11 +151,11 @@ public sealed class BlockPalette {
         return result ?? [];
     }
 
-    private static List<BlockDropData> ReadDrops(string resourceName) {
+    private static Dictionary<string, BlockDropData> ReadDrops(string resourceName) {
         Stream? stream = ProtocolData.Open(resourceName);
         if (stream is null) return [];
         using (stream) {
-            List<BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockDropData);
+            Dictionary<string, BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.DictionaryStringBlockDropData);
             return result ?? [];
         }
     }
@@ -163,17 +172,29 @@ public sealed class BlockPalette {
         return result ?? [];
     }
 
-    private static List<BlockDropData> ReadDropsFromFile(string dropsPath) {
+    private static Dictionary<string, BlockDropData> ReadDropsFromFile(string dropsPath) {
         if (!File.Exists(dropsPath)) {
             return [];
         }
 
         using FileStream stream = File.OpenRead(dropsPath);
-        List<BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockDropData);
+        Dictionary<string, BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.DictionaryStringBlockDropData);
         return result ?? [];
     }
 
-    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, List<BlockDropData> drops) {
+    private static List<BlockStateData> ReadStates(string resourceName) {
+        using Stream stream = ProtocolData.Require(resourceName);
+        List<BlockStateData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockStateData);
+        return result ?? [];
+    }
+
+    private static List<BlockStateData> ReadStatesFromFile(string statesPath) {
+        using FileStream stream = File.OpenRead(statesPath);
+        List<BlockStateData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockStateData);
+        return result ?? [];
+    }
+
+    private static void LoadRegistries(List<BlockTypeData> types, List<BlockPermutationData> permutations, Dictionary<string, BlockDropData> drops) {
         BlockType.EnsureRegistryCapacity(types.Count + 1);
         BlockPermutation.EnsureRegistryCapacity(permutations.Count);
         long startTimestamp = Stopwatch.GetTimestamp();

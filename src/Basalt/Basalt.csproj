@@ -54,12 +54,15 @@
                       LogicalName="BedrockProtocol.Data.protocol_data.bin" />
   </ItemGroup>
 
+  <Target Name="InvalidateGeneratedProtocolData" AfterTargets="Clean">
+    <Delete Files="$(IntermediateOutputPath)protocol_data.bin" />
+  </Target>
+
   <Target Name="GenerateProtocolData"
-          BeforeTargets="PrepareResourceNames"
-          Inputs="@(ProtocolDataSource);@(BlockIdentifierSource)"
-          Outputs="$(IntermediateOutputPath)protocol_data.bin;$(MSBuildThisFileDirectory)Blocks\BlockIdentifier.cs">
+          BeforeTargets="ResolveReferences;PrepareForBuild"
+          Condition="'$(DesignTimeBuild)' != 'true'">
     <MakeDir Directories="$(IntermediateOutputPath)" />
-    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\scripts\ProtocolDataGenerator.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)..\BedrockProtocol\src\Data&quot; &quot;$(IntermediateOutputPath)protocol_data.bin&quot; &quot;$(MSBuildThisFileDirectory)..\BedrockProtocol\src\Data\block_permutations.json&quot; &quot;$(MSBuildThisFileDirectory)Blocks\BlockIdentifier.cs&quot;" />
+    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\..\scripts\ProtocolDataGenerator.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)..\BedrockProtocol\src\Data&quot; &quot;$(IntermediateOutputPath)protocol_data.bin&quot; &quot;$(MSBuildThisFileDirectory)..\BedrockProtocol\src\Data\block_permutations.json&quot; &quot;$(MSBuildThisFileDirectory)Blocks\BlockIdentifier.cs&quot; &quot;$(IntermediateOutputPath)protocol_data.sha256&quot;" />
   </Target>
 
 </Project>
