@@ -288,7 +288,7 @@ public class Entity {
         }
 
         Dimension? dimension = Dimension;
-        List<ItemStack> drops = dimension is null ? [] : LootTableManager.GenerateLootFromEntity(this);
+        List<ItemStack> drops = dimension is null ? [] : LootTableManager.GenerateLootFromEntity(this, options.KillerSource);
         if (dimension?.World?.Server is Server server) {
             EntityDieSignal signal = new(this, options, drops);
             server.Emit(signal);

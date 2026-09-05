@@ -4,7 +4,9 @@ using System.Text.Json;
 
 using Basalt.Core.Blocks;
 using Basalt.Core.Entities;
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Item;
+using Basalt.Core.Item.Traits;
 
 public static class LootTableManager {
     private static readonly Dictionary<string, LootTable> Tables = new(StringComparer.Ordinal);
@@ -43,16 +45,84 @@ public static class LootTableManager {
         }
     }
 
-    public static List<ItemStack> GenerateLootFromEntity(Basalt.Core.Entities.Entity entity) {
-        return GenerateLootFromEntityType(entity.Type);
+    public static List<ItemStack> GenerateLootFromEntity(Basalt.Core.Entities.Entity entity, Basalt.Core.Entities.Entity? killer = null) {
+        ItemStack? weapon = killer?.GetTrait<EntityInventoryTrait>()?.GetHeldItem();
+        return GenerateLootFromEntityType(entity.Type, weapon);
     }
 
     public static List<ItemStack> GenerateLootFromEntityType(EntityType entityType) {
+        return GenerateLootFromEntityType(entityType, null);
+    }
+
+    private static List<ItemStack> GenerateLootFromEntityType(EntityType entityType, ItemStack? weapon) {
+        if (Definitions.TryGetValue(entityType.Identifier, out JsonElement definition) &&
+            definition.ValueKind == JsonValueKind.Object &&
+            !definition.TryGetProperty("pools", out _)) {
+            return GenerateEntityDrops(definition, weapon);
+        }
+
         if (!EntityTables.TryGetValue(entityType.Identifier, out LootTable? table)) {
             return [];
         }
 
         return table.Generate();
+    }
+
+    private static List<ItemStack> GenerateEntityDrops(JsonElement definition, ItemStack? weapon) {
+        JsonElement variants = definition;
+        if (!definition.TryGetProperty("default", out JsonElement defaultEntries) ||
+            defaultEntries.ValueKind != JsonValueKind.Array) {
+            string toolIdentifier = weapon?.Identifier ?? string.Empty;
+            int separator = toolIdentifier.IndexOf(':');
+            if (separator >= 0) {
+                toolIdentifier = toolIdentifier[(separator + 1)..];
+            }
+
+            if (!definition.TryGetProperty(toolIdentifier, out variants) ||
+                variants.ValueKind != JsonValueKind.Object) {
+                using JsonElement.ObjectEnumerator tools = definition.EnumerateObject();
+                if (!tools.MoveNext()) {
+                    return [];
+                }
+
+                variants = tools.Current.Value;
+            }
+        }
+
+        if (variants.ValueKind != JsonValueKind.Object) {
+            return [];
+        }
+
+        ItemStackEnchantmentTrait? enchantments = weapon?.GetTrait<ItemStackEnchantmentTrait>();
+        int looting = Math.Clamp(enchantments?.GetLevel("looting") ?? 0, 0, 3);
+        int fireAspect = Math.Clamp(enchantments?.GetLevel("fire_aspect") ?? 0, 0, 2);
+        string variant = fireAspect > 0 && looting > 0
+            ? $"looting{looting}_fireAspect{fireAspect}"
+            : fireAspect > 0 ? $"fireAspect{fireAspect}"
+            : looting > 0 ? $"looting{looting}" : "default";
+
+        if (!variants.TryGetProperty(variant, out JsonElement entries) ||
+            entries.ValueKind != JsonValueKind.Array) {
+            return [];
+        }
+
+        List<ItemStack> drops = new(entries.GetArrayLength());
+        foreach (JsonElement entry in entries.EnumerateArray()) {
+            string identifier = ReadString(entry, "identifier");
+            ItemType? itemType = ItemType.Get(identifier);
+            if (itemType is null || itemType == ItemType.Air) {
+                continue;
+            }
+
+            int minAmount = Math.Max(0, ReadInt(entry, "minAmount", 0));
+            int maxAmount = Math.Max(minAmount, ReadInt(entry, "maxAmount", minAmount));
+            int amount = Random.Shared.Next(minAmount, maxAmount + 1);
+            if (amount > 0) {
+                drops.Add(new ItemStack(itemType, checked((ushort)amount)));
+            }
+        }
+
+        return drops;
     }
 
     public static List<ItemStack> GenerateLootFromBlock(Basalt.Core.Blocks.Block block) {
