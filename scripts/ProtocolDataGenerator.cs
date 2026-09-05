@@ -29,7 +29,7 @@ internal static class ProtocolDataGenerator
         using FileStream stream = File.Create(outputFile);
         using BinaryWriter writer = new(stream, Encoding.UTF8, leaveOpen: false);
 
-        writer.Write(Encoding.ASCII.GetBytes("BASDATA2"));
+        writer.Write(Encoding.ASCII.GetBytes("BASDATA3"));
         writer.Write(generatedAtUtc.Ticks);
         writer.Write(files.Length);
 
@@ -37,8 +37,15 @@ internal static class ProtocolDataGenerator
         {
             string name = Path.GetRelativePath(dataDirectory, file)
                 .Replace(Path.DirectorySeparatorChar, '/');
-            byte[] nameBytes = Encoding.UTF8.GetBytes(name);
             byte[] data = File.ReadAllBytes(file);
+            if (name is "block-types.json" or "block_permutations.json" or "block-drops.json"
+                or "block_states.json" or "item-types.json" or "entity-types.json")
+            {
+                using ProtocolPaletteWriter palette = new();
+                data = palette.Write(name, data);
+                name = Path.ChangeExtension(name, ".bin");
+            }
+            byte[] nameBytes = Encoding.UTF8.GetBytes(name);
 
             writer.Write(nameBytes.Length);
             writer.Write(nameBytes);
@@ -56,7 +63,8 @@ internal static class ProtocolDataGenerator
     private static string ComputeHash(string dataDirectory, string[] files)
     {
         using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        hash.AppendData("BASDATA2"u8);
+        hash.AppendData("BASDATA3"u8);
+        hash.AppendData(File.ReadAllBytes(typeof(ProtocolDataGenerator).Assembly.Location));
 
         foreach (string file in files)
         {

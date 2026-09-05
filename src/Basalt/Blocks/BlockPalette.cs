@@ -3,6 +3,7 @@ namespace Basalt.Core.Blocks;
 using Basalt.Core.Blocks.Types;
 using Basalt.Core.Blocks.Traits;
 using Basalt.Core.Blocks.Components;
+using Basalt.Core.Types;
 
 using System.Reflection;
 using System.Diagnostics;
@@ -121,10 +122,14 @@ public sealed class BlockPalette {
                 states = ReadStatesFromFile(Path.Combine(dataDirectory, "block_states.json"));
             }
             else {
-                types = ReadTypes("block-types.json");
-                permutations = ReadPermutations("block_permutations.json");
-                drops = ReadDrops("block-drops.json");
-                states = ReadStates("block_states.json");
+                using ProtocolPaletteReader typesReader = new(ProtocolData.ReadRequired("block-types.bin"));
+                types = typesReader.ReadBlockTypes();
+                using ProtocolPaletteReader permutationsReader = new(ProtocolData.ReadRequired("block_permutations.bin"));
+                permutations = permutationsReader.ReadBlockPermutations();
+                using ProtocolPaletteReader dropsReader = new(ProtocolData.ReadRequired("block-drops.bin"));
+                drops = dropsReader.ReadBlockDrops();
+                using ProtocolPaletteReader statesReader = new(ProtocolData.ReadRequired("block_states.bin"));
+                states = statesReader.ReadBlockStates();
             }
 
             long buildTimestamp = Stopwatch.GetTimestamp();
@@ -136,27 +141,6 @@ public sealed class BlockPalette {
             BuildElapsed = Stopwatch.GetElapsedTime(buildTimestamp);
             _vanillaLoaded = true;
             LoadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
-        }
-    }
-
-    private static List<BlockTypeData> ReadTypes(string resourceName) {
-        using Stream stream = ProtocolData.Require(resourceName);
-        List<BlockTypeData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockTypeData);
-        return result ?? [];
-    }
-
-    private static List<BlockPermutationData> ReadPermutations(string resourceName) {
-        using Stream stream = ProtocolData.Require(resourceName);
-        List<BlockPermutationData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockPermutationData);
-        return result ?? [];
-    }
-
-    private static Dictionary<string, BlockDropData> ReadDrops(string resourceName) {
-        Stream? stream = ProtocolData.Open(resourceName);
-        if (stream is null) return [];
-        using (stream) {
-            Dictionary<string, BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.DictionaryStringBlockDropData);
-            return result ?? [];
         }
     }
 
@@ -179,12 +163,6 @@ public sealed class BlockPalette {
 
         using FileStream stream = File.OpenRead(dropsPath);
         Dictionary<string, BlockDropData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.DictionaryStringBlockDropData);
-        return result ?? [];
-    }
-
-    private static List<BlockStateData> ReadStates(string resourceName) {
-        using Stream stream = ProtocolData.Require(resourceName);
-        List<BlockStateData>? result = JsonSerializer.Deserialize(stream, BlockPaletteJsonContext.Default.ListBlockStateData);
         return result ?? [];
     }
 

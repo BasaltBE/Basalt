@@ -1,4 +1,5 @@
 namespace Basalt.Core.Item;
+using Basalt.Core.Types;
 
 using Basalt.Core.Item.Enchantment;
 using Basalt.Core.Item.Traits;
@@ -19,6 +20,7 @@ public sealed class ItemPalette {
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
     internal static TimeSpan LoadElapsed { get; private set; }
+    internal static TimeSpan ReadElapsed { get; private set; }
     private static byte[]? _itemRegistryPayload;
     private static byte[]? _creativeContentPayload;
     private static Dictionary<uint, ItemStack>? _creativeItems;
@@ -203,10 +205,11 @@ public sealed class ItemPalette {
                 types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
             }
             else {
-                using Stream typesStream = ProtocolData.Require("item_types.json");
-                types = JsonSerializer.Deserialize(typesStream, ItemPaletteJsonContext.Default.ListItemTypeData) ?? [];
+                using ProtocolPaletteReader reader = new(ProtocolData.ReadRequired("item-types.bin"));
+                types = reader.ReadItemTypes();
             }
 
+            ReadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
             ItemType.EnsureRegistryCapacity(types.Count + 1);
 
             for (int i = 0; i < types.Count; i++) {

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 
 /// <summary>
-/// Provides access to embedded Protocol/Data JSON resources.
+/// Provides access to embedded protocol data resources.
 /// </summary>
 internal static class ProtocolData {
     private const int HeaderSize = 20;
@@ -16,7 +16,7 @@ internal static class ProtocolData {
     public static DateTime GeneratedAtUtc {
         get {
             ReadOnlySpan<byte> source = Data.Value;
-            if (source.Length < HeaderSize || !source[..8].SequenceEqual("BASDATA2"u8)) {
+            if (source.Length < HeaderSize || !source[..8].SequenceEqual("BASDATA3"u8)) {
                 throw new InvalidDataException("The embedded protocol data header is invalid.");
             }
 
@@ -36,6 +36,25 @@ internal static class ProtocolData {
         return new MemoryStream(Data.Value, section.Offset, section.Length, writable: false, publiclyVisible: true);
     }
 
+    public static ReadOnlyMemory<byte> Read(string fileName) {
+        string normalizedName = fileName.Replace('\\', '/');
+        if (!Sections.Value.TryGetValue(normalizedName, out (int Offset, int Length) section)) {
+            normalizedName = normalizedName.Replace('_', '-');
+            if (!Sections.Value.TryGetValue(normalizedName, out section)) {
+                return ReadOnlyMemory<byte>.Empty;
+            }
+        }
+
+        return Data.Value.AsMemory(section.Offset, section.Length);
+    }
+
+    public static ReadOnlyMemory<byte> ReadRequired(string fileName) {
+        ReadOnlyMemory<byte> data = Read(fileName);
+        return data.IsEmpty
+            ? throw new FileNotFoundException($"Embedded protocol data '{fileName}' not found.")
+            : data;
+    }
+
     public static Stream Require(string fileName) {
         return Open(fileName)
           ?? throw new FileNotFoundException($"Embedded protocol data '{fileName}' not found.");
@@ -44,15 +63,15 @@ internal static class ProtocolData {
     private static byte[] LoadData() {
         using Stream stream = DataAssembly.GetManifestResourceStream("BedrockProtocol.Data.protocol_data.bin")
             ?? throw new FileNotFoundException("Embedded protocol data resource was not found.");
-        using MemoryStream buffer = new();
-        stream.CopyTo(buffer);
-        return buffer.ToArray();
+        byte[] data = new byte[checked((int)stream.Length)];
+        stream.ReadExactly(data);
+        return data;
     }
 
     private static Dictionary<string, (int Offset, int Length)> LoadSections() {
         byte[] data = Data.Value;
         ReadOnlySpan<byte> source = data;
-        if (source.Length < HeaderSize || !source[..8].SequenceEqual("BASDATA2"u8)) {
+        if (source.Length < HeaderSize || !source[..8].SequenceEqual("BASDATA3"u8)) {
             throw new InvalidDataException("The embedded protocol data header is invalid.");
         }
 

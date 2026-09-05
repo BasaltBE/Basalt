@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="../src/Basalt/Blocks/BlockPaletteData.cs" Link="Types/BlockPaletteData.cs" />
+    <Compile Include="../src/Basalt/Item/ItemPaletteData.cs" Link="Types/ItemPaletteData.cs" />
+    <Compile Include="../src/Basalt/Entities/EntityPaletteData.cs" Link="Types/EntityPaletteData.cs" />
   </ItemGroup>
 
 </Project>

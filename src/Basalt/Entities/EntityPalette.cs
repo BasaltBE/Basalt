@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Basalt.Core.Entities.Traits;
 using Basalt.Core.Loot;
+using Basalt.Core.Types;
 
 using Basalt.BedrockProtocol.NBT;
 using Basalt.BedrockProtocol.Packets;
@@ -15,6 +16,7 @@ public sealed class EntityPalette {
     private static bool _vanillaLoaded;
     private static readonly object LoadLock = new();
     internal static TimeSpan LoadElapsed { get; private set; }
+    internal static TimeSpan ReadElapsed { get; private set; }
 
 #pragma warning disable CA2255
     [ModuleInitializer]
@@ -101,10 +103,11 @@ public sealed class EntityPalette {
                 types = JsonSerializer.Deserialize(fileStream, EntityPaletteJsonContext.Default.ListEntityTypeData) ?? [];
             }
             else {
-                using Stream stream = ProtocolData.Require("entity_types.json");
-                types = JsonSerializer.Deserialize(stream, EntityPaletteJsonContext.Default.ListEntityTypeData) ?? [];
+                using ProtocolPaletteReader reader = new(ProtocolData.ReadRequired("entity-types.bin"));
+                types = reader.ReadEntityTypes();
             }
 
+            ReadElapsed = Stopwatch.GetElapsedTime(startTimestamp);
             EntityType.EnsureRegistryCapacity(types.Count + 1);
 
             for (int i = 0; i < types.Count; i++) {

@@ -277,11 +277,11 @@ public sealed class Server {
         }, _tickCancellation.Token);
 
         Emit(new ServerStartSignal());
-        TimeSpan registryElapsed = BlockPalette.LoadElapsed +
-            ItemPalette.LoadElapsed +
-            EntityPalette.LoadElapsed;
+        TimeSpan registryElapsed = BlockPalette.ReadElapsed +
+            ItemPalette.ReadElapsed +
+            EntityPalette.ReadElapsed;
         TimeSpan processStartupElapsed = registryElapsed + _startupElapsed;
-        Logger.Info($"Protocol JSON data loaded and parsed in {registryElapsed.TotalMilliseconds:0.00}ms.");
+        // Logger.Info($"Generated protocol palettes loaded in {registryElapsed.TotalMilliseconds:0.00}ms.");
         Logger.Info(
             $"Basalt NetherNet signaling on IPv4 port {Properties.Port} and IPv6 port {Properties.Ipv6Port} " +
             $"startup~{processStartupElapsed.TotalMilliseconds:0}ms,");
