@@ -27,6 +27,13 @@ public sealed class CommandRegistry {
         }
     }
 
+    public void Register(params CommandDefinition[] definitions) {
+        ArgumentNullException.ThrowIfNull(definitions);
+        for (int i = 0; i < definitions.Length; i++) {
+            Register(definitions[i]);
+        }
+    }
+
     public bool Unregister(string name) {
         if (!_commands.TryGetValue(name.TrimStart('/'), out CommandDefinition? definition)) {
             return false;
@@ -38,6 +45,15 @@ public sealed class CommandRegistry {
         }
 
         return true;
+    }
+
+    public bool Unregister(params string[] names) {
+        ArgumentNullException.ThrowIfNull(names);
+        bool removed = false;
+        for (int i = 0; i < names.Length; i++) {
+            removed |= Unregister(names[i]);
+        }
+        return removed;
     }
 
     /// <summary>

@@ -25,7 +25,6 @@ public sealed class PluginManager {
     public void LoadAll(string directory) {
         using var __zone = Profiler.Enabled ? Profiler.BeginZone("Plugins.LoadAll") : default;
         long loadPluginsTimestamp = Stopwatch.GetTimestamp();
-
         string absoluteDirectory = Path.GetFullPath(directory);
         if (!Directory.Exists(absoluteDirectory)) {
             Directory.CreateDirectory(absoluteDirectory);
@@ -56,9 +55,7 @@ public sealed class PluginManager {
         });
 
         int count = InitializePreparedPlugins(prepared);
-
-        TimeSpan loadPluginsElapsed = Stopwatch.GetElapsedTime(loadPluginsTimestamp);
-        Logger.Info($"Loaded {count} plugins in {loadPluginsElapsed.TotalMilliseconds:0}ms.");
+        Logger.Info($"Loaded {count} plugins in {Stopwatch.GetElapsedTime(loadPluginsTimestamp).TotalMilliseconds:0}ms");
         _ = Task.Run(() => CleanupStagedDirectories(temporaryDirectory));
     }
 
@@ -180,29 +177,20 @@ public sealed class PluginManager {
         string stagedAssemblyPath = stage
             ? StagePlugin(candidate, temporaryDirectory)
             : candidate.AssemblyPath;
-        long loaderStart = Stopwatch.GetTimestamp();
         PluginAssemblyLoadContext loader = new(stagedAssemblyPath, _sharedAssemblyNames);
-        double loaderMilliseconds = Stopwatch.GetElapsedTime(loaderStart).TotalMilliseconds;
         try {
-            long assemblyStart = Stopwatch.GetTimestamp();
             Assembly assembly = loader.LoadFromAssemblyPath(stagedAssemblyPath);
-            double assemblyMilliseconds = Stopwatch.GetElapsedTime(assemblyStart).TotalMilliseconds;
-            long reflectionStart = Stopwatch.GetTimestamp();
             PluginAttribute? attribute = assembly.GetCustomAttribute<PluginAttribute>();
             if (attribute is null)
                 throw new InvalidOperationException("Plugin assembly is missing PluginAttribute.");
 
             Type entry = GetEntry(assembly, attribute);
-            double reflectionMilliseconds = Stopwatch.GetElapsedTime(reflectionStart).TotalMilliseconds;
             return new PreparedPlugin(
                 candidate.Order,
                 stagedAssemblyPath,
                 loader,
                 attribute,
-                entry,
-                loaderMilliseconds,
-                assemblyMilliseconds,
-                reflectionMilliseconds);
+                entry);
         }
         catch {
             loader.Unload();
@@ -211,7 +199,6 @@ public sealed class PluginManager {
     }
 
     private bool Initialize(PreparedPlugin prepared) {
-        long loadStart = Stopwatch.GetTimestamp();
         PluginContainer container = new() {
             AssemblyPath = prepared.AssemblyPath,
             Description = PluginDescription.From(prepared.Attribute),
@@ -230,13 +217,6 @@ public sealed class PluginManager {
 
             using (EnterRegistrationScope(container))
                 plugin.OnLoad();
-
-            double onLoadMilliseconds = Stopwatch.GetElapsedTime(loadStart).TotalMilliseconds;
-            // Logger.Info(
-            //     $"Plugin {container.Description.Name}: loader~{prepared.LoaderMilliseconds:0}ms, " +
-            //     $"assembly~{prepared.AssemblyMilliseconds:0}ms, " +
-            //     $"reflection~{prepared.ReflectionMilliseconds:0}ms, " +
-            //     $"OnLoad~{onLoadMilliseconds:0}ms.");
 
             _plugins.Add(container);
             return true;
@@ -481,10 +461,7 @@ public sealed class PluginManager {
         string AssemblyPath,
         PluginAssemblyLoadContext Loader,
         PluginAttribute Attribute,
-        Type Entry,
-        double LoaderMilliseconds,
-        double AssemblyMilliseconds,
-        double ReflectionMilliseconds);
+        Type Entry);
 
     private sealed class RegistrationScope : IDisposable {
         private readonly PluginManager _manager;
