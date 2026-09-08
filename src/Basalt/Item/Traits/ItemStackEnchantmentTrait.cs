@@ -15,6 +15,12 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
 
     public IReadOnlyList<EnchantmentInstance> Enchantments => _enchantments;
 
+    public override void OnAdd() {
+        if (ItemStack.Storage is CompoundTag tag) {
+            OnRead(tag);
+        }
+    }
+
     public bool HasEnchantment(int id) {
         for (int i = 0; i < _enchantments.Count; i++) {
             if (_enchantments[i].Type.Id == id) return true;
@@ -129,7 +135,7 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
     public override void OnRead(CompoundTag tag) {
         _enchantments.Clear();
 
-        ListTag? enchList = tag.Get<ListTag>("ench");
+        ListTag? enchList = tag.Get<ListTag>("ench") ?? tag.Get<ListTag>("StoredEnchantments");
         if (enchList is null) return;
 
         for (int i = 0; i < enchList.Values.Count; i++) {
@@ -147,11 +153,12 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
 
     public override void OnWrite(CompoundTag tag) {
         if (_enchantments.Count == 0) return;
+        tag.Values.Remove("StoredEnchantments");
         tag.Set("ench", BuildEnchListTag());
     }
 
     /// <summary>
-    /// Builds a CompoundTag with the "ench" list for creative content.
+    /// Builds a CompoundTag with the enchantment list for creative content.
     /// </summary>
     public static CompoundTag BuildEnchantmentNbt(IReadOnlyList<EnchantmentInstance> enchantments) {
         CompoundTag nbt = new();
@@ -184,8 +191,10 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
 
         if (_enchantments.Count == 0) {
             nbt.Values.Remove("ench");
+            nbt.Values.Remove("StoredEnchantments");
         }
         else {
+            nbt.Values.Remove("StoredEnchantments");
             nbt.Set("ench", BuildEnchListTag());
         }
 
@@ -193,4 +202,5 @@ public sealed class ItemStackEnchantmentTrait(ItemStack itemStack) : ItemTrait(i
             ItemStack.Storage = nbt;
         }
     }
+
 }

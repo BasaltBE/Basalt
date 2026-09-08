@@ -159,9 +159,30 @@ public class Player : Entity {
     }
 
     public void AddExperienceLevels(int amount, bool sound = false) {
-        ExperienceLevel = Math.Clamp(ExperienceLevel + amount, 0, 24791);
-        Experience = Math.Min(Experience, ExperienceToNextLevel(ExperienceLevel) - 1);
+        int targetLevel = Math.Clamp(ExperienceLevel + amount, 0, 24791);
+        int total = ExperienceAtLevel(ExperienceLevel) + Experience;
+
+        if (targetLevel > ExperienceLevel) {
+            for (int level = ExperienceLevel; level < targetLevel; level++) {
+                total += ExperienceToNextLevel(level);
+            }
+        }
+        else {
+            for (int level = targetLevel; level < ExperienceLevel; level++) {
+                total -= ExperienceToNextLevel(level);
+            }
+        }
+
+        ExperienceLevel = targetLevel;
+        Experience = Math.Max(0, total - ExperienceAtLevel(ExperienceLevel));
         SyncExperience(sound);
+    }
+
+    internal void RestoreExperience(int level, int experience, int totalExperience) {
+        ExperienceLevel = Math.Clamp(level, 0, 24791);
+        Experience = Math.Clamp(experience, 0, ExperienceToNextLevel(ExperienceLevel) - 1);
+        TotalExperience = Math.Max(0, totalExperience);
+        SyncExperience(false);
     }
 
     public static int ExperienceToNextLevel(int level) {

@@ -58,10 +58,19 @@ public sealed class BlockContainer : Container {
                     continue;
                 }
 
+                NetworkItemStackDescriptor item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
+                if (item.NetIdVariant is not null) {
+                    player.Send(new InventorySlotPacket {
+                        ContainerId = ContainerId.PlayerOnlyUi,
+                        Slot = (uint)(slot + 32),
+                        Item = new NetworkItemStackDescriptor()
+                    });
+                }
+
                 player.Send(new InventorySlotPacket {
                     ContainerId = ContainerId.PlayerOnlyUi,
                     Slot = (uint)(slot + 32),
-                    Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
+                    Item = item
                 });
             }
             return;

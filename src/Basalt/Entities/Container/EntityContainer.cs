@@ -33,19 +33,37 @@ public sealed class EntityContainer : Containers.Container {
         if (Entity is Player.Player player && player.Spawned) {
             bool playerCraftingGrid = Identifier is null && Type == ContainerType.NONE;
             if (playerCraftingGrid) {
+                NetworkItemStackDescriptor item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
+                if (item.NetIdVariant is not null) {
+                    player.Send(new InventorySlotPacket {
+                        ContainerId = ContainerId.PlayerOnlyUi,
+                        Slot = (uint)(PlayerCraftingGridTrait.SlotOffset + slot),
+                        Item = new NetworkItemStackDescriptor()
+                    });
+                }
+
                 player.Send(new InventorySlotPacket {
                     ContainerId = ContainerId.PlayerOnlyUi,
                     Slot = (uint)(PlayerCraftingGridTrait.SlotOffset + slot),
-                    Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
+                    Item = item
                 });
                 return;
             }
 
             if (Identifier is { } identifier) {
+                NetworkItemStackDescriptor item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
+                if (item.NetIdVariant is not null) {
+                    player.Send(new InventorySlotPacket {
+                        ContainerId = identifier,
+                        Slot = (uint)slot,
+                        Item = new NetworkItemStackDescriptor()
+                    });
+                }
+
                 player.Send(new InventorySlotPacket {
                     ContainerId = identifier,
                     Slot = (uint)slot,
-                    Item = GetItem(slot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()
+                    Item = item
                 });
                 return;
             }

@@ -264,18 +264,28 @@ public class Container {
             }
 
 
+            NetworkItemStackDescriptor item = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor {
+                Id = 0,
+                AuxValue = 0,
+                BlockRuntimeId = 0,
+                StackSize = 0,
+                UserDataBuffer = string.Empty,
+            };
             InventorySlotPacket packet = new() {
                 ContainerId = containerId,
                 Slot = (uint)GetNetworkSlot(slot),
-                Item = Storage[slot]?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor() {
-                    Id = 0,
-                    AuxValue = 0,
-                    BlockRuntimeId = 0,
-                    StackSize = 0,
-                    UserDataBuffer = string.Empty,
-                },
+                Item = item,
                 StorageItem = null,
             };
+
+            if (item.NetIdVariant is not null) {
+                player.Send(new InventorySlotPacket {
+                    ContainerId = containerId,
+                    Slot = (uint)GetNetworkSlot(slot),
+                    Item = new NetworkItemStackDescriptor(),
+                    StorageItem = null,
+                });
+            }
 
             player.Send(packet);
         }

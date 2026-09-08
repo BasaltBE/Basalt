@@ -327,6 +327,13 @@ public sealed class ItemPalette {
             for (int level = 1; level <= enchantment.MaxLevel; level++) {
                 Basalt.Core.Item.Enchantment.EnchantmentInstance instance = new(enchantment, level);
                 CompoundTag nbt = Traits.ItemStackEnchantmentTrait.BuildEnchantmentNbt([instance]);
+                ItemStack stack = new(
+                    enchantedBook,
+                    1,
+                    0,
+                    nbt
+                );
+                string userDataBuffer = stack.ToNetworkStackDescriptor().UserDataBuffer;
 
                 uint creativeNetworkId = checked((uint)(items.Count + 1));
 
@@ -337,17 +344,11 @@ public sealed class ItemPalette {
                         Count = 1,
                         Metadata = 0,
                         BlockRuntimeId = 0,
-                        UserDataBuffer = string.Empty
+                        UserDataBuffer = userDataBuffer
                     },
                     GroupIndex = checked((uint)groupIndex)
                 });
 
-                ItemStack stack = new(
-                    enchantedBook,
-                    1,
-                    0,
-                    nbt
-                );
                 creativeItems[creativeNetworkId] = stack;
             }
         }

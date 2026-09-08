@@ -3,6 +3,7 @@ namespace Basalt.Core.Network.Handlers;
 using Basalt.Core.Containers;
 using Basalt.Core.Crafting;
 using Basalt.Core.Item;
+using Basalt.Core.Item.Traits;
 using Basalt.Core.Entities.Traits;
 using Basalt.BedrockProtocol.Enums;
 using Basalt.BedrockProtocol.Packets;
@@ -43,6 +44,22 @@ public static class ItemStackRequest {
 
     private static ItemStackResponseInfo ProcessRequest(Player.Player player, ItemStackRequestData request) {
         Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes = [];
+        Dictionary<Container, ItemStack?[]> snapshots = new(ReferenceEqualityComparer.Instance);
+        int experienceLevel = player.ExperienceLevel;
+        int experience = player.Experience;
+        int totalExperience = player.TotalExperience;
+        EntityInventoryTrait? inventory = player.GetTrait<EntityInventoryTrait>();
+        if (inventory is not null) {
+            snapshots[inventory.Container] = [.. inventory.Container.Storage.Select(item => item?.Clone())];
+        }
+
+        HashSet<Container> openedContainers = new(ReferenceEqualityComparer.Instance);
+        foreach (Container? container in player.openedContainers.Values) {
+            if (container is not null && openedContainers.Add(container)) {
+                snapshots[container] = [.. container.Storage.Select(item => item?.Clone())];
+            }
+        }
+
         byte result = Success;
 
         foreach (ItemStackRequestAction action in request.Actions) {
@@ -58,6 +75,20 @@ public static class ItemStackRequest {
                     DescribeItem(player, action.Source),
                     DescribeItem(player, action.Destination));
                 result = Error;
+                foreach (KeyValuePair<Container, ItemStack?[]> snapshotEntry in snapshots) {
+                    Container container = snapshotEntry.Key;
+                    ItemStack?[] snapshot = snapshotEntry.Value;
+                    for (int slot = 0; slot < snapshot.Length; slot++) {
+                        if (snapshot[slot] is { } item) {
+                            container.SetItem(slot, item);
+                        }
+                        else {
+                            container.ClearSlot(slot);
+                        }
+                    }
+                }
+                player.RestoreExperience(experienceLevel, experience, totalExperience);
+                player.Attributes.Send(true);
                 break;
             }
         }
@@ -65,27 +96,47 @@ public static class ItemStackRequest {
         return new ItemStackResponseInfo {
             Result = result,
             ClientRequestId = request.ClientRequestId,
-            Containers = changes.Count == 0 ? [] : [.. changes.Values]
+            Containers = result == Success && changes.Count > 0 ? [.. changes.Values] : []
         };
     }
 
     private static bool HandleAction(Player.Player player, ItemStackRequestAction action, string[] stringsToFilter,
-        Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes) => action.Type switch {
+        Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes) {
+        return action.Type switch {
         ItemStackRequestActionType.Take or ItemStackRequestActionType.Place or
-        ItemStackRequestActionType.PlaceInItemContainer or ItemStackRequestActionType.TakeFromItemContainer =>
+            ItemStackRequestActionType.PlaceInItemContainer or ItemStackRequestActionType.TakeFromItemContainer =>
             Transfer(player, action, changes),
         ItemStackRequestActionType.Swap => Swap(player, action, changes),
         ItemStackRequestActionType.Drop => Drop(player, action, changes),
-        ItemStackRequestActionType.Destroy or ItemStackRequestActionType.Consume => Remove(player, action, changes),
+        ItemStackRequestActionType.Destroy => Remove(player, action, changes),
         ItemStackRequestActionType.CraftCreative => CreateCreativeItem(player, action),
         ItemStackRequestActionType.Create or ItemStackRequestActionType.CraftResults => true,
         ItemStackRequestActionType.CraftRecipe or ItemStackRequestActionType.CraftRecipeAuto =>
             PrepareRecipeOutput(player, action),
+        ItemStackRequestActionType.CraftRecipeOptional => ApplyAnvilAction(player, action, stringsToFilter),
+        ItemStackRequestActionType.Consume when IsAnvilInputAction(player, action) => true,
+        ItemStackRequestActionType.Consume => Remove(player, action, changes),
         ItemStackRequestActionType.CraftRepairAndDisenchant or
-        ItemStackRequestActionType.CraftRecipeOptional or
-        ItemStackRequestActionType.CraftNonImplemented => ApplyAnvilAction(player, action, stringsToFilter),
+        ItemStackRequestActionType.CraftNonImplemented => false,
         _ => false
-    };
+        };
+    }
+
+    private static bool IsAnvilInputAction(Player.Player player, ItemStackRequestAction action) {
+        if (action.Source.Container.ContainerName is not (ContainerEnumName.AnvilInputContainer
+            or ContainerEnumName.AnvilMaterialContainer)) {
+            return false;
+        }
+
+        foreach (Container candidate in player.openedContainers.Values) {
+            if (candidate is Basalt.Core.Blocks.Container.BlockContainer blockContainer &&
+                blockContainer.Type == ContainerType.ANVIL) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static bool ApplyAnvilAction(Player.Player player, ItemStackRequestAction action, string[] stringsToFilter) {
         if (player.Dimension is not { } dimension) return false;
@@ -123,13 +174,91 @@ public static class ItemStackRequest {
 
     private static bool Transfer(Player.Player player, ItemStackRequestAction action,
         Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes) {
+        if (action.Source.Container.ContainerName is ContainerEnumName.CreatedOutputContainer
+            or ContainerEnumName.AnvilResultPreviewContainer) {
+            if (!ResolveSlot(player, action.Destination, out Container outputDestination,
+                out int outputDestinationSlot)) {
+                return false;
+            }
+
+            foreach (Container candidate in player.openedContainers.Values) {
+                if (candidate is not Basalt.Core.Blocks.Container.BlockContainer anvilContainer ||
+                    anvilContainer.Type != ContainerType.ANVIL ||
+                    anvilContainer.Dimension?.GetBlock(
+                        anvilContainer.Position.X,
+                        anvilContainer.Position.Y,
+                        anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>()
+                        is not { } anvil) {
+                    continue;
+                }
+
+                anvil.RefreshResult();
+                if (anvil.Result is not { } result) {
+                    return true;
+                }
+                int experienceCost = Math.Max(0, anvil.ExperienceCost - 1);
+                int experienceLevelBefore = player.ExperienceLevel;
+                if (player.Gamemode != GameType.Creative && player.ExperienceLevel < experienceCost) {
+                    return false;
+                }
+
+                ItemStack movedResult = result.Clone();
+
+                ItemStack? outputDestinationItem = outputDestination.GetItem(outputDestinationSlot);
+                if (outputDestinationItem is not null) {
+                    if (!movedResult.CanStackWith(outputDestinationItem)) return false;
+                    int available = outputDestinationItem.Type.MaxStackSize - outputDestinationItem.StackSize;
+                    if (available <= 0) return false;
+
+                    outputDestinationItem.IncrementStack((ushort)Math.Min(available, movedResult.StackSize));
+                    outputDestination.UpdateSlot(outputDestinationSlot);
+                }
+                else {
+                    outputDestination.SetItem(outputDestinationSlot, movedResult);
+                }
+
+                anvil.CompleteResult();
+                if (player.Gamemode != GameType.Creative) {
+                    player.AddExperienceLevels(-experienceCost);
+                    player.Attributes.Send(true);
+                }
+                Logger.Info(
+                    $"Anvil charge player:{player.Username} cost:{experienceCost} " +
+                    $"level:{experienceLevelBefore}->{player.ExperienceLevel}");
+                player.GetTrait<EntityInventoryTrait>()?.Container.Update();
+                ItemStack? storedResult = outputDestination.GetItem(outputDestinationSlot);
+                // Logger.Info(
+                //     "Anvil result moved player:{0} destination:{1} slot:{2} item:{3} count:{4}",
+                //     player.Username,
+                //     outputDestination.Type,
+                //     outputDestinationSlot,
+                //     storedResult?.Identifier ?? "empty",
+                //     storedResult?.StackSize ?? 0);
+                Record(changes, action.Destination, outputDestination, outputDestinationSlot);
+                return true;
+            }
+
+            return false;
+        }
+
         if (!ResolveSlot(player, action.Source, out Container source, out int sourceSlot) ||
             !ResolveSlot(player, action.Destination, out Container destination, out int destinationSlot)) {
             return false;
         }
 
+        if (ReferenceEquals(source, destination) && sourceSlot == destinationSlot) {
+            return true;
+        }
+
         ItemStack? sourceItem = source.GetItem(sourceSlot);
         if (sourceItem is null) {
+            if (action.Source.Container.ContainerName is ContainerEnumName.CreatedOutputContainer
+                or ContainerEnumName.AnvilResultPreviewContainer
+                or ContainerEnumName.AnvilInputContainer
+                or ContainerEnumName.AnvilMaterialContainer) {
+                return true;
+            }
+
             return false;
         }
 
@@ -143,15 +272,6 @@ public static class ItemStackRequest {
 
             destination.SetItem(destinationSlot, moved);
 
-            if (source is Basalt.Core.Blocks.Container.BlockContainer anvilContainer &&
-                anvilContainer.Type == ContainerType.ANVIL &&
-                sourceSlot == 2 &&
-                player.Dimension?.GetBlock(
-                    anvilContainer.Position.X,
-                    anvilContainer.Position.Y,
-                    anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is { } anvil) {
-                anvil.CompleteResult();
-            }
         }
         else {
             if (!sourceItem.CanStackWith(destinationItem)) {
@@ -225,7 +345,8 @@ public static class ItemStackRequest {
 
     private static bool ResolveSlot(Player.Player player, SlotInfoData slotInfo,
         out Container container, out int slot) {
-        if (slotInfo.Container.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+        if (slotInfo.Container.ContainerName is ContainerEnumName.CreatedOutputContainer
+            or ContainerEnumName.AnvilResultPreviewContainer) {
             foreach (Container candidate in player.openedContainers.Values) {
                 if (candidate is not Basalt.Core.Blocks.Container.BlockContainer anvilContainer ||
                     anvilContainer.Type != ContainerType.ANVIL ||
@@ -237,12 +358,22 @@ public static class ItemStackRequest {
                 }
 
                 anvil.RefreshResult();
-                if (candidate.GetItem(2) is not null) {
+                if (anvil.Result is not null) {
                     container = candidate;
-                    slot = 2;
+                    slot = 0;
                     return true;
                 }
             }
+
+            if (slotInfo.Container.ContainerName == ContainerEnumName.CreatedOutputContainer) {
+                container = player.GetTrait<Basalt.Core.Player.Traits.PlayerCursorTrait>()?.Container!;
+                slot = 0;
+                return container is not null && container.GetItem(slot) is not null;
+            }
+
+            container = null!;
+            slot = -1;
+            return false;
         }
 
         container = player.GetContainer(slotInfo.Container)!;
@@ -260,36 +391,12 @@ public static class ItemStackRequest {
             slot = slotInfo.Slot - 32;
         }
 
-        if (slotInfo.Container.ContainerName == ContainerEnumName.CreatedOutputContainer) {
-            if (container.Type == ContainerType.ANVIL) {
-                slot = 2;
-                if (container.GetItem(slot) is null &&
-                    container is Basalt.Core.Blocks.Container.BlockContainer anvilContainer &&
-                    anvilContainer.Dimension?.GetBlock(
-                        anvilContainer.Position.X,
-                        anvilContainer.Position.Y,
-                        anvilContainer.Position.Z)?.GetTrait<Basalt.Core.Blocks.Traits.AnvilTrait>() is { } anvil) {
-                    anvil.RefreshResult();
-                }
-
-                if (container.GetItem(slot) is null &&
-                    player.GetTrait<Basalt.Core.Player.Traits.PlayerCursorTrait>() is { } cursor &&
-                    cursor.Container.GetItem(0) is not null) {
-                    container = cursor.Container;
-                    slot = 0;
-                }
-            }
-            else {
-                slot = 0;
-            }
+        if (slotInfo.Container.ContainerName == ContainerEnumName.AnvilInputContainer) {
+            slot = 0;
         }
         else if (slotInfo.Container.ContainerName == ContainerEnumName.AnvilMaterialContainer) {
             slot = 1;
         }
-        else if (slotInfo.Container.ContainerName == ContainerEnumName.AnvilResultPreviewContainer) {
-            slot = 2;
-        }
-
         return slot >= 0 && slot < container.GetSize();
     }
 
@@ -357,21 +464,30 @@ public static class ItemStackRequest {
     }
 
     private static void Record(Dictionary<ContainerEnumName, ItemStackResponseContainerInfo> changes,
-        SlotInfoData slotInfo, Container container, int slot) {
-        ItemStack? item = container.GetItem(slot);
+        SlotInfoData slotInfo, Container container, int slot, ItemStack? itemOverride = null) {
+        ItemStack? item = itemOverride ?? container.GetItem(slot);
+        bool resultContainer = slotInfo.Container.ContainerName is ContainerEnumName.CreatedOutputContainer
+            or ContainerEnumName.AnvilResultPreviewContainer;
+        byte responseSlot = slotInfo.Container.ContainerName switch {
+            ContainerEnumName.AnvilInputContainer => 0,
+            ContainerEnumName.AnvilMaterialContainer => 1,
+            _ when resultContainer => 0,
+            _ => (byte)slotInfo.Slot
+        };
         if (!changes.TryGetValue(slotInfo.Container.ContainerName, out ItemStackResponseContainerInfo? response)) {
             response = new ItemStackResponseContainerInfo { Container = slotInfo.Container };
             changes.Add(slotInfo.Container.ContainerName, response);
         }
 
         response.Slots = [new ItemStackResponseSlotInfo {
-            Slot = (byte)slotInfo.Slot,
-            HotbarSlot = slotInfo.Slot,
+            Slot = responseSlot,
+            HotbarSlot = responseSlot,
             Count = (byte)(item?.StackSize ?? 0),
             ItemStackId = item?.NetworkStackId,
             CustomName = string.Empty,
             FilteredCustomName = string.Empty,
-            DurabilityCorrection = 0
+            DurabilityCorrection = item?.GetTrait<ItemStackDurabilityTrait>()?.GetCurrentDamage() ?? 0
         }];
+
     }
 }

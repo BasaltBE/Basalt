@@ -57,6 +57,10 @@ public sealed class ItemStack {
         Metadata = value;
     }
 
+    public void RefreshNetworkStackId() {
+        NetworkStackId = ++_nextNetworkStackId;
+    }
+
     public bool Equals(ItemStack other) {
         return Type.Identifier == other.Type.Identifier
                && StackSize == other.StackSize
@@ -94,9 +98,13 @@ public sealed class ItemStack {
             nbt = writer.GetProcessedBytes().ToArray();
         }
 
+        uint damage = GetTrait<ItemStackDurabilityTrait>()?.GetCurrentDamage() is int currentDamage
+            ? unchecked((uint)currentDamage)
+            : Metadata;
+
         return new NetworkItemStackDescriptor {
             Id = (short)Type.NetworkId,
-            AuxValue = Metadata,
+            AuxValue = damage,
             BlockRuntimeId = 0,
             NetIdVariant = NetworkStackId,
             StackSize = StackSize,
@@ -198,6 +206,14 @@ public sealed class ItemStack {
 
     public ItemStack Clone(ushort? stackSize = null) {
         CompoundTag serialized = Serialize();
+        using BinaryStream stream = BinaryStream.Rent(6000);
+        BinaryWriter writer = stream;
+        NBT.WriteTag(writer, serialized, new TagOptions(Name: true, Type: true, VarInt: false));
+
+        byte[] bytes = writer.GetProcessedBytes().ToArray();
+        int offset = 0;
+        BinaryReader reader = new(bytes, ref offset);
+        serialized = NBT.ReadTag<CompoundTag>(reader, new TagOptions(Name: true, Type: true, VarInt: false));
         if (stackSize.HasValue) {
             serialized.Set("count", new IntTag { Value = stackSize.Value });
         }

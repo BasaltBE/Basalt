@@ -36,6 +36,10 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
 
         // Initialize from metadata (vanilla world format stores damage there).
         _damage = unchecked((int)ItemStack.Metadata);
+        if (ItemStack.Storage?.Get<IntTag>("Damage") is { } damageTag) {
+            _damage = damageTag.Value;
+        }
+
         if (_damage > 0) {
             SyncDamageTag();
         }
@@ -139,6 +143,8 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
     }
 
     private void SyncDamageTag() {
+        ItemStack.SetMetadata(unchecked((uint)_damage));
+        ItemStack.RefreshNetworkStackId();
         CompoundTag nbt = ItemStack.Storage ?? new CompoundTag();
         nbt.Set("Damage", new IntTag { Value = _damage });
 
