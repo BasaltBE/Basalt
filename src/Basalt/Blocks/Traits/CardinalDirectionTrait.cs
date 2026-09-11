@@ -14,6 +14,11 @@ public sealed class CardinalDirectionTrait : DirectionTrait {
     }
 
     public override void OnPlace(BlockPlaceDetails details) {
+        if (Block.Type.Identifier == BlockIdentifier.PoweredRepeater.ToIdentifier() ||
+            Block.Type.Identifier == BlockIdentifier.UnpoweredRepeater.ToIdentifier()) {
+            return;
+        }
+
         CardinalDirection direction = RotationComponent.GetCardinalDirection(details.Player.Yaw);
 
         switch (direction) {

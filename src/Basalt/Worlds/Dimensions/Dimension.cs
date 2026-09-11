@@ -35,6 +35,7 @@ public sealed class Dimension : IDisposable {
     private const int DomainMailboxCapacity = 4096;
     private const int MaxDomainCommandsPerTick = 512;
     private const int MaxPendingChunkRequests = 512;
+    private const int MaxRedstoneUpdatesPerWave = 16384;
     private const float VoidY = -64f;
     private const ulong VoidDamageCooldownTicks = 20;
 
@@ -49,7 +50,10 @@ public sealed class Dimension : IDisposable {
         ["minecraft:lit_blast_furnace"] = "BlastFurnace",
         ["minecraft:smoker"] = "Smoker",
         ["minecraft:lit_smoker"] = "Smoker",
-        ["minecraft:mob_spawner"] = "MobSpawner"
+        ["minecraft:mob_spawner"] = "MobSpawner",
+        ["minecraft:piston"] = "PistonArm",
+        ["minecraft:sticky_piston"] = "PistonArm",
+        ["minecraft:moving_block"] = "MovingBlock"
     }.ToFrozenDictionary(StringComparer.Ordinal);
     private static readonly BlockPermutation AirPermutation = BlockPermutation.Resolve("minecraft:air");
 
@@ -67,6 +71,9 @@ public sealed class Dimension : IDisposable {
     private readonly Dictionary<long, int> _simulationChunkReferences = [];
     private readonly Dictionary<(int X, int Y, int Z), BlockTickTask> _blockTicks = [];
     private readonly Dictionary<long, PendingChunkRequest> _pendingChunkRequests = [];
+    private readonly Queue<BlockPos> _redstoneUpdates = [];
+    private readonly HashSet<(int X, int Y, int Z)> _pendingRedstoneUpdates = [];
+    private readonly Dictionary<(int X, int Y, int Z), UpdateSubChunkNetworkBlockInfo> _redstoneBlockUpdates = [];
 
     private readonly HashSet<Entity> _entities;
     private readonly HashSet<Player.Player> _players;
@@ -106,6 +113,7 @@ public sealed class Dimension : IDisposable {
     private World? _world;
     private bool _tickingEntities;
     private bool _disposed;
+    private bool _processingRedstoneUpdates;
     private int _simulationDistance = -1;
     private int _ownerThreadId;
     private int _activePlayerCount;
@@ -795,6 +803,12 @@ public sealed class Dimension : IDisposable {
         }
     }
 
+    public void MarkBlockStorageDirty(BlockPos position) {
+        if (_chunks.TryGetValue(HashChunk(position.X >> 4, position.Z >> 4), out ChunkColumn? chunk)) {
+            chunk.Dirty = true;
+        }
+    }
+
     private void SetPermutationLocked(int x, int y, int z, BlockPermutation permutation, int layer, bool dirty, bool broadcast) {
         ChunkColumn chunk = GetOrCreateChunk(x >> 4, z >> 4);
 
@@ -831,7 +845,16 @@ public sealed class Dimension : IDisposable {
             chunk.SetBlockStorage(position, null, dirty);
         }
 
-        if (broadcast) {
+        if (broadcast && _processingRedstoneUpdates) {
+            _redstoneBlockUpdates[(position.X, position.Y, position.Z)] = new UpdateSubChunkNetworkBlockInfo {
+                Position = position,
+                RuntimeId = (uint)permutation.NetworkId,
+                UpdateFlags = (uint)(UpdateBlockFlagsType.Neighbors | UpdateBlockFlagsType.Network),
+                EntityUniqueId = 0,
+                Message = 0
+            };
+        }
+        else if (broadcast) {
             Broadcast(new UpdateBlockPacket {
                 Position = position,
                 BlockRuntimeId = (uint)permutation.NetworkId,
@@ -851,6 +874,194 @@ public sealed class Dimension : IDisposable {
             if (kind.HasValue) {
                 FluidTrait.NotifyFluidNeighbors(kind.Value, this, position);
             }
+        }
+
+        NotifyObservers(position);
+        UpdateRedstone(position, includePosition: false);
+    }
+
+    // TODO: Find a better way to do this cause rn its temp and ugly af just did this to work
+    private void NotifyObservers(BlockPos position) {
+        if (!RedstoneEnabled) return;
+
+        ReadOnlySpan<(int X, int Y, int Z)> offsets = [
+            (1, 0, 0),
+            (-1, 0, 0),
+            (0, 1, 0),
+            (0, -1, 0),
+            (0, 0, 1),
+            (0, 0, -1)
+        ];
+
+        for (int i = 0; i < offsets.Length; i++) {
+            (int x, int y, int z) = offsets[i];
+            BlockPos observerPosition = new() {
+                X = position.X + x,
+                Y = position.Y + y,
+                Z = position.Z + z
+            };
+            BlockPermutation observer = GetLoadedPermutationOrAir(
+                observerPosition.X,
+                observerPosition.Y,
+                observerPosition.Z);
+            if (observer.Type.Identifier != BlockIdentifier.Observer.ToIdentifier()) {
+                continue;
+            }
+
+            GetBlock(observerPosition.X, observerPosition.Y, observerPosition.Z)
+                ?.GetTrait<ObserverTrait>()
+                ?.OnObservedBlockChanged(this, observerPosition, position);
+        }
+    }
+
+    public void UpdateRedstone(BlockPos position, bool includePosition = true) {
+        if (!RedstoneEnabled) return;
+
+        ReadOnlySpan<(int X, int Y, int Z)> offsets = [
+            (1, 0, 0),
+            (-1, 0, 0),
+            (0, 1, 0),
+            (0, -1, 0),
+            (0, 0, 1),
+            (0, 0, -1)
+        ];
+
+        if (includePosition && _pendingRedstoneUpdates.Add((position.X, position.Y, position.Z))) {
+            _redstoneUpdates.Enqueue(position);
+        }
+
+        for (int i = 0; i < offsets.Length; i++) {
+            (int x, int y, int z) = offsets[i];
+            BlockPos updatePosition = new() {
+                X = position.X + x,
+                Y = position.Y + y,
+                Z = position.Z + z
+            };
+            if (_pendingRedstoneUpdates.Add((updatePosition.X, updatePosition.Y, updatePosition.Z))) {
+                _redstoneUpdates.Enqueue(updatePosition);
+            }
+        }
+
+        ProcessRedstoneUpdates();
+    }
+
+    private void ProcessRedstoneUpdates() {
+        if (!RedstoneEnabled) {
+            _redstoneUpdates.Clear();
+            _pendingRedstoneUpdates.Clear();
+            _redstoneBlockUpdates.Clear();
+            return;
+        }
+
+        if (_processingRedstoneUpdates) {
+            return;
+        }
+
+        _processingRedstoneUpdates = true;
+        try {
+            int updates = 0;
+            string lever = BlockIdentifier.Lever.ToIdentifier();
+            string redstoneWire = BlockIdentifier.RedstoneWire.ToIdentifier();
+            string poweredRepeater = BlockIdentifier.PoweredRepeater.ToIdentifier();
+            string unpoweredRepeater = BlockIdentifier.UnpoweredRepeater.ToIdentifier();
+            string piston = BlockIdentifier.Piston.ToIdentifier();
+            string stickyPiston = BlockIdentifier.StickyPiston.ToIdentifier();
+            string dispenser = BlockIdentifier.Dispenser.ToIdentifier();
+            string dropper = BlockIdentifier.Dropper.ToIdentifier();
+            string redstoneLamp = BlockIdentifier.RedstoneLamp.ToIdentifier();
+            string litRedstoneLamp = BlockIdentifier.LitRedstoneLamp.ToIdentifier();
+            string poweredComparator = BlockIdentifier.PoweredComparator.ToIdentifier();
+            string unpoweredComparator = BlockIdentifier.UnpoweredComparator.ToIdentifier();
+            string buttonSuffix = "_button";
+            string pressurePlateSuffix = "_pressure_plate";
+            while (_redstoneUpdates.Count > 0 && updates < MaxRedstoneUpdatesPerWave) {
+                BlockPos updatePosition = _redstoneUpdates.Dequeue();
+                _pendingRedstoneUpdates.Remove((updatePosition.X, updatePosition.Y, updatePosition.Z));
+                BlockPermutation permutation = GetLoadedPermutationOrAir(updatePosition.X, updatePosition.Y, updatePosition.Z);
+                if (permutation.Type.Identifier != lever &&
+                    permutation.Type.Identifier != redstoneWire &&
+                    permutation.Type.Identifier != poweredRepeater &&
+                    permutation.Type.Identifier != unpoweredRepeater &&
+                    permutation.Type.Identifier != piston &&
+                    permutation.Type.Identifier != stickyPiston &&
+                    permutation.Type.Identifier != dispenser &&
+                    permutation.Type.Identifier != dropper &&
+                    permutation.Type.Identifier != redstoneLamp &&
+                    permutation.Type.Identifier != litRedstoneLamp &&
+                    permutation.Type.Identifier != poweredComparator &&
+                    permutation.Type.Identifier != unpoweredComparator &&
+                    !permutation.Type.Identifier.EndsWith(pressurePlateSuffix, StringComparison.Ordinal) &&
+                    !permutation.Type.Identifier.EndsWith(buttonSuffix, StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                GetBlock(updatePosition.X, updatePosition.Y, updatePosition.Z)?.OnRedstoneUpdate(
+                    new BlockTickDetails(this, updatePosition));
+                updates++;
+            }
+
+        }
+        finally {
+            _processingRedstoneUpdates = false;
+        }
+    }
+
+    private void FlushRedstoneUpdates() {
+        BroadcastRedstoneUpdates();
+        _redstoneBlockUpdates.Clear();
+    }
+
+    private bool RedstoneEnabled => World?.Server?.Properties.RedstoneEnabled ?? false;
+
+    private static bool IsRedstoneBlockIdentifier(string identifier) {
+        return identifier == BlockIdentifier.Lever.ToIdentifier() ||
+            identifier == BlockIdentifier.RedstoneWire.ToIdentifier() ||
+            identifier == BlockIdentifier.PoweredRepeater.ToIdentifier() ||
+            identifier == BlockIdentifier.UnpoweredRepeater.ToIdentifier() ||
+            identifier == BlockIdentifier.Piston.ToIdentifier() ||
+            identifier == BlockIdentifier.StickyPiston.ToIdentifier() ||
+            identifier == BlockIdentifier.Observer.ToIdentifier() ||
+            identifier == BlockIdentifier.MovingBlock.ToIdentifier() ||
+            identifier == BlockIdentifier.Dispenser.ToIdentifier() ||
+            identifier == BlockIdentifier.Dropper.ToIdentifier() ||
+            identifier == BlockIdentifier.RedstoneLamp.ToIdentifier() ||
+            identifier == BlockIdentifier.LitRedstoneLamp.ToIdentifier() ||
+            identifier == BlockIdentifier.PoweredComparator.ToIdentifier() ||
+            identifier == BlockIdentifier.UnpoweredComparator.ToIdentifier() ||
+            identifier.EndsWith("_button", StringComparison.Ordinal) ||
+            identifier.EndsWith("_pressure_plate", StringComparison.Ordinal);
+    }
+
+    private void BroadcastRedstoneUpdates() {
+        if (_redstoneBlockUpdates.Count == 0) return;
+
+        Dictionary<(int X, int Y, int Z), List<UpdateSubChunkNetworkBlockInfo>> updates = [];
+        foreach (UpdateSubChunkNetworkBlockInfo update in _redstoneBlockUpdates.Values) {
+            var key = (update.Position.X >> 4, update.Position.Y >> 4, update.Position.Z >> 4);
+            if (!updates.TryGetValue(key, out List<UpdateSubChunkNetworkBlockInfo>? entries)) {
+                entries = [];
+                updates[key] = entries;
+            }
+
+            entries.Add(update);
+        }
+
+        float radius = World?.Server?.Properties.MaxViewDistance * 16 ?? 256;
+        foreach (((int x, int y, int z), List<UpdateSubChunkNetworkBlockInfo> entries) in updates) {
+            Broadcast(new UpdateSubChunkBlocksPacket {
+                SubChunkBlockPosition = new BlockPos { X = x, Y = y, Z = z },
+                BlocksChanged = new UpdateSubChunkBlocksChangedInfo {
+                    Standards = entries.ToArray(),
+                    Extras = []
+                }
+            }, new BroadcastOptions {
+                Radius = radius,
+                Center = new Vec3 {
+                    X = (x << 4) + 8,
+                    Y = (y << 4) + 8,
+                    Z = (z << 4) + 8
+                }
+            });
         }
     }
 
@@ -902,7 +1113,7 @@ public sealed class Dimension : IDisposable {
         return true;
     }
 
-    private void CancelBlockTick(BlockPos position) {
+    internal void CancelBlockTick(BlockPos position) {
         var key = (position.X, position.Y, position.Z);
         if (_blockTicks.Remove(key, out BlockTickTask? task)) {
             task.Cancel();
@@ -929,13 +1140,29 @@ public sealed class Dimension : IDisposable {
         }
 
         Block? block = GetBlock(position.X, position.Y, position.Z);
-        block?.OnTick(new BlockTickDetails(this, position));
+        bool batchRedstoneUpdates = RedstoneEnabled && IsRedstoneBlockIdentifier(task.BlockIdentifier);
+        bool wasProcessingRedstoneUpdates = _processingRedstoneUpdates;
+        if (batchRedstoneUpdates) {
+            _processingRedstoneUpdates = true;
+        }
+
+        try {
+            block?.OnTick(new BlockTickDetails(this, position));
+        }
+        finally {
+            if (batchRedstoneUpdates && !wasProcessingRedstoneUpdates) {
+                _processingRedstoneUpdates = false;
+                ProcessRedstoneUpdates();
+            }
+        }
     }
 
     private void RestoreBlockTicks(ChunkColumn chunk) {
         if (chunk.Empty) {
             return;
         }
+
+        RestoreRedstoneUpdates(chunk);
 
         int subChunkOffset = Type == DimensionId.Overworld ? 4 : 0;
 
@@ -1178,6 +1405,8 @@ public sealed class Dimension : IDisposable {
         _mailbox.Drain(MaxDomainCommandsPerTick, exception =>
             Logger.Warn($"Dimension mailbox command failed in {Identifier}: {exception}"));
 
+        ProcessRedstoneUpdates();
+
         using (Profiler.Enabled ? Profiler.BeginZone("FlushCompletedChunks") : default) {
             FlushCompletedChunkRequests(CompletedChunkLimit);
         }
@@ -1212,6 +1441,7 @@ public sealed class Dimension : IDisposable {
         }
 
         if (_entities.Count == 0) {
+            FlushRedstoneUpdates();
             return;
         }
 
@@ -1373,6 +1603,7 @@ public sealed class Dimension : IDisposable {
             }
         }
         FlushPendingEntityChanges();
+        FlushRedstoneUpdates();
         }
         finally {
             Volatile.Write(ref _tickWork, (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency);
@@ -1547,6 +1778,104 @@ public sealed class Dimension : IDisposable {
             }
 
             server.Network.QueuePacket(connection, packet);
+        }
+    }
+
+    private void RestoreRedstoneUpdates(ChunkColumn chunk) {
+        int subChunkOffset = Type == DimensionId.Overworld ? 4 : 0;
+        string lever = BlockIdentifier.Lever.ToIdentifier();
+        string redstoneWire = BlockIdentifier.RedstoneWire.ToIdentifier();
+        string poweredRepeater = BlockIdentifier.PoweredRepeater.ToIdentifier();
+        string unpoweredRepeater = BlockIdentifier.UnpoweredRepeater.ToIdentifier();
+        string piston = BlockIdentifier.Piston.ToIdentifier();
+        string stickyPiston = BlockIdentifier.StickyPiston.ToIdentifier();
+        string movingBlock = BlockIdentifier.MovingBlock.ToIdentifier();
+        string observer = BlockIdentifier.Observer.ToIdentifier();
+        string buttonSuffix = "_button";
+
+        foreach (BlockLevelStorage storage in chunk.GetAllBlockStorages()) {
+            BlockPos position = storage.GetPosition();
+            BlockPermutation permutation = chunk.GetPermutation(
+                GetChunkLocal(position.X), position.Y, GetChunkLocal(position.Z));
+            string? id = storage.Get<StringTag>("id")?.Value;
+            if (permutation.Type.Air ||
+                (id == "MovingBlock" && permutation.Type.Identifier != movingBlock)) {
+                chunk.SetBlockStorage(position, null);
+            }
+        }
+
+        foreach (KeyValuePair<(int X, int Y, int Z), Block> actorEntry in chunk.GetAllBlockActors()) {
+            BlockPos position = new() {
+                X = actorEntry.Key.X,
+                Y = actorEntry.Key.Y,
+                Z = actorEntry.Key.Z
+            };
+            BlockPermutation permutation = chunk.GetPermutation(
+                GetChunkLocal(position.X), position.Y, GetChunkLocal(position.Z));
+            if (permutation.Type.Identifier != actorEntry.Value.Type.Identifier) {
+                chunk.SetBlockActor(position, null);
+            }
+        }
+
+        bool wasProcessingRedstoneUpdates = _processingRedstoneUpdates;
+        _processingRedstoneUpdates = true;
+        try {
+            for (int subChunkIndex = 0; subChunkIndex < chunk.SubChunks.Length; subChunkIndex++) {
+                Chunk.SubChunk? subChunk = chunk.SubChunks[subChunkIndex];
+                if (subChunk is null || subChunk.Layers.Count == 0) {
+                    continue;
+                }
+
+                Chunk.BlockStorage storage = subChunk.Layers[0];
+                int subChunkY = subChunk.Index ?? subChunkIndex - subChunkOffset;
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int y = 0; y < 16; y++) {
+                            BlockPermutation permutation = BlockPermutation.Resolve(storage.GetState(x, y, z));
+                            string identifier = permutation.Type.Identifier;
+                            if (identifier == movingBlock) {
+                                ScheduleBlockTick(new BlockPos {
+                                    X = (chunk.X << 4) + x,
+                                    Y = (subChunkY << 4) + y,
+                                    Z = (chunk.Z << 4) + z
+                                }, 1);
+                                continue;
+                            }
+
+                            if (identifier == observer) {
+                                if (ObserverTrait.IsPowered(permutation)) {
+                                    ScheduleBlockTick(new BlockPos {
+                                        X = (chunk.X << 4) + x,
+                                        Y = (subChunkY << 4) + y,
+                                        Z = (chunk.Z << 4) + z
+                                    }, 1);
+                                }
+                                continue;
+                            }
+
+                        if (identifier != lever && identifier != redstoneWire &&
+                            identifier != poweredRepeater && identifier != unpoweredRepeater &&
+                            identifier != piston && identifier != stickyPiston &&
+                            !identifier.EndsWith(buttonSuffix, StringComparison.Ordinal)) {
+                                continue;
+                            }
+
+                            UpdateRedstone(new BlockPos {
+                                X = (chunk.X << 4) + x,
+                                Y = (subChunkY << 4) + y,
+                                Z = (chunk.Z << 4) + z
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        finally {
+            _processingRedstoneUpdates = wasProcessingRedstoneUpdates;
+        }
+
+        if (!wasProcessingRedstoneUpdates) {
+            ProcessRedstoneUpdates();
         }
     }
 

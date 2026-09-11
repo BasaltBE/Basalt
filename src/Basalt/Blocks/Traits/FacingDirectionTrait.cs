@@ -14,7 +14,9 @@ public sealed class FacingDirectionTrait : DirectionTrait {
     }
 
     public override void OnPlace(BlockPlaceDetails details) {
-        if (Block.HasTrait<HopperTrait>()) return;
+        if (Block.HasTrait<HopperTrait>() ||
+            Block.Type.Identifier == BlockIdentifier.Piston.ToIdentifier() ||
+            Block.Type.Identifier == BlockIdentifier.StickyPiston.ToIdentifier()) return;
 
         int pitch = (int)MathF.Ceiling(details.Player.Pitch);
         if (pitch == 90) {

@@ -85,7 +85,7 @@ public sealed class ItemType {
         Tags = tags is null ? [] : [.. tags];
         Properties = properties ?? new CompoundTag();
         Components = new ItemTypeComponentCollection(this, Properties);
-        BlockType = blockType ?? BlockType.Get(identifier);
+        BlockType = blockType ?? ResolveBlockType(identifier);
         Catalog = catalog;
 
         Registry[identifier] = this;
@@ -120,6 +120,18 @@ public sealed class ItemType {
 
     public bool TryGetComponentProperties(string component, out CompoundTag properties) {
         return Components.TryGetComponentProperties(component, out properties);
+    }
+
+    private static BlockType? ResolveBlockType(string identifier) {
+        if (identifier == ItemIdentifier.Redstone.ToIdentifier()) {
+            return BlockType.Get(BlockIdentifier.RedstoneWire.ToIdentifier());
+        }
+
+        if (identifier == ItemIdentifier.Repeater.ToIdentifier()) {
+            return BlockType.Get(BlockIdentifier.UnpoweredRepeater.ToIdentifier());
+        }
+
+        return BlockType.Get(identifier);
     }
 
     public static void EnsureRegistryCapacity(int capacity) {

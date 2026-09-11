@@ -311,6 +311,12 @@ public sealed class Block {
         }
     }
 
+    public void OnRedstoneUpdate(BlockTickDetails details) {
+        for (int i = 0; i < _traits.Count; i++) {
+            _traits[i].OnRedstoneUpdate(details);
+        }
+    }
+
     public void OnRandomTick(BlockRandomTickDetails details) {
         for (int i = 0; i < _traits.Count; i++) {
             _traits[i].OnRandomTick(details);

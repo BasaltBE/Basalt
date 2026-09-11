@@ -12,6 +12,7 @@ public sealed class MovableComponent : BlockComponent {
 
     public bool CanBePushed => Movement is MovementType.PushPull or MovementType.PushOnly;
     public bool CanBePulled => Movement == MovementType.PushPull;
+    public bool BreaksWhenPushed => Movement == MovementType.Popped;
     public bool IsSticky => Sticky != StickyType.None;
 
     public MovableComponent(MovementType movement = MovementType.PushPull, StickyType sticky = StickyType.None) {
@@ -44,6 +45,7 @@ public sealed class MovableComponent : BlockComponent {
 public enum MovementType {
     PushPull,
     PushOnly,
+    Popped,
     None
 }
 

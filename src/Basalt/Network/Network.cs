@@ -93,6 +93,7 @@ public sealed class NetworkHandler {
         On<PlayerAuthInputPacket>((connection, packet) => PlayerAuthInput.Handle(_server, connection, packet));
         On<ItemStackRequestPacket>((connection, packet) => ItemStackRequest.Handle(_server, connection, packet));
         On<InventoryTransactionPacket>((connection, packet) => InventoryTransaction.Handle(_server, connection, packet));
+        On<BlockPickRequestPacket>((connection, packet) => BlockPickRequest.Handle(_server, connection, packet));
 
     }
 

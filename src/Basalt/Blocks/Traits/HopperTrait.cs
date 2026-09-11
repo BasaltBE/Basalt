@@ -162,7 +162,7 @@ public sealed class HopperTrait : BlockTrait {
           new BlockActorDataPacket {
               Position = position,
               ActorData = storage,
-              
+
           },
           new UpdateBlockPacket {
               Position = position,
@@ -311,6 +311,9 @@ public sealed class HopperTrait : BlockTrait {
 
         HopperTrait? hopper = block.GetTrait<HopperTrait>();
         if (hopper?._container is not null) return hopper._container;
+
+        DispenserTrait? dispenser = block.GetTrait<DispenserTrait>();
+        if (dispenser?.Container is not null) return dispenser.Container;
 
         return null;
     }

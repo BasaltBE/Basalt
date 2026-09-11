@@ -64,6 +64,12 @@ public class Properties {
     public bool AchievementsEnabled { get; set; } = false;
 
     [ServerProperties.PropertyOrder(13)]
+    [ServerProperties.PropertyCategory("Gameplay")]
+    [ServerProperties.PropertyKey("redstone-enabled")]
+    [ServerProperties.PropertyComment("If true, redstone components and redstone updates are enabled.")]
+    public bool RedstoneEnabled { get; set; } = true;
+
+    [ServerProperties.PropertyOrder(13)]
     [ServerProperties.PropertyCategory("World")]
     [ServerProperties.PropertyKey("max-view-distance")]
     [ServerProperties.PropertyComment("Maximum chunk view distance players can request.")]

@@ -63,6 +63,10 @@ public abstract class BlockTrait {
     public virtual void OnTick(BlockTickDetails details) {
     }
 
+    public virtual void OnRedstoneUpdate(BlockTickDetails details) {
+        OnTick(details);
+    }
+
     public virtual void OnRandomTick(BlockRandomTickDetails details) {
     }
 

@@ -11,7 +11,11 @@ namespace Basalt.BedrockProtocol.Packets;
 public sealed class BlockActorDataPacket : DataPacket {
     static readonly TagOptions NetworkNbtOptions = new(Name: true, Type: true, VarInt: true);
     public BlockPos Position = new();
-    public CompoundTag ActorData = new();
+    private CompoundTag _actorData = new();
+    public CompoundTag ActorData {
+        get => _actorData;
+        set => _actorData = value.Clone();
+    }
 
     public override void Serialize(ref BinaryWriter writer) {
         Position.Write(ref writer);
