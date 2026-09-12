@@ -10,6 +10,7 @@ sealed class Program {
         // Profiler.Enabled = true;
 
         Logger.Init();
+        // Logger.MinLevel = Logger.LogLevel.Debug;
         const string serverPropertiesPath = "server.properties";
         ServerProperties props = ServerProperties.LoadFromPath(serverPropertiesPath);
         props.ApplyMetadata<Properties>();

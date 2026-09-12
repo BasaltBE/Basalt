@@ -41,6 +41,8 @@ public sealed class EntityWanderTrait : EntityTrait {
     private bool _groundMovement;
     private float _randomStrollSpeed = 1f;
     private float _panicSpeed = 1.25f;
+    private float _wanderTargetX;
+    private float _wanderTargetZ;
     private bool _panicAllDamage;
     private readonly HashSet<ActorDamageCause> _panicDamageSources = [];
 
@@ -92,6 +94,10 @@ public sealed class EntityWanderTrait : EntityTrait {
             return;
         }
 
+        if (details.CurrentTick < movement.ExternalImpulseUntil) {
+            return;
+        }
+
         if (Entity.GetTrait<EntityTargetingTrait>()?.Target is not null) {
             return;
         }
@@ -137,15 +143,24 @@ public sealed class EntityWanderTrait : EntityTrait {
         }
 
         if (_path is null || _pathIndex >= _path.Nodes.Count) {
-            Entity.Velocity = new Vec3 {
-                X = 0f,
-                Y = Entity.Velocity.Y,
-                Z = 0f
-            };
-
             if (!_pathPending && details.CurrentTick >= _nextPathRequest &&
                 details.CurrentTick >= _idleUntil) {
                 RequestWanderPath(details.CurrentTick);
+            }
+
+            float fallbackX = _wanderTargetX + 0.5f - Entity.Position.X;
+            float fallbackZ = _wanderTargetZ + 0.5f - Entity.Position.Z;
+            float targetDistance = MathF.Sqrt(fallbackX * fallbackX + fallbackZ * fallbackZ);
+            if (targetDistance > 0.5f && details.CurrentTick >= _idleUntil) {
+                float fallbackSpeed = movement.AiMovementSpeed *
+                    (details.CurrentTick < _panicUntil ? _panicSpeed : _randomStrollSpeed);
+                Entity.Velocity.X += (fallbackX / targetDistance * fallbackSpeed - Entity.Velocity.X) * 0.12f;
+                Entity.Velocity.Z += (fallbackZ / targetDistance * fallbackSpeed - Entity.Velocity.Z) * 0.12f;
+                Entity.Rotation.Y = RotateTowards(
+                    Entity.Rotation.Y,
+                    MathF.Atan2(-fallbackX, fallbackZ) * (180f / MathF.PI),
+                    8f);
+                return;
             }
 
             return;
@@ -203,13 +218,13 @@ public sealed class EntityWanderTrait : EntityTrait {
 
         float desiredX = directionX * speed;
         float desiredZ = directionZ * speed;
-        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.18f;
         Entity.Velocity.Y = velocityY;
-        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.18f;
 
         float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 18f);
-        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, yaw, 30f);
+        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 10f);
+        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, yaw, 14f);
     }
 
     public override void OnHurt(EntityHurtDetails details) {
@@ -246,12 +261,16 @@ public sealed class EntityWanderTrait : EntityTrait {
 
         int targetX = startX + _random.Next(-distance, distance + 1);
         int targetZ = startZ + _random.Next(-distance, distance + 1);
+        _wanderTargetX = targetX;
+        _wanderTargetZ = targetZ;
         PathNode start = new(startX, startY, startZ);
         PathNode target = new(targetX, startY, targetZ);
 
         _nextPathRequest = currentTick + PathRequestCooldown;
         _pathPending = true;
         int pathRequestId = ++_pathRequestId;
+        bool logVillager = Entity.Identifier is "minecraft:villager" or "minecraft:villager_v2";
+        if (logVillager) Logger.Debug("Villager wander request: start=({0},{1},{2}) target=({3},{4},{5}) tick={6}", start.X, start.Y, start.Z, target.X, target.Y, target.Z, currentTick);
         dimension.RequestPath(start, target, path => {
             _pathPending = false;
             if (!Entity.IsAlive || Entity.Dimension != dimension || _lastTick < currentTick ||
@@ -260,6 +279,7 @@ public sealed class EntityWanderTrait : EntityTrait {
             }
 
             _path = path;
+            if (logVillager) Logger.Debug("Villager wander result: path={0} nodes={1}", path is not null, path?.Nodes.Count ?? 0);
             if (path is null || path.Nodes.Count <= 1) {
                 _path = null;
                 _pathIndex = 0;

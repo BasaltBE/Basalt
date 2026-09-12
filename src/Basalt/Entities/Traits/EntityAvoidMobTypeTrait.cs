@@ -54,13 +54,16 @@ public sealed class EntityAvoidMobTypeTrait : EntityTrait {
         }
 
         if (_threat is null || _threat.Dimension != dimension) {
-            Stop();
             return;
         }
 
         if (_path is null || _pathIndex >= _path.Nodes.Count) {
             if (details.CurrentTick >= _nextPathRequest) {
                 RequestPath(dimension, details.CurrentTick);
+            }
+
+            if (details.CurrentTick < movement.ExternalImpulseUntil) {
+                return;
             }
 
             Stop();
@@ -183,11 +186,12 @@ public sealed class EntityAvoidMobTypeTrait : EntityTrait {
         float scale = _movementSpeed * _speedMultiplier / distance;
         float desiredX = deltaX * scale;
         float desiredZ = deltaZ * scale;
-        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
-        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.18f;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.18f;
         float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation.Y = yaw;
-        Entity.Rotation.Z = yaw;
+        float difference = MathF.IEEERemainder(yaw - Entity.Rotation.Y, 360f);
+        Entity.Rotation.Y += Math.Clamp(difference, -12f, 12f);
+        Entity.Rotation.Z = Entity.Rotation.Y;
     }
 
     private void Stop() {

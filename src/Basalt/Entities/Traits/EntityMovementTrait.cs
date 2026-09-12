@@ -9,6 +9,7 @@ using Basalt.Core.Entities.Traits.Types;
 using Basalt.Core.Profiling;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
+using Basalt.Core.Worlds;
 using Basalt.Core.Player;
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
@@ -39,6 +40,7 @@ public sealed class EntityMovementTrait : EntityTrait {
     public float WaterCurrentForce { get; set; } = 0.08f;
     public bool Grounded { get; private set; }
     public bool InLava { get; private set; }
+    public ulong ExternalImpulseUntil { get; private set; }
     private const float CollisionEpsilon = 0.001f;
 
 
@@ -58,6 +60,13 @@ public sealed class EntityMovementTrait : EntityTrait {
         SetAttribute(AttributeName.Movement, movement, BaseMovementSpeed);
         SetAttribute(AttributeName.UnderwaterMovement, underwater, BaseUnderwaterMovementSpeed);
         SetAttribute(AttributeName.LavaMovement, lava, BaseLavaMovementSpeed);
+    }
+
+    public void ApplyExternalImpulse(Vec3 velocity, ulong duration = 8) {
+        Entity.Velocity = velocity;
+        if (Entity.Dimension?.World is Tickable tickable) {
+            ExternalImpulseUntil = tickable.TickValue + duration;
+        }
     }
 
     public override void OnAdd() {
@@ -101,6 +110,7 @@ public sealed class EntityMovementTrait : EntityTrait {
         _tickCollisionWidth = collision?.Width ?? EntityCollisionTrait.DefaultWidth;
         _tickCollisionHeight = collision?.Height ?? EntityCollisionTrait.DefaultHeight;
         UpdateFluidState(Entity.Position);
+
         Vec3 previousPosition = Entity.Position;
         if (collision is not null) {
             collision.XAxisCollision = 0;

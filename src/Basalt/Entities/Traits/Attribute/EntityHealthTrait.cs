@@ -1,5 +1,6 @@
 namespace Basalt.Core.Entities.Traits.Attribute;
 
+using Basalt.Core.Entities.Traits;
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Entities.Traits.Types;
@@ -91,11 +92,18 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                         velocityY = KnockbackVerticalLimit;
                     }
 
-                    Entity.Velocity = new Vec3 {
+                    Vec3 knockbackVelocity = new() {
                         X = velocityX,
                         Y = velocityY,
                         Z = velocityZ
                     };
+                    Entity.GetTrait<EntityMovementTrait>()?.ApplyExternalImpulse(knockbackVelocity, KnockbackCooldownTicks);
+                    if (Entity.GetTrait<EntityMovementTrait>() is null) {
+                        Entity.Velocity = knockbackVelocity;
+                    }
+                    if (Entity.Identifier is "minecraft:villager" or "minecraft:villager_v2") {
+                        Logger.Debug("Villager knockback: damage={0:0.###} from=({1:0.###},{2:0.###},{3:0.###}) velocity=({4:0.###},{5:0.###},{6:0.###})", signal.Amount, damager.Position.X, damager.Position.Y, damager.Position.Z, knockbackVelocity.X, knockbackVelocity.Y, knockbackVelocity.Z);
+                    }
                     _lastKnockbackTick = currentTick;
                     knockbackApplied = true;
                     knockbackTick = currentTick;
