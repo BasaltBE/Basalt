@@ -17,8 +17,20 @@ public sealed class AiTrait : EntityTrait {
 
     public MemoryStore Memories { get; } = new();
     public GoalSelector Goals { get; } = new();
+    public AiProfile? Profile { get; private set; }
 
     public AiTrait(Entity entity) : base(entity) {
+    }
+
+    public override void OnAdd() {
+        Profile = AiRegistry.Resolve(Entity.Type);
+        if (Profile is null) {
+            return;
+        }
+
+        for (int i = 0; i < Profile.GoalFactories.Count; i++) {
+            Goals.Add(Profile.GoalFactories[i](Entity));
+        }
     }
 
     public override void OnTick(TraitOnTickDetails details) {
