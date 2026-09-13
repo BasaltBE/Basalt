@@ -3,6 +3,7 @@ namespace Basalt.Core.Entities.Metadata;
 using Basalt.Core.Entities.Traits.Attribute;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Worlds;
+using System.Text.Json;
 
 using Basalt.BedrockProtocol.Packets;
 using Basalt.BedrockProtocol.Types;
@@ -54,6 +55,33 @@ public sealed class EntityAttributes {
             Default = 20f,
             Modifiers = []
         });
+        SetAttribute(new AttributeData {
+            Name = "minecraft:attack_damage",
+            Minimum = 0f,
+            Maximum = 2048f,
+            Current = 2f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 2048f,
+            Default = 2f,
+            Modifiers = []
+        });
+        SetAttribute(new AttributeData {
+            Name = "minecraft:follow_range",
+            Minimum = 0f,
+            Maximum = 2048f,
+            Current = 32f,
+            DefaultMinimum = 0f,
+            DefaultMaximum = 2048f,
+            Default = 32f,
+            Modifiers = []
+        });
+        if (_entity.Type.TryGetComponentProperties("minecraft:follow_range", out JsonElement followRange) &&
+            followRange.TryGetProperty("value", out JsonElement value) &&
+            value.TryGetSingle(out float range)) {
+            AttributeData attribute = _attributes[AttributeName.FollowRange];
+            attribute.Current = Math.Clamp(range, attribute.Minimum, attribute.Maximum);
+            attribute.Default = attribute.Current;
+        }
         RegisterWithCurrent(AttributeName.Movement, 0f, float.MaxValue, 0.1f, 0.1f);
         SetAttribute(new AttributeData {
             Name = "minecraft:player.saturation",
@@ -175,8 +203,78 @@ public sealed class EntityAttributes {
         _attributes[AttributeNameExtensions.FromProtocolString(attribute.Name)] = attribute;
     }
 
+    public bool SetModifier(AttributeName name, string id, float amount, int operation) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentOutOfRangeException.ThrowIfNegative(operation);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(operation, 2);
+        if (!_attributes.TryGetValue(name, out AttributeData? attribute)) {
+            return false;
+        }
+
+        List<AttributeModifier> modifiers = [.. attribute.Modifiers];
+        int index = modifiers.FindIndex(modifier => modifier.Id == id);
+        AttributeModifier modifier = new() {
+            Id = id,
+            Name = id,
+            Amount = amount,
+            Operation = operation,
+            Operand = 0,
+            Serializable = true
+        };
+        if (index >= 0) {
+            modifiers[index] = modifier;
+        }
+        else {
+            modifiers.Add(modifier);
+        }
+
+        attribute.Modifiers = [.. modifiers];
+        Recalculate(attribute);
+        _entity.AttributesDirty = true;
+        return true;
+    }
+
+    public bool RemoveModifier(AttributeName name, string id) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        if (!_attributes.TryGetValue(name, out AttributeData? attribute)) {
+            return false;
+        }
+
+        int count = attribute.Modifiers.Length;
+        attribute.Modifiers = [.. attribute.Modifiers.Where(modifier => modifier.Id != id)];
+        if (attribute.Modifiers.Length == count) {
+            return false;
+        }
+
+        Recalculate(attribute);
+        _entity.AttributesDirty = true;
+        return true;
+    }
+
     public bool RemoveAttribute(AttributeName name) {
         return _attributes.Remove(name);
+    }
+
+    private static void Recalculate(AttributeData attribute) {
+        float baseValue = attribute.Default;
+        float value = baseValue;
+        for (int operation = 0; operation <= 2; operation++) {
+            for (int i = 0; i < attribute.Modifiers.Length; i++) {
+                AttributeModifier modifier = attribute.Modifiers[i];
+                if (modifier.Operation != operation) {
+                    continue;
+                }
+
+                value = operation switch {
+                    0 => value + modifier.Amount,
+                    1 => value + baseValue * modifier.Amount,
+                    2 => value * (1f + modifier.Amount),
+                    _ => value
+                };
+            }
+        }
+
+        attribute.Current = Math.Clamp(value, attribute.Minimum, attribute.Maximum);
     }
 
     /// <summary>
