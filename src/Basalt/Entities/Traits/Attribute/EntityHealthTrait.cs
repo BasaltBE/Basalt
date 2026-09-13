@@ -4,6 +4,7 @@ using Basalt.Core.Entities.Traits;
 using Basalt.Core.Events;
 using Basalt.Core.Item.Traits;
 using Basalt.Core.Entities.Traits.Types;
+using Basalt.Core.Enums;
 using Basalt.Core.Player.Traits;
 using Basalt.Core.Traits;
 using Basalt.Core.Worlds.Dimensions;
@@ -37,17 +38,32 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
     }
 
     public override void OnTick(TraitOnTickDetails details) {
-        if (!Entity.IsAlive || !Entity.Type.Components.Contains("minecraft:burns_in_daylight") ||
+        if (!Entity.IsAlive || !BurnsInDaylight(Entity) ||
             Entity.Dimension is not Dimension dimension || dimension.Type != DimensionId.Overworld ||
             dimension.World is not Tickable world) {
             return;
         }
 
-        if (!dimension.IsDay() || !CanSeeSky(dimension)) {
+        float height = Entity.GetTrait<EntityCollisionTrait>()?.Height ?? 1.8f;
+        Vec3 eyePosition = new() {
+            X = Entity.Position.X,
+            Y = Entity.Position.Y + height * 0.85f,
+            Z = Entity.Position.Z
+        };
+        if (!dimension.IsDay() || !dimension.CanSeeSky(eyePosition)) {
             return;
         }
 
         Entity.SetOnFire(DaylightFireTicks);
+    }
+
+    private static bool BurnsInDaylight(Entity entity) {
+        // TODO: use EntityIdentifier.Skeleton.ToIdentifierString()
+        return entity.Type.Components.Contains("minecraft:burns_in_daylight") ||
+            entity.Identifier is "minecraft:skeleton" or "minecraft:stray" or "minecraft:bogged" or
+                "minecraft:wither_skeleton" or "minecraft:zombie" or "minecraft:husk" or
+                "minecraft:zombie_villager" or "minecraft:zombie_villager_v2" or
+                "minecraft:zombified_piglin";
     }
 
     public void ApplyDamage(float amount, Entity? damager = null, ActorDamageCause? cause = null) {
@@ -55,6 +71,17 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         Entity.Dimension?.World?.Server?.Emit(signal);
         if (!signal.Emit()) {
             return;
+        }
+
+        if (Entity.HasEffect(EffectType.FireResistance) &&
+            signal.Cause is ActorDamageCause.Fire or ActorDamageCause.FireTick or
+            ActorDamageCause.Lava or ActorDamageCause.Magma or
+            ActorDamageCause.Campfire or ActorDamageCause.SoulCampfire) {
+            return;
+        }
+
+        if (Entity.HasEffect(EffectType.Resistance) && signal.Amount > 0f) {
+            signal.Amount *= 0.8f;
         }
 
         LastDamageCause = signal.Cause;
@@ -75,8 +102,13 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         bool knockbackApplied = false;
         ulong knockbackTick = 0;
         if (signal.Cause == ActorDamageCause.EntityAttack && damager is not null && Entity.Dimension is not null && damager.Dimension == Entity.Dimension) {
+            float knockbackResistance = Math.Clamp(
+                Entity.Attributes.GetAttribute(AttributeName.KnockbackResistance)?.Current ?? 0f,
+                0f,
+                1f);
             ulong currentTick = Entity.Dimension.World is Tickable tickable ? tickable.TickValue : 0;
-            if (_lastKnockbackTick is null || currentTick - _lastKnockbackTick.Value >= KnockbackCooldownTicks) {
+            if (knockbackResistance < 1f &&
+                (_lastKnockbackTick is null || currentTick - _lastKnockbackTick.Value >= KnockbackCooldownTicks)) {
                 float x = Entity.Position.X - damager.Position.X;
                 float z = Entity.Position.Z - damager.Position.Z;
                 float length = MathF.Sqrt((x * x) + (z * z));
@@ -85,9 +117,10 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
                     float velocityX = Entity.Velocity.X * 0.5f;
                     float velocityY = Entity.Velocity.Y * 0.5f;
                     float velocityZ = Entity.Velocity.Z * 0.5f;
-                    velocityX += x * invLength * KnockbackHorizontalForce;
-                    velocityY += KnockbackVerticalForce;
-                    velocityZ += z * invLength * KnockbackHorizontalForce;
+                    float multiplier = 1f - knockbackResistance;
+                    velocityX += x * invLength * KnockbackHorizontalForce * multiplier;
+                    velocityY += KnockbackVerticalForce * multiplier;
+                    velocityZ += z * invLength * KnockbackHorizontalForce * multiplier;
                     if (velocityY > KnockbackVerticalLimit) {
                         velocityY = KnockbackVerticalLimit;
                     }
@@ -161,6 +194,14 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         }
     }
 
+    public void Heal(float amount) {
+        if (amount <= 0f || !Entity.IsAlive) {
+            return;
+        }
+
+        CurrentValue = MathF.Min(MaximumValue, CurrentValue + amount);
+    }
+
     public override void OnAdd() {
         AttributeProperties properties = GetHealthProperties();
         if (Entity.Attributes.GetAttribute(Attribute) is AttributeData attribute) {
@@ -195,24 +236,6 @@ public sealed class EntityHealthTrait : EntityAttributeTrait {
         }
 
         return value.TryGetSingle(out float result) ? result : null;
-    }
-
-    private bool CanSeeSky(Dimension dimension) {
-        int x = (int)MathF.Floor(Entity.Position.X);
-        int y = (int)MathF.Floor(Entity.Position.Y + 0.1f);
-        int z = (int)MathF.Floor(Entity.Position.Z);
-
-        for (int currentY = y; currentY <= World.MaxY; currentY++) {
-            if (!dimension.TryGetLoadedPermutation(x, currentY, z, out BlockPermutation? permutation)) {
-                return true;
-            }
-
-            if (!permutation!.Type.Air && !permutation.Type.Liquid && permutation.Type.Opacity >= 1f) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public override void OnSpawn(EntitySpawnOptions details) {
