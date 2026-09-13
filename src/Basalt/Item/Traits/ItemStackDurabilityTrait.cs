@@ -57,6 +57,11 @@ public sealed class ItemStackDurabilityTrait : ItemTrait {
         return _maxDurability - _damage;
     }
 
+    public void Damage(Player player, int slot) {
+        ArgumentNullException.ThrowIfNull(player);
+        ApplyDamage(player, slot);
+    }
+
     public void Repair(int amount) {
         if (amount <= 0 || _damage <= 0) {
             return;
