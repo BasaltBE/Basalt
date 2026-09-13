@@ -20,6 +20,8 @@ public sealed class EntityCollisionTrait : EntityTrait {
     public int XAxisCollision;
     public int YAxisCollision;
     public int ZAxisCollision;
+    public bool HorizontalCollision => XAxisCollision != 0 || ZAxisCollision != 0;
+    public bool VerticalCollision => YAxisCollision != 0;
 
     public EntityCollisionTrait(Entity entity) : base(entity) {
     }
