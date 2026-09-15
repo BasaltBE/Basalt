@@ -153,6 +153,19 @@ public sealed class Dimension : IDisposable {
     public bool IsDay() => (World?.CurrentDayTime ?? 0) < 12000;
     public bool IsNight() => !IsDay();
 
+    public bool CanSeeSky(Vec3 position) {
+        int x = (int)MathF.Floor(position.X);
+        int y = (int)MathF.Floor(position.Y);
+        int z = (int)MathF.Floor(position.Z);
+        for (int checkY = y + 1; checkY <= 320; checkY++) {
+            if (GetPermutation(x, checkY, z).Type.Solid) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public Dimension(string identifier, DimensionId type, WorldProvider provider, Generator? generator = null) {
         Identifier = identifier;
         Type = type;

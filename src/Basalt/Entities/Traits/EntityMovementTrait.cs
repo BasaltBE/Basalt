@@ -27,7 +27,7 @@ public sealed class EntityMovementTrait : EntityTrait {
 
     public float Speed { get; private set; } = 1f;
     public float MovementSpeed => BaseMovementSpeed * Speed;
-    public float AiMovementSpeed => MovementSpeed; // 0.8796f;
+    public float AiMovementSpeed => MovementSpeed / 0.8f;
     private float _fallDistance;
     private float _tickCollisionWidth = EntityCollisionTrait.DefaultWidth;
     private float _tickCollisionHeight = EntityCollisionTrait.DefaultHeight;

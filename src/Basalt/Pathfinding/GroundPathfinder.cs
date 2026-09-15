@@ -27,17 +27,18 @@ public static class GroundPathfinder {
             return null;
         }
 
-        PriorityQueue<PathNode, float> open = new();
-        Dictionary<PathNode, float> scores = [];
-        Dictionary<PathNode, PathNode> previous = [];
-        HashSet<PathNode> closed = [];
+        int capacity = Math.Min(maxVisitedNodes, 4096);
+        PriorityQueue<PathNode, float> open = new(capacity);
+        Dictionary<PathNode, float> scores = new(capacity);
+        Dictionary<PathNode, PathNode> previous = new(capacity);
+        HashSet<PathNode> closed = new(capacity);
         PathNode closest = start;
         float closestDistanceSquared = DistanceSquared(start, target);
         float maxDistanceSquared = maxDistance * maxDistance;
         int visited = 0;
 
         scores[start] = 0f;
-        open.Enqueue(start, MathF.Sqrt(closestDistanceSquared));
+        open.Enqueue(start, Heuristic(start, target));
 
         while (open.TryDequeue(out PathNode current, out _)) {
             visited++;
@@ -88,7 +89,7 @@ public static class GroundPathfinder {
 
                 scores[candidate] = score;
                 previous[candidate] = from;
-                open.Enqueue(candidate, score + MathF.Sqrt(DistanceSquared(candidate, target)));
+                open.Enqueue(candidate, score + Heuristic(candidate, target));
             }
         }
 
@@ -169,6 +170,13 @@ public static class GroundPathfinder {
             : from.X != to.X && from.Z != to.Z
                 ? DiagonalDistance
                 : 1f;
+    }
+
+    private static float Heuristic(PathNode from, PathNode to) {
+        int x = Math.Abs(from.X - to.X);
+        int z = Math.Abs(from.Z - to.Z);
+        int diagonal = Math.Min(x, z);
+        return diagonal * DiagonalDistance + x + z - diagonal * 2 + Math.Abs(from.Y - to.Y);
     }
 
     private static float DistanceSquared(PathNode from, PathNode to) {

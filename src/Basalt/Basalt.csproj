@@ -36,6 +36,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Entities\Traits\EntityTargetingTrait.cs" />
+    <Compile Remove="Entities\Traits\EntityAvoidMobTypeTrait.cs" />
+    <Compile Remove="Entities\Traits\EntityAttackTrait.cs" />
     <Compile Include="..\Nethernet\**\*.cs" Link="Nethernet\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

@@ -358,8 +358,12 @@ public sealed class EntityTargetingTrait : EntityTrait {
         float desiredZ = directionZ * _movementSpeed;
         Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.35f;
         Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.35f;
-        float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 18f);
+        float movementYaw = MathF.Atan2(-directionX, directionZ) * (180f / MathF.PI);
+        float targetYaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
+        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, movementYaw, 14f);
+        float headYaw = Entity.Rotation.Y + Math.Clamp(
+            MathF.IEEERemainder(targetYaw - Entity.Rotation.Y, 360f), -80f, 80f);
+        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, headYaw, 22f);
     }
 
     private static void GatherEntities(Dimension dimension, Vec3 center, float radius, List<Entity> candidates) {

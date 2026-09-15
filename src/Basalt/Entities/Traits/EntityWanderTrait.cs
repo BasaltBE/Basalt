@@ -98,14 +98,6 @@ public sealed class EntityWanderTrait : EntityTrait {
             return;
         }
 
-        if (Entity.GetTrait<EntityTargetingTrait>()?.Target is not null) {
-            return;
-        }
-
-        if (Entity.GetTrait<EntityAvoidMobTypeTrait>()?.Threat is not null) {
-            return;
-        }
-
         _lastTick = details.CurrentTick;
         EntityHealthTrait? health = Entity.GetTrait<EntityHealthTrait>();
         if (health is not null) {
@@ -154,8 +146,8 @@ public sealed class EntityWanderTrait : EntityTrait {
             if (targetDistance > 0.5f && details.CurrentTick >= _idleUntil) {
                 float fallbackSpeed = movement.AiMovementSpeed *
                     (details.CurrentTick < _panicUntil ? _panicSpeed : _randomStrollSpeed);
-                Entity.Velocity.X += (fallbackX / targetDistance * fallbackSpeed - Entity.Velocity.X) * 0.12f;
-                Entity.Velocity.Z += (fallbackZ / targetDistance * fallbackSpeed - Entity.Velocity.Z) * 0.12f;
+                Entity.Velocity.X += (fallbackX / targetDistance * fallbackSpeed - Entity.Velocity.X) * 0.24f;
+                Entity.Velocity.Z += (fallbackZ / targetDistance * fallbackSpeed - Entity.Velocity.Z) * 0.24f;
                 Entity.Rotation.Y = RotateTowards(
                     Entity.Rotation.Y,
                     MathF.Atan2(-fallbackX, fallbackZ) * (180f / MathF.PI),
@@ -218,13 +210,16 @@ public sealed class EntityWanderTrait : EntityTrait {
 
         float desiredX = directionX * speed;
         float desiredZ = directionZ * speed;
-        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.18f;
+        Entity.Velocity.X += (desiredX - Entity.Velocity.X) * 0.24f;
         Entity.Velocity.Y = velocityY;
-        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.18f;
+        Entity.Velocity.Z += (desiredZ - Entity.Velocity.Z) * 0.24f;
 
-        float yaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
-        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, yaw, 10f);
-        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, yaw, 14f);
+        float movementYaw = MathF.Atan2(-directionX, directionZ) * (180f / MathF.PI);
+        float targetYaw = MathF.Atan2(-deltaX, deltaZ) * (180f / MathF.PI);
+        Entity.Rotation.Y = RotateTowards(Entity.Rotation.Y, movementYaw, 8f);
+        float headYaw = Entity.Rotation.Y + Math.Clamp(
+            MathF.IEEERemainder(targetYaw - Entity.Rotation.Y, 360f), -75f, 75f);
+        Entity.Rotation.Z = RotateTowards(Entity.Rotation.Z, headYaw, 16f);
     }
 
     public override void OnHurt(EntityHurtDetails details) {
