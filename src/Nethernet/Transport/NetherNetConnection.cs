@@ -32,8 +32,15 @@ public sealed class NetherNetConnection : IDisposable {
     }
 
     public void Receive(ReadOnlySpan<byte> frame) {
-        if (_reassembler.Add(frame, out byte[] payload)) {
-            MessageReceived?.Invoke(payload);
+        if (Channel == NetherNetChannel.Unreliable) {
+            if (NetherNetReassembler.AddUnreliable(frame, out ReadOnlySpan<byte> payload)) {
+                MessageReceived?.Invoke(payload.ToArray());
+            }
+            return;
+        }
+
+        if (_reassembler.Add(frame, out byte[] reliablePayload)) {
+            MessageReceived?.Invoke(reliablePayload);
         }
     }
 

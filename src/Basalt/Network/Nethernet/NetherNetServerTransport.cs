@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using Basalt.Core.Nethernet;
+using Basalt.BedrockProtocol.Enums;
 
 namespace Basalt.Core.Network.Nethernet;
 
@@ -8,6 +9,7 @@ internal sealed class NetherNetServerTransport : IDisposable {
     private readonly NetworkHandler _network;
     private readonly ServerIdentity _identity;
     private readonly NetherNetSignalingServer _signaling;
+    private readonly NetherNetDiscoveryServer _discovery;
     private readonly ConcurrentDictionary<NetherNetPeer, NetworkConnection> _peers = new();
     private readonly ConcurrentDictionary<NetherNetPeer, NetherNetConnection> _unreliableChannels = new();
     private readonly BlockingCollection<(NetherNetConnection Connection, byte[] Payload, int Length)> _outgoing =
@@ -20,10 +22,22 @@ internal sealed class NetherNetServerTransport : IDisposable {
     private readonly Thread _thread;
     private bool _started;
 
-    public NetherNetServerTransport(NetworkHandler network, ushort ipv4Port, ushort ipv6Port) {
+    public NetherNetServerTransport(
+        NetworkHandler network,
+        ushort ipv4Port,
+        ushort ipv6Port,
+        Func<int> playerCount,
+        string motd,
+        int maxPlayers,
+        GameType gameMode,
+        string serverName) {
         _network = network ?? throw new ArgumentNullException(nameof(network));
         _identity = ServerIdentity.LoadOrGenerate("nethernet-identity.pem");
         _signaling = new NetherNetSignalingServer(ipv4Port, ipv6Port, CreateAnswerAsync);
+        _discovery = new NetherNetDiscoveryServer(
+            ipv4Port,
+            ipv6Port,
+            guid => $"MCPE;{motd};{Constants.ProtocolVersion};{Constants.MinecraftVersion};{playerCount()};{maxPlayers};{guid};{serverName};{gameMode};1;{ipv4Port};{ipv6Port};");
         _thread = new Thread(Run) { IsBackground = true, Name = "NetherNet" };
     }
 
@@ -34,6 +48,7 @@ internal sealed class NetherNetServerTransport : IDisposable {
 
         _started = true;
         _signaling.Start(cancellationToken);
+        _discovery.Start();
         _thread.Start();
     }
 
@@ -41,6 +56,7 @@ internal sealed class NetherNetServerTransport : IDisposable {
         if (!_started) {
             _identity.Dispose();
             _signaling.Dispose();
+            _discovery.Dispose();
             _cancellation.Dispose();
             _outgoing.Dispose();
             _unreliableOutgoing.Dispose();
@@ -61,6 +77,7 @@ internal sealed class NetherNetServerTransport : IDisposable {
         _peers.Clear();
         _identity.Dispose();
         _signaling.Dispose();
+        _discovery.Dispose();
         _cancellation.Dispose();
         _outgoing.Dispose();
         _unreliableOutgoing.Dispose();

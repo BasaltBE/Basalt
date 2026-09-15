@@ -172,7 +172,15 @@ public sealed class Server {
             _rcon = new RconServer(this, Properties.RconPort, Properties.RconPassword);
         }
         Network = new NetworkHandler(this);
-        _nethernet = new NetherNetServerTransport(Network, Properties.Port, Properties.Ipv6Port);
+        _nethernet = new NetherNetServerTransport(
+            Network,
+            Properties.Port,
+            Properties.Ipv6Port,
+            () => Players.Count,
+            Properties.ServerMotd,
+            Properties.MaxPlayers,
+            Properties.DefaultGamemode,
+            Properties.ServerMotd);
         PermissionStore = new PermissionStore();
         PlayerData = new PlayerDataStore(Properties.PlayerDataPath);
         Bans = new BanStore("banned-players.json");

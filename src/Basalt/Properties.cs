@@ -1,6 +1,7 @@
 namespace Basalt.Core;
 
 using Basalt.Core.Enums;
+using Basalt.BedrockProtocol.Enums;
 
 public class Properties {
     [ServerProperties.PropertyOrder(1)]
@@ -17,9 +18,15 @@ public class Properties {
 
     [ServerProperties.PropertyOrder(3)]
     [ServerProperties.PropertyCategory("Network")]
-    [ServerProperties.PropertyKey("motd")]
+    [ServerProperties.PropertyKey("server-motd")]
     [ServerProperties.PropertyComment("Message shown in the server list.")]
-    public string Motd { get; set; } = "Basalt";
+    public string ServerMotd { get; set; } = "BasaltBE Server";
+
+    [ServerProperties.PropertyOrder(5)]
+    [ServerProperties.PropertyCategory("Network")]
+    [ServerProperties.PropertyKey("default-gamemode")]
+    [ServerProperties.PropertyComment("Game mode assigned to new players.")]
+    public GameType DefaultGamemode { get; set; } = GameType.Survival;
 
     [ServerProperties.PropertyOrder(3)]
     [ServerProperties.PropertyCategory("Network")]

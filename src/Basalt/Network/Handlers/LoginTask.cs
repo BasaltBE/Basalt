@@ -83,6 +83,7 @@ internal sealed class LoginTask : ServerTask {
         }
 
         _player = new Player.Player(_identity.Username, playerXuid, playerUuid);
+        _player.RestoreGamemode(_server.Properties.DefaultGamemode);
 
         CompoundTag? savedPlayer = _server.PlayerData.Load(playerXuid) ?? LoadPlayerDataCompat(
             _server, playerXuid, _identity.Xuid, _identity.Username, playerUuid);

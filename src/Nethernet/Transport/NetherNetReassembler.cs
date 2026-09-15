@@ -38,6 +38,16 @@ public sealed class NetherNetReassembler : IDisposable {
         return true;
     }
 
+    public static bool AddUnreliable(ReadOnlySpan<byte> frame, out ReadOnlySpan<byte> payload) {
+        payload = default;
+        if (frame.Length < NetherNetFrame.HeaderSize || frame[0] != 0) {
+            return false;
+        }
+
+        payload = frame[NetherNetFrame.HeaderSize..];
+        return true;
+    }
+
     public void Dispose() {
         if (_payload is not null) {
             ArrayPool<byte>.Shared.Return(_payload);
