@@ -12,7 +12,7 @@ public static class BedrockProtocol {
     /// <summary>
     /// The network protocol version supported by this library.
     /// </summary>
-    public const int ProtocolVersion = 2192;
+    public const int ProtocolVersion = 2193;
 
     /// <summary>
     /// The upstream protocol branch for this version.

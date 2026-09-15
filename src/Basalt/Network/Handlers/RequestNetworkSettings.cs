@@ -16,7 +16,7 @@ public static class RequestNetworkSettings {
                 Reason = reason,
             };
 
-            Logger.Warn($"Session(0) failed due to {reason.ToString()}");
+            Logger.Warn($"Session(0) failed due to {reason.ToString()}, {packet.ClientNetworkVersion} != {Constants.ProtocolVersion}");
             server.Network.QueuePacket(connection, disconnect, CompressionMethod.NotPresent);
             return;
         }
