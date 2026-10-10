@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\BasaltBE.Server\BasaltBE.Server.csproj" />
+    <ProjectReference Include="..\BasaltBE.Basalt\BasaltBE.Basalt.csproj" />
     <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
     <ProjectReference Include="..\BasaltBE.Protocol\BasaltBE.Protocol.csproj" />
     <ProjectReference Include="..\BasaltBE.Logger\BasaltBE.Logger.csproj" />
