@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 env:
-  PROJECT: src/DedicatedServer/DedicatedServer.csproj
+  PROJECT: src/BasaltBE.DedicatedServer/BasaltBE.DedicatedServer.csproj
   DOTNET_VERSION: "10.0.x"
 
 jobs:
