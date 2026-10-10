@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasaltBE.Protocol", "src\Ba
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasaltBE.Logger", "src\BasaltBE.Logger\BasaltBE.Logger.csproj", "{605D1DF4-5DD3-42AE-994B-0E58F6FDADE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DedicatedServer", "src\DedicatedServer\DedicatedServer.csproj", "{61F0F1AB-6381-40A2-9CB3-B0C114ADF5C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasaltBE.DedicatedServer", "src\BasaltBE.DedicatedServer\BasaltBE.DedicatedServer.csproj", "{61F0F1AB-6381-40A2-9CB3-B0C114ADF5C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

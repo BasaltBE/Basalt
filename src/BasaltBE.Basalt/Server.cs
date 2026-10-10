@@ -1,49 +1,27 @@
-using System.Threading.Channels;
 using BasaltBE.Logging;
-using BasaltBE.NetherNet;
-using BasaltBE.NetherNet.Enums;
+using BasaltBE.Basalt.Network;
 using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt;
 
-public sealed class Server : IAsyncDisposable {
+public sealed class Server : IDisposable {
     private static readonly ScopedLogger Log = Logger.Scoped("Server");
-    private readonly NethernetServer nethernet;
-    private int running;
+    public readonly NetworkServer Network;
 
     public Server(NethernetServerOptions options, IServerIdentity? identity = null) {
-        nethernet = new NethernetServer(options, identity);
+        Network = new NetworkServer(options, identity);
     }
 
-    public ulong NetworkId => nethernet.NetworkId;
+    public void Start() => Network.Start(HandleMessage);
 
-    public async Task RunAsync(Func<NethernetMessage, ValueTask> receive, CancellationToken cancellationToken = default) {
-        ArgumentNullException.ThrowIfNull(receive);
-        if (Interlocked.Exchange(ref running, 1) != 0)
-            throw new InvalidOperationException("Server has already started.");
+    public void Dispose() => Network.Dispose();
 
-        try {
-            await nethernet.StartAsync(cancellationToken).ConfigureAwait(false);
-            Log.Info($"Server is listening on NetherNet network {NetworkId}.");
-
-            while (!cancellationToken.IsCancellationRequested) {
-                NethernetMessage message = await nethernet.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-                await receive(message).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
-        catch (ChannelClosedException) { }
-        finally {
-            await nethernet.DisposeAsync().ConfigureAwait(false);
-        }
+    public void HandleMessage(NethernetMessage message) {
+        if (message.Connected)
+            Log.Info($"Peer {message.Peer.ConnectionId} connected.");
+        else if (message.Disconnected)
+            Log.Info($"Peer {message.Peer.ConnectionId} disconnected.");
+        else
+            Log.Debug($"Received {message.Payload.Length} bytes from peer {message.Peer.ConnectionId}.");
     }
-
-    public ValueTask SendPacketAsync(
-        NethernetPeer peer,
-        ReadOnlyMemory<byte> packet,
-        MessageReliability reliability = MessageReliability.Reliable,
-        CancellationToken cancellationToken = default
-    ) => nethernet.SendAsync(peer, packet, reliability, cancellationToken);
-
-    public ValueTask DisposeAsync() => nethernet.DisposeAsync();
 }
