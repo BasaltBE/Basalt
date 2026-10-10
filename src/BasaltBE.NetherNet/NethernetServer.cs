@@ -11,7 +11,7 @@ using BasaltBE.Logging;
 
 namespace BasaltBE.NetherNet;
 
-public sealed class NethernetServer : IAsyncDisposable {
+public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     private static readonly ScopedLogger Log = Logger.Scoped("NetherNet");
     private readonly NethernetServerOptions options;
     private readonly IServerIdentity identity;
@@ -24,6 +24,7 @@ public sealed class NethernetServer : IAsyncDisposable {
     private readonly Lock disposeSync = new();
     private CancellationTokenRegistration startupCancellation;
     private Task? disposeTask;
+    private Task? messageTask;
     private LanDiscovery? discovery;
     private HttpSignalingListener? http;
     private int started;
@@ -71,6 +72,12 @@ public sealed class NethernetServer : IAsyncDisposable {
         }
     }
 
+    public void Start(Action<NethernetMessage> handler) {
+        ArgumentNullException.ThrowIfNull(handler);
+        StartAsync().AsTask().GetAwaiter().GetResult();
+        messageTask = DispatchMessagesAsync(handler);
+    }
+
     public ValueTask<NethernetMessage> ReceiveAsync(CancellationToken cancellationToken = default) => incoming.Reader.ReadAsync(cancellationToken);
 
     public ValueTask SendAsync(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable, CancellationToken cancellationToken = default) {
@@ -78,16 +85,22 @@ public sealed class NethernetServer : IAsyncDisposable {
         return connection.SendAsync(payload, reliability, cancellationToken);
     }
 
+    public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) =>
+        SendAsync(peer, payload, reliability).AsTask().GetAwaiter().GetResult();
+
     public ValueTask DisposeAsync() {
         lock (disposeSync)
             return new ValueTask(disposeTask ??= DisposeCoreAsync());
     }
+
+    public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();
 
     private async Task DisposeCoreAsync() {
         if (Interlocked.Exchange(ref disposed, 1) != 0) return;
         cancellation.Cancel();
         startupCancellation.Dispose();
         incoming.Writer.TryComplete();
+        if (messageTask is not null) await messageTask.ConfigureAwait(false);
         if (http is not null) await http.DisposeAsync().ConfigureAwait(false);
         if (discovery is not null) await discovery.DisposeAsync().ConfigureAwait(false);
         await Task.WhenAll(connections.Values.Select(connection => connection.DisposeAsync().AsTask())).ConfigureAwait(false);
@@ -95,6 +108,16 @@ public sealed class NethernetServer : IAsyncDisposable {
         if (ownsIdentity) identity.Dispose();
         peerCapacity.Dispose();
         cancellation.Dispose();
+    }
+
+    private async Task DispatchMessagesAsync(Action<NethernetMessage> handler) {
+        try {
+            await foreach (NethernetMessage message in incoming.Reader.ReadAllAsync(cancellation.Token).ConfigureAwait(false)) {
+                try { handler(message); }
+                catch (Exception error) { Log.Error($"NetherNet message handler failed: {error.Message}"); }
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
     }
 
     private void StopOnCancellation() {
