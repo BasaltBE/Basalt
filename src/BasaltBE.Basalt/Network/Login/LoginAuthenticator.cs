@@ -109,8 +109,7 @@ internal sealed class LoginAuthenticator : IDisposable {
             uuid,
             client.DeviceOS,
             client.DeviceModel ?? string.Empty,
-            skin,
-            clientKey
+            skin
         );
     }
 

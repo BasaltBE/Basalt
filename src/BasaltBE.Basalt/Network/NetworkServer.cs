@@ -11,6 +11,7 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Handlers;
 using BasaltBE.Basalt.Network.Login;
+using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet;
@@ -30,17 +31,28 @@ public sealed class NetworkServer : IDisposable {
     private static readonly ConcurrentDictionary<Type, uint> packetIds = [];
     private readonly LoginAuthenticator authenticator = new();
     private readonly NethernetServer nethernet;
+    internal readonly ResourcePackManager ResourcePacks;
     // For now players live here, they will be moved to per world
     private readonly ConcurrentDictionary<NethernetPeer, Player> players = [];
     private readonly ConcurrentDictionary<NethernetPeer, byte> compressionPeers = [];
 
     public readonly EventEmitter Events = new();
 
-    public NetworkServer(NethernetServerOptions options, IServerIdentity? identity = null) {
+    public NetworkServer(NethernetServerOptions options, IServerIdentity? identity = null)
+        : this(options, identity, ResourcePackManager.Empty) { }
+
+    internal NetworkServer(
+        NethernetServerOptions options,
+        IServerIdentity? identity,
+        ResourcePackManager resourcePacks
+    ) {
         nethernet = new NethernetServer(options, identity);
+        ResourcePacks = resourcePacks;
         Events.Subscribe(PacketEvents.RequestNetworkSettings, new RequestNetworkSettingsHandler(this).Handle);
         Events.Subscribe(PacketEvents.Login, new LoginHandler(this, authenticator).Handle);
-        Events.Subscribe(PacketEvents.ClientToServerHandshake, new ClientToServerHandshakeHandler().Handle);
+        Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
+        Events.Subscribe(PacketEvents.ResourcePackClientResponse, new ResourcePackClientResponseHandler(this).Handle);
+        Events.Subscribe(PacketEvents.ResourcePackChunkRequest, new ResourcePackChunkRequestHandler(this).Handle);
     }
 
     public ulong NetworkId => nethernet.NetworkId;
@@ -109,21 +121,10 @@ public sealed class NetworkServer : IDisposable {
         }
 
         Player? player = players.GetValueOrDefault(message.Peer);
-        byte[]? decrypted = null;
         byte[]? decompressed = null;
-        int decryptedLength = 0;
         bool compressionNegotiated = player is not null || CompressionNegotiated(message.Peer);
         try {
             ReadOnlyMemory<byte> payload = message.Payload;
-            if (player?.Encryption is BedrockEncryption { Enabled: true } encryption) {
-                if (payload.Length < 9)
-                    throw new InvalidDataException("Encrypted Bedrock packet is too short.");
-                decrypted = ArrayPool<byte>.Shared.Rent(payload.Length - 8);
-                using (Profiler.BeginZone("Network.Decrypt"))
-                    decryptedLength = encryption.Decrypt(payload.Span, decrypted.AsSpan(0, payload.Length - 8));
-                payload = decrypted.AsMemory(0, decryptedLength);
-            }
-
             ReadOnlyMemory<byte> batch = payload;
             if (compressionNegotiated) {
                 if (payload.IsEmpty)
@@ -145,13 +146,9 @@ public sealed class NetworkServer : IDisposable {
             if (batch.IsEmpty || batch.Length > MaximumBatchLength)
                 throw new InvalidDataException("Bedrock packet batch length is invalid.");
 
-            bool handshakeReceivedInBatch = false;
             int offset = 0;
             while (offset < batch.Length) {
                 using ProfilerZone packetZone = Profiler.BeginZone("Network.ReadPacket");
-                if (handshakeReceivedInBatch)
-                    throw new InvalidDataException("Client sent packets after its encryption handshake in the same batch.");
-
                 BinaryReader reader = new(batch.Span, ref offset);
                 uint packetLength = reader.ReadVarUInt();
                 if (packetLength == 0 || packetLength > reader.Remaining)
@@ -161,6 +158,9 @@ public sealed class NetworkServer : IDisposable {
                 uint packetId = packetReader.ReadVarUInt();
                 ReadOnlyMemory<byte> packetPayload = batch.Slice(offset, packetEnd - offset);
                 offset = packetEnd;
+                Logger.Scoped("Network").Debug(
+                    $"Received Bedrock packet 0x{packetId:X} ({packetLength} bytes) from {message.Peer.ConnectionId}."
+                );
 
                 if (player is null && packetId != PacketEvents.Login.PacketId && packetId != PacketEvents.RequestNetworkSettings.PacketId)
                     throw new InvalidDataException("Bedrock packet arrived before Login.");
@@ -173,9 +173,6 @@ public sealed class NetworkServer : IDisposable {
                 }
 
                 player = players.GetValueOrDefault(message.Peer);
-                if (packetId == PacketEvents.ClientToServerHandshake.PacketId) {
-                    handshakeReceivedInBatch = true;
-                }
             }
         }
         catch (Exception error) when (
@@ -197,10 +194,6 @@ public sealed class NetworkServer : IDisposable {
             );
         }
         finally {
-            if (decrypted is not null) {
-                CryptographicOperations.ZeroMemory(decrypted.AsSpan(0, decryptedLength));
-                ArrayPool<byte>.Shared.Return(decrypted);
-            }
             if (decompressed is not null) {
                 CryptographicOperations.ZeroMemory(decompressed);
                 ArrayPool<byte>.Shared.Return(decompressed);
@@ -223,7 +216,6 @@ public sealed class NetworkServer : IDisposable {
         if (player?.Disposed == true) throw new ObjectDisposedException(nameof(Player));
         int capacity = packet switch {
             LoginPacket login => checked(login.ConnectionRequest.Length + 16),
-            ServerToClientHandshakePacket handshake => Encoding.UTF8.GetByteCount(handshake.HandshakeWebToken) + 10,
             ResourcePackChunkDataPacket chunk => checked(chunk.ChunkData.Length + Encoding.UTF8.GetByteCount(chunk.ResourceName) + 32),
             ResourcePackDataInfoPacket info => checked(info.FileHash.Length + Encoding.UTF8.GetByteCount(info.ResourceName) + 32),
             _ => 256
@@ -232,8 +224,7 @@ public sealed class NetworkServer : IDisposable {
         using BinaryStream packetStream = BinaryStream.Rent(capacity);
         using BinaryStream batchStream = BinaryStream.Rent(capacity + 5);
         byte[]? markedBatch = null;
-        byte[]? encrypted = null;
-        int encryptedLength = 0;
+        int markedBatchLength = 0;
         try {
             using (Profiler.BeginZone("Network.SerializePacket")) {
                 BinaryWriter packetWriter = packetStream.GetWriter();
@@ -260,7 +251,8 @@ public sealed class NetworkServer : IDisposable {
                         deflater.Write(payload.Span);
                     byte[] compressed = compressedStream.ToArray();
                     if (compressed.Length < payload.Length) {
-                        markedBatch = GC.AllocateUninitializedArray<byte>(compressed.Length + 1);
+                        markedBatchLength = compressed.Length + 1;
+                        markedBatch = ArrayPool<byte>.Shared.Rent(markedBatchLength);
                         markedBatch[0] = (byte)method;
                         compressed.CopyTo(markedBatch.AsSpan(1));
                     }
@@ -268,30 +260,22 @@ public sealed class NetworkServer : IDisposable {
                 }
 
                 if (markedBatch is null) {
-                    markedBatch = GC.AllocateUninitializedArray<byte>(payload.Length + 1);
+                    markedBatchLength = payload.Length + 1;
+                    markedBatch = ArrayPool<byte>.Shared.Rent(markedBatchLength);
                     markedBatch[0] = unchecked((byte)PacketCompressionAlgorithm.None);
                     payload.Span.CopyTo(markedBatch.AsSpan(1));
                 }
-                payload = markedBatch;
-            }
-
-            if (player?.Encryption is BedrockEncryption { Enabled: true } encryptionContext) {
-                using ProfilerZone encryptionZone = Profiler.BeginZone("Network.EncryptPacket");
-                encryptedLength = checked(payload.Length + 8);
-                encrypted = ArrayPool<byte>.Shared.Rent(encryptedLength);
-                int written = encryptionContext.Encrypt(payload.Span, encrypted.AsSpan(0, encryptedLength));
-                payload = encrypted.AsMemory(0, written);
+                payload = markedBatch.AsMemory(0, markedBatchLength);
             }
 
             using (Profiler.BeginZone("Network.TransportSend"))
                 nethernet.Send(peer, payload, MessageReliability.Reliable);
         }
         finally {
-            if (encrypted is not null) {
-                CryptographicOperations.ZeroMemory(encrypted.AsSpan(0, encryptedLength));
-                ArrayPool<byte>.Shared.Return(encrypted);
+            if (markedBatch is not null) {
+                CryptographicOperations.ZeroMemory(markedBatch.AsSpan(0, markedBatchLength));
+                ArrayPool<byte>.Shared.Return(markedBatch);
             }
-            if (markedBatch is not null) CryptographicOperations.ZeroMemory(markedBatch);
             CryptographicOperations.ZeroMemory(packetStream.Buffer.Span[..packetStream.Offset]);
             CryptographicOperations.ZeroMemory(batchStream.Buffer.Span[..batchStream.Offset]);
         }

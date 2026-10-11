@@ -30,9 +30,8 @@ internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator aut
         );
 
         try {
-            newPlayer.Encryption = BedrockEncryption.Create(login.ClientPublicKey, out string handshakeToken);
             network.AddPlayer(newPlayer);
-            network.SendPacket(newPlayer, new ServerToClientHandshakePacket { HandshakeWebToken = handshakeToken });
+            network.SendPacket(newPlayer, new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
             Logger.Scoped("Network").Info($"Authenticated Xbox player {newPlayer.Username} ({newPlayer.Xuid}) from {peer.ConnectionId}.");
         } catch {
             network.RemovePlayer(peer);

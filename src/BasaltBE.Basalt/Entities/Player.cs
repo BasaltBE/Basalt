@@ -1,4 +1,3 @@
-using BasaltBE.Basalt.Network;
 using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Entities;
@@ -12,6 +11,8 @@ public sealed class Player(
     string deviceName,
     byte[] skin
 ) : Entity, IDisposable {
+    public readonly Lock Sync = new();
+
     /// <summary>NetherNet connection associated with this player.</summary>
     public readonly NethernetPeer Peer = peer;
 
@@ -33,16 +34,15 @@ public sealed class Player(
     /// <summary>Serialized skin data from the Bedrock login data.</summary>
     public readonly byte[] Skin = skin;
 
-    public readonly Lock Sync = new();
-    public BedrockEncryption? Encryption;
+    /// <summary>A list of resource packs requested by the player. </summary>
+    internal readonly HashSet<Guid> RequestedResourcePacks = [];
+
     public bool Disposed;
 
     public void Dispose() {
         lock (Sync) {
             if (Disposed) return;
             Disposed = true;
-            Encryption?.Dispose();
-            Encryption = null;
         }
     }
 }

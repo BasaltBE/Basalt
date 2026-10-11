@@ -39,7 +39,7 @@ public sealed class LoginTokenParserTests {
             DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         byte[] connectionRequest = CreateConnectionRequest("{\"AuthenticationType\":0,\"Token\":\"\"}", $"{signingInput}.{Base64Url.Encode(signature)}");
 
-        ECParameters parsed = LoginTokenParser.ReadClientPublicKey(connectionRequest);
+        ECParameters parsed = LoginTokenParser.Parse(connectionRequest).Client.PublicKey;
         ECParameters expected = clientKey.ExportParameters(false);
 
         Assert.Equal(expected.Q.X, parsed.Q.X);
@@ -57,7 +57,7 @@ public sealed class LoginTokenParserTests {
         string payload = Base64Url.Encode(Encoding.UTF8.GetBytes("{}"));
         string clientToken = $"{header}.{payload}.{Base64Url.Encode(new byte[96])}";
 
-        Assert.Throws<CryptographicException>(() => LoginTokenParser.ReadClientPublicKey(CreateConnectionRequest("{\"AuthenticationType\":0,\"Token\":\"\"}", clientToken)));
+        Assert.Throws<CryptographicException>(() => LoginTokenParser.Parse(CreateConnectionRequest("{\"AuthenticationType\":0,\"Token\":\"\"}", clientToken)));
     }
 
     private static byte[] CreateConnectionRequest(string identityToken, string clientToken) {
