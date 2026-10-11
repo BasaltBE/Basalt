@@ -14,8 +14,8 @@ internal static class Program {
     private const double MinimumTickRate = 19;
     private static readonly ScopedLogger Log = Logger.Scoped("DedicatedServer");
 
-    private static void Main() {
-        Profiler.Enabled = true;
+    private static void Main(string[] args) {
+        Profiler.Enabled = args.Contains("--tracy", StringComparer.OrdinalIgnoreCase);
         Profiler.SetThreadName("DedicatedServer");
         Logger.MinimumLevel = LogLevel.Debug;
         using ManualResetEventSlim shutdown = new(false);
