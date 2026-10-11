@@ -6,20 +6,21 @@ using BasaltBE.Basalt.Blocks.Types;
 namespace BasaltBE.Basalt.Blocks;
 
 public static class BlockPalette {
-    public static readonly BlockPermutation[] Permutations = Load();
+    public static readonly BlockPermutation[] Permutations = Load<BlockPermutation[]>("block_permutations.json");
+    public static readonly BlockType[] Types = Load<BlockType[]>("block-types.json");
     static readonly Dictionary<(string Identifier, string State), BlockPermutation> ByState = Permutations.ToDictionary(
         permutation => (permutation.Identifier, StateKey(permutation.State)));
 
     public static BlockPermutation? Find(string identifier, BlockState state) =>
         ByState.GetValueOrDefault((identifier, StateKey(state)));
 
-    static BlockPermutation[] Load() {
+    static T Load<T>(string fileName) where T : class {
         Assembly dataAssembly = Assembly.Load("BasaltBE.Data");
-        using Stream stream = dataAssembly.GetManifestResourceStream("BasaltBE.Data.Data.block_permutations.json")
-            ?? throw new InvalidOperationException("Block permutation data is missing.");
+        using Stream stream = dataAssembly.GetManifestResourceStream($"BasaltBE.Data.Data.{fileName}")
+            ?? throw new InvalidOperationException($"Block data file '{fileName}' is missing.");
 
-        return JsonSerializer.Deserialize<BlockPermutation[]>(stream)
-            ?? throw new JsonException("Block permutation data is empty.");
+        return JsonSerializer.Deserialize<T>(stream)
+            ?? throw new JsonException($"Block data file '{fileName}' is empty.");
     }
 
     static string StateKey(BlockState state) {
