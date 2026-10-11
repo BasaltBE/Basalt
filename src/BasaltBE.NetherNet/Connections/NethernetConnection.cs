@@ -27,12 +27,17 @@ public sealed class NethernetConnection : IAsyncDisposable {
     private readonly TaskCompletionSource<bool> channelsReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource<Exception?> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    internal NethernetConnection(RTCPeerConnection peer, NethernetServerOptions options) {
+    internal NethernetConnection(
+        RTCPeerConnection peer,
+        int maximumPacketLength,
+        int reliableFragmentLength,
+        int unreliableFragmentLength
+    ) {
         this.peer = peer;
         Peer = default;
-        maximumPacketLength = options.MaximumPacketLength;
-        reliableFragmentLength = options.ReliableFragmentLength;
-        unreliableFragmentLength = options.UnreliableFragmentLength;
+        this.maximumPacketLength = maximumPacketLength;
+        this.reliableFragmentLength = reliableFragmentLength;
+        this.unreliableFragmentLength = unreliableFragmentLength;
         peer.ondatachannel += Attach;
         peer.onconnectionstatechange += state => {
             if (state == RTCPeerConnectionState.failed) End(new IOException("WebRTC peer connection failed."));
@@ -81,7 +86,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
         return ValueTask.CompletedTask;
     }
 
-    private void Attach(RTCDataChannel channel) {
+    internal void Attach(RTCDataChannel channel) {
         if (channel.label is not (ReliableChannelLabel or UnreliableChannelLabel)) {
             channel.close();
             End(new InvalidDataException($"Unknown NetherNet data channel: {channel.label}"));

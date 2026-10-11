@@ -191,7 +191,12 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
     private async ValueTask<(NethernetConnection Connection, string Answer)> CreateAnswerAsync(string offer, CancellationToken cancellationToken) {
         RTCConfiguration configuration = new() { iceServers = [] };
         RTCPeerConnection peer = new(configuration);
-        NethernetConnection connection = new(peer, options);
+        NethernetConnection connection = new(
+            peer,
+            options.MaximumPacketLength,
+            options.ReliableFragmentLength,
+            options.UnreliableFragmentLength
+        );
         try {
             SetDescriptionResultEnum remote = peer.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offer });
             if (remote != SetDescriptionResultEnum.OK) throw new InvalidDataException("The SDP offer was rejected.");

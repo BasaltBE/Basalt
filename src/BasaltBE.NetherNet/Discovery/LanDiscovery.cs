@@ -130,7 +130,12 @@ internal sealed class LanDiscovery : IAsyncDisposable {
             return;
         }
         RTCPeerConnection transport = new(new RTCConfiguration { iceServers = [] });
-        Connections.NethernetConnection connection = new(transport, options);
+        Connections.NethernetConnection connection = new(
+            transport,
+            options.MaximumPacketLength,
+            options.ReliableFragmentLength,
+            options.UnreliableFragmentLength
+        );
         (ulong NetworkId, ulong ConnectionId) key = (remoteId, signal.ConnectionId);
         peers[key] = transport;
         transport.onicecandidate += candidate => {
