@@ -10,14 +10,14 @@ public sealed class ResourcePackChunkDataPacket : DataPacket {
     public string ResourceName = string.Empty;
     public uint ChunkId;
     public ulong ByteOffset;
-    public byte[] ChunkData = [];
+    public ReadOnlyMemory<byte> ChunkData;
 
     public override void Serialize(ref BinaryWriter writer) {
         writer.WriteVarString(ResourceName);
         writer.WriteUInt32(ChunkId, true);
         writer.WriteUInt64(ByteOffset, true);
         writer.WriteVarUInt((uint)ChunkData.Length);
-        writer.WriteBytes(ChunkData);
+        writer.WriteBytes(ChunkData.Span);
     }
 
     public override void Deserialize(ref BinaryReader reader) {

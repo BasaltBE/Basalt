@@ -11,6 +11,8 @@ public sealed class ResourcePackClientResponseDownloading : ResourcePackClientRe
 
     public override void Read(ref BinaryReader reader) {
         uint count = reader.ReadVarUInt();
+        if (count > reader.Remaining)
+            throw new InvalidDataException("Resource pack response has an invalid pack count.");
         PackIds = new string[(int)count];
         for (int i = 0; i < PackIds.Length; i++)
             PackIds[i] = reader.ReadVarString();
