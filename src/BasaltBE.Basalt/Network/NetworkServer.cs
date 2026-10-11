@@ -31,6 +31,7 @@ public sealed class NetworkServer : IDisposable {
     private static readonly ConcurrentDictionary<Type, uint> packetIds = [];
     private readonly LoginAuthenticator authenticator = new();
     private readonly NethernetServer nethernet;
+    internal readonly Server Server;
     internal readonly ResourcePackManager ResourcePacks;
     internal readonly ServerAdvertisement Advertisement;
     // For now players live here, they will be moved to per world
@@ -39,14 +40,13 @@ public sealed class NetworkServer : IDisposable {
 
     public readonly EventEmitter Events = new();
 
-    public NetworkServer(NethernetServerOptions options, IServerIdentity? identity = null)
-        : this(options, identity, ResourcePackManager.Empty) { }
-
     internal NetworkServer(
+        Server server,
         NethernetServerOptions options,
         IServerIdentity? identity,
         ResourcePackManager resourcePacks
     ) {
+        Server = server;
         nethernet = new NethernetServer(options, identity);
         Advertisement = options.Advertisement;
         ResourcePacks = resourcePacks;

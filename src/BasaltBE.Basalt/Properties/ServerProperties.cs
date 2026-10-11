@@ -22,7 +22,10 @@ public struct ServerProperties {
     [ServerProperty("World", 7, "max-view-distance", "Maximum chunk radius players can request.")]
     public int MaxViewDistance;
 
-    [ServerProperty("Resource Packs", 8, "resource-packs-path", "Directory containing resource packs.")]
+    [ServerProperty("World", 8, "default-world", "Name of the world created when the server starts.")]
+    public string DefaultWorldName;
+
+    [ServerProperty("Resource Packs", 9, "resource-packs-path", "Directory containing resource packs.")]
     public string ResourcePacksPath;
 
     public ServerProperties() {
@@ -33,6 +36,7 @@ public struct ServerProperties {
         IdentityKeyPath = "nethernet-identity.pem";
         MaxPlayers = 100;
         MaxViewDistance = 32;
+        DefaultWorldName = "world";
         ResourcePacksPath = "resource_packs";
     }
 }

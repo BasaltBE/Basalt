@@ -1,10 +1,9 @@
 using System.Diagnostics;
 using BasaltBE.Basalt;
 using BasaltBE.Basalt.Profiling;
+using BasaltBE.Basalt.Properties;
 using BasaltBE.Logging;
 using BasaltBE.Logging.Enums;
-using BasaltBE.NetherNet.Types;
-using BasaltBE.Protocol;
 
 namespace BasaltBE.DedicatedServer;
 
@@ -27,15 +26,11 @@ internal static class Program {
         Console.CancelKeyPress += cancel;
 
         try {
-            using Server server = new(new NethernetServerOptions {
-                Advertisement = new ServerAdvertisement {
-                    Name = "BasaltBE",
-                    Protocol = BedrockProtocol.ProtocolVersion,
-                    Version = "0.0.0",
-                    Level = "Bedrock level",
-                    MaxPlayers = 100
-                }
-            });
+            const string propertiesPath = "server.properties";
+            ServerProperties properties = ServerPropertiesFile.LoadFromPath(propertiesPath);
+            ServerPropertiesFile.SaveToPath(propertiesPath, properties);
+
+            using Server server = new(properties);
 
             server.Start();
             Log.Info($"NetherNet is listening on network {server.Network.NetworkId}.");

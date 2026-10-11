@@ -3,6 +3,7 @@ using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.Events;
+using BasaltBE.Basalt.Properties;
 using BasaltBE.NetherNet.Enums;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Attributes;
@@ -17,14 +18,8 @@ namespace BasaltBE.Basalt.Tests;
 public sealed class NetworkServerTests {
     [Fact]
     public void OnMessageDoesNotEmitPlayerPacketsBeforeLogin() {
-        using NetworkServer network = new(new NethernetServerOptions {
-            Advertisement = new ServerAdvertisement {
-                Name = "test",
-                Protocol = 2225,
-                Version = "test",
-                Level = "test"
-            }
-        }, new ServerIdentityStub());
+        using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());
+        NetworkServer network = server.Network;
         NethernetPeer peer = new(1, 2);
         network.OnMessage(new NethernetMessage(peer, MessageReliability.Reliable, ReadOnlyMemory<byte>.Empty, Connected: true));
         Player? receivedPlayer = null;
@@ -42,14 +37,8 @@ public sealed class NetworkServerTests {
 
     [Fact]
     public void OnMessagePreservesDecompressedBatchWhenOutputGrows() {
-        using NetworkServer network = new(new NethernetServerOptions {
-            Advertisement = new ServerAdvertisement {
-                Name = "test",
-                Protocol = 2225,
-                Version = "test",
-                Level = "test"
-            }
-        }, new ServerIdentityStub());
+        using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());
+        NetworkServer network = server.Network;
         NethernetPeer peer = new(1, 2);
         byte[] expected = new byte[8192];
         Array.Fill(expected, (byte)'A');

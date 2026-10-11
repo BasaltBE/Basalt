@@ -158,6 +158,8 @@ wwwroot/lib/
 
 # Minecraft runtime data
 worlds/
+!src/BasaltBE.Basalt/Worlds/
+!src/BasaltBE.Basalt/Worlds/**
 world/
 behavior_packs/
 resource_packs/
