@@ -6,6 +6,10 @@
     <ProjectReference Include="..\BasaltBE.Logger\BasaltBE.Logger.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Tracy-CSharp" Version="0.13.1" />
+  </ItemGroup>
+
   <PropertyGroup>
     <RootNamespace>BasaltBE.Basalt</RootNamespace>
     <TargetFramework>net10.0</TargetFramework>

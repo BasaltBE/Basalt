@@ -1,0 +1,43 @@
+using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Network.Events;
+using BasaltBE.Basalt.Network.Login;
+using BasaltBE.Basalt.Profiling;
+using BasaltBE.Logging;
+using BasaltBE.NetherNet.Types;
+using BasaltBE.Protocol;
+using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Packets;
+
+namespace BasaltBE.Basalt.Network.Handlers;
+
+internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator authenticator) {
+    public void Handle(NethernetPeer peer, Player? player, LoginPacket packet) {
+        using ProfilerZone zone = Profiler.BeginZone("Network.Login");
+        if (player is not null || !network.CompressionNegotiated(peer) ||
+            packet.ClientNetworkVersion < BedrockProtocol.MinimumProtocolVersion ||
+            packet.ClientNetworkVersion > BedrockProtocol.ProtocolVersion)
+            throw new InvalidDataException("Bedrock Login arrived outside the expected connection state.");
+
+        AuthenticatedLogin login = authenticator.Authenticate(packet.ConnectionRequest);
+        Player newPlayer = new(
+            peer,
+            login.Username,
+            login.Xuid,
+            login.Uuid,
+            login.DeviceOS,
+            login.DeviceName,
+            login.Skin
+        );
+
+        try {
+            newPlayer.Encryption = BedrockEncryption.Create(login.ClientPublicKey, out string handshakeToken);
+            network.AddPlayer(newPlayer);
+            network.SendPacket(newPlayer, new ServerToClientHandshakePacket { HandshakeWebToken = handshakeToken });
+            Logger.Scoped("Network").Info($"Authenticated Xbox player {newPlayer.Username} ({newPlayer.Xuid}) from {peer.ConnectionId}.");
+        } catch {
+            network.RemovePlayer(peer);
+            newPlayer.Dispose();
+            throw;
+        }
+    }
+}

@@ -1,0 +1,19 @@
+using BasaltBE.Protocol.Packets;
+
+namespace BasaltBE.Basalt.Network.Events;
+
+public static class PacketEvents {
+    public static readonly PacketEvent<ClientCacheStatusPacket> ClientCacheStatus = new();
+    public static readonly PacketEvent<ClientToServerHandshakePacket> ClientToServerHandshake = new();
+    public static readonly PacketEvent<LoginPacket> Login = new();
+    public static readonly PacketEvent<PlayStatusPacket> PlayStatus = new();
+    public static readonly PacketEvent<RequestNetworkSettingsPacket> RequestNetworkSettings = new();
+    public static readonly PacketEvent<ResourcePackChunkDataPacket> ResourcePackChunkData = new();
+    public static readonly PacketEvent<ResourcePackChunkRequestPacket> ResourcePackChunkRequest = new();
+    public static readonly PacketEvent<ResourcePackClientResponsePacket> ResourcePackClientResponse = new();
+    public static readonly PacketEvent<ResourcePackDataInfoPacket> ResourcePackDataInfo = new();
+    public static readonly PacketEvent<ResourcePacksInfoPacket> ResourcePacksInfo = new();
+    public static readonly PacketEvent<ResourcePackStackPacket> ResourcePackStack = new();
+    public static readonly PacketEvent<ServerToClientHandshakePacket> ServerToClientHandshake = new();
+    public static readonly PacketEvent<NetworkSettingsPacket> NetworkSettings = new();
+}
