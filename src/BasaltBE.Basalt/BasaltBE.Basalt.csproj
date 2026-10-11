@@ -4,6 +4,7 @@
     <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
     <ProjectReference Include="..\BasaltBE.Protocol\BasaltBE.Protocol.csproj" />
     <ProjectReference Include="..\BasaltBE.Logger\BasaltBE.Logger.csproj" />
+    <ProjectReference Include="..\BasaltBE.Data\BasaltBE.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
