@@ -34,6 +34,8 @@ public sealed class Player(
     /// <summary>Serialized skin data from the Bedrock login data.</summary>
     public readonly byte[] Skin = skin;
 
+    public int ChunkRadius;
+
     /// <summary>A list of resource packs requested by the player. </summary>
     internal readonly HashSet<Guid> RequestedResourcePacks = [];
 

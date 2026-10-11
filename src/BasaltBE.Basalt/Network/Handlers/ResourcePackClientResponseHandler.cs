@@ -3,6 +3,7 @@ using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
+using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -25,6 +26,54 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 break;
             case ResourcePackClientResponseStackFinished:
                 Logger.Scoped("Network").Debug($"Resource packs applied by {peer.ConnectionId}.");
+                CompoundTag structureData = new();
+                structureData.Add("processors", new ListTag());
+                structureData.Add("template_pools", new ListTag());
+                structureData.Add("jigsaws", new ListTag());
+                structureData.Add("structure_sets", new ListTag());
+
+                network.SendPacket(player, new JigsawStructureDataPacket {
+                    StructureData = structureData
+                });
+                network.SendPacket(player, new VoxelShapesPacket());
+                network.SendPacket(player, new StartGamePacket {
+                    EntityId = player.UniqueId,
+                    RuntimeId = player.RuntimeId,
+                    GameType = GameType.Survival,
+                    Position = new Vec3 { X = 0.5f, Y = 64, Z = 0.5f },
+                    Settings = new LevelSettings {
+                        SpawnSettings = new SpawnSettings {
+                            SpawnBiomeType = SpawnBiomeType.Default,
+                            Dimension = 0
+                        },
+                        GeneratorType = GeneratorType.Overworld,
+                        GameType = GameType.Survival,
+                        GameDifficulty = Difficulty.Normal,
+                        DefaultSpawnBlockPosition = new BlockPos { X = 0, Y = 64, Z = 0 },
+                        MultiplayerGameIntent = true,
+                        LanBroadcastIntent = true,
+                        XboxLiveBroadcastSetting = GamePublishSetting.Public,
+                        PlatformBroadcastSetting = GamePublishSetting.Public,
+                        TexturePacksRequired = network.ResourcePacks.Required,
+                        PlayerPermissions = PlayerPermissionLevel.Member,
+                        BaseGameVersion = network.Advertisement.Version
+                    },
+                    LevelName = network.Advertisement.Level,
+                    MovementSettings = new SyncedPlayerMovementSettings {
+                        RewindHistorySize = 0,
+                        ServerAuthoritativeBlockBreaking = true
+                    },
+                    MultiplayerCorrelationId = Guid.NewGuid().ToString(),
+                    EnableItemStackNetManager = true,
+                    ServerVersion = network.Advertisement.Version,
+                    ServerTelemetryData = new ServerTelemetryData {
+                        OwnerId = network.Advertisement.Name
+                    },
+                    BlockNetworkIdsAreHashes = true
+                });
+                network.SendPacket(player, new PlayStatusPacket {
+                    Status = PlayStatus.PlayerSpawn
+                });
                 break;
             case ResourcePackClientResponseCancel:
                 if (network.ResourcePacks.Required) {

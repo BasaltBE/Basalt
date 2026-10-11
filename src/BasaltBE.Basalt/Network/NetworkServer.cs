@@ -32,6 +32,7 @@ public sealed class NetworkServer : IDisposable {
     private readonly LoginAuthenticator authenticator = new();
     private readonly NethernetServer nethernet;
     internal readonly ResourcePackManager ResourcePacks;
+    internal readonly ServerAdvertisement Advertisement;
     // For now players live here, they will be moved to per world
     private readonly ConcurrentDictionary<NethernetPeer, Player> players = [];
     private readonly ConcurrentDictionary<NethernetPeer, byte> compressionPeers = [];
@@ -47,10 +48,12 @@ public sealed class NetworkServer : IDisposable {
         ResourcePackManager resourcePacks
     ) {
         nethernet = new NethernetServer(options, identity);
+        Advertisement = options.Advertisement;
         ResourcePacks = resourcePacks;
         Events.Subscribe(PacketEvents.RequestNetworkSettings, new RequestNetworkSettingsHandler(this).Handle);
         Events.Subscribe(PacketEvents.Login, new LoginHandler(this, authenticator).Handle);
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
+        Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
         Events.Subscribe(PacketEvents.ResourcePackClientResponse, new ResourcePackClientResponseHandler(this).Handle);
         Events.Subscribe(PacketEvents.ResourcePackChunkRequest, new ResourcePackChunkRequestHandler(this).Handle);
     }
