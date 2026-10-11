@@ -1,0 +1,7532 @@
+{
+  "minecraft:goat": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "editor:ruler_idle": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "editor:location_pointer_selected": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:bee": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "editor:location_pointer_idle": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:cushion": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "editor:ruler_pointer_selected": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "editor:map_marker": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:minecart": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:fox": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:turtle": {
+    "default": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:seagrass",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:zombie_nautilus": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:trader_llama": {
+    "default": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:wither_skeleton": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:coal",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:sulfur_cube": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:egg": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:arrow": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:llama": {
+    "default": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:horse": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:command_block_minecart": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:zombie_horse": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:tnt_minecart": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:strider": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:agent": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:stray": {
+    "default": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:skeleton_horse": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:husk": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:hoglin": {
+    "default": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 2,
+        "maxAmount": 7
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:skeleton": {
+    "default": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:zoglin": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:pig": {
+    "default": [
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:porkchop",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:parched": {
+    "default": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:nautilus": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:mule": {
+    "default": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:hopper_minecart": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:happy_ghast": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:donkey": {
+    "default": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:bogged": {
+    "default": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:ender_dragon": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:glow_squid": {
+    "default": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:glow_ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:chest_minecart": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:chest_boat": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:panda": {
+    "default": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bamboo",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:camel_husk": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 2,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:zombie_villager_v2": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:camel": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:copper_golem": {
+    "default": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:copper_ingot",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ]
+  },
+  "minecraft:boat": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:zombie_pigman": {
+    "default": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:gold_nugget",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:zombie": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:villager_v2": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:squid": {
+    "default": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:ink_sac",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ]
+  },
+  "minecraft:sheep": {
+    "default": [
+      {
+        "identifier": "minecraft:mutton",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:mutton",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:mutton",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:mutton",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:white_wool",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:piglin": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:iron_golem": {
+    "default": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:iron_ingot",
+        "minAmount": 3,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:poppy",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ]
+  },
+  "minecraft:drowned": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:tadpole": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:sniffer": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:rabbit": {
+    "default": [
+      {
+        "identifier": "minecraft:rabbit",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rabbit",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rabbit",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rabbit",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:rabbit_hide",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:wolf": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:polar_bear": {
+    "default": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:ocelot": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:blaze": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:mooshroom": {
+    "default": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:enderman": {
+    "default": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:ender_pearl",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:dolphin": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:cow": {
+    "default": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:beef",
+        "minAmount": 1,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 1,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_beef",
+        "minAmount": 2,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:leather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:chicken": {
+    "default": [
+      {
+        "identifier": "minecraft:chicken",
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:chicken",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:chicken",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:chicken",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:cat": {
+    "default": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ]
+  },
+  "minecraft:axolotl": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:armadillo": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:spider": {
+    "default": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:snow_golem": {
+    "default": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:snowball",
+        "minAmount": 0,
+        "maxAmount": 15
+      }
+    ]
+  },
+  "minecraft:frog": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:cave_spider": {
+    "default": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:string",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:allay": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:wither": {
+    "default": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:nether_star",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:guardian": {
+    "default": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:phantom": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:ravager": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:parrot": {
+    "default": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:feather",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ]
+  },
+  "minecraft:ghast": {
+    "default": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:ghast_tear",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:tropicalfish": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:shulker": {
+    "default": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:salmon": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:creeper": {
+    "default": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:pufferfish": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:pufferfish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:cod": {
+    "default": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:bone",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:cooked_cod",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:elder_guardian": {
+    "default": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:cod",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:creaking": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:vindicator": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:vex": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:silverfish": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:ender_crystal": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:pillager": {
+    "default": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:arrow",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:slime": {
+    "default": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:slime_ball",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:evocation_illager": {
+    "default": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:emerald",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:wind_charge_projectile": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:breeze": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:wandering_trader": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:villager": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:zombie_villager": {
+    "default": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:rotten_flesh",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:witch": {
+    "default": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 8
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 9
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 10
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 11
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 11
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 8
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 9
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 10
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 11
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 6
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 8
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 9
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 10
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:gunpowder",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:redstone",
+        "minAmount": 4,
+        "maxAmount": 11
+      },
+      {
+        "identifier": "minecraft:spider_eye",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:stick",
+        "minAmount": 0,
+        "maxAmount": 9
+      },
+      {
+        "identifier": "minecraft:sugar",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ]
+  },
+  "minecraft:warden": {
+    "default": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  },
+  "minecraft:piglin_brute": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:npc": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:magma_cube": {
+    "default": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect1": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect1": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect1": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect1": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    "fireAspect2": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    "looting1_fireAspect2": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    "looting2_fireAspect2": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    "looting3_fireAspect2": [
+      {
+        "identifier": "minecraft:magma_cream",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ]
+  },
+  "minecraft:endermite": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:bat": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:xp_orb": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:xp_bottle": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:tnt": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:splash_potion": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:snowball": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:armor_stand": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:lightning_bolt": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  },
+  "minecraft:fireworks_rocket": {
+    "default": [],
+    "looting1": [],
+    "looting2": [],
+    "looting3": [],
+    "fireAspect1": [],
+    "looting1_fireAspect1": [],
+    "looting2_fireAspect1": [],
+    "looting3_fireAspect1": [],
+    "fireAspect2": [],
+    "looting1_fireAspect2": [],
+    "looting2_fireAspect2": [],
+    "looting3_fireAspect2": []
+  }
+}
