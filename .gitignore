@@ -189,6 +189,7 @@ crash-reports/
 *.db
 *.sqlite
 *.sqlite3
+ClientTest
 
 # Local NetherNet and server identity data
 nethernet-identity.*

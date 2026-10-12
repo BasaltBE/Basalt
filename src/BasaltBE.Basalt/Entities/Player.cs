@@ -35,6 +35,7 @@ public sealed class Player(
     public readonly byte[] Skin = skin;
 
     public int ChunkRadius;
+    public bool Spawned;
 
     /// <summary>A list of resource packs requested by the player. </summary>
     internal readonly HashSet<Guid> RequestedResourcePacks = [];

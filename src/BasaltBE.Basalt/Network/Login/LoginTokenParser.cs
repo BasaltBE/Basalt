@@ -42,8 +42,8 @@ internal static class LoginTokenParser {
                 DSASignatureFormat.IeeeP1363FixedFieldConcatenation))
             throw new CryptographicException("Bedrock client token signature is invalid.");
 
-        ClientData client = JsonSerializer.Deserialize<ClientData>(
-            Base64Url.Decode(token[(firstDot + 1)..secondDot]), LoginJson.Options);
+        byte[] clientDataJson = Base64Url.Decode(token[(firstDot + 1)..secondDot]);
+        ClientData client = JsonSerializer.Deserialize<ClientData>(clientDataJson, LoginJson.Options);
         return new ClientTokenData(client, clientKey.ExportParameters(false));
     }
 

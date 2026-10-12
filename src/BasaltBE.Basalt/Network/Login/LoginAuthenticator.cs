@@ -171,7 +171,8 @@ internal sealed class LoginAuthenticator : IDisposable {
                     throw new CryptographicException("Minecraft authorization service returned no signing keys.");
                 DateTimeOffset expires = DateTimeOffset.UtcNow.Add(KeyLifetime);
                 Volatile.Write(ref signingKeyCache, new SigningKeyCache(keys, expires));
-            } catch (Exception refreshError) {
+            }
+            catch (Exception refreshError) {
                 error = refreshError;
                 if (firstRefresh) initialRefreshError = refreshError;
                 else Logger.Scoped("Network").Warn($"Could not refresh Minecraft authorization signing keys: {refreshError.Message}");

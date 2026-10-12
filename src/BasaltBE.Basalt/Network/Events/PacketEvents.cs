@@ -7,6 +7,7 @@ public static class PacketEvents {
     public static readonly PacketEvent<LoginPacket> Login = new();
     public static readonly PacketEvent<PlayStatusPacket> PlayStatus = new();
     public static readonly PacketEvent<RequestChunkRadiusPacket> RequestChunkRadius = new();
+    public static readonly PacketEvent<SetLocalPlayerAsInitializedPacket> SetLocalPlayerAsInitialized = new();
     public static readonly PacketEvent<RequestNetworkSettingsPacket> RequestNetworkSettings = new();
     public static readonly PacketEvent<ResourcePackChunkDataPacket> ResourcePackChunkData = new();
     public static readonly PacketEvent<ResourcePackChunkRequestPacket> ResourcePackChunkRequest = new();

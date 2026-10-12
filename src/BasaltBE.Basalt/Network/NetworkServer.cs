@@ -54,6 +54,7 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.Login, new LoginHandler(this, authenticator).Handle);
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
         Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
+        Events.Subscribe(PacketEvents.SetLocalPlayerAsInitialized, new SetLocalPlayerAsInitializedHandler().Handle);
         Events.Subscribe(PacketEvents.ResourcePackClientResponse, new ResourcePackClientResponseHandler(this).Handle);
         Events.Subscribe(PacketEvents.ResourcePackChunkRequest, new ResourcePackChunkRequestHandler(this).Handle);
     }
