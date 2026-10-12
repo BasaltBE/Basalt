@@ -2,6 +2,9 @@ namespace BasaltBE.NetherNet.Types;
 
 public sealed record NethernetClientOptions {
     public required Uri SignalingUri { get; init; }
+    public string? ClientVersion { get; init; }
+    public int? ProtocolVersion { get; init; }
+    public int? Platform { get; init; }
     public int MaximumQueuedMessages { get; init; } = 128;
     public int MaximumSdpLength { get; init; } = 1_048_576;
     public int ReliableFragmentLength { get; init; } = 262_143;

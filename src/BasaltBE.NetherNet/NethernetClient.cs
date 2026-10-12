@@ -43,7 +43,7 @@ public sealed class NethernetClient : IAsyncDisposable {
 
     public bool Connected => Volatile.Read(ref connected) == 1;
 
-    public async Task ConnectAsync(CancellationToken cancellationToken = default) {
+    public async Task ConnectAsync(CancellationToken cancellationToken = default, Func<string, string>? addIdentityAssertion = null) {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
         if (Interlocked.CompareExchange(ref connected, -1, 0) != 0)
             throw new InvalidOperationException("NetherNet client has already connected.");
@@ -53,6 +53,28 @@ public sealed class NethernetClient : IAsyncDisposable {
         RTCPeerConnection? transport = null;
         NethernetConnection? dataConnection = null;
         try {
+            if (options.ClientVersion is not null && options.ProtocolVersion is not null && options.Platform is not null) {
+                UriBuilder discoveryUri = new(options.SignalingUri) {
+                    Path = "v1/join",
+                    Query = $"version={Uri.EscapeDataString(options.ClientVersion)}&protocol={options.ProtocolVersion.Value.ToString(CultureInfo.InvariantCulture)}&platform={options.Platform.Value.ToString(CultureInfo.InvariantCulture)}&id={networkId.ToString(CultureInfo.InvariantCulture)}",
+                    Fragment = ""
+                };
+                using HttpResponseMessage discovery = await Http.GetAsync(discoveryUri.Uri, linked.Token).ConfigureAwait(false);
+                if (!discovery.IsSuccessStatusCode)
+                    throw new HttpRequestException($"NetherNet discovery failed with HTTP {(int)discovery.StatusCode}.");
+            }
+
+            UriBuilder signalingUri = new(options.SignalingUri) {
+                Path = "v1/join",
+                Query = "",
+                Fragment = ""
+            };
+            using CancellationTokenSource requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(linked.Token);
+            requestTimeout.CancelAfter(options.RequestTimeout);
+            using HttpResponseMessage capability = await Http.GetAsync(signalingUri.Uri, requestTimeout.Token).ConfigureAwait(false);
+            if (!capability.IsSuccessStatusCode)
+                throw new HttpRequestException($"NetherNet signaling capability check failed with HTTP {(int)capability.StatusCode}.");
+
             transport = new RTCPeerConnection(new RTCConfiguration { iceServers = [] });
             dataConnection = new NethernetConnection(
                 transport,
@@ -74,20 +96,20 @@ public sealed class NethernetClient : IAsyncDisposable {
             await transport.setLocalDescription(offer).ConfigureAwait(false);
             await WaitForIceAsync(transport, linked.Token).ConfigureAwait(false);
             string localSdp = transport.localDescription?.sdp?.ToString() ?? throw new IOException("NetherNet SDP offer is missing.");
+            if (addIdentityAssertion is not null)
+                localSdp = addIdentityAssertion(localSdp);
             if (Encoding.UTF8.GetByteCount(localSdp) > options.MaximumSdpLength)
                 throw new InvalidDataException("NetherNet SDP offer exceeds the configured size limit.");
 
-            UriBuilder signalingUri = new(options.SignalingUri) {
+            signalingUri = new UriBuilder(options.SignalingUri) {
                 Path = $"v1/join/{networkId.ToString(CultureInfo.InvariantCulture)}",
                 Query = "",
                 Fragment = ""
             };
-            Uri offerUri = signalingUri.Uri;
-            using CancellationTokenSource requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(linked.Token);
-            requestTimeout.CancelAfter(options.RequestTimeout);
-            using HttpRequestMessage request = new(HttpMethod.Post, offerUri) {
-                Content = new StringContent(localSdp, Encoding.UTF8, "application/sdp")
+            using HttpRequestMessage request = new(HttpMethod.Post, signalingUri.Uri) {
+                Content = new ByteArrayContent(Encoding.UTF8.GetBytes(localSdp))
             };
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/sdp");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/sdp"));
             using HttpResponseMessage response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, requestTimeout.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
@@ -96,6 +118,16 @@ public sealed class NethernetClient : IAsyncDisposable {
             if (answerBytes.Length == 0 || answerBytes.Length > options.MaximumSdpLength)
                 throw new InvalidDataException("NetherNet SDP answer length is invalid.");
             string answerSdp = Encoding.UTF8.GetString(answerBytes);
+            if (int.TryParse(answerSdp.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int failureReason)) {
+                throw new InvalidDataException($"NetherNet signaling was rejected with response code {failureReason}.");
+            }
+            int identityStart = answerSdp.IndexOf("a=identity:", StringComparison.Ordinal);
+            if (identityStart >= 0) {
+                int identityEnd = answerSdp.IndexOfAny(['\r', '\n'], identityStart);
+                answerSdp = identityEnd < 0
+                    ? answerSdp[..identityStart]
+                    : answerSdp.Remove(identityStart, identityEnd - identityStart);
+            }
             if (transport.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = answerSdp }) != SetDescriptionResultEnum.OK)
                 throw new InvalidDataException("NetherNet SDP answer was rejected.");
 
