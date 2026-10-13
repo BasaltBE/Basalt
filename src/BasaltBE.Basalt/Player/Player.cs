@@ -1,3 +1,4 @@
+using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Entities;
@@ -10,7 +11,7 @@ public sealed class Player(
     int deviceOS,
     string deviceName,
     byte[] skin
-) : Entity, IDisposable {
+) : Entity(EntityPalette.Find("minecraft:player")), IDisposable {
     public readonly Lock Sync = new();
 
     /// <summary>NetherNet connection associated with this player.</summary>
