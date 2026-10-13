@@ -1,9 +1,16 @@
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Network;
+using BasaltBE.Basalt.Worlds;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet.Types;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
 public sealed class Player(
+    NetworkServer network,
+    World world,
+    Dimension dimension,
     NethernetPeer peer,
     string username,
     string xuid,
@@ -13,6 +20,12 @@ public sealed class Player(
     byte[] skin
 ) : Entity(EntityPalette.Find("minecraft:player")), IDisposable {
     public readonly Lock Sync = new();
+    internal readonly Lock TickSync = new();
+    internal readonly NetworkServer Network = network;
+
+    public readonly World World = world;
+    public readonly Dimension Dimension = dimension;
+    public readonly Vec3 Position = new() { X = 0.5f, Y = -55.38f, Z = 0.5f };
 
     /// <summary>NetherNet connection associated with this player.</summary>
     public readonly NethernetPeer Peer = peer;
@@ -35,7 +48,7 @@ public sealed class Player(
     /// <summary>Serialized skin data from the Bedrock login data.</summary>
     public readonly byte[] Skin = skin;
 
-    public int ChunkRadius;
+    public int ChunkRadius = 16;
     public bool Spawned;
 
     /// <summary>A list of resource packs requested by the player. </summary>

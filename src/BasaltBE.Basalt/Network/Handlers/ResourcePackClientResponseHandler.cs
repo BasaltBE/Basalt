@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Logging;
@@ -40,7 +41,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
                     GameType = GameType.Survival,
-                    Position = new Vec3 { X = 0.5f, Y = 64, Z = 0.5f },
+                    Position = player.Position,
                     Settings = new LevelSettings {
                         SpawnSettings = new SpawnSettings {
                             SpawnBiomeType = SpawnBiomeType.Default,
@@ -49,7 +50,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                         GeneratorType = GeneratorType.Overworld,
                         GameType = GameType.Survival,
                         GameDifficulty = Difficulty.Normal,
-                        DefaultSpawnBlockPosition = new BlockPos { X = 0, Y = 64, Z = 0 },
+                        DefaultSpawnBlockPosition = new BlockPos { X = 0, Y = -57, Z = 0 },
                         MultiplayerGameIntent = true,
                         LanBroadcastIntent = true,
                         XboxLiveBroadcastSetting = GamePublishSetting.Public,
@@ -71,9 +72,23 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     },
                     BlockNetworkIdsAreHashes = true
                 });
+                // TODO: Cache AvailableActorIdentifiers packet
+                CompoundTag actorIdentifiers = new();
+                ListTag identifierList = new();
+                foreach (EntityType type in EntityPalette.Types) {
+                    CompoundTag identifier = new();
+                    identifier.Add("bid", new StringTag { Value = string.Empty });
+                    identifier.Add("id", new StringTag { Value = type.Identifier });
+                    identifierList.Value.Add(identifier);
+                }
+                actorIdentifiers.Add("idlist", identifierList);
+                network.SendPacket(player, new AvailableActorIdentifiersPacket {
+                    IdentifierList = actorIdentifiers
+                });
                 network.SendPacket(player, new PlayStatusPacket {
                     Status = PlayStatus.PlayerSpawn
                 });
+                network.SendPacket(player, new SetCommandsEnabledPacket());
                 break;
             case ResourcePackClientResponseCancel:
                 if (network.ResourcePacks.Required) {

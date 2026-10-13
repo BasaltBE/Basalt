@@ -2,6 +2,8 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Profiling;
+using BasaltBE.Basalt.Worlds;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol;
@@ -19,7 +21,12 @@ internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator aut
             throw new InvalidDataException("Bedrock Login arrived outside the expected connection state.");
 
         AuthenticatedLogin login = authenticator.Authenticate(packet.ConnectionRequest);
+        World world = network.Server.GetWorld();
+        Dimension dimension = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
         Player newPlayer = new(
+            network,
+            world,
+            dimension,
             peer,
             login.Username,
             login.Xuid,

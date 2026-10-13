@@ -5,6 +5,7 @@ using BasaltBE.Basalt.Worlds.Types;
 namespace BasaltBE.Basalt.Worlds;
 
 public sealed class World : IDisposable {
+    readonly Lock playersSync = new();
     readonly Dictionary<string, Player> playersByUsername = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
     readonly ChunkGeneratorRegistry generators;
@@ -39,17 +40,39 @@ public sealed class World : IDisposable {
     }
 
     public void AddPlayer(Player player) {
-        if (playersByXuid.ContainsKey(player.Xuid) || playersByUsername.ContainsKey(player.Username)) {
-            throw new InvalidOperationException("A player with the same XUID or username is already in the world.");
-        }
+        lock (playersSync) {
+            if (playersByXuid.ContainsKey(player.Xuid) || playersByUsername.ContainsKey(player.Username)) {
+                throw new InvalidOperationException("A player with the same XUID or username is already in the world.");
+            }
 
-        playersByXuid.Add(player.Xuid, player);
-        playersByUsername.Add(player.Username, player);
+            playersByXuid.Add(player.Xuid, player);
+            playersByUsername.Add(player.Username, player);
+        }
     }
 
-    public Player? GetPlayer(string username) => playersByUsername.GetValueOrDefault(username);
+    public Player? GetPlayer(string username) {
+        lock (playersSync)
+            return playersByUsername.GetValueOrDefault(username);
+    }
 
-    public Player? GetPlayerByXuid(string xuid) => playersByXuid.GetValueOrDefault(xuid);
+    public Player? GetPlayerByXuid(string xuid) {
+        lock (playersSync)
+            return playersByXuid.GetValueOrDefault(xuid);
+    }
+
+    public void RemovePlayer(Player player) {
+        lock (playersSync) {
+            if (playersByXuid.TryGetValue(player.Xuid, out Player? byXuid) && ReferenceEquals(byXuid, player))
+                playersByXuid.Remove(player.Xuid);
+            if (playersByUsername.TryGetValue(player.Username, out Player? byUsername) && ReferenceEquals(byUsername, player))
+                playersByUsername.Remove(player.Username);
+        }
+    }
+
+    public void Tick() {
+        foreach (Dimension dimension in Dimensions.Values)
+            dimension.DrainGeneratedChunks();
+    }
 
     public void Dispose() => generationService.Dispose();
 }

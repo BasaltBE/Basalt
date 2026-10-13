@@ -18,5 +18,5 @@ internal static class ChunkViewMath {
     }
 
     internal static uint PublisherRadiusBlocks(int renderDistance) =>
-        (uint)(SquareToCircle(renderDistance) << 4);
+        (uint)(Math.Clamp(renderDistance, 1, MaxBedrockViewDistance) << 4);
 }

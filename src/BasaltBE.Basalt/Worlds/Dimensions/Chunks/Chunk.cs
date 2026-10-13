@@ -15,6 +15,16 @@ public sealed class Chunk(int x, int z) {
     public readonly int Z = z;
     public int SubChunkCount => subChunks?.Count ?? 0;
 
+    internal int GetSubChunkSendCount(int minimumSubChunkY, int maximumSubChunkCount) {
+        for (int i = maximumSubChunkCount - 1; i >= 0; i--) {
+            if (GetSubChunk(checked(minimumSubChunkY + i)) is { Empty: false }) {
+                return i + 1;
+            }
+        }
+
+        return 0;
+    }
+
     public bool Empty {
         get {
             if (blockActors is { Count: > 0 }) {

@@ -88,6 +88,7 @@ public class Entity {
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
     public void OnMove() => Dispatch(static trait => trait.OnMove());
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
+    public void Tick() => Dispatch(static trait => trait.Tick());
 
     public void Read(CompoundTag entityTag) {
         ArgumentNullException.ThrowIfNull(entityTag);

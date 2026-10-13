@@ -66,7 +66,7 @@ public sealed class BlockStorage {
 
     public void Serialize(ref BinaryWriter writer) {
         int paletteCount = palette?.Count ?? 1;
-        int bitsPerBlock = PaletteEncoding.GetBitsPerEntry(paletteCount);
+        int bitsPerBlock = Math.Max(1, PaletteEncoding.GetBitsPerEntry(paletteCount));
         writer.WriteUInt8((byte)((bitsPerBlock << 1) | 1));
 
         if (bitsPerBlock > 0) {

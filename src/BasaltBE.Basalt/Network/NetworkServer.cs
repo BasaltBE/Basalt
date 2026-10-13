@@ -14,6 +14,7 @@ using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
+using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Enums;
 using BasaltBE.NetherNet.Types;
@@ -94,19 +95,46 @@ public sealed class NetworkServer : IDisposable {
         using ProfilerZone zone = Profiler.BeginZone("Network.AddPlayer");
         if (!players.TryAdd(player.Peer, player))
             throw new InvalidDataException("Peer already has a Bedrock player.");
+
+        try {
+            player.World.AddPlayer(player);
+        }
+        catch {
+            players.TryRemove(player.Peer, out _);
+            throw;
+        }
     }
 
     internal void RemovePlayer(NethernetPeer peer) {
         using ProfilerZone zone = Profiler.BeginZone("Network.RemovePlayer");
-        if (players.TryRemove(peer, out Player? player)) player.Dispose();
+        if (!players.TryGetValue(peer, out Player? player))
+            return;
+
+        using Lock.Scope tickSync = player.TickSync.EnterScope();
+        if (!players.TryRemove(peer, out Player? removed) || !ReferenceEquals(player, removed))
+            return;
+
+        player.OnDespawn();
+        player.World.RemovePlayer(player);
+        player.Dispose();
+    }
+
+    internal void Tick() {
+        foreach (Player player in players.Values) {
+            using Lock.Scope tickSync = player.TickSync.EnterScope();
+            if (player.Disposed || !players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(player, current))
+                continue;
+
+            player.Tick();
+        }
     }
 
     public void Dispose() {
         using ProfilerZone zone = Profiler.BeginZone("Network.Dispose");
         nethernet.Dispose();
         authenticator.Dispose();
-        foreach (Player player in players.Values) player.Dispose();
-        players.Clear();
+        foreach (NethernetPeer peer in players.Keys)
+            RemovePlayer(peer);
         compressionPeers.Clear();
     }
 
@@ -126,6 +154,7 @@ public sealed class NetworkServer : IDisposable {
 
         Player? player = players.GetValueOrDefault(message.Peer);
         byte[]? decompressed = null;
+        uint? currentPacketId = null;
         bool compressionNegotiated = player is not null || CompressionNegotiated(message.Peer);
         try {
             ReadOnlyMemory<byte> payload = message.Payload;
@@ -160,6 +189,7 @@ public sealed class NetworkServer : IDisposable {
                 int packetEnd = checked(offset + (int)packetLength);
                 BinaryReader packetReader = new(batch.Span[..packetEnd], ref offset);
                 uint packetId = packetReader.ReadVarUInt();
+                currentPacketId = packetId;
                 ReadOnlyMemory<byte> packetPayload = batch.Slice(offset, packetEnd - offset);
                 offset = packetEnd;
                 Logger.Scoped("Network").Debug(
@@ -193,7 +223,7 @@ public sealed class NetworkServer : IDisposable {
         ) {
             ReadOnlySpan<byte> prefix = message.Payload.Span[..Math.Min(8, message.Payload.Length)];
             Logger.Scoped("Network").Error(
-                $"Invalid Bedrock packet from {message.Peer.ConnectionId}: {error.Message} " +
+                $"Bedrock packet processing failed for {message.Peer.ConnectionId} at packet 0x{currentPacketId:X}: {error.Message} " +
                 $"(compression: {(compressionNegotiated ? PacketCompressionAlgorithm.ZLib.ToString() : "not negotiated")}, payload prefix: {Convert.ToHexString(prefix)})."
             );
         }
@@ -222,6 +252,11 @@ public sealed class NetworkServer : IDisposable {
             LoginPacket login => checked(login.ConnectionRequest.Length + 16),
             ResourcePackChunkDataPacket chunk => checked(chunk.ChunkData.Length + Encoding.UTF8.GetByteCount(chunk.ResourceName) + 32),
             ResourcePackDataInfoPacket info => checked(info.FileHash.Length + Encoding.UTF8.GetByteCount(info.ResourceName) + 32),
+            LevelChunkPacket chunk => checked(chunk.SerializedChunkData.Length + 128),
+            AvailableActorIdentifiersPacket identifiers => Math.Min(
+                MaximumBatchLength - 16,
+                checked((identifiers.IdentifierList.Get<ListTag>("idlist")?.Value.Count ?? 0) * 256 + 16)
+            ),
             _ => 256
         };
 
@@ -238,6 +273,9 @@ public sealed class NetworkServer : IDisposable {
             int packetLength = packetStream.Offset;
             if (packetLength > MaximumBatchLength - 5)
                 throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
+            Logger.Scoped("Network").Debug(
+                $"Sending Bedrock packet 0x{packetId:X} ({packet.GetType().Name}, {packetLength} bytes) to {peer.ConnectionId}."
+            );
 
             BinaryWriter batchWriter = batchStream.GetWriter();
             batchWriter.WriteVarUInt((uint)packetLength);

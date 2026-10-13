@@ -15,6 +15,7 @@ internal sealed class SetLocalPlayerAsInitializedHandler {
             throw new InvalidDataException("Player initialization runtime ID does not match the logged in player.");
 
         player.Spawned = true;
+        player.OnSpawn();
         Logger.Scoped("Network").Info($"Player {player.Username} spawned in.");
     }
 }

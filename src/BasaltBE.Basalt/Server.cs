@@ -26,7 +26,7 @@ public sealed class Server : IDisposable {
             Advertisement = new ServerAdvertisement {
                 Name = Properties.ServerName,
                 Protocol = BedrockProtocol.ProtocolVersion,
-                Version = "0.0.0",
+                Version = BedrockProtocol.MinecraftVersion,
                 Level = Properties.LevelName,
                 MaxPlayers = Properties.MaxPlayers
             },
@@ -77,12 +77,23 @@ public sealed class Server : IDisposable {
         return null;
     }
 
-    public void Start() => Network.Start();
+    public void Start() {
+        World world = GetWorld();
+        _ = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
+        Network.Start();
+    }
 
     public void Tick() {
         using ProfilerZone zone = Profiler.BeginZone("Server.Tick");
+        foreach (World world in Worlds)
+            world.Tick();
+        Network.Tick();
         Profiler.FrameMark();
     }
 
-    public void Dispose() => Network.Dispose();
+    public void Dispose() {
+        Network.Dispose();
+        foreach (World world in Worlds)
+            world.Dispose();
+    }
 }

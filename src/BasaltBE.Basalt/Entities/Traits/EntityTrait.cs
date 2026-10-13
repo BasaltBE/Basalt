@@ -13,6 +13,7 @@ public abstract class EntityTrait(Entity entity) {
     public virtual void OnHurt() { }
     public virtual void OnMove() { }
     public virtual void OnAttack() { }
+    public virtual void Tick() { }
     public virtual void Read(CompoundTag entityTag) { }
     public virtual void Write(CompoundTag entityTag) { }
 }
