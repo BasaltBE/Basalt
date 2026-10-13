@@ -5,17 +5,20 @@ using BasaltBE.Basalt.Blocks.Types;
 namespace BasaltBE.Basalt.Blocks;
 
 public static class BlockPalette {
-    public static readonly BlockPermutation[] Permutations = Load<BlockPermutation[]>("block_permutations.json");
+    public static readonly BlockPermutation[] Permutations = LoadPermutations();
     public static readonly BlockType[] Types = Load<BlockType[]>("block-types.json");
     static readonly Dictionary<string, BlockType> ByIdentifier = Types.ToDictionary(type => type.Identifier);
     static readonly Dictionary<string, BlockPermutation> DefaultPermutations = Permutations
         .GroupBy(permutation => permutation.Identifier)
         .ToDictionary(group => group.Key, group => group.First());
+    static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
     static readonly Dictionary<(string Identifier, int StateHash), List<BlockPermutation>> ByState = BuildStateIndex();
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
     public static BlockPermutation? FindDefaultPermutation(string identifier) => DefaultPermutations.GetValueOrDefault(identifier);
+
+    public static BlockPermutation? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
 
     public static BlockPermutation? Find(string identifier, BlockState state) {
         if (!ByState.TryGetValue((identifier, StateHash(state)), out List<BlockPermutation>? permutations)) {
@@ -63,6 +66,15 @@ public static class BlockPalette {
 
         return JsonSerializer.Deserialize<T>(stream)
             ?? throw new JsonException($"Block data file '{fileName}' is empty.");
+    }
+
+    static BlockPermutation[] LoadPermutations() {
+        BlockPermutation[] permutations = Load<BlockPermutation[]>("block_permutations.json");
+        foreach (BlockPermutation permutation in permutations) {
+            permutation.NetworkId = permutation.Hash;
+        }
+
+        return permutations;
     }
 
     static Dictionary<(string Identifier, int StateHash), List<BlockPermutation>> BuildStateIndex() {
