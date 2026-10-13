@@ -1,7 +1,7 @@
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace BasaltBE.Basalt.Worlds.Dimensions.Chunk;
+namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class BiomeStorage {
     public const int CellCount = BlockStorage.CellCount;

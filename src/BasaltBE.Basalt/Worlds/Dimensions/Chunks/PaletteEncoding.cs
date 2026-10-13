@@ -1,4 +1,4 @@
-namespace BasaltBE.Basalt.Worlds.Dimensions.Chunk;
+namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 static class PaletteEncoding {
     internal static int GetBitsPerEntry(int paletteCount) => paletteCount switch {

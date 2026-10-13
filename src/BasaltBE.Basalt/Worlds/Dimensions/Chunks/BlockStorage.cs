@@ -2,7 +2,7 @@ using BasaltBE.Basalt.Blocks;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace BasaltBE.Basalt.Worlds.Dimensions.Chunk;
+namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class BlockStorage {
     public const int Size = 16;

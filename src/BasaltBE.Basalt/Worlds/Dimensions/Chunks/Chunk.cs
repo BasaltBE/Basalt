@@ -5,7 +5,7 @@ using NbtCodec = BasaltBE.Nbt.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
-namespace BasaltBE.Basalt.Worlds.Dimensions.Chunk;
+namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class Chunk(int x, int z) {
     Dictionary<int, SubChunk>? subChunks;

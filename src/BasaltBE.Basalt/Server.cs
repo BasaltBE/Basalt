@@ -14,6 +14,7 @@ namespace BasaltBE.Basalt;
 public sealed class Server : IDisposable {
     public readonly ServerProperties Properties;
     public readonly NetworkServer Network;
+    public readonly ChunkGeneratorRegistry Generators = new();
     public readonly List<World> Worlds = [];
 
     public Server(ServerProperties properties, IServerIdentity? identity = null) {
@@ -40,7 +41,7 @@ public sealed class Server : IDisposable {
         if (Worlds.Any(world => string.Equals(world.Identifier, identifier, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException($"World '{identifier}' already exists.");
 
-        World world = new(identifier);
+        World world = new(identifier, Generators);
         Worlds.Add(world);
         return world;
     }
