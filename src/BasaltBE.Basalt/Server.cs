@@ -20,7 +20,6 @@ public sealed class Server : IDisposable {
     public Server(ServerProperties properties, IServerIdentity? identity = null) {
         Properties = properties;
         ArgumentException.ThrowIfNullOrWhiteSpace(Properties.DefaultWorldName);
-        CreateWorld(Properties.DefaultWorldName);
 
         Network = new NetworkServer(this, new NethernetServerOptions {
             Advertisement = new ServerAdvertisement {
@@ -77,11 +76,7 @@ public sealed class Server : IDisposable {
         return null;
     }
 
-    public void Start() {
-        World world = GetWorld();
-        _ = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
-        Network.Start();
-    }
+    public void Start() => Network.Start();
 
     public void Tick() {
         using ProfilerZone zone = Profiler.BeginZone("Server.Tick");

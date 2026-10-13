@@ -17,10 +17,11 @@ public sealed class Dimension : IDisposable {
     public readonly string Identifier;
     public readonly IChunkGenerator Generator;
 
-    public Dimension(string identifier, IChunkGenerator? generator = null) {
+    public Dimension(string identifier, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+        ArgumentNullException.ThrowIfNull(generator);
         Identifier = identifier;
-        Generator = generator ?? new SuperflatGenerator();
+        Generator = generator;
         generationService = new ChunkGenerationService(4, 1024);
         ownsGenerationService = true;
     }

@@ -14,9 +14,6 @@ public sealed class World : IDisposable {
     public readonly string Identifier;
     public readonly Dictionary<string, Dimension> Dimensions = new(StringComparer.OrdinalIgnoreCase);
 
-    public World(string identifier, int workerCount = 4, int queueCapacity = 1024)
-        : this(identifier, new ChunkGeneratorRegistry(), workerCount, queueCapacity) { }
-
     public World(string identifier, ChunkGeneratorRegistry generators, int workerCount = 4, int queueCapacity = 1024) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
@@ -28,13 +25,21 @@ public sealed class World : IDisposable {
     public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);
 
     public Dimension CreateDimension(string identifier) {
+        return CreateDimension(identifier, generators.CreateDefault());
+    }
+
+    public Dimension CreateDimension(string identifier, string generatorIdentifier) {
+        return CreateDimension(identifier, generators.Create(generatorIdentifier));
+    }
+
+    Dimension CreateDimension(string identifier, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
 
         if (Dimensions.ContainsKey(identifier)) {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
         }
 
-        Dimension dimension = new(identifier, generators.CreateFor(identifier), generationService);
+        Dimension dimension = new(identifier, generator, generationService);
         Dimensions.Add(identifier, dimension);
         return dimension;
     }

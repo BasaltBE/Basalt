@@ -22,7 +22,8 @@ internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator aut
 
         AuthenticatedLogin login = authenticator.Authenticate(packet.ConnectionRequest);
         World world = network.Server.GetWorld();
-        Dimension dimension = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
+        Dimension dimension = world.GetDimension("minecraft:overworld")
+            ?? throw new InvalidOperationException("The default world has no overworld dimension.");
         Player newPlayer = new(
             network,
             world,
