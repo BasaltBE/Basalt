@@ -1,0 +1,14 @@
+using BasaltBE.Protocol.Attributes;
+using BinaryReader = Basalt.Binary.BinaryReader;
+using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+namespace BasaltBE.Protocol.Packets;
+
+[PacketId(59)]
+public sealed class SetCommandsEnabledPacket : DataPacket {
+    public bool Enabled;
+
+    public override void Serialize(ref BinaryWriter writer) => writer.WriteBool(Enabled);
+
+    public override void Deserialize(ref BinaryReader reader) => Enabled = reader.ReadBool();
+}
