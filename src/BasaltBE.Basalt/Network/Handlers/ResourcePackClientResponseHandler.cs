@@ -1,5 +1,7 @@
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Crafting;
+using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Logging;
@@ -72,6 +74,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     },
                     BlockNetworkIdsAreHashes = true
                 });
+                network.SendSerializedPacket(player, ItemPalette.RegistryPacket, ItemPalette.SerializedRegistry);
                 network.SendPacket(player, player.Attributes.CreateUpdate(player.RuntimeId, all: true, tick: network.Server.TickValue)!);
                 network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, network.Server.TickValue));
                 network.SendPacket(player, player.Abilities.CreateUpdate(player.UniqueId));
@@ -92,6 +95,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     Status = PlayStatus.PlayerSpawn
                 });
                 network.SendPacket(player, new SetCommandsEnabledPacket());
+                network.SendSerializedPacket(player, CraftingPalette.Packet, CraftingPalette.SerializedPacket);
                 break;
             case ResourcePackClientResponseCancel:
                 if (network.ResourcePacks.Required) {

@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
@@ -14,7 +13,6 @@ using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
-using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Enums;
 using BasaltBE.NetherNet.Types;
@@ -78,6 +76,19 @@ public sealed class NetworkServer : IDisposable {
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
             throw new InvalidOperationException("Player is not connected.");
         SendPacket(player.Peer, player, packet, compress, method);
+    }
+
+    internal void SendSerializedPacket(
+        Player player,
+        DataPacket packet,
+        ReadOnlyMemory<byte> serializedPayload,
+        bool compress = true,
+        PacketCompressionAlgorithm method = PacketCompressionAlgorithm.ZLib
+    ) {
+        ArgumentNullException.ThrowIfNull(player);
+        if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
+            throw new InvalidOperationException("Player is not connected.");
+        SendPacket(player.Peer, player, packet, compress, method, serializedPayload);
     }
 
     internal bool CompressionNegotiated(NethernetPeer peer) => compressionPeers.ContainsKey(peer);
@@ -240,7 +251,8 @@ public sealed class NetworkServer : IDisposable {
         Player? player,
         DataPacket packet,
         bool compress,
-        PacketCompressionAlgorithm method
+        PacketCompressionAlgorithm method,
+        ReadOnlyMemory<byte>? serializedPayload = null
     ) {
         using ProfilerZone sendZone = Profiler.BeginZone("Network.SendPacket");
         ArgumentNullException.ThrowIfNull(packet);
@@ -248,39 +260,32 @@ public sealed class NetworkServer : IDisposable {
 
         using Lock.Scope sync = player is null ? default : player.Sync.EnterScope();
         if (player?.Disposed == true) throw new ObjectDisposedException(nameof(Player));
-        int capacity = packet switch {
-            LoginPacket login => checked(login.ConnectionRequest.Length + 16),
-            ResourcePackChunkDataPacket chunk => checked(chunk.ChunkData.Length + Encoding.UTF8.GetByteCount(chunk.ResourceName) + 32),
-            ResourcePackDataInfoPacket info => checked(info.FileHash.Length + Encoding.UTF8.GetByteCount(info.ResourceName) + 32),
-            LevelChunkPacket chunk => checked(chunk.SerializedChunkData.Length + 128),
-            AvailableActorIdentifiersPacket identifiers => Math.Min(
-                MaximumBatchLength - 16,
-                checked((identifiers.IdentifierList.Get<ListTag>("idlist")?.Value.Count ?? 0) * 256 + 16)
-            ),
-            _ => 256
-        };
-
-        using BinaryStream packetStream = BinaryStream.Rent(capacity);
-        using BinaryStream batchStream = BinaryStream.Rent(capacity + 5);
+        using BinaryStream packetStream = BinaryStream.Rent(MaximumBatchLength);
         byte[]? markedBatch = null;
         int markedBatchLength = 0;
         try {
+            packetStream.Offset = 5;
             using (Profiler.BeginZone("Network.SerializePacket")) {
                 BinaryWriter packetWriter = packetStream.GetWriter();
                 packetWriter.WriteVarUInt(packetId);
-                packet.Serialize(ref packetWriter);
+                if (serializedPayload is ReadOnlyMemory<byte> cachedPayload)
+                    packetWriter.WriteBytes(cachedPayload.Span);
+                else
+                    packet.Serialize(ref packetWriter);
             }
-            int packetLength = packetStream.Offset;
+            int packetLength = packetStream.Offset - 5;
             if (packetLength > MaximumBatchLength - 5)
                 throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
             Logger.Scoped("Network").Debug(
                 $"Sending Bedrock packet 0x{packetId:X} ({packet.GetType().Name}, {packetLength} bytes) to {peer.ConnectionId}."
             );
 
-            BinaryWriter batchWriter = batchStream.GetWriter();
+            int batchOffset = 0;
+            BinaryWriter batchWriter = new(packetStream.Buffer.Span, ref batchOffset);
             batchWriter.WriteVarUInt((uint)packetLength);
-            batchWriter.WriteBytes(packetStream.Buffer.Span[..packetLength]);
-            ReadOnlyMemory<byte> payload = batchStream.Buffer[..batchStream.Offset];
+            packetStream.Buffer.Span[5..packetStream.Offset].CopyTo(packetStream.Buffer.Span[batchOffset..]);
+            int batchLength = batchOffset + packetLength;
+            ReadOnlyMemory<byte> payload = packetStream.Buffer[..batchLength];
             bool compressionNegotiated = player is not null || CompressionNegotiated(peer);
 
             if (compressionNegotiated && compress) {
@@ -319,7 +324,6 @@ public sealed class NetworkServer : IDisposable {
                 ArrayPool<byte>.Shared.Return(markedBatch);
             }
             CryptographicOperations.ZeroMemory(packetStream.Buffer.Span[..packetStream.Offset]);
-            CryptographicOperations.ZeroMemory(batchStream.Buffer.Span[..batchStream.Offset]);
         }
     }
 

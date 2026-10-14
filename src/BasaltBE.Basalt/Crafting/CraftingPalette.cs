@@ -1,0 +1,192 @@
+using System.Buffers.Binary;
+using System.Reflection;
+using System.Text.Json;
+using Basalt.Binary;
+using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Protocol.Packets;
+using BasaltBE.Protocol.Types;
+using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+namespace BasaltBE.Basalt.Crafting;
+
+internal static class CraftingPalette {
+    internal static readonly CraftingDataPacket Packet = CreatePacket();
+    internal static readonly byte[] SerializedPacket = Serialize(Packet);
+
+    static CraftingDataPacket CreatePacket() {
+        Assembly assembly = Assembly.Load("BasaltBE.Data");
+        using Stream stream = assembly.GetManifestResourceStream("BasaltBE.Data.Data.recipes.json")
+            ?? throw new InvalidOperationException("Recipe data file 'recipes.json' is missing.");
+        using JsonDocument document = JsonDocument.Parse(stream);
+        JsonElement recipes = document.RootElement.GetProperty("recipes");
+        List<ShapedRecipePayload> shaped = [];
+        List<ShapelessRecipePayload> shapeless = [];
+        uint netId = 1;
+
+        foreach (JsonElement recipe in recipes.EnumerateArray()) {
+            int type = ReadInt(recipe, "type", -1);
+            bool isShaped = type == 1;
+            if (!isShaped && type is not (0 or 5))
+                continue;
+
+            string identifier = ReadString(recipe, "id");
+            if (identifier.Length == 0 || !recipe.TryGetProperty("output", out JsonElement outputs) ||
+                outputs.ValueKind != JsonValueKind.Array || outputs.GetArrayLength() == 0)
+                continue;
+
+            JsonElement output = outputs[0];
+            ItemType? result = FindItem(ReadString(output, "id"));
+            if (result is null)
+                continue;
+
+            NetworkItemInstanceDescriptor resultItem = new() {
+                Id = result.NetworkId,
+                StackSize = checked((ushort)Math.Clamp(ReadInt(output, "count", 1), 1, ushort.MaxValue)),
+                AuxValue = unchecked((uint)ReadInt(output, "auxValue", 0))
+            };
+            string tag = ResolveTag(ReadString(recipe, "block"));
+            int priority = ReadInt(recipe, "priority", 0);
+            Uuid uuid = CreateUuid(Guid.NewGuid());
+
+            if (isShaped) {
+                if (!recipe.TryGetProperty("input", out JsonElement input) || input.ValueKind != JsonValueKind.Object ||
+                    !recipe.TryGetProperty("shape", out JsonElement shape) || shape.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                string[] rows = shape.EnumerateArray().Select(value => value.GetString() ?? string.Empty).ToArray();
+                if (rows.Length == 0)
+                    continue;
+                Dictionary<char, RecipeIngredient> key = [];
+                foreach (JsonProperty property in input.EnumerateObject()) {
+                    if (property.Name.Length != 1)
+                        continue;
+                    RecipeIngredient? ingredient = CreateIngredient(property.Value);
+                    if (ingredient is not null)
+                        key[property.Name[0]] = ingredient;
+                }
+
+                List<RecipeIngredient> ingredients = new(rows.Length * rows.Max(row => row.Length));
+                bool valid = true;
+                int width = rows.Max(row => row.Length);
+                for (int row = 0; row < rows.Length && valid; row++) {
+                    for (int column = 0; column < width; column++) {
+                        char symbol = column < rows[row].Length ? rows[row][column] : ' ';
+                        if (symbol == ' ') {
+                            ingredients.Add(new RecipeIngredient { StackSize = 1 });
+                            continue;
+                        }
+                        if (!key.TryGetValue(symbol, out RecipeIngredient? ingredient)) {
+                            valid = false;
+                            break;
+                        }
+                        ingredients.Add(ingredient);
+                    }
+                }
+                if (!valid)
+                    continue;
+
+                shaped.Add(new ShapedRecipePayload {
+                    RecipeId = identifier,
+                    Width = width,
+                    Height = rows.Length,
+                    Ingredients = ingredients.ToArray(),
+                    Results = [resultItem],
+                    Uuid = uuid,
+                    Tag = tag,
+                    Priority = priority,
+                    AssumeSymmetry = ReadBool(recipe, "assumeSymetry", true),
+                    UnlockingRequirement = new RecipeUnlockingRequirement { UnlockingContext = 1 },
+                    NetId = netId++
+                });
+                continue;
+            }
+
+            if (!recipe.TryGetProperty("input", out JsonElement inputs) || inputs.ValueKind != JsonValueKind.Array)
+                continue;
+            List<RecipeIngredient> shapelessIngredients = [];
+            foreach (JsonElement input in inputs.EnumerateArray()) {
+                RecipeIngredient? ingredient = CreateIngredient(input);
+                if (ingredient is null) {
+                    shapelessIngredients.Clear();
+                    break;
+                }
+                shapelessIngredients.Add(ingredient);
+            }
+            if (shapelessIngredients.Count == 0)
+                continue;
+
+            shapeless.Add(new ShapelessRecipePayload {
+                RecipeId = identifier,
+                Ingredients = shapelessIngredients.ToArray(),
+                Results = [resultItem],
+                Uuid = uuid,
+                Tag = tag,
+                Priority = priority,
+                UnlockingRequirement = new RecipeUnlockingRequirement { UnlockingContext = 1 },
+                NetId = netId++
+            });
+        }
+
+        return new CraftingDataPacket {
+            ShapedRecipes = shaped.ToArray(),
+            ShapelessRecipes = shapeless.ToArray(),
+            ClearRecipes = true
+        };
+    }
+
+    static RecipeIngredient? CreateIngredient(JsonElement value) {
+        string item = ReadString(value, "id");
+        string tag = ReadString(value, "itemTag");
+        int count = Math.Clamp(ReadInt(value, "count", 1), 1, 64);
+        if (tag.Length > 0)
+            return new RecipeIngredient { Descriptor = "item_tag", DescriptorValue = tag, AuxValue = 0x7FFF, StackSize = count };
+        ItemType? type = FindItem(item);
+        return type is null
+            ? null
+            : new RecipeIngredient { Descriptor = "name", DescriptorValue = type.Identifier, AuxValue = 0x7FFF, StackSize = count };
+    }
+
+    static ItemType? FindItem(string identifier) {
+        ItemType? type = ItemPalette.Find(identifier);
+        return type ?? (identifier.Contains(':') ? null : ItemPalette.Find("minecraft:" + identifier));
+    }
+
+    static string ResolveTag(string block) => block switch {
+        "stonecutter" => "stonecutter",
+        "furnace" or "blast_furnace" or "smoker" or "campfire" => block,
+        "smithing_table" => "smithing_table",
+        _ => "crafting_table"
+    };
+
+    static Uuid CreateUuid(Guid value) {
+        Span<byte> bytes = stackalloc byte[16];
+        value.TryWriteBytes(bytes);
+        return new Uuid {
+            MostSignificantBits = BinaryPrimitives.ReadUInt64LittleEndian(bytes[..8]),
+            LeastSignificantBits = BinaryPrimitives.ReadUInt64LittleEndian(bytes[8..])
+        };
+    }
+
+    static int ReadInt(JsonElement element, string property, int fallback) =>
+        element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int result)
+            ? result
+            : fallback;
+
+    static string ReadString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
+
+    static bool ReadBool(JsonElement element, string property, bool fallback) =>
+        element.TryGetProperty(property, out JsonElement value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? value.GetBoolean()
+            : fallback;
+
+    static byte[] Serialize(CraftingDataPacket packet) {
+        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
+        BinaryWriter writer = stream.GetWriter();
+        packet.Serialize(ref writer);
+        return stream.Buffer.Span[..stream.Offset].ToArray();
+    }
+}
