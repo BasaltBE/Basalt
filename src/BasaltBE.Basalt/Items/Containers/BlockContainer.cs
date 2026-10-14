@@ -1,0 +1,22 @@
+using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Types;
+
+namespace BasaltBE.Basalt.Items.Containers;
+
+public sealed class BlockContainer : Container {
+    public readonly BlockPos Position;
+
+    public BlockContainer(
+        BlockPos position,
+        int size,
+        ContainerId containerId = ContainerId.First,
+        ContainerEnumName containerName = ContainerEnumName.LevelEntity,
+        ContainerType type = ContainerType.Container,
+        uint? dynamicId = null
+    ) : base(size, containerId, containerName, type, dynamicId) {
+        ArgumentNullException.ThrowIfNull(position);
+        Position = position;
+    }
+
+    protected override BlockPos GetPosition() => Position;
+}
