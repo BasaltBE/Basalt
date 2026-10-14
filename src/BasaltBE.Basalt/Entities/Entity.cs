@@ -1,5 +1,8 @@
+using BasaltBE.Basalt.Entities.Attributes;
+using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Network;
 using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities;
@@ -8,6 +11,8 @@ public class Entity {
     private static long nextUniqueId = 0;
     private static long nextRuntimeId = 0;
     EntityTrait[]? traits;
+    public readonly EntityAttributes Attributes = new();
+    public readonly ActorFlags Flags = new();
 
     public Entity(EntityType? type = null) {
         Type = type;
@@ -88,7 +93,23 @@ public class Entity {
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
     public void OnMove() => Dispatch(static trait => trait.OnMove());
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
-    public void Tick() => Dispatch(static trait => trait.Tick());
+    public void Tick() {
+        Dispatch(static trait => trait.Tick());
+        if (this is not Player player || !player.Spawned || player.Disposed)
+            return;
+
+        ulong tick = player.Network.Server.TickValue;
+        if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } attributes)
+            player.Dimension.Broadcast(attributes, player.Position);
+        if (Flags.Dirty)
+            player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), player.Position);
+        if (player.Abilities.Dirty)
+            player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId), player.Position);
+    }
+
+    public void SetFlag(ActorFlag flag, bool enabled) {
+        Flags.Set(flag, enabled);
+    }
 
     public void Read(CompoundTag entityTag) {
         ArgumentNullException.ThrowIfNull(entityTag);

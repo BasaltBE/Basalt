@@ -72,6 +72,9 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     },
                     BlockNetworkIdsAreHashes = true
                 });
+                network.SendPacket(player, player.Attributes.CreateUpdate(player.RuntimeId, all: true, tick: network.Server.TickValue)!);
+                network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, network.Server.TickValue));
+                network.SendPacket(player, player.Abilities.CreateUpdate(player.UniqueId));
                 // TODO: Cache AvailableActorIdentifiers packet
                 CompoundTag actorIdentifiers = new();
                 ListTag identifierList = new();

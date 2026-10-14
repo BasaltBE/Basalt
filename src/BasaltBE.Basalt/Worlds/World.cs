@@ -52,6 +52,7 @@ public sealed class World : IDisposable {
 
             playersByXuid.Add(player.Xuid, player);
             playersByUsername.Add(player.Username, player);
+            player.Dimension.AddPlayer(player);
         }
     }
 
@@ -71,6 +72,7 @@ public sealed class World : IDisposable {
                 playersByXuid.Remove(player.Xuid);
             if (playersByUsername.TryGetValue(player.Username, out Player? byUsername) && ReferenceEquals(byUsername, player))
                 playersByUsername.Remove(player.Username);
+            player.Dimension.RemovePlayer(player);
         }
     }
 

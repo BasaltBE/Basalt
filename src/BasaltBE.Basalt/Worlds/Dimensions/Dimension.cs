@@ -1,16 +1,21 @@
 using System.Collections.Concurrent;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 using BasaltBE.Basalt.Worlds.Types;
 
 namespace BasaltBE.Basalt.Worlds.Dimensions;
 
 public sealed class Dimension : IDisposable {
+    const float BroadcastRadius = 65;
     readonly Dictionary<long, Chunk?> chunks = [];
     readonly ConcurrentQueue<ChunkGenerationResult> completed = new();
     readonly ChunkGenerationService generationService;
     readonly bool ownsGenerationService;
+    readonly Lock playersSync = new();
+    Player[] players = [];
     int chunkCount;
     int pendingRequestCount;
 
@@ -85,6 +90,56 @@ public sealed class Dimension : IDisposable {
     }
 
     public ChunkRequestStatus Request(ChunkPos position) => Request(position.X, position.Z);
+
+    public void Broadcast(DataPacket packet, Vec3 position, Player? exclude = null) {
+        ArgumentNullException.ThrowIfNull(packet);
+        ArgumentNullException.ThrowIfNull(position);
+
+        float radiusSquared = BroadcastRadius * BroadcastRadius;
+        foreach (Player player in Volatile.Read(ref players)) {
+            if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
+                continue;
+
+            float x = player.Position.X - position.X;
+            float y = player.Position.Y - position.Y;
+            float z = player.Position.Z - position.Z;
+            if (x * x + y * y + z * z <= radiusSquared)
+                player.Network.SendPacket(player, packet);
+        }
+    }
+
+    internal void Broadcast(DataPacket packet, Player? exclude) {
+        foreach (Player player in Volatile.Read(ref players)) {
+            if (!player.Disposed && !ReferenceEquals(player, exclude))
+                player.Network.SendPacket(player, packet);
+        }
+    }
+
+    internal void AddPlayer(Player player) {
+        lock (playersSync) {
+            Player[] current = players;
+            Player[] expanded = new Player[current.Length + 1];
+            current.CopyTo(expanded, 0);
+            expanded[^1] = player;
+            Volatile.Write(ref players, expanded);
+        }
+    }
+
+    internal void RemovePlayer(Player player) {
+        lock (playersSync) {
+            Player[] current = players;
+            int index = Array.IndexOf(current, player);
+            if (index < 0)
+                return;
+
+            Player[] reduced = new Player[current.Length - 1];
+            if (index > 0)
+                Array.Copy(current, 0, reduced, 0, index);
+            if (index < reduced.Length)
+                Array.Copy(current, index + 1, reduced, index, reduced.Length - index);
+            Volatile.Write(ref players, reduced);
+        }
+    }
 
     public ChunkRequestBatchResult Request(ReadOnlySpan<ChunkPos> positions) {
         int queued = 0;

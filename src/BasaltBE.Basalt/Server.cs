@@ -5,9 +5,11 @@ using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
 using BasaltBE.Basalt.Worlds;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol;
+using BasaltBE.Protocol.Packets;
 
 namespace BasaltBE.Basalt;
 
@@ -16,6 +18,7 @@ public sealed class Server : IDisposable {
     public readonly NetworkServer Network;
     public readonly ChunkGeneratorRegistry Generators = new();
     public readonly List<World> Worlds = [];
+    internal ulong TickValue;
 
     public Server(ServerProperties properties, IServerIdentity? identity = null) {
         Properties = properties;
@@ -76,10 +79,19 @@ public sealed class Server : IDisposable {
         return null;
     }
 
+    public void Broadcast(DataPacket packet, Player? exclude = null) {
+        ArgumentNullException.ThrowIfNull(packet);
+        foreach (World world in Worlds) {
+            foreach (Dimension dimension in world.Dimensions.Values)
+                dimension.Broadcast(packet, exclude);
+        }
+    }
+
     public void Start() => Network.Start();
 
     public void Tick() {
         using ProfilerZone zone = Profiler.BeginZone("Server.Tick");
+        TickValue++;
         foreach (World world in Worlds)
             world.Tick();
         Network.Tick();
