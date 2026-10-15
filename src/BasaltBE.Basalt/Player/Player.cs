@@ -1,5 +1,6 @@
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
@@ -41,6 +42,7 @@ public sealed class Player : Entity, IDisposable {
 
     public int ChunkRadius = 16;
     public bool Spawned;
+    internal Container? OpenedContainer;
 
     /// <summary>A list of resource packs requested by the player. </summary>
     internal readonly HashSet<Guid> RequestedResourcePacks = [];

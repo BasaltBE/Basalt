@@ -16,9 +16,9 @@ public sealed class ItemStackResponseSlotInfo : DataType {
         RequestedSlot = reader.ReadUInt8();
         Slot = reader.ReadUInt8();
         Amount = reader.ReadUInt8();
-        ItemStackNetId = reader.ReadBool() ? reader.ReadVarInt() : null;
+        ItemStackNetId = reader.ReadBool() ? reader.ReadZigZag() : null;
         CustomName.Read(ref reader);
-        DurabilityCorrection = reader.ReadVarInt();
+        DurabilityCorrection = reader.ReadZigZag();
     }
 
     public override void Write(ref BinaryWriter writer) {
@@ -27,8 +27,8 @@ public sealed class ItemStackResponseSlotInfo : DataType {
         writer.WriteUInt8(Slot);
         writer.WriteUInt8(Amount);
         writer.WriteBool(ItemStackNetId.HasValue);
-        if (ItemStackNetId is int itemStackNetId) writer.WriteVarInt(itemStackNetId);
+        if (ItemStackNetId is int itemStackNetId) writer.WriteZigZag(itemStackNetId);
         CustomName.Write(ref writer);
-        writer.WriteVarInt(DurabilityCorrection);
+        writer.WriteZigZag(DurabilityCorrection);
     }
 }

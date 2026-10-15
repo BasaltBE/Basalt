@@ -14,6 +14,7 @@ public sealed class ItemStack {
 
     internal Container? Container;
     internal int Slot = -1;
+    internal int NetId => netId;
 
     public readonly ItemType Type;
     public uint Metadata { get; private set; }
@@ -121,7 +122,13 @@ public sealed class ItemStack {
         Slot = -1;
     }
 
-    internal ItemStack Clone(ushort? size = null) => new(Type, size ?? stackSize, Metadata, CloneNbt(Nbt));
+    internal ItemStack Clone(ushort? size = null, bool cloneNbt = true) {
+        ushort clonedSize = size ?? stackSize;
+        ItemStack clone = new(Type, clonedSize, Metadata, cloneNbt ? CloneNbt(Nbt) : Nbt) {
+            netId = clonedSize == stackSize ? netId : Interlocked.Increment(ref nextNetId)
+        };
+        return clone;
+    }
 
     private static CompoundTag? CloneNbt(CompoundTag? tag) {
         if (tag is null)

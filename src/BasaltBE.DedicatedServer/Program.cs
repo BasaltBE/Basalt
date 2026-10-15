@@ -19,7 +19,7 @@ internal static class Program {
     private static void Main(string[] args) {
         Profiler.Enabled = args.Contains("--tracy", StringComparer.OrdinalIgnoreCase);
         Profiler.SetThreadName("DedicatedServer");
-        Logger.MinimumLevel = LogLevel.Debug;
+        Logger.MinimumLevel = LogLevel.Info;
         using ManualResetEventSlim shutdown = new(false);
         ConsoleCancelEventHandler cancel = (_, eventArgs) => {
             eventArgs.Cancel = true;
@@ -34,6 +34,7 @@ internal static class Program {
             ServerPropertiesFile.SaveToPath(propertiesPath, properties);
 
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
+            EntityPalette.RegisterTrait<PlayerInventoryTrait>();
 
             using Server server = new(properties);
             server.Generators.Register<SuperflatGenerator>("superflat");

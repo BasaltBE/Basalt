@@ -8154,7 +8154,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 882,
+    "networkId": 883,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -18387,7 +18387,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 851,
+    "networkId": 852,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -23357,7 +23357,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 883,
+    "networkId": 884,
     "itemVersion": 0,
     "propertiesPayload": {
       "components": [
@@ -29275,7 +29275,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 881,
+    "networkId": 882,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -29370,7 +29370,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 832,
+    "networkId": 833,
     "itemVersion": 2,
     "legacyName": "minecraft:record_creator",
     "propertiesPayload": {
@@ -29394,7 +29394,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 833,
+    "networkId": 834,
     "itemVersion": 2,
     "legacyName": "minecraft:record_creator_music_box",
     "propertiesPayload": {
@@ -29418,7 +29418,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 834,
+    "networkId": 835,
     "itemVersion": 2,
     "legacyName": "minecraft:record_precipice",
     "propertiesPayload": {
@@ -29437,7 +29437,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 878,
+    "networkId": 879,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -29683,7 +29683,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 880,
+    "networkId": 881,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -29732,7 +29732,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 879,
+    "networkId": 880,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -30942,7 +30942,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 864,
+    "networkId": 865,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31023,7 +31023,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 876,
+    "networkId": 877,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31104,7 +31104,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 869,
+    "networkId": 870,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31185,7 +31185,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 866,
+    "networkId": 867,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31266,7 +31266,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 861,
+    "networkId": 862,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31347,7 +31347,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 863,
+    "networkId": 864,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31428,7 +31428,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 875,
+    "networkId": 876,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31509,7 +31509,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 872,
+    "networkId": 873,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31590,7 +31590,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 877,
+    "networkId": 878,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31671,7 +31671,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 870,
+    "networkId": 871,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31752,7 +31752,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 867,
+    "networkId": 868,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31833,7 +31833,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 865,
+    "networkId": 866,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31914,7 +31914,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 868,
+    "networkId": 869,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -31995,7 +31995,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 862,
+    "networkId": 863,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -32076,7 +32076,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 874,
+    "networkId": 875,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -32157,7 +32157,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 871,
+    "networkId": 872,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -32238,7 +32238,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 873,
+    "networkId": 874,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -32321,7 +32321,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 835,
+    "networkId": 836,
     "itemVersion": 2,
     "legacyName": "minecraft:record_tears",
     "propertiesPayload": {
@@ -32345,7 +32345,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 836,
+    "networkId": 837,
     "itemVersion": 2,
     "legacyName": "minecraft:record_lava_chicken",
     "propertiesPayload": {
@@ -37791,7 +37791,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 852,
+    "networkId": 853,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -37861,7 +37861,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": true,
-    "networkId": 853,
+    "networkId": 854,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -39757,7 +39757,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 849,
+    "networkId": 850,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -39939,7 +39939,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 845,
+    "networkId": 846,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40107,7 +40107,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 792,
+    "networkId": 793,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40205,7 +40205,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 838,
+    "networkId": 839,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40359,7 +40359,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 843,
+    "networkId": 844,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40373,7 +40373,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 842,
+    "networkId": 843,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40417,7 +40417,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 826,
+    "networkId": 827,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40431,7 +40431,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 827,
+    "networkId": 828,
     "itemVersion": 2,
     "legacyName": "minecraft:concretepowder",
     "propertiesPayload": {
@@ -40446,7 +40446,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 820,
+    "networkId": 821,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40460,7 +40460,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 796,
+    "networkId": 797,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40474,7 +40474,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 805,
+    "networkId": 806,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40488,7 +40488,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 806,
+    "networkId": 807,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40866,7 +40866,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 814,
+    "networkId": 815,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -40880,7 +40880,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 801,
+    "networkId": 802,
     "itemVersion": 2,
     "legacyName": "minecraft:real_double_stone_slab",
     "propertiesPayload": {
@@ -40895,7 +40895,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 802,
+    "networkId": 803,
     "itemVersion": 2,
     "legacyName": "minecraft:real_double_stone_slab2",
     "propertiesPayload": {
@@ -40910,7 +40910,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 803,
+    "networkId": 804,
     "itemVersion": 2,
     "legacyName": "minecraft:real_double_stone_slab3",
     "propertiesPayload": {
@@ -40925,7 +40925,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 804,
+    "networkId": 805,
     "itemVersion": 2,
     "legacyName": "minecraft:real_double_stone_slab4",
     "propertiesPayload": {
@@ -40940,7 +40940,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 848,
+    "networkId": 849,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41031,7 +41031,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 794,
+    "networkId": 795,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41242,7 +41242,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 840,
+    "networkId": 841,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41256,7 +41256,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 841,
+    "networkId": 842,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41649,7 +41649,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 808,
+    "networkId": 809,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41663,7 +41663,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 809,
+    "networkId": 810,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -41677,7 +41677,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 844,
+    "networkId": 845,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -42142,7 +42142,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 793,
+    "networkId": 794,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -42156,7 +42156,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 822,
+    "networkId": 823,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -42268,7 +42268,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 824,
+    "networkId": 825,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -42625,7 +42625,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 816,
+    "networkId": 817,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43031,7 +43031,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 813,
+    "networkId": 814,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43157,7 +43157,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 807,
+    "networkId": 808,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43171,7 +43171,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 830,
+    "networkId": 831,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43269,7 +43269,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 850,
+    "networkId": 851,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43325,7 +43325,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 828,
+    "networkId": 829,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43339,7 +43339,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 829,
+    "networkId": 830,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43410,7 +43410,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 797,
+    "networkId": 798,
     "itemVersion": 2,
     "legacyName": "minecraft:stone_slab",
     "propertiesPayload": {
@@ -43425,7 +43425,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 798,
+    "networkId": 799,
     "itemVersion": 2,
     "legacyName": "minecraft:stone_slab2",
     "propertiesPayload": {
@@ -43440,7 +43440,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 799,
+    "networkId": 800,
     "itemVersion": 2,
     "legacyName": "minecraft:stone_slab3",
     "propertiesPayload": {
@@ -43455,7 +43455,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 800,
+    "networkId": 801,
     "itemVersion": 2,
     "legacyName": "minecraft:stone_slab4",
     "propertiesPayload": {
@@ -43484,7 +43484,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 795,
+    "networkId": 796,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43582,7 +43582,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 821,
+    "networkId": 822,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43939,7 +43939,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 831,
+    "networkId": 832,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43953,7 +43953,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 812,
+    "networkId": 813,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -43967,7 +43967,7 @@
     "stackable": true,
     "maxAmount": 64,
     "componentBased": false,
-    "networkId": 791,
+    "networkId": 792,
     "itemVersion": 2,
     "propertiesPayload": {
       "components": [],
@@ -45357,7 +45357,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 860,
+    "networkId": 861,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -45539,7 +45539,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 859,
+    "networkId": 860,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -45717,7 +45717,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 854,
+    "networkId": 855,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -45895,7 +45895,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 857,
+    "networkId": 858,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -46073,7 +46073,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 856,
+    "networkId": 857,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -46252,7 +46252,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 855,
+    "networkId": 856,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -46432,7 +46432,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 858,
+    "networkId": 859,
     "itemVersion": 1,
     "propertiesPayload": {
       "components": [
@@ -46754,7 +46754,7 @@
     "stackable": false,
     "maxAmount": 1,
     "componentBased": true,
-    "networkId": 837,
+    "networkId": 838,
     "itemVersion": 2,
     "legacyName": "minecraft:record_bounce",
     "propertiesPayload": {

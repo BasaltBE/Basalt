@@ -9,6 +9,7 @@ public abstract class ItemStackRequestActionData : DataType {
     public abstract ItemStackRequestActionType ActionType { get; }
 
     public static ItemStackRequestActionData ReadAction(ref BinaryReader reader) {
+        reader.ReadVarUInt();
         ItemStackRequestActionType actionType = (ItemStackRequestActionType)reader.ReadUInt8();
         ItemStackRequestActionData action = actionType switch {
             ItemStackRequestActionType.Take => new TakeActionData(),

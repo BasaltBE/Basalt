@@ -11,6 +11,9 @@ public sealed class ItemPropertiesPayload {
     public Dictionary<string, Tag> Values = new(StringComparer.Ordinal);
 
     public CompoundTag ToComponentData() {
+        if (Components.Length == 0 && ItemTags.Length == 0 && Values.Count == 0)
+            return new CompoundTag();
+
         CompoundTag components = new();
         if (Values.TryGetValue("item_properties", out Tag? itemProperties))
             components.Add("item_properties", itemProperties);
@@ -26,9 +29,10 @@ public sealed class ItemPropertiesPayload {
         foreach (string itemTag in ItemTags)
             itemTags.Value.Add(new StringTag { Value = itemTag });
 
+        components.Add("item_tags", itemTags);
+
         CompoundTag data = new();
         data.Add("components", components);
-        data.Add("item_tags", itemTags);
         return data;
     }
 }

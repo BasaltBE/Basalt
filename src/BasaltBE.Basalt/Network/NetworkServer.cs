@@ -52,6 +52,10 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.RequestNetworkSettings, new RequestNetworkSettingsHandler(this).Handle);
         Events.Subscribe(PacketEvents.Login, new LoginHandler(this, authenticator).Handle);
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
+        Events.Subscribe(PacketEvents.ContainerClose, new ContainerCloseHandler().Handle);
+        Events.Subscribe(PacketEvents.Interact, new InteractHandler().Handle);
+        Events.Subscribe(PacketEvents.ItemStackRequest, new ItemStackRequestHandler().Handle);
+        Events.Subscribe(PacketEvents.PlayerAuthInput, new PlayerAuthInputHandler().Handle);
         Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
         Events.Subscribe(PacketEvents.SetLocalPlayerAsInitialized, new SetLocalPlayerAsInitializedHandler().Handle);
         Events.Subscribe(PacketEvents.ResourcePackClientResponse, new ResourcePackClientResponseHandler(this).Handle);
@@ -166,6 +170,7 @@ public sealed class NetworkServer : IDisposable {
         Player? player = players.GetValueOrDefault(message.Peer);
         byte[]? decompressed = null;
         uint? currentPacketId = null;
+        ReadOnlyMemory<byte> currentPacketPayload = default;
         bool compressionNegotiated = player is not null || CompressionNegotiated(message.Peer);
         try {
             ReadOnlyMemory<byte> payload = message.Payload;
@@ -202,11 +207,11 @@ public sealed class NetworkServer : IDisposable {
                 uint packetId = packetReader.ReadVarUInt();
                 currentPacketId = packetId;
                 ReadOnlyMemory<byte> packetPayload = batch.Slice(offset, packetEnd - offset);
+                currentPacketPayload = packetPayload;
                 offset = packetEnd;
                 Logger.Scoped("Network").Debug(
                     $"Received Bedrock packet 0x{packetId:X} ({packetLength} bytes) from {message.Peer.ConnectionId}."
                 );
-
                 if (player is null && packetId != PacketEvents.Login.PacketId && packetId != PacketEvents.RequestNetworkSettings.PacketId)
                     throw new InvalidDataException("Bedrock packet arrived before Login.");
                 bool handled;
@@ -232,10 +237,12 @@ public sealed class NetworkServer : IDisposable {
                 or HttpRequestException
                 or TaskCanceledException
         ) {
-            ReadOnlySpan<byte> prefix = message.Payload.Span[..Math.Min(8, message.Payload.Length)];
+            ReadOnlySpan<byte> packetPrefix = currentPacketPayload.Span[..Math.Min(24, currentPacketPayload.Length)];
+            ReadOnlySpan<byte> payloadPrefix = message.Payload.Span[..Math.Min(8, message.Payload.Length)];
             Logger.Scoped("Network").Error(
                 $"Bedrock packet processing failed for {message.Peer.ConnectionId} at packet 0x{currentPacketId:X}: {error.Message} " +
-                $"(compression: {(compressionNegotiated ? PacketCompressionAlgorithm.ZLib.ToString() : "not negotiated")}, payload prefix: {Convert.ToHexString(prefix)})."
+                $"(compression: {(compressionNegotiated ? PacketCompressionAlgorithm.ZLib.ToString() : "not negotiated")}, " +
+                $"packet prefix: {Convert.ToHexString(packetPrefix)}, payload prefix: {Convert.ToHexString(payloadPrefix)})."
             );
         }
         finally {

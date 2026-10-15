@@ -95,6 +95,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     Status = PlayStatus.PlayerSpawn
                 });
                 network.SendPacket(player, new SetCommandsEnabledPacket());
+                network.SendSerializedPacket(player, ItemPalette.CreativeContentPacket, ItemPalette.SerializedCreativeContent);
                 network.SendSerializedPacket(player, CraftingPalette.Packet, CraftingPalette.SerializedPacket);
                 break;
             case ResourcePackClientResponseCancel:

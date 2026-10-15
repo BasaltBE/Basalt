@@ -253,8 +253,14 @@ public class Container {
 
     public bool Open(Player player) {
         ArgumentNullException.ThrowIfNull(player);
-        lock (sync)
-            viewers.Add(player);
+        lock (player.Sync) {
+            if (player.OpenedContainer is Container opened && !ReferenceEquals(opened, this))
+                opened.Close(player);
+
+            lock (sync)
+                viewers.Add(player);
+            player.OpenedContainer = this;
+        }
 
         player.Network.SendPacket(player, new ContainerOpenPacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
@@ -266,21 +272,25 @@ public class Container {
         return true;
     }
 
-    public bool Close(Player player) {
+    public bool Close(Player player, bool serverInitiated = true) {
         ArgumentNullException.ThrowIfNull(player);
-        bool present;
-        lock (sync) {
-            present = viewers.Contains(player);
-            if (!present)
-                return false;
-            if (!persistentViewers.Contains(player))
-                viewers.Remove(player);
+        lock (player.Sync) {
+            bool opened = ReferenceEquals(player.OpenedContainer, this);
+            lock (sync) {
+                if (!viewers.Contains(player) && !opened)
+                    return false;
+                if (!persistentViewers.Contains(player))
+                    viewers.Remove(player);
+            }
+
+            if (opened)
+                player.OpenedContainer = null;
         }
 
         player.Network.SendPacket(player, new ContainerClosePacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
-            ServerInitiatedClose = true
+            ServerInitiatedClose = serverInitiated
         });
         return true;
     }

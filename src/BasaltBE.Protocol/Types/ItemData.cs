@@ -19,7 +19,7 @@ public sealed class ItemData : DataType {
         Name = reader.ReadVarString();
         Id = reader.ReadInt16(true);
         ComponentBased = reader.ReadBool();
-        Version = (ItemVersion)reader.ReadVarInt();
+        Version = (ItemVersion)reader.ReadZigZag();
         Tag componentData = NbtCodec.Read(ref reader, new Options { VarInt = true, StringLengthVarInt = true });
         ComponentData = componentData as CompoundTag
             ?? throw new InvalidDataException("Item component data must be a compound tag.");
@@ -30,7 +30,7 @@ public sealed class ItemData : DataType {
         writer.WriteVarString(Name);
         writer.WriteInt16(Id, true);
         writer.WriteBool(ComponentBased);
-        writer.WriteVarInt((int)Version);
+        writer.WriteZigZag((int)Version);
         NbtCodec.Write(ComponentData, ref writer, new Options { VarInt = true, StringLengthVarInt = true });
     }
 }

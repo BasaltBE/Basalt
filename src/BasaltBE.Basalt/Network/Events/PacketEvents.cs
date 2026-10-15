@@ -4,7 +4,11 @@ namespace BasaltBE.Basalt.Network.Events;
 
 public static class PacketEvents {
     public static readonly PacketEvent<ClientCacheStatusPacket> ClientCacheStatus = new();
+    public static readonly PacketEvent<ContainerClosePacket> ContainerClose = new();
+    public static readonly PacketEvent<InteractPacket> Interact = new();
+    public static readonly PacketEvent<ItemStackRequestPacket> ItemStackRequest = new();
     public static readonly PacketEvent<LoginPacket> Login = new();
+    public static readonly PacketEvent<PlayerAuthInputPacket> PlayerAuthInput = new();
     public static readonly PacketEvent<PlayStatusPacket> PlayStatus = new();
     public static readonly PacketEvent<RequestChunkRadiusPacket> RequestChunkRadius = new();
     public static readonly PacketEvent<SetLocalPlayerAsInitializedPacket> SetLocalPlayerAsInitialized = new();

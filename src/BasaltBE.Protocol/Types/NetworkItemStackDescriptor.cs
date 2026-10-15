@@ -5,6 +5,8 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Protocol.Types;
 
 public sealed class NetworkItemStackDescriptor : DataType {
+    static readonly byte[] EmptyUserData = new byte[10];
+
     public short Id;
     public ushort StackSize;
     public uint AuxValue;
@@ -16,9 +18,12 @@ public sealed class NetworkItemStackDescriptor : DataType {
         Id = reader.ReadInt16(true);
         StackSize = reader.ReadUInt16(true);
         AuxValue = reader.ReadVarUInt();
-        NetIdVariant = reader.ReadBool() ? reader.ReadVarInt() : null;
+        NetIdVariant = reader.ReadBool() ? checked((int)reader.ReadZigZong()) : null;
         BlockRuntimeId = reader.ReadVarUInt();
-        UserData = reader.ReadVarString();
+        uint userDataLength = reader.ReadVarUInt();
+        UserData = userDataLength == 0
+            ? string.Empty
+            : Convert.ToBase64String(reader.ReadBytes(checked((int)userDataLength)).ToArray());
     }
 
     public override void Write(ref BinaryWriter writer) {
@@ -26,8 +31,14 @@ public sealed class NetworkItemStackDescriptor : DataType {
         writer.WriteUInt16(StackSize, true);
         writer.WriteVarUInt(AuxValue);
         writer.WriteBool(NetIdVariant.HasValue);
-        if (NetIdVariant is int netIdVariant) writer.WriteVarInt(netIdVariant);
+        if (NetIdVariant is int netIdVariant) writer.WriteZigZong(netIdVariant);
         writer.WriteVarUInt(BlockRuntimeId);
-        writer.WriteVarString(UserData);
+        byte[] userData = Id == 0
+            ? []
+            : string.IsNullOrEmpty(UserData)
+                ? EmptyUserData
+                : Convert.FromBase64String(UserData);
+        writer.WriteVarUInt((uint)userData.Length);
+        writer.WriteBytes(userData);
     }
 }
