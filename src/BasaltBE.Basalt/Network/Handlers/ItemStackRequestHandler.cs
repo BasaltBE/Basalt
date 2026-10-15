@@ -11,6 +11,9 @@ using BasaltBE.Logging;
 namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class ItemStackRequestHandler {
+    [ThreadStatic]
+    private static RequestState? cachedState;
+
     public void Handle(NethernetPeer peer, Player? player, ItemStackRequestPacket packet) {
         if (player is null)
             throw new InvalidDataException("Item stack request arrived before player login.");
@@ -66,62 +69,79 @@ internal sealed class ItemStackRequestHandler {
         PlayerInventoryTrait? inventoryTrait
     ) {
         int clientRequestNetId = (request.ClientRequestId >> 1) ^ -(request.ClientRequestId & 1);
-        RequestState state = new(inventory, cursor, clientRequestNetId, inventoryTrait);
-        foreach (ItemStackRequestActionData action in request.Actions) {
-            if (!Apply(state, action)) {
-                return new ItemStackResponseInfo {
-                    Result = ItemStackNetResult.Error,
-                    ClientRequestId = request.ClientRequestId
+        RequestState state = cachedState ?? new RequestState();
+        cachedState = null;
+        state.Inventory = inventory;
+        state.Cursor = cursor;
+        state.ClientRequestNetId = clientRequestNetId;
+        state.InventoryTrait = inventoryTrait;
+        try {
+            foreach (ItemStackRequestActionData action in request.Actions) {
+                if (!Apply(state, action)) {
+                    return new ItemStackResponseInfo {
+                        Result = ItemStackNetResult.Error,
+                        ClientRequestId = request.ClientRequestId
+                    };
+                }
+            }
+
+            foreach (SlotKey key in state.ChangedSlots) {
+                key.Container.SetItem(key.Slot, state.Staged[key]);
+                inventoryTrait?.RememberClientRequestNetId(
+                    key.Container,
+                    key.Slot,
+                    clientRequestNetId,
+                    state.Staged[key]
+                );
+            }
+
+            Dictionary<ContainerNameKey, List<ItemStackResponseSlotInfo>> grouped = [];
+            foreach (ResponseSlotKey responseKey in state.ResponseSlots) {
+                ContainerNameKey name = new(responseKey.ContainerName, responseKey.DynamicId);
+                if (!grouped.TryGetValue(name, out List<ItemStackResponseSlotInfo>? slots)) {
+                    slots = [];
+                    grouped.Add(name, slots);
+                }
+
+                ItemStack? item = state.Staged[responseKey.SlotKey];
+                slots.Add(new ItemStackResponseSlotInfo {
+                    RequestedSlot = checked((byte)responseKey.SlotKey.Slot),
+                    Slot = checked((byte)responseKey.SlotKey.Slot),
+                    Amount = checked((byte)(item?.StackSize ?? 0)),
+                    ItemStackNetId = item?.NetId
+                });
+            }
+
+            ItemStackResponseContainerInfo[] containers = new ItemStackResponseContainerInfo[grouped.Count];
+            int index = 0;
+            foreach (KeyValuePair<ContainerNameKey, List<ItemStackResponseSlotInfo>> entry in grouped) {
+                containers[index++] = new ItemStackResponseContainerInfo {
+                    ContainerName = {
+                        ContainerName = entry.Key.Name,
+                        DynamicId = entry.Key.DynamicId
+                    },
+                    Slots = [.. entry.Value]
                 };
             }
-        }
 
-        foreach (SlotKey key in state.ChangedSlots) {
-            key.Container.SetItem(key.Slot, state.Staged[key]);
-            inventoryTrait?.RememberClientRequestNetId(
-                key.Container,
-                key.Slot,
-                clientRequestNetId,
-                state.Staged[key]
-            );
-        }
-
-        Dictionary<ContainerNameKey, List<ItemStackResponseSlotInfo>> grouped = [];
-        foreach (ResponseSlotKey responseKey in state.ResponseSlots) {
-            ContainerNameKey name = new(responseKey.ContainerName, responseKey.DynamicId);
-            if (!grouped.TryGetValue(name, out List<ItemStackResponseSlotInfo>? slots)) {
-                slots = [];
-                grouped.Add(name, slots);
-            }
-
-            ItemStack? item = state.Staged[responseKey.SlotKey];
-            slots.Add(new ItemStackResponseSlotInfo {
-                RequestedSlot = checked((byte)responseKey.SlotKey.Slot),
-                Slot = checked((byte)responseKey.SlotKey.Slot),
-                Amount = checked((byte)(item?.StackSize ?? 0)),
-                ItemStackNetId = item?.NetId,
-                CustomName = new RedactableString(),
-                DurabilityCorrection = 0
-            });
-        }
-
-        ItemStackResponseContainerInfo[] containers = new ItemStackResponseContainerInfo[grouped.Count];
-        int index = 0;
-        foreach (KeyValuePair<ContainerNameKey, List<ItemStackResponseSlotInfo>> entry in grouped) {
-            containers[index++] = new ItemStackResponseContainerInfo {
-                ContainerName = new FullContainerName {
-                    ContainerName = entry.Key.Name,
-                    DynamicId = entry.Key.DynamicId
-                },
-                Slots = [.. entry.Value]
+            return new ItemStackResponseInfo {
+                Result = ItemStackNetResult.Success,
+                ClientRequestId = request.ClientRequestId,
+                Containers = containers
             };
+        } finally {
+            state.Inventory = null!;
+            state.Cursor = null!;
+            state.InventoryTrait = null;
+            state.ClientRequestNetId = 0;
+            state.Staged.Clear();
+            state.StagedClientRequestNetIds.Clear();
+            state.ChangedSlots.Clear();
+            state.ChangedSlotSet.Clear();
+            state.ResponseSlots.Clear();
+            state.ResponseSlotSet.Clear();
+            cachedState ??= state;
         }
-
-        return new ItemStackResponseInfo {
-            Result = ItemStackNetResult.Success,
-            ClientRequestId = request.ClientRequestId,
-            Containers = containers
-        };
     }
 
     private static bool Apply(RequestState state, ItemStackRequestActionData action) => action switch {
@@ -284,16 +304,11 @@ internal sealed class ItemStackRequestHandler {
         ClientRequestId = requestId
     };
 
-    private sealed class RequestState(
-        Container inventory,
-        Container cursor,
-        int clientRequestNetId,
-        PlayerInventoryTrait? inventoryTrait
-    ) {
-        internal readonly Container Inventory = inventory;
-        internal readonly Container Cursor = cursor;
-        internal readonly int ClientRequestNetId = clientRequestNetId;
-        internal readonly PlayerInventoryTrait? InventoryTrait = inventoryTrait;
+    private sealed class RequestState {
+        internal Container Inventory = null!;
+        internal Container Cursor = null!;
+        internal int ClientRequestNetId;
+        internal PlayerInventoryTrait? InventoryTrait;
         internal readonly Dictionary<SlotKey, ItemStack?> Staged = [];
         internal readonly Dictionary<SlotKey, int> StagedClientRequestNetIds = [];
         internal readonly List<SlotKey> ChangedSlots = [];

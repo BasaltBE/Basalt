@@ -200,15 +200,14 @@ public sealed class Chunk(int x, int z) {
             }
 
             if (!subChunk.Empty) {
-                chunk.GetOrCreateSubChunk(expectedIndex);
-                chunk.subChunks![expectedIndex] = subChunk;
+                (chunk.subChunks ??= []).Add(expectedIndex, subChunk);
             }
         }
 
         for (int i = 0; i < biomeCount; i++) {
             int subChunkY = checked(minimumSubChunkY + i);
-            BiomeStorage biomes = BiomeStorage.Deserialize(ref reader);
-            if (!biomes.Empty) {
+            BiomeStorage? biomes = BiomeStorage.Deserialize(ref reader, false);
+            if (biomes is { Empty: false }) {
                 chunk.GetOrCreateSubChunk(subChunkY).Biomes = biomes;
             }
         }

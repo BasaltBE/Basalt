@@ -11,6 +11,7 @@ using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Handlers;
 using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Network.ResourcePacks;
+using BasaltBE.Basalt.Network.Types;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet;
@@ -269,6 +270,7 @@ public sealed class NetworkServer : IDisposable {
         if (player?.Disposed == true) throw new ObjectDisposedException(nameof(Player));
         using BinaryStream packetStream = BinaryStream.Rent(MaximumBatchLength);
         byte[]? markedBatch = null;
+        PooledBufferStream? compressedBatch = null;
         int markedBatchLength = 0;
         try {
             packetStream.Offset = 5;
@@ -300,32 +302,32 @@ public sealed class NetworkServer : IDisposable {
                 if (method == PacketCompressionAlgorithm.Snappy)
                     throw new NotSupportedException("Bedrock Snappy compression is not supported.");
                 if (method == PacketCompressionAlgorithm.ZLib && payload.Length >= CompressionThreshold) {
-                    using MemoryStream compressedStream = new();
-                    using (DeflateStream deflater = new(compressedStream, CompressionLevel.Fastest, true))
+                    compressedBatch = new PooledBufferStream(payload.Length + 1);
+                    compressedBatch.WriteByte((byte)method);
+                    using (DeflateStream deflater = new(compressedBatch, CompressionLevel.Fastest, true))
                         deflater.Write(payload.Span);
-                    byte[] compressed = compressedStream.ToArray();
-                    if (compressed.Length < payload.Length) {
-                        markedBatchLength = compressed.Length + 1;
-                        markedBatch = ArrayPool<byte>.Shared.Rent(markedBatchLength);
-                        markedBatch[0] = (byte)method;
-                        compressed.CopyTo(markedBatch.AsSpan(1));
+                    if (compressedBatch.Length - 1 < payload.Length) {
+                        payload = compressedBatch.WrittenMemory;
+                    } else {
+                        compressedBatch.Dispose();
+                        compressedBatch = null;
                     }
-                    CryptographicOperations.ZeroMemory(compressed);
                 }
 
-                if (markedBatch is null) {
+                if (compressedBatch is null) {
                     markedBatchLength = payload.Length + 1;
                     markedBatch = ArrayPool<byte>.Shared.Rent(markedBatchLength);
                     markedBatch[0] = unchecked((byte)PacketCompressionAlgorithm.None);
                     payload.Span.CopyTo(markedBatch.AsSpan(1));
+                    payload = markedBatch.AsMemory(0, markedBatchLength);
                 }
-                payload = markedBatch.AsMemory(0, markedBatchLength);
             }
 
             using (Profiler.BeginZone("Network.TransportSend"))
                 nethernet.Send(peer, payload, MessageReliability.Reliable);
         }
         finally {
+            compressedBatch?.Dispose();
             if (markedBatch is not null) {
                 CryptographicOperations.ZeroMemory(markedBatch.AsSpan(0, markedBatchLength));
                 ArrayPool<byte>.Shared.Return(markedBatch);

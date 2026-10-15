@@ -94,7 +94,9 @@ public sealed class BiomeStorage {
         writer.WriteZigZag(0);
     }
 
-    public static BiomeStorage Deserialize(ref BinaryReader reader) {
+    public static BiomeStorage Deserialize(ref BinaryReader reader) => Deserialize(ref reader, true)!;
+
+    internal static BiomeStorage? Deserialize(ref BinaryReader reader, bool retainEmpty) {
         byte format = reader.ReadUInt8();
         if ((format & 1) == 0) {
             throw new InvalidDataException("The biome palette is not in network format.");
@@ -107,6 +109,9 @@ public sealed class BiomeStorage {
 
         if (bitsPerBiome == 0) {
             int biome = reader.ReadZigZag();
+            if (biome == 0 && !retainEmpty) {
+                return null;
+            }
             return new BiomeStorage {
                 singletonBiome = biome,
                 nonDefaultCount = biome == 0 ? 0 : CellCount

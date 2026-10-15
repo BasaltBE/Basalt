@@ -8,11 +8,9 @@ public static class BlockPalette {
     public static readonly BlockPermutation[] Permutations = LoadPermutations();
     public static readonly BlockType[] Types = Load<BlockType[]>("block-types.json");
     static readonly Dictionary<string, BlockType> ByIdentifier = Types.ToDictionary(type => type.Identifier);
-    static readonly Dictionary<string, BlockPermutation> DefaultPermutations = Permutations
-        .GroupBy(permutation => permutation.Identifier)
-        .ToDictionary(group => group.Key, group => group.First());
+    static readonly Dictionary<string, BlockPermutation> DefaultPermutations = BuildDefaultPermutations();
     static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
-    static readonly Dictionary<(string Identifier, int StateHash), List<BlockPermutation>> ByState = BuildStateIndex();
+    static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
@@ -21,7 +19,7 @@ public static class BlockPalette {
     public static BlockPermutation? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
 
     public static BlockPermutation? Find(string identifier, BlockState state) {
-        if (!ByState.TryGetValue((identifier, StateHash(state)), out List<BlockPermutation>? permutations)) {
+        if (!ByState.TryGetValue((identifier, StateHash(state)), out BlockPermutation[]? permutations)) {
             return null;
         }
 
@@ -34,7 +32,7 @@ public static class BlockPalette {
     }
 
     public static BlockPermutation? Find(string identifier, BlockState state, string name, object value) {
-        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out List<BlockPermutation>? permutations)) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations)) {
             return null;
         }
 
@@ -47,7 +45,7 @@ public static class BlockPalette {
     }
 
     public static BlockPermutation? Find(string identifier, BlockState state, BlockState changes) {
-        if (!ByState.TryGetValue((identifier, StateHash(state, changes)), out List<BlockPermutation>? permutations)) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, changes)), out BlockPermutation[]? permutations)) {
             return null;
         }
 
@@ -77,15 +75,25 @@ public static class BlockPalette {
         return permutations;
     }
 
-    static Dictionary<(string Identifier, int StateHash), List<BlockPermutation>> BuildStateIndex() {
-        Dictionary<(string Identifier, int StateHash), List<BlockPermutation>> index = [];
+    static Dictionary<string, BlockPermutation> BuildDefaultPermutations() {
+        Dictionary<string, BlockPermutation> defaults = [];
+        foreach (BlockPermutation permutation in Permutations) {
+            defaults.TryAdd(permutation.Identifier, permutation);
+        }
+        return defaults;
+    }
+
+    static Dictionary<(string Identifier, int StateHash), BlockPermutation[]> BuildStateIndex() {
+        Dictionary<(string Identifier, int StateHash), BlockPermutation[]> index = new(Permutations.Length);
         foreach (BlockPermutation permutation in Permutations) {
             (string Identifier, int StateHash) key = (permutation.Identifier, StateHash(permutation.State));
-            if (!index.TryGetValue(key, out List<BlockPermutation>? permutations)) {
-                permutations = [];
-                index.Add(key, permutations);
+            if (index.TryGetValue(key, out BlockPermutation[]? permutations)) {
+                Array.Resize(ref permutations, permutations.Length + 1);
+                permutations[^1] = permutation;
+                index[key] = permutations;
+            } else {
+                index.Add(key, [permutation]);
             }
-            permutations.Add(permutation);
         }
         return index;
     }

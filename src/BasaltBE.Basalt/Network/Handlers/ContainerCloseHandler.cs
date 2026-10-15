@@ -9,16 +9,14 @@ internal sealed class ContainerCloseHandler {
     public void Handle(NethernetPeer peer, Player? player, ContainerClosePacket packet) {
         if (player is null)
             throw new InvalidDataException("Container close arrived before player login.");
-        if (player.Disposed || packet.ServerInitiatedClose)
+        if (player.Disposed)
             return;
 
         Container? opened;
         lock (player.Sync)
             opened = player.OpenedContainer;
 
-        if (opened is not null &&
-            packet.ContainerId == unchecked((byte)(sbyte)opened.ContainerId) &&
-            packet.ContainerType == unchecked((byte)(sbyte)opened.Type)) {
+        if (opened is not null && packet.ContainerId == unchecked((byte)(sbyte)opened.ContainerId)) {
             opened.Close(player, serverInitiated: false);
         }
     }
