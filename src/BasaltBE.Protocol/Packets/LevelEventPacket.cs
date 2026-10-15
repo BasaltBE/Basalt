@@ -1,0 +1,26 @@
+using Basalt.Binary;
+using BasaltBE.Protocol.Attributes;
+using BasaltBE.Protocol.Types;
+using BinaryReader = Basalt.Binary.BinaryReader;
+using BinaryWriter = Basalt.Binary.BinaryWriter;
+
+namespace BasaltBE.Protocol.Packets;
+
+[PacketId(25)]
+public sealed class LevelEventPacket : DataPacket {
+    public int EventId;
+    public Vec3 Position = new();
+    public int Data;
+
+    public override void Deserialize(ref BinaryReader reader) {
+        EventId = reader.ReadVarInt();
+        Position.Read(ref reader);
+        Data = reader.ReadVarInt();
+    }
+
+    public override void Serialize(ref BinaryWriter writer) {
+        writer.WriteVarInt(EventId);
+        Position.Write(ref writer);
+        writer.WriteVarInt(Data);
+    }
+}
