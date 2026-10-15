@@ -35,6 +35,7 @@ internal static class Program {
 
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
             EntityPalette.RegisterTrait<PlayerInventoryTrait>();
+            EntityPalette.RegisterTrait<EntityMovementTrait>();
 
             using Server server = new(properties);
             server.Generators.Register<SuperflatGenerator>("superflat");

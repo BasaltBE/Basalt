@@ -4,6 +4,7 @@ using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Nbt.Types;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -13,6 +14,9 @@ public class Entity {
     EntityTrait[]? traits;
     public readonly EntityAttributes Attributes = new();
     public readonly ActorFlags Flags = new();
+    public readonly Vec3 Position = new();
+    public readonly Vec2 Rotation = new();
+    public float HeadRotation;
 
     public Entity(EntityType? type = null) {
         Type = type;

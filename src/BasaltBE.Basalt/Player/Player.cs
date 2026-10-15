@@ -5,7 +5,6 @@ using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet.Types;
-using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -17,7 +16,6 @@ public sealed class Player : Entity, IDisposable {
 
     public readonly World World;
     public readonly Dimension Dimension;
-    public readonly Vec3 Position = new() { X = 0.5f, Y = -55.38f, Z = 0.5f };
 
     /// <summary>NetherNet connection associated with this player.</summary>
     public readonly NethernetPeer Peer;
@@ -71,6 +69,9 @@ public sealed class Player : Entity, IDisposable {
         DeviceOS = deviceOS;
         DeviceName = deviceName;
         Skin = skin;
+        Position.X = 0.5f;
+        Position.Y = -55.38f;
+        Position.Z = 0.5f;
 
         Attributes.Set("minecraft:movement", 0, float.MaxValue, 0.1f, 0, float.MaxValue, 0.1f);
         Attributes.Set("minecraft:underwater_movement", 0, float.MaxValue, 0.02f, 0, float.MaxValue, 0.02f);
