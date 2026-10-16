@@ -5,8 +5,10 @@ using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Network.Login;
 
-internal static class LoginTokenParser {
-    internal static LoginTokenData Parse(ReadOnlyMemory<byte> connectionRequest) {
+internal static class LoginTokenParser
+{
+    internal static LoginTokenData Parse(ReadOnlyMemory<byte> connectionRequest)
+    {
         using ProfilerZone zone = Profiler.BeginZone("Login.ParseTokens");
         int offset = 0;
         ReadOnlyMemory<byte> identityBytes = ReadToken(connectionRequest, ref offset);
@@ -17,7 +19,8 @@ internal static class LoginTokenParser {
         return new LoginTokenData(identity, ParseClientToken(clientToken));
     }
 
-    internal static ClientTokenData ParseClientToken(ReadOnlyMemory<byte> clientToken) {
+    internal static ClientTokenData ParseClientToken(ReadOnlyMemory<byte> clientToken)
+    {
         using ProfilerZone zone = Profiler.BeginZone("Login.ValidateClientToken");
         ReadOnlySpan<byte> token = clientToken.Span;
         int firstDot = token.IndexOf((byte)'.');
@@ -43,11 +46,13 @@ internal static class LoginTokenParser {
             throw new CryptographicException("Bedrock client token signature is invalid.");
 
         byte[] clientDataJson = Base64Url.Decode(token[(firstDot + 1)..secondDot]);
-        ClientData client = JsonSerializer.Deserialize<ClientData>(clientDataJson, LoginJson.Options);
+        ClientData client = JsonSerializer.Deserialize<ClientData>(clientDataJson, LoginJson.Options)
+            ?? throw new InvalidDataException("Client data is missing.");
         return new ClientTokenData(client, clientKey.ExportParameters(false));
     }
 
-    private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset) {
+    private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset)
+    {
         if (request.Length - offset < sizeof(int))
             throw new InvalidDataException("Login token length is incomplete.");
         int length = System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(request.Span[offset..]);

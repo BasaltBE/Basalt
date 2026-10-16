@@ -21,6 +21,8 @@ public sealed class Dimension : IDisposable
     readonly Dictionary<ulong, Entity> entities = [];
     readonly Dictionary<long, Player[]> chunkViewers = [];
     Player[] players = [];
+    Entity[]? entitySnapshot;
+    internal readonly EntitySpatialIndex EntityIndex = new();
     int chunkCount;
     int pendingRequestCount;
 
@@ -69,8 +71,13 @@ public sealed class Dimension : IDisposable
     {
         if (playersOnly)
             return Volatile.Read(ref players);
+        if (Volatile.Read(ref entitySnapshot) is { } snapshot)
+            return snapshot;
         lock (playersSync)
-            return (Entity[])[.. entities.Values];
+        {
+            entitySnapshot ??= [.. entities.Values];
+            return entitySnapshot;
+        }
     }
 
     public ReadOnlySpan<Player> GetChunkViewers(int chunkX, int chunkZ)
@@ -152,6 +159,8 @@ public sealed class Dimension : IDisposable
         {
             if (!entities.TryAdd(entity.RuntimeId, entity))
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
+            Volatile.Write(ref entitySnapshot, null);
+            EntityIndex.Ready = false;
         }
     }
 
@@ -162,8 +171,11 @@ public sealed class Dimension : IDisposable
             throw new ArgumentException("Remove players through World.RemovePlayer.", nameof(entity));
         lock (playersSync)
         {
-            return ReferenceEquals(entities.GetValueOrDefault(entity.RuntimeId), entity) &&
-                entities.Remove(entity.RuntimeId);
+            if (!ReferenceEquals(entities.GetValueOrDefault(entity.RuntimeId), entity) || !entities.Remove(entity.RuntimeId))
+                return false;
+            Volatile.Write(ref entitySnapshot, null);
+            EntityIndex.Ready = false;
+            return true;
         }
     }
 
@@ -239,6 +251,25 @@ public sealed class Dimension : IDisposable
         }
     }
 
+    public void Broadcast(DataPacket packet, Entity entity, Player? exclude = null)
+    {
+        ArgumentNullException.ThrowIfNull(packet);
+        ArgumentNullException.ThrowIfNull(entity);
+        foreach (Player viewer in GetPlayers())
+        {
+            if (!viewer.Spawned || viewer.Disposed || ReferenceEquals(viewer, exclude) ||
+                !ReferenceEquals(viewer, entity) && viewer.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(entity) != true)
+                continue;
+            try
+            {
+                viewer.Network.SendPacket(viewer, packet);
+            }
+            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+            {
+            }
+        }
+    }
+
     internal void Broadcast(DataPacket packet, Player? exclude)
     {
         foreach (Player player in Volatile.Read(ref players))
@@ -254,6 +285,8 @@ public sealed class Dimension : IDisposable
         {
             if (!entities.TryAdd(player.RuntimeId, player))
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
+            Volatile.Write(ref entitySnapshot, null);
+            EntityIndex.Ready = false;
             Player[] current = players;
             Player[] expanded = new Player[current.Length + 1];
             current.CopyTo(expanded, 0);
@@ -272,6 +305,8 @@ public sealed class Dimension : IDisposable
             if (index < 0)
                 return;
             entities.Remove(player.RuntimeId);
+            Volatile.Write(ref entitySnapshot, null);
+            EntityIndex.Ready = false;
 
             Player[] reduced = new Player[current.Length - 1];
             if (index > 0)

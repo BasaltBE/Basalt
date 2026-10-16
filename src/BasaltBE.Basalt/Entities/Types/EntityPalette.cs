@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Linq.Expressions;
 using BasaltBE.Basalt.Entities.Traits;
@@ -12,7 +13,7 @@ public static class EntityPalette {
         .Where(type => type.RuntimeId.HasValue)
         .ToDictionary(type => type.RuntimeId!.Value);
     static readonly List<TraitRegistration> TraitRegistrations = [];
-    static readonly Dictionary<EntityType, EntityTraitFactory[]> TraitFactories = new(ReferenceEqualityComparer.Instance);
+    static readonly ConcurrentDictionary<EntityType, EntityTraitFactory[]> TraitFactories = new(ReferenceEqualityComparer.Instance);
 
     public static EntityType? Find(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 

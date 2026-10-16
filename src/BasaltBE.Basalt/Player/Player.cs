@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Items.Containers;
@@ -5,6 +6,8 @@ using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet.Types;
+using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -39,6 +42,8 @@ public sealed class Player : Entity, IDisposable
 
     /// <summary>Serialized skin data from the Bedrock login data.</summary>
     public readonly byte[] Skin;
+    internal readonly PlayerListEntry ListEntry;
+    internal bool Listed;
 
     public int ChunkRadius = 16;
     public bool Spawned;
@@ -74,6 +79,25 @@ public sealed class Player : Entity, IDisposable
         DeviceOS = deviceOS;
         DeviceName = deviceName;
         Skin = skin;
+        Span<byte> uuidBytes = stackalloc byte[16];
+        uuid.TryWriteBytes(uuidBytes, bigEndian: true, out _);
+        ListEntry = new PlayerListEntry
+        {
+            Action = PlayerListAction.Add,
+            AddEntry = new PlayerListAddEntry
+            {
+                Uuid = new Uuid
+                {
+                    MostSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes),
+                    LeastSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes[8..])
+                },
+                ActorId = UniqueId,
+                Name = username,
+                Xuid = xuid,
+                BuildPlatform = (BuildPlatform)deviceOS,
+                SkinBytes = skin
+            }
+        };
         Position.X = 0.5f;
         Position.Y = -57f;
         Position.Z = 0.5f;

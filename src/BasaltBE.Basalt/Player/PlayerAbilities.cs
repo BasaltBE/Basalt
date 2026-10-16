@@ -59,23 +59,29 @@ public sealed class PlayerAbilities
     internal UpdateAbilitiesPacket CreateUpdate(long playerRawId, PlayerPermissions permissions)
     {
         Dirty = false;
+        return new UpdateAbilitiesPacket { Data = CreateData(playerRawId, permissions) };
+    }
+
+    internal SerializedAbilitiesData CreateData(long playerRawId, PlayerPermissions permissions)
+    {
         bool administrator = permissions.Contains("basalt.operator");
-        return new UpdateAbilitiesPacket
+        return new SerializedAbilitiesData
         {
-            Data = new SerializedAbilitiesData
-            {
-                TargetPlayerRawId = playerRawId,
-                PlayerPermissions = administrator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
-                CommandPermissions = administrator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,
-                Layers = [new SerializedAbilitiesLayer {
+            TargetPlayerRawId = playerRawId,
+            PlayerPermissions = administrator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
+            CommandPermissions = administrator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,
+            Layers =
+            [
+                new SerializedAbilitiesLayer
+                {
                     Layer = 1,
                     AbilitiesSet = controlled,
                     AbilityValues = enabled,
                     FlySpeed = FlySpeed,
                     VerticalFlySpeed = VerticalFlySpeed,
                     WalkSpeed = WalkSpeed
-                }]
-            }
+                }
+            ]
         };
     }
 }

@@ -114,7 +114,10 @@ public sealed class World : IDisposable
     {
         long start = Stopwatch.GetTimestamp();
         foreach (Dimension dimension in Dimensions.Values)
+        {
             dimension.DrainGeneratedChunks();
+            dimension.EntityIndex.Update(dimension.GetEntities());
+        }
         Ticks.Record(start);
     }
 

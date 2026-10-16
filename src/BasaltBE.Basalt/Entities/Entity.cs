@@ -167,14 +167,14 @@ public class Entity
 
         ulong tick = player.Network.Server.TickValue;
         if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } attributes)
-            player.Dimension.Broadcast(attributes, player.Position);
+            player.Dimension.Broadcast(attributes, entity: player);
         if (Flags.Dirty)
-            player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), player.Position);
+            player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), entity: player);
         bool permissionsChanged = Volatile.Read(ref player.Permissions.Dirty);
         if (permissionsChanged)
             Volatile.Write(ref player.Permissions.Dirty, false);
         if (player.Abilities.Dirty || permissionsChanged)
-            player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), player.Position);
+            player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), entity: player);
         if (permissionsChanged)
         {
             var commands = player.Network.Server.Commands.GetCatalog(player.Permissions);

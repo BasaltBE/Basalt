@@ -15,16 +15,19 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
-public sealed class NetworkServerTests {
+public sealed class NetworkServerTests
+{
     [Fact]
-    public void OnMessageDoesNotEmitPlayerPacketsBeforeLogin() {
+    public void OnMessageDoesNotEmitPlayerPacketsBeforeLogin()
+    {
         using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());
         NetworkServer network = server.Network;
         NethernetPeer peer = new(1, 2);
         network.OnMessage(new NethernetMessage(peer, MessageReliability.Reliable, ReadOnlyMemory<byte>.Empty, Connected: true));
         Player? receivedPlayer = null;
         ClientCacheStatusPacket? receivedPacket = null;
-        network.Events.Subscribe(PacketEvents.ClientCacheStatus, (peer, player, packet) => {
+        network.Events.Subscribe(PacketEvents.ClientCacheStatus, (peer, player, packet) =>
+        {
             receivedPlayer = player;
             receivedPacket = packet;
         });
@@ -36,13 +39,18 @@ public sealed class NetworkServerTests {
     }
 
     [Fact]
-    public void OnMessagePreservesDecompressedBatchWhenOutputGrows() {
+    public void OnMessagePreservesDecompressedBatchWhenOutputGrows()
+    {
         using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());
         NetworkServer network = server.Network;
         NethernetPeer peer = new(1, 2);
         byte[] expected = new byte[8192];
         Array.Fill(expected, (byte)'A');
-        Player player = new(peer, "test", string.Empty, Guid.Empty, 0, string.Empty, []);
+        server.Generators.Register<Worlds.VoidGenerator>("void");
+        server.Generators.SetDefault("void");
+        var world = server.CreateWorld("test", world => world.CreateDimension("minecraft:overworld"));
+        Player player = new(network, world, world.GetDimension("minecraft:overworld")!, peer,
+            "test", "123", Guid.Empty, 0, string.Empty, []);
         network.AddPlayer(player);
         byte[]? received = null;
         network.Events.Subscribe(new PacketEvent<LargePacket>(), (_, _, packet) => received = packet.Data);
@@ -71,13 +79,15 @@ public sealed class NetworkServerTests {
         Assert.Equal(expected, received);
     }
 
-    private sealed class ServerIdentityStub : IServerIdentity {
+    private sealed class ServerIdentityStub : IServerIdentity
+    {
         public string AddAssertion(string answerSdp) => answerSdp;
         public void Dispose() { }
     }
 
     [PacketId(201)]
-    private sealed class LargePacket : DataPacket {
+    private sealed class LargePacket : DataPacket
+    {
         public byte[] Data = [];
 
         public override void Serialize(ref BinaryWriter writer) => writer.WriteBytes(Data);

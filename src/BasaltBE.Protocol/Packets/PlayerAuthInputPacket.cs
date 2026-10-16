@@ -8,7 +8,8 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Protocol.Packets;
 
 [PacketId(144)]
-public sealed class PlayerAuthInputPacket : DataPacket {
+public sealed class PlayerAuthInputPacket : DataPacket
+{
     const uint MaximumInputCount = 100;
 
     public Vec2 Rotation = new();
@@ -31,7 +32,8 @@ public sealed class PlayerAuthInputPacket : DataPacket {
     public Vec3 CameraOrientation = new();
     public Vec2 RawMoveVector = new();
 
-    public override void Deserialize(ref BinaryReader reader) {
+    public override void Deserialize(ref BinaryReader reader)
+    {
         Rotation.Read(ref reader);
         Position.Read(ref reader);
         MoveVector.Read(ref reader);
@@ -42,11 +44,11 @@ public sealed class PlayerAuthInputPacket : DataPacket {
             throw new InvalidDataException("Player auth input contains too many input flags.");
         InputData = new PlayerAuthInputData[(int)inputCount];
         for (int i = 0; i < InputData.Length; i++)
-            InputData[i] = (PlayerAuthInputData)reader.ReadVarInt();
+            InputData[i] = (PlayerAuthInputData)reader.ReadZigZag();
 
         InputMode = (InputMode)reader.ReadVarUInt();
         PlayMode = (ClientPlayMode)reader.ReadVarUInt();
-        InteractionModel = (NewInteractionModel)reader.ReadVarInt();
+        InteractionModel = (NewInteractionModel)reader.ReadZigZag();
         InteractRotation.Read(ref reader);
         ClientTick.Read(ref reader);
         PositionDelta.Read(ref reader);
@@ -56,17 +58,20 @@ public sealed class PlayerAuthInputPacket : DataPacket {
         ItemStackRequest = reader.ReadBool() ? new ItemStackRequestData() : null;
         ItemStackRequest?.Read(ref reader);
 
-        if (reader.ReadBool()) {
+        if (reader.ReadBool())
+        {
             uint actionCount = reader.ReadVarUInt();
             if (actionCount > MaximumInputCount)
                 throw new InvalidDataException("Player auth input contains too many block actions.");
             PlayerBlockActions = new PlayerBlockActionData[(int)actionCount];
-            for (int i = 0; i < PlayerBlockActions.Length; i++) {
+            for (int i = 0; i < PlayerBlockActions.Length; i++)
+            {
                 PlayerBlockActions[i] = new PlayerBlockActionData();
                 PlayerBlockActions[i].Read(ref reader);
             }
         }
-        else {
+        else
+        {
             PlayerBlockActions = null;
         }
 
@@ -78,7 +83,8 @@ public sealed class PlayerAuthInputPacket : DataPacket {
         RawMoveVector.Read(ref reader);
     }
 
-    public override void Serialize(ref BinaryWriter writer) {
+    public override void Serialize(ref BinaryWriter writer)
+    {
         ArgumentNullException.ThrowIfNull(Rotation);
         ArgumentNullException.ThrowIfNull(Position);
         ArgumentNullException.ThrowIfNull(MoveVector);
@@ -99,10 +105,10 @@ public sealed class PlayerAuthInputPacket : DataPacket {
         writer.WriteF32(HeadRotation, true);
         writer.WriteVarUInt((uint)InputData.Length);
         foreach (PlayerAuthInputData input in InputData)
-            writer.WriteVarInt((int)input);
+            writer.WriteZigZag((int)input);
         writer.WriteVarUInt((uint)InputMode);
         writer.WriteVarUInt((uint)PlayMode);
-        writer.WriteVarInt((int)InteractionModel);
+        writer.WriteZigZag((int)InteractionModel);
         InteractRotation.Write(ref writer);
         ClientTick.Write(ref writer);
         PositionDelta.Write(ref writer);
@@ -113,9 +119,11 @@ public sealed class PlayerAuthInputPacket : DataPacket {
         ItemStackRequest?.Write(ref writer);
 
         writer.WriteBool(PlayerBlockActions is not null);
-        if (PlayerBlockActions is not null) {
+        if (PlayerBlockActions is not null)
+        {
             writer.WriteVarUInt((uint)PlayerBlockActions.Length);
-            foreach (PlayerBlockActionData action in PlayerBlockActions) {
+            foreach (PlayerBlockActionData action in PlayerBlockActions)
+            {
                 ArgumentNullException.ThrowIfNull(action);
                 action.Write(ref writer);
             }

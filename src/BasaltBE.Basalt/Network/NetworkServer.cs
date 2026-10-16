@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
@@ -21,6 +22,7 @@ using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Attributes;
 using BasaltBE.Protocol.Packets;
+using BasaltBE.Protocol.Types;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
 
@@ -38,6 +40,7 @@ public sealed class NetworkServer : IDisposable
     internal readonly ServerAdvertisement Advertisement;
     // For now players live here, they will be moved to per world
     private readonly ConcurrentDictionary<NethernetPeer, Player> players = [];
+    private readonly ConcurrentQueue<Player> removedPlayers = new();
     private readonly ConcurrentDictionary<NethernetPeer, byte> compressionPeers = [];
 
     public readonly EventEmitter Events = new();
@@ -120,6 +123,13 @@ public sealed class NetworkServer : IDisposable
     internal void AddPlayer(Player player)
     {
         using ProfilerZone zone = Profiler.BeginZone("Network.AddPlayer");
+        long rosterLength = player.Skin.Length + Encoding.UTF8.GetByteCount(player.Username) +
+            Encoding.UTF8.GetByteCount(player.Xuid) + 64L;
+        foreach (Player existing in players.Values)
+            rosterLength += existing.Skin.Length + Encoding.UTF8.GetByteCount(existing.Username) +
+                Encoding.UTF8.GetByteCount(existing.Xuid) + 64L;
+        if (players.Count >= 1000 || rosterLength > MaximumBatchLength - 16)
+            throw new InvalidDataException("The player list exceeds the supported network payload size.");
         if (!players.TryAdd(player.Peer, player))
             throw new InvalidDataException("Peer already has a Bedrock player.");
 
@@ -146,6 +156,11 @@ public sealed class NetworkServer : IDisposable
 
         player.OnDespawn();
         player.World.RemovePlayer(player);
+        if (player.Listed)
+        {
+            player.Listed = false;
+            removedPlayers.Enqueue(player);
+        }
         player.Dispose();
         PlayerDisconnectEvent disconnected = new(player);
         Server.Events.Emit(disconnected);
@@ -153,14 +168,87 @@ public sealed class NetworkServer : IDisposable
 
     internal void Tick()
     {
+        while (removedPlayers.TryDequeue(out Player? removed))
+        {
+            PlayerListPacket removal = new()
+            {
+                Entries = [new PlayerListEntry
+                {
+                    Action = PlayerListAction.Remove,
+                    RemoveEntry = new PlayerListRemoveEntry { Uuid = removed.ListEntry.AddEntry!.Uuid }
+                }]
+            };
+            foreach (Player recipient in players.Values)
+            {
+                using Lock.Scope tickSync = recipient.TickSync.EnterScope();
+                if (!recipient.Listed || recipient.Disposed)
+                    continue;
+                try
+                {
+                    recipient.GetTrait<Entities.Traits.PlayerChunkRenderingTrait>()?.RemoveEntity(removed);
+                    SendPacket(recipient, removal);
+                }
+                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+                {
+                    // Remaining ppl still need the removal.
+                }
+            }
+        }
+        foreach (Player player in players.Values)
+        {
+            using Lock.Scope tickSync = player.TickSync.EnterScope();
+            if (player.Spawned && !player.Disposed && !player.Listed)
+            {
+                try
+                {
+                    UpdatePlayerList(player);
+                }
+                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+                {
+                    RemovePlayer(player.Peer);
+                }
+            }
+        }
         foreach (Player player in players.Values)
         {
             using Lock.Scope tickSync = player.TickSync.EnterScope();
             if (player.Disposed || !players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(player, current))
                 continue;
 
-            player.Tick();
+            try
+            {
+                player.Tick();
+            }
+            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+            {
+                RemovePlayer(player.Peer);
+            }
         }
+    }
+
+    internal void UpdatePlayerList(Player player)
+    {
+        if (player.Listed || player.Disposed || !player.Spawned)
+            return;
+        Player[] existing = players.Values.Where(other => other.Listed && !other.Disposed &&
+            !ReferenceEquals(other, player)).ToArray();
+        PlayerListPacket roster = new() { Entries = new PlayerListEntry[existing.Length] };
+
+        for (int index = 0; index < existing.Length; index++)
+            roster.Entries[index] = existing[index].ListEntry;
+
+        SendPacket(player, roster);
+        player.Listed = true;
+
+        PlayerListPacket addition = new() { Entries = [player.ListEntry] };
+        using BinaryStream stream = BinaryStream.Rent(player.Skin.Length + Encoding.UTF8.GetByteCount(player.Username) +
+            Encoding.UTF8.GetByteCount(player.Xuid) + 64);
+        BinaryWriter writer = stream.GetWriter();
+        addition.Serialize(ref writer);
+
+        if (existing.Length != 0)
+            SendPacket(existing[0].Peer, existing[0], addition, true, PacketCompressionAlgorithm.ZLib,
+                stream.Buffer[..stream.Offset], existing);
     }
 
     public void Dispose()
@@ -170,6 +258,7 @@ public sealed class NetworkServer : IDisposable
         authenticator.Dispose();
         foreach (NethernetPeer peer in players.Keys)
             RemovePlayer(peer);
+        removedPlayers.Clear();
         compressionPeers.Clear();
     }
 
@@ -291,15 +380,17 @@ public sealed class NetworkServer : IDisposable
         DataPacket packet,
         bool compress,
         PacketCompressionAlgorithm method,
-        ReadOnlyMemory<byte>? serializedPayload = null
+        ReadOnlyMemory<byte>? serializedPayload = null,
+        Player[]? recipients = null
     )
     {
         using ProfilerZone sendZone = Profiler.BeginZone("Network.SendPacket");
         ArgumentNullException.ThrowIfNull(packet);
         uint packetId = GetPacketId(packet);
 
-        using Lock.Scope sync = player is null ? default : player.Sync.EnterScope();
-        if (player?.Disposed == true) throw new ObjectDisposedException(nameof(Player));
+        using Lock.Scope sync = player is null || recipients is not null ? default : player.Sync.EnterScope();
+        if (recipients is null && player?.Disposed == true)
+            throw new ObjectDisposedException(nameof(Player));
         using BinaryStream packetStream = BinaryStream.Rent(MaximumBatchLength);
         byte[]? markedBatch = null;
         PooledBufferStream? compressedBatch = null;
@@ -364,7 +455,29 @@ public sealed class NetworkServer : IDisposable
             }
 
             using (Profiler.BeginZone("Network.TransportSend"))
-                nethernet.Send(peer, payload, MessageReliability.Reliable);
+            {
+                if (recipients is null)
+                {
+                    nethernet.Send(peer, payload, MessageReliability.Reliable);
+                }
+                else
+                {
+                    foreach (Player recipient in recipients)
+                    {
+                        using Lock.Scope recipientSync = recipient.Sync.EnterScope();
+                        if (recipient.Disposed || !players.TryGetValue(recipient.Peer, out Player? current) ||
+                            !ReferenceEquals(current, recipient))
+                            continue;
+                        try
+                        {
+                            nethernet.Send(recipient.Peer, payload, MessageReliability.Reliable);
+                        }
+                        catch (PeerDisconnectedException)
+                        {
+                        }
+                    }
+                }
+            }
         }
         finally
         {
