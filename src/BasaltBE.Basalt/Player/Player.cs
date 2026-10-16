@@ -8,11 +8,13 @@ using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class Player : Entity, IDisposable {
+public sealed class Player : Entity, IDisposable
+{
     public readonly Lock Sync = new();
     internal readonly Lock TickSync = new();
     internal readonly NetworkServer Network;
     public readonly PlayerAbilities Abilities = new();
+    public readonly PlayerPermissions Permissions;
 
     public readonly World World;
     public readonly Dimension Dimension;
@@ -41,6 +43,7 @@ public sealed class Player : Entity, IDisposable {
     public int ChunkRadius = 16;
     public bool Spawned;
     internal Container? OpenedContainer;
+    internal int PendingCommands;
 
     /// <summary>A list of resource packs requested by the player. </summary>
     internal readonly HashSet<Guid> RequestedResourcePacks = [];
@@ -58,13 +61,15 @@ public sealed class Player : Entity, IDisposable {
         int deviceOS,
         string deviceName,
         byte[] skin
-    ) : base(EntityPalette.Find("minecraft:player"), 1.62f) {
+    ) : base(EntityPalette.Find("minecraft:player"), 1.62f)
+    {
         Network = network;
         World = world;
         Dimension = dimension;
         Peer = peer;
         Username = username;
         Xuid = xuid;
+        Permissions = network.Server.Permissions.Get(xuid, username);
         Uuid = uuid;
         DeviceOS = deviceOS;
         DeviceName = deviceName;
@@ -83,8 +88,10 @@ public sealed class Player : Entity, IDisposable {
         SetFlag(ActorFlag.CanClimb, true);
     }
 
-    public void Dispose() {
-        lock (Sync) {
+    public void Dispose()
+    {
+        lock (Sync)
+        {
             if (Disposed) return;
             Disposed = true;
         }

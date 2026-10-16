@@ -4,16 +4,18 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Protocol.Types;
 
-public sealed class AvailableCommandsCommandData : DataType {
+public sealed class AvailableCommandsCommandData : DataType
+{
     public string Name = string.Empty;
     public string Description = string.Empty;
     public ushort Flags;
-    public string PermissionLevel = "Any";
+    public string PermissionLevel = "any";
     public int AliasEnum = -1;
     public uint[] ChainedSubcommandIndexes = [];
     public AvailableCommandsOverloadData[] Overloads = [];
 
-    public override void Read(ref BinaryReader reader) {
+    public override void Read(ref BinaryReader reader)
+    {
         Name = reader.ReadVarString();
         Description = reader.ReadVarString();
         Flags = reader.ReadUInt16(true);
@@ -23,14 +25,16 @@ public sealed class AvailableCommandsCommandData : DataType {
         for (int index = 0; index < ChainedSubcommandIndexes.Length; index++)
             ChainedSubcommandIndexes[index] = reader.ReadUInt32(true);
         Overloads = new AvailableCommandsOverloadData[checked((int)reader.ReadVarUInt())];
-        for (int index = 0; index < Overloads.Length; index++) {
+        for (int index = 0; index < Overloads.Length; index++)
+        {
             AvailableCommandsOverloadData overload = new();
             overload.Read(ref reader);
             Overloads[index] = overload;
         }
     }
 
-    public override void Write(ref BinaryWriter writer) {
+    public override void Write(ref BinaryWriter writer)
+    {
         writer.WriteVarString(Name);
         writer.WriteVarString(Description);
         writer.WriteUInt16(Flags, true);

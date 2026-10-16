@@ -170,6 +170,7 @@ server.properties
 network.properties
 allowlist.json
 permissions.json
+permissions.players.json
 whitelist.json
 valid_known_packs.json
 *.mcworld
