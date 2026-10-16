@@ -43,7 +43,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
                     GameType = GameType.Survival,
-                    Position = player.Position,
+                    Position = player.GetHeadPosition(),
                     Settings = new LevelSettings {
                         SpawnSettings = new SpawnSettings {
                             SpawnBiomeType = SpawnBiomeType.Default,

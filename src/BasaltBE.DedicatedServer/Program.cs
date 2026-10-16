@@ -44,7 +44,9 @@ internal static class Program {
 
             World world = server.Worlds.FirstOrDefault(world =>
                 string.Equals(world.Identifier, properties.DefaultWorldName, StringComparison.OrdinalIgnoreCase)
-            ) ?? server.CreateWorld(properties.DefaultWorldName);
+            ) ?? server.CreateWorld(properties.DefaultWorldName, static world => {
+                world.CreateDimension("minecraft:overworld");
+            });
             _ = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
 
             server.Start();

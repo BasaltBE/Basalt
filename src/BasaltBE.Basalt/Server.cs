@@ -1,5 +1,6 @@
 using System.Net;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Profiling;
@@ -16,6 +17,7 @@ namespace BasaltBE.Basalt;
 public sealed class Server : IDisposable {
     public readonly ServerProperties Properties;
     public readonly NetworkServer Network;
+    public readonly EventEmitter Events = new();
     public readonly ChunkGeneratorRegistry Generators = new();
     public readonly List<World> Worlds = [];
     internal ulong TickValue;
@@ -38,13 +40,24 @@ public sealed class Server : IDisposable {
         }, identity, ResourcePackManager.Load(Properties.ResourcePacksPath));
     }
 
-    public World CreateWorld(string identifier) {
+    public World CreateWorld(string identifier, Action<World> configure) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-        if (Worlds.Any(world => string.Equals(world.Identifier, identifier, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException($"World '{identifier}' already exists.");
+        ArgumentNullException.ThrowIfNull(configure);
+        foreach (World existing in Worlds) {
+            if (string.Equals(existing.Identifier, identifier, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"World '{identifier}' already exists.");
+        }
 
         World world = new(identifier, Generators);
         Worlds.Add(world);
+        try {
+            world.Initialize(configure, Events);
+        }
+        catch {
+            Worlds.Remove(world);
+            world.Dispose();
+            throw;
+        }
         return world;
     }
 
@@ -102,5 +115,6 @@ public sealed class Server : IDisposable {
         Network.Dispose();
         foreach (World world in Worlds)
             world.Dispose();
+        Events.Clear();
     }
 }

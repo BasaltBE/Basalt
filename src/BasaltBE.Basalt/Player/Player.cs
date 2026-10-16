@@ -58,7 +58,7 @@ public sealed class Player : Entity, IDisposable {
         int deviceOS,
         string deviceName,
         byte[] skin
-    ) : base(EntityPalette.Find("minecraft:player")) {
+    ) : base(EntityPalette.Find("minecraft:player"), 1.62f) {
         Network = network;
         World = world;
         Dimension = dimension;
@@ -70,7 +70,7 @@ public sealed class Player : Entity, IDisposable {
         DeviceName = deviceName;
         Skin = skin;
         Position.X = 0.5f;
-        Position.Y = -55.38f;
+        Position.Y = -57f;
         Position.Z = 0.5f;
 
         Attributes.Set("minecraft:movement", 0, float.MaxValue, 0.1f, 0, float.MaxValue, 0.1f);

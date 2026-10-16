@@ -135,7 +135,7 @@ internal sealed class InventoryTransactionHandler {
         }
 
         float reachX = use.Position.X + use.ClickPosition.X - player.Position.X;
-        float reachY = use.Position.Y + use.ClickPosition.Y - player.Position.Y;
+        float reachY = use.Position.Y + use.ClickPosition.Y - (player.Position.Y + player.HeadOffset);
         float reachZ = use.Position.Z + use.ClickPosition.Z - player.Position.Z;
         var clickedChunk = player.Dimension.GetChunk(use.Position.X >> 4, use.Position.Z >> 4);
         if (reachX * reachX + reachY * reachY + reachZ * reachZ > BlockReachSquared || clickedChunk is null) {
@@ -240,7 +240,7 @@ internal sealed class InventoryTransactionHandler {
     private static bool Collides(Player player, int x, int y, int z) {
         bool lowPose = player.Flags.Get(ActorFlag.Swimming) || player.Flags.Get(ActorFlag.Gliding) || player.Flags.Get(ActorFlag.Crawling);
         bool sneaking = player.Flags.Get(ActorFlag.Sneaking);
-        float feet = player.Position.Y - (lowPose ? 0.4f : sneaking ? 1.27f : 1.62f);
+        float feet = player.Position.Y;
         float height = lowPose ? 0.6f : sneaking ? 1.5f : 1.8f;
         return player.Position.X + 0.3f > x && player.Position.X - 0.3f < x + 1 &&
             player.Position.Z + 0.3f > z && player.Position.Z - 0.3f < z + 1 &&
@@ -251,7 +251,7 @@ internal sealed class InventoryTransactionHandler {
         if (use.Face > 5)
             return;
         float dx = use.Position.X + 0.5f - player.Position.X;
-        float dy = use.Position.Y + 0.5f - player.Position.Y;
+        float dy = use.Position.Y + 0.5f - (player.Position.Y + player.HeadOffset);
         float dz = use.Position.Z + 0.5f - player.Position.Z;
         if (dx * dx + dy * dy + dz * dz > 8 * 8)
             return;

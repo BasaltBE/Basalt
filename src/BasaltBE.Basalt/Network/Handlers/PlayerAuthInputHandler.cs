@@ -1,6 +1,8 @@
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Events.Players;
+using System.Numerics;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -49,15 +51,31 @@ internal sealed class PlayerAuthInputHandler {
             player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(interaction.ItemUseTransaction, interaction.LegacyRequestId);
 
         float deltaX = packet.Position.X - player.Position.X;
-        float deltaY = packet.Position.Y - player.Position.Y;
+        float feetY = packet.Position.Y - player.HeadOffset;
+        float deltaY = feetY - player.Position.Y;
         float deltaZ = packet.Position.Z - player.Position.Z;
-        if (deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 1) {
+        bool moved = deltaX != 0 || deltaY != 0 || deltaZ != 0;
+        bool rejected = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 1;
+        bool jumping = inputs[(int)PlayerAuthInputData.Jumping] || inputs[(int)PlayerAuthInputData.StartJumping];
+        if (!rejected && moved && player.Network.Server.Events.HasSubscribers<PlayerMoveEvent>()) {
+            PlayerMoveEvent moving = new(player,
+                new Vector3(player.Position.X, player.Position.Y, player.Position.Z),
+                new Vector3(packet.Position.X, feetY, packet.Position.Z));
+            player.Network.Server.Events.Emit(moving);
+            rejected = moving.IsCanceled();
+        }
+        if (!rejected && jumping && !movement.Jumping && player.Network.Server.Events.HasSubscribers<PlayerJumpEvent>()) {
+            PlayerJumpEvent jump = new(player);
+            player.Network.Server.Events.Emit(jump);
+            rejected = jump.IsCanceled();
+        }
+        if (player.Disposed)
+            return;
+        if (rejected) {
             CorrectPlayerMovePredictionPacket correction = movementCorrection ?? new();
             movementCorrection = null;
             try {
-                correction.Position.X = player.Position.X;
-                correction.Position.Y = player.Position.Y;
-                correction.Position.Z = player.Position.Z;
+                correction.Position = player.GetHeadPosition();
                 correction.Rotation.X = player.Rotation.X;
                 correction.Rotation.Y = player.Rotation.Y;
                 correction.Tick = packet.ClientTick.Tick;
@@ -70,10 +88,26 @@ internal sealed class PlayerAuthInputHandler {
             return;
         }
 
-        player.SetFlag(ActorFlag.Sneaking,
-            !inputs[(int)PlayerAuthInputData.StopSneaking] &&
+        bool sneaking = !inputs[(int)PlayerAuthInputData.StopSneaking] &&
             (inputs[(int)PlayerAuthInputData.Sneaking] || inputs[(int)PlayerAuthInputData.PersistSneak] ||
-            inputs[(int)PlayerAuthInputData.StartSneaking]));
+            inputs[(int)PlayerAuthInputData.StartSneaking]);
+        if (sneaking != player.Flags.Get(ActorFlag.Sneaking) && player.Network.Server.Events.HasSubscribers<PlayerSneakEvent>()) {
+            PlayerSneakEvent sneak = new(player, sneaking);
+            player.Network.Server.Events.Emit(sneak);
+            if (player.Disposed)
+                return;
+            if (sneak.IsCanceled()) {
+                sneaking = player.Flags.Get(ActorFlag.Sneaking);
+                bool dirty = player.Flags.Dirty;
+                try {
+                    player.Network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, packet.ClientTick.Tick));
+                }
+                finally {
+                    player.Flags.Dirty |= dirty;
+                }
+            }
+        }
+        player.SetFlag(ActorFlag.Sneaking, sneaking);
         player.SetFlag(ActorFlag.Sprinting,
             !inputs[(int)PlayerAuthInputData.StopSprinting] &&
             (inputs[(int)PlayerAuthInputData.Sprinting] || inputs[(int)PlayerAuthInputData.StartSprinting]));
@@ -89,21 +123,19 @@ internal sealed class PlayerAuthInputHandler {
         else if (inputs[(int)PlayerAuthInputData.StartFlying])
             player.Abilities.Set(PlayerAbility.Flying, true);
 
-        movement.Jumping = inputs[(int)PlayerAuthInputData.Jumping] || inputs[(int)PlayerAuthInputData.StartJumping];
+        movement.Jumping = jumping;
         movement.HorizontalCollision = inputs[(int)PlayerAuthInputData.HorizontalCollision];
         movement.VerticalCollision = inputs[(int)PlayerAuthInputData.VerticalCollision];
 
         float pitch = Math.Clamp(packet.Rotation.X, -90, 90);
         float yaw = packet.Rotation.Y % 360;
         float headYaw = packet.HeadRotation % 360;
-        bool moved = player.Position.X != packet.Position.X || player.Position.Y != packet.Position.Y ||
-            player.Position.Z != packet.Position.Z;
         bool rotated = player.Rotation.X != pitch || player.Rotation.Y != yaw || player.HeadRotation != headYaw;
         movement.Motion.X = deltaX;
         movement.Motion.Y = deltaY;
         movement.Motion.Z = deltaZ;
         player.Position.X = packet.Position.X;
-        player.Position.Y = packet.Position.Y;
+        player.Position.Y = feetY;
         player.Position.Z = packet.Position.Z;
         player.Rotation.X = pitch;
         player.Rotation.Y = yaw;
@@ -115,14 +147,12 @@ internal sealed class PlayerAuthInputHandler {
             movementUpdate = null;
             try {
                 update.PlayerRuntimeId = player.RuntimeId;
-                update.Position.X = player.Position.X;
-                update.Position.Y = player.Position.Y;
-                update.Position.Z = player.Position.Z;
+                update.Position = player.GetHeadPosition();
                 update.Rotation.X = player.Rotation.X;
                 update.Rotation.Y = player.Rotation.Y;
                 update.HeadRotation = headYaw;
                 update.OnGround = movement.VerticalCollision && movement.Motion.Y <= 0;
-                update.Tick = player.Network.Server.TickValue;
+                update.Tick = packet.ClientTick.Tick;
                 player.Dimension.Broadcast(update, player.Position, exclude: player);
             }
             finally {

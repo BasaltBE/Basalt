@@ -1,5 +1,6 @@
 using System.Text;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -25,6 +26,11 @@ internal sealed class TextHandler {
             if (char.IsControl(character))
                 return;
         }
+
+        PlayerChatEvent chat = new(player, packet.Message);
+        player.Network.Server.Events.Emit(chat);
+        if (chat.IsCanceled() || player.Disposed)
+            return;
 
         player.Network.Server.Broadcast(new TextPacket {
             Type = TextMessageType.Chat,

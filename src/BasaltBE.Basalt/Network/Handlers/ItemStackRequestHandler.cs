@@ -1,4 +1,6 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Containers;
+using BasaltBE.Basalt.Events.Types;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
@@ -85,6 +87,18 @@ internal sealed class ItemStackRequestHandler {
                 }
             }
 
+            if (inventoryTrait?.Entity is Player actor && actor.Network.Server.Events.HasSubscribers<ContainerTransactionEvent>()) {
+                ContainerSlotChange[] changes = new ContainerSlotChange[state.ChangedSlots.Count];
+                for (int i = 0; i < changes.Length; i++) {
+                    SlotKey key = state.ChangedSlots[i];
+                    changes[i] = new(key.Container, key.Slot, key.Container.GetItem(key.Slot), state.Staged[key]);
+                }
+                ContainerTransactionEvent transaction = new(actor, request.ClientRequestId, changes);
+                actor.Network.Server.Events.Emit(transaction);
+                if (transaction.IsCanceled() || actor.Disposed)
+                    return ErrorResponse(request.ClientRequestId);
+            }
+
             foreach (SlotKey key in state.ChangedSlots) {
                 key.Container.SetItem(key.Slot, state.Staged[key]);
                 inventoryTrait?.RememberClientRequestNetId(
@@ -129,7 +143,8 @@ internal sealed class ItemStackRequestHandler {
                 ClientRequestId = request.ClientRequestId,
                 Containers = containers
             };
-        } finally {
+        }
+        finally {
             state.Inventory = null!;
             state.Cursor = null!;
             state.InventoryTrait = null;

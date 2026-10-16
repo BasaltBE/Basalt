@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
@@ -14,8 +15,13 @@ internal sealed class SetLocalPlayerAsInitializedHandler {
         if (packet.RuntimeId != player.RuntimeId)
             throw new InvalidDataException("Player initialization runtime ID does not match the logged in player.");
 
+        using Lock.Scope tickSync = player.TickSync.EnterScope();
+        if (player.Spawned || player.Disposed)
+            return;
         player.Spawned = true;
         player.OnSpawn();
+        PlayerSpawnEvent spawned = new(player);
+        player.Network.Server.Events.Emit(spawned);
         Logger.Scoped("Network").Info($"Player {player.Username} spawned in.");
     }
 }

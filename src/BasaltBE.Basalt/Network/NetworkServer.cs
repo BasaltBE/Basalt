@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.Json;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Handlers;
 using BasaltBE.Basalt.Network.Login;
@@ -136,6 +137,8 @@ public sealed class NetworkServer : IDisposable {
         player.OnDespawn();
         player.World.RemovePlayer(player);
         player.Dispose();
+        PlayerDisconnectEvent disconnected = new(player);
+        Server.Events.Emit(disconnected);
     }
 
     internal void Tick() {
@@ -311,7 +314,8 @@ public sealed class NetworkServer : IDisposable {
                         deflater.Write(payload.Span);
                     if (compressedBatch.Length - 1 < payload.Length) {
                         payload = compressedBatch.WrittenMemory;
-                    } else {
+                    }
+                    else {
                         compressedBatch.Dispose();
                         compressedBatch = null;
                     }

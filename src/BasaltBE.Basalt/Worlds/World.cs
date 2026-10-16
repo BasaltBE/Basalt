@@ -1,4 +1,6 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events;
+using BasaltBE.Basalt.Events.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Types;
 
@@ -10,9 +12,11 @@ public sealed class World : IDisposable {
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
     readonly ChunkGeneratorRegistry generators;
     readonly ChunkGenerationService generationService;
+    int initialization;
 
     public readonly string Identifier;
     public readonly Dictionary<string, Dimension> Dimensions = new(StringComparer.OrdinalIgnoreCase);
+    public bool Initialized => Volatile.Read(ref initialization) == 2;
 
     public World(string identifier, ChunkGeneratorRegistry generators, int workerCount = 4, int queueCapacity = 1024) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
@@ -20,6 +24,19 @@ public sealed class World : IDisposable {
         Identifier = identifier;
         this.generators = generators;
         generationService = new ChunkGenerationService(workerCount, queueCapacity);
+    }
+
+    internal void Initialize(Action<World> configure, EventEmitter events) {
+        if (Interlocked.CompareExchange(ref initialization, 1, 0) != 0)
+            throw new InvalidOperationException($"World '{Identifier}' initialization has already started.");
+
+        configure(this);
+        if (Dimensions.Count == 0)
+            throw new InvalidOperationException($"World '{Identifier}' requires at least one dimension.");
+
+        Volatile.Write(ref initialization, 2);
+        if (events.HasSubscribers<WorldInitializeEvent>())
+            events.Emit(new WorldInitializeEvent(this));
     }
 
     public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);

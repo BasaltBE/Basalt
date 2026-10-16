@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -242,6 +243,10 @@ public class Container {
 
     public bool Open(Player player) {
         ArgumentNullException.ThrowIfNull(player);
+        PlayerOpenContainerEvent opening = new(player, this);
+        player.Network.Server.Events.Emit(opening);
+        if (opening.IsCanceled() || player.Disposed)
+            return false;
         lock (player.Sync) {
             if (player.OpenedContainer is Container opened && !ReferenceEquals(opened, this))
                 opened.Close(player);
@@ -281,6 +286,8 @@ public class Container {
             ContainerType = unchecked((byte)(sbyte)Type),
             ServerInitiatedClose = serverInitiated
         });
+        PlayerCloseContainerEvent closed = new(player, this, serverInitiated);
+        player.Network.Server.Events.Emit(closed);
         return true;
     }
 

@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Profiling;
@@ -40,6 +41,8 @@ internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator aut
         try {
             network.AddPlayer(newPlayer);
             network.SendPacket(newPlayer, new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
+            PlayerJoinEvent joined = new(newPlayer);
+            network.Server.Events.Emit(joined);
             Logger.Scoped("Network").Info($"Authenticated Xbox player {newPlayer.Username} ({newPlayer.Xuid}) from {peer.ConnectionId}.");
         }
         catch {

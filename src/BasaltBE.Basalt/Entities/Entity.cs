@@ -17,10 +17,15 @@ public class Entity {
     public readonly EntityAttributes Attributes = new();
     public readonly ActorFlags Flags = new();
     public readonly Vec3 Position = new();
+    public readonly float HeadOffset;
     public readonly Vec2 Rotation = new();
     public float HeadRotation;
 
-    public Entity(EntityType? type = null) {
+    public Entity(EntityType? type = null, float headOffset = 0) {
+        if (!float.IsFinite(headOffset) || headOffset < 0)
+            throw new ArgumentOutOfRangeException(nameof(headOffset));
+
+        HeadOffset = headOffset;
         Type = type;
         traits = EntityPalette.CreateTraits(this, type);
         if (traits is not null) {
@@ -32,6 +37,16 @@ public class Entity {
     public long UniqueId = Interlocked.Increment(ref nextUniqueId);
     public ulong RuntimeId = checked((ulong)Interlocked.Increment(ref nextRuntimeId));
     public EntityType? Type;
+
+    /// <summary>
+    /// Returns the entity's feet position. !! Not a snapshot. !!
+    /// </summary>
+    public Vec3 GetPosition() => Position;
+
+    /// <summary>
+    /// Returns a new head-position snapshot.
+    /// </summary>
+    public Vec3 GetHeadPosition() => new() { X = Position.X, Y = Position.Y + HeadOffset, Z = Position.Z };
 
     public void AddTrait(EntityTrait trait) {
         ArgumentNullException.ThrowIfNull(trait);
