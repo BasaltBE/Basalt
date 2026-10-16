@@ -13,6 +13,8 @@ public sealed class PackedItemUseLegacyInventoryTransaction : DataType {
         LegacyRequestId = reader.ReadVarInt();
         if (reader.ReadBool()) {
             uint count = reader.ReadVarUInt();
+            if (count > 100 || count > reader.Remaining)
+                throw new InvalidDataException("Item interaction contains too many legacy slot sets.");
             LegacySetItemSlots = new LegacySetSlot[(int)count];
             for (int i = 0; i < LegacySetItemSlots.Length; i++) {
                 LegacySetItemSlots[i] = new LegacySetSlot();

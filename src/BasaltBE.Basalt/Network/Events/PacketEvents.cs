@@ -7,6 +7,8 @@ public static class PacketEvents {
     public static readonly PacketEvent<ClientCacheStatusPacket> ClientCacheStatus = new();
     public static readonly PacketEvent<ContainerClosePacket> ContainerClose = new();
     public static readonly PacketEvent<InteractPacket> Interact = new();
+    public static readonly PacketEvent<InventoryTransactionPacket> InventoryTransaction = new(30);
+    public static readonly PacketEvent<MobEquipmentPacket> MobEquipment = new(31);
     public static readonly PacketEvent<ItemStackRequestPacket> ItemStackRequest = new();
     public static readonly PacketEvent<LoginPacket> Login = new();
     public static readonly PacketEvent<PlayerAuthInputPacket> PlayerAuthInput = new();

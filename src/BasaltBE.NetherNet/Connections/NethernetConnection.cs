@@ -68,7 +68,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
                 byte[] frame = GC.AllocateUninitializedArray<byte>(length + 1);
                 frame[0] = checked((byte)(fragmentCount - 1 - offset / fragmentLength));
                 payload.Span.Slice(offset, length).CopyTo(frame.AsSpan(1));
-                if (channel.readyState != RTCDataChannelState.open) throw new IOException("NetherNet data channel is not open.");
+                if (channel.readyState != RTCDataChannelState.open) throw new PeerDisconnectedException(Peer);
                 channel.send(frame);
                 Log.Debug($"Data-channel frame to {Peer.NetworkId}/{Peer.ConnectionId}: {channel.label}, {frame.Length} bytes");
                 offset += length;

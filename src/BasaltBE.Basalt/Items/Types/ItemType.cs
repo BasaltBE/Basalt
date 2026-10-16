@@ -1,9 +1,13 @@
 using System.Text.Json.Serialization;
 using BasaltBE.Protocol.Enums;
+using BasaltBE.Basalt.Blocks;
 
 namespace BasaltBE.Basalt.Items.Types;
 
 public sealed class ItemType {
+    [JsonIgnore]
+    internal BlockPermutation? PlacementPermutation;
+
     [JsonInclude, JsonPropertyName("identifier")]
     public string Identifier = string.Empty;
 

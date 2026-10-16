@@ -91,6 +91,7 @@ public sealed class ItemStack {
             StackSize = stackSize,
             AuxValue = Metadata,
             NetIdVariant = netId,
+            BlockRuntimeId = unchecked((uint)(Type.PlacementPermutation?.Hash ?? 0)),
             UserData = Convert.ToBase64String(stream.Buffer.Span[..stream.Offset])
         };
     }

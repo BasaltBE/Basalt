@@ -47,9 +47,17 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
     public override void OnSpawn() => Volatile.Write(ref spawnReady, 1);
 
+    public bool Viewing(int chunkX, int chunkZ) => loadedChunks.Contains(HashChunk(chunkX, chunkZ));
+
+    public override void OnRemove() => OnDespawn();
+
     public override void OnDespawn() {
         Volatile.Write(ref spawnReady, 0);
         started = false;
+        foreach (long hash in loadedChunks) {
+            GetPosition(hash, out int x, out int z);
+            player.Dimension.RemoveChunkViewer(player, x, z);
+        }
         loadedChunks.Clear();
         requestedChunks.Clear();
         pendingChunks.Clear();
@@ -159,6 +167,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
             SendChunk(chunk);
             loadedChunks.Add(hash);
+            player.Dimension.AddChunkViewer(player, x, z);
             RemovePending(pendingIndex, hash);
             sent++;
         }
@@ -194,6 +203,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             GetPosition(hash, out int x, out int z);
             SendUnload(x, z);
             loadedChunks.Remove(hash);
+            player.Dimension.RemoveChunkViewer(player, x, z);
         }
 
         for (int i = pendingChunks.Count - 1; i >= 0; i--) {

@@ -119,6 +119,15 @@ public static class ItemPalette {
         using Stream stream = dataAssembly.GetManifestResourceStream("BasaltBE.Data.Data.item-types.json")
             ?? throw new InvalidOperationException("Item data file 'item-types.json' is missing.");
 
-        return ItemTypeParser.Parse(stream);
+        ItemType[] types = ItemTypeParser.Parse(stream);
+        foreach (ItemType type in types) {
+            string identifier = type.Identifier;
+            if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:block_placer") is CompoundTag placer &&
+                placer.Get<StringTag>("block") is { } block)
+                identifier = block.Value;
+
+            type.PlacementPermutation = BlockPalette.FindDefaultPermutation(identifier);
+        }
+        return types;
     }
 }

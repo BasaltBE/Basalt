@@ -55,6 +55,8 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
         Events.Subscribe(PacketEvents.ContainerClose, new ContainerCloseHandler().Handle);
         Events.Subscribe(PacketEvents.Interact, new InteractHandler().Handle);
+        Events.Subscribe(PacketEvents.InventoryTransaction, new InventoryTransactionHandler().Handle);
+        Events.Subscribe(PacketEvents.MobEquipment, new MobEquipmentHandler().Handle);
         Events.Subscribe(PacketEvents.Text, new TextHandler().Handle);
         Events.Subscribe(PacketEvents.ItemStackRequest, new ItemStackRequestHandler().Handle);
         Events.Subscribe(PacketEvents.PlayerAuthInput, new PlayerAuthInputHandler().Handle);
@@ -80,7 +82,7 @@ public sealed class NetworkServer : IDisposable {
     ) {
         ArgumentNullException.ThrowIfNull(player);
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
-            throw new InvalidOperationException("Player is not connected.");
+            throw new PeerDisconnectedException(player.Peer);
         SendPacket(player.Peer, player, packet, compress, method);
     }
 
@@ -93,7 +95,7 @@ public sealed class NetworkServer : IDisposable {
     ) {
         ArgumentNullException.ThrowIfNull(player);
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
-            throw new InvalidOperationException("Player is not connected.");
+            throw new PeerDisconnectedException(player.Peer);
         SendPacket(player.Peer, player, packet, compress, method, serializedPayload);
     }
 

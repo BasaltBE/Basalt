@@ -17,7 +17,7 @@ public sealed class ItemReleaseInventoryTransaction : InventoryTransactionData {
     public override void Read(ref BinaryReader reader) {
         Actions.Read(ref reader);
         ActionType = (ItemReleaseInventoryTransactionActionType)reader.ReadVarInt();
-        Slot = reader.ReadVarInt();
+        Slot = reader.ReadZigZag();
         Item.Read(ref reader);
         FromPosition.Read(ref reader);
         Hand = (HandSlot)reader.ReadUInt8();
@@ -26,7 +26,7 @@ public sealed class ItemReleaseInventoryTransaction : InventoryTransactionData {
     public override void Write(ref BinaryWriter writer) {
         Actions.Write(ref writer);
         writer.WriteVarInt((int)ActionType);
-        writer.WriteVarInt(Slot);
+        writer.WriteZigZag(Slot);
         Item.Write(ref writer);
         FromPosition.Write(ref writer);
         writer.WriteUInt8((byte)Hand);

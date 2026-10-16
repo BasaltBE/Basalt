@@ -20,7 +20,7 @@ public sealed class ItemUseOnActorInventoryTransaction : InventoryTransactionDat
         Actions.Read(ref reader);
         RuntimeId = reader.ReadVarULong();
         ActionType = (ItemUseOnActorInventoryTransactionActionType)reader.ReadVarInt();
-        Slot = reader.ReadVarInt();
+        Slot = reader.ReadZigZag();
         Hand = (HandSlot)reader.ReadUInt8();
         Item.Read(ref reader);
         FromPosition.Read(ref reader);
@@ -31,7 +31,7 @@ public sealed class ItemUseOnActorInventoryTransaction : InventoryTransactionDat
         Actions.Write(ref writer);
         writer.WriteVarULong(RuntimeId);
         writer.WriteVarInt((int)ActionType);
-        writer.WriteVarInt(Slot);
+        writer.WriteZigZag(Slot);
         writer.WriteUInt8((byte)Hand);
         Item.Write(ref writer);
         FromPosition.Write(ref writer);

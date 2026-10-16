@@ -81,7 +81,7 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     public ValueTask<NethernetMessage> ReceiveAsync(CancellationToken cancellationToken = default) => incoming.Reader.ReadAsync(cancellationToken);
 
     public ValueTask SendAsync(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable, CancellationToken cancellationToken = default) {
-        if (!connections.TryGetValue(peer, out NethernetConnection? connection)) throw new InvalidOperationException("Peer is not connected.");
+        if (!connections.TryGetValue(peer, out NethernetConnection? connection)) throw new PeerDisconnectedException(peer);
         return connection.SendAsync(payload, reliability, cancellationToken);
     }
 

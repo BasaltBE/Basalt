@@ -27,7 +27,7 @@ public sealed class ItemUseInventoryTransaction : InventoryTransactionData {
         TriggerType = (ItemUseInventoryTransactionTriggerType)reader.ReadUInt8();
         Position.Read(ref reader);
         Face = reader.ReadUInt8();
-        Slot = reader.ReadVarInt();
+        Slot = reader.ReadZigZag();
         Hand = (HandSlot)reader.ReadUInt8();
         Item.Read(ref reader);
         FromPosition.Read(ref reader);
@@ -43,7 +43,7 @@ public sealed class ItemUseInventoryTransaction : InventoryTransactionData {
         writer.WriteUInt8((byte)TriggerType);
         Position.Write(ref writer);
         writer.WriteUInt8(Face);
-        writer.WriteVarInt(Slot);
+        writer.WriteZigZag(Slot);
         writer.WriteUInt8((byte)Hand);
         Item.Write(ref writer);
         FromPosition.Write(ref writer);

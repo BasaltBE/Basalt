@@ -230,17 +230,6 @@ public class Container {
         }
 
         NetworkItemStackDescriptor descriptor = item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
-        if (descriptor.NetIdVariant is int) {
-            InventorySlotPacket reset = new() {
-                ContainerId = unchecked((byte)(sbyte)ContainerId),
-                Slot = (uint)slot,
-                FullContainerName = GetFullContainerName(),
-                Item = new NetworkItemStackDescriptor()
-            };
-            foreach (Player player in recipients)
-                player.Network.SendPacket(player, reset);
-        }
-
         InventorySlotPacket packet = new() {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             Slot = (uint)slot,

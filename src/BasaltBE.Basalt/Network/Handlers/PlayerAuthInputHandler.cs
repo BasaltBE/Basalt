@@ -45,6 +45,9 @@ internal sealed class PlayerAuthInputHandler {
         }
 
         movement.InputTick = packet.ClientTick.Tick;
+        if (inputs[(int)PlayerAuthInputData.PerformItemInteraction] && packet.ItemUseTransaction is { } interaction)
+            player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(interaction.ItemUseTransaction, interaction.LegacyRequestId);
+
         float deltaX = packet.Position.X - player.Position.X;
         float deltaY = packet.Position.Y - player.Position.Y;
         float deltaZ = packet.Position.Z - player.Position.Z;

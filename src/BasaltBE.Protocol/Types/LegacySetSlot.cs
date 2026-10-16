@@ -12,6 +12,8 @@ public sealed class LegacySetSlot : DataType {
     public override void Read(ref BinaryReader reader) {
         ContainerEnum = (ContainerEnumName)reader.ReadUInt8();
         uint count = reader.ReadVarUInt();
+        if (count > reader.Remaining)
+            throw new InvalidDataException("Legacy slot count exceeds the remaining payload.");
         Slots = new byte[(int)count];
         for (int i = 0; i < Slots.Length; i++) Slots[i] = reader.ReadUInt8();
     }

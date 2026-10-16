@@ -1,7 +1,9 @@
+using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Entities.Attributes;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Types;
@@ -97,6 +99,35 @@ public class Entity {
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
     public void OnMove() => Dispatch(static trait => trait.OnMove());
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
+
+    public void OnAttack(Entity target, ItemStack? item) {
+        if (traits is null)
+            return;
+        foreach (EntityTrait trait in traits)
+            trait.OnAttack(target, item);
+    }
+
+    public void OnUseItem(ItemStack? item) {
+        if (traits is null)
+            return;
+        foreach (EntityTrait trait in traits)
+            trait.OnUseItem(item);
+    }
+
+    public void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition) {
+        if (traits is null)
+            return;
+        foreach (EntityTrait trait in traits)
+            trait.OnUseItemOnBlock(item, block, position, face, clickPosition);
+    }
+
+    public void OnUseItemOnEntity(ItemStack? item, Entity target, Vec3 hitPosition) {
+        if (traits is null)
+            return;
+        foreach (EntityTrait trait in traits)
+            trait.OnUseItemOnEntity(item, target, hitPosition);
+    }
+
     public void Tick() {
         Dispatch(static trait => trait.Tick());
         if (this is not Player player || !player.Spawned || player.Disposed)
