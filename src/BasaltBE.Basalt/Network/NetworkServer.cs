@@ -63,6 +63,7 @@ public sealed class NetworkServer : IDisposable
         Events.Subscribe(PacketEvents.Interact, new InteractHandler().Handle);
         Events.Subscribe(PacketEvents.InventoryTransaction, new InventoryTransactionHandler().Handle);
         Events.Subscribe(PacketEvents.MobEquipment, new MobEquipmentHandler().Handle);
+        Events.Subscribe(PacketEvents.Animate, new AnimateHandler().Handle);
         Events.Subscribe(PacketEvents.Text, new TextHandler().Handle);
         Events.Subscribe(PacketEvents.CommandRequest, new CommandRequestHandler().Handle);
         Events.Subscribe(PacketEvents.ItemStackRequest, new ItemStackRequestHandler().Handle);

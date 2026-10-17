@@ -232,12 +232,14 @@ public sealed class Dimension : IDisposable
 
     public ChunkRequestStatus Request(ChunkPos position) => Request(position.X, position.Z);
 
-    public void Broadcast(DataPacket packet, Vec3 position, Player? exclude = null)
+    public void Broadcast(DataPacket packet, Vec3 position, Player? exclude = null, float radius = BroadcastRadius)
     {
         ArgumentNullException.ThrowIfNull(packet);
         ArgumentNullException.ThrowIfNull(position);
+        if (!float.IsFinite(radius) || radius < 0)
+            throw new ArgumentOutOfRangeException(nameof(radius));
 
-        float radiusSquared = BroadcastRadius * BroadcastRadius;
+        float radiusSquared = radius * radius;
         foreach (Player player in Volatile.Read(ref players))
         {
             if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
@@ -247,7 +249,15 @@ public sealed class Dimension : IDisposable
             float y = player.Position.Y - position.Y;
             float z = player.Position.Z - position.Z;
             if (x * x + y * y + z * z <= radiusSquared)
-                player.Network.SendPacket(player, packet);
+            {
+                try
+                {
+                    player.Network.SendPacket(player, packet);
+                }
+                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+                {
+                }
+            }
         }
     }
 
