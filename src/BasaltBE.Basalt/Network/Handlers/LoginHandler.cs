@@ -43,7 +43,7 @@ internal sealed class LoginHandler(NetworkServer network, LoginAuthenticator aut
             network.SendPacket(newPlayer, new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
             PlayerJoinEvent joined = new(newPlayer);
             network.Server.Events.Emit(joined);
-            Logger.Scoped("Network").Info($"Authenticated Xbox player {newPlayer.Username} ({newPlayer.Xuid}) from {peer.ConnectionId}.");
+            Logger.Scoped("Network").Info($"Player {newPlayer.Username} Logged in.");
         }
         catch {
             network.RemovePlayer(peer);

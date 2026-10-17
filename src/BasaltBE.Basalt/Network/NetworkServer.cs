@@ -267,16 +267,14 @@ public sealed class NetworkServer : IDisposable
     {
         using ProfilerZone messageZone = Profiler.BeginZone("Network.OnMessage");
         if (message.Connected)
-        {
-            Logger.Scoped("Network").Info($"Peer {message.Peer.ConnectionId} connected.");
             return;
-        }
 
         if (message.Disconnected)
         {
+            if (players.TryGetValue(message.Peer, out Player? disconnectedPlayer))
+                Logger.Scoped("Network").Info($"Player {disconnectedPlayer.Username} Disconnected.");
             RemovePlayer(message.Peer);
             compressionPeers.TryRemove(message.Peer, out _);
-            Logger.Scoped("Network").Info($"Peer {message.Peer.ConnectionId} disconnected.");
             return;
         }
 

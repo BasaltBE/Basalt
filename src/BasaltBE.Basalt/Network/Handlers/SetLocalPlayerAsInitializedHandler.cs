@@ -22,6 +22,6 @@ internal sealed class SetLocalPlayerAsInitializedHandler {
         player.OnSpawn();
         PlayerSpawnEvent spawned = new(player);
         player.Network.Server.Events.Emit(spawned);
-        Logger.Scoped("Network").Info($"Player {player.Username} spawned in.");
+        Logger.Scoped("Network").Info($"Player {player.Username} Spawned in.");
     }
 }
