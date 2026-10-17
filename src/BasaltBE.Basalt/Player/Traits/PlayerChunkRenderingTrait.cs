@@ -202,9 +202,12 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
             }
             else if (entity is not Player && (state.X != entity.Position.X || state.Y != entity.Position.Y ||
                 state.Z != entity.Position.Z || state.Pitch != entity.Rotation.X || state.Yaw != entity.Rotation.Y ||
-                state.HeadYaw != entity.HeadRotation))
+                state.HeadYaw != entity.HeadRotation ||
+                state.Grounded != (entity.GetTrait<EntityMovementTrait>()?.Grounded ?? false)))
             {
+                EntityMovementTrait? movement = entity.GetTrait<EntityMovementTrait>();
                 actorMovement.MoveData.ActorRuntimeId = entity.RuntimeId;
+                actorMovement.MoveData.Header = movement?.Grounded == true ? (byte)1 : (byte)0;
                 actorMovement.MoveData.Position = entity.Position;
                 actorMovement.MoveData.RotationX = unchecked((byte)(entity.Rotation.X * 256 / 360));
                 actorMovement.MoveData.RotationY = unchecked((byte)(entity.Rotation.Y * 256 / 360));
@@ -216,6 +219,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
                 state.Pitch = entity.Rotation.X;
                 state.Yaw = entity.Rotation.Y;
                 state.HeadYaw = entity.HeadRotation;
+                state.Grounded = movement?.Grounded ?? false;
             }
             state.Seen = renderPass;
         }

@@ -4,6 +4,7 @@ using BasaltBE.Basalt;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Commands.Types;
 using BasaltBE.Basalt.Commands.Vanilla;
+using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Events.Players;
@@ -20,7 +21,7 @@ internal static class Program
 {
     private const int TickRate = 20;
     private const int MinimumSleepMilliseconds = 10;
-    private const double MinimumTickRate = 19;
+    private const double WarningTickRate = 18;
     private static readonly ScopedLogger Log = Logger.Scoped("DedicatedServer");
 
     private static void Main(string[] args)
@@ -53,6 +54,7 @@ internal static class Program
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
             EntityPalette.RegisterTrait<PlayerInventoryTrait>();
             EntityPalette.RegisterTrait<EntityMovementTrait>();
+            EntityPalette.RegisterTrait<EntityHealthTrait>();
 
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");
@@ -68,6 +70,7 @@ internal static class Program
             server.Commands.Register(new OpCommand());
             server.Commands.Register(new DeopCommand());
             server.Commands.Register(new StopCommand());
+            server.Commands.Register(new SummonCommand());
 
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
                 .Select(argument => argument[11..]).ToArray();
@@ -78,6 +81,15 @@ internal static class Program
                     operators.Contains(joined.Player.Xuid, StringComparer.Ordinal))
                     joined.Player.Permissions.Add("basalt.operator");
             });
+
+            // server.Events.Subscribe<PlayerSpawnEvent>(spawned =>
+            // {
+            //     Entity zombie = new("minecraft:zombie");
+            //     zombie.Position.X = spawned.Player.Position.X;
+            //     zombie.Position.Y = spawned.Player.Position.Y + 2;
+            //     zombie.Position.Z = spawned.Player.Position.Z;
+            //     zombie.Spawn(spawned.Player.Dimension);
+            // });
 
             #endregion
 
@@ -149,8 +161,10 @@ internal static class Program
             long sleepOvershoot = Stopwatch.Frequency / 1000;
             WaitHandle shutdownWaitHandle = shutdown.WaitHandle;
             int ticks = 0;
-            long slowestTickDuration = 0;
-            long maximumTickLateness = 0;
+            TimeSpan lastGcPauseDuration = GC.GetTotalPauseDuration();
+            int lastGen0CollectionCount = GC.CollectionCount(0);
+            int lastGen1CollectionCount = GC.CollectionCount(1);
+            int lastGen2CollectionCount = GC.CollectionCount(2);
 
             while (!shutdown.IsSet && !server.Stopping)
             {
@@ -182,7 +196,6 @@ internal static class Program
                     break;
 
                 long tickStart = Stopwatch.GetTimestamp();
-                maximumTickLateness = Math.Max(maximumTickLateness, tickStart - nextTick);
 
                 for (int index = 0; index < 16 && !server.Stopping &&
                     consoleCommands.Reader.TryRead(out string? command); index++)
@@ -205,8 +218,6 @@ internal static class Program
                     break;
 
                 server.Tick();
-                long tickDurationTicks = Stopwatch.GetTimestamp() - tickStart;
-                slowestTickDuration = Math.Max(slowestTickDuration, tickDurationTicks);
 
                 if (ticks == 0)
                 {
@@ -220,17 +231,41 @@ internal static class Program
                     if (reportDuration >= Stopwatch.Frequency)
                     {
                         double ticksPerSecond = (ticks - 1) * (double)Stopwatch.Frequency / reportDuration;
-                        if (ticksPerSecond < MinimumTickRate)
-                            Log.Warn(
-                                $"Server tick rate is below 19 TPS: {ticksPerSecond:F2} TPS " +
-                                $"({1000 / ticksPerSecond:F2} ms average interval, " +
-                                $"{slowestTickDuration * 1000.0 / Stopwatch.Frequency:F2} ms slowest tick, " +
-                                $"{maximumTickLateness * 1000.0 / Stopwatch.Frequency:F2} ms max start lateness)."
-                            );
+                        TimeSpan gcPauseDuration = GC.GetTotalPauseDuration();
+                        double gcPauseMilliseconds = Math.Max(
+                            (gcPauseDuration - lastGcPauseDuration).TotalMilliseconds,
+                            0
+                        );
+                        lastGcPauseDuration = gcPauseDuration;
+                        int gen0Collections = GC.CollectionCount(0);
+                        int gen1Collections = GC.CollectionCount(1);
+                        int gen2Collections = GC.CollectionCount(2);
+                        int gen0CollectionsInSample = gen0Collections - lastGen0CollectionCount;
+                        int gen1CollectionsInSample = gen1Collections - lastGen1CollectionCount;
+                        int gen2CollectionsInSample = gen2Collections - lastGen2CollectionCount;
+                        lastGen0CollectionCount = gen0Collections;
+                        lastGen1CollectionCount = gen1Collections;
+                        lastGen2CollectionCount = gen2Collections;
+                        if (ticksPerSecond < WarningTickRate)
+                        {
+                            double averageMilliseconds = server.Ticks.AverageMilliseconds;
+                            double lastMilliseconds = server.Ticks.LastMilliseconds;
+                            double peakMilliseconds = server.Ticks.MaximumMilliseconds;
+                            string averageColor = averageMilliseconds >= 40 ? "§c" : averageMilliseconds >= 20 ? "§e" : "§a";
+                            string lastColor = lastMilliseconds >= 40 ? "§c" : lastMilliseconds >= 20 ? "§e" : "§a";
+                            string peakColor = peakMilliseconds >= 40 ? "§c" : peakMilliseconds >= 20 ? "§e" : "§a";
+                            string gcColor = gcPauseMilliseconds >= 40 ? "§c" : gcPauseMilliseconds >= 20 ? "§e" : "§a";
+                            Log.Warn(FormattableString.Invariant(
+                                $"""
+                                §6Server Performance§r
+                                §8` §7TPS (§c{ticksPerSecond:F2}§7)  MSPT ({averageColor}{averageMilliseconds:F3}§7)§r
+                                §8` §7Tick ({lastColor}{lastMilliseconds:F3}§7 ms last, {peakColor}{peakMilliseconds:F3}§7 ms peak)§r
+                                §8` §7GC ({gcColor}{gcPauseMilliseconds:F2}§7 ms pause, Gen0/1/2 {gen0CollectionsInSample}/{gen1CollectionsInSample}/{gen2CollectionsInSample})§r
+                                """
+                            ));
+                        }
 
                         ticks = 1;
-                        slowestTickDuration = 0;
-                        maximumTickLateness = 0;
                         reportStart = tickStart;
                     }
                 }
@@ -238,7 +273,9 @@ internal static class Program
                 nextTick += tickDuration;
                 long now = Stopwatch.GetTimestamp();
                 if (nextTick <= now)
+                {
                     nextTick += ((now - nextTick) / tickDuration + 1) * tickDuration;
+                }
             }
 
             #endregion

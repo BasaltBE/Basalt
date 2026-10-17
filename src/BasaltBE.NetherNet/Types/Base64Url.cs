@@ -42,17 +42,17 @@ public static class Base64Url {
     }
 
     public static byte[] Decode(ReadOnlySpan<byte> value) {
-        int padding = value.Length != 0 && value[^1] == (byte)'='
-            ? value.Length > 1 && value[^2] == (byte)'=' ? 2 : 1
-            : 0;
-        int unpaddedLength = value.Length - padding;
-        int remainder = unpaddedLength & 3;
-        int requiredPadding = (4 - remainder) & 3;
-        if (remainder == 1 || padding != 0 && padding != requiredPadding)
-            throw new InvalidDataException("Base64Url data is invalid.");
+        int outputLength = GetDecodedLength(value, out _, out _, out _);
+        byte[] output = GC.AllocateUninitializedArray<byte>(outputLength);
+        Decode(value, output);
+        return output;
+    }
 
-        int paddedLength = checked((value.Length + requiredPadding - padding + 3) & ~3);
-        int outputLength = paddedLength / 4 * 3 - (padding == 0 ? requiredPadding : padding);
+    public static int Decode(ReadOnlySpan<byte> value, Span<byte> output) {
+        int outputLength = GetDecodedLength(value, out int paddedLength, out int padding, out int requiredPadding);
+        if (output.Length < outputLength)
+            throw new ArgumentException("Output buffer is too small.", nameof(output));
+
         byte[] characters = ArrayPool<byte>.Shared.Rent(paddedLength);
         try {
             Span<byte> encoded = characters.AsSpan(0, paddedLength);
@@ -65,14 +65,32 @@ public static class Base64Url {
                 };
             encoded[value.Length..].Fill((byte)'=');
 
-            byte[] output = GC.AllocateUninitializedArray<byte>(outputLength);
-            OperationStatus status = Base64.DecodeFromUtf8(encoded, output, out int consumed, out int written);
+            OperationStatus status = Base64.DecodeFromUtf8(encoded, output[..outputLength], out int consumed, out int written);
             if (status != OperationStatus.Done || consumed != paddedLength || written != outputLength)
                 throw new InvalidDataException("Base64Url data is invalid.");
-            return output;
+            return written;
         }
         finally {
             ArrayPool<byte>.Shared.Return(characters, clearArray: true);
         }
+    }
+
+    private static int GetDecodedLength(
+        ReadOnlySpan<byte> value,
+        out int paddedLength,
+        out int padding,
+        out int requiredPadding
+    ) {
+        padding = value.Length != 0 && value[^1] == (byte)'='
+            ? value.Length > 1 && value[^2] == (byte)'=' ? 2 : 1
+            : 0;
+        int unpaddedLength = value.Length - padding;
+        int remainder = unpaddedLength & 3;
+        requiredPadding = (4 - remainder) & 3;
+        if (remainder == 1 || padding != 0 && padding != requiredPadding)
+            throw new InvalidDataException("Base64Url data is invalid.");
+
+        paddedLength = checked((value.Length + requiredPadding - padding + 3) & ~3);
+        return paddedLength / 4 * 3 - (padding == 0 ? requiredPadding : padding);
     }
 }

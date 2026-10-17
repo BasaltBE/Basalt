@@ -3,10 +3,12 @@ using BasaltBE.Basalt.Entities.Attributes;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Events.Entities;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Basalt.Worlds.Dimensions;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -21,6 +23,9 @@ public class Entity
     public readonly float HeadOffset;
     public readonly Vec2 Rotation = new();
     public float HeadRotation;
+    internal Dimension? SpawnedDimension;
+    internal ulong DeathDespawnTick;
+    public bool Dead;
 
     public Entity(EntityType? type = null, float headOffset = 0)
     {
@@ -37,6 +42,18 @@ public class Entity
         }
     }
 
+    public Entity(string identifier, float headOffset = 0)
+        : this(Resolve(identifier), headOffset)
+    {
+    }
+
+    private static EntityType Resolve(string identifier)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+        return EntityPalette.Find(identifier)
+            ?? throw new KeyNotFoundException($"Entity type '{identifier}' was not found.");
+    }
+
     public long UniqueId = Interlocked.Increment(ref nextUniqueId);
     public ulong RuntimeId = checked((ulong)Interlocked.Increment(ref nextRuntimeId));
     public EntityType? Type;
@@ -50,6 +67,23 @@ public class Entity
     /// Returns a new head-position snapshot.
     /// </summary>
     public Vec3 GetHeadPosition() => new() { X = Position.X, Y = Position.Y + HeadOffset, Z = Position.Z };
+
+    public void Spawn(Dimension dimension)
+    {
+        ArgumentNullException.ThrowIfNull(dimension);
+        if (Type is null)
+            throw new InvalidOperationException("An entity requires a type before it can spawn.");
+        if (this is Player)
+            throw new InvalidOperationException("Players are spawned through the network login flow.");
+        dimension.AddEntity(this);
+    }
+
+    public void Despawn()
+    {
+        if (this is Player)
+            throw new InvalidOperationException("Players are removed through the network connection.");
+        SpawnedDimension?.RemoveEntity(this);
+    }
 
     public void AddTrait(EntityTrait trait)
     {
@@ -124,6 +158,8 @@ public class Entity
     public void OnDespawn() => Dispatch(static trait => trait.OnDespawn());
     public void OnDeath() => Dispatch(static trait => trait.OnDeath());
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
+    public void OnDeath(EntityDeathEvent death) => Dispatch(trait => trait.OnDeath(death));
+    public void OnHurt(EntityHurtEvent hurt) => Dispatch(trait => trait.OnHurt(hurt));
     public void OnMove() => Dispatch(static trait => trait.OnMove());
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
 
@@ -162,24 +198,36 @@ public class Entity
     public void Tick()
     {
         Dispatch(static trait => trait.Tick());
-        if (this is not Player player || !player.Spawned || player.Disposed)
-            return;
-
-        ulong tick = player.Network.Server.TickValue;
-        if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } attributes)
-            player.Dimension.Broadcast(attributes, entity: player);
-        if (Flags.Dirty)
-            player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), entity: player);
-        bool permissionsChanged = Volatile.Read(ref player.Permissions.Dirty);
-        if (permissionsChanged)
-            Volatile.Write(ref player.Permissions.Dirty, false);
-        if (player.Abilities.Dirty || permissionsChanged)
-            player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), entity: player);
-        if (permissionsChanged)
+        if (this is Player player)
         {
-            var commands = player.Network.Server.Commands.GetCatalog(player.Permissions);
-            player.Network.SendSerializedPacket(player, commands.Packet, commands.Payload);
+            if (!player.Spawned || player.Disposed)
+                return;
+
+            ulong tick = player.Network.Server.TickValue;
+            if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } playerAttributes)
+                player.Dimension.Broadcast(playerAttributes, entity: player);
+            if (Flags.Dirty)
+                player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), entity: player);
+            bool permissionsChanged = Volatile.Read(ref player.Permissions.Dirty);
+            if (permissionsChanged)
+                Volatile.Write(ref player.Permissions.Dirty, false);
+            if (player.Abilities.Dirty || permissionsChanged)
+                player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), entity: player);
+            if (permissionsChanged)
+            {
+                var commands = player.Network.Server.Commands.GetCatalog(player.Permissions);
+                player.Network.SendSerializedPacket(player, commands.Packet, commands.Payload);
+            }
+            return;
         }
+
+        if (SpawnedDimension is not { } dimension)
+            return;
+        ulong entityTick = dimension.World?.TickValue ?? 0;
+        if (Attributes.CreateUpdate(RuntimeId, tick: entityTick) is { } attributes)
+            dimension.Broadcast(attributes, this);
+        if (Flags.Dirty)
+            dimension.Broadcast(Flags.CreateUpdate(RuntimeId, entityTick), this);
     }
 
     public void SetFlag(ActorFlag flag, bool enabled)

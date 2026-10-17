@@ -15,7 +15,9 @@ public sealed class World : IDisposable
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
     readonly ChunkGeneratorRegistry generators;
     readonly ChunkGenerationService generationService;
+    EventEmitter? events;
     int initialization;
+    internal ulong TickValue;
 
     public readonly string Identifier;
     public readonly TickMetrics Ticks = new();
@@ -36,6 +38,7 @@ public sealed class World : IDisposable
         if (Interlocked.CompareExchange(ref initialization, 1, 0) != 0)
             throw new InvalidOperationException($"World '{Identifier}' initialization has already started.");
 
+        this.events = events;
         configure(this);
         if (Dimensions.Count == 0)
             throw new InvalidOperationException($"World '{Identifier}' requires at least one dimension.");
@@ -67,6 +70,8 @@ public sealed class World : IDisposable
         }
 
         Dimension dimension = new(identifier, generator, generationService);
+        dimension.Events = events;
+        dimension.World = this;
         Dimensions.Add(identifier, dimension);
         return dimension;
     }
@@ -113,9 +118,22 @@ public sealed class World : IDisposable
     public void Tick()
     {
         long start = Stopwatch.GetTimestamp();
+        TickValue++;
         foreach (Dimension dimension in Dimensions.Values)
         {
             dimension.DrainGeneratedChunks();
+            foreach (Entity entity in dimension.GetEntities())
+            {
+                if (entity is not Player && entity.Dead)
+                {
+                    if (entity.DeathDespawnTick <= TickValue)
+                        dimension.RemoveEntity(entity);
+                    continue;
+                }
+
+                if (entity is not Player)
+                    entity.Tick();
+            }
             dimension.EntityIndex.Update(dimension.GetEntities());
         }
         Ticks.Record(start);

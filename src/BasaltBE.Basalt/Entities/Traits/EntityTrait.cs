@@ -1,11 +1,13 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Events.Entities;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
-public abstract class EntityTrait(Entity entity) {
+public abstract class EntityTrait(Entity entity)
+{
     public readonly Entity Entity = entity;
 
     public virtual void OnAdd() { }
@@ -14,6 +16,8 @@ public abstract class EntityTrait(Entity entity) {
     public virtual void OnDespawn() { }
     public virtual void OnDeath() { }
     public virtual void OnHurt() { }
+    public virtual void OnHurt(EntityHurtEvent hurt) => OnHurt();
+    public virtual void OnDeath(EntityDeathEvent death) => OnDeath();
     public virtual void OnMove() { }
     public virtual void OnAttack() { }
     public virtual void OnAttack(Entity target, ItemStack? item) => OnAttack();

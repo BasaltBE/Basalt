@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Protocol.Enums;
 using Xunit;
@@ -13,7 +14,7 @@ public sealed class PlayerSkinTests
         ClientData data = new()
         {
             SkinId = "skin",
-            SkinData = Convert.ToBase64String(new byte[64 * 64 * 4]),
+            SkinData = new byte[64 * 64 * 4],
             SkinImageWidth = 64,
             SkinImageHeight = 64,
             SkinResourcePatch = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"geometry\":{\"default\":\"geometry.humanoid.custom\"}}")),
@@ -38,8 +39,25 @@ public sealed class PlayerSkinTests
     [Fact]
     public void InvalidDimensionsAreRejected()
     {
-        ClientData data = new() { SkinImageWidth = 64, SkinImageHeight = 64, SkinData = "AAAA" };
+        ClientData data = new() { SkinImageWidth = 64, SkinImageHeight = 64, SkinData = [0, 0, 0] };
         Assert.Throws<InvalidDataException>(() => data.CreateSkin());
+    }
+
+    [Fact]
+    public void LoginReadsStandardAndUrlSafeSkinBase64IntoOwnedBytes()
+    {
+        byte[] image = [0xFB, 0xFF, 0xF0, 0x00];
+        string standardBase64 = Convert.ToBase64String(image);
+        string urlSafeBase64 = standardBase64.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        foreach (string encodedImage in new[] { standardBase64, urlSafeBase64 })
+        {
+            byte[] json = Encoding.UTF8.GetBytes($"{{\"SkinData\":\"{encodedImage}\",\"SkinImageWidth\":1,\"SkinImageHeight\":1}}");
+            ClientData data = JsonSerializer.Deserialize<ClientData>(json, LoginJson.Options)!;
+
+            Assert.Equal(image, data.SkinData);
+            Assert.Same(data.SkinData, data.CreateSkin().ImageData.ImageBytes);
+        }
     }
 
     [Fact]

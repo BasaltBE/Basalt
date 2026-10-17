@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
@@ -28,6 +29,8 @@ public sealed class Dimension : IDisposable
 
     public readonly string Identifier;
     public readonly IChunkGenerator Generator;
+    internal World? World;
+    internal EventEmitter? Events;
 
     public Dimension(string identifier, IChunkGenerator generator)
     {
@@ -157,11 +160,15 @@ public sealed class Dimension : IDisposable
             throw new ArgumentException("Add players through World.AddPlayer.", nameof(entity));
         lock (playersSync)
         {
+            if (entity.SpawnedDimension is not null)
+                throw new InvalidOperationException("Entity already belongs to a dimension.");
             if (!entities.TryAdd(entity.RuntimeId, entity))
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Ready = false;
+            entity.SpawnedDimension = this;
         }
+        entity.OnSpawn();
     }
 
     public bool RemoveEntity(Entity entity)
@@ -175,8 +182,10 @@ public sealed class Dimension : IDisposable
                 return false;
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Ready = false;
-            return true;
+            entity.SpawnedDimension = null;
         }
+        entity.OnDespawn();
+        return true;
     }
 
     public bool Empty
@@ -297,6 +306,7 @@ public sealed class Dimension : IDisposable
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Ready = false;
+            player.SpawnedDimension = this;
             Player[] current = players;
             Player[] expanded = new Player[current.Length + 1];
             current.CopyTo(expanded, 0);
@@ -315,6 +325,7 @@ public sealed class Dimension : IDisposable
             if (index < 0)
                 return;
             entities.Remove(player.RuntimeId);
+            player.SpawnedDimension = null;
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Ready = false;
 

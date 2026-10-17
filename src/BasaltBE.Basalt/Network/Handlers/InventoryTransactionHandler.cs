@@ -13,7 +13,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class InventoryTransactionHandler {
     private const float BlockReachSquared = 6 * 6;
-    private const float EntityReachSquared = 4 * 4;
+    private const float EntityReachSquared = 3 * 3;
     [ThreadStatic]
     private static UpdateBlockPacket? blockUpdate;
 
@@ -33,7 +33,7 @@ internal sealed class InventoryTransactionHandler {
             if (player.Disposed || !player.Spawned || inventory is null)
                 return;
 
-            if (legacyRequestId != 0 && transaction is not ItemUseInventoryTransaction) {
+            if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction)) {
                 player.Network.SendPacket(player, new ItemStackResponsePacket {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
@@ -49,12 +49,22 @@ internal sealed class InventoryTransactionHandler {
                 ItemUseOnActorInventoryTransaction actor => (actor.Slot, actor.Hand, actor.Item, actor.FromPosition),
                 _ => (-1, HandSlot.Mainhand, null, null)
             };
+            bool attack = transaction is ItemUseOnActorInventoryTransaction {
+                ActionType: ItemUseOnActorInventoryTransactionActionType.Attack or
+                    ItemUseOnActorInventoryTransactionActionType.ItemInteract
+            };
             if (descriptor is null || origin is null || hand != HandSlot.Mainhand ||
                 (uint)slot >= 9 || slot != inventory.SelectedSlot ||
                 !float.IsFinite(origin.X) || !float.IsFinite(origin.Y) || !float.IsFinite(origin.Z)) {
+                if (attack)
+                    Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: slot={slot}, selected={inventory.SelectedSlot}, hand={hand}.");
                 return;
             }
-            if (!inventory.MatchesItem(slot, descriptor, out var item)) {
+            ItemStack? item;
+            if (attack) {
+                item = inventory.Inventory.GetItem(slot);
+            }
+            else if (!inventory.MatchesItem(slot, descriptor, out item)) {
                 if (transaction is ItemUseInventoryTransaction { ActionType: ItemUseInventoryTransactionActionType.Place } predicted)
                     RepairPlacement(player, predicted);
                 inventory.Inventory.UpdateSlot(slot);
@@ -93,24 +103,54 @@ internal sealed class InventoryTransactionHandler {
                         ItemUseOnActorInventoryTransactionActionType.ItemInteract or
                         ItemUseOnActorInventoryTransactionActionType.Attack) ||
                         !float.IsFinite(actor.HitPosition.X) || !float.IsFinite(actor.HitPosition.Y) ||
-                        !float.IsFinite(actor.HitPosition.Z))
+                        !float.IsFinite(actor.HitPosition.Z)) {
+                        if (attack)
+                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: invalid hit position.");
                         return;
+                    }
 
                     Entity? target = player.Dimension.GetEntity(actor.RuntimeId);
-                    if (target is null || ReferenceEquals(target, player) ||
+                    if (target is null || target.Dead || ReferenceEquals(target, player) ||
                         target is Player targetPlayer && (targetPlayer.Disposed || !targetPlayer.Spawned ||
-                        !ReferenceEquals(targetPlayer.Dimension, player.Dimension)))
+                        !ReferenceEquals(targetPlayer.Dimension, player.Dimension))) {
+                        if (attack)
+                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is missing or unavailable.");
                         return;
+                    }
 
-                    float targetX = target.Position.X - player.Position.X;
-                    float targetY = target.Position.Y - player.Position.Y;
-                    float targetZ = target.Position.Z - player.Position.Z;
-                    float distanceSquared = targetX * targetX + targetY * targetY + targetZ * targetZ;
-                    if (!float.IsFinite(distanceSquared) || distanceSquared > EntityReachSquared)
+                    float targetWidth = target.Type?.PropertiesPayload?.Components.CollisionBox?.Width is double width &&
+                        double.IsFinite(width) && width > 0 && width <= float.MaxValue
+                            ? (float)width
+                            : 0.6f;
+                    float targetHeight = target.Type?.PropertiesPayload?.Components.CollisionBox?.Height is double height &&
+                        double.IsFinite(height) && height > 0 && height <= float.MaxValue
+                            ? (float)height
+                            : 1.8f;
+                    float eyeX = player.Position.X;
+                    float eyeY = player.Position.Y + player.HeadOffset;
+                    float eyeZ = player.Position.Z;
+                    float closestX = Math.Clamp(eyeX, target.Position.X - targetWidth * 0.5f, target.Position.X + targetWidth * 0.5f);
+                    float closestY = Math.Clamp(eyeY, target.Position.Y, target.Position.Y + targetHeight);
+                    float closestZ = Math.Clamp(eyeZ, target.Position.Z - targetWidth * 0.5f, target.Position.Z + targetWidth * 0.5f);
+                    float distanceX = eyeX - closestX;
+                    float distanceY = eyeY - closestY;
+                    float distanceZ = eyeZ - closestZ;
+                    float distanceSquared = distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ;
+                    if (!float.IsFinite(distanceSquared) || distanceSquared > EntityReachSquared) {
+                        if (attack)
+                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is out of reach ({MathF.Sqrt(distanceSquared):0.##} blocks).");
                         return;
+                    }
 
-                    if (actor.ActionType == ItemUseOnActorInventoryTransactionActionType.Attack)
+                    if (attack)
+                    {
                         player.OnAttack(target, item);
+                        if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health)
+                        {
+                            float damage = player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1;
+                            health.ApplyDamage(damage, EntityDamageCause.Entity, player);
+                        }
+                    }
                     else
                         player.OnUseItemOnEntity(item, target, actor.HitPosition);
                     break;

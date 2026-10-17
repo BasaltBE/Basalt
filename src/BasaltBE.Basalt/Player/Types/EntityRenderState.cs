@@ -1,3 +1,5 @@
+using BasaltBE.Basalt.Entities.Traits;
+
 namespace BasaltBE.Basalt.Entities.Types;
 
 internal sealed class EntityRenderState(Entity entity)
@@ -10,4 +12,5 @@ internal sealed class EntityRenderState(Entity entity)
     internal float Pitch = entity.Rotation.X;
     internal float Yaw = entity.Rotation.Y;
     internal float HeadYaw = entity.HeadRotation;
+    internal bool Grounded = entity.GetTrait<EntityMovementTrait>()?.Grounded ?? false;
 }

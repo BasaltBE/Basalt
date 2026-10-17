@@ -1,3 +1,4 @@
+using System.Buffers;
 using BasaltBE.NetherNet.Enums;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Logging;
@@ -65,12 +66,18 @@ public sealed class NethernetConnection : IAsyncDisposable {
             int offset = 0;
             do {
                 int length = Math.Min(fragmentLength, payload.Length - offset);
-                byte[] frame = GC.AllocateUninitializedArray<byte>(length + 1);
-                frame[0] = checked((byte)(fragmentCount - 1 - offset / fragmentLength));
-                payload.Span.Slice(offset, length).CopyTo(frame.AsSpan(1));
-                if (channel.readyState != RTCDataChannelState.open) throw new PeerDisconnectedException(Peer);
-                channel.send(frame);
-                Log.Debug($"Data-channel frame to {Peer.NetworkId}/{Peer.ConnectionId}: {channel.label}, {frame.Length} bytes");
+                int frameLength = length + 1;
+                byte[] frame = ArrayPool<byte>.Shared.Rent(frameLength);
+                try {
+                    frame[0] = checked((byte)(fragmentCount - 1 - offset / fragmentLength));
+                    payload.Span.Slice(offset, length).CopyTo(frame.AsSpan(1));
+                    if (channel.readyState != RTCDataChannelState.open) throw new PeerDisconnectedException(Peer);
+                    channel.send(frame, 0, frameLength);
+                    Log.Debug($"Data-channel frame to {Peer.NetworkId}/{Peer.ConnectionId}: {channel.label}, {frameLength} bytes");
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(frame, clearArray: true);
+                }
                 offset += length;
             } while (offset < payload.Length);
         }
@@ -124,6 +131,12 @@ public sealed class NethernetConnection : IAsyncDisposable {
         if (frame.Length == 0) { End(new InvalidDataException("NetherNet frame is empty.")); return; }
         lock (receiveSync) {
             int remaining = frame[0];
+            int payloadLength = frame.Length - 1;
+            int fragmentLimit = isReliable ? reliableFragmentLength : unreliableFragmentLength;
+            if (payloadLength > fragmentLimit || payloadLength > maximumPacketLength) {
+                End(new InvalidDataException("NetherNet frame exceeds the configured packet limit."));
+                return;
+            }
             if (!isReliable && remaining != 0) {
                 fragmentLength = 0;
                 expectedFragment = -1;
@@ -131,9 +144,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
                 return;
             }
             if (!isReliable) {
-                byte[] unreliablePayload = GC.AllocateUninitializedArray<byte>(frame.Length - 1);
-                frame.AsSpan(1).CopyTo(unreliablePayload);
-                MessageHandler?.Invoke(new NethernetMessage(Peer, MessageReliability.Unreliable, unreliablePayload));
+                MessageHandler?.Invoke(new NethernetMessage(Peer, MessageReliability.Unreliable, frame.AsMemory(1)));
                 return;
             }
             if (expectedFragment >= 0 && remaining != expectedFragment - 1) {
@@ -142,14 +153,13 @@ public sealed class NethernetConnection : IAsyncDisposable {
                 End(new InvalidDataException("NetherNet fragment order is invalid."));
                 return;
             }
-            int payloadLength = frame.Length - 1;
-            int fragmentLimit = isReliable ? reliableFragmentLength : unreliableFragmentLength;
-            if (payloadLength > fragmentLimit) {
-                End(new InvalidDataException("NetherNet frame exceeds the configured fragment limit."));
-                return;
-            }
             if (fragmentLength + payloadLength > maximumPacketLength) {
                 End(new InvalidDataException("NetherNet packet exceeds the configured limit."));
+                return;
+            }
+            if (remaining == 0 && fragmentLength == 0) {
+                expectedFragment = -1;
+                MessageHandler?.Invoke(new NethernetMessage(Peer, MessageReliability.Reliable, frame.AsMemory(1)));
                 return;
             }
             int required = fragmentLength + payloadLength;

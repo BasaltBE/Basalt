@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using BasaltBE.Basalt.Profiling;
@@ -45,10 +46,20 @@ internal static class LoginTokenParser
                 DSASignatureFormat.IeeeP1363FixedFieldConcatenation))
             throw new CryptographicException("Bedrock client token signature is invalid.");
 
-        byte[] clientDataJson = Base64Url.Decode(token[(firstDot + 1)..secondDot]);
-        ClientData client = JsonSerializer.Deserialize<ClientData>(clientDataJson, LoginJson.Options)
-            ?? throw new InvalidDataException("Client data is missing.");
-        return new ClientTokenData(client, clientKey.ExportParameters(false));
+        ReadOnlySpan<byte> encodedClientData = token[(firstDot + 1)..secondDot];
+        byte[] clientDataJson = ArrayPool<byte>.Shared.Rent(encodedClientData.Length);
+        try
+        {
+            int clientDataLength = Base64Url.Decode(encodedClientData, clientDataJson);
+            ClientData client = JsonSerializer.Deserialize<ClientData>(
+                clientDataJson.AsSpan(0, clientDataLength), LoginJson.Options)
+                ?? throw new InvalidDataException("Client data is missing.");
+            return new ClientTokenData(client, clientKey.ExportParameters(false));
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(clientDataJson, clearArray: true);
+        }
     }
 
     private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset)

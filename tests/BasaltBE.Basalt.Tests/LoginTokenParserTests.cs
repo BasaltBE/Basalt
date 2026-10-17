@@ -60,6 +60,50 @@ public sealed class LoginTokenParserTests {
         Assert.Throws<CryptographicException>(() => LoginTokenParser.Parse(CreateConnectionRequest("{\"AuthenticationType\":0,\"Token\":\"\"}", clientToken)));
     }
 
+    [Fact]
+    public void ParseReadsLargeSkinDataFromPooledClientPayload() {
+        using ECDsa clientKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
+        ClientData client = new() {
+            SkinData = new byte[128 * 128 * 4],
+            SkinImageWidth = 128,
+            SkinImageHeight = 128
+        };
+        byte[] clientJson = JsonSerializer.SerializeToUtf8Bytes(client, LoginJson.Options);
+        string header = Base64Url.Encode(JsonSerializer.SerializeToUtf8Bytes(new {
+            alg = "ES384",
+            x5u = Base64Url.Encode(clientKey.ExportSubjectPublicKeyInfo())
+        }));
+        string payload = Base64Url.Encode(clientJson);
+        string signingInput = $"{header}.{payload}";
+        byte[] signature = clientKey.SignData(Encoding.ASCII.GetBytes(signingInput), HashAlgorithmName.SHA384,
+            DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        string clientToken = $"{signingInput}.{Base64Url.Encode(signature)}";
+        byte[] connectionRequest = CreateConnectionRequest(
+            "{\"AuthenticationType\":0,\"Token\":\"\"}", clientToken);
+
+        ClientData parsed = LoginTokenParser.Parse(connectionRequest).Client.Client;
+
+        Assert.Equal(client.SkinData, parsed.SkinData);
+    }
+
+    [Fact]
+    public void Base64UrlDecodesIntoCallerBuffer() {
+        byte[] expected = [0xFB, 0xFF, 0xF0, 0x00];
+        string[] encodedValues = [
+            Base64Url.Encode(expected),
+            Convert.ToBase64String(expected)
+        ];
+
+        foreach (string encodedValue in encodedValues) {
+            byte[] encoded = Encoding.ASCII.GetBytes(encodedValue);
+            byte[] output = new byte[encoded.Length];
+
+            int written = Base64Url.Decode(encoded, output);
+
+            Assert.Equal(expected, output.AsSpan(0, written).ToArray());
+        }
+    }
+
     private static byte[] CreateConnectionRequest(string identityToken, string clientToken) {
         byte[] identity = Encoding.UTF8.GetBytes(identityToken);
         byte[] client = Encoding.UTF8.GetBytes(clientToken);

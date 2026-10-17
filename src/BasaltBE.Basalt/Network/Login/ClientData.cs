@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
@@ -13,7 +14,8 @@ internal sealed class ClientData
     public string DeviceModel = string.Empty;
     public int DeviceOS;
     public string SelfSignedId = string.Empty;
-    public string SkinData = string.Empty;
+    [JsonConverter(typeof(Base64UrlByteArrayConverter))]
+    public byte[] SkinData = [];
     public string SkinId = string.Empty;
     public uint SkinImageWidth;
     public uint SkinImageHeight;
@@ -46,7 +48,7 @@ internal sealed class ClientData
             Id = SkinId,
             FullId = SkinId,
             ResourcePatch = DecodeText(SkinResourcePatch),
-            ImageData = DecodeImage(SkinData, SkinImageWidth, SkinImageHeight),
+            ImageData = DecodeSkinImage(SkinData, SkinImageWidth, SkinImageHeight),
             CapeImageData = DecodeImage(CapeData, CapeImageWidth, CapeImageHeight),
             GeometryData = DecodeText(SkinGeometryData),
             GeometryDataMinEngineVersion = DecodeText(SkinGeometryDataEngineVersion),
@@ -136,6 +138,15 @@ internal sealed class ClientData
             throw new InvalidDataException("Skin image exceeds the size limit.");
         byte[] bytes = string.IsNullOrEmpty(value) ? [] : Base64Url.Decode(value.AsSpan());
         if ((ulong)bytes.Length != (ulong)width * height * 4)
+            throw new InvalidDataException("Skin image dimensions do not match its bytes.");
+        return new SkinImage { Width = width, Height = height, ImageBytes = bytes };
+    }
+
+    private static SkinImage DecodeSkinImage(byte[]? bytes, uint width, uint height)
+    {
+        if (width > 4096 || height > 4096 || (ulong)width * height * 4 > 2 * 1024 * 1024)
+            throw new InvalidDataException("Skin image exceeds the size limit.");
+        if (bytes is null || (ulong)bytes.Length != (ulong)width * height * 4)
             throw new InvalidDataException("Skin image dimensions do not match its bytes.");
         return new SkinImage { Width = width, Height = height, ImageBytes = bytes };
     }

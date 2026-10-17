@@ -30,7 +30,7 @@ public sealed class MultiplayerRenderingTests
         Assert.Equal(other.RuntimeId, Assert.IsType<SetActorDataPacket>(sent[2]).ActorRuntimeId);
         Assert.Equal(other.RuntimeId, add.RuntimeId);
         Assert.Equal(other.UniqueId, add.Abilities.TargetPlayerRawId);
-        Assert.Equal(other.Position.Y + 1.62f, add.Position.Y);
+        Assert.Equal(other.Position.Y, add.Position.Y);
         Assert.True(trait.Viewing(other));
         sent.Clear();
         trait.UpdateEntities([viewer, other], sent.Add);
