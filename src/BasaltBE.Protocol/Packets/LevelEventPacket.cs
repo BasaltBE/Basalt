@@ -13,14 +13,14 @@ public sealed class LevelEventPacket : DataPacket {
     public int Data;
 
     public override void Deserialize(ref BinaryReader reader) {
-        EventId = reader.ReadVarInt();
+        EventId = reader.ReadZigZag();
         Position.Read(ref reader);
-        Data = reader.ReadVarInt();
+        Data = reader.ReadZigZag();
     }
 
     public override void Serialize(ref BinaryWriter writer) {
-        writer.WriteVarInt(EventId);
+        writer.WriteZigZag(EventId);
         Position.Write(ref writer);
-        writer.WriteVarInt(Data);
+        writer.WriteZigZag(Data);
     }
 }

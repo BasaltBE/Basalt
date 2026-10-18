@@ -47,6 +47,9 @@ public sealed class Player : Entity, IDisposable
 
     public int ChunkRadius = 16;
     public bool Spawned;
+    internal BlockPos? BreakingBlock;
+    internal ulong BlockBreakStartTick;
+    internal uint BlockBreakDurationTicks;
     internal Container? OpenedContainer;
     internal int PendingCommands;
 

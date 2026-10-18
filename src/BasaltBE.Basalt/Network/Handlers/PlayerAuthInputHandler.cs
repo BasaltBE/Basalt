@@ -1,8 +1,11 @@
+using System.Numerics;
+using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
-using System.Numerics;
+using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -13,6 +16,14 @@ namespace BasaltBE.Basalt.Network.Handlers;
 internal sealed class PlayerAuthInputHandler
 {
     private const float MaximumCoordinate = 30_000_000;
+    private const ulong BreakToleranceTicks = 5;
+    private const uint MaximumBreakDurationTicks = 6000;
+    [ThreadStatic]
+    private static LevelEventPacket? blockBreakEvent;
+    [ThreadStatic]
+    private static UpdateBlockPacket? blockUpdate;
+    [ThreadStatic]
+    private static LevelSoundEventPacket? blockBreakSound;
     [ThreadStatic]
     private static MovePlayerPacket? movementUpdate;
     [ThreadStatic]
@@ -90,8 +101,7 @@ internal sealed class PlayerAuthInputHandler
                 correction.OnGround = movement.VerticalCollision && movement.Motion.Y <= 0;
                 player.Network.SendPacket(player, correction);
             }
-            finally
-            {
+            finally {
                 movementCorrection ??= correction;
             }
             return;
@@ -114,8 +124,7 @@ internal sealed class PlayerAuthInputHandler
                 {
                     player.Network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, packet.ClientTick.Tick));
                 }
-                finally
-                {
+                finally {
                     player.Flags.Dirty |= dirty;
                 }
             }
@@ -181,13 +190,18 @@ internal sealed class PlayerAuthInputHandler
                 movement.BroadcastHeadRotation = headYaw;
                 movement.BroadcastOnGround = onGround;
             }
-            finally
-            {
+            finally {
                 movementUpdate ??= update;
             }
         }
         if (moved)
             player.OnMove();
+
+        if (packet.PlayerBlockActions is { Length: > 0 } blockActions)
+        {
+            foreach (PlayerBlockActionData action in blockActions)
+                HandleBlockAction(player, action, packet.ClientTick.Tick);
+        }
 
         if (inputs[(int)PlayerAuthInputData.PerformItemStackRequest] && packet.ItemStackRequest is { } request)
         {
@@ -196,6 +210,308 @@ internal sealed class PlayerAuthInputHandler
             {
                 Responses = [response]
             });
+        }
+    }
+
+    private static void HandleBlockAction(Player player, PlayerBlockActionData action, ulong tick)
+    {
+        switch (action.PlayerActionType)
+        {
+            case PlayerActionType.StartDestroyBlock:
+            case PlayerActionType.CrackBlock:
+                StartBlockBreak(player, action.Position, tick);
+                break;
+            case PlayerActionType.ContinueDestroyBlock:
+                if (player.BreakingBlock is null || !SameBlock(player.BreakingBlock, action.Position))
+                    StartBlockBreak(player, action.Position, tick);
+                else if (player.BlockBreakDurationTicks > 1)
+                {
+                    LevelEventPacket crack = blockBreakEvent ?? new();
+                    blockBreakEvent = null;
+                    try
+                    {
+                        crack.Position.X = action.Position.X + 0.5f;
+                        crack.Position.Y = action.Position.Y + 0.5f;
+                        crack.Position.Z = action.Position.Z + 0.5f;
+                        crack.EventId = (int)LevelEvent.UpdateBlockCracking;
+                        crack.Data = (int)Math.Max(1U, ushort.MaxValue / player.BlockBreakDurationTicks);
+                        player.Dimension.Broadcast(crack, crack.Position);
+                    }
+                    finally {
+                        blockBreakEvent ??= crack;
+                    }
+                }
+                break;
+            case PlayerActionType.AbortDestroyBlock:
+            case PlayerActionType.StopDestroyBlock:
+                StopBlockBreak(player);
+                break;
+            case PlayerActionType.PredictDestroyBlock:
+                PredictBlockBreak(player, action.Position, tick);
+                break;
+            case PlayerActionType.CreativeDestroyBlock:
+                if (player.Abilities.Get(PlayerAbility.InstantBuild))
+                {
+                    StopBlockBreak(player);
+                    DestroyBlock(player, action.Position);
+                }
+                break;
+        }
+    }
+
+    private static void StartBlockBreak(Player player, BlockPos position, ulong tick)
+    {
+        bool canMine = player.Abilities.Get(PlayerAbility.Mine);
+        bool validTarget = ValidBlockTarget(player, position);
+        if (!canMine || !validTarget)
+        {
+            StopBlockBreak(player);
+            return;
+        }
+
+        if (player.BreakingBlock is { } current && SameBlock(current, position))
+            return;
+        StopBlockBreak(player);
+
+        BlockPermutation block = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
+        BlockType? type = BlockPalette.FindType(block.Identifier);
+        if (type is null || type.Hardness < 0)
+            return;
+
+        bool requiresTool = RequiresTool(type);
+        uint duration = BreakDurationTicks(type.Hardness, requiresTool);
+        if (duration == 0)
+            return;
+
+        player.BreakingBlock = new BlockPos { X = position.X, Y = position.Y, Z = position.Z };
+        player.BlockBreakStartTick = tick;
+        player.BlockBreakDurationTicks = duration;
+        if (duration <= 1)
+            return;
+
+        LevelEventPacket crack = blockBreakEvent ?? new();
+        blockBreakEvent = null;
+        try
+        {
+            crack.Position.X = position.X + 0.5f;
+            crack.Position.Y = position.Y + 0.5f;
+            crack.Position.Z = position.Z + 0.5f;
+            crack.EventId = (int)LevelEvent.StartBlockCracking;
+            crack.Data = unchecked((int)player.RuntimeId);
+            player.Dimension.Broadcast(crack, crack.Position);
+
+            crack.EventId = (int)LevelEvent.UpdateBlockCracking;
+            crack.Data = (int)Math.Max(1U, ushort.MaxValue / player.BlockBreakDurationTicks);
+            player.Dimension.Broadcast(crack, crack.Position);
+        }
+        finally {
+            blockBreakEvent ??= crack;
+        }
+    }
+
+    private static void PredictBlockBreak(Player player, BlockPos position, ulong tick)
+    {
+        BlockPos target = position.X == 0 && position.Y == 0 && position.Z == 0 && player.BreakingBlock is { } active
+            ? active
+            : position;
+        if (!ValidBlockTarget(player, target))
+        {
+            StopBlockBreak(player);
+            return;
+        }
+        if (!player.Abilities.Get(PlayerAbility.Mine))
+        {
+            StopBlockBreak(player);
+            SendBlockUpdate(player, target.X, target.Y, target.Z);
+            return;
+        }
+        if (player.Abilities.Get(PlayerAbility.InstantBuild))
+        {
+            StopBlockBreak(player);
+            DestroyBlock(player, target);
+            return;
+        }
+
+        bool valid = player.BreakingBlock is { } breaking && SameBlock(breaking, target) &&
+            tick >= player.BlockBreakStartTick;
+        if (valid)
+        {
+            ulong elapsed = tick - player.BlockBreakStartTick;
+            uint duration = player.BlockBreakDurationTicks;
+            valid = duration <= 1 || elapsed >= duration || duration - elapsed <= BreakToleranceTicks;
+        }
+
+        if (valid)
+        {
+            StopBlockBreak(player);
+            DestroyBlock(player, target);
+        }
+        else
+        {
+            StopBlockBreak(player);
+            SendBlockUpdate(player, target.X, target.Y, target.Z);
+        }
+    }
+
+    private static void DestroyBlock(Player player, BlockPos position)
+    {
+        if (!ValidBlockTarget(player, position))
+        {
+            SendBlockUpdate(player, position.X, position.Y, position.Z);
+            return;
+        }
+
+        BlockPermutation block = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
+        if (block == BlockStorage.Air)
+        {
+            SendBlockUpdate(player, position.X, position.Y, position.Z);
+            return;
+        }
+
+        int x = position.X;
+        int y = position.Y;
+        int z = position.Z;
+        Chunk chunk = player.Dimension.GetChunk(x >> 4, z >> 4)!;
+        chunk.SetBlockActor(x & 15, y, z & 15, null);
+        player.Dimension.SetPermutation(x, y, z, BlockStorage.Air);
+
+        LevelEventPacket particles = blockBreakEvent ?? new();
+        blockBreakEvent = null;
+        try
+        {
+            particles.EventId = (int)LevelEvent.ParticlesDestroyBlock;
+            particles.Position.X = x + 0.5f;
+            particles.Position.Y = y + 0.5f;
+            particles.Position.Z = z + 0.5f;
+            particles.Data = block.Hash;
+            player.Dimension.Broadcast(particles, particles.Position);
+        }
+        finally {
+            blockBreakEvent ??= particles;
+        }
+
+        UpdateBlockPacket update = blockUpdate ?? new();
+        blockUpdate = null;
+        try
+        {
+            update.Position.X = x;
+            update.Position.Y = y;
+            update.Position.Z = z;
+            update.BlockRuntimeId = unchecked((uint)BlockStorage.Air.Hash);
+            update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
+            update.Layer = 0;
+
+            LevelSoundEventPacket sound = blockBreakSound ?? new();
+            blockBreakSound = null;
+            try
+            {
+                sound.SoundEvent = "break";
+                sound.Position.X = x + 0.5f;
+                sound.Position.Y = y + 0.5f;
+                sound.Position.Z = z + 0.5f;
+                sound.Data = block.Hash;
+                sound.ActorUniqueId = -1;
+                player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: sound);
+            }
+            finally {
+                blockBreakSound ??= sound;
+            }
+        }
+        finally {
+            blockUpdate ??= update;
+        }
+    }
+
+    private static void StopBlockBreak(Player player)
+    {
+        if (player.BreakingBlock is not { } position)
+            return;
+
+        if (player.BlockBreakDurationTicks > 1)
+        {
+            LevelEventPacket stop = blockBreakEvent ?? new();
+            blockBreakEvent = null;
+            try
+            {
+                stop.EventId = (int)LevelEvent.StopBlockCracking;
+                stop.Position.X = position.X + 0.5f;
+                stop.Position.Y = position.Y + 0.5f;
+                stop.Position.Z = position.Z + 0.5f;
+                stop.Data = unchecked((int)player.RuntimeId);
+                player.Dimension.Broadcast(stop, stop.Position);
+            }
+            finally {
+                blockBreakEvent ??= stop;
+            }
+        }
+
+        player.BreakingBlock = null;
+        player.BlockBreakStartTick = 0;
+        player.BlockBreakDurationTicks = 0;
+    }
+
+    private static bool ValidBlockTarget(Player player, BlockPos position)
+    {
+        if (position.Y is < -64 or >= 320 || player.Dimension.GetChunk(position.X >> 4, position.Z >> 4) is null)
+            return false;
+
+        float deltaX = player.Position.X - position.X - 0.5f;
+        float deltaY = player.Position.Y + player.HeadOffset - position.Y - 0.5f;
+        float deltaZ = player.Position.Z - position.Z - 0.5f;
+        return deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ <= 36;
+    }
+
+    private static bool SameBlock(BlockPos left, BlockPos right) =>
+        left.X == right.X && left.Y == right.Y && left.Z == right.Z;
+
+    internal static uint BreakDurationTicks(float hardness, bool requiresTool)
+    {
+        if (!float.IsFinite(hardness) || hardness < 0)
+            return 0;
+        if (hardness == 0)
+            return 1;
+        float multiplier = requiresTool ? 5f : 1.5f;
+        if (hardness >= MaximumBreakDurationTicks / (multiplier * 20f))
+            return MaximumBreakDurationTicks;
+        return Math.Max(1U, (uint)MathF.Ceiling(hardness * multiplier * 20f));
+    }
+
+    private static bool RequiresTool(BlockType type)
+    {
+        foreach (string tag in type.Tags)
+        {
+            if (tag == "minecraft:is_pickaxe_item_destructible" ||
+                tag.EndsWith("_tier_destructible", StringComparison.Ordinal))
+                return true;
+        }
+        return false;
+    }
+
+    private static void SendBlockUpdate(Player player, int x, int y, int z)
+    {
+        if (y is < -64 or >= 320 || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk)
+            return;
+
+        UpdateBlockPacket update = blockUpdate ?? new();
+        blockUpdate = null;
+        try
+        {
+            update.Position.X = x;
+            update.Position.Y = y;
+            update.Position.Z = z;
+            update.BlockRuntimeId = unchecked((uint)chunk.GetPermutation(x & 15, y, z & 15).Hash);
+            update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
+            update.Layer = 0;
+            try
+            {
+                player.Network.SendPacket(player, update);
+            }
+            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException)
+            {
+            }
+        }
+        finally {
+            blockUpdate ??= update;
         }
     }
 }

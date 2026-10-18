@@ -10,13 +10,13 @@ public sealed class PlayerBlockActionData : DataType {
     public BlockPos Position = new();
     public int Facing;
     public override void Read(ref BinaryReader reader) {
-        PlayerActionType = (PlayerActionType)reader.ReadVarInt();
+        PlayerActionType = (PlayerActionType)reader.ReadZigZag();
         Position.Read(ref reader);
-        Facing = reader.ReadVarInt();
+        Facing = reader.ReadZigZag();
     }
     public override void Write(ref BinaryWriter writer) {
-        writer.WriteVarInt((int)PlayerActionType);
+        writer.WriteZigZag((int)PlayerActionType);
         Position.Write(ref writer);
-        writer.WriteVarInt(Facing);
+        writer.WriteZigZag(Facing);
     }
 }

@@ -18,8 +18,8 @@ public sealed class ItemEntity : Entity
     private const float PickupVerticalTolerance = 2f;
     private static readonly EntityType ItemType = new() { Identifier = "minecraft:item" };
     private readonly EntityMovementTrait movement;
-    private ulong mergeUnlockTick;
-    private ulong pickupUnlockTick;
+    private readonly ulong mergeUnlockTick;
+    private readonly ulong pickupUnlockTick;
     private ulong despawnTick;
     private ulong nextMergeTick;
 
