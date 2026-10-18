@@ -11,8 +11,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class Player : Entity, IDisposable
-{
+public sealed class Player : Entity, IDisposable {
     public readonly Lock Sync = new();
     internal readonly Lock TickSync = new();
     internal readonly NetworkServer Network;
@@ -69,8 +68,7 @@ public sealed class Player : Entity, IDisposable
         int deviceOS,
         string deviceName,
         byte[] skin
-    ) : base(EntityPalette.Find("minecraft:player"), 1.62f)
-    {
+    ) : base(EntityPalette.Find("minecraft:player"), 1.62f) {
         Network = network;
         World = world;
         Dimension = dimension;
@@ -84,13 +82,10 @@ public sealed class Player : Entity, IDisposable
         Skin = skin;
         Span<byte> uuidBytes = stackalloc byte[16];
         uuid.TryWriteBytes(uuidBytes, bigEndian: true, out _);
-        ListEntry = new PlayerListEntry
-        {
+        ListEntry = new PlayerListEntry {
             Action = PlayerListAction.Add,
-            AddEntry = new PlayerListAddEntry
-            {
-                Uuid = new Uuid
-                {
+            AddEntry = new PlayerListAddEntry {
+                Uuid = new Uuid {
                     MostSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes),
                     LeastSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes[8..])
                 },
@@ -115,10 +110,8 @@ public sealed class Player : Entity, IDisposable
         SetFlag(ActorFlag.CanClimb, true);
     }
 
-    public void Dispose()
-    {
-        lock (Sync)
-        {
+    public void Dispose() {
+        lock (Sync) {
             if (Disposed) return;
             Disposed = true;
         }

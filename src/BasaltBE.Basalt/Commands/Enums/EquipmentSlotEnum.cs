@@ -2,10 +2,8 @@ using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.Basalt.Commands.Enums;
 
-public sealed class EquipmentSlotEnum() : CommandEnum(CommandParameterType.EquipmentSlot)
-{
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+public sealed class EquipmentSlotEnum() : CommandEnum(CommandParameterType.EquipmentSlot) {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token) || token is not
             ("slot.weapon.mainhand" or "slot.weapon.offhand" or "slot.armor.head" or "slot.armor.chest" or

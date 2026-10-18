@@ -10,13 +10,11 @@ public sealed class CommandOutput : DataType {
     public CommandOutputMessage[] Messages = [];
     public string? DataSet;
 
-    public override void Read(ref BinaryReader reader)
-    {
+    public override void Read(ref BinaryReader reader) {
         Type = reader.ReadVarString();
         SuccessCount = reader.ReadUInt32(true);
         Messages = new CommandOutputMessage[checked((int)reader.ReadVarUInt())];
-        for (int index = 0; index < Messages.Length; index++)
-        {
+        for (int index = 0; index < Messages.Length; index++) {
             CommandOutputMessage message = new();
             message.Read(ref reader);
             Messages[index] = message;
@@ -24,8 +22,7 @@ public sealed class CommandOutput : DataType {
         DataSet = reader.ReadBool() ? reader.ReadVarString() : null;
     }
 
-    public override void Write(ref BinaryWriter writer)
-    {
+    public override void Write(ref BinaryWriter writer) {
         writer.WriteVarString(Type);
         writer.WriteUInt32(SuccessCount, true);
         writer.WriteVarUInt((uint)Messages.Length);

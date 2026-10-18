@@ -5,8 +5,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class PlayerAbilities
-{
+public sealed class PlayerAbilities {
     const uint BaseAbilities = (1U << (int)PlayerAbility.Build)
         | (1U << (int)PlayerAbility.Mine)
         | (1U << (int)PlayerAbility.DoorsAndSwitches)
@@ -31,8 +30,7 @@ public sealed class PlayerAbilities
 
     public bool Get(PlayerAbility ability) => (enabled & (1U << (int)ability)) != 0;
 
-    public bool Set(PlayerAbility ability, bool value)
-    {
+    public bool Set(PlayerAbility ability, bool value) {
         uint mask = 1U << (int)ability;
         bool changed = (controlled & mask) == 0 || Get(ability) != value;
         controlled |= mask;
@@ -44,8 +42,7 @@ public sealed class PlayerAbilities
         return changed;
     }
 
-    public bool SetSpeeds(float fly, float verticalFly, float walk)
-    {
+    public bool SetSpeeds(float fly, float verticalFly, float walk) {
         if (FlySpeed == fly && VerticalFlySpeed == verticalFly && WalkSpeed == walk)
             return false;
 
@@ -56,17 +53,14 @@ public sealed class PlayerAbilities
         return true;
     }
 
-    internal UpdateAbilitiesPacket CreateUpdate(long playerRawId, PlayerPermissions permissions)
-    {
+    internal UpdateAbilitiesPacket CreateUpdate(long playerRawId, PlayerPermissions permissions) {
         Dirty = false;
         return new UpdateAbilitiesPacket { Data = CreateData(playerRawId, permissions) };
     }
 
-    internal SerializedAbilitiesData CreateData(long playerRawId, PlayerPermissions permissions)
-    {
+    internal SerializedAbilitiesData CreateData(long playerRawId, PlayerPermissions permissions) {
         bool administrator = permissions.Contains("basalt.operator");
-        return new SerializedAbilitiesData
-        {
+        return new SerializedAbilitiesData {
             TargetPlayerRawId = playerRawId,
             PlayerPermissions = administrator ? PlayerPermissionLevel.Operator : PlayerPermissionLevel.Member,
             CommandPermissions = administrator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,

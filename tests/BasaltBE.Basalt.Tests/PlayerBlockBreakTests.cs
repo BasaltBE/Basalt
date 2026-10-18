@@ -9,8 +9,7 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
-public sealed class PlayerBlockBreakTests
-{
+public sealed class PlayerBlockBreakTests {
     [Theory]
     [InlineData(-1, true, 0)]
     [InlineData(0, false, 1)]
@@ -19,14 +18,12 @@ public sealed class PlayerBlockBreakTests
     [InlineData(0.5, true, 50)]
     [InlineData(1.5, true, 150)]
     [InlineData(100, true, 6000)]
-    public void BreakDurationUsesHandSpeedAndCapsLongBreaks(float hardness, bool requiresTool, uint expected)
-    {
+    public void BreakDurationUsesHandSpeedAndCapsLongBreaks(float hardness, bool requiresTool, uint expected) {
         Assert.Equal(expected, PlayerAuthInputHandler.BreakDurationTicks(hardness, requiresTool));
     }
 
     [Fact]
-    public void PredictDestroyBreaksBlockAtDurationMinusTolerance()
-    {
+    public void PredictDestroyBreaksBlockAtDurationMinusTolerance() {
         using MultiplayerFixture fixture = new();
         var player = fixture.CreatePlayer();
         player.Position.X = 0.5f;
@@ -48,8 +45,7 @@ public sealed class PlayerBlockBreakTests
     }
 
     [Fact]
-    public void EarlyPredictionKeepsBlockAndClearsBreakState()
-    {
+    public void EarlyPredictionKeepsBlockAndClearsBreakState() {
         using MultiplayerFixture fixture = new();
         var player = fixture.CreatePlayer();
         player.Position.X = 0.5f;
@@ -70,8 +66,7 @@ public sealed class PlayerBlockBreakTests
     }
 
     [Fact]
-    public void PredictionOutsideReachDoesNotBreakLoadedBlock()
-    {
+    public void PredictionOutsideReachDoesNotBreakLoadedBlock() {
         using MultiplayerFixture fixture = new();
         var player = fixture.CreatePlayer();
         player.Position.X = 0.5f;
@@ -89,8 +84,7 @@ public sealed class PlayerBlockBreakTests
         Assert.Same(stone, fixture.Dimension.GetPermutation(161, -57, 0));
     }
 
-    private static PlayerAuthInputPacket Input(ulong tick, PlayerActionType action, int x, int y, int z) => new()
-    {
+    private static PlayerAuthInputPacket Input(ulong tick, PlayerActionType action, int x, int y, int z) => new() {
         Position = new Vec3 { X = 0.5f, Y = -55.38f, Z = 0.5f },
         ClientTick = new PlayerInputTick { Tick = tick },
         PlayerBlockActions = [new PlayerBlockActionData

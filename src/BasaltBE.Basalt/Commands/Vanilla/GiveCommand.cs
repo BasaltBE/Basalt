@@ -7,10 +7,8 @@ using BasaltBE.Basalt.Items.Types;
 
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
-public sealed class GiveCommand : Command
-{
-    public GiveCommand() : base("give", "Give items to players.", "basalt.command.give")
-    {
+public sealed class GiveCommand : Command {
+    public GiveCommand() : base("give", "Give items to players.", "basalt.command.give") {
         AddOverload(
             new("player", new TargetEnum(playersOnly: true)),
             new("item", new ItemEnum()),
@@ -18,8 +16,7 @@ public sealed class GiveCommand : Command
         );
     }
 
-    public override CommandResult Execute(CommandContext context)
-    {
+    public override CommandResult Execute(CommandContext context) {
         Entity[] targets = context.Get<Entity[]>("player");
         ItemType item = context.Get<ItemType>("item");
         int amount = context.Get("amount", 1);
@@ -30,8 +27,7 @@ public sealed class GiveCommand : Command
 
         int given = 0;
         int recipients = 0;
-        foreach (Entity target in targets)
-        {
+        foreach (Entity target in targets) {
             if (target is not Player { Disposed: false, Spawned: true } player)
                 continue;
             using Lock.Scope tickSync = player.TickSync.EnterScope();

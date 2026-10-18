@@ -7,15 +7,12 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Network.Handlers;
 
-internal sealed class MobEquipmentHandler
-{
-    public void Handle(NethernetPeer peer, Player? player, MobEquipmentPacket packet)
-    {
+internal sealed class MobEquipmentHandler {
+    public void Handle(NethernetPeer peer, Player? player, MobEquipmentPacket packet) {
         if (player is null)
             throw new InvalidDataException("Equipment arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
-        lock (player.Sync)
-        {
+        lock (player.Sync) {
             if (player.Disposed || !player.Spawned ||
                 (packet.TargetRuntimeId != 0 && packet.TargetRuntimeId != player.RuntimeId) ||
                 packet.ContainerId != (byte)ContainerId.Inventory || packet.SelectedSlot >= 9)
@@ -26,8 +23,7 @@ internal sealed class MobEquipmentHandler
                 return;
 
             inventory.SelectedSlot = packet.SelectedSlot;
-            player.Dimension.Broadcast(new MobEquipmentPacket
-            {
+            player.Dimension.Broadcast(new MobEquipmentPacket {
                 TargetRuntimeId = player.RuntimeId,
                 Item = item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor(),
                 Slot = packet.SelectedSlot,

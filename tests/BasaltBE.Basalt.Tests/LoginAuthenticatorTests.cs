@@ -48,7 +48,8 @@ public sealed class LoginAuthenticatorTests {
             stopwatch.Stop();
 
             Assert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(100));
-        } finally {
+        }
+        finally {
             releaseRefresh.Set();
         }
     }

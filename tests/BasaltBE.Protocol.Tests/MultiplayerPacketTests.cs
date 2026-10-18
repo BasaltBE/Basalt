@@ -8,13 +8,10 @@ using Xunit;
 
 namespace BasaltBE.Protocol.Tests;
 
-public sealed class MultiplayerPacketTests
-{
+public sealed class MultiplayerPacketTests {
     [Fact]
-    public void PlayerListRemoveMatchesReferenceWireBytes()
-    {
-        PlayerListPacket packet = new()
-        {
+    public void PlayerListRemoveMatchesReferenceWireBytes() {
+        PlayerListPacket packet = new() {
             Entries = [new PlayerListEntry
             {
                 Action = PlayerListAction.Remove,
@@ -34,10 +31,8 @@ public sealed class MultiplayerPacketTests
     [Theory]
     [InlineData(64, 64)]
     [InlineData(128, 128)]
-    public void CachedAndTypedSkinsProduceIdenticalPlayerLists(int width, int height)
-    {
-        SerializedSkin skin = new()
-        {
+    public void CachedAndTypedSkinsProduceIdenticalPlayerLists(int width, int height) {
+        SerializedSkin skin = new() {
             Id = "test-skin",
             FullId = "test-skin",
             ResourcePatch = "{\"geometry\":{\"default\":\"geometry.humanoid.custom\"}}",
@@ -50,8 +45,7 @@ public sealed class MultiplayerPacketTests
         BinaryWriter skinWriter = skinStream.GetWriter();
         skin.Write(ref skinWriter);
         PlayerListAddEntry add = new() { ActorId = 123, Name = "Player", Xuid = "1234", Skin = skin, IsHost = true, PlayerColor = 123 };
-        PlayerListPacket packet = new()
-        {
+        PlayerListPacket packet = new() {
             Entries = [new PlayerListEntry { Action = PlayerListAction.Add, AddEntry = add }]
         };
         using BinaryStream typed = BinaryStream.Rent(128 * 1024);
@@ -79,8 +73,7 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void RawSkinSpanDoesNotAddAByteArrayLength()
-    {
+    public void RawSkinSpanDoesNotAddAByteArrayLength() {
         PlayerListAddEntry entry = new();
         using BinaryStream stream = BinaryStream.Rent(256);
         BinaryWriter writer = stream.GetWriter();
@@ -89,10 +82,8 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void PlayerListRejectsOversizedCountBeforeAllocation()
-    {
-        Assert.Throws<InvalidDataException>(() =>
-        {
+    public void PlayerListRejectsOversizedCountBeforeAllocation() {
+        Assert.Throws<InvalidDataException>(() => {
             byte[] data = [0xE9, 0x07];
             int offset = 0;
             BinaryReader reader = new(data, ref offset);
@@ -101,10 +92,8 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void PlayerListRejectsVariantActionMismatch()
-    {
-        Assert.Throws<InvalidDataException>(() =>
-        {
+    public void PlayerListRejectsVariantActionMismatch() {
+        Assert.Throws<InvalidDataException>(() => {
             byte[] data = [1, 0, 0];
             int offset = 0;
             BinaryReader reader = new(data, ref offset);
@@ -113,10 +102,8 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void MixedPlayerListEntriesRoundTrip()
-    {
-        PlayerListPacket packet = new()
-        {
+    public void MixedPlayerListEntriesRoundTrip() {
+        PlayerListPacket packet = new() {
             Entries = [
                 new PlayerListEntry { Action = PlayerListAction.Add, AddEntry = new PlayerListAddEntry { Name = "One" } },
                 new PlayerListEntry { Action = PlayerListAction.Remove, RemoveEntry = new PlayerListRemoveEntry() }
@@ -137,10 +124,8 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void AddPlayerRoundTripsIdentityPositionAbilitiesAndMetadata()
-    {
-        AddPlayerPacket packet = new()
-        {
+    public void AddPlayerRoundTripsIdentityPositionAbilitiesAndMetadata() {
+        AddPlayerPacket packet = new() {
             Uuid = new Uuid { MostSignificantBits = 123, LeastSignificantBits = 456 },
             Name = "Other",
             RuntimeId = 123456,
@@ -173,8 +158,7 @@ public sealed class MultiplayerPacketTests
     }
 
     [Fact]
-    public void AddPlayerGameTypeUsesSignedVarInt()
-    {
+    public void AddPlayerGameTypeUsesSignedVarInt() {
         AddPlayerPacket packet = new() { GameType = GameType.Creative };
         using BinaryStream stream = BinaryStream.Rent(256);
         BinaryWriter writer = stream.GetWriter();

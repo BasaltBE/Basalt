@@ -5,10 +5,8 @@ using BasaltBE.Protocol.Packets;
 
 namespace BasaltBE.Basalt.Network.Handlers;
 
-internal sealed class AnimateHandler
-{
-    public void Handle(NethernetPeer peer, Player? player, AnimatePacket packet)
-    {
+internal sealed class AnimateHandler {
+    public void Handle(NethernetPeer peer, Player? player, AnimatePacket packet) {
         if (player is null)
             throw new InvalidDataException("Animate packet arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();

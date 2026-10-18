@@ -2,8 +2,7 @@ using BasaltBE.Protocol.Packets;
 
 namespace BasaltBE.Basalt.Network.Events;
 
-public static class PacketEvents
-{
+public static class PacketEvents {
     public static readonly PacketEvent<CommandRequestPacket> CommandRequest = new(77);
     public static readonly PacketEvent<TextPacket> Text = new(9);
     public static readonly PacketEvent<ClientCacheStatusPacket> ClientCacheStatus = new();

@@ -6,10 +6,8 @@ using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Network.Login;
 
-internal static class LoginTokenParser
-{
-    internal static LoginTokenData Parse(ReadOnlyMemory<byte> connectionRequest)
-    {
+internal static class LoginTokenParser {
+    internal static LoginTokenData Parse(ReadOnlyMemory<byte> connectionRequest) {
         using ProfilerZone zone = Profiler.BeginZone("Login.ParseTokens");
         int offset = 0;
         ReadOnlyMemory<byte> identityBytes = ReadToken(connectionRequest, ref offset);
@@ -20,8 +18,7 @@ internal static class LoginTokenParser
         return new LoginTokenData(identity, ParseClientToken(clientToken));
     }
 
-    internal static ClientTokenData ParseClientToken(ReadOnlyMemory<byte> clientToken)
-    {
+    internal static ClientTokenData ParseClientToken(ReadOnlyMemory<byte> clientToken) {
         using ProfilerZone zone = Profiler.BeginZone("Login.ValidateClientToken");
         ReadOnlySpan<byte> token = clientToken.Span;
         int firstDot = token.IndexOf((byte)'.');
@@ -48,22 +45,19 @@ internal static class LoginTokenParser
 
         ReadOnlySpan<byte> encodedClientData = token[(firstDot + 1)..secondDot];
         byte[] clientDataJson = ArrayPool<byte>.Shared.Rent(encodedClientData.Length);
-        try
-        {
+        try {
             int clientDataLength = Base64Url.Decode(encodedClientData, clientDataJson);
             ClientData client = JsonSerializer.Deserialize<ClientData>(
                 clientDataJson.AsSpan(0, clientDataLength), LoginJson.Options)
                 ?? throw new InvalidDataException("Client data is missing.");
             return new ClientTokenData(client, clientKey.ExportParameters(false));
         }
-        finally
-        {
+        finally {
             ArrayPool<byte>.Shared.Return(clientDataJson, clearArray: true);
         }
     }
 
-    private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset)
-    {
+    private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset) {
         if (request.Length - offset < sizeof(int))
             throw new InvalidDataException("Login token length is incomplete.");
         int length = System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(request.Span[offset..]);

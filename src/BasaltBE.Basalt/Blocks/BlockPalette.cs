@@ -91,7 +91,8 @@ public static class BlockPalette {
                 Array.Resize(ref permutations, permutations.Length + 1);
                 permutations[^1] = permutation;
                 index[key] = permutations;
-            } else {
+            }
+            else {
                 index.Add(key, [permutation]);
             }
         }
@@ -163,7 +164,8 @@ public static class BlockPalette {
             object? expectedValue;
             if (candidateName == name) {
                 expectedValue = value;
-            } else if (!state.Values.TryGetValue(candidateName, out expectedValue)) {
+            }
+            else if (!state.Values.TryGetValue(candidateName, out expectedValue)) {
                 return false;
             }
             if (!Equals(candidateValue, expectedValue)) {
@@ -188,7 +190,8 @@ public static class BlockPalette {
             object? expectedValue;
             if (changes.Values.TryGetValue(candidateName, out object? changedValue)) {
                 expectedValue = changedValue;
-            } else if (!state.Values.TryGetValue(candidateName, out expectedValue)) {
+            }
+            else if (!state.Values.TryGetValue(candidateName, out expectedValue)) {
                 return false;
             }
             if (!Equals(candidateValue, expectedValue)) {

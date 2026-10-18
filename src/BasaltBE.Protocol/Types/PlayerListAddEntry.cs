@@ -5,8 +5,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Protocol.Types;
 
-public sealed class PlayerListAddEntry : DataType
-{
+public sealed class PlayerListAddEntry : DataType {
     public Uuid Uuid = new();
     public long ActorId;
     public string Name = string.Empty;
@@ -22,8 +21,7 @@ public sealed class PlayerListAddEntry : DataType
     public bool IsSubClient;
     public int PlayerColor;
 
-    public override void Read(ref BinaryReader reader)
-    {
+    public override void Read(ref BinaryReader reader) {
         SkinBytes = default;
         Uuid.Read(ref reader);
         ActorId = reader.ReadZigZong();
@@ -41,8 +39,7 @@ public sealed class PlayerListAddEntry : DataType
 
     public override void Write(ref BinaryWriter writer) => Write(ref writer, SkinBytes.Span);
 
-    public void Write(ref BinaryWriter writer, ReadOnlySpan<byte> skinBytes)
-    {
+    public void Write(ref BinaryWriter writer, ReadOnlySpan<byte> skinBytes) {
         Uuid.Write(ref writer);
         writer.WriteZigZong(ActorId);
         writer.WriteVarString(Name);

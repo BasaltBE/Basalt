@@ -10,8 +10,7 @@ namespace BasaltBE.Basalt.Entities.Traits;
     Identifiers = ["minecraft:player"],
     Components = ["minecraft:health"]
 )]
-public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
-{
+public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     private const float DefaultHealth = 20;
     private const string AttributeName = "minecraft:health";
     private const ulong AttackCooldownTicks = 10;
@@ -21,8 +20,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
     public float Current => Entity.Attributes.Get(AttributeName)?.Current ?? 0;
     public float Maximum => Entity.Attributes.Get(AttributeName)?.Maximum ?? 0;
 
-    public override void OnAdd()
-    {
+    public override void OnAdd() {
         var component = Entity.Type?.PropertiesPayload?.Components.Health;
         double maximum = component?.Max
             ?? component?.Value?.Range?.RangeMax
@@ -32,8 +30,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
             ?? component?.Value?.Range?.RangeMax
             ?? maximum;
         if (!double.IsFinite(maximum) || maximum <= 0 || maximum > float.MaxValue ||
-            !double.IsFinite(current))
-        {
+            !double.IsFinite(current)) {
             maximum = DefaultHealth;
             current = DefaultHealth;
         }
@@ -49,8 +46,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
         );
     }
 
-    public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null)
-    {
+    public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null) {
         if (!float.IsFinite(amount) || amount <= 0 || Entity.Dead ||
             Entity.Attributes.Get(AttributeName) is not { } health)
             return false;
@@ -60,8 +56,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
             return false;
 
         ulong? attackTick = null;
-        if (cause == EntityDamageCause.Entity && Entity.SpawnedDimension?.World is { } world)
-        {
+        if (cause == EntityDamageCause.Entity && Entity.SpawnedDimension?.World is { } world) {
             ulong currentTick = world.TickValue;
             if (lastAttackTick is ulong previousTick && currentTick >= previousTick &&
                 currentTick - previousTick < AttackCooldownTicks)
@@ -77,8 +72,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
 
         float current = health.Current - damage;
         EntityDeathEvent? death = null;
-        if (current <= health.Minimum)
-        {
+        if (current <= health.Minimum) {
             death = new EntityDeathEvent(Entity, source, cause);
             if (Entity.SpawnedDimension?.Events is { } deathEvents && deathEvents.HasSubscribers<EntityDeathEvent>())
                 deathEvents.Emit(death);
@@ -90,27 +84,22 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
         if (attackTick is ulong appliedAttackTick)
             lastAttackTick = appliedAttackTick;
         Entity.OnHurt(hurt);
-        if (Entity.SpawnedDimension is { } dimension)
-        {
-            dimension.Broadcast(new ActorEventPacket
-            {
+        if (Entity.SpawnedDimension is { } dimension) {
+            dimension.Broadcast(new ActorEventPacket {
                 TargetRuntimeId = Entity.RuntimeId,
                 Event = ActorEvent.Hurt,
                 Data = (int)(cause == EntityDamageCause.Entity
                     ? ActorDamageCause.EntityAttack
                     : ActorDamageCause.None)
             }, Entity);
-            dimension.Broadcast(new LevelSoundEventPacket
-            {
+            dimension.Broadcast(new LevelSoundEventPacket {
                 SoundEvent = "hurt",
                 Position = Entity.Position,
                 ActorIdentifier = Entity.Type?.Identifier ?? string.Empty,
                 ActorUniqueId = unchecked((long)Entity.RuntimeId)
             }, Entity);
-            if (cause == EntityDamageCause.Entity && source is not null)
-            {
-                dimension.Broadcast(new LevelSoundEventPacket
-                {
+            if (cause == EntityDamageCause.Entity && source is not null) {
+                dimension.Broadcast(new LevelSoundEventPacket {
                     SoundEvent = "attack",
                     Position = source.Position,
                     ActorIdentifier = source.Type?.Identifier ?? string.Empty,
@@ -119,14 +108,11 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
             }
         }
 
-        if (death is not null)
-        {
+        if (death is not null) {
             Entity.Dead = true;
             Entity.OnDeath(death);
-            if (Entity is not Player && Entity.SpawnedDimension is { } deadDimension)
-            {
-                deadDimension.Broadcast(new ActorEventPacket
-                {
+            if (Entity is not Player && Entity.SpawnedDimension is { } deadDimension) {
+                deadDimension.Broadcast(new ActorEventPacket {
                     TargetRuntimeId = Entity.RuntimeId,
                     Event = ActorEvent.Death
                 }, Entity);
@@ -136,15 +122,13 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
                     deadDimension.RemoveEntity(Entity);
             }
         }
-        else if (cause == EntityDamageCause.Entity && source is not null)
-        {
+        else if (cause == EntityDamageCause.Entity && source is not null) {
             ApplyKnockback(source);
         }
         return true;
     }
 
-    public bool Heal(float amount)
-    {
+    public bool Heal(float amount) {
         if (!float.IsFinite(amount) || amount <= 0 || Entity.Dead ||
             Entity.Attributes.Get(AttributeName) is not { } health ||
             health.Current >= health.Maximum)
@@ -153,28 +137,24 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity)
         return Entity.Attributes.SetCurrent(AttributeName, health.Current + amount);
     }
 
-    private void ApplyKnockback(Entity source)
-    {
+    private void ApplyKnockback(Entity source) {
         if (Entity.SpawnedDimension is not { } dimension ||
             !ReferenceEquals(source.SpawnedDimension, dimension) ||
             Entity.GetTrait<EntityMovementTrait>() is not { } movement)
             return;
 
-        SetActorMotionPacket packet = new()
-        {
+        SetActorMotionPacket packet = new() {
             TargetRuntimeId = Entity.RuntimeId,
             Tick = dimension.World?.TickValue ?? 0
         };
         if (!movement.CalculateKnockback(source, packet.Motion))
             return;
 
-        if (Entity is Player player)
-        {
+        if (Entity is Player player) {
             dimension.Broadcast(packet, Entity, exclude: player);
             player.Network.SendPacket(player, packet);
         }
-        else
-        {
+        else {
             movement.Motion.X = packet.Motion.X;
             movement.Motion.Y = packet.Motion.Y;
             movement.Motion.Z = packet.Motion.Z;

@@ -4,10 +4,8 @@ using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.Basalt.Commands.Enums;
 
-public sealed class WildcardIntEnum() : CommandEnum(CommandParameterType.WildcardInt)
-{
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+public sealed class WildcardIntEnum() : CommandEnum(CommandParameterType.WildcardInt) {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token))
             return false;

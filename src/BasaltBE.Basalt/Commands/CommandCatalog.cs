@@ -7,13 +7,11 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Commands;
 
-internal sealed class CommandCatalog
-{
+internal sealed class CommandCatalog {
     public readonly AvailableCommandsPacket Packet;
     public readonly byte[] Payload;
 
-    public CommandCatalog(IEnumerable<Command> definitions)
-    {
+    public CommandCatalog(IEnumerable<Command> definitions) {
         List<string> values = [];
         Dictionary<string, uint> valueIndexes = new(StringComparer.Ordinal);
         List<AvailableCommandsEnumData> enums = [];
@@ -23,24 +21,19 @@ internal sealed class CommandCatalog
         Dictionary<string, CommandEnum> names = new(StringComparer.Ordinal);
         List<AvailableCommandsCommandData> commands = [];
 
-        foreach (Command definition in definitions)
-        {
+        foreach (Command definition in definitions) {
             int aliasIndex = -1;
-            if (definition.Aliases.Length > 0)
-            {
+            if (definition.Aliases.Length > 0) {
                 aliasIndex = enums.Count;
                 AddEnum(definition.Name + "_aliases", [definition.Name, .. definition.Aliases]);
             }
             AvailableCommandsOverloadData[] overloads = new AvailableCommandsOverloadData[definition.Overloads.Count];
-            for (int index = 0; index < overloads.Length; index++)
-            {
+            for (int index = 0; index < overloads.Length; index++) {
                 var parameters = definition.Overloads[index].Parameters;
                 AvailableCommandsParamData[] encoded = new AvailableCommandsParamData[parameters.Length];
-                for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
-                {
+                for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++) {
                     var parameter = parameters[parameterIndex];
-                    encoded[parameterIndex] = new AvailableCommandsParamData
-                    {
+                    encoded[parameterIndex] = new AvailableCommandsParamData {
                         Name = parameter.Name,
                         ParseSymbol = GetParseSymbol(parameter.Parser),
                         Optional = parameter.Optional
@@ -48,8 +41,7 @@ internal sealed class CommandCatalog
                 }
                 overloads[index] = new AvailableCommandsOverloadData { Parameters = encoded };
             }
-            commands.Add(new AvailableCommandsCommandData
-            {
+            commands.Add(new AvailableCommandsCommandData {
                 Name = definition.Name,
                 Description = definition.Description,
                 PermissionLevel = "any",
@@ -57,8 +49,7 @@ internal sealed class CommandCatalog
                 Overloads = overloads
             });
         }
-        Packet = new AvailableCommandsPacket
-        {
+        Packet = new AvailableCommandsPacket {
             EnumValues = values.ToArray(),
             Enums = enums.ToArray(),
             SoftEnums = softEnums.ToArray(),
@@ -69,33 +60,27 @@ internal sealed class CommandCatalog
         Packet.Serialize(ref writer);
         Payload = stream.Buffer.Span[..stream.Offset].ToArray();
 
-        uint GetParseSymbol(CommandEnum parser)
-        {
+        uint GetParseSymbol(CommandEnum parser) {
             if (symbols.TryGetValue(parser, out uint symbol))
                 return symbol;
-            if (parser is not CustomEnum custom)
-            {
+            if (parser is not CustomEnum custom) {
                 symbol = (uint)CommandParameterTypeFlag.Valid | (uint)parser.Type;
                 symbols.Add(parser, symbol);
                 return symbol;
             }
-            if (names.TryGetValue(custom.Identifier, out CommandEnum? existing))
-            {
+            if (names.TryGetValue(custom.Identifier, out CommandEnum? existing)) {
                 if (existing is not CustomEnum previous || previous.Soft != custom.Soft ||
                     !previous.Options.Order(StringComparer.Ordinal).SequenceEqual(custom.Options.Order(StringComparer.Ordinal)))
                     throw new InvalidOperationException($"Conflicting command enum '{custom.Identifier}'.");
                 symbol = symbols[existing];
             }
-            else
-            {
+            else {
                 names.Add(custom.Identifier, parser);
-                if (custom.Soft)
-                {
+                if (custom.Soft) {
                     symbol = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.SoftEnum | (uint)softEnums.Count;
                     softEnums.Add(new AvailableCommandsSoftEnumData { Name = custom.Identifier, Values = custom.Options.ToArray() });
                 }
-                else
-                {
+                else {
                     symbol = (uint)CommandParameterTypeFlag.Valid | (uint)CommandParameterTypeFlag.Enum | (uint)enums.Count;
                     AddEnum(custom.Identifier, custom.Options);
                 }
@@ -104,15 +89,12 @@ internal sealed class CommandCatalog
             return symbol;
         }
 
-        void AddEnum(string name, IEnumerable<string> options)
-        {
+        void AddEnum(string name, IEnumerable<string> options) {
             if (!enumNames.Add(name))
                 throw new InvalidOperationException($"Duplicate command enum name '{name}'.");
             List<uint> indexes = [];
-            foreach (string option in options)
-            {
-                if (!valueIndexes.TryGetValue(option, out uint offset))
-                {
+            foreach (string option in options) {
+                if (!valueIndexes.TryGetValue(option, out uint offset)) {
                     offset = (uint)values.Count;
                     valueIndexes.Add(option, offset);
                     values.Add(option);

@@ -9,11 +9,9 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
-public sealed class EntityRuntimeTests
-{
+public sealed class EntityRuntimeTests {
     [Fact]
-    public void EntityTypeComponentsInitializeHealthMovementAndBounds()
-    {
+    public void EntityTypeComponentsInitializeHealthMovementAndBounds() {
         EntityType pigType = EntityPalette.Find("minecraft:pig")!;
         Entity pig = new(pigType);
         EntityHealthTrait health = new(pig);
@@ -27,19 +25,13 @@ public sealed class EntityRuntimeTests
     }
 
     [Fact]
-    public void HealthRangeUsesItsMaximumAsCurrentHealth()
-    {
-        EntityType type = new()
-        {
+    public void HealthRangeUsesItsMaximumAsCurrentHealth() {
+        EntityType type = new() {
             Identifier = "minecraft:range_health_test",
-            PropertiesPayload = new EntityTypePayload
-            {
-                Components = new EntityComponentPayloads
-                {
-                    Health = new EntityHealthComponent
-                    {
-                        Value = new EntityNumericValue
-                        {
+            PropertiesPayload = new EntityTypePayload {
+                Components = new EntityComponentPayloads {
+                    Health = new EntityHealthComponent {
+                        Value = new EntityNumericValue {
                             Range = new EntityNumericRange { RangeMin = 15, RangeMax = 30 }
                         }
                     }
@@ -55,8 +47,7 @@ public sealed class EntityRuntimeTests
     }
 
     [Fact]
-    public void DamageEmitsCauseAndDeathRemovesEntity()
-    {
+    public void DamageEmitsCauseAndDeathRemovesEntity() {
         using MultiplayerFixture fixture = new();
         Entity pig = new(EntityPalette.Find("minecraft:pig"));
         EntityHealthTrait health = new(pig);
@@ -81,8 +72,7 @@ public sealed class EntityRuntimeTests
     }
 
     [Fact]
-    public void CanceledHurtLeavesHealthUnchanged()
-    {
+    public void CanceledHurtLeavesHealthUnchanged() {
         using MultiplayerFixture fixture = new();
         Entity pig = new(EntityPalette.Find("minecraft:pig"));
         EntityHealthTrait health = new(pig);
@@ -95,8 +85,7 @@ public sealed class EntityRuntimeTests
     }
 
     [Fact]
-    public void CanceledDeathPreventsLethalDamage()
-    {
+    public void CanceledDeathPreventsLethalDamage() {
         using MultiplayerFixture fixture = new();
         Entity pig = new(EntityPalette.Find("minecraft:pig"));
         EntityHealthTrait health = new(pig);
@@ -111,8 +100,7 @@ public sealed class EntityRuntimeTests
     }
 
     [Fact]
-    public void MovementTraitAppliesGravityAndStopsAtSolidBlocks()
-    {
+    public void MovementTraitAppliesGravityAndStopsAtSolidBlocks() {
         using MultiplayerFixture fixture = new();
         fixture.Dimension.SetPermutation(0, 0, 0,
             BasaltBE.Basalt.Blocks.BlockPalette.FindDefaultPermutation("minecraft:stone")!);
@@ -131,8 +119,7 @@ public sealed class EntityRuntimeTests
         Assert.True(pig.Flags.Get(ActorFlag.HasGravity));
     }
 
-    private sealed class HurtRecorder(Entity entity) : EntityTrait(entity)
-    {
+    private sealed class HurtRecorder(Entity entity) : EntityTrait(entity) {
         public EntityHurtEvent? Hurt;
 
         public override void OnHurt(EntityHurtEvent hurt) => Hurt = hurt;

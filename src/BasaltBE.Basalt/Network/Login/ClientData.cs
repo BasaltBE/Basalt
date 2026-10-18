@@ -9,8 +9,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Network.Login;
 
-internal sealed class ClientData
-{
+internal sealed class ClientData {
     public string DeviceModel = string.Empty;
     public int DeviceOS;
     public string SelfSignedId = string.Empty;
@@ -37,14 +36,12 @@ internal sealed class ClientData
     public ClientPersonaPiece[] PersonaPieces = [];
     public ClientPieceTint[] PieceTintColors = [];
 
-    internal SerializedSkin CreateSkin()
-    {
+    internal SerializedSkin CreateSkin() {
         if (AnimatedImageData is null || PersonaPieces is null || PieceTintColors is null ||
             AnimatedImageData.Length > 128 || PersonaPieces.Length > 128 || PieceTintColors.Length > 128)
             throw new InvalidDataException("Skin collection exceeds the supported limit.");
 
-        SerializedSkin skin = new()
-        {
+        SerializedSkin skin = new() {
             Id = SkinId,
             FullId = SkinId,
             ResourcePatch = DecodeText(SkinResourcePatch),
@@ -67,22 +64,18 @@ internal sealed class ClientData
         };
         if (skin.ImageData.ImageBytes.Length == 0)
             throw new InvalidDataException("Player skin image is empty.");
-        if (skin.ResourcePatch.Length != 0)
-        {
+        if (skin.ResourcePatch.Length != 0) {
             using JsonDocument patch = JsonDocument.Parse(skin.ResourcePatch);
         }
-        if (skin.GeometryData.Length != 0)
-        {
+        if (skin.GeometryData.Length != 0) {
             using JsonDocument geometry = JsonDocument.Parse(skin.GeometryData);
         }
-        for (int index = 0; index < AnimatedImageData.Length; index++)
-        {
+        for (int index = 0; index < AnimatedImageData.Length; index++) {
             ClientSkinAnimation animation = AnimatedImageData[index];
             if (!float.IsFinite(animation.Frames) || animation.Frames < 0 ||
                 animation.Type > 3 || animation.AnimationExpression > 1)
                 throw new InvalidDataException("Invalid skin animation.");
-            skin.AnimatedImageData[index] = new AnimatedImageData
-            {
+            skin.AnimatedImageData[index] = new AnimatedImageData {
                 Image = DecodeImage(animation.Image, animation.ImageWidth, animation.ImageHeight),
                 Frames = animation.Frames,
                 TextureType = (PersonaAnimatedTextureType)animation.Type,
@@ -90,22 +83,19 @@ internal sealed class ClientData
             };
         }
         Span<byte> uuidBytes = stackalloc byte[16];
-        for (int index = 0; index < PersonaPieces.Length; index++)
-        {
+        for (int index = 0; index < PersonaPieces.Length; index++) {
             ClientPersonaPiece piece = PersonaPieces[index];
             ReadOnlySpan<char> name = piece.PieceType.AsSpan();
             if (name.StartsWith("persona_"))
                 name = name[8..];
             Enum.TryParse(name, true, out PersonaPieceType pieceType);
             Uuid pack = new();
-            if (Guid.TryParse(piece.PackId, out Guid packId))
-            {
+            if (Guid.TryParse(piece.PackId, out Guid packId)) {
                 packId.TryWriteBytes(uuidBytes, bigEndian: true, out _);
                 pack.MostSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes);
                 pack.LeastSignificantBits = BinaryPrimitives.ReadUInt64BigEndian(uuidBytes[8..]);
             }
-            skin.PersonaPieces[index] = new SerializedPersonaPieceHandle
-            {
+            skin.PersonaPieces[index] = new SerializedPersonaPieceHandle {
                 PieceId = piece.PieceId,
                 PieceType = pieceType,
                 PackId = pack,
@@ -113,8 +103,7 @@ internal sealed class ClientData
                 ProductId = piece.ProductId
             };
         }
-        foreach (ClientPieceTint tint in PieceTintColors)
-        {
+        foreach (ClientPieceTint tint in PieceTintColors) {
             if (tint.Colors is null || tint.Colors.Length != 4)
                 throw new InvalidDataException("Persona tint requires four colors.");
             string name = tint.PieceType.StartsWith("persona_") ? tint.PieceType[8..] : tint.PieceType;
@@ -132,8 +121,7 @@ internal sealed class ClientData
         ? string.Empty
         : Encoding.UTF8.GetString(Base64Url.Decode(value.AsSpan()));
 
-    private static SkinImage DecodeImage(string value, uint width, uint height)
-    {
+    private static SkinImage DecodeImage(string value, uint width, uint height) {
         if (width > 4096 || height > 4096 || (ulong)width * height * 4 > 2 * 1024 * 1024)
             throw new InvalidDataException("Skin image exceeds the size limit.");
         byte[] bytes = string.IsNullOrEmpty(value) ? [] : Base64Url.Decode(value.AsSpan());
@@ -142,8 +130,7 @@ internal sealed class ClientData
         return new SkinImage { Width = width, Height = height, ImageBytes = bytes };
     }
 
-    private static SkinImage DecodeSkinImage(byte[]? bytes, uint width, uint height)
-    {
+    private static SkinImage DecodeSkinImage(byte[]? bytes, uint width, uint height) {
         if (width > 4096 || height > 4096 || (ulong)width * height * 4 > 2 * 1024 * 1024)
             throw new InvalidDataException("Skin image exceeds the size limit.");
         if (bytes is null || (ulong)bytes.Length != (ulong)width * height * 4)
@@ -151,8 +138,7 @@ internal sealed class ClientData
         return new SkinImage { Width = width, Height = height, ImageBytes = bytes };
     }
 
-    private static int ParseColor(string text)
-    {
+    private static int ParseColor(string text) {
         if (string.IsNullOrEmpty(text))
             return 0;
         ReadOnlySpan<char> hex = text.AsSpan();

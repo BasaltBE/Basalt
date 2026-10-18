@@ -17,8 +17,7 @@ using BasaltBE.Protocol.Packets;
 
 namespace BasaltBE.Basalt;
 
-public sealed class Server : IDisposable
-{
+public sealed class Server : IDisposable {
     private int stopping;
     public readonly ServerProperties Properties;
     public readonly NetworkServer Network;
@@ -31,17 +30,14 @@ public sealed class Server : IDisposable
     public readonly TickMetrics Ticks = new();
     public bool Stopping => Volatile.Read(ref stopping) != 0;
 
-    public Server(ServerProperties properties, IServerIdentity? identity = null, PermissionStore? permissions = null)
-    {
+    public Server(ServerProperties properties, IServerIdentity? identity = null, PermissionStore? permissions = null) {
         Commands = new CommandRegistry(this);
         Permissions = permissions ?? new PermissionStore();
         Properties = properties;
         ArgumentException.ThrowIfNullOrWhiteSpace(Properties.DefaultWorldName);
 
-        Network = new NetworkServer(this, new NethernetServerOptions
-        {
-            Advertisement = new ServerAdvertisement
-            {
+        Network = new NetworkServer(this, new NethernetServerOptions {
+            Advertisement = new ServerAdvertisement {
                 Name = Properties.ServerName,
                 Protocol = BedrockProtocol.ProtocolVersion,
                 Version = BedrockProtocol.MinecraftVersion,
@@ -54,24 +50,20 @@ public sealed class Server : IDisposable
         }, identity, ResourcePackManager.Load(Properties.ResourcePacksPath));
     }
 
-    public World CreateWorld(string identifier, Action<World> configure)
-    {
+    public World CreateWorld(string identifier, Action<World> configure) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(configure);
-        foreach (World existing in Worlds)
-        {
+        foreach (World existing in Worlds) {
             if (string.Equals(existing.Identifier, identifier, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"World '{identifier}' already exists.");
         }
 
         World world = new(identifier, Generators);
         Worlds.Add(world);
-        try
-        {
+        try {
             world.Initialize(configure, Events);
         }
-        catch
-        {
+        catch {
             Worlds.Remove(world);
             world.Dispose();
             throw;
@@ -81,10 +73,8 @@ public sealed class Server : IDisposable
 
     public World GetWorld() => GetWorld(Properties.DefaultWorldName);
 
-    public World GetWorld(string identifier)
-    {
-        foreach (World world in Worlds)
-        {
+    public World GetWorld(string identifier) {
+        foreach (World world in Worlds) {
             if (string.Equals(world.Identifier, identifier, StringComparison.OrdinalIgnoreCase))
                 return world;
         }
@@ -92,10 +82,8 @@ public sealed class Server : IDisposable
         throw new KeyNotFoundException($"World '{identifier}' was not found.");
     }
 
-    public Player? GetPlayer(string username)
-    {
-        foreach (World world in Worlds)
-        {
+    public Player? GetPlayer(string username) {
+        foreach (World world in Worlds) {
             Player? player = world.GetPlayer(username);
             if (player is not null)
                 return player;
@@ -104,10 +92,8 @@ public sealed class Server : IDisposable
         return null;
     }
 
-    public Player? GetPlayerByXuid(string xuid)
-    {
-        foreach (World world in Worlds)
-        {
+    public Player? GetPlayerByXuid(string xuid) {
+        foreach (World world in Worlds) {
             Player? player = world.GetPlayerByXuid(xuid);
             if (player is not null)
                 return player;
@@ -116,29 +102,24 @@ public sealed class Server : IDisposable
         return null;
     }
 
-    public void Broadcast(DataPacket packet, Player? exclude = null)
-    {
+    public void Broadcast(DataPacket packet, Player? exclude = null) {
         ArgumentNullException.ThrowIfNull(packet);
-        foreach (World world in Worlds)
-        {
+        foreach (World world in Worlds) {
             foreach (Dimension dimension in world.Dimensions.Values)
                 dimension.Broadcast(packet, exclude);
         }
     }
 
-    public void Start()
-    {
+    public void Start() {
         Commands.Prepare();
         Network.Start();
     }
 
-    public void Stop()
-    {
+    public void Stop() {
         Interlocked.Exchange(ref stopping, 1);
     }
 
-    public void Tick()
-    {
+    public void Tick() {
         long start = Stopwatch.GetTimestamp();
         using ProfilerZone zone = Profiler.BeginZone("Server.Tick");
         TickValue++;
@@ -150,8 +131,7 @@ public sealed class Server : IDisposable
         Ticks.Record(start);
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
         Network.Dispose();
         foreach (World world in Worlds)
             world.Dispose();

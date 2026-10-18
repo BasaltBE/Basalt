@@ -7,24 +7,18 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
-public sealed class StatusCommand : Command
-{
-    public StatusCommand() : base("status", "Show server runtime statistics.")
-    {
+public sealed class StatusCommand : Command {
+    public StatusCommand() : base("status", "Show server runtime statistics.") {
         AddOverload();
     }
 
-    public override CommandResult Execute(CommandContext context)
-    {
+    public override CommandResult Execute(CommandContext context) {
         int players = 0;
         int entities = 0;
-        foreach (World world in context.Server.Worlds)
-        {
-            foreach (Dimension dimension in world.Dimensions.Values)
-            {
+        foreach (World world in context.Server.Worlds) {
+            foreach (Dimension dimension in world.Dimensions.Values) {
                 entities += dimension.EntityCount;
-                foreach (Player player in dimension.GetPlayers())
-                {
+                foreach (Player player in dimension.GetPlayers()) {
                     if (player.Spawned && !player.Disposed)
                         players++;
                 }
@@ -49,12 +43,10 @@ public sealed class StatusCommand : Command
         response.Append(CultureInfo.InvariantCulture,
             $"§8` §7Worlds (§w{context.Server.Worlds.Count}§7)§r");
 
-        foreach (World world in context.Server.Worlds)
-        {
+        foreach (World world in context.Server.Worlds) {
             int chunks = 0;
             int pending = 0;
-            foreach (Dimension dimension in world.Dimensions.Values)
-            {
+            foreach (Dimension dimension in world.Dimensions.Values) {
                 chunks += dimension.ChunkCount;
                 pending += dimension.PendingRequestCount;
             }

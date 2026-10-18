@@ -6,11 +6,9 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
-public sealed class MultiplayerRenderingTests
-{
+public sealed class MultiplayerRenderingTests {
     [Fact]
-    public void PlayerMustBeListedAndItsChunkLoadedBeforeAddPlayer()
-    {
+    public void PlayerMustBeListedAndItsChunkLoadedBeforeAddPlayer() {
         using MultiplayerFixture fixture = new();
         Player viewer = fixture.CreatePlayer();
         Player other = fixture.CreatePlayer();
@@ -38,8 +36,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void LeavingChunkAndReenteringRemovesThenAddsPlayer()
-    {
+    public void LeavingChunkAndReenteringRemovesThenAddsPlayer() {
         using MultiplayerFixture fixture = new();
         Player other = fixture.CreatePlayer();
         PlayerChunkRenderingTrait trait = new(fixture.CreatePlayer());
@@ -59,8 +56,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void MembershipRemovalAndDisposedPlayersDisappear()
-    {
+    public void MembershipRemovalAndDisposedPlayersDisappear() {
         using MultiplayerFixture fixture = new();
         Player other = fixture.CreatePlayer();
         PlayerChunkRenderingTrait trait = new(fixture.CreatePlayer());
@@ -77,8 +73,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void ActorsSpawnMoveAndDespawnWithoutIdlePackets()
-    {
+    public void ActorsSpawnMoveAndDespawnWithoutIdlePackets() {
         using MultiplayerFixture fixture = new();
         PlayerChunkRenderingTrait trait = new(fixture.CreatePlayer());
         MultiplayerFixture.LoadedChunks(trait).Add(0);
@@ -98,8 +93,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void RenderDoesNotClearAnotherPlayersDirtyState()
-    {
+    public void RenderDoesNotClearAnotherPlayersDirtyState() {
         using MultiplayerFixture fixture = new();
         Player other = fixture.CreatePlayer();
         other.Abilities.Dirty = true;
@@ -112,8 +106,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void MembershipSnapshotsAreCachedAndInvalidated()
-    {
+    public void MembershipSnapshotsAreCachedAndInvalidated() {
         using MultiplayerFixture fixture = new();
         Entity actor = new();
         fixture.Dimension.AddEntity(actor);
@@ -128,8 +121,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void DimensionSnapshotsDoNotIncludeOtherDimensions()
-    {
+    public void DimensionSnapshotsDoNotIncludeOtherDimensions() {
         using MultiplayerFixture fixture = new();
         var other = fixture.World.CreateDimension("minecraft:nether");
         Entity actor = new(new EntityType { Identifier = "minecraft:pig" });
@@ -139,8 +131,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void SpatialIndexTracksNegativeCoordinatesMovementAndRemoval()
-    {
+    public void SpatialIndexTracksNegativeCoordinatesMovementAndRemoval() {
         using MultiplayerFixture fixture = new();
         Entity actor = new();
         actor.Position.X = -0.01f;
@@ -165,8 +156,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void UnloadedChunksRemoveVisibleEntitiesWithoutNewMovement()
-    {
+    public void UnloadedChunksRemoveVisibleEntitiesWithoutNewMovement() {
         using MultiplayerFixture fixture = new();
         PlayerChunkRenderingTrait trait = new(fixture.CreatePlayer());
         HashSet<long> loaded = MultiplayerFixture.LoadedChunks(trait);
@@ -182,8 +172,7 @@ public sealed class MultiplayerRenderingTests
     }
 
     [Fact]
-    public void ParallelEntityCreationSharesTheTraitCacheSafely()
-    {
+    public void ParallelEntityCreationSharesTheTraitCacheSafely() {
         EntityType type = new() { Identifier = "minecraft:pig" };
         Parallel.For(0, 1000, _ => new Entity(type));
     }

@@ -3,8 +3,7 @@ using BasaltBE.Basalt.Permissions;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class PlayerPermissions : IReadOnlyCollection<string>
-{
+public sealed class PlayerPermissions : IReadOnlyCollection<string> {
     private readonly Lock sync = new();
     private readonly PermissionStore? store;
     private string[] values = [];
@@ -14,25 +13,21 @@ public sealed class PlayerPermissions : IReadOnlyCollection<string>
 
     public PlayerPermissions() { }
 
-    internal PlayerPermissions(PermissionStore store)
-    {
+    internal PlayerPermissions(PermissionStore store) {
         this.store = store;
     }
 
     public bool Contains(string permission) => Array.IndexOf(Volatile.Read(ref values), permission) >= 0;
 
-    public bool Allows(string permission)
-    {
+    public bool Allows(string permission) {
         string[] snapshot = Volatile.Read(ref values);
         return permission.Length == 0 || Array.IndexOf(snapshot, "basalt.operator") >= 0 ||
             Array.IndexOf(snapshot, permission) >= 0;
     }
 
-    public bool Add(string permission)
-    {
+    public bool Add(string permission) {
         ArgumentException.ThrowIfNullOrWhiteSpace(permission);
-        lock (sync)
-        {
+        lock (sync) {
             if (Array.IndexOf(values, permission) >= 0)
                 return false;
             Volatile.Write(ref values, [.. values, permission]);
@@ -43,10 +38,8 @@ public sealed class PlayerPermissions : IReadOnlyCollection<string>
         }
     }
 
-    public bool Remove(string permission)
-    {
-        lock (sync)
-        {
+    public bool Remove(string permission) {
+        lock (sync) {
             int index = Array.IndexOf(values, permission);
             if (index < 0)
                 return false;

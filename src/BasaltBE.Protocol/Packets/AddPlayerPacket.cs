@@ -8,8 +8,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Protocol.Packets;
 
 [PacketId(12)]
-public sealed class AddPlayerPacket : DataPacket
-{
+public sealed class AddPlayerPacket : DataPacket {
     public Uuid Uuid = new();
     public string Name = string.Empty;
     public ulong RuntimeId;
@@ -28,8 +27,7 @@ public sealed class AddPlayerPacket : DataPacket
     public string DeviceId = string.Empty;
     public BuildPlatform BuildPlatform;
 
-    public override void Deserialize(ref BinaryReader reader)
-    {
+    public override void Deserialize(ref BinaryReader reader) {
         Uuid.Read(ref reader);
         Name = reader.ReadVarString();
         RuntimeId = reader.ReadVarULong();
@@ -41,16 +39,14 @@ public sealed class AddPlayerPacket : DataPacket
         CarriedItem.Read(ref reader);
         GameType = (GameType)reader.ReadZigZag();
         ActorData = new ActorDataItem[checked((int)reader.ReadVarUInt())];
-        for (int i = 0; i < ActorData.Length; i++)
-        {
+        for (int i = 0; i < ActorData.Length; i++) {
             ActorData[i] = new ActorDataItem();
             ActorData[i].Read(ref reader);
         }
         SynchedProperties.Read(ref reader);
         Abilities.Read(ref reader);
         Links = new ActorLink[checked((int)reader.ReadVarUInt())];
-        for (int i = 0; i < Links.Length; i++)
-        {
+        for (int i = 0; i < Links.Length; i++) {
             Links[i] = new ActorLink();
             Links[i].Read(ref reader);
         }
@@ -60,8 +56,7 @@ public sealed class AddPlayerPacket : DataPacket
         BuildPlatform = (BuildPlatform)reader.ReadInt32(true);
     }
 
-    public override void Serialize(ref BinaryWriter writer)
-    {
+    public override void Serialize(ref BinaryWriter writer) {
         Uuid.Write(ref writer);
         writer.WriteVarString(Name);
         writer.WriteVarULong(RuntimeId);

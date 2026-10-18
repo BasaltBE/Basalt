@@ -11,8 +11,7 @@ using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Network.Login;
 
-internal sealed class LoginAuthenticator : IDisposable
-{
+internal sealed class LoginAuthenticator : IDisposable {
     private const string Issuer = "https://authorization.franchise.minecraft-services.net/";
     private const string Audience = "api://auth-minecraft-services/multiplayer";
     private const string MetadataUrl = Issuer + ".well-known/openid-configuration";
@@ -34,33 +33,28 @@ internal sealed class LoginAuthenticator : IDisposable
 
     public LoginAuthenticator() : this(FetchSigningKeys, KeyRefreshInterval) { }
 
-    internal LoginAuthenticator(Func<CancellationToken, OpenIdSigningKey[]> fetchSigningKeys, TimeSpan refreshInterval)
-    {
+    internal LoginAuthenticator(Func<CancellationToken, OpenIdSigningKey[]> fetchSigningKeys, TimeSpan refreshInterval) {
         this.fetchSigningKeys = fetchSigningKeys;
         this.refreshInterval = refreshInterval;
-        refreshThread = new Thread(RefreshSigningKeys)
-        {
+        refreshThread = new Thread(RefreshSigningKeys) {
             IsBackground = true,
             Name = "BasaltBE Login Key Refresh"
         };
     }
 
-    public void Start()
-    {
+    public void Start() {
         using ProfilerZone zone = Profiler.BeginZone("Login.Start");
         ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
         if (Interlocked.Exchange(ref started, 1) == 0) refreshThread.Start();
         initialRefresh.Wait();
-        if (initialRefreshError is not null)
-        {
+        if (initialRefreshError is not null) {
             Exception error = initialRefreshError;
             Dispose();
             throw new InvalidOperationException("Minecraft authorization signing keys could not be loaded.", error);
         }
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
         using ProfilerZone zone = Profiler.BeginZone("Login.Dispose");
         if (Interlocked.Exchange(ref disposed, 1) != 0) return;
         refreshCancellation.Cancel();
@@ -71,8 +65,7 @@ internal sealed class LoginAuthenticator : IDisposable
         initialRefresh.Dispose();
     }
 
-    public AuthenticatedLogin Authenticate(ReadOnlyMemory<byte> connectionRequest)
-    {
+    public AuthenticatedLogin Authenticate(ReadOnlyMemory<byte> connectionRequest) {
         using ProfilerZone authenticationZone = Profiler.BeginZone("Login.Authenticate");
         LoginTokenData tokens;
         using (Profiler.BeginZone("Login.ParseConnectionRequest"))
@@ -84,8 +77,7 @@ internal sealed class LoginAuthenticator : IDisposable
         TokenParts identityParts;
         MultiplayerTokenHeader identityHeader;
         MultiplayerTokenPayload claims;
-        using (Profiler.BeginZone("Login.ParseMultiplayerToken"))
-        {
+        using (Profiler.BeginZone("Login.ParseMultiplayerToken")) {
             identityParts = ParseToken(Encoding.UTF8.GetBytes(identity.Token));
             identityHeader = JsonSerializer.Deserialize<MultiplayerTokenHeader>(
                 identityParts.Header, LoginJson.Options);
@@ -100,8 +92,7 @@ internal sealed class LoginAuthenticator : IDisposable
         ClientData client;
         Guid uuid;
         byte[] skin;
-        using (Profiler.BeginZone("Login.ValidateClientData"))
-        {
+        using (Profiler.BeginZone("Login.ValidateClientData")) {
             ECParameters authenticatedKey = ReadPublicKey(claims.ClientPublicKey);
             if (!clientKey.Q.X!.AsSpan().SequenceEqual(authenticatedKey.Q.X) ||
                 !clientKey.Q.Y!.AsSpan().SequenceEqual(authenticatedKey.Q.Y))
@@ -131,15 +122,13 @@ internal sealed class LoginAuthenticator : IDisposable
         TokenParts token,
         MultiplayerTokenHeader header,
         MultiplayerTokenPayload claims
-    )
-    {
+    ) {
         using ProfilerZone zone = Profiler.BeginZone("Login.ValidateMultiplayerToken");
         if (header.Algorithm is not ("RS256" or "ES384") || string.IsNullOrEmpty(header.KeyId))
             throw new CryptographicException("Xbox multiplayer token header is invalid.");
 
         OpenIdSigningKey key = GetSigningKey(header.KeyId, header.Algorithm);
-        bool validSignature = header.Algorithm switch
-        {
+        bool validSignature = header.Algorithm switch {
             "RS256" when key.KeyType == "RSA" => VerifyRsa(token, key),
             "ES384" when key.KeyType == "EC" => VerifyEc(token, key),
             _ => false
@@ -163,12 +152,10 @@ internal sealed class LoginAuthenticator : IDisposable
     internal static Guid ParsePlayerUuid(string? selfSignedId) =>
         Guid.TryParse(selfSignedId, out Guid uuid) ? uuid : Guid.Empty;
 
-    internal OpenIdSigningKey GetSigningKey(string keyId, string algorithm)
-    {
+    internal OpenIdSigningKey GetSigningKey(string keyId, string algorithm) {
         using ProfilerZone zone = Profiler.BeginZone("Login.GetSigningKey");
         SigningKeyCache? cache = Volatile.Read(ref signingKeyCache);
-        if (cache is not null && DateTimeOffset.UtcNow < cache.Expires)
-        {
+        if (cache is not null && DateTimeOffset.UtcNow < cache.Expires) {
             OpenIdSigningKey? key = FindSigningKey(cache.Keys, keyId, algorithm);
             if (key is not null) return key.Value;
         }
@@ -177,14 +164,11 @@ internal sealed class LoginAuthenticator : IDisposable
         throw new CryptographicException("Xbox multiplayer token signing key is not trusted or the key cache has expired.");
     }
 
-    private void RefreshSigningKeys()
-    {
+    private void RefreshSigningKeys() {
         bool firstRefresh = true;
-        while (Volatile.Read(ref disposed) == 0)
-        {
+        while (Volatile.Read(ref disposed) == 0) {
             Exception? error = null;
-            try
-            {
+            try {
                 OpenIdSigningKey[] keys;
                 using (Profiler.BeginZone("Login.RefreshSigningKeys"))
                     keys = fetchSigningKeys(refreshCancellation.Token);
@@ -193,15 +177,13 @@ internal sealed class LoginAuthenticator : IDisposable
                 DateTimeOffset expires = DateTimeOffset.UtcNow.Add(KeyLifetime);
                 Volatile.Write(ref signingKeyCache, new SigningKeyCache(keys, expires));
             }
-            catch (Exception refreshError)
-            {
+            catch (Exception refreshError) {
                 error = refreshError;
                 if (firstRefresh) initialRefreshError = refreshError;
                 else Logger.Scoped("Network").Warn($"Could not refresh Minecraft authorization signing keys: {refreshError.Message}");
             }
 
-            if (firstRefresh)
-            {
+            if (firstRefresh) {
                 initialRefresh.Set();
                 if (error is not null) return;
                 firstRefresh = false;
@@ -211,8 +193,7 @@ internal sealed class LoginAuthenticator : IDisposable
         }
     }
 
-    private void RequestSigningKeyRefresh()
-    {
+    private void RequestSigningKeyRefresh() {
         long now = Environment.TickCount64;
         long previous = Interlocked.Read(ref lastRefreshRequest);
         if (now - previous < KeyRetryInterval.TotalMilliseconds ||
@@ -221,8 +202,7 @@ internal sealed class LoginAuthenticator : IDisposable
         refreshSignal.Set();
     }
 
-    private static OpenIdSigningKey[] FetchSigningKeys(CancellationToken cancellationToken)
-    {
+    private static OpenIdSigningKey[] FetchSigningKeys(CancellationToken cancellationToken) {
         using HttpRequestMessage metadataRequest = new(HttpMethod.Get, MetadataUrl);
         using HttpResponseMessage metadataResponse = httpClient.Send(metadataRequest, cancellationToken);
         metadataResponse.EnsureSuccessStatusCode();
@@ -241,33 +221,28 @@ internal sealed class LoginAuthenticator : IDisposable
         return keySet.Keys ?? [];
     }
 
-    private static OpenIdSigningKey? FindSigningKey(OpenIdSigningKey[] keys, string keyId, string algorithm)
-    {
+    private static OpenIdSigningKey? FindSigningKey(OpenIdSigningKey[] keys, string keyId, string algorithm) {
         foreach (OpenIdSigningKey key in keys)
             if (key.KeyId == keyId && (string.IsNullOrEmpty(key.Algorithm) || key.Algorithm == algorithm))
                 return key;
         return null;
     }
 
-    private static bool VerifyRsa(TokenParts token, OpenIdSigningKey key)
-    {
+    private static bool VerifyRsa(TokenParts token, OpenIdSigningKey key) {
         using RSA rsa = RSA.Create();
-        rsa.ImportParameters(new RSAParameters
-        {
+        rsa.ImportParameters(new RSAParameters {
             Modulus = Base64Url.Decode(key.Modulus.AsSpan()),
             Exponent = Base64Url.Decode(key.Exponent.AsSpan())
         });
         return rsa.VerifyData(token.SigningInput, token.Signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     }
 
-    private static bool VerifyEc(TokenParts token, OpenIdSigningKey key)
-    {
+    private static bool VerifyEc(TokenParts token, OpenIdSigningKey key) {
         byte[] x = Base64Url.Decode(key.X.AsSpan());
         byte[] y = Base64Url.Decode(key.Y.AsSpan());
         if (x.Length != 48 || y.Length != 48)
             throw new CryptographicException("Xbox multiplayer signing key is not P-384.");
-        using ECDsa ecdsa = ECDsa.Create(new ECParameters
-        {
+        using ECDsa ecdsa = ECDsa.Create(new ECParameters {
             Curve = ECCurve.NamedCurves.nistP384,
             Q = new ECPoint { X = x, Y = y }
         });
@@ -275,8 +250,7 @@ internal sealed class LoginAuthenticator : IDisposable
             HashAlgorithmName.SHA384, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
     }
 
-    private static ECParameters ReadPublicKey(JsonElement key)
-    {
+    private static ECParameters ReadPublicKey(JsonElement key) {
         if (key.ValueKind == JsonValueKind.String)
             return ReadPublicKey(key.GetString()!);
         if (key.ValueKind != JsonValueKind.Object || key.GetProperty("kty").GetString() != "EC" ||
@@ -290,8 +264,7 @@ internal sealed class LoginAuthenticator : IDisposable
         return new ECParameters { Curve = ECCurve.NamedCurves.nistP384, Q = new ECPoint { X = x, Y = y } };
     }
 
-    private static ECParameters ReadPublicKey(string encodedKey)
-    {
+    private static ECParameters ReadPublicKey(string encodedKey) {
         byte[] keyBytes = Base64Url.Decode(encodedKey.AsSpan());
         using ECDsa key = ECDsa.Create();
         key.ImportSubjectPublicKeyInfo(keyBytes, out int bytesRead);
@@ -300,8 +273,7 @@ internal sealed class LoginAuthenticator : IDisposable
         return key.ExportParameters(false);
     }
 
-    private static TokenParts ParseToken(ReadOnlySpan<byte> token)
-    {
+    private static TokenParts ParseToken(ReadOnlySpan<byte> token) {
         int firstDot = token.IndexOf((byte)'.');
         int secondDotOffset = firstDot < 0 ? -1 : token[(firstDot + 1)..].IndexOf((byte)'.');
         int secondDot = secondDotOffset < 0 ? -1 : firstDot + secondDotOffset + 1;

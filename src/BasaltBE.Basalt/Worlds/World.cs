@@ -8,8 +8,7 @@ using BasaltBE.Basalt.Worlds.Types;
 
 namespace BasaltBE.Basalt.Worlds;
 
-public sealed class World : IDisposable
-{
+public sealed class World : IDisposable {
     readonly Lock playersSync = new();
     readonly Dictionary<string, Player> playersByUsername = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
@@ -24,8 +23,7 @@ public sealed class World : IDisposable
     public readonly Dictionary<string, Dimension> Dimensions = new(StringComparer.OrdinalIgnoreCase);
     public bool Initialized => Volatile.Read(ref initialization) == 2;
 
-    public World(string identifier, ChunkGeneratorRegistry generators, int workerCount = 4, int queueCapacity = 1024)
-    {
+    public World(string identifier, ChunkGeneratorRegistry generators, int workerCount = 4, int queueCapacity = 1024) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
         Identifier = identifier;
@@ -33,8 +31,7 @@ public sealed class World : IDisposable
         generationService = new ChunkGenerationService(workerCount, queueCapacity);
     }
 
-    internal void Initialize(Action<World> configure, EventEmitter events)
-    {
+    internal void Initialize(Action<World> configure, EventEmitter events) {
         if (Interlocked.CompareExchange(ref initialization, 1, 0) != 0)
             throw new InvalidOperationException($"World '{Identifier}' initialization has already started.");
 
@@ -50,22 +47,18 @@ public sealed class World : IDisposable
 
     public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);
 
-    public Dimension CreateDimension(string identifier)
-    {
+    public Dimension CreateDimension(string identifier) {
         return CreateDimension(identifier, generators.CreateDefault());
     }
 
-    public Dimension CreateDimension(string identifier, string generatorIdentifier)
-    {
+    public Dimension CreateDimension(string identifier, string generatorIdentifier) {
         return CreateDimension(identifier, generators.Create(generatorIdentifier));
     }
 
-    Dimension CreateDimension(string identifier, IChunkGenerator generator)
-    {
+    Dimension CreateDimension(string identifier, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
 
-        if (Dimensions.ContainsKey(identifier))
-        {
+        if (Dimensions.ContainsKey(identifier)) {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
         }
 
@@ -76,12 +69,9 @@ public sealed class World : IDisposable
         return dimension;
     }
 
-    public void AddPlayer(Player player)
-    {
-        lock (playersSync)
-        {
-            if (playersByXuid.ContainsKey(player.Xuid) || playersByUsername.ContainsKey(player.Username))
-            {
+    public void AddPlayer(Player player) {
+        lock (playersSync) {
+            if (playersByXuid.ContainsKey(player.Xuid) || playersByUsername.ContainsKey(player.Username)) {
                 throw new InvalidOperationException("A player with the same XUID or username is already in the world.");
             }
 
@@ -91,22 +81,18 @@ public sealed class World : IDisposable
         }
     }
 
-    public Player? GetPlayer(string username)
-    {
+    public Player? GetPlayer(string username) {
         lock (playersSync)
             return playersByUsername.GetValueOrDefault(username);
     }
 
-    public Player? GetPlayerByXuid(string xuid)
-    {
+    public Player? GetPlayerByXuid(string xuid) {
         lock (playersSync)
             return playersByXuid.GetValueOrDefault(xuid);
     }
 
-    public void RemovePlayer(Player player)
-    {
-        lock (playersSync)
-        {
+    public void RemovePlayer(Player player) {
+        lock (playersSync) {
             if (playersByXuid.TryGetValue(player.Xuid, out Player? byXuid) && ReferenceEquals(byXuid, player))
                 playersByXuid.Remove(player.Xuid);
             if (playersByUsername.TryGetValue(player.Username, out Player? byUsername) && ReferenceEquals(byUsername, player))
@@ -115,17 +101,13 @@ public sealed class World : IDisposable
         }
     }
 
-    public void Tick()
-    {
+    public void Tick() {
         long start = Stopwatch.GetTimestamp();
         TickValue++;
-        foreach (Dimension dimension in Dimensions.Values)
-        {
+        foreach (Dimension dimension in Dimensions.Values) {
             dimension.DrainGeneratedChunks();
-            foreach (Entity entity in dimension.GetEntities())
-            {
-                if (entity is not Player && entity.Dead)
-                {
+            foreach (Entity entity in dimension.GetEntities()) {
+                if (entity is not Player && entity.Dead) {
                     if (entity.DeathDespawnTick <= TickValue)
                         dimension.RemoveEntity(entity);
                     continue;

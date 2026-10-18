@@ -2,8 +2,7 @@ using BasaltBE.Basalt.Entities.Traits;
 
 namespace BasaltBE.Basalt.Entities.Types;
 
-internal sealed class EntityRenderState(Entity entity)
-{
+internal sealed class EntityRenderState(Entity entity) {
     internal readonly Entity Entity = entity;
     internal ulong Seen;
     internal float X = entity.Position.X;

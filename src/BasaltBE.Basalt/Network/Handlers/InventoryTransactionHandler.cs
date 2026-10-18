@@ -148,11 +148,9 @@ internal sealed class InventoryTransactionHandler {
                         return;
                     }
 
-                    if (attack)
-                    {
+                    if (attack) {
                         player.OnAttack(target, item);
-                        if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health)
-                        {
+                        if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health) {
                             float damage = player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1;
                             health.ApplyDamage(damage, EntityDamageCause.Entity, player);
                         }

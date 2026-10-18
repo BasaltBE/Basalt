@@ -14,7 +14,8 @@ public sealed class RecipeIngredient : DataType {
         if (Descriptor.Length == 0) {
             writer.WriteVarUInt(0);
             writer.WriteZigZag(32767);
-        } else {
+        }
+        else {
             writer.WriteVarUInt(1);
             writer.WriteVarString(Descriptor);
             writer.WriteVarString(DescriptorValue);
@@ -29,11 +30,13 @@ public sealed class RecipeIngredient : DataType {
             Descriptor = string.Empty;
             DescriptorValue = string.Empty;
             AuxValue = reader.ReadZigZag();
-        } else if (variant == 1) {
+        }
+        else if (variant == 1) {
             Descriptor = reader.ReadVarString();
             DescriptorValue = reader.ReadVarString();
             AuxValue = reader.ReadZigZag();
-        } else {
+        }
+        else {
             throw new InvalidDataException($"Invalid recipe ingredient descriptor variant: {variant}.");
         }
         StackSize = reader.ReadZigZag();

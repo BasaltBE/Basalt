@@ -2,15 +2,13 @@ using System.Text.Json;
 
 namespace BasaltBE.Basalt.Commands;
 
-public ref struct CommandReader(ReadOnlySpan<char> input)
-{
+public ref struct CommandReader(ReadOnlySpan<char> input) {
     private int offset;
     public readonly ReadOnlySpan<char> Input = input;
     public readonly bool Complete => Input[offset..].Trim().IsEmpty;
     public readonly int Offset => offset;
 
-    public bool Read(out ReadOnlySpan<char> token)
-    {
+    public bool Read(out ReadOnlySpan<char> token) {
         while (offset < Input.Length && char.IsWhiteSpace(Input[offset]))
             offset++;
         int start = offset;
@@ -18,26 +16,20 @@ public ref struct CommandReader(ReadOnlySpan<char> input)
         int depth = 0;
         bool quoted = false;
         bool escaped = false;
-        while (offset < Input.Length)
-        {
+        while (offset < Input.Length) {
             char character = Input[offset];
-            if (quoted)
-            {
-                if (escaped)
-                {
-                    if (character == 'u')
-                    {
+            if (quoted) {
+                if (escaped) {
+                    if (character == 'u') {
                         if (offset + 4 >= Input.Length || !char.IsAsciiHexDigit(Input[offset + 1]) ||
                             !char.IsAsciiHexDigit(Input[offset + 2]) || !char.IsAsciiHexDigit(Input[offset + 3]) ||
-                            !char.IsAsciiHexDigit(Input[offset + 4]))
-                        {
+                            !char.IsAsciiHexDigit(Input[offset + 4])) {
                             token = default;
                             return false;
                         }
                         offset += 4;
                     }
-                    else if (character is not ('"' or '\\' or '/' or 'b' or 'f' or 'n' or 'r' or 't'))
-                    {
+                    else if (character is not ('"' or '\\' or '/' or 'b' or 'f' or 'n' or 'r' or 't')) {
                         token = default;
                         return false;
                     }
@@ -45,33 +37,27 @@ public ref struct CommandReader(ReadOnlySpan<char> input)
                 }
                 else if (character == '\\')
                     escaped = true;
-                else if (character == '"')
-                {
+                else if (character == '"') {
                     quoted = false;
-                    if (depth == 0 && offset + 1 < Input.Length && !char.IsWhiteSpace(Input[offset + 1]))
-                    {
+                    if (depth == 0 && offset + 1 < Input.Length && !char.IsWhiteSpace(Input[offset + 1])) {
                         token = default;
                         return false;
                     }
                 }
             }
-            else if (character == '"')
-            {
-                if (depth == 0 && offset != start)
-                {
+            else if (character == '"') {
+                if (depth == 0 && offset != start) {
                     token = default;
                     return false;
                 }
                 quoted = true;
             }
-            else if (character is '[' or '{')
-            {
+            else if (character is '[' or '{') {
                 if (depth == closings.Length)
                     break;
                 closings[depth++] = character == '[' ? ']' : '}';
             }
-            else if (character is ']' or '}')
-            {
+            else if (character is ']' or '}') {
                 if (depth == 0 || closings[--depth] != character)
                     break;
             }
@@ -85,17 +71,14 @@ public ref struct CommandReader(ReadOnlySpan<char> input)
             (offset == Input.Length || char.IsWhiteSpace(Input[offset]));
     }
 
-    public string ReadRemaining()
-    {
+    public string ReadRemaining() {
         string value = Input[offset..].Trim().ToString();
         offset = Input.Length;
         return value;
     }
 
-    public static string Text(ReadOnlySpan<char> token)
-    {
-        if (token.IsEmpty || token[0] != '"')
-        {
+    public static string Text(ReadOnlySpan<char> token) {
+        if (token.IsEmpty || token[0] != '"') {
             if (token.Contains('"'))
                 throw new JsonException("Unexpected quote in command argument.");
             return token.ToString();

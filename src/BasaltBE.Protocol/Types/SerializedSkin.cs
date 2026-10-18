@@ -5,8 +5,7 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Protocol.Types;
 
-public sealed class SerializedSkin : DataType
-{
+public sealed class SerializedSkin : DataType {
     public string Id = string.Empty;
     public string ResourcePatch = string.Empty;
     public SkinImage ImageData = new();
@@ -29,14 +28,12 @@ public sealed class SerializedSkin : DataType
     public TrustedSkinFlag TrustedSkinFlag;
     public string ProfileHash = string.Empty;
 
-    public override void Read(ref BinaryReader reader)
-    {
+    public override void Read(ref BinaryReader reader) {
         Id = reader.ReadVarString();
         ResourcePatch = reader.ReadVarString();
         ImageData.Read(ref reader);
         AnimatedImageData = new AnimatedImageData[checked((int)reader.ReadVarUInt())];
-        for (int i = 0; i < AnimatedImageData.Length; i++)
-        {
+        for (int i = 0; i < AnimatedImageData.Length; i++) {
             AnimatedImageData[i] = new AnimatedImageData();
             AnimatedImageData[i].Read(ref reader);
         }
@@ -49,15 +46,13 @@ public sealed class SerializedSkin : DataType
         ArmSize = (PersonaArmSize)reader.ReadUInt8();
         SkinColor = reader.ReadInt32(true);
         PersonaPieces = new SerializedPersonaPieceHandle[checked((int)reader.ReadVarUInt())];
-        for (int i = 0; i < PersonaPieces.Length; i++)
-        {
+        for (int i = 0; i < PersonaPieces.Length; i++) {
             PersonaPieces[i] = new SerializedPersonaPieceHandle();
             PersonaPieces[i].Read(ref reader);
         }
         PieceTintColors = new Dictionary<string, TintMapColor>();
         uint tintCount = reader.ReadVarUInt();
-        for (int i = 0; i < tintCount; i++)
-        {
+        for (int i = 0; i < tintCount; i++) {
             string pieceType = reader.ReadVarString();
             TintMapColor colors = new();
             colors.Read(ref reader);
@@ -72,8 +67,7 @@ public sealed class SerializedSkin : DataType
         ProfileHash = reader.ReadVarString();
     }
 
-    public override void Write(ref BinaryWriter writer)
-    {
+    public override void Write(ref BinaryWriter writer) {
         writer.WriteVarString(Id);
         writer.WriteVarString(ResourcePatch);
         ImageData.Write(ref writer);
@@ -92,8 +86,7 @@ public sealed class SerializedSkin : DataType
         foreach (SerializedPersonaPieceHandle piece in PersonaPieces)
             piece.Write(ref writer);
         writer.WriteVarUInt((uint)PieceTintColors.Count);
-        foreach ((string pieceType, TintMapColor colors) in PieceTintColors)
-        {
+        foreach ((string pieceType, TintMapColor colors) in PieceTintColors) {
             writer.WriteVarString(pieceType);
             colors.Write(ref writer);
         }
@@ -102,8 +95,7 @@ public sealed class SerializedSkin : DataType
         writer.WriteBool(IsPersonaCapeOnClassicSkin);
         writer.WriteBool(IsPrimaryUser);
         writer.WriteBool(OverridesPlayerAppearance);
-        writer.WriteVarString(TrustedSkinFlag switch
-        {
+        writer.WriteVarString(TrustedSkinFlag switch {
             TrustedSkinFlag.Unset => "Unset",
             TrustedSkinFlag.False => "False",
             TrustedSkinFlag.True => "True",

@@ -4,8 +4,7 @@ using BasaltBE.Basalt.Items.Types;
 
 namespace BasaltBE.Basalt.Events.Types;
 
-public readonly struct ContainerSlotChange(Container container, int slot, ItemStack? previous, ItemStack? item)
-{
+public readonly struct ContainerSlotChange(Container container, int slot, ItemStack? previous, ItemStack? item) {
     public readonly Container Container = container;
     public readonly int Slot = slot;
     public readonly ItemType? PreviousType = previous?.Type;

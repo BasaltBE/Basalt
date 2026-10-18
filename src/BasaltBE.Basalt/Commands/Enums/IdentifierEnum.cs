@@ -2,21 +2,17 @@ using System.Collections.Frozen;
 
 namespace BasaltBE.Basalt.Commands.Enums;
 
-public abstract class IdentifierEnum<T> : CustomEnum where T : class
-{
+public abstract class IdentifierEnum<T> : CustomEnum where T : class {
     private readonly FrozenDictionary<string, T> values;
 
     protected IdentifierEnum(string identifier, FrozenDictionary<string, T> values)
-        : base(identifier, values.Keys)
-    {
+        : base(identifier, values.Keys) {
         this.values = values;
     }
 
-    protected static FrozenDictionary<string, T> Index(IEnumerable<T> values, Func<T, string> identifier)
-    {
+    protected static FrozenDictionary<string, T> Index(IEnumerable<T> values, Func<T, string> identifier) {
         Dictionary<string, T> index = new(StringComparer.Ordinal);
-        foreach (T value in values)
-        {
+        foreach (T value in values) {
             string name = identifier(value);
             index.Add(name, value);
             if (name.StartsWith("minecraft:", StringComparison.Ordinal))
@@ -25,8 +21,7 @@ public abstract class IdentifierEnum<T> : CustomEnum where T : class
         return index.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token))
             return false;

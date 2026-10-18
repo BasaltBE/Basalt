@@ -6,8 +6,7 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 
 namespace BasaltBE.Basalt.Commands.Types;
 
-public sealed class EntitySelector
-{
+public sealed class EntitySelector {
     private static readonly EntitySelector Self = new() { kind = 's' };
     private static readonly EntitySelector AllPlayers = new() { kind = 'a' };
     private static readonly EntitySelector AllEntities = new() { kind = 'e' };
@@ -24,15 +23,12 @@ public sealed class EntitySelector
     private float maximumRadius = float.MaxValue;
     private int count;
 
-    public static bool Parse(ReadOnlySpan<char> text, out EntitySelector? selector)
-    {
+    public static bool Parse(ReadOnlySpan<char> text, out EntitySelector? selector) {
         selector = null;
         if (text.IsEmpty)
             return false;
-        if (text.Length == 2 && text[0] == '@')
-        {
-            selector = text[1] switch
-            {
+        if (text.Length == 2 && text[0] == '@') {
+            selector = text[1] switch {
                 's' => Self,
                 'a' => AllPlayers,
                 'e' => AllEntities,
@@ -43,8 +39,7 @@ public sealed class EntitySelector
             return selector is not null;
         }
         EntitySelector parsed = new();
-        if (text[0] != '@')
-        {
+        if (text[0] != '@') {
             parsed.name = CommandReader.Text(text);
             selector = parsed;
             return parsed.name.Length > 0;
@@ -56,13 +51,11 @@ public sealed class EntitySelector
             return false;
         ReadOnlySpan<char> remaining = text[3..^1].Trim();
         HashSet<string> keys = new(StringComparer.Ordinal);
-        while (!remaining.IsEmpty)
-        {
+        while (!remaining.IsEmpty) {
             int end = 0;
             bool quoted = false;
             bool escaped = false;
-            for (; end < remaining.Length; end++)
-            {
+            for (; end < remaining.Length; end++) {
                 char character = remaining[end];
                 if (escaped) escaped = false;
                 else if (quoted && character == '\\') escaped = true;
@@ -82,31 +75,26 @@ public sealed class EntitySelector
             if (rawValue.IsEmpty)
                 return false;
 
-            if (key is "name" or "type" or "family")
-            {
+            if (key is "name" or "type" or "family") {
                 string value = CommandReader.Text(rawValue);
                 if (value.Length == 0)
                     return false;
                 if (key == "type" && !value.Contains(':')) value = "minecraft:" + value;
                 (parsed.filters ??= []).Add((key, value, negated));
             }
-            else
-            {
+            else {
                 if (negated || !keys.Add(key))
                     return false;
-                if (key == "c")
-                {
+                if (key == "c") {
                     if (!int.TryParse(rawValue, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out parsed.count) ||
                         parsed.count == 0 || parsed.count < -1024 || parsed.count > 1024)
                         return false;
                 }
-                else
-                {
+                else {
                     if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float number) ||
                         !float.IsFinite(number) || MathF.Abs(number) > 30_000_000)
                         return false;
-                    switch (key)
-                    {
+                    switch (key) {
                         case "x": parsed.origin.X = number; parsed.originAxes |= 1; break;
                         case "y": parsed.origin.Y = number; parsed.originAxes |= 2; break;
                         case "z": parsed.origin.Z = number; parsed.originAxes |= 4; break;
@@ -131,10 +119,8 @@ public sealed class EntitySelector
         return true;
     }
 
-    public Entity[] Resolve(CommandContext context, bool playersOnly = false)
-    {
-        if (name is not null)
-        {
+    public Entity[] Resolve(CommandContext context, bool playersOnly = false) {
+        if (name is not null) {
             Player? named = context.Server.GetPlayer(name);
             return named is { Spawned: true, Disposed: false } ? [named] : [];
         }
@@ -155,31 +141,24 @@ public sealed class EntitySelector
         Entity? selected = null;
         float selectedDistance = count < 0 ? float.MinValue : float.MaxValue;
         int matches = 0;
-        foreach (World world in context.Server.Worlds)
-        {
-            foreach (Dimension dimension in world.Dimensions.Values)
-            {
+        foreach (World world in context.Server.Worlds) {
+            foreach (Dimension dimension in world.Dimensions.Values) {
                 if (sender is not null && (spatial || kind == 'e') && !ReferenceEquals(dimension, sender.Dimension))
                     continue;
-                foreach (Entity entity in dimension.GetEntities(playersOnly || kind != 'e'))
-                {
+                foreach (Entity entity in dimension.GetEntities(playersOnly || kind != 'e')) {
                     if (!Matches(entity, center))
                         continue;
-                    if (!single)
-                    {
+                    if (!single) {
                         found!.Add(entity);
                         continue;
                     }
-                    if (kind == 'r')
-                    {
+                    if (kind == 'r') {
                         if (Random.Shared.Next(++matches) == 0)
                             selected = entity;
                     }
-                    else
-                    {
+                    else {
                         float distance = Distance(entity, center);
-                        if (selected is null || (count < 0 ? distance > selectedDistance : distance < selectedDistance))
-                        {
+                        if (selected is null || (count < 0 ? distance > selectedDistance : distance < selectedDistance)) {
                             selected = entity;
                             selectedDistance = distance;
                         }
@@ -193,8 +172,7 @@ public sealed class EntitySelector
             return [];
         if (kind == 'r')
             Random.Shared.Shuffle(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(found));
-        else if (kind == 'p' || count != 0)
-        {
+        else if (kind == 'p' || count != 0) {
             found.Sort(new SelectorDistanceComparer(center, count < 0));
         }
         int limit = count == 0 ? (kind is 'p' or 'r' ? 1 : found.Count) : Math.Abs(count);
@@ -203,16 +181,12 @@ public sealed class EntitySelector
         return found.ToArray();
     }
 
-    private bool Matches(Entity entity, Vector3 center)
-    {
+    private bool Matches(Entity entity, Vector3 center) {
         if (entity is Player { Spawned: false } or Player { Disposed: true })
             return false;
-        if (filters is not null)
-        {
-            foreach ((string key, string value, bool negated) in filters)
-            {
-                bool matches = key switch
-                {
+        if (filters is not null) {
+            foreach ((string key, string value, bool negated) in filters) {
+                bool matches = key switch {
                     "type" => entity.Type?.Identifier == value,
                     "name" => entity is Player player && string.Equals(player.Username, value, StringComparison.OrdinalIgnoreCase),
                     "family" => entity.Type is { } type && Array.IndexOf(type.Families, value) >= 0,
@@ -222,8 +196,7 @@ public sealed class EntitySelector
                     return false;
             }
         }
-        if (minimumRadius != 0 || maximumRadius != float.MaxValue)
-        {
+        if (minimumRadius != 0 || maximumRadius != float.MaxValue) {
             float distance = Distance(entity, center);
             if (distance < minimumRadius * minimumRadius || distance > (double)maximumRadius * maximumRadius)
                 return false;

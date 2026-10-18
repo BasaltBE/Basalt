@@ -5,22 +5,18 @@ using BasaltBE.Protocol.Enums;
 namespace BasaltBE.Basalt.Commands.Enums;
 
 public sealed class BlockStatesEnum(bool array = false)
-    : CommandEnum(array ? CommandParameterType.BlockStateArray : CommandParameterType.BlockStates)
-{
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+    : CommandEnum(array ? CommandParameterType.BlockStateArray : CommandParameterType.BlockStates) {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token) || token.Length < 2 || token[0] != '[' || token[^1] != ']')
             return false;
         BlockState states = new();
         ReadOnlySpan<char> remaining = token[1..^1].Trim();
-        while (!remaining.IsEmpty)
-        {
+        while (!remaining.IsEmpty) {
             int end = 0;
             bool quoted = false;
             bool escaped = false;
-            for (; end < remaining.Length; end++)
-            {
+            for (; end < remaining.Length; end++) {
                 char character = remaining[end];
                 if (escaped) escaped = false;
                 else if (quoted && character == '\\') escaped = true;

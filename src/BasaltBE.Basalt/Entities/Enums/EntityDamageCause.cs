@@ -1,7 +1,6 @@
 namespace BasaltBE.Basalt.Entities.Enums;
 
-public enum EntityDamageCause
-{
+public enum EntityDamageCause {
     Entity,
     Fire,
     Lava,

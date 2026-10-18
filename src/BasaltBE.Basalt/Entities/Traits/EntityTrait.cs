@@ -6,8 +6,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
-public abstract class EntityTrait(Entity entity)
-{
+public abstract class EntityTrait(Entity entity) {
     public readonly Entity Entity = entity;
 
     public virtual void OnAdd() { }

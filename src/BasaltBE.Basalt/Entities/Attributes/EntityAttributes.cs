@@ -3,21 +3,17 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities.Attributes;
 
-public sealed class EntityAttributes
-{
+public sealed class EntityAttributes {
     readonly Dictionary<string, EntityAttribute> values = new(StringComparer.Ordinal);
     HashSet<string>? dirty;
 
     public EntityAttribute? Get(string name) => values.TryGetValue(name, out EntityAttribute value) ? value : null;
 
-    internal SyncedAttribute[] CreateSnapshot()
-    {
+    internal SyncedAttribute[] CreateSnapshot() {
         SyncedAttribute[] attributes = new SyncedAttribute[values.Count];
         int index = 0;
-        foreach (EntityAttribute attribute in values.Values)
-        {
-            attributes[index++] = new SyncedAttribute
-            {
+        foreach (EntityAttribute attribute in values.Values) {
+            attributes[index++] = new SyncedAttribute {
                 Name = attribute.Name,
                 Minimum = attribute.Minimum,
                 Maximum = attribute.Maximum,
@@ -36,8 +32,7 @@ public sealed class EntityAttributes
         float defaultMaximum,
         float @default,
         AttributeModifier[]? modifiers = null
-    )
-    {
+    ) {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(minimum, maximum);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(defaultMinimum, defaultMaximum);
@@ -59,8 +54,7 @@ public sealed class EntityAttributes
         return true;
     }
 
-    public bool SetCurrent(string name, float current)
-    {
+    public bool SetCurrent(string name, float current) {
         if (!values.TryGetValue(name, out EntityAttribute existing))
             return false;
         float value = Math.Clamp(current, existing.Minimum, existing.Maximum);
@@ -81,8 +75,7 @@ public sealed class EntityAttributes
         return true;
     }
 
-    public bool SetModifier(string name, AttributeModifier modifier)
-    {
+    public bool SetModifier(string name, AttributeModifier modifier) {
         ArgumentNullException.ThrowIfNull(modifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(modifier.Id);
         ArgumentOutOfRangeException.ThrowIfNegative(modifier.Operation);
@@ -114,8 +107,7 @@ public sealed class EntityAttributes
         return true;
     }
 
-    public bool RemoveModifier(string name, string id)
-    {
+    public bool RemoveModifier(string name, string id) {
         if (!values.TryGetValue(name, out EntityAttribute existing))
             return false;
 
@@ -140,21 +132,18 @@ public sealed class EntityAttributes
         return true;
     }
 
-    public UpdateAttributesPacket? CreateUpdate(ulong runtimeId, bool all = false, ulong tick = 0)
-    {
+    public UpdateAttributesPacket? CreateUpdate(ulong runtimeId, bool all = false, ulong tick = 0) {
         if (values.Count == 0 || (!all && dirty is null))
             return null;
 
         int count = all ? values.Count : dirty!.Count;
         AttributeData[] attributes = new AttributeData[count];
         int index = 0;
-        if (all)
-        {
+        if (all) {
             foreach (EntityAttribute attribute in values.Values)
                 attributes[index++] = attribute.ToProtocolData();
         }
-        else
-        {
+        else {
             foreach (string name in dirty!)
                 attributes[index++] = values[name].ToProtocolData();
         }
@@ -172,19 +161,15 @@ public sealed class EntityAttributes
         left.Default == right.Default &&
         ReferenceEquals(left.Modifiers, right.Modifiers);
 
-    static float Calculate(float @default, AttributeModifier[] modifiers, float minimum, float maximum)
-    {
+    static float Calculate(float @default, AttributeModifier[] modifiers, float minimum, float maximum) {
         float value = @default;
-        for (int operation = 0; operation <= 2; operation++)
-        {
-            for (int i = 0; i < modifiers.Length; i++)
-            {
+        for (int operation = 0; operation <= 2; operation++) {
+            for (int i = 0; i < modifiers.Length; i++) {
                 AttributeModifier modifier = modifiers[i];
                 if (modifier.Operation != operation)
                     continue;
 
-                value = operation switch
-                {
+                value = operation switch {
                     0 => value + modifier.Amount,
                     1 => value + @default * modifier.Amount,
                     2 => value * (1f + modifier.Amount),

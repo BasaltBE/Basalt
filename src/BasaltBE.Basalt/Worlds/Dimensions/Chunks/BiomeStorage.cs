@@ -39,7 +39,8 @@ public sealed class BiomeStorage {
 
         if (oldBiome == 0 && biome != 0) {
             nonDefaultCount++;
-        } else if (oldBiome != 0 && biome == 0) {
+        }
+        else if (oldBiome != 0 && biome == 0) {
             nonDefaultCount--;
         }
 

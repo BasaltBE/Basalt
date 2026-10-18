@@ -6,23 +6,17 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
-public sealed class ListCommand : Command
-{
-    public ListCommand() : base("list", "List connected players.")
-    {
+public sealed class ListCommand : Command {
+    public ListCommand() : base("list", "List connected players.") {
         AddOverload();
     }
 
-    public override CommandResult Execute(CommandContext context)
-    {
+    public override CommandResult Execute(CommandContext context) {
         StringBuilder names = new();
         int count = 0;
-        foreach (World world in context.Server.Worlds)
-        {
-            foreach (Dimension dimension in world.Dimensions.Values)
-            {
-                foreach (Player player in dimension.GetPlayers())
-                {
+        foreach (World world in context.Server.Worlds) {
+            foreach (Dimension dimension in world.Dimensions.Values) {
+                foreach (Player player in dimension.GetPlayers()) {
                     if (!player.Spawned || player.Disposed)
                         continue;
                     if (count++ > 0) names.Append(", ");

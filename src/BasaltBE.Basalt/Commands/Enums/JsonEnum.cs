@@ -4,20 +4,16 @@ using BasaltBE.Protocol.Enums;
 namespace BasaltBE.Basalt.Commands.Enums;
 
 /// <summary>Returns validated JSON text. The command owns any subsequent deserialization.</summary>
-public sealed class JsonEnum() : CommandEnum(CommandParameterType.Json)
-{
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+public sealed class JsonEnum() : CommandEnum(CommandParameterType.Json) {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token))
             return false;
         string text = token.ToString();
-        try
-        {
+        try {
             using JsonDocument document = JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 16 });
         }
-        catch (JsonException)
-        {
+        catch (JsonException) {
             return false;
         }
         value = text;

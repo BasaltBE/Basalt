@@ -47,7 +47,8 @@ public sealed class BlockStorage {
         bool isAir = permutation == Air;
         if (wasAir && !isAir) {
             nonAirCount++;
-        } else if (!wasAir && isAir) {
+        }
+        else if (!wasAir && isAir) {
             nonAirCount--;
         }
 
@@ -92,7 +93,8 @@ public sealed class BlockStorage {
         writer.WriteZigZag(paletteCount);
         if (palette is null) {
             writer.WriteZigZag(implicitPermutation.NetworkId);
-        } else {
+        }
+        else {
             foreach (BlockPermutation permutation in palette) {
                 writer.WriteZigZag(permutation.NetworkId);
             }
@@ -153,7 +155,8 @@ public sealed class BlockStorage {
 
         if (bitsPerBlock == 0) {
             storage.nonAirCount = storage.implicitPermutation == Air ? 0 : CellCount;
-        } else {
+        }
+        else {
             storage.indices = indices;
             for (int cellIndex = 0; cellIndex < CellCount; cellIndex++) {
                 ushort paletteIndex = indices![cellIndex];

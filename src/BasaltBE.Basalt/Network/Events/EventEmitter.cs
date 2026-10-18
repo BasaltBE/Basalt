@@ -59,7 +59,8 @@ public sealed class EventEmitter {
                     foreach (Action<NethernetPeer, Player?, TPacket> subscriber in subscribers)
                         subscriber(peer, player, packet);
                 }
-            } finally {
+            }
+            finally {
                 if (packet is LoginPacket login && MemoryMarshal.TryGetArray(login.ConnectionRequest, out ArraySegment<byte> request))
                     CryptographicOperations.ZeroMemory(request.AsSpan());
             }

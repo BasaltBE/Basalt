@@ -17,11 +17,9 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
-public sealed class MultiplayerTransportTests
-{
+public sealed class MultiplayerTransportTests {
     [Fact]
-    public async Task ThreePeersReceiveBatchedRostersAndOrderedActorRemoval()
-    {
+    public async Task ThreePeersReceiveBatchedRostersAndOrderedActorRemoval() {
         using TcpListener reservation = new(IPAddress.Loopback, 0);
         reservation.Start();
         ushort port = (ushort)((IPEndPoint)reservation.LocalEndpoint).Port;
@@ -31,8 +29,7 @@ public sealed class MultiplayerTransportTests
         NethernetServer transport = (NethernetServer)typeof(Network.NetworkServer)
             .GetField("nethernet", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(network)!;
         Channel<NethernetPeer> connected = Channel.CreateUnbounded<NethernetPeer>();
-        transport.Start(message =>
-        {
+        transport.Start(message => {
             if (message.Connected)
                 connected.Writer.TryWrite(message.Peer);
         });
@@ -46,8 +43,7 @@ public sealed class MultiplayerTransportTests
 
         using BinaryStream skinStream = BinaryStream.Rent(32 * 1024);
         BinaryWriter skinWriter = skinStream.GetWriter();
-        new SerializedSkin
-        {
+        new SerializedSkin {
             Id = "transport-skin",
             ImageData = new SkinImage { Width = 64, Height = 64, ImageBytes = new byte[16384] }
         }.Write(ref skinWriter);
@@ -96,8 +92,7 @@ public sealed class MultiplayerTransportTests
         Assert.False(rendering.Viewing(two));
     }
 
-    private static PlayerListPacket DecodeList((uint Id, byte[] Payload) packet)
-    {
+    private static PlayerListPacket DecodeList((uint Id, byte[] Payload) packet) {
         Assert.Equal(63u, packet.Id);
         int offset = 0;
         BinaryReader reader = new(packet.Payload, ref offset);
@@ -107,22 +102,19 @@ public sealed class MultiplayerTransportTests
         return list;
     }
 
-    private static async Task<(uint Id, byte[] Payload)> ReceivePacket(NethernetClient client, CancellationToken token)
-    {
+    private static async Task<(uint Id, byte[] Payload)> ReceivePacket(NethernetClient client, CancellationToken token) {
         NethernetMessage message = await client.ReceiveAsync(token);
         Assert.False(message.Disconnected);
         ReadOnlyMemory<byte> payload = message.Payload;
         byte[] batch;
-        if (payload.Span[0] == 0)
-        {
+        if (payload.Span[0] == 0) {
             using MemoryStream input = new(payload[1..].ToArray());
             using DeflateStream deflate = new(input, CompressionMode.Decompress);
             using MemoryStream output = new();
             deflate.CopyTo(output);
             batch = output.ToArray();
         }
-        else
-        {
+        else {
             Assert.Equal(0xFF, payload.Span[0]);
             batch = payload[1..].ToArray();
         }

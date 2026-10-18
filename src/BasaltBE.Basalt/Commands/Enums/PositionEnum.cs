@@ -6,22 +6,18 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Commands.Enums;
 
 public sealed class PositionEnum(bool integer = false)
-    : CommandEnum(integer ? CommandParameterType.IntPosition : CommandParameterType.Position)
-{
-    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value)
-    {
+    : CommandEnum(integer ? CommandParameterType.IntPosition : CommandParameterType.Position) {
+    public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         Span<float> coordinates = stackalloc float[3];
         Span<char> modes = stackalloc char[3];
         Vec3? origin = context.Player?.Position;
-        for (int axis = 0; axis < 3; axis++)
-        {
+        for (int axis = 0; axis < 3; axis++) {
             if (!reader.Read(out ReadOnlySpan<char> token))
                 return false;
             char mode = token[0] is '~' or '^' ? token[0] : '\0';
             modes[axis] = mode;
-            if (mode != '\0')
-            {
+            if (mode != '\0') {
                 if (origin is null)
                     return false;
                 token = token[1..];
@@ -36,8 +32,7 @@ public sealed class PositionEnum(bool integer = false)
         }
 
         Vector3 position = new(coordinates[0], coordinates[1], coordinates[2]);
-        if (modes.Contains('^'))
-        {
+        if (modes.Contains('^')) {
             if (modes[0] != '^' || modes[1] != '^' || modes[2] != '^' || context.Player is not { } player)
                 return false;
             float yaw = player.Rotation.Y * MathF.PI / 180;
@@ -47,8 +42,7 @@ public sealed class PositionEnum(bool integer = false)
             Vector3 up = Vector3.Cross(forward, left);
             position = new Vector3(origin!.X, origin.Y, origin.Z) + left * position.X + up * position.Y + forward * position.Z;
         }
-        else if (origin is not null)
-        {
+        else if (origin is not null) {
             if (modes[0] == '~') position.X += origin.X;
             if (modes[1] == '~') position.Y += origin.Y;
             if (modes[2] == '~') position.Z += origin.Z;

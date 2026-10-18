@@ -1,8 +1,7 @@
 namespace BasaltBE.Protocol.Enums;
 
 [Flags]
-public enum CommandParameterTypeFlag : uint
-{
+public enum CommandParameterTypeFlag : uint {
     None = 0,
     Valid = 0x100000,
     Enum = 0x200000,

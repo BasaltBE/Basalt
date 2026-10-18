@@ -4,10 +4,8 @@ using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Network.Login;
 
-internal sealed class Base64UrlByteArrayConverter : JsonConverter<byte[]>
-{
-    public override byte[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
+internal sealed class Base64UrlByteArrayConverter : JsonConverter<byte[]> {
+    public override byte[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
         if (reader.TokenType != JsonTokenType.String)
             throw new JsonException();
         if (reader.ValueIsEscaped || reader.HasValueSequence)
