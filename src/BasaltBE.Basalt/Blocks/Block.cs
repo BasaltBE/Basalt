@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Blocks;
@@ -6,7 +7,8 @@ namespace BasaltBE.Basalt.Blocks;
 public sealed class Block {
     public BlockType Type;
     public BlockPermutation Permutation;
-    public CompoundTag? Actor;
+    public CompoundTag? Nbt;
+    public BlockActor? Actor;
 
     public Block(string identifier) {
         Type = BlockPalette.FindType(identifier)

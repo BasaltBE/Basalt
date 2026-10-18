@@ -18,6 +18,8 @@ public class Container {
     public readonly ContainerType Type;
     public readonly uint? DynamicId;
     public int ContainerSize => items.Length;
+    public event Action? FirstViewerOpened;
+    public event Action? LastViewerClosed;
 
     public Container(
         int size,
@@ -73,6 +75,18 @@ public class Container {
         }
 
         UpdateSlot(slot);
+    }
+
+    internal void LoadItem(int slot, ItemStack item) {
+        ArgumentOutOfRangeException.ThrowIfNegative(slot);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
+        ArgumentNullException.ThrowIfNull(item);
+        lock (sync) {
+            if (items[slot] is not null || item.StackSize == 0 || item.StackSize > item.Type.MaxAmount)
+                return;
+            items[slot] = item;
+            item.Attach(this, slot);
+        }
     }
 
     public bool CanAddItem(ItemStack item) {
@@ -247,15 +261,20 @@ public class Container {
         player.Network.Server.Events.Emit(opening);
         if (opening.IsCanceled() || player.Disposed)
             return false;
+        bool firstViewer;
         lock (player.Sync) {
             if (player.OpenedContainer is Container opened && !ReferenceEquals(opened, this))
                 opened.Close(player);
 
-            lock (sync)
+            lock (sync) {
+                firstViewer = viewers.Count == 0;
                 viewers.Add(player);
+            }
             player.OpenedContainer = this;
         }
 
+        if (firstViewer)
+            FirstViewerOpened?.Invoke();
         player.Network.SendPacket(player, new ContainerOpenPacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
@@ -268,19 +287,22 @@ public class Container {
 
     public bool Close(Player player, bool serverInitiated = true) {
         ArgumentNullException.ThrowIfNull(player);
+        bool lastViewer = false;
         lock (player.Sync) {
             bool opened = ReferenceEquals(player.OpenedContainer, this);
             lock (sync) {
                 if (!viewers.Contains(player) && !opened)
                     return false;
-                if (!persistentViewers.Contains(player))
-                    viewers.Remove(player);
+                if (!persistentViewers.Contains(player) && viewers.Remove(player))
+                    lastViewer = viewers.Count == 0;
             }
 
             if (opened)
                 player.OpenedContainer = null;
         }
 
+        if (lastViewer)
+            LastViewerClosed?.Invoke();
         player.Network.SendPacket(player, new ContainerClosePacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
@@ -293,21 +315,37 @@ public class Container {
 
     public void AddPersistent(Player player) {
         ArgumentNullException.ThrowIfNull(player);
+        bool firstViewer;
         lock (sync) {
+            firstViewer = viewers.Count == 0;
             persistentViewers.Add(player);
             viewers.Add(player);
         }
+        if (firstViewer)
+            FirstViewerOpened?.Invoke();
         Update(player);
     }
 
     public bool RemovePersistence(Player player) {
         ArgumentNullException.ThrowIfNull(player);
+        bool lastViewer;
         lock (sync) {
             if (!persistentViewers.Remove(player))
                 return false;
             viewers.Remove(player);
-            return true;
+            lastViewer = viewers.Count == 0;
         }
+        if (lastViewer)
+            LastViewerClosed?.Invoke();
+        return true;
+    }
+
+    internal void CloseViewers() {
+        Player[] current;
+        lock (sync)
+            current = [.. viewers];
+        foreach (Player player in current)
+            Close(player);
     }
 
     public FullContainerName GetFullContainerName() => new() {

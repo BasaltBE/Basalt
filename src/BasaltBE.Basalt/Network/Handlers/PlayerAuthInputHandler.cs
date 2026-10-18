@@ -343,7 +343,7 @@ internal sealed class PlayerAuthInputHandler {
         int y = position.Y;
         int z = position.Z;
         Chunk chunk = player.Dimension.GetChunk(x >> 4, z >> 4)!;
-        chunk.SetBlockActor(x & 15, y, z & 15, null);
+        player.Dimension.RemoveBlockActor(x, y, z);
         player.Dimension.SetPermutation(x, y, z, BlockStorage.Air);
 
         LevelEventPacket particles = blockBreakEvent ?? new();

@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using BasaltBE.Basalt;
+using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Commands.Types;
 using BasaltBE.Basalt.Commands.Vanilla;
@@ -54,6 +56,7 @@ internal static class Program {
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");
             using Server server = new(properties, permissions: permissions);
+            server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
 
             #endregion
 

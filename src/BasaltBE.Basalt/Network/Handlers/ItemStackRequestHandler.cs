@@ -58,23 +58,31 @@ internal sealed class ItemStackRequestHandler {
         Container cursor,
         ItemStackRequestData request
     ) {
-        return ProcessRequest(inventory, cursor, request, null);
+        return ProcessRequest(inventory, cursor, request, null, null);
     }
 
     private static ItemStackResponseInfo ProcessRequest(PlayerInventoryTrait inventory, ItemStackRequestData request) =>
-        ProcessRequest(inventory.Inventory, inventory.Cursor, request, inventory);
+        ProcessRequest(
+            inventory.Inventory,
+            inventory.Cursor,
+            request,
+            inventory,
+            inventory.Entity is Player player ? player.OpenedContainer : null
+        );
 
     private static ItemStackResponseInfo ProcessRequest(
         Container inventory,
         Container cursor,
         ItemStackRequestData request,
-        PlayerInventoryTrait? inventoryTrait
+        PlayerInventoryTrait? inventoryTrait,
+        Container? openedContainer
     ) {
         int clientRequestNetId = (request.ClientRequestId >> 1) ^ -(request.ClientRequestId & 1);
         RequestState state = cachedState ?? new RequestState();
         cachedState = null;
         state.Inventory = inventory;
         state.Cursor = cursor;
+        state.OpenedContainer = openedContainer;
         state.ClientRequestNetId = clientRequestNetId;
         state.InventoryTrait = inventoryTrait;
         try {
@@ -152,6 +160,7 @@ internal sealed class ItemStackRequestHandler {
         finally {
             state.Inventory = null!;
             state.Cursor = null!;
+            state.OpenedContainer = null;
             state.InventoryTrait = null;
             state.ClientRequestNetId = 0;
             state.Staged.Clear();
@@ -319,6 +328,13 @@ internal sealed class ItemStackRequestHandler {
 
     private static bool ResolveContainer(RequestState state, FullContainerName name, out Container? container) {
         container = null;
+        if (state.OpenedContainer is { } openedContainer &&
+            openedContainer.ContainerName == name.ContainerName &&
+            openedContainer.DynamicId == name.DynamicId) {
+            container = openedContainer;
+            return true;
+        }
+
         if (name.DynamicId is uint dynamicId && dynamicId != 0)
             return false;
 
@@ -349,6 +365,7 @@ internal sealed class ItemStackRequestHandler {
     private sealed class RequestState {
         internal Container Inventory = null!;
         internal Container Cursor = null!;
+        internal Container? OpenedContainer;
         internal int ClientRequestNetId;
         internal PlayerInventoryTrait? InventoryTrait;
         internal readonly Dictionary<SlotKey, ItemStack?> Staged = [];

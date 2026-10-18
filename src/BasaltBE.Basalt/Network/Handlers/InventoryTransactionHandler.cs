@@ -1,5 +1,7 @@
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
+using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
@@ -298,6 +300,13 @@ internal sealed class InventoryTransactionHandler {
             return false;
         }
 
+        if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success &&
+            !player.Flags.Get(ActorFlag.Sneaking) &&
+            player.Dimension.GetBlockActor(clickedChunk, use.Position.X & 15, use.Position.Y, use.Position.Z & 15) is { } actor) {
+            actor.OnInteract(player);
+            return true;
+        }
+
         BlockPermutation? permutation = item?.Type.PlacementPermutation;
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
             player.OnUseItemOnBlock(item, clicked, use.Position, use.Face, use.ClickPosition);
@@ -341,7 +350,8 @@ internal sealed class InventoryTransactionHandler {
             return false;
         }
 
-        if (BlockPalette.FindType(permutation.Identifier)?.Solid == true) {
+        BlockType? blockType = BlockPalette.FindType(permutation.Identifier);
+        if (blockType?.Solid == true) {
             bool collision = Collides(player, x, y, z);
             foreach (Player viewer in player.Dimension.GetChunkViewers(x >> 4, z >> 4)) {
                 if (viewer.Spawned && !viewer.Disposed && !ReferenceEquals(viewer, player) && Collides(viewer, x, y, z)) {
@@ -360,8 +370,23 @@ internal sealed class InventoryTransactionHandler {
             string axis = use.Face is 4 or 5 ? "x" : use.Face is 2 or 3 ? "z" : "y";
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "pillar_axis", axis) ?? permutation;
         }
+        if (blockType is not null && Array.IndexOf(blockType.States, "minecraft:cardinal_direction") >= 0) {
+            int facing = ((int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3);
+            string direction = facing switch {
+                0 => "north",
+                1 => "east",
+                2 => "south",
+                _ => "west"
+            };
+            permutation = BlockPalette.Find(
+                permutation.Identifier,
+                permutation.State,
+                "minecraft:cardinal_direction",
+                direction
+            ) ?? permutation;
+        }
 
-        chunk.SetBlockActor(x & 15, y, z & 15, null);
+        player.Dimension.RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation);
         Logger.Scoped("Network").Debug($"Player {player.Username} placed {permutation.Identifier} at ({x}, {y}, {z}) in {player.Dimension.Identifier}.");
         try {
@@ -374,6 +399,7 @@ internal sealed class InventoryTransactionHandler {
         finally {
             SendBlockUpdate(player, x, y, z, 0, broadcast: true);
         }
+        player.Dimension.PlaceBlockActor(x, y, z, permutation.Identifier)?.Update();
         return true;
     }
 

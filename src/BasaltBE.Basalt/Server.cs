@@ -2,6 +2,8 @@ using System.Net;
 using System.Diagnostics;
 using BasaltBE.Logging;
 using BasaltBE.Basalt.Commands;
+using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.LootTables;
@@ -34,6 +36,7 @@ public sealed class Server : IDisposable
     public readonly EventEmitter Events = new();
     public readonly ChunkGeneratorRegistry Generators = new();
     public readonly LootTableManager LootTables = new();
+    public readonly BlockActorRegistry BlockActors = new();
     private readonly List<World> worlds = [];
     public readonly IReadOnlyList<World> Worlds;
     public readonly CommandRegistry Commands;
@@ -154,6 +157,7 @@ public sealed class Server : IDisposable
 
         _ = GetWorld();
         Commands.Prepare();
+        BlockActors.Freeze();
         coordinatorThread = Environment.CurrentManagedThreadId;
         Started = true;
         foreach (World world in worlds)

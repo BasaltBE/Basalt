@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
+using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Entities.Traits;
@@ -202,6 +204,7 @@ public sealed class Dimension : IDisposable {
         }
 
         chunk = new Chunk(chunkX, chunkZ);
+        chunk.Dimension = this;
         chunks[key] = chunk;
         chunkCount++;
         return chunk;
@@ -355,6 +358,7 @@ public sealed class Dimension : IDisposable {
 
             if (chunks.TryGetValue(result.Key, out Chunk? current) && current is null) {
                 if (result.Chunk is not null) {
+                    result.Chunk.Dimension = this;
                     chunks[result.Key] = result.Chunk;
                     chunkCount++;
                     committed++;
@@ -404,7 +408,67 @@ public sealed class Dimension : IDisposable {
             chunk = GetOrCreateChunk(chunkX, chunkZ);
         }
 
+        if (layer == 0 && chunk.GetPermutation(x & 15, y, z & 15, layer) != permutation)
+            RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation, layer);
+    }
+
+    internal BlockActor? GetBlockActor(Chunk chunk, int x, int y, int z) {
+        if (chunk.GetRuntimeActor(x, y, z) is { } actor)
+            return actor;
+        if (chunk.GetBlockNbt(x, y, z) is not { } nbt)
+            return null;
+
+        BlockPermutation permutation = chunk.GetPermutation(x, y, z);
+        BlockActor? loaded = World?.Server?.BlockActors.Create(
+            permutation.Identifier,
+            new BlockActorContext(
+                this,
+                new BlockPos { X = chunk.X * 16 + x, Y = y, Z = chunk.Z * 16 + z },
+                permutation.Identifier,
+                permutation,
+                nbt
+            )
+        );
+        if (loaded is null)
+            return null;
+
+        loaded.OnRead(nbt);
+        chunk.SetRuntimeActor(x, y, z, loaded);
+        return loaded;
+    }
+
+    internal BlockActor? PlaceBlockActor(int x, int y, int z, string blockIdentifier) {
+        Chunk chunk = GetOrCreateChunk(x >> 4, z >> 4);
+        BlockActorContext context = new(
+            this,
+            new BlockPos { X = x, Y = y, Z = z },
+            blockIdentifier,
+            GetPermutation(x, y, z),
+            new CompoundTag()
+        );
+        BlockActor? actor = World?.Server?.BlockActors.Create(blockIdentifier, context);
+        if (actor is null)
+            return null;
+
+        actor.Nbt.Add("id", new StringTag { Value = actor.ActorIdentifier });
+        actor.Nbt.Add("x", new IntTag { Value = x });
+        actor.Nbt.Add("y", new IntTag { Value = y });
+        actor.Nbt.Add("z", new IntTag { Value = z });
+        actor.OnPlace();
+        chunk.SetBlockNbt(x & 15, y, z & 15, actor.Nbt);
+        chunk.SetRuntimeActor(x & 15, y, z & 15, actor);
+        return actor;
+    }
+
+    internal void RemoveBlockActor(int x, int y, int z) {
+        Chunk? chunk = GetChunk(x >> 4, z >> 4);
+        if (chunk is null)
+            return;
+
+        BlockActor? actor = GetBlockActor(chunk, x & 15, y, z & 15);
+        actor?.OnRemove();
+        chunk.SetBlockNbt(x & 15, y, z & 15, null);
     }
 
     public void AddTickingArea(string identifier, ReadOnlySpan<ChunkPos> positions) {

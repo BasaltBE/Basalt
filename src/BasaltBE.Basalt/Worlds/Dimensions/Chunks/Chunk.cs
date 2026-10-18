@@ -1,5 +1,7 @@
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Nbt.Types;
 using NbtCodec = BasaltBE.Nbt.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -8,8 +10,12 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class Chunk(int x, int z) {
+    static readonly Options NetworkNbtOptions = new() { VarInt = true, StringLengthVarInt = true };
+
     Dictionary<int, SubChunk>? subChunks;
     Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
+    Dictionary<(int X, int Y, int Z), BlockActor>? actors;
+    internal Dimension? Dimension;
 
     public readonly int X = x;
     public readonly int Z = z;
@@ -95,25 +101,28 @@ public sealed class Chunk(int x, int z) {
             ?? throw new KeyNotFoundException($"Block type '{permutation.Identifier}' was not found.");
 
         return new Block(type, permutation) {
-            Actor = GetBlockActor(x, y, z)
+            Nbt = GetBlockNbt(x, y, z),
+            Actor = Dimension?.GetBlockActor(this, x, y, z)
         };
     }
 
     public void SetBlock(int x, int y, int z, Block block, int layer = 0) {
         ArgumentNullException.ThrowIfNull(block);
         SetPermutation(x, y, z, block.Permutation, layer);
-        SetBlockActor(x, y, z, block.Actor);
+        SetBlockNbt(x, y, z, block.Actor?.Nbt ?? block.Nbt);
+        SetRuntimeActor(x, y, z, block.Actor);
     }
 
-    public CompoundTag? GetBlockActor(int x, int y, int z) {
+    public CompoundTag? GetBlockNbt(int x, int y, int z) {
         BlockStorage.GetIndex(x, y & 15, z);
         return blockActors?.GetValueOrDefault((x, y, z));
     }
 
-    public void SetBlockActor(int x, int y, int z, CompoundTag? actor) {
+    public void SetBlockNbt(int x, int y, int z, CompoundTag? actor) {
         BlockStorage.GetIndex(x, y & 15, z);
         if (actor is null) {
             blockActors?.Remove((x, y, z));
+            actors?.Remove((x, y, z));
             return;
         }
 
@@ -123,6 +132,17 @@ public sealed class Chunk(int x, int z) {
         SetCoordinate(actor, "z", checked(Z * 16 + z));
         blockActors ??= [];
         blockActors[(x, y, z)] = actor;
+    }
+
+    internal BlockActor? GetRuntimeActor(int x, int y, int z) => actors?.GetValueOrDefault((x, y, z));
+
+    internal void SetRuntimeActor(int x, int y, int z, BlockActor? actor) {
+        if (actor is null) {
+            actors?.Remove((x, y, z));
+            return;
+        }
+
+        (actors ??= [])[(x, y, z)] = actor;
     }
 
     /// <summary>Serializes/Writes chunk data into a writer.</summary>
@@ -162,8 +182,13 @@ public sealed class Chunk(int x, int z) {
             return;
         }
 
+        if (actors is not null) {
+            foreach (BlockActor actor in actors.Values)
+                actor.OnWrite(actor.Nbt);
+        }
+
         foreach (CompoundTag actor in blockActors.Values) {
-            NbtCodec.Write(actor, ref writer, Options.LittleEndian);
+            NbtCodec.Write(actor, ref writer, NetworkNbtOptions);
         }
     }
 
@@ -221,14 +246,14 @@ public sealed class Chunk(int x, int z) {
                 throw new InvalidDataException("Invalid block actor NBT tag in chunk data.");
             }
 
-            if (NbtCodec.Read(ref reader, Options.LittleEndian) is not CompoundTag actor ||
+            if (NbtCodec.Read(ref reader, NetworkNbtOptions) is not CompoundTag actor ||
                 !actor.TryGet("x", out IntTag? actorX) ||
                 !actor.TryGet("y", out IntTag? actorY) ||
                 !actor.TryGet("z", out IntTag? actorZ)) {
                 throw new InvalidDataException("Block actor is missing its coordinates.");
             }
 
-            chunk.SetBlockActor(actorX!.Value - x * 16, actorY!.Value, actorZ!.Value - z * 16, actor);
+            chunk.SetBlockNbt(actorX!.Value - x * 16, actorY!.Value, actorZ!.Value - z * 16, actor);
         }
 
         return chunk;
