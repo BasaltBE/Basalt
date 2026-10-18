@@ -1,5 +1,8 @@
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Events.Entities;
+using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Basalt.LootTables;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
@@ -111,6 +114,25 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         if (death is not null) {
             Entity.Dead = true;
             Entity.OnDeath(death);
+            if (Entity is not Player && Entity.SpawnedDimension is { } dropDimension &&
+                dropDimension.World is { } dropWorld && Entity.Type is { } entityType) {
+                foreach (EntityDrop drop in dropWorld.LootTables.GetEntityDrops(entityType.Identifier)) {
+                    ItemType? itemType = ItemPalette.Find(drop.Identifier);
+                    if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
+                        continue;
+
+                    int dropAmount = drop.MinAmount == drop.MaxAmount
+                        ? drop.MinAmount
+                        : (int)Random.Shared.NextInt64(drop.MinAmount, (long)drop.MaxAmount + 1);
+                    while (dropAmount > 0) {
+                        ushort stackSize = (ushort)Math.Min(itemType.MaxAmount, dropAmount);
+                        ItemEntity item = new(new ItemStack(itemType, stackSize), Entity);
+                        item.Spawn(dropDimension);
+                        dropAmount -= stackSize;
+                    }
+                }
+            }
+
             if (Entity is not Player && Entity.SpawnedDimension is { } deadDimension) {
                 deadDimension.Broadcast(new ActorEventPacket {
                     TargetRuntimeId = Entity.RuntimeId,

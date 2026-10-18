@@ -3,6 +3,7 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Events.Worlds;
+using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Types;
 
@@ -19,15 +20,23 @@ public sealed class World : IDisposable {
     internal ulong TickValue;
 
     public readonly string Identifier;
+    public readonly LootTableManager LootTables;
     public readonly TickMetrics Ticks = new();
     public readonly Dictionary<string, Dimension> Dimensions = new(StringComparer.OrdinalIgnoreCase);
     public bool Initialized => Volatile.Read(ref initialization) == 2;
 
-    public World(string identifier, ChunkGeneratorRegistry generators, int workerCount = 4, int queueCapacity = 1024) {
+    public World(
+        string identifier,
+        ChunkGeneratorRegistry generators,
+        int workerCount = 4,
+        int queueCapacity = 1024,
+        LootTableManager? lootTables = null
+    ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
         Identifier = identifier;
         this.generators = generators;
+        LootTables = lootTables ?? new LootTableManager();
         generationService = new ChunkGenerationService(workerCount, queueCapacity);
     }
 

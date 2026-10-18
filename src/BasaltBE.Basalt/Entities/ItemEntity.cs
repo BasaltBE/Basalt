@@ -25,9 +25,32 @@ public sealed class ItemEntity : Entity {
     public readonly ItemStack Item;
 
     public ItemEntity(ItemStack item, Player player, bool randomly)
+        : this(item, player, 0, 0, 0, blockDrop: false, randomly) {
+    }
+
+    public ItemEntity(ItemStack item, Player player, int blockX, int blockY, int blockZ)
+        : this(item, player, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
+    }
+
+    public ItemEntity(ItemStack item, Entity source)
+        : this(item, source, 0, 0, 0, blockDrop: false, randomly: true, entityDrop: true) {
+    }
+
+    private ItemEntity(
+        ItemStack item,
+        Entity source,
+        int blockX,
+        int blockY,
+        int blockZ,
+        bool blockDrop,
+        bool randomly,
+        bool entityDrop = false
+    )
         : base(ItemType) {
         ArgumentNullException.ThrowIfNull(item);
-        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(source);
+        if (!blockDrop && !entityDrop && source is not Player)
+            throw new ArgumentException("Player drops require a player source.", nameof(source));
         if (item.StackSize == 0 || item.Type.NetworkId == 0)
             throw new ArgumentException("Dropped items must have a valid non-empty stack.", nameof(item));
         if (item.Container is not null)
@@ -40,30 +63,50 @@ public sealed class ItemEntity : Entity {
             VerticalDragBeforeGravity = true
         };
         AddTrait(movement);
-        mergeUnlockTick = player.World.TickValue + MergeDelayTicks;
-        pickupUnlockTick = player.World.TickValue + PickupDelayTicks;
-        despawnTick = player.World.TickValue + DespawnDelayTicks;
+        ulong tick = source.SpawnedDimension?.World?.TickValue ?? 0;
+        mergeUnlockTick = tick + MergeDelayTicks;
+        pickupUnlockTick = tick + PickupDelayTicks;
+        despawnTick = tick + DespawnDelayTicks;
         nextMergeTick = mergeUnlockTick;
 
-        float pitch = player.Rotation.X * (MathF.PI / 180);
-        float yaw = player.Rotation.Y * (MathF.PI / 180);
-        float pitchCosine = MathF.Cos(pitch);
-        float directionX = -MathF.Sin(yaw) * pitchCosine;
-        float directionY = -MathF.Sin(pitch);
-        float directionZ = MathF.Cos(yaw) * pitchCosine;
-        Position.X = player.Position.X + directionX * 0.3f;
-        Position.Y = player.Position.Y + 1.3f + directionY * 0.3f;
-        Position.Z = player.Position.Z + directionZ * 0.3f;
-
-        if (randomly) {
-            directionX += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
-            directionY += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
-            directionZ += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+        if (blockDrop) {
+            Position.X = blockX + 0.5f;
+            Position.Y = blockY + 0.25f;
+            Position.Z = blockZ + 0.5f;
+            movement.Motion.X = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
+            movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
         }
+        else if (entityDrop) {
+            Position.X = source.Position.X;
+            Position.Y = source.Position.Y + 0.3f;
+            Position.Z = source.Position.Z;
+            movement.Motion.X = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
+            movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+        }
+        else {
+            Player player = (Player)source;
+            float pitch = player.Rotation.X * (MathF.PI / 180);
+            float yaw = player.Rotation.Y * (MathF.PI / 180);
+            float pitchCosine = MathF.Cos(pitch);
+            float directionX = -MathF.Sin(yaw) * pitchCosine;
+            float directionY = -MathF.Sin(pitch);
+            float directionZ = MathF.Cos(yaw) * pitchCosine;
+            Position.X = player.Position.X + directionX * 0.3f;
+            Position.Y = player.Position.Y + 1.3f + directionY * 0.3f;
+            Position.Z = player.Position.Z + directionZ * 0.3f;
 
-        movement.Motion.X = directionX * 0.4f;
-        movement.Motion.Y = directionY * 0.4f;
-        movement.Motion.Z = directionZ * 0.4f;
+            if (randomly) {
+                directionX += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+                directionY += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+                directionZ += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            }
+
+            movement.Motion.X = directionX * 0.4f;
+            movement.Motion.Y = directionY * 0.4f;
+            movement.Motion.Z = directionZ * 0.4f;
+        }
     }
 
     internal void TickItem() {

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
+using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Permissions;
@@ -23,6 +24,7 @@ public sealed class Server : IDisposable {
     public readonly NetworkServer Network;
     public readonly EventEmitter Events = new();
     public readonly ChunkGeneratorRegistry Generators = new();
+    public readonly LootTableManager LootTables = new();
     public readonly List<World> Worlds = [];
     public readonly CommandRegistry Commands;
     public readonly PermissionStore Permissions;
@@ -58,7 +60,7 @@ public sealed class Server : IDisposable {
                 throw new InvalidOperationException($"World '{identifier}' already exists.");
         }
 
-        World world = new(identifier, Generators);
+        World world = new(identifier, Generators, lootTables: LootTables);
         Worlds.Add(world);
         try {
             world.Initialize(configure, Events);

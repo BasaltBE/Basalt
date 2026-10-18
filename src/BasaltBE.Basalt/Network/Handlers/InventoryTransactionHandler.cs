@@ -13,7 +13,6 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class InventoryTransactionHandler {
     private const float BlockReachSquared = 6 * 6;
-    private const float EntityReachSquared = 3 * 3;
     [ThreadStatic]
     private static UpdateBlockPacket? blockUpdate;
 
@@ -142,9 +141,10 @@ internal sealed class InventoryTransactionHandler {
                     float distanceY = eyeY - closestY;
                     float distanceZ = eyeZ - closestZ;
                     float distanceSquared = distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ;
-                    if (!float.IsFinite(distanceSquared) || distanceSquared > EntityReachSquared) {
+                    float reach = player.InputMode == InputMode.Touch ? 6 : 3;
+                    if (!float.IsFinite(distanceSquared) || distanceSquared > reach * reach) {
                         if (attack)
-                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is out of reach ({MathF.Sqrt(distanceSquared):0.##} blocks).");
+                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is out of reach ({MathF.Sqrt(distanceSquared):0.##} blocks, {reach} block limit for {player.InputMode} input).");
                         return;
                     }
 

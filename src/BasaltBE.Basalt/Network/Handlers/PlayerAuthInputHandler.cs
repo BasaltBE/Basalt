@@ -5,6 +5,9 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
+using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
@@ -58,6 +61,8 @@ internal sealed class PlayerAuthInputHandler {
         }
 
         movement.InputTick = packet.ClientTick.Tick;
+        if (packet.InputMode is >= InputMode.Mouse and < InputMode.Count)
+            player.InputMode = packet.InputMode;
         if (inputs[(int)PlayerAuthInputData.PerformItemInteraction] && packet.ItemUseTransaction is { } interaction)
             player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(interaction.ItemUseTransaction, interaction.LegacyRequestId);
 
@@ -232,7 +237,7 @@ internal sealed class PlayerAuthInputHandler {
             case PlayerActionType.CreativeDestroyBlock:
                 if (player.Abilities.Get(PlayerAbility.InstantBuild)) {
                     StopBlockBreak(player);
-                    DestroyBlock(player, action.Position);
+                    DestroyBlock(player, action.Position, dropItems: false);
                 }
                 break;
         }
@@ -300,7 +305,7 @@ internal sealed class PlayerAuthInputHandler {
         }
         if (player.Abilities.Get(PlayerAbility.InstantBuild)) {
             StopBlockBreak(player);
-            DestroyBlock(player, target);
+            DestroyBlock(player, target, dropItems: false);
             return;
         }
 
@@ -322,7 +327,7 @@ internal sealed class PlayerAuthInputHandler {
         }
     }
 
-    private static void DestroyBlock(Player player, BlockPos position) {
+    private static void DestroyBlock(Player player, BlockPos position, bool dropItems = true) {
         if (!ValidBlockTarget(player, position)) {
             SendBlockUpdate(player, position.X, position.Y, position.Z);
             return;
@@ -382,6 +387,28 @@ internal sealed class PlayerAuthInputHandler {
         }
         finally {
             blockUpdate ??= update;
+        }
+
+        if (dropItems) {
+            ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
+                ? inventory.Inventory.GetItem(inventory.SelectedSlot)
+                : null;
+            ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool);
+            foreach (BlockDrop drop in drops) {
+                ItemType? itemType = ItemPalette.Find(drop.Identifier);
+                if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
+                    continue;
+
+                int amount = drop.MinAmount == drop.MaxAmount
+                    ? drop.MinAmount
+                    : (int)Random.Shared.NextInt64(drop.MinAmount, (long)drop.MaxAmount + 1);
+                while (amount > 0) {
+                    ushort stackSize = (ushort)Math.Min(itemType.MaxAmount, amount);
+                    ItemEntity item = new(new ItemStack(itemType, stackSize), player, x, y, z);
+                    item.Spawn(player.Dimension);
+                    amount -= stackSize;
+                }
+            }
         }
     }
 

@@ -41,6 +41,7 @@ public sealed class Player : Entity, IDisposable {
 
     /// <summary>Serialized skin data from the Bedrock login data.</summary>
     public readonly byte[] Skin;
+    internal InputMode InputMode;
     internal readonly PlayerListEntry ListEntry;
     internal bool Listed;
 
