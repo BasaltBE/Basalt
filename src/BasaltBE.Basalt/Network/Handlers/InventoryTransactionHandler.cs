@@ -33,6 +33,12 @@ internal sealed class InventoryTransactionHandler {
             if (player.Disposed || !player.Spawned || inventory is null)
                 return;
 
+            if (transaction is NormalTransactionData normal &&
+                normal.Actions.Actions.Any(action => action.Source.Type == InventorySourceType.WorldInteraction)) {
+                DropWorldItem(player, inventory, normal.Actions.Actions, legacyRequestId);
+                return;
+            }
+
             if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction)) {
                 player.Network.SendPacket(player, new ItemStackResponsePacket {
                     Responses = [new ItemStackResponseInfo {
@@ -157,6 +163,109 @@ internal sealed class InventoryTransactionHandler {
             }
         }
     }
+
+    private static void DropWorldItem(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions, int legacyRequestId) {
+        InventoryAction? worldAction = null;
+        InventoryAction? inventoryAction = null;
+        bool invalidAction = false;
+        foreach (InventoryAction action in actions) {
+            if (action.Source.Type == InventorySourceType.WorldInteraction) {
+                if (worldAction is not null) {
+                    invalidAction = true;
+                    break;
+                }
+                worldAction = action;
+            }
+            else if (action.Source.Type == InventorySourceType.ContainerInventory &&
+                action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId) {
+                if (inventoryAction is not null) {
+                    invalidAction = true;
+                    break;
+                }
+                inventoryAction = action;
+            }
+            else {
+                invalidAction = true;
+                break;
+            }
+        }
+
+        ItemStack? item = null;
+        bool valid = !invalidAction && actions.Length == 2 && worldAction is not null && inventoryAction is not null &&
+            inventoryAction.Slot < 9 &&
+            inventory.MatchesItem((int)inventoryAction.Slot, inventoryAction.FromItem, out item) && item is not null;
+        int amount = valid ? inventoryAction!.FromItem.StackSize - inventoryAction.ToItem.StackSize : 0;
+        if (valid) {
+            NetworkItemStackDescriptor from = inventoryAction!.FromItem;
+            NetworkItemStackDescriptor dropped = worldAction!.ToItem;
+            valid = amount > 0 && amount <= item!.StackSize &&
+                SameItem(from, item.ToNetworkStackDescriptor()) &&
+                (inventoryAction.ToItem.StackSize == 0 || SameItem(from, inventoryAction.ToItem)) &&
+                dropped.Id == from.Id && dropped.AuxValue == from.AuxValue && dropped.StackSize == amount &&
+                dropped.BlockRuntimeId == from.BlockRuntimeId && dropped.UserData == from.UserData;
+        }
+
+        if (!valid) {
+            Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: invalid inventory transaction.");
+            inventory.Inventory.Update();
+            if (legacyRequestId != 0) {
+                player.Network.SendPacket(player, new ItemStackResponsePacket {
+                    Responses = [new ItemStackResponseInfo {
+                        ClientRequestId = legacyRequestId,
+                        Result = ItemStackNetResult.Error
+                    }]
+                });
+            }
+            return;
+        }
+
+        ItemStack sourceItem = item!;
+        InventoryAction sourceAction = inventoryAction!;
+        InventoryAction dropAction = worldAction!;
+        ItemStack drop = sourceItem.Clone((ushort)amount, cloneNbt: amount != sourceItem.StackSize);
+        ItemEntity droppedEntity = new(
+            drop,
+            player,
+            dropAction.Source.Flags == InventorySourceFlags.WorldInteractionRandom
+        );
+        if (inventory.Inventory.TakeItem((int)sourceAction.Slot, (ushort)amount) is null) {
+            Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: source slot was empty.");
+            inventory.Inventory.Update();
+            if (legacyRequestId != 0) {
+                player.Network.SendPacket(player, new ItemStackResponsePacket {
+                    Responses = [new ItemStackResponseInfo {
+                        ClientRequestId = legacyRequestId,
+                        Result = ItemStackNetResult.Error
+                    }]
+                });
+            }
+            return;
+        }
+        droppedEntity.Spawn(player.Dimension);
+
+        if (legacyRequestId != 0) {
+            ItemStack? remaining = inventory.Inventory.GetItem((int)sourceAction.Slot);
+            player.Network.SendPacket(player, new ItemStackResponsePacket {
+                Responses = [new ItemStackResponseInfo {
+                    ClientRequestId = legacyRequestId,
+                    Result = ItemStackNetResult.Success,
+                    Containers = [new ItemStackResponseContainerInfo {
+                        ContainerName = inventory.Inventory.GetFullContainerName(),
+                        Slots = [new ItemStackResponseSlotInfo {
+                            RequestedSlot = (byte)sourceAction.Slot,
+                            Slot = (byte)sourceAction.Slot,
+                            Amount = (byte)(remaining?.StackSize ?? 0),
+                            ItemStackNetId = remaining?.NetId
+                        }]
+                    }]
+                }]
+            });
+        }
+    }
+
+    private static bool SameItem(NetworkItemStackDescriptor first, NetworkItemStackDescriptor second) =>
+        first.Id == second.Id && first.AuxValue == second.AuxValue &&
+        first.BlockRuntimeId == second.BlockRuntimeId && first.UserData == second.UserData;
 
     private static bool UseItemOnBlock(Player player, PlayerInventoryTrait inventory, ItemStack? item, ItemUseInventoryTransaction use) {
         PlayerChunkRenderingTrait? rendering = player.GetTrait<PlayerChunkRenderingTrait>();

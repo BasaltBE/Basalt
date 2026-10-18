@@ -25,6 +25,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity)
     public readonly Vec3 Motion = new();
     public float Gravity = 0.08f;
     public float Drag = 0.02f;
+    public bool VerticalDragBeforeGravity;
     public float TerminalVelocity = -3.92f;
     public float MovementSpeed = 0.1f;
     public const float KnockbackHorizontal = 0.3f;
@@ -81,14 +82,22 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity)
         if (!gravity && Motion.X == 0 && Motion.Y == 0 && Motion.Z == 0)
             return;
 
-        float width = Entity.Type?.PropertiesPayload?.Components.CollisionBox?.Width is double configuredWidth &&
-            double.IsFinite(configuredWidth) && configuredWidth > 0 && configuredWidth <= float.MaxValue
-                ? (float)configuredWidth
-                : 0.6f;
-        float height = Entity.Type?.PropertiesPayload?.Components.CollisionBox?.Height is double configuredHeight &&
-            double.IsFinite(configuredHeight) && configuredHeight > 0 && configuredHeight <= float.MaxValue
-                ? (float)configuredHeight
-                : 1.8f;
+        float width = 0.6f;
+        float height = 1.8f;
+        if (Entity is ItemEntity)
+        {
+            width = 0.25f;
+            height = 0.25f;
+        }
+        else if (Entity.Type?.PropertiesPayload?.Components.CollisionBox is { } collisionBox)
+        {
+            if (collisionBox.Width is double configuredWidth && double.IsFinite(configuredWidth) &&
+                configuredWidth > 0 && configuredWidth <= float.MaxValue)
+                width = (float)configuredWidth;
+            if (collisionBox.Height is double configuredHeight && double.IsFinite(configuredHeight) &&
+                configuredHeight > 0 && configuredHeight <= float.MaxValue)
+                height = (float)configuredHeight;
+        }
         float drag = Math.Clamp(Drag, 0, 1);
         float verticalDrag = 1 - drag;
         float horizontalDrag = verticalDrag;
@@ -108,7 +117,16 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity)
         float velocityY = Motion.Y;
         float velocityZ = Motion.Z * horizontalDrag;
         if (gravity)
-            velocityY = Math.Max((velocityY - Math.Max(0, Gravity)) * verticalDrag, TerminalVelocity);
+        {
+            velocityY = VerticalDragBeforeGravity
+                ? velocityY * verticalDrag - Math.Max(0, Gravity)
+                : (velocityY - Math.Max(0, Gravity)) * verticalDrag;
+            velocityY = Math.Max(velocityY, TerminalVelocity);
+        }
+        else if (VerticalDragBeforeGravity)
+        {
+            velocityY *= verticalDrag;
+        }
 
         float previousX = Entity.Position.X;
         float previousY = Entity.Position.Y;

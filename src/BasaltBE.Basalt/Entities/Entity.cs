@@ -198,6 +198,9 @@ public class Entity
     public void Tick()
     {
         Dispatch(static trait => trait.Tick());
+        if (this is ItemEntity item)
+            item.TickItem();
+
         if (this is Player player)
         {
             if (!player.Spawned || player.Disposed)

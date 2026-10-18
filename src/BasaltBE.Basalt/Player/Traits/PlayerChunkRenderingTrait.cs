@@ -180,6 +180,18 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
                         Tick = player.Network.Server.TickValue
                     });
                 }
+                else if (entity is ItemEntity item)
+                {
+                    send(new AddItemActorPacket
+                    {
+                        ActorId = item.UniqueId,
+                        RuntimeId = item.RuntimeId,
+                        Item = item.Item.ToNetworkStackDescriptor(),
+                        Position = item.Position,
+                        Velocity = item.GetTrait<EntityMovementTrait>()?.Motion ?? new Vec3(),
+                        ActorData = item.Flags.CreateSnapshot()
+                    });
+                }
                 else
                 {
                     send(new AddActorPacket

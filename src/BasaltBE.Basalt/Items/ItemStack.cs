@@ -20,6 +20,7 @@ public sealed class ItemStack {
     public uint Metadata { get; private set; }
     public CompoundTag? Nbt;
     public ushort StackSize => stackSize;
+    public bool IsStackFull => stackSize >= Type.MaxAmount;
 
     public ItemStack(ItemType type, ushort stackSize = 1, uint metadata = 0, CompoundTag? nbt = null) {
         ArgumentNullException.ThrowIfNull(type);

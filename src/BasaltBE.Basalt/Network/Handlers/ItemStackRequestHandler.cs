@@ -109,6 +109,11 @@ internal sealed class ItemStackRequestHandler {
                 );
             }
 
+            if (inventoryTrait?.Entity is Player player) {
+                foreach (PendingDrop drop in state.DroppedItems)
+                    new ItemEntity(drop.Item, player, drop.Randomly).Spawn(player.Dimension);
+            }
+
             Dictionary<ContainerNameKey, List<ItemStackResponseSlotInfo>> grouped = [];
             foreach (ResponseSlotKey responseKey in state.ResponseSlots) {
                 ContainerNameKey name = new(responseKey.ContainerName, responseKey.DynamicId);
@@ -155,6 +160,7 @@ internal sealed class ItemStackRequestHandler {
             state.ChangedSlotSet.Clear();
             state.ResponseSlots.Clear();
             state.ResponseSlotSet.Clear();
+            state.DroppedItems.Clear();
             cachedState ??= state;
         }
     }
@@ -163,6 +169,7 @@ internal sealed class ItemStackRequestHandler {
         TakeActionData take => Transfer(state, take.Amount, take.Source, take.Destination),
         PlaceActionData place => Transfer(state, place.Amount, place.Source, place.Destination),
         SwapActionData swap => Swap(state, swap.Source, swap.Destination),
+        DropActionData drop => Drop(state, drop),
         DestroyActionData destroy => Remove(state, destroy.Amount, destroy.Source),
         ConsumeActionData consume => Remove(state, consume.Amount, consume.Source),
         _ => false
@@ -258,6 +265,26 @@ internal sealed class ItemStackRequestHandler {
         return true;
     }
 
+    private static bool Drop(RequestState state, DropActionData action) {
+        if (action.Amount == 0 || state.InventoryTrait?.Entity is not Player player ||
+            !player.Spawned || player.Disposed ||
+            !TryGetItem(state, action.Source, out SlotKey sourceKey, out ItemStack? sourceItem) ||
+            sourceItem is null || action.Amount > sourceItem.StackSize)
+            return false;
+
+        ItemStack dropped = sourceItem.Clone(action.Amount, cloneNbt: action.Amount != sourceItem.StackSize);
+        ushort remaining = (ushort)(sourceItem.StackSize - action.Amount);
+        SetItem(
+            state,
+            sourceKey,
+            remaining == 0 ? null : sourceItem.Clone(remaining),
+            action.Source.ContainerName.ContainerName,
+            action.Source.ContainerName.DynamicId
+        );
+        state.DroppedItems.Add(new PendingDrop(dropped, action.Randomly));
+        return true;
+    }
+
     private static bool TryGetItem(
         RequestState state,
         ItemStackSlotInfoData info,
@@ -330,8 +357,10 @@ internal sealed class ItemStackRequestHandler {
         internal readonly HashSet<SlotKey> ChangedSlotSet = [];
         internal readonly List<ResponseSlotKey> ResponseSlots = [];
         internal readonly HashSet<ResponseSlotKey> ResponseSlotSet = [];
+        internal readonly List<PendingDrop> DroppedItems = [];
     }
 
+    private readonly record struct PendingDrop(ItemStack Item, bool Randomly);
     private readonly record struct SlotKey(Container Container, int Slot);
     private readonly record struct ResponseSlotKey(SlotKey SlotKey, ContainerEnumName ContainerName, uint? DynamicId);
     private readonly record struct ContainerNameKey(ContainerEnumName Name, uint? DynamicId);

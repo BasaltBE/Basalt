@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using BasaltBE.Basalt.Entities;
 
 namespace BasaltBE.Basalt.Worlds.Types;
@@ -49,5 +50,13 @@ internal sealed class EntitySpatialIndex
             if (chunks.TryGetValue(key, out List<Entity>? bucket))
                 destination.AddRange(bucket);
         }
+    }
+
+    internal ReadOnlySpan<Entity> GetChunkEntities(int chunkX, int chunkZ)
+    {
+        long key = ((long)chunkX << 32) | (uint)chunkZ;
+        return chunks.TryGetValue(key, out List<Entity>? bucket)
+            ? CollectionsMarshal.AsSpan(bucket)
+            : [];
     }
 }
