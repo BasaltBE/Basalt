@@ -1,4 +1,8 @@
 using System.Diagnostics;
+using System.Buffers;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using BasaltBE.NetherNet.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Events;
@@ -15,14 +19,23 @@ public sealed class World : IDisposable {
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
     readonly ChunkGeneratorRegistry generators;
     readonly ChunkGenerationService generationService;
+    readonly bool ownsGenerationService;
     EventEmitter? events;
+    internal Server? Server;
+    internal int OwnerThread;
+    internal bool Started;
+    readonly ConcurrentQueue<(NethernetMessage Message, byte[]? Buffer)> inbound = new();
+    long queuedBytes;
+    int queuedMessages;
+
     int initialization;
     internal ulong TickValue;
 
     public readonly string Identifier;
     public readonly LootTableManager LootTables;
     public readonly TickMetrics Ticks = new();
-    public readonly Dictionary<string, Dimension> Dimensions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Dimension> dimensions = new(StringComparer.OrdinalIgnoreCase);
+    public readonly IReadOnlyDictionary<string, Dimension> Dimensions;
     public bool Initialized => Volatile.Read(ref initialization) == 2;
 
     public World(
@@ -31,13 +44,24 @@ public sealed class World : IDisposable {
         int workerCount = 4,
         int queueCapacity = 1024,
         LootTableManager? lootTables = null
+    ) : this(identifier, generators, null, lootTables, workerCount, queueCapacity) { }
+
+    internal World(
+        string identifier,
+        ChunkGeneratorRegistry generators,
+        ChunkGenerationService? generationService,
+        LootTableManager? lootTables,
+        int workerCount = 4,
+        int queueCapacity = 1024
     ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
+        Dimensions = new ReadOnlyDictionary<string, Dimension>(dimensions);
         Identifier = identifier;
         this.generators = generators;
         LootTables = lootTables ?? new LootTableManager();
-        generationService = new ChunkGenerationService(workerCount, queueCapacity);
+        ownsGenerationService = generationService is null;
+        this.generationService = generationService ?? new ChunkGenerationService(workerCount, queueCapacity);
     }
 
     internal void Initialize(Action<World> configure, EventEmitter events) {
@@ -54,7 +78,7 @@ public sealed class World : IDisposable {
             events.Emit(new WorldInitializeEvent(this));
     }
 
-    public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);
+    public Dimension? GetDimension(string identifier) => dimensions.GetValueOrDefault(identifier);
 
     public Dimension CreateDimension(string identifier) {
         return CreateDimension(identifier, generators.CreateDefault());
@@ -66,6 +90,8 @@ public sealed class World : IDisposable {
 
     Dimension CreateDimension(string identifier, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+        if (Started)
+            throw new InvalidOperationException("Configure dimensions before starting the server.");
 
         if (Dimensions.ContainsKey(identifier)) {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
@@ -74,11 +100,13 @@ public sealed class World : IDisposable {
         Dimension dimension = new(identifier, generator, generationService);
         dimension.Events = events;
         dimension.World = this;
-        Dimensions.Add(identifier, dimension);
+        dimension.SimulationRadius = Server?.Properties.TickDistance ?? 4;
+        dimensions.Add(identifier, dimension);
         return dimension;
     }
 
     public void AddPlayer(Player player) {
+        CheckOwnership();
         lock (playersSync) {
             if (playersByXuid.ContainsKey(player.Xuid) || playersByUsername.ContainsKey(player.Username)) {
                 throw new InvalidOperationException("A player with the same XUID or username is already in the world.");
@@ -101,6 +129,7 @@ public sealed class World : IDisposable {
     }
 
     public void RemovePlayer(Player player) {
+        CheckOwnership();
         lock (playersSync) {
             if (playersByXuid.TryGetValue(player.Xuid, out Player? byXuid) && ReferenceEquals(byXuid, player))
                 playersByXuid.Remove(player.Xuid);
@@ -110,25 +139,68 @@ public sealed class World : IDisposable {
         }
     }
 
-    public void Tick() {
-        long start = Stopwatch.GetTimestamp();
-        TickValue++;
-        foreach (Dimension dimension in Dimensions.Values) {
-            dimension.DrainGeneratedChunks();
-            foreach (Entity entity in dimension.GetEntities()) {
-                if (entity is not Player && entity.Dead) {
-                    if (entity.DeathDespawnTick <= TickValue)
-                        dimension.RemoveEntity(entity);
-                    continue;
-                }
-
-                if (entity is not Player)
-                    entity.Tick();
-            }
-            dimension.EntityIndex.Update(dimension.GetEntities());
+    internal bool Enqueue(NethernetMessage message) {
+        if (message.Disconnected) {
+            inbound.Enqueue((message, null));
+            return true;
         }
+        int length = message.Payload.Length;
+        if (Interlocked.Increment(ref queuedMessages) > 4096) {
+            Interlocked.Decrement(ref queuedMessages);
+            return false;
+        }
+        if (Interlocked.Add(ref queuedBytes, length) > 16 * 1024 * 1024) {
+            Interlocked.Add(ref queuedBytes, -length);
+            Interlocked.Decrement(ref queuedMessages);
+            return false;
+        }
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(length);
+        message.Payload.Span.CopyTo(buffer);
+        inbound.Enqueue((message with { Payload = buffer.AsMemory(0, length) }, buffer));
+        return true;
+    }
+
+    internal void CheckOwnership() {
+        if (Started && Environment.CurrentManagedThreadId != OwnerThread && Server?.Gameplay.IsWriteLockHeld != true)
+            throw new InvalidOperationException("Gameplay state belongs to another tick thread.");
+    }
+
+    public void Tick() {
+        CheckOwnership();
+
+        long start = Stopwatch.GetTimestamp();
+        using ProfilerZone zone = Profiler.BeginZone("World.Tick");
+        TickValue++;
+
+        long ingressDeadline = start + Stopwatch.Frequency / 250;
+        for (int count = 0;
+             count < 256 && Stopwatch.GetTimestamp() < ingressDeadline && inbound.TryDequeue(out var entry);
+             count++) {
+            try {
+                Server!.Network.ProcessMessage(entry.Message);
+            }
+            finally {
+                if (entry.Buffer is not null) {
+                    Server!.Network.ReleaseInbound(entry.Message);
+                    Interlocked.Add(ref queuedBytes, -entry.Message.Payload.Length);
+                    Interlocked.Decrement(ref queuedMessages);
+                    ArrayPool<byte>.Shared.Return(entry.Buffer, clearArray: true);
+                }
+            }
+        }
+
+        foreach (Dimension dimension in dimensions.Values)
+            dimension.Tick();
+
         Ticks.Record(start);
     }
 
-    public void Dispose() => generationService.Dispose();
+    public void Dispose() {
+        if (ownsGenerationService)
+            generationService.Dispose();
+        while (inbound.TryDequeue(out var entry)) {
+            if (entry.Buffer is not null)
+                ArrayPool<byte>.Shared.Return(entry.Buffer, clearArray: true);
+        }
+    }
 }

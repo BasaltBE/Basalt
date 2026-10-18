@@ -14,8 +14,8 @@ internal sealed class MultiplayerFixture : IDisposable {
     internal readonly Dimension Dimension;
     private ulong nextPlayer;
 
-    internal MultiplayerFixture(ushort port = 0) {
-        Server = new Server(new ServerProperties { ServerPort = port, DiscoveryPort = 0 }, new Identity());
+    internal MultiplayerFixture(ushort port = 0, string ticking = "default") {
+        Server = new Server(new ServerProperties { ServerPort = port, DiscoveryPort = 0, Ticking = ticking }, new Identity());
         Server.Generators.Register<VoidGenerator>("void");
         Server.Generators.SetDefault("void");
         World = Server.CreateWorld("test", world => world.CreateDimension("minecraft:overworld"));

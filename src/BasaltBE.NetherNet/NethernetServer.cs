@@ -88,6 +88,11 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) =>
         SendAsync(peer, payload, reliability).AsTask().GetAwaiter().GetResult();
 
+    public void Disconnect(NethernetPeer peer) {
+        if (connections.TryGetValue(peer, out NethernetConnection? connection))
+            connection.Close(new IOException("The server closed the connection."));
+    }
+
     public ValueTask DisposeAsync() {
         lock (disposeSync)
             return new ValueTask(disposeTask ??= DisposeCoreAsync());

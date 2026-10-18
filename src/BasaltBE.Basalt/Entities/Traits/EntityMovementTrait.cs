@@ -13,7 +13,8 @@ namespace BasaltBE.Basalt.Entities.Traits;
     Identifiers = ["minecraft:player"],
     Components = ["minecraft:movement", "minecraft:movement.basic", "minecraft:movement.generic"]
 )]
-public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
+public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity)
+{
     private const float CollisionEpsilon = 0.001f;
     internal const float PositionBroadcastThreshold = 0.01f;
     internal const float RotationBroadcastThreshold = 1;
@@ -36,7 +37,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     public bool VerticalCollision;
     public ulong? InputTick;
 
-    public override void OnSpawn() {
+    public override void OnSpawn()
+    {
         if (Entity is not Player)
             Entity.SetFlag(ActorFlag.HasGravity, true);
         BroadcastPosition = new Vector3(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
@@ -45,8 +47,10 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         BroadcastOnGround = VerticalCollision && Motion.Y <= 0;
     }
 
-    public override void OnAdd() {
-        if (Entity.Type?.PropertiesPayload?.Components.Movement is { } movement) {
+    public override void OnAdd()
+    {
+        if (Entity.Type?.PropertiesPayload?.Components.Movement is { } movement)
+        {
             EntityNumericValue? value = movement.Value;
             double? speed = value?.Value ?? value?.Range?.RangeMax;
             if (speed is double configuredSpeed && double.IsFinite(configuredSpeed) &&
@@ -69,7 +73,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         );
     }
 
-    public override void Tick() {
+    public override void Tick()
+    {
         if (Entity is Player || Entity.Dead || Entity.SpawnedDimension is not Dimension dimension)
             return;
 
@@ -79,11 +84,13 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
 
         float width = 0.6f;
         float height = 1.8f;
-        if (Entity is ItemEntity) {
+        if (Entity is ItemEntity)
+        {
             width = 0.25f;
             height = 0.25f;
         }
-        else if (Entity.Type?.PropertiesPayload?.Components.CollisionBox is { } collisionBox) {
+        else if (Entity.Type?.PropertiesPayload?.Components.CollisionBox is { } collisionBox)
+        {
             if (collisionBox.Width is double configuredWidth && double.IsFinite(configuredWidth) &&
                 configuredWidth > 0 && configuredWidth <= float.MaxValue)
                 width = (float)configuredWidth;
@@ -94,7 +101,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         float drag = Math.Clamp(Drag, 0, 1);
         float verticalDrag = 1 - drag;
         float horizontalDrag = verticalDrag;
-        if (Grounded) {
+        if (Grounded)
+        {
             int blockX = (int)MathF.Floor(Entity.Position.X);
             int blockY = (int)MathF.Floor(Entity.Position.Y - CollisionEpsilon);
             int blockZ = (int)MathF.Floor(Entity.Position.Z);
@@ -108,13 +116,15 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         float velocityX = Motion.X * horizontalDrag;
         float velocityY = Motion.Y;
         float velocityZ = Motion.Z * horizontalDrag;
-        if (gravity) {
+        if (gravity)
+        {
             velocityY = VerticalDragBeforeGravity
                 ? velocityY * verticalDrag - Math.Max(0, Gravity)
                 : (velocityY - Math.Max(0, Gravity)) * verticalDrag;
             velocityY = Math.Max(velocityY, TerminalVelocity);
         }
-        else if (VerticalDragBeforeGravity) {
+        else if (VerticalDragBeforeGravity)
+        {
             velocityY *= verticalDrag;
         }
 
@@ -134,8 +144,10 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             Entity.Position.Z = nextZ;
 
         float nextY = Entity.Position.Y + velocityY;
-        if (Collides(dimension, Entity.Position.X, nextY, Entity.Position.Z, width, height)) {
-            if (velocityY < 0) {
+        if (Collides(dimension, Entity.Position.X, nextY, Entity.Position.Z, width, height))
+        {
+            if (velocityY < 0)
+            {
                 float landedY = float.NegativeInfinity;
                 int minX = (int)MathF.Floor(Entity.Position.X - width * 0.5f + CollisionEpsilon);
                 int maxX = (int)MathF.Floor(Entity.Position.X + width * 0.5f - CollisionEpsilon);
@@ -143,9 +155,12 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
                 int maxZ = (int)MathF.Floor(Entity.Position.Z + width * 0.5f - CollisionEpsilon);
                 int minY = (int)MathF.Floor(nextY + CollisionEpsilon);
                 int maxY = (int)MathF.Floor(Entity.Position.Y + CollisionEpsilon);
-                for (int x = minX; x <= maxX; x++) {
-                    for (int z = minZ; z <= maxZ; z++) {
-                        for (int y = minY; y <= maxY; y++) {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    for (int z = minZ; z <= maxZ; z++)
+                    {
+                        for (int y = minY; y <= maxY; y++)
+                        {
                             if (BlockPalette.FindType(dimension.GetPermutation(x, y, z).Identifier)?.Solid == true)
                                 landedY = Math.Max(landedY, y + 1);
                         }
@@ -158,7 +173,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             }
             velocityY = 0;
         }
-        else {
+        else
+        {
             Entity.Position.Y = nextY;
             Grounded = false;
         }
@@ -170,7 +186,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             Entity.OnMove();
     }
 
-    internal bool CalculateKnockback(Entity source, Vec3 velocity) {
+    internal bool CalculateKnockback(Entity source, Vec3 velocity)
+    {
         float resistance = Math.Clamp(Entity.Attributes.Get("minecraft:knockback_resistance")?.Current ?? 0, 0, 1);
         float strength = 1 - resistance;
         if (strength == 0)
@@ -179,7 +196,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         float x = Entity.Position.X - source.Position.X;
         float z = Entity.Position.Z - source.Position.Z;
         float length = MathF.Sqrt(x * x + z * z);
-        if (length <= 0.0001f) {
+        if (length <= 0.0001f)
+        {
             float yaw = source.Rotation.Y * (MathF.PI / 180);
             x = -MathF.Sin(yaw);
             z = MathF.Cos(yaw);
@@ -193,17 +211,22 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         return true;
     }
 
-    private static bool Collides(Dimension dimension, float x, float y, float z, float width, float height) {
+    private static bool Collides(Dimension dimension, float x, float y, float z, float width, float height)
+    {
         int minX = (int)MathF.Floor(x - width * 0.5f + CollisionEpsilon);
         int maxX = (int)MathF.Floor(x + width * 0.5f - CollisionEpsilon);
         int minY = (int)MathF.Floor(y + CollisionEpsilon);
         int maxY = (int)MathF.Floor(y + height - CollisionEpsilon);
         int minZ = (int)MathF.Floor(z - width * 0.5f + CollisionEpsilon);
         int maxZ = (int)MathF.Floor(z + width * 0.5f - CollisionEpsilon);
-        for (int blockX = minX; blockX <= maxX; blockX++) {
-            for (int blockY = minY; blockY <= maxY; blockY++) {
-                for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
-                    if (BlockPalette.FindType(dimension.GetPermutation(blockX, blockY, blockZ).Identifier)?.Solid == true)
+        for (int blockX = minX; blockX <= maxX; blockX++)
+        {
+            for (int blockY = minY; blockY <= maxY; blockY++)
+            {
+                for (int blockZ = minZ; blockZ <= maxZ; blockZ++)
+                {
+                    if (dimension.GetChunk(blockX >> 4, blockZ >> 4) is null ||
+                        BlockPalette.FindType(dimension.GetPermutation(blockX, blockY, blockZ).Identifier)?.Solid == true)
                         return true;
                 }
             }

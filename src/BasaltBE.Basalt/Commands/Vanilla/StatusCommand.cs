@@ -9,6 +9,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class StatusCommand : Command {
     public StatusCommand() : base("status", "Show server runtime statistics.") {
+        Concurrent = true;
         AddOverload();
     }
 
@@ -26,6 +27,7 @@ public sealed class StatusCommand : Command {
         }
 
         var ticks = context.Server.Ticks;
+        string clock = context.Server.Properties.Ticking == "world" ? "Control TPS" : "TPS";
         string tpsColor = ticks.Tps >= 19 ? "§a" : "§c";
         string msptColor = ticks.AverageMilliseconds < 40 ? "§a" : "§c";
         string lastColor = ticks.LastMilliseconds >= 40 ? "§c" : ticks.LastMilliseconds >= 20 ? "§e" : "§a";
@@ -33,7 +35,7 @@ public sealed class StatusCommand : Command {
         StringBuilder response = new();
         response.Append("§7Server Status§r\n");
         response.Append(CultureInfo.InvariantCulture,
-            $"§8` §7TPS ({tpsColor}{ticks.Tps:F2}§7)  MSPT ({msptColor}{ticks.AverageMilliseconds:F3}§7)§r\n");
+            $"§8` §7{clock} ({tpsColor}{ticks.Tps:F2}§7)  MSPT ({msptColor}{ticks.AverageMilliseconds:F3}§7)§r\n");
         response.Append(CultureInfo.InvariantCulture,
             $"§8` §7Tick ({lastColor}{ticks.LastMilliseconds:F3}§7 ms last, {peakColor}{ticks.MaximumMilliseconds:F3}§7 ms peak)§r\n");
         response.Append(CultureInfo.InvariantCulture,
@@ -52,7 +54,7 @@ public sealed class StatusCommand : Command {
             }
             string worldMsptColor = world.Ticks.AverageMilliseconds < 40 ? "§a" : "§c";
             response.Append(CultureInfo.InvariantCulture,
-                $"\n§8  ` §7{world.Identifier} (§w{chunks}§7 chunks, §w{pending}§7 pending, {worldMsptColor}{world.Ticks.AverageMilliseconds:F3}§7 ms)§r");
+                $"\n§8  ` §7{world.Identifier} (§w{chunks}§7 chunks, §w{pending}§7 pending, {worldMsptColor}{world.Ticks.AverageMilliseconds:F3}§7 ms, {world.Ticks.Tps:F2} TPS)§r");
         }
         return new(true, response.ToString());
     }

@@ -13,16 +13,25 @@ namespace BasaltBE.Basalt.Worlds.Dimensions;
 
 public sealed class Dimension : IDisposable {
     const float BroadcastRadius = 65;
-    readonly Dictionary<long, Chunk?> chunks = [];
+    readonly Dictionary<long, Chunk?> chunks = new(ChunkKeyComparer.Instance);
     readonly ConcurrentQueue<ChunkGenerationResult> completed = new();
     readonly ChunkGenerationService generationService;
     readonly bool ownsGenerationService;
     readonly Lock playersSync = new();
     readonly Dictionary<ulong, Entity> entities = [];
-    readonly Dictionary<long, Player[]> chunkViewers = [];
+    readonly Dictionary<long, Player[]> chunkViewers = new(ChunkKeyComparer.Instance);
     Player[] players = [];
     Entity[]? entitySnapshot;
     internal readonly EntitySpatialIndex EntityIndex = new();
+    internal readonly ConcurrentQueue<Player> RemovedPlayers = new();
+    readonly HashSet<long> simulatedChunks = new(ChunkKeyComparer.Instance);
+    readonly Dictionary<long, int> simulationReferences = new(ChunkKeyComparer.Instance);
+    readonly Dictionary<Player, (int X, int Z)> playerAreas = [];
+    readonly List<Player> expiredAreas = [];
+    readonly Dictionary<string, long[]> tickingAreas = new(StringComparer.Ordinal);
+    readonly List<Entity> simulation = [];
+    internal ulong TickValue;
+    internal int SimulationRadius = 4;
     int chunkCount;
     int pendingRequestCount;
 
@@ -53,8 +62,8 @@ public sealed class Dimension : IDisposable {
         this.ownsGenerationService = ownsGenerationService;
     }
 
-    public int ChunkCount => chunkCount;
-    public int PendingRequestCount => pendingRequestCount;
+    public int ChunkCount => Volatile.Read(ref chunkCount);
+    public int PendingRequestCount => Volatile.Read(ref pendingRequestCount);
 
     public int EntityCount {
         get {
@@ -136,22 +145,26 @@ public sealed class Dimension : IDisposable {
     }
 
     public void AddEntity(Entity entity) {
+        World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(entity);
         if (entity is Player)
             throw new ArgumentException("Add players through World.AddPlayer.", nameof(entity));
         lock (playersSync) {
             if (entity.SpawnedDimension is not null)
                 throw new InvalidOperationException("Entity already belongs to a dimension.");
+            if (entity.SpatialSlot >= 0)
+                throw new InvalidOperationException("Wait for the current simulation step to finish before respawning this entity.");
             if (!entities.TryAdd(entity.RuntimeId, entity))
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
             Volatile.Write(ref entitySnapshot, null);
-            EntityIndex.Ready = false;
+            EntityIndex.Update(entity);
             entity.SpawnedDimension = this;
         }
         entity.OnSpawn();
     }
 
     public bool RemoveEntity(Entity entity) {
+        World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(entity);
         if (entity is Player)
             throw new ArgumentException("Remove players through World.RemovePlayer.", nameof(entity));
@@ -159,7 +172,7 @@ public sealed class Dimension : IDisposable {
             if (!ReferenceEquals(entities.GetValueOrDefault(entity.RuntimeId), entity) || !entities.Remove(entity.RuntimeId))
                 return false;
             Volatile.Write(ref entitySnapshot, null);
-            EntityIndex.Ready = false;
+            EntityIndex.Remove(entity);
             entity.SpawnedDimension = null;
         }
         entity.OnDespawn();
@@ -182,6 +195,7 @@ public sealed class Dimension : IDisposable {
         chunks.GetValueOrDefault(GetKey(chunkX, chunkZ));
 
     public Chunk GetOrCreateChunk(int chunkX, int chunkZ) {
+        World?.CheckOwnership();
         long key = GetKey(chunkX, chunkZ);
         if (chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
             return chunk;
@@ -194,6 +208,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public ChunkRequestStatus Request(int chunkX, int chunkZ) {
+        World?.CheckOwnership();
         long key = GetKey(chunkX, chunkZ);
         if (chunks.TryGetValue(key, out Chunk? chunk)) {
             return chunk is null ? ChunkRequestStatus.AlreadyPending : ChunkRequestStatus.AlreadyLoaded;
@@ -261,7 +276,7 @@ public sealed class Dimension : IDisposable {
             if (!entities.TryAdd(player.RuntimeId, player))
                 throw new InvalidOperationException("An entity with this runtime ID already belongs to the dimension.");
             Volatile.Write(ref entitySnapshot, null);
-            EntityIndex.Ready = false;
+            EntityIndex.Update(player);
             player.SpawnedDimension = this;
             Player[] current = players;
             Player[] expanded = new Player[current.Length + 1];
@@ -281,7 +296,7 @@ public sealed class Dimension : IDisposable {
             entities.Remove(player.RuntimeId);
             player.SpawnedDimension = null;
             Volatile.Write(ref entitySnapshot, null);
-            EntityIndex.Ready = false;
+            EntityIndex.Remove(player);
 
             Player[] reduced = new Player[current.Length - 1];
             if (index > 0)
@@ -293,6 +308,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public ChunkRequestBatchResult Request(ReadOnlySpan<ChunkPos> positions) {
+        World?.CheckOwnership();
         int queued = 0;
         int alreadyLoaded = 0;
         int alreadyPending = 0;
@@ -323,6 +339,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public int DrainGeneratedChunks() {
+        World?.CheckOwnership();
         int committed = 0;
         Exception? error = null;
         while (completed.TryDequeue(out ChunkGenerationResult result)) {
@@ -371,6 +388,7 @@ public sealed class Dimension : IDisposable {
     }
 
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0) {
+        World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(permutation);
         if ((uint)layer > 1) {
             throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");
@@ -387,6 +405,155 @@ public sealed class Dimension : IDisposable {
         }
 
         chunk.SetPermutation(x & 15, y, z & 15, permutation, layer);
+    }
+
+    public void AddTickingArea(string identifier, ReadOnlySpan<ChunkPos> positions) {
+        World?.CheckOwnership();
+        ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+
+        if (positions.Length > 4096)
+            throw new ArgumentOutOfRangeException(nameof(positions));
+
+        long[] keys = new long[positions.Length];
+        for (int index = 0; index < positions.Length; index++)
+            keys[index] = GetKey(positions[index].X, positions[index].Z);
+
+        tickingAreas.Add(identifier, keys);
+
+        foreach (long key in keys)
+            ChangeSimulation(key, 1);
+    }
+
+    public bool RemoveTickingArea(string identifier) {
+        World?.CheckOwnership();
+
+        if (!tickingAreas.Remove(identifier, out long[]? keys))
+            return false;
+
+        foreach (long key in keys)
+            ChangeSimulation(key, -1);
+
+        return true;
+    }
+
+    void ChangeSimulation(long key, int change) {
+        int count = simulationReferences.GetValueOrDefault(key) + change;
+
+        if (count == 0) {
+            simulationReferences.Remove(key);
+            simulatedChunks.Remove(key);
+        }
+        else {
+            simulationReferences[key] = count;
+            simulatedChunks.Add(key);
+        }
+    }
+
+    void MoveSimulationArea((int X, int Z)? previous, (int X, int Z)? current) {
+        if (previous == current)
+            return;
+
+        if (previous is { } old) {
+            for (int x = old.X - SimulationRadius; x <= old.X + SimulationRadius; x++) {
+                for (int z = old.Z - SimulationRadius; z <= old.Z + SimulationRadius; z++) {
+                    if (current is not { } next ||
+                        Math.Abs((long)x - next.X) > SimulationRadius ||
+                        Math.Abs((long)z - next.Z) > SimulationRadius)
+                        ChangeSimulation(GetKey(x, z), -1);
+                }
+            }
+        }
+
+        if (current is { } added) {
+            for (int x = added.X - SimulationRadius; x <= added.X + SimulationRadius; x++) {
+                for (int z = added.Z - SimulationRadius; z <= added.Z + SimulationRadius; z++) {
+                    if (previous is not { } prior ||
+                        Math.Abs((long)x - prior.X) > SimulationRadius ||
+                        Math.Abs((long)z - prior.Z) > SimulationRadius)
+                        ChangeSimulation(GetKey(x, z), 1);
+                }
+            }
+        }
+    }
+
+    public void Tick() {
+        World?.CheckOwnership();
+
+        TickValue++;
+        DrainGeneratedChunks();
+
+        foreach ((Player player, var area) in playerAreas) {
+            if (!player.Spawned || player.Disposed || player.SpawnedDimension != this)
+                expiredAreas.Add(player);
+        }
+
+        foreach (Player player in expiredAreas) {
+            MoveSimulationArea(playerAreas[player], null);
+            playerAreas.Remove(player);
+        }
+        expiredAreas.Clear();
+
+        foreach (Player player in GetPlayers()) {
+            if (!player.Spawned || player.Disposed)
+                continue;
+
+            var current = (
+                X: (int)MathF.Floor(player.Position.X) >> 4,
+                Z: (int)MathF.Floor(player.Position.Z) >> 4
+            );
+            (int X, int Z)? previous = playerAreas.TryGetValue(player, out var area) ? area : null;
+            MoveSimulationArea(previous, current);
+            playerAreas[player] = current;
+        }
+
+        EntityIndex.Collect(simulatedChunks, simulation);
+        foreach (long key in simulatedChunks) {
+            if (!chunks.ContainsKey(key))
+                Request((int)(key >> 32), (int)key);
+        }
+
+        foreach (Entity entity in simulation) {
+            if (entity is Player || entity.SpawnedDimension != this)
+                continue;
+
+            if (GetChunk((int)(entity.SpatialChunk >> 32), (int)entity.SpatialChunk) is null) {
+                Request((int)(entity.SpatialChunk >> 32), (int)entity.SpatialChunk);
+                continue;
+            }
+
+            if (entity.Dead) {
+                if (++entity.SimulationAge >= entity.DeathDespawnTick)
+                    RemoveEntity(entity);
+                continue;
+            }
+
+            EntityIndex.Deferred = true;
+
+            try {
+                entity.Tick();
+            }
+            finally {
+                EntityIndex.Flush();
+            }
+
+            if (entity.SpawnedDimension == this)
+                EntityIndex.Update(entity);
+        }
+        simulation.Clear();
+        World?.Server?.Network.Tick(this);
+
+        foreach (Player player in GetPlayers()) {
+            if (player.Disposed)
+                continue;
+
+            try {
+                player.Tick();
+                EntityIndex.Update(player);
+            }
+            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                player.Network.RemovePlayer(player.Peer);
+            }
+        }
     }
 
     static long GetKey(int x, int z) => ((long)x << 32) | (uint)z;

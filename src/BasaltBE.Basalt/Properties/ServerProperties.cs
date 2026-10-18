@@ -1,6 +1,7 @@
 namespace BasaltBE.Basalt.Properties;
 
-public struct ServerProperties {
+public struct ServerProperties
+{
     [ServerProperty("Network", 1, "server-name", "Name shown in the server list.")]
     public string ServerName;
 
@@ -28,7 +29,20 @@ public struct ServerProperties {
     [ServerProperty("Resource Packs", 9, "resource-packs-path", "Directory containing resource packs.")]
     public string ResourcePacksPath;
 
-    public ServerProperties() {
+    [ServerProperty("Ticking", 10, "ticking", "Gameplay scheduling: default or world. Restart required.")]
+    public string Ticking;
+
+    [ServerProperty("Ticking", 11, "ticking-threads", "Maximum persistent gameplay workers in world mode. Excludes network and generation threads.")]
+    public int TickingThreads;
+
+    [ServerProperty("Ticking", 12, "tick-distance", "Square simulation radius in chunks, separate from render distance.")]
+    public int TickDistance;
+
+    public ServerProperties()
+    {
+        Ticking = "default";
+        TickingThreads = 4;
+        TickDistance = 4;
         ServerName = "BasaltBE";
         LevelName = "Bedrock level";
         ServerPort = 19132;

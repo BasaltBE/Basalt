@@ -8,6 +8,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class ListCommand : Command {
     public ListCommand() : base("list", "List connected players.") {
+        Concurrent = true;
         AddOverload();
     }
 

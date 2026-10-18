@@ -4,6 +4,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class StopCommand : Command {
     public StopCommand() : base("stop", "Stop the server.", "basalt.operator") {
+        Concurrent = true;
         AddOverload();
     }
 

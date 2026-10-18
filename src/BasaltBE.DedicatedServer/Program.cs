@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Channels;
 using BasaltBE.Basalt;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Commands.Types;
@@ -108,27 +107,25 @@ internal static class Program {
 
             #region Console Input
 
-            Channel<string> consoleCommands = Channel.CreateBounded<string>(new BoundedChannelOptions(64) {
-                SingleReader = true,
-                SingleWriter = true,
-                FullMode = BoundedChannelFullMode.Wait
-            });
             ServerCommandExecutor console = new(server);
+            Action<CommandResult> commandCompleted = result => {
+                if (result.Success)
+                    Log.Info(result.Message);
+                else
+                    Log.Warn(result.Message);
+            };
 
             Thread input = new(() => {
                 try {
                     while (Console.ReadLine() is { } command) {
                         if (string.IsNullOrWhiteSpace(command))
                             continue;
-                        if (!consoleCommands.Writer.TryWrite(command))
+                        if (!server.Commands.Enqueue(command, console, commandCompleted))
                             Log.Warn("Console command queue is full.");
                     }
                 }
                 catch (IOException error) {
                     Log.Warn($"Console input stopped: {error.Message}");
-                }
-                finally {
-                    consoleCommands.Writer.TryComplete();
                 }
             }) {
                 IsBackground = true,
@@ -161,7 +158,17 @@ internal static class Program {
                     if (sleepMilliseconds > 0) {
                         long requestedSleepTicks = sleepMilliseconds * Stopwatch.Frequency / 1000;
                         long beforeSleep = Stopwatch.GetTimestamp();
-                        if (shutdownWaitHandle.WaitOne((int)sleepMilliseconds))
+                        bool shuttingDown = false;
+                        long sleepDeadline = beforeSleep + requestedSleepTicks;
+                        do {
+                            server.Poll();
+                            int wait = (int)Math.Clamp((sleepDeadline - Stopwatch.GetTimestamp()) * 1000 / Stopwatch.Frequency, 0, 5);
+                            if (shutdownWaitHandle.WaitOne(wait)) {
+                                shuttingDown = true;
+                                break;
+                            }
+                        } while (Stopwatch.GetTimestamp() < sleepDeadline);
+                        if (shuttingDown)
                             break;
 
                         long overshoot = Stopwatch.GetTimestamp() - beforeSleep - requestedSleepTicks;
@@ -180,20 +187,6 @@ internal static class Program {
                     break;
 
                 long tickStart = Stopwatch.GetTimestamp();
-
-                for (int index = 0; index < 16 && !server.Stopping &&
-                    consoleCommands.Reader.TryRead(out string? command); index++) {
-                    try {
-                        CommandResult result = console.Execute(command);
-                        if (result.Success)
-                            Log.Info(result.Message);
-                        else
-                            Log.Warn(result.Message);
-                    }
-                    catch (Exception error) {
-                        Log.Error($"Console command failed: {error}");
-                    }
-                }
 
                 if (server.Stopping)
                     break;

@@ -10,6 +10,8 @@ public abstract class Command {
     public readonly string Permission;
     public readonly List<CommandOverload> Overloads = [];
 
+    internal bool Concurrent;
+
     protected Command(
         string name,
         string description,

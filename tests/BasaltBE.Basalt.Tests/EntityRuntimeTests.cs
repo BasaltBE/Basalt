@@ -68,6 +68,13 @@ public sealed class EntityRuntimeTests {
         Assert.True(health.ApplyDamage(6, EntityDamageCause.Void));
         Assert.True(pig.Dead);
         Assert.Equal(EntityDamageCause.Void, deathCause);
+        Assert.Same(pig, fixture.Dimension.GetEntity(pig.RuntimeId));
+        fixture.Dimension.GetOrCreateChunk(0, 0);
+        fixture.Dimension.AddTickingArea("death", [new() { X = 0, Z = 0 }]);
+        for (int tick = 0; tick < 19; tick++)
+            fixture.World.Tick();
+        Assert.Same(pig, fixture.Dimension.GetEntity(pig.RuntimeId));
+        fixture.World.Tick();
         Assert.Null(fixture.Dimension.GetEntity(pig.RuntimeId));
     }
 

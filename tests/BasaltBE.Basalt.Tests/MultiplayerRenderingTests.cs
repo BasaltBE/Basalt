@@ -142,6 +142,7 @@ public sealed class MultiplayerRenderingTests {
         fixture.Dimension.EntityIndex.Collect(loaded, candidates);
         Assert.Same(actor, Assert.Single(candidates));
         actor.Position.X = 0;
+        actor.OnMove();
         fixture.World.Tick();
         fixture.Dimension.EntityIndex.Collect(loaded, candidates);
         Assert.Empty(candidates);

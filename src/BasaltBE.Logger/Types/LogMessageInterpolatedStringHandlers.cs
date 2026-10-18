@@ -11,7 +11,7 @@ public ref struct DebugLogMessageHandler {
     public DebugLogMessageHandler(int literalLength, int formattedCount, ScopedLogger logger, out bool shouldAppend) {
         Enabled = Logger.IsEnabled(LogLevel.Debug);
         shouldAppend = Enabled;
-        message = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
+        message = Enabled ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
     }
 
     public void AppendLiteral(string value) => message.AppendLiteral(value);
@@ -32,7 +32,7 @@ public ref struct InfoLogMessageHandler {
     public InfoLogMessageHandler(int literalLength, int formattedCount, ScopedLogger logger, out bool shouldAppend) {
         Enabled = Logger.IsEnabled(LogLevel.Info);
         shouldAppend = Enabled;
-        message = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
+        message = Enabled ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
     }
 
     public void AppendLiteral(string value) => message.AppendLiteral(value);
@@ -53,7 +53,7 @@ public ref struct WarnLogMessageHandler {
     public WarnLogMessageHandler(int literalLength, int formattedCount, ScopedLogger logger, out bool shouldAppend) {
         Enabled = Logger.IsEnabled(LogLevel.Warn);
         shouldAppend = Enabled;
-        message = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
+        message = Enabled ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
     }
 
     public void AppendLiteral(string value) => message.AppendLiteral(value);
@@ -74,7 +74,7 @@ public ref struct ErrorLogMessageHandler {
     public ErrorLogMessageHandler(int literalLength, int formattedCount, ScopedLogger logger, out bool shouldAppend) {
         Enabled = Logger.IsEnabled(LogLevel.Error);
         shouldAppend = Enabled;
-        message = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
+        message = Enabled ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
     }
 
     public void AppendLiteral(string value) => message.AppendLiteral(value);

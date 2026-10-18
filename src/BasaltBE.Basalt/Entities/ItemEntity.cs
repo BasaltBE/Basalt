@@ -7,7 +7,8 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class ItemEntity : Entity {
+public sealed class ItemEntity : Entity
+{
     private const ulong MergeDelayTicks = 40;
     private const ulong PickupDelayTicks = 40;
     private const ulong MergeCheckInterval = 15;
@@ -17,23 +18,26 @@ public sealed class ItemEntity : Entity {
     private const float PickupVerticalTolerance = 2f;
     private static readonly EntityType ItemType = new() { Identifier = "minecraft:item" };
     private readonly EntityMovementTrait movement;
-    private readonly ulong mergeUnlockTick;
-    private readonly ulong pickupUnlockTick;
-    private ulong despawnTick;
-    private ulong nextMergeTick;
+    private readonly ulong mergeUnlockTick = MergeDelayTicks;
+    private readonly ulong pickupUnlockTick = PickupDelayTicks;
+    private ulong despawnTick = DespawnDelayTicks;
+    private ulong nextMergeTick = MergeDelayTicks;
 
     public readonly ItemStack Item;
 
     public ItemEntity(ItemStack item, Player player, bool randomly)
-        : this(item, player, 0, 0, 0, blockDrop: false, randomly) {
+        : this(item, player, 0, 0, 0, blockDrop: false, randomly)
+    {
     }
 
     public ItemEntity(ItemStack item, Player player, int blockX, int blockY, int blockZ)
-        : this(item, player, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
+        : this(item, player, blockX, blockY, blockZ, blockDrop: true, randomly: true)
+    {
     }
 
     public ItemEntity(ItemStack item, Entity source)
-        : this(item, source, 0, 0, 0, blockDrop: false, randomly: true, entityDrop: true) {
+        : this(item, source, 0, 0, 0, blockDrop: false, randomly: true, entityDrop: true)
+    {
     }
 
     private ItemEntity(
@@ -46,7 +50,8 @@ public sealed class ItemEntity : Entity {
         bool randomly,
         bool entityDrop = false
     )
-        : base(ItemType) {
+        : base(ItemType)
+    {
         ArgumentNullException.ThrowIfNull(item);
         ArgumentNullException.ThrowIfNull(source);
         if (!blockDrop && !entityDrop && source is not Player)
@@ -57,19 +62,16 @@ public sealed class ItemEntity : Entity {
             throw new ArgumentException("Dropped items cannot belong to a container.", nameof(item));
 
         Item = item;
-        movement = new(this) {
+        movement = new(this)
+        {
             Gravity = 0.04f,
             Drag = 0.02f,
             VerticalDragBeforeGravity = true
         };
         AddTrait(movement);
-        ulong tick = source.SpawnedDimension?.World?.TickValue ?? 0;
-        mergeUnlockTick = tick + MergeDelayTicks;
-        pickupUnlockTick = tick + PickupDelayTicks;
-        despawnTick = tick + DespawnDelayTicks;
-        nextMergeTick = mergeUnlockTick;
 
-        if (blockDrop) {
+        if (blockDrop)
+        {
             Position.X = blockX + 0.5f;
             Position.Y = blockY + 0.25f;
             Position.Z = blockZ + 0.5f;
@@ -77,7 +79,8 @@ public sealed class ItemEntity : Entity {
             movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
             movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
         }
-        else if (entityDrop) {
+        else if (entityDrop)
+        {
             Position.X = source.Position.X;
             Position.Y = source.Position.Y + 0.3f;
             Position.Z = source.Position.Z;
@@ -85,7 +88,8 @@ public sealed class ItemEntity : Entity {
             movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
             movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
         }
-        else {
+        else
+        {
             Player player = (Player)source;
             float pitch = player.Rotation.X * (MathF.PI / 180);
             float yaw = player.Rotation.Y * (MathF.PI / 180);
@@ -97,7 +101,8 @@ public sealed class ItemEntity : Entity {
             Position.Y = player.Position.Y + 1.3f + directionY * 0.3f;
             Position.Z = player.Position.Z + directionZ * 0.3f;
 
-            if (randomly) {
+            if (randomly)
+            {
                 directionX += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
                 directionY += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
                 directionZ += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
@@ -109,19 +114,23 @@ public sealed class ItemEntity : Entity {
         }
     }
 
-    internal void TickItem() {
+    internal void TickItem()
+    {
         if (Dead || SpawnedDimension is not { } dimension || Item.StackSize == 0)
             return;
 
-        ulong tick = dimension.World?.TickValue ?? 0;
-        if (tick >= despawnTick) {
+        ulong tick = SimulationAge;
+        if (tick >= despawnTick)
+        {
             dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
             Despawn();
             return;
         }
 
-        if (tick >= pickupUnlockTick) {
-            foreach (Player player in dimension.GetPlayers()) {
+        if (tick >= pickupUnlockTick)
+        {
+            foreach (Player player in dimension.GetPlayers())
+            {
                 if (player.SpawnedDimension != dimension || !player.Spawned || player.Disposed || player.Dead)
                     continue;
 
@@ -141,11 +150,13 @@ public sealed class ItemEntity : Entity {
                 if (Item.StackSize == previousSize)
                     continue;
 
-                dimension.Broadcast(new TakeItemActorPacket {
+                dimension.Broadcast(new TakeItemActorPacket
+                {
                     ItemRuntimeId = RuntimeId,
                     ActorRuntimeId = player.RuntimeId
                 }, this);
-                if (Item.StackSize == 0) {
+                if (Item.StackSize == 0)
+                {
                     dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
                     Despawn();
                     return;
@@ -162,11 +173,14 @@ public sealed class ItemEntity : Entity {
         nextMergeTick = tick + MergeCheckInterval;
         int itemChunkX = (int)MathF.Floor(Position.X) >> 4;
         int itemChunkZ = (int)MathF.Floor(Position.Z) >> 4;
-        for (int z = itemChunkZ - 1; z <= itemChunkZ + 1; z++) {
-            for (int x = itemChunkX - 1; x <= itemChunkX + 1; x++) {
-                foreach (Entity entity in dimension.EntityIndex.GetChunkEntities(x, z)) {
+        for (int z = itemChunkZ - 1; z <= itemChunkZ + 1; z++)
+        {
+            for (int x = itemChunkX - 1; x <= itemChunkX + 1; x++)
+            {
+                foreach (Entity entity in dimension.EntityIndex.GetChunkEntities(x, z))
+                {
                     if (entity is not ItemEntity other || other.RuntimeId <= RuntimeId || other.Dead ||
-                        other.SpawnedDimension != dimension || tick < other.mergeUnlockTick ||
+                        other.SpawnedDimension != dimension || other.SimulationAge < other.mergeUnlockTick ||
                         !other.movement.Grounded || other.Item.IsStackFull || !Item.CanStackWith(other.Item))
                         continue;
 
@@ -180,13 +194,15 @@ public sealed class ItemEntity : Entity {
                     ushort moved = (ushort)Math.Min(space, other.Item.StackSize);
                     Item.SetStackSize((ushort)(Item.StackSize + moved));
                     other.Item.SetStackSize((ushort)(other.Item.StackSize - moved));
-                    despawnTick = Math.Max(despawnTick, other.despawnTick);
+                    despawnTick = tick + Math.Max(despawnTick - tick, other.despawnTick - Math.Min(other.SimulationAge, other.despawnTick));
                     UpdateViewers(dimension);
-                    if (other.Item.StackSize == 0) {
+                    if (other.Item.StackSize == 0)
+                    {
                         dimension.Broadcast(new RemoveActorPacket { ActorId = other.UniqueId }, other);
                         other.Despawn();
                     }
-                    else {
+                    else
+                    {
                         other.UpdateViewers(dimension);
                     }
 
@@ -197,9 +213,11 @@ public sealed class ItemEntity : Entity {
         }
     }
 
-    private void UpdateViewers(Dimension dimension) {
+    private void UpdateViewers(Dimension dimension)
+    {
         dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
-        dimension.Broadcast(new AddItemActorPacket {
+        dimension.Broadcast(new AddItemActorPacket
+        {
             ActorId = UniqueId,
             RuntimeId = RuntimeId,
             Item = Item.ToNetworkStackDescriptor(),
