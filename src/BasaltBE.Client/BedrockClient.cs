@@ -168,7 +168,8 @@ public sealed class BedrockClient : IAsyncDisposable {
                 continue;
             }
 
-            await DispatchPacketsAsync(DecompressBatch(message.Payload), cancellationToken).ConfigureAwait(false);
+            ReadOnlyMemory<byte> batch = Compression is null ? message.Payload : DecompressBatch(message.Payload);
+            await DispatchPacketsAsync(batch, cancellationToken).ConfigureAwait(false);
         }
     }
 
