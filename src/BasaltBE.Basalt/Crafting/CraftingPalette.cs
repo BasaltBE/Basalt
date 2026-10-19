@@ -11,10 +11,18 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Basalt.Crafting;
 
 internal static class CraftingPalette {
-    internal static readonly CraftingDataPacket Packet = CreatePacket();
-    internal static readonly byte[] SerializedPacket = Serialize(Packet);
+    private static readonly Dictionary<int, CraftingRecipe> recipes;
+    internal static readonly CraftingDataPacket Packet;
+    internal static readonly byte[] SerializedPacket;
 
-    static CraftingDataPacket CreatePacket() {
+    static CraftingPalette() {
+        Packet = CreatePacket(out recipes);
+        SerializedPacket = Serialize(Packet);
+    }
+
+    internal static CraftingRecipe? FindRecipe(int netId) => recipes.GetValueOrDefault(netId);
+
+    static CraftingDataPacket CreatePacket(out Dictionary<int, CraftingRecipe> recipeMap) {
         Assembly assembly = Assembly.Load("BasaltBE.Data");
         using Stream stream = assembly.GetManifestResourceStream("BasaltBE.Data.Data.recipes.json")
             ?? throw new InvalidOperationException("Recipe data file 'recipes.json' is missing.");
@@ -22,6 +30,7 @@ internal static class CraftingPalette {
         JsonElement recipes = document.RootElement.GetProperty("recipes");
         List<ShapedRecipePayload> shaped = [];
         List<ShapelessRecipePayload> shapeless = [];
+        recipeMap = [];
         uint netId = 1;
 
         foreach (JsonElement recipe in recipes.EnumerateArray()) {
@@ -40,14 +49,17 @@ internal static class CraftingPalette {
             if (result is null)
                 continue;
 
+            ushort resultCount = checked((ushort)Math.Clamp(ReadInt(output, "count", 1), 1, ushort.MaxValue));
+            uint resultMetadata = unchecked((uint)ReadInt(output, "auxValue", 0));
             NetworkItemInstanceDescriptor resultItem = new() {
                 Id = result.NetworkId,
-                StackSize = checked((ushort)Math.Clamp(ReadInt(output, "count", 1), 1, ushort.MaxValue)),
-                AuxValue = unchecked((uint)ReadInt(output, "auxValue", 0))
+                StackSize = resultCount,
+                AuxValue = resultMetadata
             };
             string tag = ResolveTag(ReadString(recipe, "block"));
             int priority = ReadInt(recipe, "priority", 0);
             Uuid uuid = CreateUuid(Guid.NewGuid());
+            int recipeNetId = checked((int)netId);
 
             if (isShaped) {
                 if (!recipe.TryGetProperty("input", out JsonElement input) || input.ValueKind != JsonValueKind.Object ||
@@ -86,6 +98,16 @@ internal static class CraftingPalette {
                 if (!valid)
                     continue;
 
+                recipeMap.Add(recipeNetId, new CraftingRecipe(
+                    tag,
+                    width,
+                    rows.Length,
+                    ingredients.ToArray(),
+                    result,
+                    resultCount,
+                    resultMetadata,
+                    ReadBool(recipe, "assumeSymetry", true)
+                ));
                 shaped.Add(new ShapedRecipePayload {
                     RecipeId = identifier,
                     Width = width,
@@ -116,6 +138,16 @@ internal static class CraftingPalette {
             if (shapelessIngredients.Count == 0)
                 continue;
 
+            recipeMap.Add(recipeNetId, new CraftingRecipe(
+                tag,
+                0,
+                0,
+                shapelessIngredients.ToArray(),
+                result,
+                resultCount,
+                resultMetadata,
+                false
+            ));
             shapeless.Add(new ShapelessRecipePayload {
                 RecipeId = identifier,
                 Ingredients = shapelessIngredients.ToArray(),
@@ -144,7 +176,12 @@ internal static class CraftingPalette {
         ItemType? type = FindItem(item);
         return type is null
             ? null
-            : new RecipeIngredient { Descriptor = "name", DescriptorValue = type.Identifier, AuxValue = 0x7FFF, StackSize = count };
+            : new RecipeIngredient {
+                Descriptor = "name",
+                DescriptorValue = type.Identifier,
+                AuxValue = ReadInt(value, "auxValue", 0x7FFF),
+                StackSize = count
+            };
     }
 
     static ItemType? FindItem(string identifier) {

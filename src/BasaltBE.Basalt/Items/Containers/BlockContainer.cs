@@ -12,8 +12,9 @@ public sealed class BlockContainer : Container {
         ContainerId containerId = ContainerId.First,
         ContainerEnumName containerName = ContainerEnumName.LevelEntity,
         ContainerType type = ContainerType.Container,
-        uint? dynamicId = null
-    ) : base(size, containerId, containerName, type, dynamicId) {
+        uint? dynamicId = null,
+        int slotOffset = 0
+    ) : base(size, containerId, containerName, type, dynamicId, slotOffset) {
         ArgumentNullException.ThrowIfNull(position);
         Position = position;
     }

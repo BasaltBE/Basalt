@@ -2,6 +2,7 @@ using System.Diagnostics;
 using BasaltBE.Basalt;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
+using BasaltBE.Basalt.Blocks.Traits;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Commands.Types;
 using BasaltBE.Basalt.Commands.Vanilla;
@@ -52,6 +53,7 @@ internal static class Program {
             EntityPalette.RegisterTrait<PlayerInventoryTrait>();
             EntityPalette.RegisterTrait<EntityMovementTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
+            BlockPalette.RegisterTrait<CraftingTableTrait>();
 
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");

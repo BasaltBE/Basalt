@@ -9,8 +9,33 @@ public abstract class ItemStackRequestActionData : DataType {
     public abstract ItemStackRequestActionType ActionType { get; }
 
     public static ItemStackRequestActionData ReadAction(ref BinaryReader reader) {
-        reader.ReadVarUInt();
+        uint selector = reader.ReadVarUInt();
         ItemStackRequestActionType actionType = (ItemStackRequestActionType)reader.ReadUInt8();
+        uint expectedSelector = actionType switch {
+            ItemStackRequestActionType.Take => 0,
+            ItemStackRequestActionType.Place => 1,
+            ItemStackRequestActionType.Swap => 2,
+            ItemStackRequestActionType.Drop => 3,
+            ItemStackRequestActionType.Destroy => 4,
+            ItemStackRequestActionType.Consume => 5,
+            ItemStackRequestActionType.Create => 6,
+            ItemStackRequestActionType.ScreenLabTableCombine => 7,
+            ItemStackRequestActionType.ScreenBeaconPayment => 8,
+            ItemStackRequestActionType.ScreenHudMineBlock => 9,
+            ItemStackRequestActionType.CraftRecipe => 10,
+            ItemStackRequestActionType.CraftRecipeAuto => 11,
+            ItemStackRequestActionType.CraftCreative => 12,
+            ItemStackRequestActionType.CraftRecipeOptional => 13,
+            ItemStackRequestActionType.CraftRepairAndDisenchant => 14,
+            ItemStackRequestActionType.CraftLoom => 15,
+            ItemStackRequestActionType.CraftReservedAction => 16,
+            ItemStackRequestActionType.CraftNonImplemented => 17,
+            ItemStackRequestActionType.CraftResults => 18,
+            _ => throw new InvalidDataException($"Unknown item stack request action type {(byte)actionType}.")
+        };
+        if (selector != expectedSelector)
+            throw new InvalidDataException($"Item stack request action selector {selector} does not match action type {(byte)actionType}.");
+
         ItemStackRequestActionData action = actionType switch {
             ItemStackRequestActionType.Take => new TakeActionData(),
             ItemStackRequestActionType.Place => new PlaceActionData(),
@@ -38,6 +63,29 @@ public abstract class ItemStackRequestActionData : DataType {
     }
 
     public void WriteAction(ref BinaryWriter writer) {
+        uint selector = ActionType switch {
+            ItemStackRequestActionType.Take => 0,
+            ItemStackRequestActionType.Place => 1,
+            ItemStackRequestActionType.Swap => 2,
+            ItemStackRequestActionType.Drop => 3,
+            ItemStackRequestActionType.Destroy => 4,
+            ItemStackRequestActionType.Consume => 5,
+            ItemStackRequestActionType.Create => 6,
+            ItemStackRequestActionType.ScreenLabTableCombine => 7,
+            ItemStackRequestActionType.ScreenBeaconPayment => 8,
+            ItemStackRequestActionType.ScreenHudMineBlock => 9,
+            ItemStackRequestActionType.CraftRecipe => 10,
+            ItemStackRequestActionType.CraftRecipeAuto => 11,
+            ItemStackRequestActionType.CraftCreative => 12,
+            ItemStackRequestActionType.CraftRecipeOptional => 13,
+            ItemStackRequestActionType.CraftRepairAndDisenchant => 14,
+            ItemStackRequestActionType.CraftLoom => 15,
+            ItemStackRequestActionType.CraftReservedAction => 16,
+            ItemStackRequestActionType.CraftNonImplemented => 17,
+            ItemStackRequestActionType.CraftResults => 18,
+            _ => throw new InvalidDataException($"Unknown item stack request action type {(byte)ActionType}.")
+        };
+        writer.WriteVarUInt(selector);
         writer.WriteUInt8((byte)ActionType);
         Write(ref writer);
     }

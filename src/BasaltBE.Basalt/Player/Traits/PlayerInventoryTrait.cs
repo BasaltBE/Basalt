@@ -3,9 +3,9 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Network.Handlers;
+using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
-using BasaltBE.NetherNet.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -17,6 +17,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
 
     public readonly EntityContainer Inventory;
     public readonly EntityContainer Cursor;
+    public readonly EntityContainer CraftingGrid;
     public byte SelectedSlot;
 
     internal void QueueTransaction(InventoryTransactionData transaction, int legacyRequestId) {
@@ -75,6 +76,14 @@ public sealed class PlayerInventoryTrait : EntityTrait {
             ContainerType.Inventory,
             dynamicId: 0
         );
+        CraftingGrid = new EntityContainer(
+            player,
+            4,
+            ContainerId.PlayerOnlyUi,
+            ContainerEnumName.CraftingInput,
+            ContainerType.Inventory,
+            slotOffset: 28
+        );
     }
 
     public override void OnSpawn() {
@@ -82,6 +91,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
         Inventory.SetItem(0, new ItemStack("minecraft:stick", 64));
         Inventory.SetItem(1, new ItemStack("minecraft:stone", 64));
         Inventory.AddPersistent((Player)Entity);
+        CraftingGrid.AddPersistent((Player)Entity);
     }
 
     internal bool MatchesClientRequestNetId(Container container, int slot, int clientRequestNetId, ItemStack? item) =>

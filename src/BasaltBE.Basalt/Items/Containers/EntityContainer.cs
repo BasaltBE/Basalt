@@ -12,8 +12,9 @@ public sealed class EntityContainer : Container {
         ContainerId containerId = ContainerId.Inventory,
         ContainerEnumName containerName = ContainerEnumName.Inventory,
         ContainerType type = ContainerType.Inventory,
-        uint? dynamicId = null
-    ) : base(size, containerId, containerName, type, dynamicId) {
+        uint? dynamicId = null,
+        int slotOffset = 0
+    ) : base(size, containerId, containerName, type, dynamicId, slotOffset) {
         ArgumentNullException.ThrowIfNull(entity);
         Entity = entity;
     }

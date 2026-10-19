@@ -1,6 +1,9 @@
 using System.Reflection;
 using System.Text.Json;
+using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Blocks.Traits.Types;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Blocks;
 
@@ -11,12 +14,52 @@ public static class BlockPalette {
     static readonly Dictionary<string, BlockPermutation> DefaultPermutations = BuildDefaultPermutations();
     static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
     static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
+    static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
+    static readonly HashSet<Type> RegisteredTraits = [];
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
     public static BlockPermutation? FindDefaultPermutation(string identifier) => DefaultPermutations.GetValueOrDefault(identifier);
 
     public static BlockPermutation? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
+
+    /// <summary>Registers one shared trait instance for each block identifier declared by the trait.</summary>
+    public static void RegisterTrait<TTrait>() where TTrait : BlockTrait, new() {
+        Type traitType = typeof(TTrait);
+        if (RegisteredTraits.Contains(traitType))
+            throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
+
+        BlockTraitAppliesToAttribute targets = traitType.GetCustomAttribute<BlockTraitAppliesToAttribute>()
+            ?? throw new InvalidOperationException($"Block trait '{traitType}' has no BlockTraitAppliesTo attribute.");
+        if (targets.Identifiers.Length == 0)
+            throw new InvalidOperationException($"Block trait '{traitType}' has no block targets.");
+
+        foreach (string identifier in targets.Identifiers) {
+            if (!ByIdentifier.ContainsKey(identifier))
+                throw new InvalidOperationException($"Block trait '{traitType}' targets unknown block '{identifier}'.");
+        }
+
+        TTrait trait = new();
+        RegisteredTraits.Add(traitType);
+        foreach (string identifier in targets.Identifiers) {
+            BlockTrait[] current = TraitsByIdentifier.GetValueOrDefault(identifier) ?? [];
+            BlockTrait[] updated = new BlockTrait[current.Length + 1];
+            current.CopyTo(updated, 0);
+            updated[^1] = trait;
+            TraitsByIdentifier[identifier] = updated;
+        }
+    }
+
+    internal static bool OnInteract(string identifier, Player player, BlockPos position) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
+            return false;
+
+        foreach (BlockTrait trait in traits) {
+            if (trait.OnInteract(player, position))
+                return true;
+        }
+        return false;
+    }
 
     public static BlockPermutation? Find(string identifier, BlockState state) {
         if (!ByState.TryGetValue((identifier, StateHash(state)), out BlockPermutation[]? permutations)) {

@@ -1,7 +1,8 @@
+using BasaltBE.Basalt.Crafting;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Containers;
 using BasaltBE.Basalt.Events.Types;
-using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.NetherNet.Types;
@@ -24,11 +25,12 @@ internal sealed class ItemStackRequestHandler {
 
         ItemStackResponseInfo[] responses = new ItemStackResponseInfo[packet.Requests.Length];
         for (int i = 0; i < packet.Requests.Length; i++) {
-            responses[i] = ProcessRequest(player, packet.Requests[i]);
+            responses[i] = ProcessRequest(player, packet.Requests[i], out string? failureReason);
             ItemStackResponseInfo response = responses[i];
             if (response.Result != ItemStackNetResult.Success)
                 Logger.Scoped("Network").Warn(
-                    $"Rejected item stack request {response.ClientRequestId} from {player.Username}: {response.Result}."
+                    $"Rejected item stack request {response.ClientRequestId} from {player.Username}: {response.Result}" +
+                    (failureReason is null ? "." : $" ({failureReason}).")
                 );
         }
 
@@ -37,13 +39,22 @@ internal sealed class ItemStackRequestHandler {
         });
     }
 
-    internal static ItemStackResponseInfo ProcessRequest(Player player, ItemStackRequestData request) {
+    internal static ItemStackResponseInfo ProcessRequest(Player player, ItemStackRequestData request) =>
+        ProcessRequest(player, request, out _);
+
+    private static ItemStackResponseInfo ProcessRequest(
+        Player player,
+        ItemStackRequestData request,
+        out string? failureReason
+    ) {
         lock (player.Sync) {
             PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
-            if (!player.Spawned || inventory is null)
+            if (!player.Spawned || inventory is null) {
+                failureReason = "player inventory is unavailable";
                 return ErrorResponse(request.ClientRequestId);
+            }
 
-            ItemStackResponseInfo response = ProcessRequest(inventory, request);
+            ItemStackResponseInfo response = ProcessRequest(inventory, request, out failureReason);
             if (response.Result != ItemStackNetResult.Success) {
                 inventory.Inventory.Update();
                 inventory.Cursor.Update();
@@ -58,16 +69,24 @@ internal sealed class ItemStackRequestHandler {
         Container cursor,
         ItemStackRequestData request
     ) {
-        return ProcessRequest(inventory, cursor, request, null, null);
+        return ProcessRequest(inventory, cursor, request, null, null, out _);
     }
 
     private static ItemStackResponseInfo ProcessRequest(PlayerInventoryTrait inventory, ItemStackRequestData request) =>
+        ProcessRequest(inventory, request, out _);
+
+    private static ItemStackResponseInfo ProcessRequest(
+        PlayerInventoryTrait inventory,
+        ItemStackRequestData request,
+        out string? failureReason
+    ) =>
         ProcessRequest(
             inventory.Inventory,
             inventory.Cursor,
             request,
             inventory,
-            inventory.Entity is Player player ? player.OpenedContainer : null
+            inventory.Entity is Player player ? player.OpenedContainer : null,
+            out failureReason
         );
 
     private static ItemStackResponseInfo ProcessRequest(
@@ -75,8 +94,10 @@ internal sealed class ItemStackRequestHandler {
         Container cursor,
         ItemStackRequestData request,
         PlayerInventoryTrait? inventoryTrait,
-        Container? openedContainer
+        Container? openedContainer,
+        out string? failureReason
     ) {
+        failureReason = null;
         int clientRequestNetId = (request.ClientRequestId >> 1) ^ -(request.ClientRequestId & 1);
         RequestState state = cachedState ?? new RequestState();
         cachedState = null;
@@ -88,6 +109,7 @@ internal sealed class ItemStackRequestHandler {
         try {
             foreach (ItemStackRequestActionData action in request.Actions) {
                 if (!Apply(state, action)) {
+                    failureReason = state.FailureReason ?? action.ActionType.ToString();
                     return new ItemStackResponseInfo {
                         Result = ItemStackNetResult.Error,
                         ClientRequestId = request.ClientRequestId
@@ -95,11 +117,21 @@ internal sealed class ItemStackRequestHandler {
                 }
             }
 
+            if (state.Recipe is not null && !ValidateCraft(state)) {
+                failureReason = "craft validation";
+                return ErrorResponse(request.ClientRequestId);
+            }
+
             if (inventoryTrait?.Entity is Player actor && actor.Network.Server.Events.HasSubscribers<ContainerTransactionEvent>()) {
-                ContainerSlotChange[] changes = new ContainerSlotChange[state.ChangedSlots.Count];
-                for (int i = 0; i < changes.Length; i++) {
-                    SlotKey key = state.ChangedSlots[i];
-                    changes[i] = new(key.Container, key.Slot, key.Container.GetItem(key.Slot), state.Staged[key]);
+                int changeCount = state.ChangedSlots.Count;
+                if (state.CreatedOutput is { } output && state.ChangedSlotSet.Contains(new SlotKey(output, 0)))
+                    changeCount--;
+                ContainerSlotChange[] changes = new ContainerSlotChange[changeCount];
+                int changeIndex = 0;
+                foreach (SlotKey key in state.ChangedSlots) {
+                    if (ReferenceEquals(key.Container, state.CreatedOutput))
+                        continue;
+                    changes[changeIndex++] = new(key.Container, key.Slot, key.Container.GetItem(key.Slot), state.Staged[key]);
                 }
                 ContainerTransactionEvent transaction = new(actor, request.ClientRequestId, changes);
                 actor.Network.Server.Events.Emit(transaction);
@@ -108,6 +140,8 @@ internal sealed class ItemStackRequestHandler {
             }
 
             foreach (SlotKey key in state.ChangedSlots) {
+                if (ReferenceEquals(key.Container, state.CreatedOutput))
+                    continue;
                 key.Container.SetItem(key.Slot, state.Staged[key]);
                 inventoryTrait?.RememberClientRequestNetId(
                     key.Container,
@@ -132,8 +166,8 @@ internal sealed class ItemStackRequestHandler {
 
                 ItemStack? item = state.Staged[responseKey.SlotKey];
                 slots.Add(new ItemStackResponseSlotInfo {
-                    RequestedSlot = checked((byte)responseKey.SlotKey.Slot),
-                    Slot = checked((byte)responseKey.SlotKey.Slot),
+                    RequestedSlot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
+                    Slot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
                     Amount = checked((byte)(item?.StackSize ?? 0)),
                     ItemStackNetId = item?.NetId
                 });
@@ -163,6 +197,15 @@ internal sealed class ItemStackRequestHandler {
             state.OpenedContainer = null;
             state.InventoryTrait = null;
             state.ClientRequestNetId = 0;
+            state.Recipe = null;
+            state.CraftCount = 0;
+            state.CraftConsumption = null;
+            state.CraftConsumed = null;
+            state.CraftSources = null;
+            state.AutoCraft = false;
+            state.AutoCraftOutputSlot = null;
+            state.CraftResults = null;
+            state.CreatedOutput = null;
             state.Staged.Clear();
             state.StagedClientRequestNetIds.Clear();
             state.ChangedSlots.Clear();
@@ -170,6 +213,7 @@ internal sealed class ItemStackRequestHandler {
             state.ResponseSlots.Clear();
             state.ResponseSlotSet.Clear();
             state.DroppedItems.Clear();
+            state.FailureReason = null;
             cachedState ??= state;
         }
     }
@@ -179,10 +223,165 @@ internal sealed class ItemStackRequestHandler {
         PlaceActionData place => Transfer(state, place.Amount, place.Source, place.Destination),
         SwapActionData swap => Swap(state, swap.Source, swap.Destination),
         DropActionData drop => Drop(state, drop),
-        DestroyActionData destroy => Remove(state, destroy.Amount, destroy.Source),
-        ConsumeActionData consume => Remove(state, consume.Amount, consume.Source),
+        DestroyActionData destroy => Remove(state, destroy.Amount, destroy.Source, consume: false),
+        ConsumeActionData consume => Remove(state, consume.Amount, consume.Source, consume: true),
+        CraftRecipeActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: false),
+        CraftRecipeAutoActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: true),
+        CreateActionData create => CreateCraftResult(state, create.ResultsIndex),
+        CraftResultsActionData results => RecordCraftResults(state, results),
         _ => false
     };
+
+    private static bool SelectRecipe(RequestState state, int netId, byte crafts, bool autoCraft) {
+        if (state.Recipe is not null) {
+            state.FailureReason = "recipe already selected";
+            return false;
+        }
+        if (crafts == 0) {
+            state.FailureReason = "requested craft count is zero";
+            return false;
+        }
+        if (CraftingPalette.FindRecipe(netId) is not { Tag: "crafting_table" } recipe) {
+            state.FailureReason = $"recipe {netId} was not found for a crafting table";
+            return false;
+        }
+        if ((long)recipe.ResultCount * crafts > recipe.Result.MaxAmount) {
+            state.FailureReason = "requested result exceeds the item stack limit";
+            return false;
+        }
+
+        Container[] sources;
+        int[] consumption;
+        if (autoCraft) {
+            Container? workbench = state.OpenedContainer is { Type: ContainerType.Workbench, ContainerName: ContainerEnumName.CraftingInput } table
+                ? table
+                : null;
+            if (workbench is not null && state.InventoryTrait is { } inventoryTrait)
+                sources = [workbench, inventoryTrait.CraftingGrid, state.Inventory];
+            else if (workbench is not null)
+                sources = [workbench, state.Inventory];
+            else if (state.InventoryTrait is { } playerInventory)
+                sources = [playerInventory.CraftingGrid, state.Inventory];
+            else
+                sources = [state.Inventory];
+
+            ItemStack?[] items = new ItemStack?[sources.Sum(static source => source.ContainerSize)];
+            int itemIndex = 0;
+            foreach (Container source in sources) {
+                for (int slot = 0; slot < source.ContainerSize; slot++)
+                    items[itemIndex++] = source.GetItem(slot);
+            }
+
+            consumption = new int[items.Length];
+            if (!recipe.TryMatchInventory(items, crafts, consumption)) {
+                state.FailureReason = $"recipe {netId} does not match available crafting ingredients";
+                return false;
+            }
+        }
+        else {
+            Container? grid = state.OpenedContainer is { Type: ContainerType.Workbench, ContainerName: ContainerEnumName.CraftingInput } table
+                ? table
+                : state.OpenedContainer is null || ReferenceEquals(state.OpenedContainer, state.Inventory)
+                    ? state.InventoryTrait?.CraftingGrid
+                    : null;
+            if (grid is null || grid.ContainerSize is not (4 or 9)) {
+                state.FailureReason = "crafting grid is unavailable";
+                return false;
+            }
+
+            int gridWidth = grid.ContainerSize == 9 ? 3 : 2;
+            ItemStack?[] items = new ItemStack?[grid.ContainerSize];
+            for (int i = 0; i < items.Length; i++)
+                items[i] = grid.GetItem(i);
+
+            consumption = new int[items.Length];
+            if (!recipe.TryMatch(items, gridWidth, crafts, consumption)) {
+                state.FailureReason = $"recipe {netId} does not match crafting grid items";
+                return false;
+            }
+            sources = [grid];
+        }
+
+        state.Recipe = recipe;
+        state.CraftCount = crafts;
+        state.CraftConsumption = consumption;
+        state.CraftConsumed = new int[consumption.Length];
+        state.CraftSources = sources;
+        state.AutoCraft = autoCraft;
+        return true;
+    }
+
+    private static bool CreateCraftResult(RequestState state, byte resultsIndex) {
+        if (state.Recipe is not { } recipe || state.CreatedOutput is not null || resultsIndex != 0)
+            return false;
+
+        Container output = new(
+            1,
+            ContainerId.PlayerOnlyUi,
+            ContainerEnumName.CreatedOutput,
+            ContainerType.Inventory,
+            slotOffset: 50
+        );
+        ItemStack result = new(recipe.Result, (ushort)(recipe.ResultCount * state.CraftCount), recipe.ResultMetadata);
+        state.CreatedOutput = output;
+        SetItem(state, new SlotKey(output, 0), result, ContainerEnumName.CreatedOutput, 0);
+        return true;
+    }
+
+    private static bool RecordCraftResults(RequestState state, CraftResultsActionData results) {
+        if (state.Recipe is null || state.CraftResults is not null || results.CraftResults.Length != 1 ||
+            results.NumberOfCrafts != state.CraftCount)
+            return false;
+        if (state.CreatedOutput is null && !CreateCraftResult(state, 0))
+            return false;
+        state.CraftResults = results;
+        return true;
+    }
+
+    private static bool ValidateCraft(RequestState state) {
+        CraftingRecipe recipe = state.Recipe!;
+        Container[] sources = state.CraftSources!;
+        int[] consumption = state.CraftConsumption!;
+        int index = 0;
+        foreach (Container source in sources) {
+            for (int slot = 0; slot < source.ContainerSize; slot++, index++) {
+                SlotKey key = new(source, slot);
+                bool isAutoCraftOutput = state.AutoCraftOutputSlot == key;
+                if (state.CraftConsumed![index] != consumption[index] || isAutoCraftOutput && consumption[index] != 0)
+                    return false;
+                ItemStack? original = source.GetItem(slot);
+                if (isAutoCraftOutput)
+                    continue;
+                ItemStack? current = state.Staged.TryGetValue(key, out ItemStack? staged) ? staged : original;
+                int consumed = consumption[index];
+                if (consumed == 0) {
+                    if (!SameStack(original, current))
+                        return false;
+                }
+                else if (original is null || current is null && original.StackSize != consumed ||
+                    current is not null && (current.Type != original.Type || current.StackSize != original.StackSize - consumed)) {
+                    return false;
+                }
+            }
+        }
+
+        if (state.CreatedOutput is not { } output ||
+            state.Staged.GetValueOrDefault(new SlotKey(output, 0)) is not null)
+            return false;
+
+        if (state.CraftResults is not { } reported)
+            return true;
+
+        NetworkItemInstanceDescriptorData result = reported.CraftResults[0];
+        return result.ItemDescriptor is ItemNameDescriptorData descriptor &&
+            descriptor.FullName == recipe.Result.Identifier &&
+            result.StackSize == recipe.ResultCount * state.CraftCount &&
+            (descriptor.AuxValue == 0x7FFF || unchecked((uint)descriptor.AuxValue) == recipe.ResultMetadata);
+    }
+
+    private static bool SameStack(ItemStack? first, ItemStack? second) =>
+        first is null ? second is null : second is not null &&
+        first.Type == second.Type && first.StackSize == second.StackSize && first.Metadata == second.Metadata;
 
     private static bool Transfer(
         RequestState state,
@@ -190,16 +389,33 @@ internal sealed class ItemStackRequestHandler {
         ItemStackSlotInfoData sourceInfo,
         ItemStackSlotInfoData destinationInfo
     ) {
-        if (amount == 0 ||
-            !TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem) ||
-            !TryGetItem(state, destinationInfo, out SlotKey destinationKey, out ItemStack? destinationItem)) {
+        if (amount == 0) {
+            state.FailureReason = "transfer amount is zero";
+            return false;
+        }
+        if (!TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem)) {
+            state.FailureReason = $"invalid source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}]";
+            return false;
+        }
+        if (!TryGetItem(state, destinationInfo, out SlotKey destinationKey, out ItemStack? destinationItem)) {
+            state.FailureReason = $"invalid destination slot {destinationInfo.ContainerName.ContainerName}[{destinationInfo.Slot}]";
             return false;
         }
 
+        bool touchesCraftGrid = IsCraftSource(state, sourceKey.Container) ||
+            IsCraftSource(state, destinationKey.Container);
+        bool autoCraftOutput = state.AutoCraft && ReferenceEquals(sourceKey.Container, state.CreatedOutput) &&
+            ReferenceEquals(destinationKey.Container, state.Inventory);
+        if (state.Recipe is not null && touchesCraftGrid && !autoCraftOutput) {
+            state.FailureReason = "recipe transfer touches the crafting input";
+            return false;
+        }
         if (sourceKey == destinationKey)
             return true;
-        if (sourceItem is null || amount > sourceItem.StackSize)
+        if (sourceItem is null || amount > sourceItem.StackSize) {
+            state.FailureReason = "source stack is empty or smaller than the transfer";
             return false;
+        }
 
         if (destinationItem is null) {
             ItemStack moved = sourceItem.Clone(amount, cloneNbt: amount != sourceItem.StackSize);
@@ -209,15 +425,21 @@ internal sealed class ItemStackRequestHandler {
                 : sourceItem.Clone((ushort)(sourceItem.StackSize - amount)),
                 sourceInfo.ContainerName.ContainerName,
                 sourceInfo.ContainerName.DynamicId);
+            if (autoCraftOutput)
+                state.AutoCraftOutputSlot = destinationKey;
             return true;
         }
 
-        if (!sourceItem.CanStackWith(destinationItem))
+        if (!sourceItem.CanStackWith(destinationItem)) {
+            state.FailureReason = "source and destination stacks cannot merge";
             return false;
+        }
 
         int available = destinationItem.Type.MaxAmount - destinationItem.StackSize;
-        if (available < amount)
+        if (available < amount) {
+            state.FailureReason = "destination stack has insufficient space";
             return false;
+        }
 
         destinationItem.SetStackSize((ushort)(destinationItem.StackSize + amount));
         sourceItem.SetStackSize((ushort)(sourceItem.StackSize - amount));
@@ -235,6 +457,8 @@ internal sealed class ItemStackRequestHandler {
             sourceInfo.ContainerName.ContainerName,
             sourceInfo.ContainerName.DynamicId
         );
+        if (autoCraftOutput)
+            state.AutoCraftOutputSlot = destinationKey;
         return true;
     }
 
@@ -251,16 +475,69 @@ internal sealed class ItemStackRequestHandler {
         if (sourceKey == destinationKey)
             return true;
 
+        if (state.Recipe is not null &&
+            (IsCraftSource(state, sourceKey.Container) || IsCraftSource(state, destinationKey.Container)))
+            return false;
+
         SetItem(state, sourceKey, destinationItem, sourceInfo.ContainerName.ContainerName, sourceInfo.ContainerName.DynamicId);
         SetItem(state, destinationKey, sourceItem, destinationInfo.ContainerName.ContainerName, destinationInfo.ContainerName.DynamicId);
         return true;
     }
 
-    private static bool Remove(RequestState state, byte amount, ItemStackSlotInfoData sourceInfo) {
-        if (amount == 0 ||
-            !TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem) ||
-            sourceItem is null || amount > sourceItem.StackSize) {
+    private static bool Remove(RequestState state, byte amount, ItemStackSlotInfoData sourceInfo, bool consume) {
+        if (amount == 0) {
+            state.FailureReason = "consume amount is zero";
             return false;
+        }
+        if (!TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem)) {
+            state.FailureReason = $"invalid source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}] netId={sourceInfo.NetIdVariant}";
+            return false;
+        }
+        if (sourceItem is null || amount > sourceItem.StackSize) {
+            state.FailureReason = $"source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}] has {sourceItem?.StackSize ?? 0}, requested {amount}";
+            return false;
+        }
+
+        if (state.Recipe is not null) {
+            if (!consume) {
+                state.FailureReason = "recipe action tried to destroy an ingredient";
+                return false;
+            }
+            int sourceIndex = GetCraftSourceIndex(state, sourceKey);
+            if (sourceIndex < 0 || state.CraftConsumption is null) {
+                state.FailureReason = $"ingredient came from an unexpected container {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}]";
+                return false;
+            }
+            int expected = state.CraftConsumption[sourceIndex] - state.CraftConsumed![sourceIndex];
+            if (amount > expected && state.AutoCraft) {
+                int needed = amount - expected;
+                for (int slot = 0; slot < state.CraftConsumption.Length && needed > 0; slot++) {
+                    if (slot == sourceIndex)
+                        continue;
+
+                    int available = state.CraftConsumption[slot] - state.CraftConsumed[slot];
+                    if (available <= 0)
+                        continue;
+
+                    SlotKey candidateKey = GetCraftSourceKey(state, slot);
+                    ItemStack? candidate = state.Staged.TryGetValue(candidateKey, out ItemStack? staged)
+                        ? staged
+                        : candidateKey.Container.GetItem(candidateKey.Slot);
+                    if (candidate is null || !candidate.CanStackWith(sourceItem))
+                        continue;
+
+                    int shifted = Math.Min(available, needed);
+                    state.CraftConsumption[slot] -= shifted;
+                    state.CraftConsumption[sourceIndex] += shifted;
+                    expected += shifted;
+                    needed -= shifted;
+                }
+            }
+            if (amount > expected) {
+                state.FailureReason = $"slot {sourceKey.Slot} expected {expected} more ingredients, got {amount}";
+                return false;
+            }
+            state.CraftConsumed[sourceIndex] += amount;
         }
 
         ushort remaining = (ushort)(sourceItem.StackSize - amount);
@@ -279,6 +556,8 @@ internal sealed class ItemStackRequestHandler {
             !player.Spawned || player.Disposed ||
             !TryGetItem(state, action.Source, out SlotKey sourceKey, out ItemStack? sourceItem) ||
             sourceItem is null || action.Amount > sourceItem.StackSize)
+            return false;
+        if (state.Recipe is not null && IsCraftSource(state, sourceKey.Container))
             return false;
 
         ItemStack dropped = sourceItem.Clone(action.Amount, cloneNbt: action.Amount != sourceItem.StackSize);
@@ -303,17 +582,18 @@ internal sealed class ItemStackRequestHandler {
         if (!ResolveContainer(state, info.ContainerName, out Container? container) ||
             container is null ||
             (info.ContainerName.ContainerName == ContainerEnumName.Hotbar && info.Slot >= 9) ||
-            info.Slot >= container.ContainerSize) {
+            (uint)container.GetLocalSlot(info.Slot) >= container.ContainerSize) {
             key = default;
             item = null;
             return false;
         }
 
-        key = new SlotKey(container, info.Slot);
+        key = new SlotKey(container, container.GetLocalSlot(info.Slot));
         if (!state.Staged.TryGetValue(key, out item)) {
-            item = container.GetItem(info.Slot);
-            if ((item?.NetId ?? 0) != info.NetIdVariant &&
-                !(state.InventoryTrait?.MatchesClientRequestNetId(container, info.Slot, info.NetIdVariant, item) ?? false)) {
+            item = container.GetItem(key.Slot);
+            if (!ReferenceEquals(container, state.CreatedOutput) &&
+                (item?.NetId ?? 0) != info.NetIdVariant &&
+                !(state.InventoryTrait?.MatchesClientRequestNetId(container, key.Slot, info.NetIdVariant, item) ?? false)) {
                 return false;
             }
             item = item?.Clone();
@@ -321,7 +601,9 @@ internal sealed class ItemStackRequestHandler {
             return true;
         }
 
-        return (item?.NetId ?? 0) == info.NetIdVariant ||
+        return ReferenceEquals(container, state.CreatedOutput) ||
+            state.Recipe is not null && IsCraftSource(state, container) ||
+            (item?.NetId ?? 0) == info.NetIdVariant ||
             state.StagedClientRequestNetIds.TryGetValue(key, out int clientRequestNetId) &&
             clientRequestNetId == info.NetIdVariant;
     }
@@ -330,13 +612,28 @@ internal sealed class ItemStackRequestHandler {
         container = null;
         if (state.OpenedContainer is { } openedContainer &&
             openedContainer.ContainerName == name.ContainerName &&
-            openedContainer.DynamicId == name.DynamicId) {
+            (openedContainer.DynamicId == name.DynamicId ||
+                name.ContainerName == ContainerEnumName.CraftingInput &&
+                (openedContainer.DynamicId is null or 0) && (name.DynamicId is null or 0))) {
             container = openedContainer;
+            return true;
+        }
+
+        if (name.ContainerName == ContainerEnumName.CreatedOutput &&
+            (name.DynamicId is null or 0) && state.CreatedOutput is { } createdOutput) {
+            container = createdOutput;
             return true;
         }
 
         if (name.DynamicId is uint dynamicId && dynamicId != 0)
             return false;
+
+        if (name.ContainerName == ContainerEnumName.CraftingInput &&
+            (state.OpenedContainer is null || ReferenceEquals(state.OpenedContainer, state.Inventory)) &&
+            state.InventoryTrait is { } inventoryTrait) {
+            container = inventoryTrait.CraftingGrid;
+            return true;
+        }
 
         container = name.ContainerName switch {
             ContainerEnumName.Inventory or ContainerEnumName.Hotbar or ContainerEnumName.CombinedHotbarAndInventory => state.Inventory,
@@ -362,12 +659,50 @@ internal sealed class ItemStackRequestHandler {
         ClientRequestId = requestId
     };
 
+    private static bool IsCraftSource(RequestState state, Container container) {
+        if (state.CraftSources is null)
+            return false;
+        foreach (Container source in state.CraftSources) {
+            if (ReferenceEquals(source, container))
+                return true;
+        }
+        return false;
+    }
+
+    private static int GetCraftSourceIndex(RequestState state, SlotKey key) {
+        int index = 0;
+        foreach (Container source in state.CraftSources!) {
+            if (ReferenceEquals(source, key.Container))
+                return index + key.Slot;
+            index += source.ContainerSize;
+        }
+        return -1;
+    }
+
+    private static SlotKey GetCraftSourceKey(RequestState state, int index) {
+        foreach (Container source in state.CraftSources!) {
+            if (index < source.ContainerSize)
+                return new SlotKey(source, index);
+            index -= source.ContainerSize;
+        }
+        throw new ArgumentOutOfRangeException(nameof(index));
+    }
+
     private sealed class RequestState {
         internal Container Inventory = null!;
         internal Container Cursor = null!;
         internal Container? OpenedContainer;
         internal int ClientRequestNetId;
         internal PlayerInventoryTrait? InventoryTrait;
+        internal CraftingRecipe? Recipe;
+        internal byte CraftCount;
+        internal int[]? CraftConsumption;
+        internal int[]? CraftConsumed;
+        internal Container[]? CraftSources;
+        internal bool AutoCraft;
+        internal SlotKey? AutoCraftOutputSlot;
+        internal CraftResultsActionData? CraftResults;
+        internal Container? CreatedOutput;
         internal readonly Dictionary<SlotKey, ItemStack?> Staged = [];
         internal readonly Dictionary<SlotKey, int> StagedClientRequestNetIds = [];
         internal readonly List<SlotKey> ChangedSlots = [];
@@ -375,6 +710,7 @@ internal sealed class ItemStackRequestHandler {
         internal readonly List<ResponseSlotKey> ResponseSlots = [];
         internal readonly HashSet<ResponseSlotKey> ResponseSlotSet = [];
         internal readonly List<PendingDrop> DroppedItems = [];
+        internal string? FailureReason;
     }
 
     private readonly record struct PendingDrop(ItemStack Item, bool Randomly);

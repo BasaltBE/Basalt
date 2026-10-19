@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Profiling;
+using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Packets;
 using BinaryReader = Basalt.Binary.BinaryReader;
@@ -54,13 +55,29 @@ public sealed class EventEmitter
         public void Emit(uint packetId, NethernetPeer peer, Player? player, ReadOnlyMemory<byte> payload)
         {
             TPacket packet = new();
-            using (Profiler.BeginZone("Network.DeserializePacket"))
+            try
             {
-                int offset = 0;
-                BinaryReader reader = new(payload.Span, ref offset);
-                packet.Deserialize(ref reader);
-                if (offset != payload.Length)
-                    throw new InvalidDataException($"Bedrock packet 0x{packetId:X} has trailing data.");
+                using (Profiler.BeginZone("Network.DeserializePacket"))
+                {
+                    int offset = 0;
+                    BinaryReader reader = new(payload.Span, ref offset);
+                    packet.Deserialize(ref reader);
+                    if (offset != payload.Length)
+                        throw new InvalidDataException($"Bedrock packet 0x{packetId:X} has trailing data.");
+                }
+            }
+            catch (Exception error) when (
+                packetId == PacketEvents.ItemStackRequest.PacketId &&
+                error is IndexOutOfRangeException or InvalidDataException or ArgumentOutOfRangeException or OverflowException or FormatException)
+            {
+                int length = Math.Min(payload.Length, 256);
+                string prefix = Convert.ToHexString(payload.Span[..length]);
+                string truncated = payload.Length > length ? " (truncated)" : string.Empty;
+                Logger.Scoped("Network").Warn(
+                    $"Could not decode item stack request from {peer.ConnectionId}: {error.Message} " +
+                    $"({payload.Length} bytes, payload: {prefix}{truncated})."
+                );
+                return;
             }
 
             try

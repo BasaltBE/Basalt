@@ -17,6 +17,7 @@ public class Container {
     public readonly ContainerEnumName ContainerName;
     public readonly ContainerType Type;
     public readonly uint? DynamicId;
+    public readonly int SlotOffset;
     public int ContainerSize => items.Length;
     public event Action? FirstViewerOpened;
     public event Action? LastViewerClosed;
@@ -26,14 +27,17 @@ public class Container {
         ContainerId containerId = ContainerId.Inventory,
         ContainerEnumName containerName = ContainerEnumName.Inventory,
         ContainerType type = ContainerType.Container,
-        uint? dynamicId = null
+        uint? dynamicId = null,
+        int slotOffset = 0
     ) {
         ArgumentOutOfRangeException.ThrowIfNegative(size);
+        ArgumentOutOfRangeException.ThrowIfNegative(slotOffset);
         items = new ItemStack?[size];
         ContainerId = containerId;
         ContainerName = containerName;
         Type = type;
         DynamicId = dynamicId;
+        SlotOffset = slotOffset;
     }
 
     public ItemStack? GetItem(int slot) {
@@ -222,6 +226,12 @@ public class Container {
             recipients = [.. viewers];
         }
 
+        if (SlotOffset > 0) {
+            for (int i = 0; i < snapshot.Length; i++)
+                SendSlot(recipients, i, snapshot[i]);
+            return;
+        }
+
         InventoryContentPacket packet = new() {
             ContainerId = unchecked((uint)(sbyte)ContainerId),
             Slots = Array.ConvertAll(snapshot, static item => item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()),
@@ -244,10 +254,18 @@ public class Container {
             recipients = [.. viewers];
         }
 
+        SendSlot(recipients, slot, item);
+    }
+
+    internal int GetLocalSlot(int networkSlot) => networkSlot - SlotOffset;
+
+    internal int GetNetworkSlot(int slot) => slot + SlotOffset;
+
+    private void SendSlot(Player[] recipients, int slot, ItemStack? item) {
         NetworkItemStackDescriptor descriptor = item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
         InventorySlotPacket packet = new() {
-            ContainerId = unchecked((byte)(sbyte)ContainerId),
-            Slot = (uint)slot,
+            ContainerId = unchecked((byte)(sbyte)(SlotOffset > 0 ? ContainerId.PlayerOnlyUi : ContainerId)),
+            Slot = checked((uint)GetNetworkSlot(slot)),
             FullContainerName = GetFullContainerName(),
             Item = descriptor
         };
@@ -371,6 +389,13 @@ public class Container {
         ItemStack?[] snapshot;
         lock (sync)
             snapshot = (ItemStack?[])items.Clone();
+
+        if (SlotOffset > 0) {
+            Player[] recipient = [player];
+            for (int i = 0; i < snapshot.Length; i++)
+                SendSlot(recipient, i, snapshot[i]);
+            return;
+        }
 
         player.Network.SendPacket(player, new InventoryContentPacket {
             ContainerId = unchecked((uint)(sbyte)ContainerId),

@@ -1,6 +1,5 @@
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Blocks;
-using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
@@ -301,10 +300,13 @@ internal sealed class InventoryTransactionHandler {
         }
 
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success &&
-            !player.Flags.Get(ActorFlag.Sneaking) &&
-            player.Dimension.GetBlockActor(clickedChunk, use.Position.X & 15, use.Position.Y, use.Position.Z & 15) is { } actor) {
-            actor.OnInteract(player);
-            return true;
+            !player.Flags.Get(ActorFlag.Sneaking)) {
+            if (player.Dimension.GetBlockActor(clickedChunk, use.Position.X & 15, use.Position.Y, use.Position.Z & 15) is { } actor) {
+                actor.OnInteract(player);
+                return true;
+            }
+            if (BlockPalette.OnInteract(clicked.Identifier, player, use.Position))
+                return true;
         }
 
         BlockPermutation? permutation = item?.Type.PlacementPermutation;

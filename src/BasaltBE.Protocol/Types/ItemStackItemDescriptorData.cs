@@ -9,6 +9,7 @@ public abstract class ItemStackItemDescriptorData : DataType {
     public abstract ItemDescriptorType DescriptorType { get; }
 
     public static ItemStackItemDescriptorData ReadDescriptor(ref BinaryReader reader) {
+        reader.ReadVarUInt();
         ItemDescriptorType type = (ItemDescriptorType)reader.ReadUInt8();
         ItemStackItemDescriptorData descriptor = type switch {
             ItemDescriptorType.Empty => new EmptyItemDescriptorData(),
@@ -22,6 +23,7 @@ public abstract class ItemStackItemDescriptorData : DataType {
     }
 
     public void WriteDescriptor(ref BinaryWriter writer) {
+        writer.WriteVarUInt((uint)DescriptorType);
         writer.WriteUInt8((byte)DescriptorType);
         Write(ref writer);
     }
