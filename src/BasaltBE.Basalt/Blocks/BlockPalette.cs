@@ -3,6 +3,7 @@ using System.Text.Json;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Blocks.Traits.Types;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Blocks;
@@ -14,6 +15,20 @@ public static class BlockPalette {
     static readonly Dictionary<string, BlockPermutation> DefaultPermutations = BuildDefaultPermutations();
     static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
     static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
+    static readonly Dictionary<(string Identifier, string Half), BlockPermutation> DoubleSlabs = BuildDoubleSlabs();
+    static readonly HashSet<string> FenceIdentifiers = BuildIdentifiers(
+        ["minecraft:connection_east", "minecraft:connection_north", "minecraft:connection_south", "minecraft:connection_west"],
+        "fence"
+    );
+    static readonly HashSet<string> FenceGateIdentifiers = BuildIdentifiers(
+        ["in_wall_bit", "minecraft:cardinal_direction", "open_bit"],
+        "fence_gate"
+    );
+    static readonly HashSet<string> WallIdentifiers = BuildIdentifiers(
+        ["wall_connection_type_east", "wall_connection_type_north", "wall_connection_type_south", "wall_connection_type_west"]
+    );
+    static readonly Dictionary<(string Identifier, byte Connections), BlockPermutation> FencePermutations = BuildFencePermutations();
+    static readonly Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> FenceGatePermutations = BuildFenceGatePermutations();
     static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
     static readonly HashSet<Type> RegisteredTraits = [];
 
@@ -23,25 +38,74 @@ public static class BlockPalette {
 
     public static BlockPermutation? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
 
+    internal static BlockPermutation? FindDoubleSlab(string identifier, string half) =>
+        DoubleSlabs.GetValueOrDefault((identifier, half));
+
+    internal static bool IsSlab(string identifier) => DoubleSlabs.ContainsKey((identifier, "bottom"));
+
+    internal static bool IsCornerableStairs(string identifier) =>
+        ByIdentifier.TryGetValue(identifier, out BlockType? type) &&
+        Array.IndexOf(type.Tags, "minecraft:cornerable_stairs") >= 0;
+
+    internal static bool IsFence(string identifier) => FenceIdentifiers.Contains(identifier);
+
+    internal static bool IsFenceGate(string identifier) => FenceGateIdentifiers.Contains(identifier);
+
+    internal static bool IsWall(string identifier) => WallIdentifiers.Contains(identifier);
+
+    internal static BlockPermutation? FindFencePermutation(string identifier, byte connections) =>
+        FencePermutations.GetValueOrDefault((identifier, connections));
+
+    internal static BlockPermutation? FindFenceGatePermutation(string identifier, string direction, bool open, bool inWall) =>
+        FenceGatePermutations.GetValueOrDefault((identifier, direction, open, inWall));
+
+    internal static bool FenceConnects(string fenceIdentifier, string neighborIdentifier) {
+        if (IsFence(neighborIdentifier)) {
+            bool fenceIsWood = Array.IndexOf(ByIdentifier[fenceIdentifier].Tags, "wood") >= 0;
+            bool neighborIsWood = Array.IndexOf(ByIdentifier[neighborIdentifier].Tags, "wood") >= 0;
+            return fenceIsWood == neighborIsWood;
+        }
+
+        if (IsFenceGate(neighborIdentifier))
+            return Array.IndexOf(ByIdentifier[fenceIdentifier].Tags, "wood") >= 0;
+
+        if (IsWall(neighborIdentifier))
+            return true;
+
+        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 15;
+    }
+
     /// <summary>Registers one shared trait instance for each block identifier declared by the trait.</summary>
     public static void RegisterTrait<TTrait>() where TTrait : BlockTrait, new() {
         Type traitType = typeof(TTrait);
-        if (RegisteredTraits.Contains(traitType))
-            throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
-
         BlockTraitAppliesToAttribute targets = traitType.GetCustomAttribute<BlockTraitAppliesToAttribute>()
             ?? throw new InvalidOperationException($"Block trait '{traitType}' has no BlockTraitAppliesTo attribute.");
-        if (targets.Identifiers.Length == 0)
+        RegisterTrait<TTrait>(targets.Identifiers);
+    }
+
+    public static void RegisterTrait<TTrait>(string blockTag) where TTrait : BlockTrait, new() {
+        string[] identifiers = Types
+            .Where(type => Array.IndexOf(type.Tags, blockTag) >= 0)
+            .Select(type => type.Identifier)
+            .ToArray();
+        RegisterTrait<TTrait>(identifiers);
+    }
+
+    static void RegisterTrait<TTrait>(string[] identifiers) where TTrait : BlockTrait, new() {
+        Type traitType = typeof(TTrait);
+        if (RegisteredTraits.Contains(traitType))
+            throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
+        if (identifiers.Length == 0)
             throw new InvalidOperationException($"Block trait '{traitType}' has no block targets.");
 
-        foreach (string identifier in targets.Identifiers) {
+        foreach (string identifier in identifiers) {
             if (!ByIdentifier.ContainsKey(identifier))
                 throw new InvalidOperationException($"Block trait '{traitType}' targets unknown block '{identifier}'.");
         }
 
         TTrait trait = new();
         RegisteredTraits.Add(traitType);
-        foreach (string identifier in targets.Identifiers) {
+        foreach (string identifier in identifiers) {
             BlockTrait[] current = TraitsByIdentifier.GetValueOrDefault(identifier) ?? [];
             BlockTrait[] updated = new BlockTrait[current.Length + 1];
             current.CopyTo(updated, 0);
@@ -59,6 +123,20 @@ public static class BlockPalette {
                 return true;
         }
         return false;
+    }
+
+    internal static bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
+        if (y < -64 || y >= 320 || dimension.GetChunk(x >> 4, z >> 4) is null)
+            return false;
+
+        BlockPermutation current = dimension.GetPermutation(x, y, z);
+        if (!TraitsByIdentifier.TryGetValue(current.Identifier, out BlockTrait[]? traits))
+            return false;
+
+        bool updated = false;
+        foreach (BlockTrait trait in traits)
+            updated |= trait.OnNeighborUpdate(dimension, x, y, z);
+        return updated;
     }
 
     public static BlockPermutation? Find(string identifier, BlockState state) {
@@ -124,6 +202,82 @@ public static class BlockPalette {
             defaults.TryAdd(permutation.Identifier, permutation);
         }
         return defaults;
+    }
+
+    static HashSet<string> BuildIdentifiers(string[] states, string? identifierSuffix = null) {
+        HashSet<string> identifiers = new(StringComparer.Ordinal);
+        foreach (BlockType type in Types) {
+            if (identifierSuffix is not null && !type.Identifier.EndsWith(identifierSuffix, StringComparison.Ordinal))
+                continue;
+
+            bool matches = true;
+            foreach (string state in states) {
+                if (Array.IndexOf(type.States, state) >= 0)
+                    continue;
+
+                matches = false;
+                break;
+            }
+
+            if (matches)
+                identifiers.Add(type.Identifier);
+        }
+
+        return identifiers;
+    }
+
+    static Dictionary<(string Identifier, byte Connections), BlockPermutation> BuildFencePermutations() {
+        Dictionary<(string Identifier, byte Connections), BlockPermutation> permutations = [];
+        foreach (BlockPermutation permutation in Permutations) {
+            if (!FenceIdentifiers.Contains(permutation.Identifier))
+                continue;
+
+            byte connections = 0;
+            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_east") is true)
+                connections |= 1;
+            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_north") is true)
+                connections |= 2;
+            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_south") is true)
+                connections |= 4;
+            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_west") is true)
+                connections |= 8;
+            permutations.TryAdd((permutation.Identifier, connections), permutation);
+        }
+
+        return permutations;
+    }
+
+    static Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> BuildFenceGatePermutations() {
+        Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> permutations = [];
+        foreach (BlockPermutation permutation in Permutations) {
+            if (!FenceGateIdentifiers.Contains(permutation.Identifier) ||
+                permutation.State.Values.GetValueOrDefault("minecraft:cardinal_direction") is not string direction ||
+                permutation.State.Values.GetValueOrDefault("open_bit") is not bool open ||
+                permutation.State.Values.GetValueOrDefault("in_wall_bit") is not bool inWall)
+                continue;
+
+            permutations.TryAdd((permutation.Identifier, direction, open, inWall), permutation);
+        }
+
+        return permutations;
+    }
+
+    static Dictionary<(string Identifier, string Half), BlockPermutation> BuildDoubleSlabs() {
+        Dictionary<(string Identifier, string Half), BlockPermutation> slabs = [];
+        foreach (BlockPermutation permutation in Permutations) {
+            int namespaceEnd = permutation.Identifier.IndexOf(':') + 1;
+            int doubleToken = permutation.Identifier.IndexOf("double_", namespaceEnd, StringComparison.Ordinal);
+            if (doubleToken < 0 ||
+                !permutation.State.Values.TryGetValue("minecraft:vertical_half", out object? half) ||
+                half is not string halfName)
+                continue;
+
+            string slabIdentifier = permutation.Identifier.Remove(doubleToken, "double_".Length);
+            if (ByIdentifier.ContainsKey(slabIdentifier))
+                slabs.TryAdd((slabIdentifier, halfName), permutation);
+        }
+
+        return slabs;
     }
 
     static Dictionary<(string Identifier, int StateHash), BlockPermutation[]> BuildStateIndex() {

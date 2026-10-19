@@ -389,6 +389,8 @@ internal sealed class PlayerAuthInputHandler {
             blockUpdate ??= update;
         }
 
+        player.Dimension.UpdateNeighbors(x, y, z);
+
         if (dropItems) {
             ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
                 ? inventory.Inventory.GetItem(inventory.SelectedSlot)

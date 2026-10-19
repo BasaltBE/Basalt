@@ -54,6 +54,9 @@ internal static class Program {
             EntityPalette.RegisterTrait<EntityMovementTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
             BlockPalette.RegisterTrait<CraftingTableTrait>();
+            BlockPalette.RegisterTrait<FenceTrait>();
+            BlockPalette.RegisterTrait<FenceGateTrait>();
+            BlockPalette.RegisterTrait<StairShapeTrait>("minecraft:cornerable_stairs");
 
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");

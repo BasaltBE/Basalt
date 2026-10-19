@@ -121,7 +121,9 @@ public static class ItemPalette {
 
         ItemType[] types = ItemTypeParser.Parse(stream);
         foreach (ItemType type in types) {
-            string identifier = type.Identifier;
+            string identifier = type.Identifier == "minecraft:fence"
+                ? "minecraft:oak_fence"
+                : type.Identifier;
             if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:block_placer") is CompoundTag placer &&
                 placer.Get<StringTag>("block") is { } block)
                 identifier = block.Value;

@@ -7,6 +7,7 @@ using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 using BasaltBE.Basalt.Worlds.Types;
@@ -411,6 +412,27 @@ public sealed class Dimension : IDisposable {
         if (layer == 0 && chunk.GetPermutation(x & 15, y, z & 15, layer) != permutation)
             RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation, layer);
+    }
+
+    internal void UpdateNeighbors(int x, int y, int z) {
+        UpdateNeighbor(x + 1, y, z);
+        UpdateNeighbor(x - 1, y, z);
+        UpdateNeighbor(x, y, z + 1);
+        UpdateNeighbor(x, y, z - 1);
+        UpdateNeighbor(x, y + 1, z);
+        UpdateNeighbor(x, y - 1, z);
+    }
+
+    void UpdateNeighbor(int x, int y, int z) {
+        if (!BlockPalette.OnNeighborUpdate(this, x, y, z))
+            return;
+
+        BlockPermutation permutation = GetPermutation(x, y, z);
+        Broadcast(new UpdateBlockPacket {
+            Position = new BlockPos { X = x, Y = y, Z = z },
+            BlockRuntimeId = unchecked((uint)permutation.Hash),
+            Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
+        }, x >> 4, z >> 4);
     }
 
     internal BlockActor? GetBlockActor(Chunk chunk, int x, int y, int z) {

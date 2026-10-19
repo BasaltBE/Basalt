@@ -322,14 +322,26 @@ internal sealed class InventoryTransactionHandler {
         int x = use.Position.X;
         int y = use.Position.Y;
         int z = use.Position.Z;
+        string placedHalf = use.Face == 0 || (use.Face != 1 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
+        string mergedHalf = use.Face == 1 || (use.Face != 0 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
+        bool mergingSlab = false;
         if (!Replaceable(clicked)) {
-            switch (use.Face) {
-                case 0: y--; break;
-                case 1: y++; break;
-                case 2: z--; break;
-                case 3: z++; break;
-                case 4: x--; break;
-                case 5: x++; break;
+            if (clicked.Identifier == permutation.Identifier &&
+                BlockPalette.FindDoubleSlab(permutation.Identifier, mergedHalf) is { } doubleSlab &&
+                clicked.State.Values.TryGetValue("minecraft:vertical_half", out object? clickedHalf) &&
+                clickedHalf is string clickedHalfName && clickedHalfName != mergedHalf) {
+                permutation = doubleSlab;
+                mergingSlab = true;
+            }
+            else {
+                switch (use.Face) {
+                    case 0: y--; break;
+                    case 1: y++; break;
+                    case 2: z--; break;
+                    case 3: z++; break;
+                    case 4: x--; break;
+                    case 5: x++; break;
+                }
             }
         }
 
@@ -346,13 +358,23 @@ internal sealed class InventoryTransactionHandler {
         }
 
         BlockPermutation existing = chunk.GetPermutation(x & 15, y, z & 15);
-        if (!Replaceable(existing) || existing.Identifier == permutation.Identifier) {
+        if (!mergingSlab && (!Replaceable(existing) || existing.Identifier == permutation.Identifier)) {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
         }
 
         BlockType? blockType = BlockPalette.FindType(permutation.Identifier);
+        bool cornerableStairs = BlockPalette.IsCornerableStairs(permutation.Identifier);
+        if (BlockPalette.IsSlab(permutation.Identifier))
+            permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "minecraft:vertical_half", placedHalf) ?? permutation;
+        if (cornerableStairs) {
+            int direction = StairDirection(player.Rotation.Y);
+            bool upsideDown = placedHalf == "top";
+            permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "weirdo_direction", direction) ?? permutation;
+            permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "upside_down_bit", upsideDown) ?? permutation;
+        }
+
         if (blockType?.Solid == true) {
             bool collision = Collides(player, x, y, z);
             foreach (Player viewer in player.Dimension.GetChunkViewers(x >> 4, z >> 4)) {
@@ -390,6 +412,7 @@ internal sealed class InventoryTransactionHandler {
 
         player.Dimension.RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation);
+        BlockPalette.OnNeighborUpdate(player.Dimension, x, y, z);
         Logger.Scoped("Network").Debug($"Player {player.Username} placed {permutation.Identifier} at ({x}, {y}, {z}) in {player.Dimension.Identifier}.");
         try {
             if (!player.Abilities.Get(PlayerAbility.InstantBuild)) {
@@ -400,9 +423,20 @@ internal sealed class InventoryTransactionHandler {
         }
         finally {
             SendBlockUpdate(player, x, y, z, 0, broadcast: true);
+            player.Dimension.UpdateNeighbors(x, y, z);
         }
         player.Dimension.PlaceBlockActor(x, y, z, permutation.Identifier)?.Update();
         return true;
+    }
+
+    private static int StairDirection(float yaw) {
+        int direction = (int)MathF.Floor((yaw + 45) / 90) & 3;
+        return direction switch {
+            0 => 2,
+            1 => 1,
+            2 => 3,
+            _ => 0
+        };
     }
 
     private static bool Replaceable(BlockPermutation block) => block.Identifier is
@@ -448,7 +482,7 @@ internal sealed class InventoryTransactionHandler {
             SendBlockUpdate(player, x, y, z, layer, broadcast: false);
     }
 
-    private static void SendBlockUpdate(Player player, int x, int y, int z, uint layer, bool broadcast) {
+    private static void SendBlockUpdate(Player player, int x, int y, int z, uint layer, bool broadcast, bool playPlaceSound = true) {
         if (y < -64 || y >= 320 || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
             (!broadcast && player.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(x >> 4, z >> 4) != true))
             return;
@@ -462,13 +496,15 @@ internal sealed class InventoryTransactionHandler {
             update.BlockRuntimeId = unchecked((uint)chunk.GetPermutation(x & 15, y, z & 15, (int)layer).Hash);
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = layer;
-            if (broadcast)
+            if (broadcast && playPlaceSound)
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: new LevelSoundEventPacket {
                     SoundEvent = "place",
                     Position = new Vec3 { X = x + 0.5f, Y = y + 0.5f, Z = z + 0.5f },
                     Data = unchecked((int)update.BlockRuntimeId),
                     ActorUniqueId = -1
                 });
+            else if (broadcast)
+                player.Dimension.Broadcast(update, x >> 4, z >> 4);
             else
                 player.Network.SendPacket(player, update);
         }
