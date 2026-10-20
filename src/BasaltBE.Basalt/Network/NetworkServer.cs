@@ -12,7 +12,6 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Network.Events;
 using BasaltBE.Basalt.Network.Handlers;
-using BasaltBE.Basalt.Network.Login;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Network.Types;
 using BasaltBE.Basalt.Profiling;
@@ -34,16 +33,18 @@ public sealed class NetworkServer : IDisposable
     private const int MaximumBatchLength = 4 * 1024 * 1024;
     internal const ushort CompressionThreshold = 512;
     private static readonly ConcurrentDictionary<Type, uint> packetIds = [];
-    private readonly LoginAuthenticator authenticator = new();
     private readonly NethernetServer nethernet;
+    internal readonly LoginHandler Login;
     internal readonly Server Server;
     internal readonly ResourcePackManager ResourcePacks;
     internal readonly ServerAdvertisement Advertisement;
+    public readonly SerializedPacketPalette SerializedPackets;
     // For now players live here, they will be moved to per world
     private readonly ConcurrentDictionary<NethernetPeer, Player> players = [];
     private readonly ConcurrentQueue<Player> removedPlayers = new();
     private readonly Lock rosterSync = new();
     private readonly ConcurrentDictionary<NethernetPeer, byte> compressionPeers = [];
+    private int disposed;
 
     private readonly ConcurrentDictionary<NethernetPeer, InboundConnection> inbound = [];
 
@@ -67,8 +68,10 @@ public sealed class NetworkServer : IDisposable
         nethernet = new NethernetServer(options, identity);
         Advertisement = options.Advertisement;
         ResourcePacks = resourcePacks;
+        SerializedPackets = new SerializedPacketPalette(this);
+        Login = new LoginHandler(this);
         Events.Subscribe(PacketEvents.RequestNetworkSettings, new RequestNetworkSettingsHandler(this).Handle);
-        Events.Subscribe(PacketEvents.Login, new LoginHandler(this, authenticator).Handle);
+        Events.Subscribe(PacketEvents.Login, Login.Handle);
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
         Events.Subscribe(PacketEvents.ContainerClose, new ContainerCloseHandler().Handle);
         Events.Subscribe(PacketEvents.Interact, new InteractHandler().Handle);
@@ -81,7 +84,8 @@ public sealed class NetworkServer : IDisposable
         Events.Subscribe(PacketEvents.PlayerAuthInput, new PlayerAuthInputHandler().Handle);
         Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
         Events.Subscribe(PacketEvents.SetLocalPlayerAsInitialized, new SetLocalPlayerAsInitializedHandler().Handle);
-        Events.Subscribe(PacketEvents.ResourcePackClientResponse, new ResourcePackClientResponseHandler(this).Handle);
+        ResourcePackClientResponseHandler resourcePackResponse = new(this);
+        Events.Subscribe(PacketEvents.ResourcePackClientResponse, resourcePackResponse.Handle);
         Events.Subscribe(PacketEvents.ResourcePackChunkRequest, new ResourcePackChunkRequestHandler(this).Handle);
     }
 
@@ -90,7 +94,7 @@ public sealed class NetworkServer : IDisposable
     public void Start()
     {
         using ProfilerZone zone = Profiler.BeginZone("Network.Start");
-        authenticator.Start();
+        Login.Start();
         nethernet.Start(OnMessage);
     }
 
@@ -124,6 +128,59 @@ public sealed class NetworkServer : IDisposable
     internal bool CompressionNegotiated(NethernetPeer peer) => compressionPeers.ContainsKey(peer);
 
     internal void SetCompression(NethernetPeer peer) => compressionPeers.TryAdd(peer, 0);
+
+    internal byte[] PreparePacket(DataPacket packet)
+    {
+        using BinaryStream body = BinaryStream.Rent(256 * 1024);
+        BinaryWriter writer = body.GetWriter();
+        writer.WriteVarUInt(GetPacketId(packet));
+        packet.Serialize(ref writer);
+        return PrepareBatch(body.Buffer[..body.Offset]);
+    }
+
+    private static byte[] PrepareBatch(ReadOnlyMemory<byte> packet)
+    {
+        if (packet.Length > MaximumBatchLength - 5)
+            throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
+
+        using BinaryStream framed = BinaryStream.Rent(packet.Length + 5);
+        int batchOffset = 0;
+        BinaryWriter batchWriter = new(framed.Buffer.Span, ref batchOffset);
+        batchWriter.WriteVarUInt((uint)packet.Length);
+        packet.Span.CopyTo(framed.Buffer.Span[batchOffset..]);
+        int batchLength = batchOffset + packet.Length;
+        ReadOnlyMemory<byte> payload = framed.Buffer[..batchLength];
+        if (payload.Length >= CompressionThreshold) {
+            using PooledBufferStream compressedBatch = new(payload.Length + 1);
+            compressedBatch.WriteByte((byte)PacketCompressionAlgorithm.ZLib);
+            using (DeflateStream deflater = new(compressedBatch, CompressionLevel.Fastest, true))
+                deflater.Write(payload.Span);
+            if (compressedBatch.Length - 1 < payload.Length)
+                return compressedBatch.WrittenMemory.ToArray();
+        }
+
+        byte[] markedBatch = new byte[payload.Length + 1];
+        markedBatch[0] = unchecked((byte)PacketCompressionAlgorithm.None);
+        payload.Span.CopyTo(markedBatch.AsSpan(1));
+        return markedBatch;
+    }
+
+    internal void SendPreparedPacket(Player player, ReadOnlyMemory<byte> payload)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
+            throw new PeerDisconnectedException(player.Peer);
+
+        using Lock.Scope sync = player.Sync.EnterScope();
+        if (player.Disposed)
+            throw new ObjectDisposedException(nameof(Player));
+        nethernet.Send(player.Peer, payload, MessageReliability.Reliable);
+    }
+
+    internal bool PeerConnected(NethernetPeer peer) =>
+        inbound.TryGetValue(peer, out InboundConnection? connection) && Volatile.Read(ref connection.Closed) == 0;
+
+    internal void Disconnect(NethernetPeer peer) => nethernet.Disconnect(peer);
 
     internal void SendPacket(
         NethernetPeer peer,
@@ -265,9 +322,11 @@ public sealed class NetworkServer : IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
+            return;
         using ProfilerZone zone = Profiler.BeginZone("Network.Dispose");
         nethernet.Dispose();
-        authenticator.Dispose();
+        Login.Dispose();
         foreach (NethernetPeer peer in players.Keys)
             RemovePlayer(peer);
         removedPlayers.Clear();
@@ -332,6 +391,7 @@ public sealed class NetworkServer : IDisposable
 
         if (message.Disconnected)
         {
+            Login.Disconnected(message.Peer);
             if (players.TryGetValue(message.Peer, out Player? disconnectedPlayer))
                 Logger.Scoped("Network").Info($"Player {disconnectedPlayer.Username} Disconnected.");
             RemovePlayer(message.Peer);

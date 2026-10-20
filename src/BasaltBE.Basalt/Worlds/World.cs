@@ -10,10 +10,12 @@ using BasaltBE.Basalt.Events.Worlds;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Logging;
 
 namespace BasaltBE.Basalt.Worlds;
 
 public sealed class World : IDisposable {
+    internal long ChunkSendBudgetRemaining;
     readonly Lock playersSync = new();
     readonly Dictionary<string, Player> playersByUsername = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, Player> playersByXuid = new(StringComparer.Ordinal);
@@ -171,6 +173,7 @@ public sealed class World : IDisposable {
         long start = Stopwatch.GetTimestamp();
         using ProfilerZone zone = Profiler.BeginZone("World.Tick");
         TickValue++;
+        Server?.Network.Login.ProcessCompletions(this);
 
         long ingressDeadline = start + Stopwatch.Frequency / 250;
         for (int count = 0;
@@ -188,11 +191,12 @@ public sealed class World : IDisposable {
                 }
             }
         }
-
+        ChunkSendBudgetRemaining = Stopwatch.Frequency * Dimension.ChunkSendBudgetMilliseconds / 1000;
         foreach (Dimension dimension in dimensions.Values)
             dimension.Tick();
 
         Ticks.Record(start);
+        Logger.Scoped("Ticking").Info($"World {Identifier} tick: {Ticks.LastMilliseconds:F3} ms.");
     }
 
     public void Dispose() {

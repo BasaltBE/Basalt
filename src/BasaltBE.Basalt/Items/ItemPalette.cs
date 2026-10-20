@@ -1,12 +1,10 @@
 using System.Reflection;
-using Basalt.Binary;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Items;
 
@@ -15,9 +13,7 @@ public static class ItemPalette {
     static readonly Dictionary<string, ItemType> ByIdentifier = Types.ToDictionary(type => type.Identifier, StringComparer.Ordinal);
     static readonly Dictionary<int, ItemType> ByNetworkId = Types.ToDictionary(type => type.NetworkId);
     internal static readonly ItemRegistryPacket RegistryPacket = CreateRegistryPacket();
-    internal static readonly byte[] SerializedRegistry = SerializeRegistry(RegistryPacket);
     internal static readonly CreativeContentPacket CreativeContentPacket = CreateCreativeContentPacket();
-    internal static readonly byte[] SerializedCreativeContent = SerializeCreativeContent(CreativeContentPacket);
 
     public static ItemType? Find(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
@@ -39,13 +35,6 @@ public static class ItemPalette {
         }
 
         return new ItemRegistryPacket { Items = items };
-    }
-
-    static byte[] SerializeRegistry(ItemRegistryPacket packet) {
-        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
-        BinaryWriter writer = stream.GetWriter();
-        packet.Serialize(ref writer);
-        return stream.Buffer.Span[..stream.Offset].ToArray();
     }
 
     static CreativeContentPacket CreateCreativeContentPacket() {
@@ -105,13 +94,6 @@ public static class ItemPalette {
             Groups = groups.ToArray(),
             Entries = entries.ToArray()
         };
-    }
-
-    static byte[] SerializeCreativeContent(CreativeContentPacket packet) {
-        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
-        BinaryWriter writer = stream.GetWriter();
-        packet.Serialize(ref writer);
-        return stream.Buffer.Span[..stream.Offset].ToArray();
     }
 
     static ItemType[] LoadTypes() {

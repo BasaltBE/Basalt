@@ -1,7 +1,4 @@
 using BasaltBE.Basalt.Entities;
-using BasaltBE.Basalt.Entities.Types;
-using BasaltBE.Basalt.Crafting;
-using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Logging;
@@ -84,26 +81,12 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network)
                     },
                     BlockNetworkIdsAreHashes = true
                 });
-                network.SendSerializedPacket(player, ItemPalette.RegistryPacket, ItemPalette.SerializedRegistry);
+                network.SendPreparedPacket(player, network.SerializedPackets.Get<ItemRegistryPacket>());
                 network.SendPacket(player, player.Attributes.CreateUpdate(player.RuntimeId, all: true, tick: player.Dimension.TickValue)!);
                 network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, player.Dimension.TickValue));
                 Volatile.Write(ref player.Permissions.Dirty, false);
                 network.SendPacket(player, player.Abilities.CreateUpdate(player.UniqueId, player.Permissions));
-                // TODO: Cache AvailableActorIdentifiers packet
-                CompoundTag actorIdentifiers = new();
-                ListTag identifierList = new();
-                foreach (EntityType type in EntityPalette.Types)
-                {
-                    CompoundTag identifier = new();
-                    identifier.Add("bid", new StringTag { Value = string.Empty });
-                    identifier.Add("id", new StringTag { Value = type.Identifier });
-                    identifierList.Value.Add(identifier);
-                }
-                actorIdentifiers.Add("idlist", identifierList);
-                network.SendPacket(player, new AvailableActorIdentifiersPacket
-                {
-                    IdentifierList = actorIdentifiers
-                });
+                network.SendPreparedPacket(player, network.SerializedPackets.Get<AvailableActorIdentifiersPacket>());
                 network.SendPacket(player, new PlayStatusPacket
                 {
                     Status = PlayStatus.PlayerSpawn
@@ -111,8 +94,8 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network)
                 network.SendPacket(player, new SetCommandsEnabledPacket { Enabled = true });
                 var commands = network.Server.Commands.GetCatalog(player.Permissions);
                 network.SendSerializedPacket(player, commands.Packet, commands.Payload);
-                network.SendSerializedPacket(player, ItemPalette.CreativeContentPacket, ItemPalette.SerializedCreativeContent);
-                network.SendSerializedPacket(player, CraftingPalette.Packet, CraftingPalette.SerializedPacket);
+                network.SendPreparedPacket(player, network.SerializedPackets.Get<CreativeContentPacket>());
+                network.SendPreparedPacket(player, network.SerializedPackets.Get<CraftingDataPacket>());
                 break;
             case ResourcePackClientResponseCancel:
                 if (network.ResourcePacks.Required)

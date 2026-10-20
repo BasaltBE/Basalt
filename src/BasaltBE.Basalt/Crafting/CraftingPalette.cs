@@ -1,23 +1,19 @@
 using System.Buffers.Binary;
 using System.Reflection;
 using System.Text.Json;
-using Basalt.Binary;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Crafting;
 
 internal static class CraftingPalette {
     private static readonly Dictionary<int, CraftingRecipe> recipes;
     internal static readonly CraftingDataPacket Packet;
-    internal static readonly byte[] SerializedPacket;
 
     static CraftingPalette() {
         Packet = CreatePacket(out recipes);
-        SerializedPacket = Serialize(Packet);
     }
 
     internal static CraftingRecipe? FindRecipe(int netId) => recipes.GetValueOrDefault(netId);
@@ -219,11 +215,4 @@ internal static class CraftingPalette {
         element.TryGetProperty(property, out JsonElement value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? value.GetBoolean()
             : fallback;
-
-    static byte[] Serialize(CraftingDataPacket packet) {
-        using BinaryStream stream = BinaryStream.Rent(2 * 1024 * 1024);
-        BinaryWriter writer = stream.GetWriter();
-        packet.Serialize(ref writer);
-        return stream.Buffer.Span[..stream.Offset].ToArray();
-    }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Nbt.Types;
@@ -16,6 +17,7 @@ namespace BasaltBE.Basalt.Worlds.Dimensions;
 
 public sealed class Dimension : IDisposable {
     const float BroadcastRadius = 65;
+    internal const int ChunkSendBudgetMilliseconds = 4;
     readonly Dictionary<long, Chunk?> chunks = new(ChunkKeyComparer.Instance);
     readonly ConcurrentQueue<ChunkGenerationResult> completed = new();
     readonly ChunkGenerationService generationService;
@@ -34,7 +36,9 @@ public sealed class Dimension : IDisposable {
     readonly Dictionary<string, long[]> tickingAreas = new(StringComparer.Ordinal);
     readonly List<Entity> simulation = [];
     internal ulong TickValue;
+    internal long ChunkSendBudgetRemaining;
     internal int SimulationRadius = 4;
+    int nextPlayerTick;
     int chunkCount;
     int pendingRequestCount;
 
@@ -565,6 +569,9 @@ public sealed class Dimension : IDisposable {
     public void Tick() {
         World?.CheckOwnership();
 
+        if (World is null)
+            ChunkSendBudgetRemaining = Stopwatch.Frequency * ChunkSendBudgetMilliseconds / 1000;
+
         TickValue++;
         DrainGeneratedChunks();
 
@@ -628,17 +635,46 @@ public sealed class Dimension : IDisposable {
         simulation.Clear();
         World?.Server?.Network.Tick(this);
 
-        foreach (Player player in GetPlayers()) {
-            if (player.Disposed)
-                continue;
+        ReadOnlySpan<Player> currentPlayers = GetPlayers();
+        if (!currentPlayers.IsEmpty) {
+            int startPlayer = nextPlayerTick % currentPlayers.Length;
+            for (int offset = 0; offset < currentPlayers.Length; offset++) {
+                Player player = currentPlayers[(startPlayer + offset) % currentPlayers.Length];
+                if (player.Disposed)
+                    continue;
 
-            try {
-                player.Tick();
-                EntityIndex.Update(player);
+                try {
+                    player.Tick();
+                    EntityIndex.Update(player);
+                }
+                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                    player.Network.RemovePlayer(player.Peer);
+                }
             }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
-                player.Network.RemovePlayer(player.Peer);
-            }
+
+            nextPlayerTick = (startPlayer + 1) % currentPlayers.Length;
+
+            bool sentChunk;
+            do {
+                sentChunk = false;
+                for (int offset = 0; offset < currentPlayers.Length; offset++) {
+                    long budgetRemaining = World?.ChunkSendBudgetRemaining ?? ChunkSendBudgetRemaining;
+                    if (budgetRemaining <= 0)
+                        break;
+
+                    Player player = currentPlayers[(startPlayer + offset) % currentPlayers.Length];
+                    if (player.Disposed)
+                        continue;
+
+                    try {
+                        if (player.GetTrait<PlayerChunkRenderingTrait>()?.SendReadyChunk() == true)
+                            sentChunk = true;
+                    }
+                    catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                        player.Network.RemovePlayer(player.Peer);
+                    }
+                }
+            } while (sentChunk && (World?.ChunkSendBudgetRemaining ?? ChunkSendBudgetRemaining) > 0);
         }
     }
 

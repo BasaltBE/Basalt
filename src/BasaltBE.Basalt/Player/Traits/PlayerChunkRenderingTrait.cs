@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
@@ -51,6 +52,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
     int publisherChunkZ = int.MinValue;
     int publisherViewDistance = -1;
     bool started;
+    ulong chunkSendBlockedTick;
 
     public PlayerChunkRenderingTrait(Entity entity) : base(entity)
     {
@@ -128,7 +130,6 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
 
         RetryDeferredChunks();
         RequestChunks();
-        SendReadyChunks();
         ReadOnlySpan<Entity> entities;
         if (player.Dimension.EntityCount > loadedChunks.Count * 2)
         {
@@ -310,11 +311,14 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
         }
     }
 
-    bool SendReadyChunks()
+    internal bool SendReadyChunk()
     {
+        if (Volatile.Read(ref spawnReady) == 0 || player.Disposed || pendingChunks.Count == 0 ||
+            chunkSendBlockedTick == player.Dimension.TickValue)
+            return false;
+
         int checks = Math.Min(pendingChunks.Count, PendingChecksPerTick);
-        int sent = 0;
-        while (checks > 0 && pendingChunks.Count > 0 && sent < ChunksPerTick)
+        while (checks > 0 && pendingChunks.Count > 0)
         {
             if (pendingIndex >= pendingChunks.Count)
                 pendingIndex = 0;
@@ -336,17 +340,29 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait
                 continue;
             }
 
-            if (sent == 0)
-                SendPublisherUpdate();
+            SendPublisherUpdate();
 
-            SendChunk(chunk);
+            long sendStart = Stopwatch.GetTimestamp();
+            try
+            {
+                SendChunk(chunk);
+            }
+            finally
+            {
+                long elapsed = Stopwatch.GetTimestamp() - sendStart;
+                if (player.Dimension.World is { } world)
+                    world.ChunkSendBudgetRemaining -= elapsed;
+                else
+                    player.Dimension.ChunkSendBudgetRemaining -= elapsed;
+            }
             loadedChunks.Add(hash);
             player.Dimension.AddChunkViewer(player, x, z);
             RemovePending(pendingIndex, hash);
-            sent++;
+            return true;
         }
 
-        return sent > 0;
+        chunkSendBlockedTick = player.Dimension.TickValue;
+        return false;
     }
 
     void SendPublisherUpdate()
