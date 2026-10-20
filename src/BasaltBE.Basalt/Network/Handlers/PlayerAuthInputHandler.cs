@@ -189,20 +189,37 @@ internal sealed class PlayerAuthInputHandler {
         if (moved)
             player.OnMove();
 
+        int? mineBlockNetId = null;
+        if (packet.ItemStackRequest is { } itemStackRequest &&
+            player.GetTrait<PlayerInventoryTrait>() is { } inventory) {
+            foreach (ItemStackRequestActionData action in itemStackRequest.Actions) {
+                if (action is MineBlockActionData mineBlock && (uint)mineBlock.Slot < inventory.Inventory.ContainerSize) {
+                    mineBlockNetId = inventory.Inventory.GetItem(mineBlock.Slot)?.NetId ?? 0;
+                    break;
+                }
+            }
+        }
+
+        bool blockDestroyed = false;
         if (packet.PlayerBlockActions is { Length: > 0 } blockActions) {
             foreach (PlayerBlockActionData action in blockActions)
-                HandleBlockAction(player, action, packet.ClientTick.Tick);
+                HandleBlockAction(player, action, packet.ClientTick.Tick, ref blockDestroyed);
         }
 
         if (inputs[(int)PlayerAuthInputData.PerformItemStackRequest] && packet.ItemStackRequest is { } request) {
-            ItemStackResponseInfo response = ItemStackRequestHandler.ProcessRequest(player, request);
+            ItemStackResponseInfo response = ItemStackRequestHandler.ProcessRequest(
+                player,
+                request,
+                mineBlockNetId,
+                blockDestroyed
+            );
             player.Network.SendPacket(player, new ItemStackResponsePacket {
                 Responses = [response]
             });
         }
     }
 
-    private static void HandleBlockAction(Player player, PlayerBlockActionData action, ulong tick) {
+    private static void HandleBlockAction(Player player, PlayerBlockActionData action, ulong tick, ref bool blockDestroyed) {
         switch (action.PlayerActionType) {
             case PlayerActionType.StartDestroyBlock:
             case PlayerActionType.CrackBlock:
@@ -232,12 +249,12 @@ internal sealed class PlayerAuthInputHandler {
                 StopBlockBreak(player);
                 break;
             case PlayerActionType.PredictDestroyBlock:
-                PredictBlockBreak(player, action.Position, tick);
+                PredictBlockBreak(player, action.Position, tick, ref blockDestroyed);
                 break;
             case PlayerActionType.CreativeDestroyBlock:
                 if (player.Abilities.Get(PlayerAbility.InstantBuild)) {
                     StopBlockBreak(player);
-                    DestroyBlock(player, action.Position, dropItems: false);
+                    blockDestroyed |= DestroyBlock(player, action.Position, dropItems: false);
                 }
                 break;
         }
@@ -296,7 +313,7 @@ internal sealed class PlayerAuthInputHandler {
         }
     }
 
-    private static void PredictBlockBreak(Player player, BlockPos position, ulong tick) {
+    private static void PredictBlockBreak(Player player, BlockPos position, ulong tick, ref bool blockDestroyed) {
         BlockPos target = position.X == 0 && position.Y == 0 && position.Z == 0 && player.BreakingBlock is { } active
             ? active
             : position;
@@ -311,7 +328,7 @@ internal sealed class PlayerAuthInputHandler {
         }
         if (player.Abilities.Get(PlayerAbility.InstantBuild)) {
             StopBlockBreak(player);
-            DestroyBlock(player, target, dropItems: false);
+            blockDestroyed |= DestroyBlock(player, target, dropItems: false);
             return;
         }
 
@@ -325,7 +342,7 @@ internal sealed class PlayerAuthInputHandler {
 
         if (valid) {
             StopBlockBreak(player);
-            DestroyBlock(player, target);
+            blockDestroyed |= DestroyBlock(player, target);
         }
         else {
             StopBlockBreak(player);
@@ -333,16 +350,31 @@ internal sealed class PlayerAuthInputHandler {
         }
     }
 
-    private static void DestroyBlock(Player player, BlockPos position, bool dropItems = true) {
+    private static bool DestroyBlock(Player player, BlockPos position, bool dropItems = true) {
         if (!ValidBlockTarget(player, position)) {
             SendBlockUpdate(player, position.X, position.Y, position.Z);
-            return;
+            return false;
         }
 
         BlockPermutation block = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
         if (block == BlockStorage.Air) {
             SendBlockUpdate(player, position.X, position.Y, position.Z);
-            return;
+            return false;
+        }
+
+        ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
+            ? inventory.Inventory.GetItem(inventory.SelectedSlot)
+            : null;
+        int durabilityDamage = dropItems ? tool?.Type.BlockDurabilityDamage ?? 0 : 0;
+        if (dropItems && player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+            PlayerItemUseEvent itemUse = new(player, tool, PlayerItemUseAction.BreakBlock, durabilityDamage);
+            player.Network.Server.Events.Emit(itemUse);
+            durabilityDamage = itemUse.DurabilityDamage;
+            if (itemUse.IsCanceled()) {
+                tool?.DamageDurability(durabilityDamage);
+                SendBlockUpdate(player, position.X, position.Y, position.Z);
+                return false;
+            }
         }
 
         int x = position.X;
@@ -398,9 +430,6 @@ internal sealed class PlayerAuthInputHandler {
         player.Dimension.UpdateNeighbors(x, y, z);
 
         if (dropItems) {
-            ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
-                ? inventory.Inventory.GetItem(inventory.SelectedSlot)
-                : null;
             ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);
@@ -418,6 +447,9 @@ internal sealed class PlayerAuthInputHandler {
                 }
             }
         }
+
+        tool?.DamageDurability(durabilityDamage);
+        return true;
     }
 
     private static void StopBlockBreak(Player player) {

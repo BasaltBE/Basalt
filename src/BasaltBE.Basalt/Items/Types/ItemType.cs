@@ -23,6 +23,18 @@ public sealed class ItemType {
     [JsonIgnore]
     internal float AttackDamageBonus;
 
+    [JsonIgnore]
+    internal int AttackDurabilityDamage;
+
+    [JsonIgnore]
+    internal int BlockDurabilityDamage;
+
+    [JsonIgnore]
+    internal byte DurabilityDamageChanceMinimum = 100;
+
+    [JsonIgnore]
+    internal byte DurabilityDamageChanceMaximum = 100;
+
     [JsonInclude, JsonPropertyName("identifier")]
     public string Identifier = string.Empty;
 
@@ -52,4 +64,7 @@ public sealed class ItemType {
 
     [JsonInclude, JsonPropertyName("propertiesPayload")]
     public ItemPropertiesPayload PropertiesPayload = new();
+
+    [JsonIgnore]
+    public int MaxDurability;
 }

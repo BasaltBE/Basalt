@@ -40,11 +40,26 @@ internal sealed class ItemStackRequestHandler {
     }
 
     internal static ItemStackResponseInfo ProcessRequest(Player player, ItemStackRequestData request) =>
-        ProcessRequest(player, request, out _);
+        ProcessRequest(player, request, null, false, out _);
+
+    internal static ItemStackResponseInfo ProcessRequest(
+        Player player,
+        ItemStackRequestData request,
+        int? mineBlockNetId,
+        bool blockDestroyed
+    ) => ProcessRequest(player, request, mineBlockNetId, blockDestroyed, out _);
 
     private static ItemStackResponseInfo ProcessRequest(
         Player player,
         ItemStackRequestData request,
+        out string? failureReason
+    ) => ProcessRequest(player, request, null, false, out failureReason);
+
+    private static ItemStackResponseInfo ProcessRequest(
+        Player player,
+        ItemStackRequestData request,
+        int? mineBlockNetId,
+        bool blockDestroyed,
         out string? failureReason
     ) {
         lock (player.Sync) {
@@ -54,7 +69,7 @@ internal sealed class ItemStackRequestHandler {
                 return ErrorResponse(request.ClientRequestId);
             }
 
-            ItemStackResponseInfo response = ProcessRequest(inventory, request, out failureReason);
+            ItemStackResponseInfo response = ProcessRequest(inventory, request, mineBlockNetId, blockDestroyed, out failureReason);
             if (response.Result != ItemStackNetResult.Success) {
                 inventory.Inventory.Update();
                 inventory.Cursor.Update();
@@ -69,7 +84,7 @@ internal sealed class ItemStackRequestHandler {
         Container cursor,
         ItemStackRequestData request
     ) {
-        return ProcessRequest(inventory, cursor, request, null, null, out _);
+        return ProcessRequest(inventory, cursor, request, null, null, null, false, out _);
     }
 
     private static ItemStackResponseInfo ProcessRequest(PlayerInventoryTrait inventory, ItemStackRequestData request) =>
@@ -79,6 +94,14 @@ internal sealed class ItemStackRequestHandler {
         PlayerInventoryTrait inventory,
         ItemStackRequestData request,
         out string? failureReason
+    ) => ProcessRequest(inventory, request, null, false, out failureReason);
+
+    private static ItemStackResponseInfo ProcessRequest(
+        PlayerInventoryTrait inventory,
+        ItemStackRequestData request,
+        int? mineBlockNetId,
+        bool blockDestroyed,
+        out string? failureReason
     ) =>
         ProcessRequest(
             inventory.Inventory,
@@ -86,6 +109,8 @@ internal sealed class ItemStackRequestHandler {
             request,
             inventory,
             inventory.Entity is Player player ? player.OpenedContainer : null,
+            mineBlockNetId,
+            blockDestroyed,
             out failureReason
         );
 
@@ -95,6 +120,8 @@ internal sealed class ItemStackRequestHandler {
         ItemStackRequestData request,
         PlayerInventoryTrait? inventoryTrait,
         Container? openedContainer,
+        int? mineBlockNetId,
+        bool blockDestroyed,
         out string? failureReason
     ) {
         failureReason = null;
@@ -106,6 +133,8 @@ internal sealed class ItemStackRequestHandler {
         state.OpenedContainer = openedContainer;
         state.ClientRequestNetId = clientRequestNetId;
         state.InventoryTrait = inventoryTrait;
+        state.MineBlockNetId = mineBlockNetId;
+        state.BlockDestroyed = blockDestroyed;
         try {
             foreach (ItemStackRequestActionData action in request.Actions) {
                 if (!Apply(state, action)) {
@@ -169,7 +198,8 @@ internal sealed class ItemStackRequestHandler {
                     RequestedSlot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
                     Slot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
                     Amount = checked((byte)(item?.StackSize ?? 0)),
-                    ItemStackNetId = item?.NetId
+                    ItemStackNetId = item?.NetId,
+                    DurabilityCorrection = responseKey.DurabilityCorrection
                 });
             }
 
@@ -197,6 +227,8 @@ internal sealed class ItemStackRequestHandler {
             state.OpenedContainer = null;
             state.InventoryTrait = null;
             state.ClientRequestNetId = 0;
+            state.MineBlockNetId = null;
+            state.BlockDestroyed = false;
             state.Recipe = null;
             state.CraftCount = 0;
             state.CraftConsumption = null;
@@ -229,8 +261,32 @@ internal sealed class ItemStackRequestHandler {
         CraftRecipeAutoActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: true),
         CreateActionData create => CreateCraftResult(state, create.ResultsIndex),
         CraftResultsActionData results => RecordCraftResults(state, results),
+        MineBlockActionData mineBlock => MineBlock(state, mineBlock),
         _ => false
     };
+
+    private static bool MineBlock(RequestState state, MineBlockActionData action) {
+        if (!state.BlockDestroyed || state.MineBlockNetId is not int expectedNetId ||
+            (uint)action.Slot >= 9 || state.InventoryTrait?.SelectedSlot != action.Slot ||
+            expectedNetId != action.NetIdVariant) {
+            state.FailureReason = "block break or held item prediction did not match";
+            return false;
+        }
+
+        SlotKey key = new(state.Inventory, action.Slot);
+        ItemStack? item = state.Inventory.GetItem(action.Slot);
+        int correction = item is null ? 0 : item.Damage - action.PredictedDurability;
+        if (correction is < short.MinValue or > short.MaxValue) {
+            state.FailureReason = "durability correction is out of range";
+            return false;
+        }
+
+        state.Staged[key] = item?.Clone();
+        ResponseSlotKey responseKey = new(key, ContainerEnumName.Hotbar, null, correction);
+        if (state.ResponseSlotSet.Add(responseKey))
+            state.ResponseSlots.Add(responseKey);
+        return true;
+    }
 
     private static bool SelectRecipe(RequestState state, int netId, byte crafts, bool autoCraft) {
         if (state.Recipe is not null) {
@@ -693,6 +749,8 @@ internal sealed class ItemStackRequestHandler {
         internal Container Cursor = null!;
         internal Container? OpenedContainer;
         internal int ClientRequestNetId;
+        internal int? MineBlockNetId;
+        internal bool BlockDestroyed;
         internal PlayerInventoryTrait? InventoryTrait;
         internal CraftingRecipe? Recipe;
         internal byte CraftCount;
@@ -715,6 +773,11 @@ internal sealed class ItemStackRequestHandler {
 
     private readonly record struct PendingDrop(ItemStack Item, bool Randomly);
     private readonly record struct SlotKey(Container Container, int Slot);
-    private readonly record struct ResponseSlotKey(SlotKey SlotKey, ContainerEnumName ContainerName, uint? DynamicId);
+    private readonly record struct ResponseSlotKey(
+        SlotKey SlotKey,
+        ContainerEnumName ContainerName,
+        uint? DynamicId,
+        int DurabilityCorrection = 0
+    );
     private readonly record struct ContainerNameKey(ContainerEnumName Name, uint? DynamicId);
 }

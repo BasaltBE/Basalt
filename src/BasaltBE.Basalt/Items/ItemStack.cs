@@ -21,6 +21,10 @@ public sealed class ItemStack {
     public CompoundTag? Nbt;
     public ushort StackSize => stackSize;
     public bool IsStackFull => stackSize >= Type.MaxAmount;
+    public int Damage => Type.MaxDurability > 0
+        ? checked((int)Metadata)
+        : Nbt?.Get<ShortTag>("Damage")?.Value ?? Nbt?.Get<IntTag>("Damage")?.Value ?? 0;
+    public int RemainingDurability => Math.Max(0, Type.MaxDurability - Damage);
 
     public ItemStack(ItemType type, ushort stackSize = 1, uint metadata = 0, CompoundTag? nbt = null) {
         ArgumentNullException.ThrowIfNull(type);
@@ -54,6 +58,46 @@ public sealed class ItemStack {
 
         SetMetadataRaw(value);
         Container?.ItemChanged(this, Slot);
+    }
+
+    public void SetDamage(int value) {
+        if (Type.MaxDurability <= 0)
+            throw new InvalidOperationException($"Item '{Type.Identifier}' does not have durability.");
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        if (value >= Type.MaxDurability) {
+            SetStackSize(0);
+            return;
+        }
+
+        if (Damage == value)
+            return;
+
+        SetMetadataRaw((uint)value);
+        Nbt ??= new CompoundTag();
+        Nbt.Add("Damage", new IntTag { Value = value });
+        Container?.ItemChanged(this, Slot);
+    }
+
+    public bool DamageDurability(int amount = 1) {
+        if (amount <= 0 || Type.MaxDurability <= 0 || stackSize == 0)
+            return false;
+
+        int minimumChance = Type.DurabilityDamageChanceMinimum;
+        int maximumChance = Type.DurabilityDamageChanceMaximum;
+        int chance = minimumChance == maximumChance
+            ? minimumChance
+            : Random.Shared.Next(minimumChance, maximumChance + 1);
+        if (chance < 100 && Random.Shared.Next(100) >= chance)
+            return false;
+
+        int damage = Damage;
+        if (amount >= Type.MaxDurability - damage) {
+            SetStackSize(0);
+            return true;
+        }
+
+        SetDamage(damage + amount);
+        return false;
     }
 
     public void IncrementStack(ushort amount = 1) => SetStackSize(checked((ushort)Math.Min(Type.MaxAmount, stackSize + amount)));

@@ -3,6 +3,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
@@ -56,8 +57,7 @@ internal sealed class InventoryTransactionHandler {
                 _ => (-1, HandSlot.Mainhand, null, null)
             };
             bool attack = transaction is ItemUseOnActorInventoryTransaction {
-                ActionType: ItemUseOnActorInventoryTransactionActionType.Attack or
-                    ItemUseOnActorInventoryTransactionActionType.ItemInteract
+                ActionType: ItemUseOnActorInventoryTransactionActionType.Attack
             };
             if (descriptor is null || origin is null || hand != HandSlot.Mainhand ||
                 (uint)slot >= 9 || slot != inventory.SelectedSlot ||
@@ -80,7 +80,18 @@ internal sealed class InventoryTransactionHandler {
             switch (transaction) {
                 case ItemUseInventoryTransaction use:
                     if (use.ActionType == ItemUseInventoryTransactionActionType.Use) {
+                        int durabilityDamage = item?.Type.MaxDurability > 0 ? 1 : 0;
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                            PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Use, durabilityDamage);
+                            player.Network.Server.Events.Emit(itemUse);
+                            durabilityDamage = itemUse.DurabilityDamage;
+                            if (itemUse.IsCanceled()) {
+                                item?.DamageDurability(durabilityDamage);
+                                break;
+                            }
+                        }
                         player.OnUseItem(item);
+                        item?.DamageDurability(durabilityDamage);
                     }
                     else if (use.ActionType == ItemUseInventoryTransactionActionType.Place) {
                         bool placed = UseItemOnBlock(player, inventory, item, use);
@@ -150,14 +161,41 @@ internal sealed class InventoryTransactionHandler {
                     }
 
                     if (attack) {
+                        int durabilityDamage = item?.Type.AttackDurabilityDamage ?? 0;
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                            PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Attack, durabilityDamage);
+                            player.Network.Server.Events.Emit(itemUse);
+                            durabilityDamage = itemUse.DurabilityDamage;
+                            if (itemUse.IsCanceled()) {
+                                item?.DamageDurability(durabilityDamage);
+                                break;
+                            }
+                        }
                         player.OnAttack(target, item);
                         if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health) {
                             float damage = (player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1) + (item?.Type.AttackDamageBonus ?? 0);
                             health.ApplyDamage(damage, EntityDamageCause.Entity, player);
                         }
+                        item?.DamageDurability(durabilityDamage);
                     }
-                    else
+                    else if (actor.ActionType == ItemUseOnActorInventoryTransactionActionType.Interact)
                         player.OnUseItemOnEntity(item, target, actor.HitPosition);
+                    if (transaction is ItemUseOnActorInventoryTransaction {
+                        ActionType: ItemUseOnActorInventoryTransactionActionType.ItemInteract
+                    }) {
+                        int durabilityDamage = item?.Type.MaxDurability > 0 ? 1 : 0;
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                            PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnEntity, durabilityDamage);
+                            player.Network.Server.Events.Emit(itemUse);
+                            durabilityDamage = itemUse.DurabilityDamage;
+                            if (itemUse.IsCanceled()) {
+                                item?.DamageDurability(durabilityDamage);
+                                break;
+                            }
+                        }
+                        player.OnUseItemOnEntity(item, target, actor.HitPosition);
+                        item?.DamageDurability(durabilityDamage);
+                    }
                     break;
             }
         }

@@ -1,6 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
@@ -40,6 +41,17 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
         if (updated is null || updated == block)
             return;
 
+        int durabilityDamage = 1;
+        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+            PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnBlock, durabilityDamage);
+            player.Network.Server.Events.Emit(itemUse);
+            durabilityDamage = itemUse.DurabilityDamage;
+            if (itemUse.IsCanceled()) {
+                item.DamageDurability(durabilityDamage);
+                return;
+            }
+        }
+
         player.Dimension.SetPermutation(position.X, position.Y, position.Z, updated);
         player.Dimension.Broadcast(new UpdateBlockPacket {
             Position = position,
@@ -52,6 +64,7 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             ActorUniqueId = -1
         });
         player.Dimension.UpdateNeighbors(position.X, position.Y, position.Z);
+        item.DamageDurability(durabilityDamage);
     }
 
 }

@@ -153,6 +153,15 @@ public static class ItemPalette {
                 _ => 0
             };
 
+            type.MaxDurability = GetMaxDurability(type);
+            type.AttackDurabilityDamage = type.Tags.Any(static tag =>
+                tag is "minecraft:is_sword" or "minecraft:is_spear" or "minecraft:is_trident") ? 1 :
+                type.Tags.Any(static tag => tag is
+                    "minecraft:is_pickaxe" or "minecraft:is_axe" or "minecraft:is_shovel" or "minecraft:is_hoe") ? 2 : 0;
+            type.BlockDurabilityDamage = type.MaxDurability > 0 && type.Tags.Any(static tag =>
+                tag is "minecraft:is_pickaxe" or "minecraft:is_axe" or "minecraft:is_shovel" or "minecraft:is_hoe" or
+                    "minecraft:is_sword" or "minecraft:is_spear" or "minecraft:is_trident" or "minecraft:is_shears") ? 1 : 0;
+
             string identifier = type.Identifier == "minecraft:fence"
                 ? "minecraft:oak_fence"
                 : type.Identifier;
@@ -163,5 +172,82 @@ public static class ItemPalette {
             type.PlacementPermutation = BlockPalette.FindDefaultPermutation(identifier);
         }
         return types;
+    }
+
+    static int GetMaxDurability(ItemType type) {
+        if (!type.PropertiesPayload.Components.Contains("minecraft:durability"))
+            return 0;
+
+        if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:durability") is CompoundTag durability) {
+            if (durability.Get<IntTag>("max_durability") is { } maximum) {
+                if (durability.Get<CompoundTag>("damage_chance") is { } chance) {
+                    byte minimum = (byte)Math.Clamp(chance.Get<IntTag>("min")?.Value ?? 100, 0, 100);
+                    byte maximumChance = (byte)Math.Clamp(chance.Get<IntTag>("max")?.Value ?? 100, 0, 100);
+                    type.DurabilityDamageChanceMinimum = Math.Min(minimum, maximumChance);
+                    type.DurabilityDamageChanceMaximum = Math.Max(minimum, maximumChance);
+                }
+                return Math.Max(0, maximum.Value);
+            }
+        }
+
+        int specialDurability = type.Identifier switch {
+            "minecraft:bow" => 385,
+            "minecraft:crossbow" => 465,
+            "minecraft:shield" => 337,
+            "minecraft:fishing_rod" => 65,
+            "minecraft:carrot_on_a_stick" => 26,
+            "minecraft:shears" => 239,
+            "minecraft:flint_and_steel" => 65,
+            "minecraft:trident" => 251,
+            "minecraft:turtle_helmet" => 276,
+            "minecraft:elytra" => 433,
+            "minecraft:warped_fungus_on_a_stick" => 101,
+            "minecraft:brush" => 65,
+            "minecraft:wolf_armor" => 64,
+            "minecraft:mace" => 500,
+            "minecraft:glow_stick" or "minecraft:sparkler" => 100,
+            _ => 0
+        };
+        if (specialDurability != 0)
+            return specialDurability;
+
+        if ((type.ToolType != ToolType.None || type.Tags.Contains("minecraft:is_spear")) && type.ToolMaterial != ToolMaterial.None)
+            return type.ToolMaterial switch {
+                ToolMaterial.Wooden => 60,
+                ToolMaterial.Stone => 132,
+                ToolMaterial.Copper => 191,
+                ToolMaterial.Iron => 251,
+                ToolMaterial.Gold => 33,
+                ToolMaterial.Diamond => 1562,
+                ToolMaterial.Netherite => 2032,
+                _ => 0
+            };
+
+        if (type.Tags.Contains("minecraft:is_armor")) {
+            ReadOnlySpan<char> identifier = type.Identifier.AsSpan("minecraft:".Length);
+            int separator = identifier.LastIndexOf('_');
+            ReadOnlySpan<char> material = separator < 0 ? [] : identifier[..separator];
+            ReadOnlySpan<char> piece = separator < 0 ? [] : identifier[(separator + 1)..];
+            int pieceDurability = piece switch {
+                "helmet" => 11,
+                "chestplate" => 16,
+                "leggings" => 15,
+                "boots" => 13,
+                _ => 0
+            };
+            int materialMultiplier = material switch {
+                "leather" => 5,
+                "chainmail" or "iron" => 15,
+                "golden" => 7,
+                "copper" => 11,
+                "diamond" => 33,
+                "netherite" => 37,
+                _ => 0
+            };
+            if (pieceDurability != 0 && materialMultiplier != 0)
+                return pieceDurability * materialMultiplier;
+        }
+
+        return 0;
     }
 }
