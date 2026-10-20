@@ -111,8 +111,7 @@ internal sealed class LoginHandler(NetworkServer network) {
                 Complete(completion.Peer, completion.Login!.Value);
             }
             catch (Exception error) when (
-                error is InvalidDataException or InvalidOperationException or ArgumentException or ObjectDisposedException)
-            {
+                error is InvalidDataException or InvalidOperationException or ArgumentException or ObjectDisposedException) {
                 Logger.Scoped("Network").Warn(
                     $"Login failed for {completion.Peer.ConnectionId}: {error.Message}"
                 );

@@ -1,13 +1,11 @@
 namespace BasaltBE.Basalt.Worlds.Types;
 
-internal sealed class ChunkKeyComparer : IEqualityComparer<long>
-{
+internal sealed class ChunkKeyComparer : IEqualityComparer<long> {
     internal static readonly ChunkKeyComparer Instance = new();
 
     public bool Equals(long x, long y) => x == y;
 
-    public int GetHashCode(long value)
-    {
+    public int GetHashCode(long value) {
         ulong hash = unchecked((ulong)value);
         hash ^= hash >> 30;
         hash *= 0xbf58476d1ce4e5b9UL;

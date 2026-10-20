@@ -5,8 +5,7 @@ using BasaltBE.Logging;
 
 namespace BasaltBE.Basalt.Ticking;
 
-internal sealed class WorldTickWorker : IDisposable
-{
+internal sealed class WorldTickWorker : IDisposable {
     private int disposed;
     private readonly Server server;
     private readonly World[] worlds;
@@ -14,15 +13,13 @@ internal sealed class WorldTickWorker : IDisposable
     private readonly ManualResetEventSlim stop = new(false);
     private readonly ManualResetEventSlim ready = new(false);
 
-    internal WorldTickWorker(Server server, int index, World[] worlds)
-    {
+    internal WorldTickWorker(Server server, int index, World[] worlds) {
         this.server = server;
         this.worlds = worlds;
         thread = new Thread(Run) { IsBackground = true, Name = $"Basalt tick {index + 1}" };
     }
 
-    internal void Start()
-    {
+    internal void Start() {
         thread.Start();
         ready.Wait();
         Logger.Scoped("Ticking").Info($"{thread.Name}: {string.Join(", ", worlds.Select(world => world.Identifier))}.");
@@ -30,30 +27,25 @@ internal sealed class WorldTickWorker : IDisposable
 
     internal void Stop() => stop.Set();
 
-    private void Run()
-    {
+    private void Run() {
         Profiler.SetThreadName(thread.Name!);
         foreach (World world in worlds)
             world.OwnerThread = Environment.CurrentManagedThreadId;
         ready.Set();
         long interval = Stopwatch.Frequency / 20;
         long deadline = Stopwatch.GetTimestamp();
-        while (!stop.IsSet && !server.Stopping)
-        {
+        while (!stop.IsSet && !server.Stopping) {
             server.Gameplay.EnterReadLock();
-            try
-            {
+            try {
                 foreach (World world in worlds)
                     world.Tick();
             }
-            catch (Exception error)
-            {
+            catch (Exception error) {
                 Logger.Scoped("Ticking").Error($"{thread.Name} failed: {error}");
                 server.Stop();
                 break;
             }
-            finally
-            {
+            finally {
                 server.Gameplay.ExitReadLock();
             }
             deadline += interval;
@@ -66,8 +58,7 @@ internal sealed class WorldTickWorker : IDisposable
         }
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
         if (Interlocked.Exchange(ref disposed, 1) != 0)
             return;
         stop.Set();

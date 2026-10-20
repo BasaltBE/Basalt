@@ -1,7 +1,6 @@
 namespace BasaltBE.Basalt.Properties;
 
-public struct ServerProperties
-{
+public struct ServerProperties {
     [ServerProperty("Network", 1, "server-name", "Name shown in the server list.")]
     public string ServerName;
 
@@ -38,8 +37,7 @@ public struct ServerProperties
     [ServerProperty("Ticking", 12, "tick-distance", "Square simulation radius in chunks, separate from render distance.")]
     public int TickDistance;
 
-    public ServerProperties()
-    {
+    public ServerProperties() {
         Ticking = "default";
         TickingThreads = 4;
         TickDistance = 4;
