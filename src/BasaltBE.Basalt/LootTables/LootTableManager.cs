@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Types;
 
 namespace BasaltBE.Basalt.LootTables;
 
@@ -23,6 +24,7 @@ public sealed class LootTableManager {
     static readonly Dictionary<string, int> ToolIndices;
     static readonly Dictionary<string, int[]> BlockDropSetIds;
     static readonly BlockDrop[][] DropSets;
+    static readonly HashSet<string> RequiresToolDrops;
     static readonly Dictionary<string, int[]> EntityDropSetIds;
     static readonly EntityDrop[][] EntityDropSets;
     readonly Lock registryLock = new();
@@ -70,6 +72,27 @@ public sealed class LootTableManager {
                 if (dropSetId < -1 || dropSetId >= DropSets.Length)
                     throw new InvalidDataException($"Block drop data for '{block.Identifier}' contains an invalid drop set id.");
             }
+        }
+        RequiresToolDrops = [];
+        int handIndex = ToolIndices["hand"];
+        foreach (BlockDropBlockData block in table.Blocks) {
+            int handDropSet = block.DropSetIds[handIndex * Variants.Length];
+            if (handDropSet >= 0 && DropSets[handDropSet].Length > 0)
+                continue;
+
+            bool hasToolDrops = false;
+            for (int toolIndex = 0; toolIndex < table.Tools.Length; toolIndex++) {
+                if (toolIndex == handIndex)
+                    continue;
+
+                int dropSetId = block.DropSetIds[toolIndex * Variants.Length];
+                if (dropSetId >= 0 && DropSets[dropSetId].Length > 0) {
+                    hasToolDrops = true;
+                    break;
+                }
+            }
+            if (hasToolDrops)
+                RequiresToolDrops.Add(block.Identifier);
         }
 
         using Stream entityStream = dataAssembly.GetManifestResourceStream("BasaltBE.Data.Data.entity-drops.json")
@@ -140,10 +163,22 @@ public sealed class LootTableManager {
         bool silkTouch = false
     ) {
         string toolIdentifier = itemStack?.Type.Identifier ?? "hand";
+        if (!ToolIndices.ContainsKey(toolIdentifier) &&
+            itemStack?.Type.ToolType == ToolType.Pickaxe && itemStack.Type.ToolTier == 1)
+            toolIdentifier = "stone_pickaxe";
         if (!ToolIndices.ContainsKey(toolIdentifier))
             toolIdentifier = "hand";
 
         return GetBlockDrops(blockIdentifier, toolIdentifier, fortuneLevel, silkTouch);
+    }
+
+    public bool CanHarvest(string blockIdentifier, ItemStack? itemStack = null) {
+        RegistrySnapshot current = Volatile.Read(ref registry);
+        if (current.CustomDrops.ContainsKey(blockIdentifier) || current.RemovedVanillaDrops.Contains(blockIdentifier) ||
+            !RequiresToolDrops.Contains(blockIdentifier))
+            return true;
+
+        return Get(blockIdentifier, itemStack).Length > 0;
     }
 
     public ReadOnlySpan<EntityDrop> GetEntityDrops(

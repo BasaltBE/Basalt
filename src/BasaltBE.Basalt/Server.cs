@@ -183,10 +183,6 @@ public sealed class Server : IDisposable {
         }
         Profiler.FrameMark();
         Ticks.Record(start);
-        if (workers.Length == 0)
-            Logger.Scoped("Ticking").Info($"Server tick: {Ticks.LastMilliseconds:F3} ms.");
-        else
-            Logger.Scoped("Ticking").Info($"Control tick: {Ticks.LastMilliseconds:F3} ms.");
     }
 
     public void Poll() {

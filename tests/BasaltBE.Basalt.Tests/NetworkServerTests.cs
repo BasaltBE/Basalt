@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Basalt.Binary;
+using BasaltBE.Basalt.Crafting;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.Events;
@@ -16,6 +17,19 @@ using Xunit;
 namespace BasaltBE.Basalt.Tests;
 
 public sealed class NetworkServerTests {
+    [Fact]
+    public void SerializesDefaultCraftingDataPacket() {
+        using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());
+        using BinaryStream body = BinaryStream.Rent(4 * 1024 * 1024);
+        BinaryWriter writer = body.GetWriter();
+        CraftingPalette.Packet.Serialize(ref writer);
+        Assert.True(body.Offset > 256 * 1024);
+
+        server.Network.SerializedPackets.Serialize(CraftingPalette.Packet);
+
+        Assert.True(server.Network.SerializedPackets.Get<CraftingDataPacket>().Length > 0);
+    }
+
     [Fact]
     public void OnMessageDoesNotEmitPlayerPacketsBeforeLogin() {
         using BasaltBE.Basalt.Server server = new(new ServerProperties(), new ServerIdentityStub());

@@ -58,6 +58,28 @@ public sealed class PacketTests {
         Assert.Equal(PlayStatus.LoginSuccess, decoded.Status);
     }
 
+    [Theory]
+    [InlineData(825916963, "C6F8D39306")]
+    [InlineData(-2144268767, "BDC7F7FC0F")]
+    public void LevelSoundEventPacketRoundTripsSignedBlockNetworkId(int networkId, string expectedData) {
+        LevelSoundEventPacket packet = new() {
+            SoundEvent = "place",
+            Data = networkId,
+            ActorUniqueId = -1
+        };
+        using BinaryStream stream = BinaryStream.Rent(64);
+        BinaryWriter writer = stream.GetWriter();
+        packet.Serialize(ref writer);
+        Assert.Equal(Convert.FromHexString(expectedData), stream.Buffer.Span.Slice(18, expectedData.Length / 2).ToArray());
+        stream.Offset = 0;
+        BinaryReader reader = stream.GetReader();
+        LevelSoundEventPacket decoded = new();
+
+        decoded.Deserialize(ref reader);
+
+        Assert.Equal(networkId, decoded.Data);
+    }
+
     [Fact]
     public void DisconnectPacketRoundTripsReasonAndMessages() {
         DisconnectPacket packet = new() {

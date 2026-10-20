@@ -103,6 +103,56 @@ public static class ItemPalette {
 
         ItemType[] types = ItemTypeParser.Parse(stream);
         foreach (ItemType type in types) {
+            foreach (string tag in type.Tags) {
+                type.ToolType |= tag switch {
+                    "minecraft:is_pickaxe" => ToolType.Pickaxe,
+                    "minecraft:is_axe" => ToolType.Axe,
+                    "minecraft:is_shovel" => ToolType.Shovel,
+                    "minecraft:is_hoe" => ToolType.Hoe,
+                    "minecraft:is_sword" => ToolType.Sword,
+                    _ => ToolType.None
+                };
+
+                type.ToolMaterial = tag switch {
+                    "minecraft:wooden_tier" => ToolMaterial.Wooden,
+                    "minecraft:stone_tier" => ToolMaterial.Stone,
+                    "minecraft:copper_tier" => ToolMaterial.Copper,
+                    "minecraft:iron_tier" => ToolMaterial.Iron,
+                    "minecraft:golden_tier" => ToolMaterial.Gold,
+                    "minecraft:diamond_tier" => ToolMaterial.Diamond,
+                    "minecraft:netherite_tier" => ToolMaterial.Netherite,
+                    _ => type.ToolMaterial
+                };
+            }
+
+            type.ToolTier = type.ToolMaterial switch {
+                ToolMaterial.Stone or ToolMaterial.Copper => 1,
+                ToolMaterial.Iron => 2,
+                ToolMaterial.Diamond or ToolMaterial.Netherite => 3,
+                _ => 0
+            };
+            type.MiningSpeed = type.ToolType == ToolType.None ? 1 : type.ToolMaterial switch {
+                ToolMaterial.Wooden => 2,
+                ToolMaterial.Stone => 4,
+                ToolMaterial.Copper => 5,
+                ToolMaterial.Iron => 6,
+                ToolMaterial.Gold => 12,
+                ToolMaterial.Diamond => 8,
+                ToolMaterial.Netherite => 9,
+                _ => 1
+            };
+            type.AttackDamageBonus = (type.ToolType, type.ToolMaterial) switch {
+                (ToolType.Sword, ToolMaterial.Wooden or ToolMaterial.Gold) => 3,
+                (ToolType.Sword, ToolMaterial.Stone or ToolMaterial.Copper) => 4,
+                (ToolType.Sword, ToolMaterial.Iron) => 5,
+                (ToolType.Sword, ToolMaterial.Diamond) => 6,
+                (ToolType.Sword, ToolMaterial.Netherite) => 7,
+                (ToolType.Axe, ToolMaterial.Wooden or ToolMaterial.Gold) => 6,
+                (ToolType.Axe, ToolMaterial.Stone or ToolMaterial.Copper or ToolMaterial.Iron or ToolMaterial.Diamond) => 8,
+                (ToolType.Axe, ToolMaterial.Netherite) => 9,
+                _ => 0
+            };
+
             string identifier = type.Identifier == "minecraft:fence"
                 ? "minecraft:oak_fence"
                 : type.Identifier;

@@ -1,9 +1,13 @@
 using System.Text.Json.Serialization;
 using BasaltBE.Basalt.Blocks.Types.Components;
+using BasaltBE.Basalt.Items.Types;
 
 namespace BasaltBE.Basalt.Blocks.Types;
 
 public sealed class BlockType {
+    [JsonIgnore]
+    internal ToolType ToolTypes;
+
     [JsonInclude, JsonPropertyName("identifier")]
     public string Identifier = string.Empty;
 

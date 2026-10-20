@@ -22,6 +22,12 @@ public sealed class Block {
         Permutation = permutation;
     }
 
+    public static BlockPermutation? Till(BlockPermutation permutation) => permutation.Identifier switch {
+        "minecraft:grass_block" or "minecraft:dirt" or "minecraft:grass_path" => BlockPalette.FindDefaultPermutation("minecraft:farmland"),
+        "minecraft:coarse_dirt" or "minecraft:dirt_with_roots" => BlockPalette.FindDefaultPermutation("minecraft:dirt"),
+        _ => null
+    };
+
     public bool SetStates(string name, object value) {
         BlockPermutation? permutation = BlockPalette.Find(Type.Identifier, Permutation.State, name, value);
         if (permutation is null) {

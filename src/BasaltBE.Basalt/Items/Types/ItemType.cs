@@ -8,6 +8,21 @@ public sealed class ItemType {
     [JsonIgnore]
     internal BlockPermutation? PlacementPermutation;
 
+    [JsonIgnore]
+    internal ToolType ToolType;
+
+    [JsonIgnore]
+    internal int ToolTier;
+
+    [JsonIgnore]
+    internal ToolMaterial ToolMaterial;
+
+    [JsonIgnore]
+    internal float MiningSpeed = 1;
+
+    [JsonIgnore]
+    internal float AttackDamageBonus;
+
     [JsonInclude, JsonPropertyName("identifier")]
     public string Identifier = string.Empty;
 

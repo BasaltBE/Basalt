@@ -152,7 +152,7 @@ internal sealed class InventoryTransactionHandler {
                     if (attack) {
                         player.OnAttack(target, item);
                         if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health) {
-                            float damage = player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1;
+                            float damage = (player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1) + (item?.Type.AttackDamageBonus ?? 0);
                             health.ApplyDamage(damage, EntityDamageCause.Entity, player);
                         }
                     }
@@ -311,11 +311,11 @@ internal sealed class InventoryTransactionHandler {
 
         BlockPermutation? permutation = item?.Type.PlacementPermutation;
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
-            player.OnUseItemOnBlock(item, clicked, use.Position, use.Face, use.ClickPosition);
             if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success) {
                 RepairPlacement(player, use);
                 inventory.Inventory.UpdateSlot(use.Slot);
             }
+            player.OnUseItemOnBlock(item, clicked, use.Position, use.Face, use.ClickPosition);
             return false;
         }
 
@@ -493,14 +493,15 @@ internal sealed class InventoryTransactionHandler {
             update.Position.X = x;
             update.Position.Y = y;
             update.Position.Z = z;
-            update.BlockRuntimeId = unchecked((uint)chunk.GetPermutation(x & 15, y, z & 15, (int)layer).Hash);
+            BlockPermutation block = chunk.GetPermutation(x & 15, y, z & 15, (int)layer);
+            update.BlockRuntimeId = unchecked((uint)block.NetworkId);
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = layer;
             if (broadcast && playPlaceSound)
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: new LevelSoundEventPacket {
                     SoundEvent = "place",
                     Position = new Vec3 { X = x + 0.5f, Y = y + 0.5f, Z = z + 0.5f },
-                    Data = unchecked((int)update.BlockRuntimeId),
+                    Data = block.NetworkId,
                     ActorUniqueId = -1
                 });
             else if (broadcast)

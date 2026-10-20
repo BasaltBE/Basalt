@@ -3,6 +3,7 @@ using System.Text.Json;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Blocks.Traits.Types;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
 
@@ -10,12 +11,13 @@ namespace BasaltBE.Basalt.Blocks;
 
 public static class BlockPalette {
     public static readonly BlockPermutation[] Permutations = LoadPermutations();
-    public static readonly BlockType[] Types = Load<BlockType[]>("block-types.json");
+    public static readonly BlockType[] Types = LoadBlockTypes();
     static readonly Dictionary<string, BlockType> ByIdentifier = Types.ToDictionary(type => type.Identifier);
     static readonly Dictionary<string, BlockPermutation> DefaultPermutations = BuildDefaultPermutations();
     static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
     static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
     static readonly Dictionary<(string Identifier, string Half), BlockPermutation> DoubleSlabs = BuildDoubleSlabs();
+    static readonly Dictionary<string, string> StrippedBlocks = BuildStrippedBlocks();
     static readonly HashSet<string> FenceIdentifiers = BuildIdentifiers(
         ["minecraft:connection_east", "minecraft:connection_north", "minecraft:connection_south", "minecraft:connection_west"],
         "fence"
@@ -52,6 +54,11 @@ public static class BlockPalette {
     internal static bool IsFenceGate(string identifier) => FenceGateIdentifiers.Contains(identifier);
 
     internal static bool IsWall(string identifier) => WallIdentifiers.Contains(identifier);
+
+    internal static BlockPermutation? FindStripped(BlockPermutation block) =>
+        StrippedBlocks.TryGetValue(block.Identifier, out string? strippedIdentifier)
+            ? Find(strippedIdentifier, block.State) ?? FindDefaultPermutation(strippedIdentifier)
+            : null;
 
     internal static BlockPermutation? FindFencePermutation(string identifier, byte connections) =>
         FencePermutations.GetValueOrDefault((identifier, connections));
@@ -185,6 +192,37 @@ public static class BlockPalette {
 
         return JsonSerializer.Deserialize<T>(stream)
             ?? throw new JsonException($"Block data file '{fileName}' is empty.");
+    }
+
+    static BlockType[] LoadBlockTypes() {
+        BlockType[] types = Load<BlockType[]>("block-types.json");
+        foreach (BlockType type in types) {
+            foreach (string tag in type.Tags) {
+                type.ToolTypes |= tag switch {
+                    "minecraft:is_pickaxe_item_destructible" => ToolType.Pickaxe,
+                    "minecraft:is_axe_item_destructible" => ToolType.Axe,
+                    "minecraft:is_shovel_item_destructible" => ToolType.Shovel,
+                    "minecraft:is_hoe_item_destructible" => ToolType.Hoe,
+                    _ => ToolType.None
+                };
+            }
+        }
+        return types;
+    }
+
+    static Dictionary<string, string> BuildStrippedBlocks() {
+        Dictionary<string, string> stripped = new(StringComparer.Ordinal);
+        foreach (BlockType type in Types) {
+            int separator = type.Identifier.IndexOf(':');
+            string strippedName = type.Identifier[(separator + 1)..];
+            if (!strippedName.StartsWith("stripped_", StringComparison.Ordinal))
+                continue;
+
+            string originalIdentifier = type.Identifier[..(separator + 1)] + strippedName["stripped_".Length..];
+            if (ByIdentifier.ContainsKey(originalIdentifier))
+                stripped.TryAdd(originalIdentifier, type.Identifier);
+        }
+        return stripped;
     }
 
     static BlockPermutation[] LoadPermutations() {

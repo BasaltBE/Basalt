@@ -124,7 +124,7 @@ public sealed class NetworkServer : IDisposable {
     internal void SetCompression(NethernetPeer peer) => compressionPeers.TryAdd(peer, 0);
 
     internal byte[] PreparePacket(DataPacket packet) {
-        using BinaryStream body = BinaryStream.Rent(256 * 1024);
+        using BinaryStream body = BinaryStream.Rent(MaximumBatchLength);
         BinaryWriter writer = body.GetWriter();
         writer.WriteVarUInt(GetPacketId(packet));
         packet.Serialize(ref writer);

@@ -20,7 +20,7 @@ public sealed class LevelSoundEventPacket : DataPacket {
     public override void Deserialize(ref BinaryReader reader) {
         SoundEvent = reader.ReadVarString();
         Position.Read(ref reader);
-        Data = reader.ReadVarInt();
+        Data = reader.ReadZigZag();
         ActorIdentifier = reader.ReadVarString();
         IsBaby = reader.ReadBool();
         IsGlobal = reader.ReadBool();
@@ -32,7 +32,7 @@ public sealed class LevelSoundEventPacket : DataPacket {
     public override void Serialize(ref BinaryWriter writer) {
         writer.WriteVarString(SoundEvent);
         Position.Write(ref writer);
-        writer.WriteVarInt(Data);
+        writer.WriteZigZag(Data);
         writer.WriteVarString(ActorIdentifier);
         writer.WriteBool(IsBaby);
         writer.WriteBool(IsGlobal);

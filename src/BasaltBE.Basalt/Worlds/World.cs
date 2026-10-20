@@ -196,7 +196,6 @@ public sealed class World : IDisposable {
             dimension.Tick();
 
         Ticks.Record(start);
-        Logger.Scoped("Ticking").Info($"World {Identifier} tick: {Ticks.LastMilliseconds:F3} ms.");
     }
 
     public void Dispose() {

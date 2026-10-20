@@ -260,8 +260,14 @@ internal sealed class PlayerAuthInputHandler {
         if (type is null || type.Hardness < 0)
             return;
 
-        bool requiresTool = RequiresTool(type);
-        uint duration = BreakDurationTicks(type.Hardness, requiresTool);
+        ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
+            ? inventory.Inventory.GetItem(inventory.SelectedSlot)
+            : null;
+        bool canHarvest = player.Network.Server.LootTables.CanHarvest(block.Identifier, tool);
+        float miningSpeed = tool is not null && (type.ToolTypes & tool.Type.ToolType) != 0
+            ? tool.Type.MiningSpeed
+            : 1;
+        uint duration = BreakDurationTicks(type.Hardness, miningSpeed, canHarvest);
         if (duration == 0)
             return;
 
@@ -377,7 +383,7 @@ internal sealed class PlayerAuthInputHandler {
                 sound.Position.X = x + 0.5f;
                 sound.Position.Y = y + 0.5f;
                 sound.Position.Z = z + 0.5f;
-                sound.Data = block.Hash;
+                sound.Data = block.NetworkId;
                 sound.ActorUniqueId = -1;
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: sound);
             }
@@ -452,24 +458,17 @@ internal sealed class PlayerAuthInputHandler {
     private static bool SameBlock(BlockPos left, BlockPos right) =>
         left.X == right.X && left.Y == right.Y && left.Z == right.Z;
 
-    internal static uint BreakDurationTicks(float hardness, bool requiresTool) {
+    internal static uint BreakDurationTicks(float hardness, float miningSpeed, bool canHarvest) {
         if (!float.IsFinite(hardness) || hardness < 0)
             return 0;
         if (hardness == 0)
             return 1;
-        float multiplier = requiresTool ? 5f : 1.5f;
-        if (hardness >= MaximumBreakDurationTicks / (multiplier * 20f))
+        if (!float.IsFinite(miningSpeed) || miningSpeed <= 0)
+            miningSpeed = 1;
+        float divisor = canHarvest ? 30f : 100f;
+        if (hardness >= MaximumBreakDurationTicks * miningSpeed / divisor)
             return MaximumBreakDurationTicks;
-        return Math.Max(1U, (uint)MathF.Ceiling(hardness * multiplier * 20f));
-    }
-
-    private static bool RequiresTool(BlockType type) {
-        foreach (string tag in type.Tags) {
-            if (tag == "minecraft:is_pickaxe_item_destructible" ||
-                tag.EndsWith("_tier_destructible", StringComparison.Ordinal))
-                return true;
-        }
-        return false;
+        return Math.Max(1U, (uint)MathF.Ceiling(hardness * divisor / miningSpeed));
     }
 
     private static void SendBlockUpdate(Player player, int x, int y, int z) {

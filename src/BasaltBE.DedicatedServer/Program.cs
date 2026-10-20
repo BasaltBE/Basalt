@@ -51,6 +51,7 @@ internal static class Program {
 
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
             EntityPalette.RegisterTrait<PlayerInventoryTrait>();
+            EntityPalette.RegisterTrait<PlayerToolTrait>();
             EntityPalette.RegisterTrait<EntityMovementTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
             BlockPalette.RegisterTrait<CraftingTableTrait>();
