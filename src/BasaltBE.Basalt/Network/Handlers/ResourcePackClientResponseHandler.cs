@@ -39,7 +39,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 network.SendPacket(player, new StartGamePacket {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
-                    GameType = GameType.Survival,
+                    GameType = player.GameType,
                     Position = player.GetHeadPosition(),
                     Settings = new LevelSettings {
                         SpawnSettings = new SpawnSettings {
@@ -47,9 +47,13 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                             Dimension = 0
                         },
                         GeneratorType = GeneratorType.Overworld,
-                        GameType = GameType.Survival,
-                        GameDifficulty = Difficulty.Normal,
-                        DefaultSpawnBlockPosition = new BlockPos { X = 0, Y = -57, Z = 0 },
+                        GameType = player.GameType,
+                        GameDifficulty = player.Dimension.Difficulty,
+                        DefaultSpawnBlockPosition = new BlockPos {
+                            X = (int)MathF.Floor(player.Dimension.SpawnPosition.X),
+                            Y = (int)MathF.Floor(player.Dimension.SpawnPosition.Y),
+                            Z = (int)MathF.Floor(player.Dimension.SpawnPosition.Z)
+                        },
                         MultiplayerGameIntent = true,
                         CommandsEnabled = true,
                         LanBroadcastIntent = true,

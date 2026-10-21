@@ -44,6 +44,12 @@ internal sealed class InventoryTransactionHandler {
             if (player.Disposed || !player.Spawned || inventory is null)
                 return;
 
+            if (transaction is ItemReleaseInventoryTransaction release) {
+                if (release.ActionType == ItemReleaseInventoryTransactionActionType.Release)
+                    player.GetTrait<PlayerHungerTrait>()?.CancelEating();
+                return;
+            }
+
             if (transaction is NormalTransactionData normal &&
                 normal.Actions.Actions.Any(action => action.Source.Type == InventorySourceType.WorldInteraction)) {
                 DropWorldItem(player, inventory, normal.Actions.Actions, legacyRequestId);
@@ -111,6 +117,11 @@ internal sealed class InventoryTransactionHandler {
             switch (transaction) {
                 case ItemUseInventoryTransaction use:
                     if (use.ActionType == ItemUseInventoryTransactionActionType.Use) {
+                        if (item is not null && item.Type.FoodNutrition > 0) {
+                            player.GetTrait<PlayerHungerTrait>()?.StartEating(slot, item);
+                            break;
+                        }
+
                         int durabilityDamage = item?.Type.MaxDurability > 0 && item.Type.ArmorSlot is null ? 1 : 0;
                         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
                             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Use, durabilityDamage);

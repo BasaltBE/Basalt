@@ -143,6 +143,7 @@ public class Entity {
     }
 
     public void OnSpawn() => Dispatch(static trait => trait.OnSpawn());
+    public void OnRespawn() => Dispatch(static trait => trait.OnRespawn());
     public void OnDespawn() => Dispatch(static trait => trait.OnDespawn());
     public void OnDeath() => Dispatch(static trait => trait.OnDeath());
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());

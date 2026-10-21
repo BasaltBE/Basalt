@@ -12,6 +12,7 @@ public abstract class EntityTrait(Entity entity) {
     public virtual void OnAdd() { }
     public virtual void OnRemove() { }
     public virtual void OnSpawn() { }
+    public virtual void OnRespawn() { }
     public virtual void OnDespawn() { }
     public virtual void OnDeath() { }
     public virtual void OnHurt() { }

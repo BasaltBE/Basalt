@@ -47,6 +47,7 @@ public sealed class Player : Entity, IDisposable {
 
     public int ChunkRadius = 16;
     public bool Spawned;
+    public GameType GameType = GameType.Survival;
     internal BlockPos? BreakingBlock;
     internal ulong BlockBreakStartTick;
     internal uint BlockBreakDurationTicks;
@@ -97,9 +98,9 @@ public sealed class Player : Entity, IDisposable {
                 SkinBytes = skin
             }
         };
-        Position.X = 0.5f;
-        Position.Y = -57f;
-        Position.Z = 0.5f;
+        Position.X = dimension.SpawnPosition.X;
+        Position.Y = dimension.SpawnPosition.Y;
+        Position.Z = dimension.SpawnPosition.Z;
 
         Attributes.Set("minecraft:movement", 0, float.MaxValue, 0.1f, 0, float.MaxValue, 0.1f);
         Attributes.Set("minecraft:underwater_movement", 0, float.MaxValue, 0.02f, 0, float.MaxValue, 0.02f);

@@ -55,6 +55,7 @@ internal static class Program {
             EntityPalette.RegisterTrait<PlayerToolTrait>();
             EntityPalette.RegisterTrait<EntityMovementTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
+            EntityPalette.RegisterTrait<PlayerHungerTrait>();
             BlockPalette.RegisterTrait<CraftingTableTrait>();
             BlockPalette.RegisterTrait<FenceTrait>();
             BlockPalette.RegisterTrait<FenceGateTrait>();

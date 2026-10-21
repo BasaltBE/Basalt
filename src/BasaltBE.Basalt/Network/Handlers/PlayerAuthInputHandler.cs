@@ -9,6 +9,7 @@ using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -35,7 +36,7 @@ internal sealed class PlayerAuthInputHandler {
         if (player is null)
             throw new InvalidDataException("Player auth input arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
-        if (player.Disposed || !player.Spawned)
+        if (player.Disposed || !player.Spawned || player.Dead)
             return;
         EntityMovementTrait? movement = player.GetTrait<EntityMovementTrait>();
         if (movement is null)
@@ -63,12 +64,20 @@ internal sealed class PlayerAuthInputHandler {
         movement.InputTick = packet.ClientTick.Tick;
         if (packet.InputMode is >= InputMode.Mouse and < InputMode.Count)
             player.InputMode = packet.InputMode;
-        if (inputs[(int)PlayerAuthInputData.PerformItemInteraction] && packet.ItemUseTransaction is { } interaction)
-            player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(
+
+        PlayerInventoryTrait? playerInventory = player.GetTrait<PlayerInventoryTrait>();
+        if (inputs[(int)PlayerAuthInputData.StartUsingItem] &&
+            playerInventory is { } foodInventory &&
+            foodInventory.Inventory.GetItem(foodInventory.SelectedSlot) is { Type.FoodNutrition: > 0 } food)
+            player.GetTrait<PlayerHungerTrait>()?.StartEating(foodInventory.SelectedSlot, food);
+
+        if (inputs[(int)PlayerAuthInputData.PerformItemInteraction] && packet.ItemUseTransaction is { } interaction) {
+            playerInventory?.QueueTransaction(
                 interaction.ItemUseTransaction,
                 interaction.LegacyRequestId,
                 interaction.LegacySetItemSlots
             );
+        }
 
         float deltaX = packet.Position.X - player.Position.X;
         float feetY = packet.Position.Y - player.HeadOffset;
@@ -215,8 +224,14 @@ internal sealed class PlayerAuthInputHandler {
                 player,
                 request,
                 mineBlockNetId,
-                blockDestroyed
+                blockDestroyed,
+                out string? failureReason
             );
+            if (response.Result != ItemStackNetResult.Success)
+                Logger.Scoped("Network").Warn(
+                    $"Rejected item stack request {request.ClientRequestId} from {player.Username}: {response.Result}" +
+                    (failureReason is null ? "." : $" ({failureReason}).")
+                );
             player.Network.SendPacket(player, new ItemStackResponsePacket {
                 Responses = [response]
             });

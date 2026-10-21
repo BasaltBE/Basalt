@@ -58,7 +58,7 @@ internal sealed class ItemStackRequestHandler {
         out string? failureReason
     ) => ProcessRequest(player, request, null, false, out failureReason);
 
-    private static ItemStackResponseInfo ProcessRequest(
+    internal static ItemStackResponseInfo ProcessRequest(
         Player player,
         ItemStackRequestData request,
         int? mineBlockNetId,

@@ -15,6 +15,7 @@ public static class PacketEvents {
     public static readonly PacketEvent<LoginPacket> Login = new();
     public static readonly PacketEvent<PlayerAuthInputPacket> PlayerAuthInput = new();
     public static readonly PacketEvent<PlayStatusPacket> PlayStatus = new();
+    public static readonly PacketEvent<RespawnPacket> Respawn = new(45);
     public static readonly PacketEvent<RequestChunkRadiusPacket> RequestChunkRadius = new();
     public static readonly PacketEvent<SetLocalPlayerAsInitializedPacket> SetLocalPlayerAsInitialized = new();
     public static readonly PacketEvent<RequestNetworkSettingsPacket> RequestNetworkSettings = new();

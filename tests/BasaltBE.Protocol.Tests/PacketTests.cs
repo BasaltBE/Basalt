@@ -58,6 +58,29 @@ public sealed class PacketTests {
         Assert.Equal(PlayStatus.LoginSuccess, decoded.Status);
     }
 
+    [Fact]
+    public void RespawnPacketRoundTripsItsFields() {
+        RespawnPacket packet = new() {
+            Position = new Vec3 { X = 1.5f, Y = 65.62f, Z = -2.5f },
+            State = PlayerRespawnState.ClientReadyToSpawn,
+            RuntimeId = 123456789
+        };
+        using BinaryStream stream = BinaryStream.Rent(32);
+        BinaryWriter writer = stream.GetWriter();
+        packet.Serialize(ref writer);
+        stream.Offset = 0;
+        BinaryReader reader = stream.GetReader();
+        RespawnPacket decoded = new();
+
+        decoded.Deserialize(ref reader);
+
+        Assert.Equal(packet.Position.X, decoded.Position.X);
+        Assert.Equal(packet.Position.Y, decoded.Position.Y);
+        Assert.Equal(packet.Position.Z, decoded.Position.Z);
+        Assert.Equal(packet.State, decoded.State);
+        Assert.Equal(packet.RuntimeId, decoded.RuntimeId);
+    }
+
     [Theory]
     [InlineData(825916963, "C6F8D39306")]
     [InlineData(-2144268767, "BDC7F7FC0F")]

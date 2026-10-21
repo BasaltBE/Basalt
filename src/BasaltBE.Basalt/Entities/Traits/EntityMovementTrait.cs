@@ -45,6 +45,20 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         BroadcastOnGround = VerticalCollision && Motion.Y <= 0;
     }
 
+    public override void OnRespawn() {
+        Motion.X = 0;
+        Motion.Y = 0;
+        Motion.Z = 0;
+        Grounded = false;
+        Jumping = false;
+        HorizontalCollision = false;
+        VerticalCollision = false;
+        BroadcastPosition = new Vector3(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
+        BroadcastRotation = new Vector2(Entity.Rotation.X, Entity.Rotation.Y);
+        BroadcastHeadRotation = Entity.HeadRotation;
+        BroadcastOnGround = false;
+    }
+
     public override void OnAdd() {
         if (Entity.Type?.PropertiesPayload?.Components.Movement is { } movement) {
             EntityNumericValue? value = movement.Value;

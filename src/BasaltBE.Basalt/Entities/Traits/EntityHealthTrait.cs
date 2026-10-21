@@ -1,5 +1,7 @@
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Events.Entities;
+using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.LootTables;
@@ -18,7 +20,15 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     private const string AttributeName = "minecraft:health";
     private const ulong AttackCooldownTicks = 10;
     private const ulong DeathAnimationTicks = 20;
+    private const ulong SuffocationDamageInterval = 10;
+    private const float SafeFallDistance = 3;
+    private const float PositionEpsilon = 0.001f;
     private ulong? lastAttackTick;
+    private float previousY;
+    private float highestY;
+    private bool falling;
+
+    public float FallDistance { get; private set; }
 
     public float Current => Entity.Attributes.Get(AttributeName)?.Current ?? 0;
     public float Maximum => Entity.Attributes.Get(AttributeName)?.Maximum ?? 0;
@@ -47,6 +57,54 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             (float)maximum,
             (float)maximum
         );
+    }
+
+    public override void OnSpawn() => ResetFallDamage();
+
+    public override void OnRespawn() => ResetFallDamage();
+
+    public override void Tick() {
+        if (Entity is not Player player || !player.Spawned || player.Disposed || player.Dead ||
+            player.GameType is not (GameType.Survival or GameType.Adventure) ||
+            player.Abilities.Get(PlayerAbility.Flying) || Entity.SimulationAge % SuffocationDamageInterval != 0)
+            return;
+
+        int blockX = (int)MathF.Floor(Entity.Position.X);
+        int blockY = (int)MathF.Floor(Entity.Position.Y + Entity.HeadOffset);
+        int blockZ = (int)MathF.Floor(Entity.Position.Z);
+        if (player.Dimension.GetChunk(blockX >> 4, blockZ >> 4) is null)
+            return;
+
+        BlockType? block = BlockPalette.FindType(player.Dimension.GetPermutation(blockX, blockY, blockZ).Identifier);
+        if (block is { Solid: true, Air: false, Liquid: false })
+            ApplyDamage(1, EntityDamageCause.Suffocation);
+    }
+
+    public override void OnMove() {
+        if (Entity is not Player player || player.Dead) {
+            ResetFallDamage();
+            return;
+        }
+
+        float currentY = Entity.Position.Y;
+        float deltaY = currentY - previousY;
+        if (deltaY > PositionEpsilon) {
+            if (!falling || currentY > highestY)
+                highestY = currentY;
+            falling = false;
+            FallDistance = 0;
+        }
+        else if (deltaY < -PositionEpsilon) {
+            if (!falling) {
+                highestY = previousY;
+                falling = true;
+            }
+            FallDistance = Math.Max(0, highestY - currentY);
+        }
+
+        previousY = currentY;
+        if (falling && Entity.GetTrait<EntityMovementTrait>()?.VerticalCollision == true && deltaY <= 0)
+            Land(player);
     }
 
     public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null) {
@@ -86,6 +144,8 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         }
 
         Entity.Attributes.SetCurrent(AttributeName, current);
+        if (Entity is Player)
+            Entity.GetTrait<PlayerHungerTrait>()?.AddExhaustion(damage * 0.1f);
         if (attackTick is ulong appliedAttackTick)
             lastAttackTick = appliedAttackTick;
         Entity.OnHurt(hurt);
@@ -116,6 +176,19 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         if (death is not null) {
             Entity.Dead = true;
             Entity.OnDeath(death);
+            if (Entity is Player player && Entity.SpawnedDimension is { } playerDimension) {
+                playerDimension.Broadcast(new ActorEventPacket {
+                    TargetRuntimeId = Entity.RuntimeId,
+                    Event = ActorEvent.Death
+                }, Entity);
+                foreach (Player viewer in playerDimension.GetPlayers())
+                    viewer.GetTrait<PlayerChunkRenderingTrait>()?.RemoveEntity(Entity);
+                player.Network.SendPacket(player, new RespawnPacket {
+                    Position = playerDimension.SpawnPosition,
+                    State = PlayerRespawnState.SearchingForSpawn,
+                    RuntimeId = player.RuntimeId
+                });
+            }
             if (Entity is not Player && Entity.SpawnedDimension is { } dropDimension &&
                 dropDimension.World is { } dropWorld && Entity.Type is { } entityType) {
                 foreach (EntityDrop drop in dropWorld.LootTables.GetEntityDrops(entityType.Identifier)) {
@@ -161,6 +234,15 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         return Entity.Attributes.SetCurrent(AttributeName, health.Current + amount);
     }
 
+    internal bool Respawn() {
+        if (Entity is not Player || !Entity.Dead || Entity.Attributes.Get(AttributeName) is not { } health)
+            return false;
+
+        Entity.Dead = false;
+        Entity.Attributes.SetCurrent(AttributeName, health.Maximum);
+        return true;
+    }
+
     private void ApplyKnockback(Entity source) {
         if (Entity.SpawnedDimension is not { } dimension ||
             !ReferenceEquals(source.SpawnedDimension, dimension) ||
@@ -184,5 +266,49 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             movement.Motion.Z = packet.Motion.Z;
             dimension.Broadcast(packet, Entity);
         }
+    }
+
+    private void Land(Player player) {
+        EntityMovementTrait? movement = Entity.GetTrait<EntityMovementTrait>();
+        float damageMultiplier = GetLandingDamageMultiplier(player);
+        if ((player.GameType is GameType.Survival or GameType.Adventure) &&
+            movement?.VerticalCollision == true &&
+            !player.Abilities.Get(PlayerAbility.Flying) &&
+            !player.Flags.Get(ActorFlag.Swimming) &&
+            damageMultiplier > 0 && FallDistance > SafeFallDistance) {
+            float damage = MathF.Floor((FallDistance - SafeFallDistance) * damageMultiplier);
+            if (damage > 0)
+                ApplyDamage(damage, EntityDamageCause.Fall);
+        }
+
+        FallDistance = 0;
+        falling = false;
+        highestY = Entity.Position.Y;
+    }
+
+    private static float GetLandingDamageMultiplier(Player player) {
+        int x = (int)MathF.Floor(player.Position.X);
+        int y = (int)MathF.Floor(player.Position.Y - PositionEpsilon);
+        int z = (int)MathF.Floor(player.Position.Z);
+        if (player.Dimension.GetChunk(x >> 4, z >> 4) is null)
+            return 1;
+
+        BlockType? block = BlockPalette.FindType(player.Dimension.GetPermutation(x, y, z).Identifier);
+        if (block?.Liquid == true)
+            return 0;
+
+        string? identifier = block?.Identifier;
+        if (identifier is "minecraft:slime_block" or "minecraft:powder_snow")
+            return 0;
+        if (identifier == "minecraft:hay_block")
+            return 0.2f;
+        return identifier?.EndsWith("_bed", StringComparison.Ordinal) == true ? 0.5f : 1;
+    }
+
+    private void ResetFallDamage() {
+        previousY = Entity.Position.Y;
+        highestY = previousY;
+        FallDistance = 0;
+        falling = false;
     }
 }

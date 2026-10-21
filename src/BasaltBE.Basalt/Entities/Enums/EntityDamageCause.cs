@@ -5,7 +5,9 @@ public enum EntityDamageCause {
     Fire,
     Lava,
     Drowning,
+    Suffocation,
     Void,
     Fall,
+    Starvation,
     Unknown
 }

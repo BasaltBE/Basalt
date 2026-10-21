@@ -29,9 +29,7 @@ public static class ItemPalette {
                 Id = checked((short)type.NetworkId),
                 ComponentBased = type.ComponentBased,
                 Version = type.Version,
-                ComponentData = type.ComponentBased
-                    ? type.PropertiesPayload.ToComponentData()
-                    : new CompoundTag()
+                ComponentData = type.PropertiesPayload.ToComponentData()
             };
         }
 
@@ -104,6 +102,7 @@ public static class ItemPalette {
 
         ItemType[] types = ItemTypeParser.Parse(stream);
         foreach (ItemType type in types) {
+            ConfigureFood(type);
             foreach (string tag in type.Tags) {
                 type.ToolType |= tag switch {
                     "minecraft:is_pickaxe" => ToolType.Pickaxe,
@@ -174,6 +173,36 @@ public static class ItemPalette {
             type.PlacementPermutation = BlockPalette.FindDefaultPermutation(identifier);
         }
         return types;
+    }
+
+    static void ConfigureFood(ItemType type) {
+        if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:food") is not CompoundTag food)
+            return;
+
+        type.FoodNutrition = Math.Max(0, food.Get<IntTag>("nutrition")?.Value ?? 0);
+        type.FoodSaturationModifier = food.Get<DoubleTag>("saturation_modifier")?.Value is double saturation &&
+            double.IsFinite(saturation) && saturation > 0 && saturation <= float.MaxValue
+                ? (float)saturation
+                : food.Get<FloatTag>("saturation_modifier")?.Value is float floatSaturation &&
+                  float.IsFinite(floatSaturation) && floatSaturation > 0
+                    ? floatSaturation
+                    : 0;
+        type.FoodCanAlwaysEat = (food.Get<IntTag>("can_always_eat")?.Value ?? 0) != 0;
+
+        if (type.PropertiesPayload.Values.GetValueOrDefault("item_properties") is not CompoundTag itemProperties) {
+            itemProperties = new CompoundTag();
+            type.PropertiesPayload.Values["item_properties"] = itemProperties;
+        }
+
+        if (!itemProperties.TryGet<IntTag>("use_animation", out _))
+            itemProperties.Add("use_animation", new IntTag { Value = type.Identifier == "minecraft:honey_bottle" ? 2 : 1 });
+        if (!itemProperties.TryGet<IntTag>("use_duration", out _)) {
+            int duration = type.PropertiesPayload.Values.GetValueOrDefault("minecraft:use_duration") is IntTag useDuration
+                ? useDuration.Value
+                : 32;
+            itemProperties.Add("use_duration", new IntTag { Value = duration });
+        }
+        type.FoodUseDurationTicks = Math.Max(1, itemProperties.Get<IntTag>("use_duration")?.Value ?? 32);
     }
 
     static int GetMaxDurability(ItemType type) {

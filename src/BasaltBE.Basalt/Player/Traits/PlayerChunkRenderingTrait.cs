@@ -139,7 +139,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         bool membershipChanged = false;
         foreach (Entity entity in entities) {
             if (ReferenceEquals(entity, player) || entity.Type is null ||
-                entity is Player { Spawned: false } or Player { Disposed: true } or Player { Listed: false } ||
+                entity is Player { Spawned: false } or Player { Disposed: true } or Player { Dead: true } or Player { Listed: false } ||
                 !float.IsFinite(entity.Position.X) || !float.IsFinite(entity.Position.Y) || !float.IsFinite(entity.Position.Z) ||
                 !Viewing((int)MathF.Floor(entity.Position.X) >> 4, (int)MathF.Floor(entity.Position.Z) >> 4))
                 continue;

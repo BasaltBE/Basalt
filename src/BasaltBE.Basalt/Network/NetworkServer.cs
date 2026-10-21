@@ -79,6 +79,7 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.CommandRequest, new CommandRequestHandler().Handle);
         Events.Subscribe(PacketEvents.ItemStackRequest, new ItemStackRequestHandler().Handle);
         Events.Subscribe(PacketEvents.PlayerAuthInput, new PlayerAuthInputHandler().Handle);
+        Events.Subscribe(PacketEvents.Respawn, new RespawnHandler().Handle);
         Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
         Events.Subscribe(PacketEvents.SetLocalPlayerAsInitialized, new SetLocalPlayerAsInitializedHandler().Handle);
         ResourcePackClientResponseHandler resourcePackResponse = new(this);

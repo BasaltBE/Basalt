@@ -73,4 +73,16 @@ public sealed class ItemType {
 
     [JsonIgnore]
     public int ArmorProtection;
+
+    [JsonIgnore]
+    public int FoodNutrition;
+
+    [JsonIgnore]
+    public float FoodSaturationModifier;
+
+    [JsonIgnore]
+    public bool FoodCanAlwaysEat;
+
+    [JsonIgnore]
+    public int FoodUseDurationTicks = 32;
 }

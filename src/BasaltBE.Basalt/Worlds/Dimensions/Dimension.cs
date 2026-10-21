@@ -44,6 +44,8 @@ public sealed class Dimension : IDisposable {
 
     public readonly string Identifier;
     public readonly IChunkGenerator Generator;
+    public readonly Vec3 SpawnPosition = new() { X = 0.5f, Y = -57, Z = 0.5f };
+    public Difficulty Difficulty = Difficulty.Normal;
     internal World? World;
     internal EventEmitter? Events;
 
