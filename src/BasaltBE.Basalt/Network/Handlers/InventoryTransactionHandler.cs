@@ -259,25 +259,27 @@ internal sealed class InventoryTransactionHandler {
         if (armor is null || transaction.ActionType != ItemUseInventoryTransactionActionType.Destroy ||
             transaction.Hand != HandSlot.Mainhand || transaction.Slot < 0 ||
             (uint)transaction.Slot >= inventory.Inventory.ContainerSize || actions.Length != 1 ||
-            armorSlot >= armor.Armor.ContainerSize || armor.Armor.GetItem(armorSlot) is not null)
+            armorSlot >= armor.Armor.ContainerSize)
             return Reject();
 
         InventoryAction action = actions[0];
         ItemStack? item = inventory.Inventory.GetItem(transaction.Slot);
+        ItemStack? equipped = armor.Armor.GetItem(armorSlot);
         NetworkItemStackDescriptor empty = new();
+        NetworkItemStackDescriptor replaced = equipped?.ToNetworkStackDescriptor() ?? empty;
         bool valid = action.Source.Type == InventorySourceType.ContainerInventory &&
             action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId &&
             action.Slot == (uint)transaction.Slot && item?.Type.ArmorSlot == (ArmorSlot)armorSlot &&
             inventory.MatchesItem(transaction.Slot, transaction.Item, out ItemStack? usedItem) &&
             ReferenceEquals(item, usedItem) &&
             MatchesStack(action.FromItem, item.ToNetworkStackDescriptor()) &&
-            MatchesStack(action.ToItem, empty) &&
+            MatchesStack(action.ToItem, replaced) &&
             transaction.Item.Id == item.Type.NetworkId && transaction.Item.StackSize == item.StackSize;
 
         if (!valid || !armor.Equip(inventory, transaction.Slot))
             return Reject();
 
-        ItemStack? equipped = armor.Armor.GetItem(armorSlot);
+        equipped = armor.Armor.GetItem(armorSlot);
         player.Network.SendPacket(player, new ItemStackResponsePacket {
             Responses = [new ItemStackResponseInfo {
                 ClientRequestId = legacyRequestId,

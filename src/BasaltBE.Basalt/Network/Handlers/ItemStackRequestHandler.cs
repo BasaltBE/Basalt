@@ -667,8 +667,11 @@ internal sealed class ItemStackRequestHandler {
         key = new SlotKey(container, container.GetLocalSlot(info.Slot));
         if (!state.Staged.TryGetValue(key, out item)) {
             item = container.GetItem(key.Slot);
+            bool predictedArmorStack = container.ContainerName == ContainerEnumName.Armor &&
+                info.NetIdVariant < 0 && item?.Type.ArmorSlot == (ArmorSlot)key.Slot;
             if (item is not null && !ReferenceEquals(container, state.CreatedOutput) &&
                 item.NetId != info.NetIdVariant &&
+                !predictedArmorStack &&
                 !(state.InventoryTrait?.MatchesClientRequestNetId(container, key.Slot, info.NetIdVariant, item) ?? false)) {
                 state.FailureReason = $"stack ID mismatch in {info.ContainerName.ContainerName}[{info.Slot}]: client: {info.NetIdVariant}, server: {item.NetId}";
                 return false;
