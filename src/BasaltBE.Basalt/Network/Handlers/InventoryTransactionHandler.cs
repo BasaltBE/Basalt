@@ -5,6 +5,7 @@ using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
@@ -25,10 +26,19 @@ internal sealed class InventoryTransactionHandler {
         if (player.Disposed || !player.Spawned)
             return;
 
-        player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(packet.Transaction, packet.LegacyRequestId);
+        player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(
+            packet.Transaction,
+            packet.LegacyRequestId,
+            packet.LegacySetItemSlots
+        );
     }
 
-    internal static void ProcessTransaction(Player player, InventoryTransactionData transaction, int legacyRequestId) {
+    internal static void ProcessTransaction(
+        Player player,
+        InventoryTransactionData transaction,
+        int legacyRequestId,
+        LegacySetSlot[]? legacySetItemSlots
+    ) {
         lock (player.Sync) {
             PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
             if (player.Disposed || !player.Spawned || inventory is null)
@@ -39,6 +49,14 @@ internal sealed class InventoryTransactionHandler {
                 DropWorldItem(player, inventory, normal.Actions.Actions, legacyRequestId);
                 return;
             }
+
+            if (transaction is NormalTransactionData armorTransaction &&
+                EquipArmor(player, inventory, armorTransaction.Actions.Actions))
+                return;
+
+            if (transaction is ItemUseInventoryTransaction legacyArmorUse &&
+                EquipArmorFromLegacyUse(player, inventory, legacyArmorUse, legacyRequestId, legacySetItemSlots))
+                return;
 
             if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction)) {
                 player.Network.SendPacket(player, new ItemStackResponsePacket {
@@ -56,6 +74,19 @@ internal sealed class InventoryTransactionHandler {
                 ItemUseOnActorInventoryTransaction actor => (actor.Slot, actor.Hand, actor.Item, actor.FromPosition),
                 _ => (-1, HandSlot.Mainhand, null, null)
             };
+            if (transaction is ItemUseInventoryTransaction { ActionType: ItemUseInventoryTransactionActionType.Use } armorUse &&
+                armorUse.Hand == HandSlot.Mainhand &&
+                (uint)armorUse.Slot < inventory.Inventory.ContainerSize &&
+                armorUse.Slot != inventory.SelectedSlot &&
+                float.IsFinite(armorUse.FromPosition.X) && float.IsFinite(armorUse.FromPosition.Y) &&
+                float.IsFinite(armorUse.FromPosition.Z) &&
+                inventory.Inventory.GetItem(armorUse.Slot)?.Type.ArmorSlot is not null &&
+                inventory.MatchesItem(armorUse.Slot, armorUse.Item, out _) &&
+                player.GetTrait<EntityArmorTrait>() is { } armor) {
+                armor.Equip(inventory, armorUse.Slot);
+                return;
+            }
+
             bool attack = transaction is ItemUseOnActorInventoryTransaction {
                 ActionType: ItemUseOnActorInventoryTransactionActionType.Attack
             };
@@ -80,7 +111,7 @@ internal sealed class InventoryTransactionHandler {
             switch (transaction) {
                 case ItemUseInventoryTransaction use:
                     if (use.ActionType == ItemUseInventoryTransactionActionType.Use) {
-                        int durabilityDamage = item?.Type.MaxDurability > 0 ? 1 : 0;
+                        int durabilityDamage = item?.Type.MaxDurability > 0 && item.Type.ArmorSlot is null ? 1 : 0;
                         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
                             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Use, durabilityDamage);
                             player.Network.Server.Events.Emit(itemUse);
@@ -200,6 +231,149 @@ internal sealed class InventoryTransactionHandler {
             }
         }
     }
+
+    private static bool EquipArmorFromLegacyUse(
+        Player player,
+        PlayerInventoryTrait inventory,
+        ItemUseInventoryTransaction transaction,
+        int legacyRequestId,
+        LegacySetSlot[]? legacySetItemSlots
+    ) {
+        if (legacyRequestId == 0 || legacySetItemSlots is null)
+            return false;
+
+        byte? requestedArmorSlot = null;
+        foreach (LegacySetSlot legacySlot in legacySetItemSlots) {
+            if (legacySlot.ContainerEnum != ContainerEnumName.Armor)
+                continue;
+            if (legacySlot.Slots.Length != 1 || requestedArmorSlot.HasValue)
+                return false;
+            requestedArmorSlot = legacySlot.Slots[0];
+        }
+
+        if (requestedArmorSlot is not byte armorSlot)
+            return false;
+
+        EntityArmorTrait? armor = player.GetTrait<EntityArmorTrait>();
+        InventoryAction[] actions = transaction.Actions.Actions;
+        if (armor is null || transaction.ActionType != ItemUseInventoryTransactionActionType.Destroy ||
+            transaction.Hand != HandSlot.Mainhand || transaction.Slot < 0 ||
+            (uint)transaction.Slot >= inventory.Inventory.ContainerSize || actions.Length != 1 ||
+            armorSlot >= armor.Armor.ContainerSize || armor.Armor.GetItem(armorSlot) is not null)
+            return Reject();
+
+        InventoryAction action = actions[0];
+        ItemStack? item = inventory.Inventory.GetItem(transaction.Slot);
+        NetworkItemStackDescriptor empty = new();
+        bool valid = action.Source.Type == InventorySourceType.ContainerInventory &&
+            action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId &&
+            action.Slot == (uint)transaction.Slot && item?.Type.ArmorSlot == (ArmorSlot)armorSlot &&
+            inventory.MatchesItem(transaction.Slot, transaction.Item, out ItemStack? usedItem) &&
+            ReferenceEquals(item, usedItem) &&
+            MatchesStack(action.FromItem, item.ToNetworkStackDescriptor()) &&
+            MatchesStack(action.ToItem, empty) &&
+            transaction.Item.Id == item.Type.NetworkId && transaction.Item.StackSize == item.StackSize;
+
+        if (!valid || !armor.Equip(inventory, transaction.Slot))
+            return Reject();
+
+        ItemStack? equipped = armor.Armor.GetItem(armorSlot);
+        player.Network.SendPacket(player, new ItemStackResponsePacket {
+            Responses = [new ItemStackResponseInfo {
+                ClientRequestId = legacyRequestId,
+                Result = ItemStackNetResult.Success,
+                Containers = [
+                    new ItemStackResponseContainerInfo {
+                        ContainerName = inventory.Inventory.GetFullContainerName(),
+                        Slots = [new ItemStackResponseSlotInfo {
+                            RequestedSlot = checked((byte)transaction.Slot),
+                            Slot = checked((byte)inventory.Inventory.GetNetworkSlot(transaction.Slot)),
+                            Amount = checked((byte)(inventory.Inventory.GetItem(transaction.Slot)?.StackSize ?? 0)),
+                            ItemStackNetId = inventory.Inventory.GetItem(transaction.Slot)?.NetId
+                        }]
+                    },
+                    new ItemStackResponseContainerInfo {
+                        ContainerName = armor.Armor.GetFullContainerName(),
+                        Slots = [new ItemStackResponseSlotInfo {
+                            RequestedSlot = armorSlot,
+                            Slot = checked((byte)armor.Armor.GetNetworkSlot(armorSlot)),
+                            Amount = checked((byte)(equipped?.StackSize ?? 0)),
+                            ItemStackNetId = equipped?.NetId
+                        }]
+                    }
+                ]
+            }]
+        });
+        return true;
+
+        bool Reject() {
+            player.Network.SendPacket(player, new ItemStackResponsePacket {
+                Responses = [new ItemStackResponseInfo {
+                    ClientRequestId = legacyRequestId,
+                    Result = ItemStackNetResult.Error
+                }]
+            });
+            inventory.Inventory.Update();
+            armor?.Armor.Update();
+            return true;
+        }
+    }
+
+    private static bool EquipArmor(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions) {
+        if (!actions.Any(static action => action.Source.ContainerId == (sbyte)ContainerId.Armor))
+            return false;
+
+        EntityArmorTrait? armor = player.GetTrait<EntityArmorTrait>();
+        InventoryAction? inventoryAction = null;
+        InventoryAction? armorAction = null;
+        bool valid = armor is not null && actions.Length == 2;
+        foreach (InventoryAction action in actions) {
+            if (action.Source.Type != InventorySourceType.ContainerInventory) {
+                valid = false;
+                continue;
+            }
+
+            if (action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId && inventoryAction is null)
+                inventoryAction = action;
+            else if (action.Source.ContainerId == (sbyte)ContainerId.Armor && armorAction is null)
+                armorAction = action;
+            else
+                valid = false;
+        }
+
+        valid = valid && inventoryAction is not null && armorAction is not null &&
+            inventoryAction.Slot < inventory.Inventory.ContainerSize &&
+            armorAction.Slot < armor!.Armor.ContainerSize;
+
+        if (valid) {
+            int inventorySlot = (int)inventoryAction!.Slot;
+            int armorSlot = (int)armorAction!.Slot;
+            ItemStack? item = inventory.Inventory.GetItem(inventorySlot);
+            ItemStack? equipped = armor!.Armor.GetItem(armorSlot);
+            NetworkItemStackDescriptor empty = new();
+
+            valid = item?.Type.ArmorSlot == (ArmorSlot)armorSlot &&
+                MatchesStack(inventoryAction.FromItem, item?.ToNetworkStackDescriptor() ?? empty) &&
+                MatchesStack(inventoryAction.ToItem, equipped?.ToNetworkStackDescriptor() ?? empty) &&
+                MatchesStack(armorAction.FromItem, equipped?.ToNetworkStackDescriptor() ?? empty) &&
+                MatchesStack(armorAction.ToItem, item?.ToNetworkStackDescriptor() ?? empty);
+
+            if (valid)
+                valid = armor.Equip(inventory, inventorySlot);
+        }
+
+        if (!valid) {
+            inventory.Inventory.Update();
+            armor?.Armor.Update();
+        }
+
+        return true;
+    }
+
+    private static bool MatchesStack(NetworkItemStackDescriptor actual, NetworkItemStackDescriptor expected) =>
+        actual.Id == expected.Id && actual.StackSize == expected.StackSize &&
+        actual.AuxValue == expected.AuxValue && actual.BlockRuntimeId == expected.BlockRuntimeId &&
+        actual.UserData == expected.UserData;
 
     private static void DropWorldItem(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions, int legacyRequestId) {
         InventoryAction? worldAction = null;

@@ -64,7 +64,11 @@ internal sealed class PlayerAuthInputHandler {
         if (packet.InputMode is >= InputMode.Mouse and < InputMode.Count)
             player.InputMode = packet.InputMode;
         if (inputs[(int)PlayerAuthInputData.PerformItemInteraction] && packet.ItemUseTransaction is { } interaction)
-            player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(interaction.ItemUseTransaction, interaction.LegacyRequestId);
+            player.GetTrait<PlayerInventoryTrait>()?.QueueTransaction(
+                interaction.ItemUseTransaction,
+                interaction.LegacyRequestId,
+                interaction.LegacySetItemSlots
+            );
 
         float deltaX = packet.Position.X - player.Position.X;
         float feetY = packet.Position.Y - player.HeadOffset;

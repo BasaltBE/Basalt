@@ -5,6 +5,7 @@ using BasaltBE.Basalt.Events.Containers;
 using BasaltBE.Basalt.Events.Types;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
+using BasaltBE.Basalt.Items.Types;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -47,7 +48,9 @@ internal sealed class ItemStackRequestHandler {
         ItemStackRequestData request,
         int? mineBlockNetId,
         bool blockDestroyed
-    ) => ProcessRequest(player, request, mineBlockNetId, blockDestroyed, out _);
+    ) {
+        return ProcessRequest(player, request, mineBlockNetId, blockDestroyed, out _);
+    }
 
     private static ItemStackResponseInfo ProcessRequest(
         Player player,
@@ -73,6 +76,8 @@ internal sealed class ItemStackRequestHandler {
             if (response.Result != ItemStackNetResult.Success) {
                 inventory.Inventory.Update();
                 inventory.Cursor.Update();
+                if (TouchesArmor(request))
+                    inventory.Entity.GetTrait<EntityArmorTrait>()?.Armor.Update();
             }
 
             return response;
@@ -151,6 +156,16 @@ internal sealed class ItemStackRequestHandler {
                 return ErrorResponse(request.ClientRequestId);
             }
 
+            EntityArmorTrait? armor = inventoryTrait?.Entity.GetTrait<EntityArmorTrait>();
+            foreach (SlotKey key in state.ChangedSlots) {
+                if (!ReferenceEquals(key.Container, armor?.Armor) || state.Staged[key] is not { } item)
+                    continue;
+                if (item.Type.ArmorSlot != (ArmorSlot)key.Slot) {
+                    failureReason = "item does not fit armor slot";
+                    return ErrorResponse(request.ClientRequestId);
+                }
+            }
+
             if (inventoryTrait?.Entity is Player actor && actor.Network.Server.Events.HasSubscribers<ContainerTransactionEvent>()) {
                 int changeCount = state.ChangedSlots.Count;
                 if (state.CreatedOutput is { } output && state.ChangedSlotSet.Contains(new SlotKey(output, 0)))
@@ -168,10 +183,12 @@ internal sealed class ItemStackRequestHandler {
                     return ErrorResponse(request.ClientRequestId);
             }
 
+            bool armorChanged = false;
             foreach (SlotKey key in state.ChangedSlots) {
                 if (ReferenceEquals(key.Container, state.CreatedOutput))
                     continue;
                 key.Container.SetItem(key.Slot, state.Staged[key]);
+                armorChanged |= ReferenceEquals(key.Container, armor?.Armor);
                 inventoryTrait?.RememberClientRequestNetId(
                     key.Container,
                     key.Slot,
@@ -179,6 +196,9 @@ internal sealed class ItemStackRequestHandler {
                     state.Staged[key]
                 );
             }
+
+            if (armorChanged)
+                armor?.SyncEquipment();
 
             if (inventoryTrait?.Entity is Player player) {
                 foreach (PendingDrop drop in state.DroppedItems)
@@ -450,11 +470,11 @@ internal sealed class ItemStackRequestHandler {
             return false;
         }
         if (!TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem)) {
-            state.FailureReason = $"invalid source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}]";
+            state.FailureReason ??= $"invalid source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}]";
             return false;
         }
         if (!TryGetItem(state, destinationInfo, out SlotKey destinationKey, out ItemStack? destinationItem)) {
-            state.FailureReason = $"invalid destination slot {destinationInfo.ContainerName.ContainerName}[{destinationInfo.Slot}]";
+            state.FailureReason ??= $"invalid destination slot {destinationInfo.ContainerName.ContainerName}[{destinationInfo.Slot}]";
             return false;
         }
 
@@ -647,9 +667,10 @@ internal sealed class ItemStackRequestHandler {
         key = new SlotKey(container, container.GetLocalSlot(info.Slot));
         if (!state.Staged.TryGetValue(key, out item)) {
             item = container.GetItem(key.Slot);
-            if (!ReferenceEquals(container, state.CreatedOutput) &&
-                (item?.NetId ?? 0) != info.NetIdVariant &&
+            if (item is not null && !ReferenceEquals(container, state.CreatedOutput) &&
+                item.NetId != info.NetIdVariant &&
                 !(state.InventoryTrait?.MatchesClientRequestNetId(container, key.Slot, info.NetIdVariant, item) ?? false)) {
+                state.FailureReason = $"stack ID mismatch in {info.ContainerName.ContainerName}[{info.Slot}]: client: {info.NetIdVariant}, server: {item.NetId}";
                 return false;
             }
             item = item?.Clone();
@@ -659,6 +680,7 @@ internal sealed class ItemStackRequestHandler {
 
         return ReferenceEquals(container, state.CreatedOutput) ||
             state.Recipe is not null && IsCraftSource(state, container) ||
+            item is null ||
             (item?.NetId ?? 0) == info.NetIdVariant ||
             state.StagedClientRequestNetIds.TryGetValue(key, out int clientRequestNetId) &&
             clientRequestNetId == info.NetIdVariant;
@@ -694,6 +716,7 @@ internal sealed class ItemStackRequestHandler {
         container = name.ContainerName switch {
             ContainerEnumName.Inventory or ContainerEnumName.Hotbar or ContainerEnumName.CombinedHotbarAndInventory => state.Inventory,
             ContainerEnumName.Cursor => state.Cursor,
+            ContainerEnumName.Armor => state.InventoryTrait?.Entity.GetTrait<EntityArmorTrait>()?.Armor,
             _ => null
         };
         return container is not null;
@@ -714,6 +737,27 @@ internal sealed class ItemStackRequestHandler {
         Result = ItemStackNetResult.Error,
         ClientRequestId = requestId
     };
+
+    private static bool TouchesArmor(ItemStackRequestData request) {
+        foreach (ItemStackRequestActionData action in request.Actions) {
+            bool touchesArmor = action switch {
+                TakeActionData take => IsArmorSlot(take.Source) || IsArmorSlot(take.Destination),
+                PlaceActionData place => IsArmorSlot(place.Source) || IsArmorSlot(place.Destination),
+                SwapActionData swap => IsArmorSlot(swap.Source) || IsArmorSlot(swap.Destination),
+                DropActionData drop => IsArmorSlot(drop.Source),
+                DestroyActionData destroy => IsArmorSlot(destroy.Source),
+                ConsumeActionData consume => IsArmorSlot(consume.Source),
+                _ => false
+            };
+            if (touchesArmor)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsArmorSlot(ItemStackSlotInfoData slot) =>
+        slot.ContainerName.ContainerName == ContainerEnumName.Armor;
 
     private static bool IsCraftSource(RequestState state, Container container) {
         if (state.CraftSources is null)

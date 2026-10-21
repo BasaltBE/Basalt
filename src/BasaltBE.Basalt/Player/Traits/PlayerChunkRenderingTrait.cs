@@ -163,6 +163,8 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         Abilities = abilities,
                         BuildPlatform = (BuildPlatform)other.DeviceOS
                     });
+                    if (other.GetTrait<EntityArmorTrait>() is { } armor)
+                        send(armor.CreateEquipmentPacket());
                     send(new UpdateAbilitiesPacket { Data = abilities });
                     send(new SetActorDataPacket {
                         ActorRuntimeId = other.RuntimeId,

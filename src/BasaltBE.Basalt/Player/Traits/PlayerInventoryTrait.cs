@@ -12,7 +12,11 @@ namespace BasaltBE.Basalt.Entities.Traits;
 [EntityTraitAppliesTo(Identifiers = ["minecraft:player"])]
 public sealed class PlayerInventoryTrait : EntityTrait {
     private readonly Dictionary<(Container Container, int Slot), SlotPrediction> slotPredictions = [];
-    private readonly ConcurrentQueue<(InventoryTransactionData Transaction, int LegacyRequestId)> transactions = new();
+    private readonly ConcurrentQueue<(
+        InventoryTransactionData Transaction,
+        int LegacyRequestId,
+        LegacySetSlot[]? LegacySetItemSlots
+    )> transactions = new();
     private int pendingTransactions;
 
     public readonly EntityContainer Inventory;
@@ -20,12 +24,16 @@ public sealed class PlayerInventoryTrait : EntityTrait {
     public readonly EntityContainer CraftingGrid;
     public byte SelectedSlot;
 
-    internal void QueueTransaction(InventoryTransactionData transaction, int legacyRequestId) {
+    internal void QueueTransaction(
+        InventoryTransactionData transaction,
+        int legacyRequestId,
+        LegacySetSlot[]? legacySetItemSlots = null
+    ) {
         if (Interlocked.Increment(ref pendingTransactions) > 64) {
             Interlocked.Decrement(ref pendingTransactions);
             return;
         }
-        transactions.Enqueue((transaction, legacyRequestId));
+        transactions.Enqueue((transaction, legacyRequestId, legacySetItemSlots));
     }
 
     public override void Tick() {
@@ -33,7 +41,12 @@ public sealed class PlayerInventoryTrait : EntityTrait {
         for (int i = 0; i < 64 && transactions.TryDequeue(out var pending); i++) {
             Interlocked.Decrement(ref pendingTransactions);
             try {
-                InventoryTransactionHandler.ProcessTransaction(player, pending.Transaction, pending.LegacyRequestId);
+                InventoryTransactionHandler.ProcessTransaction(
+                    player,
+                    pending.Transaction,
+                    pending.LegacyRequestId,
+                    pending.LegacySetItemSlots
+                );
             }
             catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 player.Network.RemovePlayer(player.Peer);
@@ -49,7 +62,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
 
     internal bool MatchesItem(int slot, NetworkItemStackDescriptor descriptor, out ItemStack? item) {
         item = null;
-        if ((uint)slot >= 9)
+        if ((uint)slot >= Inventory.ContainerSize)
             return false;
 
         item = Inventory.GetItem(slot);

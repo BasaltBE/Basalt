@@ -2,6 +2,7 @@ using System.Reflection;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Nbt.Types;
+using ArmorSlot = BasaltBE.Basalt.Items.Types.ArmorSlot;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
@@ -154,6 +155,7 @@ public static class ItemPalette {
             };
 
             type.MaxDurability = GetMaxDurability(type);
+            ConfigureArmor(type);
             type.AttackDurabilityDamage = type.Tags.Any(static tag =>
                 tag is "minecraft:is_sword" or "minecraft:is_spear" or "minecraft:is_trident") ? 1 :
                 type.Tags.Any(static tag => tag is
@@ -250,4 +252,60 @@ public static class ItemPalette {
 
         return 0;
     }
+
+    static void ConfigureArmor(ItemType type) {
+        if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:wearable") is CompoundTag wearable) {
+            type.ArmorSlot = wearable.Get<StringTag>("slot")?.Value switch {
+                "slot.armor.head" => ArmorSlot.Head,
+                "slot.armor.chest" => ArmorSlot.Chest,
+                "slot.armor.legs" => ArmorSlot.Legs,
+                "slot.armor.feet" => ArmorSlot.Feet,
+                _ => ReadWearableSlot(wearable)
+            };
+            type.ArmorProtection = wearable.Get<IntTag>("protection")?.Value ?? 0;
+            if (type.ArmorSlot.HasValue)
+                return;
+        }
+
+        if (!type.Tags.Contains("minecraft:is_armor"))
+            return;
+
+        ReadOnlySpan<char> identifier = type.Identifier.AsSpan("minecraft:".Length);
+        type.ArmorSlot = identifier.EndsWith("_helmet") ? ArmorSlot.Head :
+            identifier.EndsWith("_chestplate") || identifier.SequenceEqual("elytra") ? ArmorSlot.Chest :
+            identifier.EndsWith("_leggings") ? ArmorSlot.Legs :
+            identifier.EndsWith("_boots") ? ArmorSlot.Feet : null;
+        if (type.ArmorSlot is not ArmorSlot slot)
+            return;
+
+        if (identifier.SequenceEqual("turtle_helmet")) {
+            type.ArmorProtection = 2;
+            return;
+        }
+
+        int materialProtection = type.Tags.Contains("minecraft:leather_tier") ? 0 :
+            type.Tags.Contains("minecraft:chainmail_tier") ? 1 :
+            type.Tags.Contains("minecraft:iron_tier") ? 2 :
+            type.Tags.Contains("minecraft:golden_tier") ? 3 :
+            type.Tags.Contains("minecraft:diamond_tier") ? 4 :
+            type.Tags.Contains("minecraft:netherite_tier") ? 5 :
+            type.Tags.Contains("minecraft:copper_tier") ? 6 : -1;
+        type.ArmorProtection = materialProtection switch {
+            0 => slot switch { ArmorSlot.Head => 1, ArmorSlot.Chest => 3, ArmorSlot.Legs => 2, _ => 1 },
+            1 => slot switch { ArmorSlot.Head => 2, ArmorSlot.Chest => 5, ArmorSlot.Legs => 4, _ => 1 },
+            2 => slot switch { ArmorSlot.Head => 2, ArmorSlot.Chest => 6, ArmorSlot.Legs => 5, _ => 2 },
+            3 => slot switch { ArmorSlot.Head => 2, ArmorSlot.Chest => 5, ArmorSlot.Legs => 3, _ => 1 },
+            4 or 5 => slot switch { ArmorSlot.Head => 3, ArmorSlot.Chest => 8, ArmorSlot.Legs => 6, _ => 3 },
+            6 => slot switch { ArmorSlot.Head => 2, ArmorSlot.Chest => 5, ArmorSlot.Legs => 4, _ => 1 },
+            _ => 0
+        };
+    }
+
+    static ArmorSlot? ReadWearableSlot(CompoundTag wearable) => wearable.Get<IntTag>("slot")?.Value switch {
+        0 => ArmorSlot.Head,
+        1 => ArmorSlot.Chest,
+        2 => ArmorSlot.Legs,
+        3 => ArmorSlot.Feet,
+        _ => null
+    };
 }

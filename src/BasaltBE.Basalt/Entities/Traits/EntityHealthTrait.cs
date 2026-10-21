@@ -55,7 +55,8 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             Entity.Attributes.Get(AttributeName) is not { } health)
             return false;
 
-        float damage = Math.Min(amount, health.Current - health.Minimum);
+        float damage = Entity.GetTrait<EntityArmorTrait>()?.ReduceDamage(amount, cause) ?? amount;
+        damage = Math.Min(damage, health.Current - health.Minimum);
         if (damage <= 0)
             return false;
 
