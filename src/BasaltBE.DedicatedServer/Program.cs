@@ -59,6 +59,7 @@ internal static class Program {
             BlockPalette.RegisterTrait<CraftingTableTrait>();
             BlockPalette.RegisterTrait<FenceTrait>();
             BlockPalette.RegisterTrait<FenceGateTrait>();
+            BlockPalette.RegisterTrait<PaneConnectionTrait>();
             BlockPalette.RegisterTrait<StairShapeTrait>("minecraft:cornerable_stairs");
 
             PermissionStore permissions = new();

@@ -18,8 +18,18 @@ public static class BlockPalette {
     static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
     static readonly Dictionary<(string Identifier, string Half), BlockPermutation> DoubleSlabs = BuildDoubleSlabs();
     static readonly Dictionary<string, string> StrippedBlocks = BuildStrippedBlocks();
+    static readonly string[] ConnectionStates = [
+        "minecraft:connection_east",
+        "minecraft:connection_north",
+        "minecraft:connection_south",
+        "minecraft:connection_west"
+    ];
+    static readonly HashSet<string> PaneIdentifiers = BuildIdentifiers(ConnectionStates, "_pane");
+    static readonly HashSet<string> BarIdentifiers = BuildIdentifiers(ConnectionStates, "_bars");
+    static readonly HashSet<string> GlassIdentifiers = BuildIdentifiers([], "glass");
+    static readonly HashSet<string> PaneAndBarIdentifiers = [.. PaneIdentifiers, .. BarIdentifiers];
     static readonly HashSet<string> FenceIdentifiers = BuildIdentifiers(
-        ["minecraft:connection_east", "minecraft:connection_north", "minecraft:connection_south", "minecraft:connection_west"],
+        ConnectionStates,
         "fence"
     );
     static readonly HashSet<string> FenceGateIdentifiers = BuildIdentifiers(
@@ -29,7 +39,8 @@ public static class BlockPalette {
     static readonly HashSet<string> WallIdentifiers = BuildIdentifiers(
         ["wall_connection_type_east", "wall_connection_type_north", "wall_connection_type_south", "wall_connection_type_west"]
     );
-    static readonly Dictionary<(string Identifier, byte Connections), BlockPermutation> FencePermutations = BuildFencePermutations();
+    static readonly Dictionary<(string Identifier, byte Connections), BlockPermutation> FencePermutations = BuildConnectionPermutations(FenceIdentifiers);
+    static readonly Dictionary<(string Identifier, byte Connections), BlockPermutation> PanePermutations = BuildConnectionPermutations(PaneAndBarIdentifiers);
     static readonly Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> FenceGatePermutations = BuildFenceGatePermutations();
     static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
     static readonly HashSet<Type> RegisteredTraits = [];
@@ -55,6 +66,13 @@ public static class BlockPalette {
 
     internal static bool IsWall(string identifier) => WallIdentifiers.Contains(identifier);
 
+    internal static bool PaneConnects(string neighborIdentifier) {
+        if (PaneAndBarIdentifiers.Contains(neighborIdentifier) || GlassIdentifiers.Contains(neighborIdentifier))
+            return true;
+
+        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 15;
+    }
+
     internal static BlockPermutation? FindStripped(BlockPermutation block) =>
         StrippedBlocks.TryGetValue(block.Identifier, out string? strippedIdentifier)
             ? Find(strippedIdentifier, block.State) ?? FindDefaultPermutation(strippedIdentifier)
@@ -62,6 +80,9 @@ public static class BlockPalette {
 
     internal static BlockPermutation? FindFencePermutation(string identifier, byte connections) =>
         FencePermutations.GetValueOrDefault((identifier, connections));
+
+    internal static BlockPermutation? FindPanePermutation(string identifier, byte connections) =>
+        PanePermutations.GetValueOrDefault((identifier, connections));
 
     internal static BlockPermutation? FindFenceGatePermutation(string identifier, string direction, bool open, bool inWall) =>
         FenceGatePermutations.GetValueOrDefault((identifier, direction, open, inWall));
@@ -264,10 +285,10 @@ public static class BlockPalette {
         return identifiers;
     }
 
-    static Dictionary<(string Identifier, byte Connections), BlockPermutation> BuildFencePermutations() {
+    static Dictionary<(string Identifier, byte Connections), BlockPermutation> BuildConnectionPermutations(HashSet<string> identifiers) {
         Dictionary<(string Identifier, byte Connections), BlockPermutation> permutations = [];
         foreach (BlockPermutation permutation in Permutations) {
-            if (!FenceIdentifiers.Contains(permutation.Identifier))
+            if (!identifiers.Contains(permutation.Identifier))
                 continue;
 
             byte connections = 0;
