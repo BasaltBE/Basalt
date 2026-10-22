@@ -9,4 +9,5 @@ public sealed class FloatTag : Tag {
     public override TagType Type => TagType.Float;
     internal override void Read(ref BinaryReader reader, Options options) => Value = reader.ReadF32(options.ByteOrder == ByteOrder.LittleEndian);
     internal override void Write(ref BinaryWriter writer, Options options) => writer.WriteF32(Value, options.ByteOrder == ByteOrder.LittleEndian);
+    internal override int GetPayloadSize(Options options) => sizeof(float);
 }

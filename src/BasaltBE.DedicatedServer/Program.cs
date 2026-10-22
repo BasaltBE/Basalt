@@ -3,6 +3,7 @@ using BasaltBE.Basalt;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Blocks.Traits;
+using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Commands;
 using BasaltBE.Basalt.Commands.Types;
 using BasaltBE.Basalt.Commands.Vanilla;
@@ -66,6 +67,11 @@ internal static class Program {
             using PermissionFile permissionFile = new(permissions, "permissions.json");
             using Server server = new(properties, permissions: permissions);
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
+            server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
+            foreach (BlockType type in BlockPalette.Types) {
+                if (type.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal))
+                    server.BlockActors.Register(type.Identifier, static context => new ShulkerBoxBlockActor(context));
+            }
 
             #endregion
 

@@ -421,6 +421,21 @@ internal sealed class ItemStackRequestHandler {
             slotOffset: 50
         );
         ItemStack result = new(recipe.Result, (ushort)(recipe.ResultCount * state.CraftCount), recipe.ResultMetadata);
+        if (recipe.Result.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal) &&
+            state.CraftSources is not null && state.CraftConsumption is { } consumption) {
+            for (int index = 0; index < consumption.Length; index++) {
+                if (consumption[index] == 0)
+                    continue;
+
+                SlotKey ingredientKey = GetCraftSourceKey(state, index);
+                if (ingredientKey.Container.GetItem(ingredientKey.Slot) is not { } ingredient ||
+                    !ingredient.Type.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal))
+                    continue;
+
+                result.Nbt = ingredient.Clone().Nbt;
+                break;
+            }
+        }
         state.CreatedOutput = output;
         SetItem(state, new SlotKey(output, 0), result, ContainerEnumName.CreatedOutput, 0);
         return true;
@@ -514,6 +529,10 @@ internal sealed class ItemStackRequestHandler {
             state.FailureReason = "source stack is empty or smaller than the transfer";
             return false;
         }
+        if (!destinationKey.Container.CanContain(sourceItem)) {
+            state.FailureReason = $"{sourceItem.Type.Identifier} is not allowed in {destinationKey.Container.ContainerName}";
+            return false;
+        }
 
         if (destinationItem is null) {
             ItemStack moved = sourceItem.Clone(amount, cloneNbt: amount != sourceItem.StackSize);
@@ -572,6 +591,12 @@ internal sealed class ItemStackRequestHandler {
 
         if (sourceKey == destinationKey)
             return true;
+
+        if ((sourceItem is not null && !destinationKey.Container.CanContain(sourceItem)) ||
+            (destinationItem is not null && !sourceKey.Container.CanContain(destinationItem))) {
+            state.FailureReason = "an item is not allowed in the destination container";
+            return false;
+        }
 
         if (state.Recipe is not null &&
             (IsCraftSource(state, sourceKey.Container) || IsCraftSource(state, destinationKey.Container)))

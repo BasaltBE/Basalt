@@ -423,17 +423,16 @@ internal sealed class InventoryTransactionHandler {
 
         ItemStack? item = null;
         bool valid = !invalidAction && actions.Length == 2 && worldAction is not null && inventoryAction is not null &&
-            inventoryAction.Slot < 9 &&
+            inventoryAction.Slot < inventory.Inventory.ContainerSize &&
             inventory.MatchesItem((int)inventoryAction.Slot, inventoryAction.FromItem, out item) && item is not null;
         int amount = valid ? inventoryAction!.FromItem.StackSize - inventoryAction.ToItem.StackSize : 0;
         if (valid) {
             NetworkItemStackDescriptor from = inventoryAction!.FromItem;
+            NetworkItemStackDescriptor remaining = inventoryAction.ToItem;
             NetworkItemStackDescriptor dropped = worldAction!.ToItem;
             valid = amount > 0 && amount <= item!.StackSize &&
-                SameItem(from, item.ToNetworkStackDescriptor()) &&
-                (inventoryAction.ToItem.StackSize == 0 || SameItem(from, inventoryAction.ToItem)) &&
-                dropped.Id == from.Id && dropped.AuxValue == from.AuxValue && dropped.StackSize == amount &&
-                dropped.BlockRuntimeId == from.BlockRuntimeId && dropped.UserData == from.UserData;
+                (remaining.StackSize == 0 || remaining.Id == from.Id && remaining.AuxValue == from.AuxValue) &&
+                dropped.Id == from.Id && dropped.AuxValue == from.AuxValue && dropped.StackSize == amount;
         }
 
         if (!valid) {
@@ -493,10 +492,6 @@ internal sealed class InventoryTransactionHandler {
             });
         }
     }
-
-    private static bool SameItem(NetworkItemStackDescriptor first, NetworkItemStackDescriptor second) =>
-        first.Id == second.Id && first.AuxValue == second.AuxValue &&
-        first.BlockRuntimeId == second.BlockRuntimeId && first.UserData == second.UserData;
 
     private static bool UseItemOnBlock(Player player, PlayerInventoryTrait inventory, ItemStack? item, ItemUseInventoryTransaction use) {
         PlayerChunkRenderingTrait? rendering = player.GetTrait<PlayerChunkRenderingTrait>();
@@ -641,6 +636,8 @@ internal sealed class InventoryTransactionHandler {
                 direction
             ) ?? permutation;
         }
+        if (permutation.State.Values.ContainsKey("facing_direction"))
+            permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)use.Face) ?? permutation;
 
         player.Dimension.RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation);
@@ -657,7 +654,7 @@ internal sealed class InventoryTransactionHandler {
             SendBlockUpdate(player, x, y, z, 0, broadcast: true);
             player.Dimension.UpdateNeighbors(x, y, z);
         }
-        player.Dimension.PlaceBlockActor(x, y, z, permutation.Identifier)?.Update();
+        player.Dimension.PlaceBlockActor(x, y, z, permutation.Identifier, item, use.Face)?.Update();
         return true;
     }
 

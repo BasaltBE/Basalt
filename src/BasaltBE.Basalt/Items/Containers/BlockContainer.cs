@@ -1,3 +1,4 @@
+using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
 
@@ -13,8 +14,9 @@ public sealed class BlockContainer : Container {
         ContainerEnumName containerName = ContainerEnumName.LevelEntity,
         ContainerType type = ContainerType.Container,
         uint? dynamicId = null,
-        int slotOffset = 0
-    ) : base(size, containerId, containerName, type, dynamicId, slotOffset) {
+        int slotOffset = 0,
+        IReadOnlySet<ItemType>? bannedItems = null
+    ) : base(size, containerId, containerName, type, dynamicId, slotOffset, bannedItems) {
         ArgumentNullException.ThrowIfNull(position);
         Position = position;
     }

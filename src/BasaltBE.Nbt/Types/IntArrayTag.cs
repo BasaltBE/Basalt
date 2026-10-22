@@ -21,4 +21,11 @@ public sealed class IntArrayTag : Tag {
             else writer.WriteInt32(value, options.ByteOrder == ByteOrder.LittleEndian);
         }
     }
+
+    internal override int GetPayloadSize(Options options) {
+        int size = Nbt.GetLengthSize(Value.Length, options);
+        foreach (int value in Value)
+            size = checked(size + (options.VarInt ? Nbt.GetVarIntSize(value) : sizeof(int)));
+        return size;
+    }
 }

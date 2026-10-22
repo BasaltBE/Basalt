@@ -27,7 +27,8 @@ public sealed class ChestBlockActor : BlockActor {
 
     BlockContainer CreateContainer(BlockPos position, int size) {
         BlockContainer container = new(position, size);
-        WatchContainer(container);
+        container.FirstViewerOpened += OnFirstViewerOpened;
+        container.LastViewerClosed += OnLastViewerClosed;
         return container;
     }
 
@@ -45,26 +46,7 @@ public sealed class ChestBlockActor : BlockActor {
             PairLead = nbt.Get<ByteTag>("pairlead")?.Value == 1;
         }
 
-        if (nbt.Get<ListTag>("Items") is not { } items)
-            return;
-
-        foreach (Tag entry in items.Value) {
-            if (entry is not CompoundTag item ||
-                !item.TryGet("Slot", out ByteTag? slot) ||
-                !item.TryGet("Name", out StringTag? nameTag) ||
-                !item.TryGet("Count", out ByteTag? count) ||
-                slot!.Value >= Container.ContainerSize ||
-                ItemPalette.Find(nameTag!.Value) is not { } type)
-                continue;
-
-            ushort amount = count!.Value;
-            if (amount > 0) {
-                uint metadata = item.Get<ShortTag>("Damage") is { } damage
-                    ? unchecked((ushort)damage.Value)
-                    : 0U;
-                Container.LoadItem(slot.Value, new ItemStack(type, amount, metadata, item.Get<CompoundTag>("tag")));
-            }
-        }
+        ReadItems(nbt, Container);
     }
 
     public override void OnWrite(CompoundTag nbt) {
@@ -94,8 +76,8 @@ public sealed class ChestBlockActor : BlockActor {
             nbt.Remove("pairlead");
         }
 
-        ListTag items = new() { ElementType = TagType.Compound };
         int firstSlot = PairPosition is not null && !PairLead ? 27 : 0;
+        ListTag items = new() { ElementType = TagType.Compound };
         for (int slot = 0; slot < 27; slot++) {
             if (Container.GetItem(firstSlot + slot) is not { } stack)
                 continue;
@@ -112,16 +94,40 @@ public sealed class ChestBlockActor : BlockActor {
         nbt.Add("Items", items);
     }
 
-    public override void OnPlace() => PairWithNeighbor();
+    public override void OnPlace(ItemStack? item, byte face) {
+        CompoundTag? blockEntity = item?.Nbt?.Get<CompoundTag>("BlockEntityTag") ?? item?.Nbt;
+        if (blockEntity is not null)
+            OnRead(blockEntity);
+        PairWithNeighbor();
+    }
+
+    public override CompoundTag CreateItemData() {
+        CompoundTag itemData = base.CreateItemData();
+        itemData.Remove("pairx");
+        itemData.Remove("pairz");
+        itemData.Remove("pairlead");
+        return itemData;
+    }
 
     public override void OnInteract(Player player) {
         AttachPairedContainer();
         Container.Open(player);
     }
 
-    void Opened() => SendOpenState(true);
+    public override void OnBreak(Player player) {
+        int firstSlot = PairPosition is not null && !PairLead ? 27 : 0;
+        for (int slot = firstSlot; slot < firstSlot + 27; slot++) {
+            if (Container.GetItem(slot) is not { } item)
+                continue;
 
-    void Closed() => SendOpenState(false);
+            ItemEntity drop = new(item.Clone(), player, Position.X, Position.Y, Position.Z);
+            drop.Spawn(Dimension);
+        }
+    }
+
+    void OnFirstViewerOpened() => SendOpenState(true);
+
+    void OnLastViewerClosed() => SendOpenState(false);
 
     void SendOpenState(bool open) {
         BlockEventPacket packet = new() {
@@ -230,8 +236,4 @@ public sealed class ChestBlockActor : BlockActor {
         return result;
     }
 
-    void WatchContainer(BlockContainer container) {
-        container.FirstViewerOpened += Opened;
-        container.LastViewerClosed += Closed;
-    }
 }

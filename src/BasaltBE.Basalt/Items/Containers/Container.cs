@@ -12,6 +12,7 @@ public class Container {
     private readonly ItemStack?[] items;
     private readonly HashSet<Player> viewers = [];
     private readonly HashSet<Player> persistentViewers = [];
+    private readonly IReadOnlySet<ItemType>? bannedItems;
 
     public readonly ContainerId ContainerId;
     public readonly ContainerEnumName ContainerName;
@@ -28,7 +29,8 @@ public class Container {
         ContainerEnumName containerName = ContainerEnumName.Inventory,
         ContainerType type = ContainerType.Container,
         uint? dynamicId = null,
-        int slotOffset = 0
+        int slotOffset = 0,
+        IReadOnlySet<ItemType>? bannedItems = null
     ) {
         ArgumentOutOfRangeException.ThrowIfNegative(size);
         ArgumentOutOfRangeException.ThrowIfNegative(slotOffset);
@@ -38,6 +40,12 @@ public class Container {
         Type = type;
         DynamicId = dynamicId;
         SlotOffset = slotOffset;
+        this.bannedItems = bannedItems;
+    }
+
+    public bool CanContain(ItemStack item) {
+        ArgumentNullException.ThrowIfNull(item);
+        return bannedItems?.Contains(item.Type) != true;
     }
 
     public ItemStack? GetItem(int slot) {
@@ -63,6 +71,8 @@ public class Container {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
 
         lock (sync) {
+            if (item is not null && !CanContain(item))
+                throw new InvalidOperationException($"Container '{ContainerName}' does not accept '{item.Type.Identifier}'.");
             if (item is not null && item.Container is not null &&
                 (!ReferenceEquals(item.Container, this) || item.Slot != slot))
                 throw new InvalidOperationException("An item stack can only belong to one container slot.");
@@ -95,7 +105,7 @@ public class Container {
 
     public bool CanAddItem(ItemStack item) {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Type.MaxAmount <= 0)
+        if (item.Type.MaxAmount <= 0 || !CanContain(item))
             return false;
         int remaining = item.StackSize;
         lock (sync) {
@@ -112,7 +122,7 @@ public class Container {
 
     public ItemStack? AddItem(ItemStack item) {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Type.MaxAmount <= 0)
+        if (item.Type.MaxAmount <= 0 || !CanContain(item))
             return item;
         if (item.Container is not null)
             throw new InvalidOperationException("Remove an item stack from its current slot before adding it.");

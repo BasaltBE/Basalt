@@ -1,5 +1,6 @@
 using System.Numerics;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Enums;
@@ -400,6 +401,13 @@ internal sealed class PlayerAuthInputHandler {
         int y = position.Y;
         int z = position.Z;
         Chunk chunk = player.Dimension.GetChunk(x >> 4, z >> 4)!;
+        BlockActor? actor = player.Dimension.GetBlockActor(chunk, x & 15, y, z & 15);
+        ItemStack? actorDrop = null;
+        if (actor is not null) {
+            actor.OnBreak(player);
+            if (dropItems || actor.DropsInCreative)
+                actorDrop = actor.CreateDrop();
+        }
         player.Dimension.RemoveBlockActor(x, y, z);
         player.Dimension.SetPermutation(x, y, z, BlockStorage.Air);
 
@@ -448,7 +456,11 @@ internal sealed class PlayerAuthInputHandler {
 
         player.Dimension.UpdateNeighbors(x, y, z);
 
-        if (dropItems) {
+        if (actorDrop is not null) {
+            ItemEntity item = new(actorDrop, player, x, y, z);
+            item.Spawn(player.Dimension);
+        }
+        else if (dropItems) {
             ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);

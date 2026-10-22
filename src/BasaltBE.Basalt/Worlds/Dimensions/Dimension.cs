@@ -6,12 +6,14 @@ using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Items;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Logging;
 
 namespace BasaltBE.Basalt.Worlds.Dimensions;
 
@@ -466,7 +468,7 @@ public sealed class Dimension : IDisposable {
         return loaded;
     }
 
-    internal BlockActor? PlaceBlockActor(int x, int y, int z, string blockIdentifier) {
+    internal BlockActor? PlaceBlockActor(int x, int y, int z, string blockIdentifier, ItemStack? item, byte face) {
         Chunk chunk = GetOrCreateChunk(x >> 4, z >> 4);
         BlockActorContext context = new(
             this,
@@ -483,7 +485,18 @@ public sealed class Dimension : IDisposable {
         actor.Nbt.Add("x", new IntTag { Value = x });
         actor.Nbt.Add("y", new IntTag { Value = y });
         actor.Nbt.Add("z", new IntTag { Value = z });
-        actor.OnPlace();
+        if (item?.Nbt is { } itemNbt) {
+            Logger.Scoped("Network").Info(
+                $"Placing {blockIdentifier} with item tags ({string.Join(", ", itemNbt.Tags.Keys)})."
+            );
+        }
+        actor.OnPlace(item, face);
+        if (item?.Nbt is not null) {
+            CompoundTag itemData = actor.CreateItemData();
+            Logger.Scoped("Network").Info(
+                $"Placed {blockIdentifier} actor data tags ({string.Join(", ", itemData.Tags.Keys)})."
+            );
+        }
         chunk.SetBlockNbt(x & 15, y, z & 15, actor.Nbt);
         chunk.SetRuntimeActor(x & 15, y, z & 15, actor);
         return actor;

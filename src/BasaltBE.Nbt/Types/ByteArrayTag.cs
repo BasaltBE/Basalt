@@ -12,4 +12,6 @@ public sealed class ByteArrayTag : Tag {
         Nbt.WriteLength(ref writer, Value.Length, options);
         writer.WriteBytes(Value);
     }
+
+    internal override int GetPayloadSize(Options options) => checked(Nbt.GetLengthSize(Value.Length, options) + Value.Length);
 }

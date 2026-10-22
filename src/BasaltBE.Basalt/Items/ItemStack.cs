@@ -121,7 +121,8 @@ public sealed class ItemStack {
         if (Type.NetworkId == 0 || stackSize == 0)
             return new NetworkItemStackDescriptor();
 
-        using BinaryStream stream = BinaryStream.Rent(256);
+        int nbtSize = Nbt?.GetSize() ?? 0;
+        using BinaryStream stream = BinaryStream.Rent(sizeof(short) + (nbtSize == 0 ? 0 : sizeof(byte) + nbtSize) + sizeof(uint) * 2);
         BinaryWriter writer = stream.GetWriter();
         writer.WriteInt16(Nbt is null ? (short)0 : (short)-1, true);
         if (Nbt is CompoundTag tag) {
@@ -180,7 +181,7 @@ public sealed class ItemStack {
         if (tag is null)
             return null;
 
-        using BinaryStream stream = BinaryStream.Rent(256);
+        using BinaryStream stream = BinaryStream.Rent(tag.GetSize());
         BinaryWriter writer = stream.GetWriter();
         BasaltBE.Nbt.Nbt.Write(tag, ref writer);
         int offset = 0;
@@ -197,9 +198,10 @@ public sealed class ItemStack {
     }
 
     private static byte[] CloneNbtBytes(CompoundTag tag) {
-        using BinaryStream stream = BinaryStream.Rent(256);
+        using BinaryStream stream = BinaryStream.Rent(tag.GetSize());
         BinaryWriter writer = stream.GetWriter();
         BasaltBE.Nbt.Nbt.Write(tag, ref writer);
         return stream.Buffer.Span[..stream.Offset].ToArray();
     }
+
 }

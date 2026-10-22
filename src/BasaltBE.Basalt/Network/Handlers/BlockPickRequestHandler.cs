@@ -1,17 +1,17 @@
-using Basalt.Binary;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Logging;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
-using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Network.Handlers;
 
@@ -54,19 +54,15 @@ internal sealed class BlockPickRequestHandler {
             return;
 
         ItemStack item = new(type, checked((ushort)type.MaxAmount));
-        if (packet.WithData && player.Dimension.GetBlockActor(chunk, packet.Position.X & 15, packet.Position.Y, packet.Position.Z & 15) is { } actor) {
-            using BinaryStream stream = BinaryStream.Rent(256);
-            BinaryWriter writer = stream.GetWriter();
-            BasaltBE.Nbt.Nbt.Write(actor.Nbt, ref writer);
-            int offset = 0;
-            if (BasaltBE.Nbt.Nbt.Read(stream.Buffer.Span[..stream.Offset], ref offset) is CompoundTag pickedData) {
-                pickedData.Remove("id");
-                pickedData.Remove("x");
-                pickedData.Remove("y");
-                pickedData.Remove("z");
-                if (pickedData.Tags.Count > 0)
-                    item.Nbt = pickedData;
-            }
+        BlockActor? actor = player.Dimension.GetBlockActor(chunk, packet.Position.X & 15, packet.Position.Y, packet.Position.Z & 15);
+        if (packet.WithData && actor is not null) {
+            item.Nbt = actor.CreateItemData();
+            Logger.Scoped("Network").Info(
+                $"Block pick from {player.Username}: block {block.Identifier}, with data, actor tags ({string.Join(", ", item.Nbt.Tags.Keys)})."
+            );
+        }
+        else if (actor is not null) {
+            Logger.Scoped("Network").Info($"Block pick from {player.Username}: block {block.Identifier}, no actor data requested.");
         }
 
         if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
@@ -129,6 +125,7 @@ internal sealed class BlockPickRequestHandler {
                 SelectedSlot = inventory.SelectedSlot,
                 ContainerId = (byte)ContainerId.Inventory
             };
+            inventory.Inventory.Update();
             player.Network.SendPacket(player, equipment);
             player.Dimension.Broadcast(equipment, player, exclude: player);
         }

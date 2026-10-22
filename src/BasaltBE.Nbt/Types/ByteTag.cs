@@ -9,4 +9,5 @@ public sealed class ByteTag : Tag {
     public override TagType Type => TagType.Byte;
     internal override void Read(ref BinaryReader reader, Options options) => Value = reader.ReadUInt8();
     internal override void Write(ref BinaryWriter writer, Options options) => writer.WriteUInt8(Value);
+    internal override int GetPayloadSize(Options options) => sizeof(byte);
 }

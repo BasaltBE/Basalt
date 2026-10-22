@@ -21,4 +21,11 @@ public sealed class LongArrayTag : Tag {
             else writer.WriteInt64(value, options.ByteOrder == ByteOrder.LittleEndian);
         }
     }
+
+    internal override int GetPayloadSize(Options options) {
+        int size = Nbt.GetLengthSize(Value.Length, options);
+        foreach (long value in Value)
+            size = checked(size + (options.VarInt ? Nbt.GetVarIntSize(value) : sizeof(long)));
+        return size;
+    }
 }

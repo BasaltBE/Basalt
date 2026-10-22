@@ -15,4 +15,6 @@ public sealed class LongTag : Tag {
         if (options.VarInt) writer.WriteZigZong(Value);
         else writer.WriteInt64(Value, options.ByteOrder == ByteOrder.LittleEndian);
     }
+
+    internal override int GetPayloadSize(Options options) => options.VarInt ? Nbt.GetVarIntSize(Value) : sizeof(long);
 }

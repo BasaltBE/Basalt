@@ -4,3 +4,6 @@
 [x] Crafting Table
 [x] Fences
 [x] Fence Gates
+[x] Glass Panes
+[x] Barrel
+[x] Shulker Boxes

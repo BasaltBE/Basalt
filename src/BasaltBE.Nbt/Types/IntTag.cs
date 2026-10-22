@@ -15,4 +15,6 @@ public sealed class IntTag : Tag {
         if (options.VarInt) writer.WriteZigZag(Value);
         else writer.WriteInt32(Value, options.ByteOrder == ByteOrder.LittleEndian);
     }
+
+    internal override int GetPayloadSize(Options options) => options.VarInt ? Nbt.GetVarIntSize(Value) : sizeof(int);
 }

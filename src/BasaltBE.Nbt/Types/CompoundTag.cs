@@ -57,4 +57,11 @@ public sealed class CompoundTag : Tag {
 
         writer.WriteUInt8((byte)TagType.End);
     }
+
+    internal override int GetPayloadSize(Options options) {
+        int size = sizeof(byte);
+        foreach ((string name, Tag tag) in tags)
+            size = checked(size + sizeof(byte) + (options.HasName ? Nbt.GetStringSize(name, options) : 0) + tag.GetPayloadSize(options));
+        return size;
+    }
 }

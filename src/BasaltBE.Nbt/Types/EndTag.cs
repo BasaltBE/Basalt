@@ -8,4 +8,5 @@ public sealed class EndTag : Tag {
     public override TagType Type => TagType.End;
     internal override void Read(ref BinaryReader reader, Options options) { }
     internal override void Write(ref BinaryWriter writer, Options options) { }
+    internal override int GetPayloadSize(Options options) => 0;
 }

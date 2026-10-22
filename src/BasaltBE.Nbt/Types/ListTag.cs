@@ -34,4 +34,11 @@ public sealed class ListTag : Tag {
         foreach (Tag tag in Value)
             Nbt.Write(ref writer, tag, options);
     }
+
+    internal override int GetPayloadSize(Options options) {
+        int size = checked(sizeof(byte) + Nbt.GetLengthSize(Value.Count, options));
+        foreach (Tag tag in Value)
+            size = checked(size + tag.GetPayloadSize(options));
+        return size;
+    }
 }

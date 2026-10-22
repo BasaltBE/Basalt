@@ -9,4 +9,5 @@ public sealed class DoubleTag : Tag {
     public override TagType Type => TagType.Double;
     internal override void Read(ref BinaryReader reader, Options options) => Value = reader.ReadF64(options.ByteOrder == ByteOrder.LittleEndian);
     internal override void Write(ref BinaryWriter writer, Options options) => writer.WriteF64(Value, options.ByteOrder == ByteOrder.LittleEndian);
+    internal override int GetPayloadSize(Options options) => sizeof(double);
 }
