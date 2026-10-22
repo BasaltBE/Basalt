@@ -615,9 +615,17 @@ public sealed class Dimension : IDisposable {
         }
 
         EntityIndex.Collect(simulatedChunks, simulation);
+        var server = World?.Server;
         foreach (long key in simulatedChunks) {
-            if (!chunks.ContainsKey(key))
+            if (!chunks.TryGetValue(key, out Chunk? chunk))
                 Request((int)(key >> 32), (int)key);
+            else if (chunk?.blockActors is { } actors && server is not null) {
+                foreach ((int X, int Y, int Z) position in actors.Keys) {
+                    BlockPermutation permutation = chunk.GetPermutation(position.X, position.Y, position.Z);
+                    if (server.BlockActors.Ticks(permutation.Identifier))
+                        GetBlockActor(chunk, position.X, position.Y, position.Z)?.Tick();
+                }
+            }
         }
 
         foreach (Entity entity in simulation) {

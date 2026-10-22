@@ -4,20 +4,26 @@ namespace BasaltBE.Basalt.Blocks.BlockActors;
 
 public sealed class BlockActorRegistry {
     readonly Dictionary<string, Func<BlockActorContext, BlockActor>> factories = new(StringComparer.Ordinal);
+    readonly HashSet<string> ticking = new(StringComparer.Ordinal);
     bool frozen;
 
-    public void Register(string blockIdentifier, Func<BlockActorContext, BlockActor> factory) {
+    public void Register(string blockIdentifier, Func<BlockActorContext, BlockActor> factory, bool tick = false) {
         if (frozen)
             throw new InvalidOperationException("Block actor registrations are closed after the server starts.");
         ArgumentException.ThrowIfNullOrWhiteSpace(blockIdentifier);
         ArgumentNullException.ThrowIfNull(factory);
         factories[blockIdentifier] = factory;
+        if (tick)
+            ticking.Add(blockIdentifier);
+        else
+            ticking.Remove(blockIdentifier);
     }
 
     public bool Unregister(string blockIdentifier) {
         if (frozen)
             throw new InvalidOperationException("Block actor registrations are closed after the server starts.");
         ArgumentException.ThrowIfNullOrWhiteSpace(blockIdentifier);
+        ticking.Remove(blockIdentifier);
         return factories.Remove(blockIdentifier);
     }
 
@@ -27,4 +33,6 @@ public sealed class BlockActorRegistry {
         factories.TryGetValue(blockIdentifier, out Func<BlockActorContext, BlockActor>? factory)
             ? factory(context)
             : null;
+
+    internal bool Ticks(string blockIdentifier) => ticking.Contains(blockIdentifier);
 }

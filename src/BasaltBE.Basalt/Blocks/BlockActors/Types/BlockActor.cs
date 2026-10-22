@@ -25,6 +25,7 @@ public abstract class BlockActor(BlockActorContext context) {
     public virtual void OnInteract(Player player) { }
     public virtual void OnBreak(Player player) { }
     public virtual void OnRemove() { }
+    public virtual void Tick() { }
     public virtual bool DropsInCreative => false;
     public virtual ItemStack? CreateDrop() => null;
 

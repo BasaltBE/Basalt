@@ -13,6 +13,7 @@ public class Container {
     private readonly HashSet<Player> viewers = [];
     private readonly HashSet<Player> persistentViewers = [];
     private readonly IReadOnlySet<ItemType>? bannedItems;
+    private readonly ContainerEnumName[]? slotNames;
 
     public readonly ContainerId ContainerId;
     public readonly ContainerEnumName ContainerName;
@@ -20,6 +21,12 @@ public class Container {
     public readonly uint? DynamicId;
     public readonly int SlotOffset;
     public int ContainerSize => items.Length;
+    internal bool HasViewers {
+        get {
+            lock (sync)
+                return viewers.Count > 0;
+        }
+    }
     public event Action? FirstViewerOpened;
     public event Action? LastViewerClosed;
 
@@ -30,7 +37,8 @@ public class Container {
         ContainerType type = ContainerType.Container,
         uint? dynamicId = null,
         int slotOffset = 0,
-        IReadOnlySet<ItemType>? bannedItems = null
+        IReadOnlySet<ItemType>? bannedItems = null,
+        ContainerEnumName[]? slotNames = null
     ) {
         ArgumentOutOfRangeException.ThrowIfNegative(size);
         ArgumentOutOfRangeException.ThrowIfNegative(slotOffset);
@@ -41,6 +49,9 @@ public class Container {
         DynamicId = dynamicId;
         SlotOffset = slotOffset;
         this.bannedItems = bannedItems;
+        if (slotNames is not null && slotNames.Length != size)
+            throw new ArgumentException("Slot container names must match the container size.", nameof(slotNames));
+        this.slotNames = slotNames;
     }
 
     public bool CanContain(ItemStack item) {
@@ -271,12 +282,19 @@ public class Container {
 
     internal int GetNetworkSlot(int slot) => slot + SlotOffset;
 
+    internal ContainerEnumName GetContainerName(int slot) => slotNames?[slot] ?? ContainerName;
+
+    private FullContainerName GetFullContainerName(int slot) => new() {
+        ContainerName = GetContainerName(slot),
+        DynamicId = DynamicId
+    };
+
     private void SendSlot(Player[] recipients, int slot, ItemStack? item) {
         NetworkItemStackDescriptor descriptor = item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor();
         InventorySlotPacket packet = new() {
             ContainerId = unchecked((byte)(sbyte)(SlotOffset > 0 ? ContainerId.PlayerOnlyUi : ContainerId)),
             Slot = checked((uint)GetNetworkSlot(slot)),
-            FullContainerName = GetFullContainerName(),
+            FullContainerName = GetFullContainerName(slot),
             Item = descriptor
         };
         foreach (Player player in recipients)

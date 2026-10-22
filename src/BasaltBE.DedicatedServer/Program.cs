@@ -68,6 +68,12 @@ internal static class Program {
             using Server server = new(properties, permissions: permissions);
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
             server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
+            foreach (string identifier in new[] {
+                "minecraft:furnace", "minecraft:lit_furnace",
+                "minecraft:blast_furnace", "minecraft:lit_blast_furnace",
+                "minecraft:smoker", "minecraft:lit_smoker"
+            })
+                server.BlockActors.Register(identifier, static context => new FurnaceBlockActor(context), tick: true);
             foreach (BlockType type in BlockPalette.Types) {
                 if (type.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal))
                     server.BlockActors.Register(type.Identifier, static context => new ShulkerBoxBlockActor(context));

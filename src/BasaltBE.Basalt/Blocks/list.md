@@ -7,3 +7,6 @@
 [x] Glass Panes
 [x] Barrel
 [x] Shulker Boxes
+[x] Furnace
+[x] Smoker
+[x] Blast Furnace

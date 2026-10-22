@@ -2,6 +2,7 @@ using System.Net;
 using System.Diagnostics;
 using BasaltBE.Logging;
 using BasaltBE.Basalt.Commands;
+using BasaltBE.Basalt.Crafting;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Entities;
@@ -140,6 +141,7 @@ public sealed class Server : IDisposable {
 
         _ = GetWorld();
         Commands.Prepare();
+        CookingPalette.Initialize();
         BlockActors.Freeze();
         Network.SerializedPackets.SerializeDefault();
         coordinatorThread = Environment.CurrentManagedThreadId;

@@ -214,9 +214,10 @@ internal sealed class ItemStackRequestHandler {
                 }
 
                 ItemStack? item = state.Staged[responseKey.SlotKey];
-                byte slot = checked((byte)(responseKey.ContainerName == ContainerEnumName.CreatedOutput
-                    ? 50
-                    : responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)));
+                byte slot = responseKey.ContainerName switch {
+                    ContainerEnumName.CreatedOutput => 50,
+                    _ => checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot))
+                };
                 slots.Add(new ItemStackResponseSlotInfo {
                     RequestedSlot = slot,
                     Slot = slot,
@@ -442,11 +443,82 @@ internal sealed class ItemStackRequestHandler {
     }
 
     private static bool RecordCraftResults(RequestState state, CraftResultsActionData results) {
-        if (state.Recipe is null || state.CraftResults is not null || results.CraftResults.Length != 1 ||
-            results.NumberOfCrafts != state.CraftCount)
+        if (state.Recipe is not { } recipe || state.CraftResults is not null || results.CraftResults.Length != 1) {
+            state.FailureReason = "craft results do not match the selected recipe";
             return false;
-        if (state.CreatedOutput is null && !CreateCraftResult(state, 0))
+        }
+        if (results.NumberOfCrafts == 0) {
+            state.FailureReason = "craft result count is zero";
             return false;
+        }
+        if (state.CraftConsumed is null || state.CraftConsumed.Any(static consumed => consumed != 0)) {
+            state.FailureReason = "craft results arrived after ingredient consumption";
+            return false;
+        }
+
+        int crafts = results.NumberOfCrafts;
+        int resultSize = recipe.ResultCount * crafts;
+        if (resultSize > recipe.Result.MaxAmount) {
+            state.FailureReason = "craft result exceeds the item stack limit";
+            return false;
+        }
+
+        int[] consumption = new int[state.CraftConsumption!.Length];
+        if (state.AutoCraft) {
+            ItemStack?[] items = new ItemStack?[consumption.Length];
+            int itemIndex = 0;
+            foreach (Container source in state.CraftSources!) {
+                for (int slot = 0; slot < source.ContainerSize; slot++)
+                    items[itemIndex++] = source.GetItem(slot);
+            }
+
+            if (!recipe.TryMatchInventory(items, crafts, consumption)) {
+                state.FailureReason = "craft result count exceeds available ingredients";
+                return false;
+            }
+        }
+        else {
+            Container grid = state.CraftSources![0];
+            int gridWidth = grid.ContainerSize == 9 ? 3 : 2;
+            ItemStack?[] items = new ItemStack?[grid.ContainerSize];
+            for (int slot = 0; slot < grid.ContainerSize; slot++)
+                items[slot] = grid.GetItem(slot);
+
+            if (!recipe.TryMatch(items, gridWidth, crafts, consumption)) {
+                state.FailureReason = "craft result count exceeds available ingredients";
+                return false;
+            }
+        }
+
+        NetworkItemInstanceDescriptorData result = results.CraftResults[0];
+        if (result.ItemDescriptor is not ItemNameDescriptorData descriptor ||
+            descriptor.FullName != recipe.Result.Identifier || result.StackSize != resultSize ||
+            descriptor.AuxValue != 0x7FFF && unchecked((uint)descriptor.AuxValue) != recipe.ResultMetadata) {
+            state.FailureReason = "reported craft result does not match the recipe output";
+            return false;
+        }
+
+        state.CraftCount = (byte)crafts;
+        state.CraftConsumption = consumption;
+        state.CraftConsumed = new int[consumption.Length];
+        if (state.CreatedOutput is null) {
+            if (!CreateCraftResult(state, 0))
+                return false;
+        }
+        else {
+            SlotKey outputKey = new(state.CreatedOutput, 0);
+            ItemStack output = new(recipe.Result, (ushort)resultSize, recipe.ResultMetadata);
+            if (state.Staged.GetValueOrDefault(outputKey) is { } previousOutput)
+                output.Nbt = previousOutput.Nbt;
+            SetItem(
+                state,
+                outputKey,
+                output,
+                ContainerEnumName.CreatedOutput,
+                0
+            );
+        }
+
         state.CraftResults = results;
         return true;
     }
@@ -720,6 +792,24 @@ internal sealed class ItemStackRequestHandler {
         bool createdOutputCursor = info.ContainerName.ContainerName == ContainerEnumName.CreatedOutput &&
             ReferenceEquals(container, state.Cursor);
         int localSlot = createdOutputCursor ? 0 : container.GetLocalSlot(info.Slot);
+        if (state.OpenedContainer is { Type: ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker } furnace &&
+            (info.ContainerName.ContainerName is ContainerEnumName.FurnaceFuel or ContainerEnumName.FurnaceIngredient or ContainerEnumName.FurnaceResult or
+                ContainerEnumName.BlastFurnaceIngredient or ContainerEnumName.SmokerIngredient)) {
+            int expectedSlot = info.ContainerName.ContainerName switch {
+                ContainerEnumName.FurnaceFuel => 1,
+                ContainerEnumName.FurnaceResult => 2,
+                ContainerEnumName.BlastFurnaceIngredient when furnace.Type == ContainerType.BlastFurnace => 0,
+                ContainerEnumName.SmokerIngredient when furnace.Type == ContainerType.Smoker => 0,
+                ContainerEnumName.FurnaceIngredient when furnace.Type == ContainerType.Furnace => 0,
+                _ => -1
+            };
+            if (localSlot != expectedSlot) {
+                key = default;
+                item = null;
+                state.FailureReason ??= $"furnace slot {info.Slot} does not match {info.ContainerName.ContainerName}";
+                return false;
+            }
+        }
         if ((uint)localSlot >= container.ContainerSize) {
             key = default;
             item = null;
@@ -764,6 +854,17 @@ internal sealed class ItemStackRequestHandler {
         container = null;
         if (name.ContainerName == ContainerEnumName.Cursor) {
             container = state.Cursor;
+            return true;
+        }
+
+        if (state.OpenedContainer is { } furnaceContainer &&
+            furnaceContainer.Type is ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker &&
+            (name.ContainerName is ContainerEnumName.FurnaceFuel or ContainerEnumName.FurnaceResult ||
+                name.ContainerName == ContainerEnumName.FurnaceIngredient && furnaceContainer.Type == ContainerType.Furnace ||
+                name.ContainerName == ContainerEnumName.BlastFurnaceIngredient && furnaceContainer.Type == ContainerType.BlastFurnace ||
+                name.ContainerName == ContainerEnumName.SmokerIngredient && furnaceContainer.Type == ContainerType.Smoker) &&
+            (name.DynamicId is null or 0)) {
+            container = furnaceContainer;
             return true;
         }
 

@@ -13,7 +13,7 @@ public sealed class Chunk(int x, int z) {
     static readonly Options NetworkNbtOptions = new() { VarInt = true, StringLengthVarInt = true };
 
     Dictionary<int, SubChunk>? subChunks;
-    Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
+    internal Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
     Dictionary<(int X, int Y, int Z), BlockActor>? actors;
     internal Dimension? Dimension;
 

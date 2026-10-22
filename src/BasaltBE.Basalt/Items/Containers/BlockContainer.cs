@@ -15,8 +15,9 @@ public sealed class BlockContainer : Container {
         ContainerType type = ContainerType.Container,
         uint? dynamicId = null,
         int slotOffset = 0,
-        IReadOnlySet<ItemType>? bannedItems = null
-    ) : base(size, containerId, containerName, type, dynamicId, slotOffset, bannedItems) {
+        IReadOnlySet<ItemType>? bannedItems = null,
+        ContainerEnumName[]? slotNames = null
+    ) : base(size, containerId, containerName, type, dynamicId, slotOffset, bannedItems, slotNames) {
         ArgumentNullException.ThrowIfNull(position);
         Position = position;
     }
