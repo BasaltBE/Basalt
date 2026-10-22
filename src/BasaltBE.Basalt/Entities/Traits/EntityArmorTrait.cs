@@ -61,7 +61,8 @@ public sealed class EntityArmorTrait : EntityTrait {
     }
 
     public override void OnHurt(Events.Entities.EntityHurtEvent hurt) {
-        if (hurt.Cause is EntityDamageCause.Drowning or EntityDamageCause.Void)
+        if (hurt.Cause is EntityDamageCause.Drowning or EntityDamageCause.Void ||
+            Entity is Player { GameType: GameType.Creative or GameType.Spectator })
             return;
 
         int durabilityDamage = Math.Max(1, (int)(hurt.Damage / 4));

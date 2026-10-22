@@ -157,7 +157,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         Velocity = other.GetTrait<EntityMovementTrait>()?.Motion ?? new Vec3(),
                         Rotation = other.Rotation,
                         HeadRotation = other.HeadRotation,
-                        GameType = GameType.Survival,
+                        GameType = other.GameType,
                         CarriedItem = inventory?.Inventory.GetItem(inventory.SelectedSlot)?.ToNetworkStackDescriptor() ?? new(),
                         ActorData = flags,
                         Abilities = abilities,

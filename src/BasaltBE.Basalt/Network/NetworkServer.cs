@@ -72,6 +72,7 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.ClientCacheStatus, new ClientCacheStatusHandler(this).Handle);
         Events.Subscribe(PacketEvents.ContainerClose, new ContainerCloseHandler().Handle);
         Events.Subscribe(PacketEvents.Interact, new InteractHandler().Handle);
+        Events.Subscribe(PacketEvents.BlockPickRequest, new BlockPickRequestHandler().Handle);
         Events.Subscribe(PacketEvents.InventoryTransaction, new InventoryTransactionHandler().Handle);
         Events.Subscribe(PacketEvents.MobEquipment, new MobEquipmentHandler().Handle);
         Events.Subscribe(PacketEvents.Animate, new AnimateHandler().Handle);

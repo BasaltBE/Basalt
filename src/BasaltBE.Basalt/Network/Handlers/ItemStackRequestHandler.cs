@@ -214,9 +214,12 @@ internal sealed class ItemStackRequestHandler {
                 }
 
                 ItemStack? item = state.Staged[responseKey.SlotKey];
+                byte slot = checked((byte)(responseKey.ContainerName == ContainerEnumName.CreatedOutput
+                    ? 50
+                    : responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)));
                 slots.Add(new ItemStackResponseSlotInfo {
-                    RequestedSlot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
-                    Slot = checked((byte)responseKey.SlotKey.Container.GetNetworkSlot(responseKey.SlotKey.Slot)),
+                    RequestedSlot = slot,
+                    Slot = slot,
                     Amount = checked((byte)(item?.StackSize ?? 0)),
                     ItemStackNetId = item?.NetId,
                     DurabilityCorrection = responseKey.DurabilityCorrection
@@ -257,6 +260,7 @@ internal sealed class ItemStackRequestHandler {
             state.AutoCraft = false;
             state.AutoCraftOutputSlot = null;
             state.CraftResults = null;
+            state.CreativeCraft = false;
             state.CreatedOutput = null;
             state.Staged.Clear();
             state.StagedClientRequestNetIds.Clear();
@@ -279,11 +283,29 @@ internal sealed class ItemStackRequestHandler {
         ConsumeActionData consume => Remove(state, consume.Amount, consume.Source, consume: true),
         CraftRecipeActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: false),
         CraftRecipeAutoActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: true),
-        CreateActionData create => CreateCraftResult(state, create.ResultsIndex),
-        CraftResultsActionData results => RecordCraftResults(state, results),
+        CraftCreativeActionData craft => CreateCreativeItem(state, craft),
+        CreateActionData create => state.CreativeCraft || CreateCraftResult(state, create.ResultsIndex),
+        CraftResultsActionData results => state.CreativeCraft || RecordCraftResults(state, results),
         MineBlockActionData mineBlock => MineBlock(state, mineBlock),
         _ => false
     };
+
+    private static bool CreateCreativeItem(RequestState state, CraftCreativeActionData action) {
+        SlotKey cursor = new(state.Cursor, 0);
+        if (state.InventoryTrait?.Entity is not Player { GameType: GameType.Creative }) {
+            state.FailureReason = "player is not in Creative";
+            return false;
+        }
+
+        if (ItemPalette.CreateCreativeItem(action.CreativeItemNetId) is not { } item) {
+            state.FailureReason = $"creative item ID {action.CreativeItemNetId} was not sent";
+            return false;
+        }
+
+        state.CreativeCraft = true;
+        SetItem(state, cursor, item, ContainerEnumName.Cursor, state.Cursor.DynamicId);
+        return true;
+    }
 
     private static bool MineBlock(RequestState state, MineBlockActionData action) {
         if (!state.BlockDestroyed || state.MineBlockNetId is not int expectedNetId ||
@@ -655,21 +677,39 @@ internal sealed class ItemStackRequestHandler {
         out SlotKey key,
         out ItemStack? item
     ) {
-        if (!ResolveContainer(state, info.ContainerName, out Container? container) ||
-            container is null ||
-            (info.ContainerName.ContainerName == ContainerEnumName.Hotbar && info.Slot >= 9) ||
-            (uint)container.GetLocalSlot(info.Slot) >= container.ContainerSize) {
+        if (!ResolveContainer(state, info.ContainerName, out Container? container) || container is null) {
             key = default;
             item = null;
+            state.FailureReason ??= $"container {info.ContainerName.ContainerName} is unavailable " +
+                $"(dynamic ID: {info.ContainerName.DynamicId?.ToString() ?? "none"})";
             return false;
         }
 
-        key = new SlotKey(container, container.GetLocalSlot(info.Slot));
+        if (info.ContainerName.ContainerName == ContainerEnumName.Hotbar && info.Slot >= 9) {
+            key = default;
+            item = null;
+            state.FailureReason ??= $"hotbar slot {info.Slot} is outside the hotbar";
+            return false;
+        }
+
+        bool createdOutputCursor = info.ContainerName.ContainerName == ContainerEnumName.CreatedOutput &&
+            ReferenceEquals(container, state.Cursor);
+        int localSlot = createdOutputCursor ? 0 : container.GetLocalSlot(info.Slot);
+        if ((uint)localSlot >= container.ContainerSize) {
+            key = default;
+            item = null;
+            state.FailureReason ??= $"slot {info.Slot} is outside {info.ContainerName.ContainerName} " +
+                $"(size: {container.ContainerSize}, offset: {container.SlotOffset})";
+            return false;
+        }
+
+        key = new SlotKey(container, localSlot);
+        bool cursorSlot = ReferenceEquals(container, state.Cursor);
         if (!state.Staged.TryGetValue(key, out item)) {
             item = container.GetItem(key.Slot);
             bool predictedArmorStack = container.ContainerName == ContainerEnumName.Armor &&
                 info.NetIdVariant < 0 && item?.Type.ArmorSlot == (ArmorSlot)key.Slot;
-            if (item is not null && !ReferenceEquals(container, state.CreatedOutput) &&
+            if (item is not null && !cursorSlot && !ReferenceEquals(container, state.CreatedOutput) && !createdOutputCursor &&
                 item.NetId != info.NetIdVariant &&
                 !predictedArmorStack &&
                 !(state.InventoryTrait?.MatchesClientRequestNetId(container, key.Slot, info.NetIdVariant, item) ?? false)) {
@@ -681,16 +721,27 @@ internal sealed class ItemStackRequestHandler {
             return true;
         }
 
-        return ReferenceEquals(container, state.CreatedOutput) ||
+        bool validStagedStack = cursorSlot || ReferenceEquals(container, state.CreatedOutput) || createdOutputCursor ||
             state.Recipe is not null && IsCraftSource(state, container) ||
             item is null ||
             (item?.NetId ?? 0) == info.NetIdVariant ||
             state.StagedClientRequestNetIds.TryGetValue(key, out int clientRequestNetId) &&
             clientRequestNetId == info.NetIdVariant;
+        if (!validStagedStack) {
+            state.FailureReason ??= $"stack ID mismatch in {info.ContainerName.ContainerName}[{info.Slot}] " +
+                $"(client: {info.NetIdVariant}, server: {item?.NetId ?? 0})";
+        }
+
+        return validStagedStack;
     }
 
     private static bool ResolveContainer(RequestState state, FullContainerName name, out Container? container) {
         container = null;
+        if (name.ContainerName == ContainerEnumName.Cursor) {
+            container = state.Cursor;
+            return true;
+        }
+
         if (state.OpenedContainer is { } openedContainer &&
             openedContainer.ContainerName == name.ContainerName &&
             (openedContainer.DynamicId == name.DynamicId ||
@@ -703,6 +754,15 @@ internal sealed class ItemStackRequestHandler {
         if (name.ContainerName == ContainerEnumName.CreatedOutput &&
             (name.DynamicId is null or 0) && state.CreatedOutput is { } createdOutput) {
             container = createdOutput;
+            return true;
+        }
+
+        if (name.ContainerName == ContainerEnumName.CreatedOutput &&
+            (name.DynamicId is null or 0) &&
+            (state.Staged.TryGetValue(new SlotKey(state.Cursor, 0), out ItemStack? stagedCursor)
+                ? stagedCursor is not null
+                : state.Cursor.GetItem(0) is not null)) {
+            container = state.Cursor;
             return true;
         }
 
@@ -726,6 +786,9 @@ internal sealed class ItemStackRequestHandler {
     }
 
     private static void SetItem(RequestState state, SlotKey key, ItemStack? item, ContainerEnumName name, uint? dynamicId) {
+        if (name == ContainerEnumName.Cursor)
+            dynamicId = state.Cursor.DynamicId;
+
         state.Staged[key] = item;
         state.StagedClientRequestNetIds[key] = state.ClientRequestNetId;
         if (state.ChangedSlotSet.Add(key))
@@ -807,6 +870,7 @@ internal sealed class ItemStackRequestHandler {
         internal bool AutoCraft;
         internal SlotKey? AutoCraftOutputSlot;
         internal CraftResultsActionData? CraftResults;
+        internal bool CreativeCraft;
         internal Container? CreatedOutput;
         internal readonly Dictionary<SlotKey, ItemStack?> Staged = [];
         internal readonly Dictionary<SlotKey, int> StagedClientRequestNetIds = [];

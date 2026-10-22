@@ -96,6 +96,7 @@ internal sealed class InventoryTransactionHandler {
             bool attack = transaction is ItemUseOnActorInventoryTransaction {
                 ActionType: ItemUseOnActorInventoryTransactionActionType.Attack
             };
+            bool damageItems = !player.Abilities.Get(PlayerAbility.InstantBuild);
             if (descriptor is null || origin is null || hand != HandSlot.Mainhand ||
                 (uint)slot >= 9 || slot != inventory.SelectedSlot ||
                 !float.IsFinite(origin.X) || !float.IsFinite(origin.Y) || !float.IsFinite(origin.Z)) {
@@ -128,12 +129,14 @@ internal sealed class InventoryTransactionHandler {
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
                             if (itemUse.IsCanceled()) {
-                                item?.DamageDurability(durabilityDamage);
+                                if (damageItems)
+                                    item?.DamageDurability(durabilityDamage);
                                 break;
                             }
                         }
                         player.OnUseItem(item);
-                        item?.DamageDurability(durabilityDamage);
+                        if (damageItems)
+                            item?.DamageDurability(durabilityDamage);
                     }
                     else if (use.ActionType == ItemUseInventoryTransactionActionType.Place) {
                         bool placed = UseItemOnBlock(player, inventory, item, use);
@@ -209,7 +212,8 @@ internal sealed class InventoryTransactionHandler {
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
                             if (itemUse.IsCanceled()) {
-                                item?.DamageDurability(durabilityDamage);
+                                if (damageItems)
+                                    item?.DamageDurability(durabilityDamage);
                                 break;
                             }
                         }
@@ -218,7 +222,8 @@ internal sealed class InventoryTransactionHandler {
                             float damage = (player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1) + (item?.Type.AttackDamageBonus ?? 0);
                             health.ApplyDamage(damage, EntityDamageCause.Entity, player);
                         }
-                        item?.DamageDurability(durabilityDamage);
+                        if (damageItems)
+                            item?.DamageDurability(durabilityDamage);
                     }
                     else if (actor.ActionType == ItemUseOnActorInventoryTransactionActionType.Interact)
                         player.OnUseItemOnEntity(item, target, actor.HitPosition);
@@ -231,12 +236,14 @@ internal sealed class InventoryTransactionHandler {
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
                             if (itemUse.IsCanceled()) {
-                                item?.DamageDurability(durabilityDamage);
+                                if (damageItems)
+                                    item?.DamageDurability(durabilityDamage);
                                 break;
                             }
                         }
                         player.OnUseItemOnEntity(item, target, actor.HitPosition);
-                        item?.DamageDurability(durabilityDamage);
+                        if (damageItems)
+                            item?.DamageDurability(durabilityDamage);
                     }
                     break;
             }

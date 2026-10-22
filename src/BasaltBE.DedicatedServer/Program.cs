@@ -77,6 +77,7 @@ internal static class Program {
             server.Commands.Register(new DeopCommand());
             server.Commands.Register(new StopCommand());
             server.Commands.Register(new SummonCommand());
+            server.Commands.Register(new GameModeCommand());
 
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
                 .Select(argument => argument[11..]).ToArray();

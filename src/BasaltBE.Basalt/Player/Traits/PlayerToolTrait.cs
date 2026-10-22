@@ -1,5 +1,6 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
@@ -47,7 +48,8 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             player.Network.Server.Events.Emit(itemUse);
             durabilityDamage = itemUse.DurabilityDamage;
             if (itemUse.IsCanceled()) {
-                item.DamageDurability(durabilityDamage);
+                if (!player.Abilities.Get(PlayerAbility.InstantBuild))
+                    item.DamageDurability(durabilityDamage);
                 return;
             }
         }
@@ -64,7 +66,8 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             ActorUniqueId = -1
         });
         player.Dimension.UpdateNeighbors(position.X, position.Y, position.Z);
-        item.DamageDurability(durabilityDamage);
+        if (!player.Abilities.Get(PlayerAbility.InstantBuild))
+            item.DamageDurability(durabilityDamage);
     }
 
 }

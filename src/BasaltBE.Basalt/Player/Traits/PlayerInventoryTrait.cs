@@ -104,6 +104,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
         Inventory.SetItem(0, new ItemStack("minecraft:stick", 64));
         Inventory.SetItem(1, new ItemStack("minecraft:stone", 64));
         Inventory.AddPersistent((Player)Entity);
+        Cursor.AddPersistent((Player)Entity);
         CraftingGrid.AddPersistent((Player)Entity);
     }
 

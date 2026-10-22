@@ -1,12 +1,15 @@
 using System.Buffers.Binary;
 using BasaltBE.Basalt.Entities.Enums;
+using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Network;
+
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
@@ -110,6 +113,35 @@ public sealed class Player : Entity, IDisposable {
         SetFlag(ActorFlag.CanShowName, true);
         SetFlag(ActorFlag.AlwaysShowName, true);
         SetFlag(ActorFlag.CanClimb, true);
+    }
+
+    public bool SetGameType(GameType gameType) {
+        if (gameType is not (GameType.Survival or GameType.Creative or GameType.Adventure or GameType.Spectator))
+            throw new ArgumentOutOfRangeException(nameof(gameType));
+        if (GameType == gameType)
+            return false;
+
+        GameType = gameType;
+        bool canBuild = gameType is GameType.Survival or GameType.Creative;
+        bool spectator = gameType == GameType.Spectator;
+        Abilities.Set(PlayerAbility.Build, canBuild);
+        Abilities.Set(PlayerAbility.Mine, canBuild);
+        Abilities.Set(PlayerAbility.MayFly, gameType is GameType.Creative or GameType.Spectator);
+        Abilities.Set(PlayerAbility.InstantBuild, gameType == GameType.Creative);
+        Abilities.Set(PlayerAbility.Invulnerable, gameType is GameType.Creative or GameType.Spectator);
+        Abilities.Set(PlayerAbility.Flying, spectator);
+        Abilities.Set(PlayerAbility.NoClip, spectator);
+
+        if (Spawned) {
+            Network.SendPacket(this, new SetPlayerGameTypePacket { GameType = gameType });
+            Network.SendPacket(this, Abilities.CreateUpdate(UniqueId, Permissions));
+            Dimension.Broadcast(new UpdatePlayerGameTypePacket {
+                GameType = gameType,
+                TargetPlayerUniqueId = UniqueId,
+                Tick = GetTrait<EntityMovementTrait>()?.InputTick ?? 0
+            }, this);
+        }
+        return true;
     }
 
     public void Dispose() {

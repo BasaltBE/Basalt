@@ -13,12 +13,18 @@ public static class ItemPalette {
     public static readonly ItemType[] Types = LoadTypes();
     static readonly Dictionary<string, ItemType> ByIdentifier = Types.ToDictionary(type => type.Identifier, StringComparer.Ordinal);
     static readonly Dictionary<int, ItemType> ByNetworkId = Types.ToDictionary(type => type.NetworkId);
+    static readonly Dictionary<uint, ItemType> ByCreativeNetId = [];
     internal static readonly ItemRegistryPacket RegistryPacket = CreateRegistryPacket();
     internal static readonly CreativeContentPacket CreativeContentPacket = CreateCreativeContentPacket();
 
     public static ItemType? Find(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
     public static ItemType? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
+
+    internal static ItemStack? CreateCreativeItem(uint creativeNetId) =>
+        ByCreativeNetId.TryGetValue(creativeNetId, out ItemType? type)
+            ? new ItemStack(type, checked((ushort)type.MaxAmount))
+            : null;
 
     static ItemRegistryPacket CreateRegistryPacket() {
         ItemData[] items = new ItemData[Types.Length];
@@ -87,6 +93,7 @@ public static class ItemPalette {
                 },
                 GroupIndex = checked((uint)groupIndex)
             });
+            ByCreativeNetId.Add(checked((uint)entries.Count), type);
         }
 
         return new CreativeContentPacket {
