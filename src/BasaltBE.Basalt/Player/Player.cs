@@ -8,6 +8,7 @@ using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.NetherNet.Types;
+using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
@@ -142,6 +143,45 @@ public sealed class Player : Entity, IDisposable {
             }, this);
         }
         return true;
+    }
+
+    internal void LoadData(CompoundTag data, bool restoredLocation) {
+        Read(data);
+        if (data.Get<IntTag>("GameType") is { } gameType && Enum.IsDefined((GameType)gameType.Value))
+            SetGameType((GameType)gameType.Value);
+        if (!restoredLocation)
+            return;
+
+        Position.X = data.Get<FloatTag>("PosX")?.Value ?? Position.X;
+        Position.Y = data.Get<FloatTag>("PosY")?.Value ?? Position.Y;
+        Position.Z = data.Get<FloatTag>("PosZ")?.Value ?? Position.Z;
+        Rotation.X = data.Get<FloatTag>("RotationX")?.Value ?? Rotation.X;
+        Rotation.Y = data.Get<FloatTag>("RotationY")?.Value ?? Rotation.Y;
+        HeadRotation = data.Get<FloatTag>("HeadRotation")?.Value ?? HeadRotation;
+        if (!float.IsFinite(Position.X) || !float.IsFinite(Position.Y) || !float.IsFinite(Position.Z) ||
+            !float.IsFinite(Rotation.X) || !float.IsFinite(Rotation.Y) || !float.IsFinite(HeadRotation)) {
+            Position.X = Dimension.SpawnPosition.X;
+            Position.Y = Dimension.SpawnPosition.Y;
+            Position.Z = Dimension.SpawnPosition.Z;
+            Rotation.X = 0;
+            Rotation.Y = 0;
+            HeadRotation = 0;
+        }
+    }
+
+    internal CompoundTag SaveData() {
+        CompoundTag data = new() { Name = "Player" };
+        data.Add("World", new StringTag { Value = World.Identifier });
+        data.Add("Dimension", new StringTag { Value = Dimension.Identifier });
+        data.Add("PosX", new FloatTag { Value = Position.X });
+        data.Add("PosY", new FloatTag { Value = Position.Y });
+        data.Add("PosZ", new FloatTag { Value = Position.Z });
+        data.Add("RotationX", new FloatTag { Value = Rotation.X });
+        data.Add("RotationY", new FloatTag { Value = Rotation.Y });
+        data.Add("HeadRotation", new FloatTag { Value = HeadRotation });
+        data.Add("GameType", new IntTag { Value = (int)GameType });
+        Write(data);
+        return data;
     }
 
     public void Dispose() {

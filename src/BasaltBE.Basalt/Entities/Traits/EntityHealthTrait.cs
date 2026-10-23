@@ -8,6 +8,7 @@ using BasaltBE.Basalt.LootTables;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -60,6 +61,14 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void OnSpawn() => ResetFallDamage();
+
+    public override void Read(CompoundTag entityTag) {
+        if (entityTag.Get<FloatTag>("Health") is { } health && float.IsFinite(health.Value))
+            Entity.Attributes.SetCurrent(AttributeName, Math.Clamp(health.Value, 0, Maximum));
+    }
+
+    public override void Write(CompoundTag entityTag) =>
+        entityTag.Add("Health", new FloatTag { Value = Current });
 
     public override void OnRespawn() => ResetFallDamage();
 

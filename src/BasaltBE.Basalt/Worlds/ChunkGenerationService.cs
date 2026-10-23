@@ -59,6 +59,9 @@ internal sealed class ChunkGenerationService : IDisposable {
         }
 
         requests.CompleteAdding();
+        while (requests.TryTake(out _))
+            Interlocked.Decrement(ref outstanding);
+
         foreach (Thread worker in workers)
             worker.Join();
         requests.Dispose();

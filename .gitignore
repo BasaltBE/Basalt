@@ -161,6 +161,7 @@ worlds/
 !src/BasaltBE.Basalt/Worlds/
 !src/BasaltBE.Basalt/Worlds/**
 world/
+players/
 behavior_packs/
 resource_packs/
 development_behavior_packs/

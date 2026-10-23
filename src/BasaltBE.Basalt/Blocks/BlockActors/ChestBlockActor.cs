@@ -29,6 +29,7 @@ public sealed class ChestBlockActor : BlockActor {
         BlockContainer container = new(position, size);
         container.FirstViewerOpened += OnFirstViewerOpened;
         container.LastViewerClosed += OnLastViewerClosed;
+        container.Changed += MarkDirty;
         return container;
     }
 

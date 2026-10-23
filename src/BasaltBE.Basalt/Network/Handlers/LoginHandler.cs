@@ -7,6 +7,7 @@ using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Logging;
+using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol;
 using BasaltBE.Protocol.Enums;
@@ -123,9 +124,24 @@ internal sealed class LoginHandler(NetworkServer network) {
     internal void Disconnected(NethernetPeer peer) => pending.TryRemove(peer, out _);
 
     private void Complete(NethernetPeer peer, AuthenticatedLogin login) {
+        CompoundTag? playerData = network.Server.PlayerData.Load(login.Xuid);
         World world = network.Server.GetWorld();
-        Dimension dimension = world.GetDimension("minecraft:overworld")
+        Dimension dimension = world.GetDimension(DimensionType.Overworld)
             ?? throw new InvalidOperationException("The default world has no overworld dimension.");
+        bool restoredLocation = false;
+        if (playerData?.Get<StringTag>("World") is { } savedWorld &&
+            playerData.Get<StringTag>("Dimension") is { } savedDimension) {
+            foreach (World candidate in network.Server.Worlds) {
+                if (!string.Equals(candidate.Identifier, savedWorld.Value, StringComparison.OrdinalIgnoreCase) ||
+                    candidate.GetDimension(savedDimension.Value) is not { } restoredDimension)
+                    continue;
+
+                world = candidate;
+                dimension = restoredDimension;
+                restoredLocation = true;
+                break;
+            }
+        }
         Player player = new(
             network,
             world,
@@ -138,6 +154,8 @@ internal sealed class LoginHandler(NetworkServer network) {
             login.DeviceName,
             login.Skin
         );
+        if (playerData is not null)
+            player.LoadData(playerData, restoredLocation);
 
         try {
             network.AddPlayer(player);

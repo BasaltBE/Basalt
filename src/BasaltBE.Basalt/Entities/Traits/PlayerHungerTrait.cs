@@ -5,6 +5,7 @@ using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -33,6 +34,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     private int pendingFoodNetId;
     private ulong pendingFoodFinishAge;
     private ulong pendingFoodSoundAge;
+    private bool restored;
 
     public float Hunger => Entity.Attributes.Get(HungerAttribute)?.Current ?? Maximum;
     public float Saturation => saturation;
@@ -45,13 +47,36 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void OnSpawn() {
-        Reset();
+        if (!restored)
+            Reset();
+        restored = false;
         RememberPosition();
     }
 
     public override void OnRespawn() {
         Reset();
         RememberPosition();
+    }
+
+    public override void Read(CompoundTag entityTag) {
+        if (entityTag.Get<FloatTag>("Hunger") is not { } hunger ||
+            entityTag.Get<FloatTag>("Saturation") is not { } savedSaturation ||
+            entityTag.Get<FloatTag>("Exhaustion") is not { } savedExhaustion ||
+            !float.IsFinite(hunger.Value) || !float.IsFinite(savedSaturation.Value) || !float.IsFinite(savedExhaustion.Value))
+            return;
+
+        Entity.Attributes.SetCurrent(HungerAttribute, Math.Clamp(hunger.Value, 0, Maximum));
+        saturation = Math.Clamp(savedSaturation.Value, 0, Maximum);
+        exhaustion = Math.Clamp(savedExhaustion.Value, 0, 40);
+        Entity.Attributes.SetCurrent(SaturationAttribute, saturation);
+        Entity.Attributes.SetCurrent(ExhaustionAttribute, Math.Min(exhaustion, ExhaustionThreshold));
+        restored = true;
+    }
+
+    public override void Write(CompoundTag entityTag) {
+        entityTag.Add("Hunger", new FloatTag { Value = Hunger });
+        entityTag.Add("Saturation", new FloatTag { Value = saturation });
+        entityTag.Add("Exhaustion", new FloatTag { Value = exhaustion });
     }
 
     public override void OnMove() {

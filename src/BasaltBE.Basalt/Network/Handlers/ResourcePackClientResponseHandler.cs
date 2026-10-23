@@ -44,9 +44,14 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     Settings = new LevelSettings {
                         SpawnSettings = new SpawnSettings {
                             SpawnBiomeType = SpawnBiomeType.Default,
-                            Dimension = 0
+                            Dimension = (int)player.Dimension.Type
                         },
-                        GeneratorType = GeneratorType.Overworld,
+                        GeneratorType = player.Dimension.Type switch {
+                            DimensionType.Overworld => GeneratorType.Overworld,
+                            DimensionType.Nether => GeneratorType.Nether,
+                            DimensionType.TheEnd => GeneratorType.TheEnd,
+                            _ => GeneratorType.Undefined
+                        },
                         GameType = player.GameType,
                         GameDifficulty = player.Dimension.Difficulty,
                         DefaultSpawnBlockPosition = new BlockPos {

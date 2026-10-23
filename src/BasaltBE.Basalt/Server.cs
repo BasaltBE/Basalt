@@ -11,11 +11,13 @@ using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Basalt.Permissions;
+using BasaltBE.Basalt.PlayerData;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Ticking;
 using BasaltBE.Basalt.Worlds.Dimensions;
+using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol;
@@ -35,12 +37,14 @@ public sealed class Server : IDisposable {
     public readonly NetworkServer Network;
     public readonly EventEmitter Events = new();
     public readonly ChunkGeneratorRegistry Generators = new();
+    public readonly WorldProviderRegistry Providers = new();
     public readonly LootTableManager LootTables = new();
     public readonly BlockActorRegistry BlockActors = new();
     private readonly List<World> worlds = [];
     public readonly IReadOnlyList<World> Worlds;
     public readonly CommandRegistry Commands;
     public readonly PermissionStore Permissions;
+    internal readonly PlayerDataStore PlayerData = new("players");
     internal ulong TickValue;
     public readonly TickMetrics Ticks = new();
     public bool Stopping => Volatile.Read(ref stopping) != 0;
@@ -66,17 +70,29 @@ public sealed class Server : IDisposable {
         }, identity, ResourcePackManager.Load(Properties.ResourcePacksPath));
     }
 
-    public World CreateWorld(string identifier, Action<World> configure) {
+    public World CreateWorld(
+        string identifier,
+        Action<World> configure,
+        IWorldProvider? provider = null,
+        string? providerName = null
+    ) {
         if (Started)
             throw new InvalidOperationException("Create worlds before starting the server.");
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(configure);
+        if (provider is not null && providerName is not null)
+            throw new ArgumentException("Specify a provider instance or provider name, not both.");
         foreach (World existing in Worlds) {
             if (string.Equals(existing.Identifier, identifier, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"World '{identifier}' already exists.");
         }
 
-        World world = new(identifier, Generators, generation ??= new ChunkGenerationService(4, 1024), LootTables);
+        if (providerName is not null) {
+            string worldDirectory = Path.GetFullPath(Path.Combine("worlds", identifier));
+            Directory.CreateDirectory(worldDirectory);
+            provider = Providers.Create(providerName, worldDirectory);
+        }
+        World world = new(identifier, Generators, generation ??= new ChunkGenerationService(4, 1024), LootTables, provider: provider);
         world.Server = this;
         worlds.Add(world);
         try {
@@ -205,9 +221,9 @@ public sealed class Server : IDisposable {
         Gameplay.EnterWriteLock();
         try {
             Network.Dispose();
+            generation?.Dispose();
             foreach (World world in worlds)
                 world.Dispose();
-            generation?.Dispose();
         }
         finally {
             Gameplay.ExitWriteLock();

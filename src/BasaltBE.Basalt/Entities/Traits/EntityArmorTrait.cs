@@ -5,6 +5,8 @@ using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Enums;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -32,6 +34,45 @@ public sealed class EntityArmorTrait : EntityTrait {
     public override void OnDespawn() {
         if (Entity is Player player)
             Armor.RemovePersistence(player);
+    }
+
+    public override void Read(CompoundTag entityTag) {
+        if (entityTag.Get<ListTag>("Armor") is not { } items)
+            return;
+
+        foreach (Tag entry in items.Value) {
+            if (entry is not CompoundTag item ||
+                !item.TryGet("Slot", out ByteTag? slot) ||
+                !item.TryGet("Name", out StringTag? name) ||
+                !item.TryGet("Count", out ByteTag? count) ||
+                slot!.Value >= Armor.ContainerSize ||
+                ItemPalette.Find(name!.Value) is not { } type ||
+                count!.Value == 0)
+                continue;
+
+            uint metadata = item.Get<ShortTag>("Damage") is { } damage
+                ? unchecked((ushort)damage.Value)
+                : 0U;
+            Armor.LoadItem(slot.Value, new ItemStack(type, count.Value, metadata, item.Get<CompoundTag>("tag")));
+        }
+    }
+
+    public override void Write(CompoundTag entityTag) {
+        ListTag items = new() { ElementType = TagType.Compound };
+        for (int slot = 0; slot < Armor.ContainerSize; slot++) {
+            if (Armor.GetItem(slot) is not { } stack)
+                continue;
+
+            CompoundTag item = new();
+            item.Add("Name", new StringTag { Value = stack.Type.Identifier });
+            item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
+            item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
+            item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
+            if (stack.Nbt is not null)
+                item.Add("tag", stack.Clone().Nbt!);
+            items.Value.Add(item);
+        }
+        entityTag.Add("Armor", items);
     }
 
     public override void OnUseItem(ItemStack? item) {

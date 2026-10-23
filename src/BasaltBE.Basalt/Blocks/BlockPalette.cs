@@ -12,6 +12,7 @@ namespace BasaltBE.Basalt.Blocks;
 public static class BlockPalette {
     public static readonly BlockPermutation[] Permutations = LoadPermutations();
     public static readonly BlockType[] Types = LoadBlockTypes();
+    static readonly Dictionary<string, string> StateTypes = LoadStateTypes();
     static readonly Dictionary<string, BlockType> ByIdentifier = Types.ToDictionary(type => type.Identifier);
     static readonly Dictionary<string, BlockPermutation> DefaultPermutations = BuildDefaultPermutations();
     static readonly Dictionary<int, BlockPermutation> ByNetworkId = Permutations.ToDictionary(permutation => permutation.NetworkId);
@@ -46,6 +47,8 @@ public static class BlockPalette {
     static readonly HashSet<Type> RegisteredTraits = [];
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
+
+    internal static string? GetStateType(string identifier) => StateTypes.GetValueOrDefault(identifier);
 
     public static BlockPermutation? FindDefaultPermutation(string identifier) => DefaultPermutations.GetValueOrDefault(identifier);
 
@@ -213,6 +216,17 @@ public static class BlockPalette {
 
         return JsonSerializer.Deserialize<T>(stream)
             ?? throw new JsonException($"Block data file '{fileName}' is empty.");
+    }
+
+    static Dictionary<string, string> LoadStateTypes() {
+        using Stream stream = Assembly.Load("BasaltBE.Data").GetManifestResourceStream("BasaltBE.Data.Data.block_states.json")
+            ?? throw new InvalidOperationException("Block state data is missing.");
+        using JsonDocument document = JsonDocument.Parse(stream);
+        Dictionary<string, string> stateTypes = new(StringComparer.Ordinal);
+        foreach (JsonElement state in document.RootElement.EnumerateArray()) {
+            stateTypes.Add(state.GetProperty("identifier").GetString()!, state.GetProperty("type").GetString()!);
+        }
+        return stateTypes;
     }
 
     static BlockType[] LoadBlockTypes() {

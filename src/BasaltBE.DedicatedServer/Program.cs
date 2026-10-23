@@ -15,8 +15,10 @@ using BasaltBE.Basalt.Permissions;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
 using BasaltBE.Basalt.Worlds;
+using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.Logging;
 using BasaltBE.Logging.Enums;
+using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.DedicatedServer;
 
@@ -66,6 +68,8 @@ internal static class Program {
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");
             using Server server = new(properties, permissions: permissions);
+            server.Providers.Register("leveldb", static path => new LevelDbProvider(Path.Combine(path, "db")));
+            server.Providers.Register("memory", static _ => new InMemoryProvider());
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
             server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
             foreach (string identifier in new[] {
@@ -118,12 +122,16 @@ internal static class Program {
             server.Generators.Register<VoidGenerator>("void");
             server.Generators.SetDefault("superflat");
 
-            World world = server.Worlds.FirstOrDefault(world =>
+            World? world = server.Worlds.FirstOrDefault(world =>
                 string.Equals(world.Identifier, properties.DefaultWorldName, StringComparison.OrdinalIgnoreCase)
-            ) ?? server.CreateWorld(properties.DefaultWorldName, static world => {
-                world.CreateDimension("minecraft:overworld");
-            });
-            _ = world.GetDimension("minecraft:overworld") ?? world.CreateDimension("minecraft:overworld");
+            );
+            if (world is null) {
+                world = server.CreateWorld(properties.DefaultWorldName, static world => {
+                    world.CreateDimension("minecraft:overworld", DimensionType.Overworld);
+                }, providerName: properties.WorldProvider);
+            }
+            _ = world.GetDimension(DimensionType.Overworld)
+                ?? world.CreateDimension("minecraft:overworld", DimensionType.Overworld);
 
             #endregion
 

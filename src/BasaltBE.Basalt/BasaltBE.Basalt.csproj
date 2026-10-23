@@ -8,6 +8,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="LevelDB.Net.MCPE" Version="1.1.7" />
+    <PackageReference Include="LevelDB.Net.Platform" Version="1.1.7" />
     <PackageReference Include="Tracy-CSharp" Version="0.13.1" />
   </ItemGroup>
 

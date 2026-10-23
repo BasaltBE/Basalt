@@ -52,6 +52,7 @@ public sealed class FurnaceBlockActor : BlockActor {
             containerType,
             slotNames: [ingredient, ContainerEnumName.FurnaceFuel, ContainerEnumName.FurnaceResult]
         );
+        Container.Changed += MarkDirty;
     }
 
     public override void OnRead(CompoundTag nbt) {
@@ -89,6 +90,10 @@ public sealed class FurnaceBlockActor : BlockActor {
     public override void OnRemove() => Container.CloseViewers();
 
     public override void Tick() {
+        int previousBurnTime = BurnTime;
+        int previousBurnDuration = BurnDuration;
+        int previousCookTime = CookTime;
+        int previousExperience = StoredExperience;
         ItemStack? input = Container.GetItem(InputSlot);
         ItemStack? fuel = Container.GetItem(FuelSlot);
         ItemStack? output = Container.GetItem(ResultSlot);
@@ -127,6 +132,9 @@ public sealed class FurnaceBlockActor : BlockActor {
 
         if (Container.HasViewers && (Container.GetItem(InputSlot) is not null || Container.GetItem(FuelSlot) is not null || burning || wasBurning))
             SendProgressToViewers();
+        if (BurnTime != previousBurnTime || BurnDuration != previousBurnDuration ||
+            CookTime != previousCookTime || StoredExperience != previousExperience)
+            MarkDirty();
     }
 
     private bool CanCook(CookingRecipe? recipe, ItemStack? output) {

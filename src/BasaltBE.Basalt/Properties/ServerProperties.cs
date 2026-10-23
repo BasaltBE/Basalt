@@ -25,16 +25,19 @@ public struct ServerProperties {
     [ServerProperty("World", 8, "default-world", "Name of the world created when the server starts.")]
     public string DefaultWorldName;
 
-    [ServerProperty("Resource Packs", 9, "resource-packs-path", "Directory containing resource packs.")]
+    [ServerProperty("World", 9, "world-provider", "Registered chunk storage provider used by the default world.")]
+    public string WorldProvider;
+
+    [ServerProperty("Resource Packs", 10, "resource-packs-path", "Directory containing resource packs.")]
     public string ResourcePacksPath;
 
-    [ServerProperty("Ticking", 10, "ticking", "Gameplay scheduling: default or world. Restart required.")]
+    [ServerProperty("Ticking", 11, "ticking", "Gameplay scheduling: default or world. Restart required.")]
     public string Ticking;
 
-    [ServerProperty("Ticking", 11, "ticking-threads", "Maximum persistent gameplay workers in world mode. Excludes network and generation threads.")]
+    [ServerProperty("Ticking", 12, "ticking-threads", "Maximum persistent gameplay workers in world mode. Excludes network and generation threads.")]
     public int TickingThreads;
 
-    [ServerProperty("Ticking", 12, "tick-distance", "Square simulation radius in chunks, separate from render distance.")]
+    [ServerProperty("Ticking", 13, "tick-distance", "Square simulation radius in chunks, separate from render distance.")]
     public int TickDistance;
 
     public ServerProperties() {
@@ -49,6 +52,7 @@ public struct ServerProperties {
         MaxPlayers = 100;
         MaxViewDistance = 32;
         DefaultWorldName = "world";
+        WorldProvider = "leveldb";
         ResourcePacksPath = "resource_packs";
     }
 }

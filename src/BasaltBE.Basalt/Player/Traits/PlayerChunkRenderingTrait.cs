@@ -385,7 +385,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         resources.Position.X = x;
         resources.Position.Z = z;
         resources.Packet.Position = resources.Position;
-        resources.Packet.DimensionId = 0;
+        resources.Packet.DimensionId = (int)player.Dimension.Type;
         resources.Packet.SubChunkCount = 0;
         resources.Packet.ClientRequestSubChunkLimit = null;
         resources.Packet.CacheEnabled = false;
@@ -419,7 +419,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         resources.Position.X = chunk.X;
         resources.Position.Z = chunk.Z;
         resources.Packet.Position = resources.Position;
-        resources.Packet.DimensionId = 0;
+        resources.Packet.DimensionId = (int)player.Dimension.Type;
         resources.Packet.SubChunkCount = (uint)subChunkCount;
         resources.Packet.ClientRequestSubChunkLimit = null;
         resources.Packet.CacheEnabled = false;

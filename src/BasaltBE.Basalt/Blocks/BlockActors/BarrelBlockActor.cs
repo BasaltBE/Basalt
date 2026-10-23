@@ -19,6 +19,7 @@ public sealed class BarrelBlockActor : BlockActor {
 
     public BarrelBlockActor(BlockActorContext context) : base(context) {
         Container = new BlockContainer(context.Position, 27, containerName: ContainerEnumName.Barrel);
+        Container.Changed += MarkDirty;
         Container.FirstViewerOpened += OnFirstViewerOpened;
         Container.LastViewerClosed += OnLastViewerClosed;
     }

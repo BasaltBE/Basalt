@@ -10,7 +10,10 @@ using BasaltBE.Basalt.Events.Worlds;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Basalt.Worlds.Providers;
+using BasaltBE.Basalt.Worlds.Providers.Types;
 using BasaltBE.Logging;
+using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.Basalt.Worlds;
 
@@ -22,6 +25,7 @@ public sealed class World : IDisposable {
     readonly ChunkGeneratorRegistry generators;
     readonly ChunkGenerationService generationService;
     readonly bool ownsGenerationService;
+    readonly WorldProviderService? storage;
     EventEmitter? events;
     internal Server? Server;
     internal int OwnerThread;
@@ -36,6 +40,7 @@ public sealed class World : IDisposable {
     public readonly string Identifier;
     public readonly LootTableManager LootTables;
     public readonly TickMetrics Ticks = new();
+    public WorldStorageMetrics StorageMetrics => storage?.Metrics ?? default;
     private readonly Dictionary<string, Dimension> dimensions = new(StringComparer.OrdinalIgnoreCase);
     public readonly IReadOnlyDictionary<string, Dimension> Dimensions;
     public bool Initialized => Volatile.Read(ref initialization) == 2;
@@ -45,8 +50,9 @@ public sealed class World : IDisposable {
         ChunkGeneratorRegistry generators,
         int workerCount = 4,
         int queueCapacity = 1024,
-        LootTableManager? lootTables = null
-    ) : this(identifier, generators, null, lootTables, workerCount, queueCapacity) { }
+        LootTableManager? lootTables = null,
+        IWorldProvider? provider = null
+    ) : this(identifier, generators, null, lootTables, workerCount, queueCapacity, provider) { }
 
     internal World(
         string identifier,
@@ -54,7 +60,8 @@ public sealed class World : IDisposable {
         ChunkGenerationService? generationService,
         LootTableManager? lootTables,
         int workerCount = 4,
-        int queueCapacity = 1024
+        int queueCapacity = 1024,
+        IWorldProvider? provider = null
     ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
@@ -64,7 +71,10 @@ public sealed class World : IDisposable {
         LootTables = lootTables ?? new LootTableManager();
         ownsGenerationService = generationService is null;
         this.generationService = generationService ?? new ChunkGenerationService(workerCount, queueCapacity);
+        storage = provider is null ? null : new WorldProviderService(provider);
     }
+
+    internal WorldProviderService? Storage => storage;
 
     internal void Initialize(Action<World> configure, EventEmitter events) {
         if (Interlocked.CompareExchange(ref initialization, 1, 0) != 0)
@@ -82,15 +92,28 @@ public sealed class World : IDisposable {
 
     public Dimension? GetDimension(string identifier) => dimensions.GetValueOrDefault(identifier);
 
-    public Dimension CreateDimension(string identifier) {
-        return CreateDimension(identifier, generators.CreateDefault());
+    public Dimension? GetDimension(DimensionType type) {
+        foreach (Dimension dimension in dimensions.Values) {
+            if (dimension.Type == type)
+                return dimension;
+        }
+
+        return null;
     }
 
-    public Dimension CreateDimension(string identifier, string generatorIdentifier) {
-        return CreateDimension(identifier, generators.Create(generatorIdentifier));
-    }
+    public Dimension CreateDimension(string identifier) =>
+        CreateDimension(identifier, Dimension.GetDimensionType(identifier));
 
-    Dimension CreateDimension(string identifier, IChunkGenerator generator) {
+    public Dimension CreateDimension(string identifier, string generatorIdentifier) =>
+        CreateDimension(identifier, Dimension.GetDimensionType(identifier), generatorIdentifier);
+
+    public Dimension CreateDimension(string identifier, DimensionType type) =>
+        CreateDimension(identifier, type, generators.CreateDefault());
+
+    public Dimension CreateDimension(string identifier, DimensionType type, string generatorIdentifier) =>
+        CreateDimension(identifier, type, generators.Create(generatorIdentifier));
+
+    Dimension CreateDimension(string identifier, DimensionType type, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         if (Started)
             throw new InvalidOperationException("Configure dimensions before starting the server.");
@@ -99,7 +122,8 @@ public sealed class World : IDisposable {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
         }
 
-        Dimension dimension = new(identifier, generator, generationService);
+        Dimension dimension = new(identifier, type, generator, generationService);
+        dimension.PrimaryStorageDimension = !dimensions.Values.Any(existing => existing.Type == type);
         dimension.Events = events;
         dimension.World = this;
         dimension.SimulationRadius = Server?.Properties.TickDistance ?? 4;
@@ -199,6 +223,9 @@ public sealed class World : IDisposable {
     }
 
     public void Dispose() {
+        foreach (Dimension dimension in dimensions.Values)
+            dimension.FlushStorage();
+        storage?.Dispose();
         if (ownsGenerationService)
             generationService.Dispose();
         while (inbound.TryDequeue(out var entry)) {

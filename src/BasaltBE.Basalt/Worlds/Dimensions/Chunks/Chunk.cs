@@ -2,7 +2,9 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
+using BasaltBE.Basalt.Worlds.Providers.Types;
 using BasaltBE.Nbt.Types;
+using Basalt.Binary;
 using NbtCodec = BasaltBE.Nbt.Nbt;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -11,11 +13,14 @@ namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class Chunk(int x, int z) {
     static readonly Options NetworkNbtOptions = new() { VarInt = true, StringLengthVarInt = true };
+    const int MinimumSubChunkY = -4;
+    const int WorldSubChunkCount = 24;
 
     Dictionary<int, SubChunk>? subChunks;
     internal Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
     Dictionary<(int X, int Y, int Z), BlockActor>? actors;
     internal Dimension? Dimension;
+    internal long Revision;
 
     public readonly int X = x;
     public readonly int Z = z;
@@ -61,6 +66,7 @@ public sealed class Chunk(int x, int z) {
         }
 
         subChunk = new SubChunk { Index = checked((sbyte)subChunkY) };
+        subChunk.Chunk = this;
         subChunks.Add(subChunkY, subChunk);
         return subChunk;
     }
@@ -121,8 +127,10 @@ public sealed class Chunk(int x, int z) {
     public void SetBlockNbt(int x, int y, int z, CompoundTag? actor) {
         BlockStorage.GetIndex(x, y & 15, z);
         if (actor is null) {
-            blockActors?.Remove((x, y, z));
+            bool changed = blockActors?.Remove((x, y, z)) == true;
             actors?.Remove((x, y, z));
+            if (changed)
+                MarkDirty();
             return;
         }
 
@@ -132,6 +140,7 @@ public sealed class Chunk(int x, int z) {
         SetCoordinate(actor, "z", checked(Z * 16 + z));
         blockActors ??= [];
         blockActors[(x, y, z)] = actor;
+        MarkDirty();
     }
 
     internal BlockActor? GetRuntimeActor(int x, int y, int z) => actors?.GetValueOrDefault((x, y, z));
@@ -143,6 +152,11 @@ public sealed class Chunk(int x, int z) {
         }
 
         (actors ??= [])[(x, y, z)] = actor;
+    }
+
+    internal void MarkDirty() {
+        Revision++;
+        Dimension?.MarkChunkDirty(this);
     }
 
     /// <summary>Serializes/Writes chunk data into a writer.</summary>
@@ -215,7 +229,7 @@ public sealed class Chunk(int x, int z) {
         Chunk chunk = new(x, z);
         for (int i = 0; i < subChunkCount; i++) {
             int expectedIndex = checked(minimumSubChunkY + i);
-            SubChunk? subChunk = SubChunk.Deserialize(ref reader, false);
+            SubChunk? subChunk = SubChunk.Deserialize(ref reader, ChunkSerializationMode.Network, false);
             if (subChunk is null) {
                 continue;
             }
@@ -225,13 +239,14 @@ public sealed class Chunk(int x, int z) {
             }
 
             if (!subChunk.Empty) {
+                subChunk.Chunk = chunk;
                 (chunk.subChunks ??= []).Add(expectedIndex, subChunk);
             }
         }
 
         for (int i = 0; i < biomeCount; i++) {
             int subChunkY = checked(minimumSubChunkY + i);
-            BiomeStorage? biomes = BiomeStorage.Deserialize(ref reader, false);
+            BiomeStorage? biomes = BiomeStorage.Deserialize(ref reader, ChunkSerializationMode.Network, false);
             if (biomes is { Empty: false }) {
                 chunk.GetOrCreateSubChunk(subChunkY).Biomes = biomes;
             }
@@ -259,6 +274,133 @@ public sealed class Chunk(int x, int z) {
         return chunk;
     }
 
+    public ChunkStorageEntry[] Serialize() {
+        List<ChunkStorageEntry> entries = new(WorldSubChunkCount + 2);
+        using (BinaryStream stream = BinaryStream.Rent(64 * 1024)) {
+            BinaryWriter writer = stream.GetWriter();
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    int height = 0;
+                    for (int y = 319; y >= -64; y--) {
+                        BlockPermutation permutation = GetPermutation(x, y, z);
+                        BlockType? type = BlockPalette.FindType(permutation.Identifier);
+                        if (type is { Opacity: > 0 } or { Solid: true } or { Liquid: true }) {
+                            height = y + 65;
+                            break;
+                        }
+                    }
+                    writer.WriteUInt16(checked((ushort)height), true);
+                }
+            }
+
+            for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+                SubChunk? subChunk = GetSubChunk(subChunkY);
+                if (subChunk is null) {
+                    writer.WriteUInt8(0xFF);
+                }
+                else {
+                    subChunk.Biomes.Serialize(ref writer, ChunkSerializationMode.LevelDb);
+                }
+            }
+            entries.Add(new ChunkStorageEntry(ChunkStorageType.Data3D, 0, stream.Buffer[..stream.Offset].ToArray()));
+        }
+
+        for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+            if (GetSubChunk(subChunkY) is not { Empty: false } subChunk)
+                continue;
+            using BinaryStream stream = BinaryStream.Rent(64 * 1024);
+            BinaryWriter writer = stream.GetWriter();
+            subChunk.Serialize(ref writer, checked((sbyte)subChunkY), ChunkSerializationMode.LevelDb);
+            entries.Add(new ChunkStorageEntry(ChunkStorageType.SubChunk, checked((sbyte)subChunkY), stream.Buffer[..stream.Offset].ToArray()));
+        }
+
+        if (blockActors is { Count: > 0 }) {
+            using BinaryStream stream = BinaryStream.Rent(64 * 1024);
+            BinaryWriter writer = stream.GetWriter();
+            if (actors is not null) {
+                foreach (BlockActor actor in actors.Values)
+                    actor.OnWrite(actor.Nbt);
+            }
+            foreach (CompoundTag actor in blockActors.Values)
+                NbtCodec.Write(actor, ref writer, Options.LittleEndian);
+            entries.Add(new ChunkStorageEntry(ChunkStorageType.BlockActor, 0, stream.Buffer[..stream.Offset].ToArray()));
+        }
+
+        return entries.ToArray();
+    }
+
+    public static Chunk Deserialize(int x, int z, ChunkStorageEntry[] entries) {
+        Chunk chunk = new(x, z);
+        ChunkStorageEntry? data3D = null;
+        ChunkStorageEntry? actors = null;
+        foreach (ChunkStorageEntry entry in entries) {
+            switch (entry.Type) {
+                case ChunkStorageType.Data3D:
+                    data3D = entry;
+                    break;
+                case ChunkStorageType.SubChunk: {
+                    int offset = 0;
+                    BinaryReader reader = new(entry.Data, ref offset);
+                    SubChunk subChunk = SubChunk.Deserialize(ref reader, ChunkSerializationMode.LevelDb);
+                    if (reader.Remaining != 0 || subChunk.Index != entry.SubChunkY)
+                        throw new InvalidDataException("The stored subchunk does not match its key.");
+                    subChunk.Chunk = chunk;
+                    if (chunk.subChunks is null)
+                        chunk.subChunks = [];
+                    if (!chunk.subChunks.TryAdd(entry.SubChunkY, subChunk))
+                        throw new InvalidDataException("The stored chunk contains a duplicate subchunk.");
+                    break;
+                }
+                case ChunkStorageType.BlockActor:
+                    actors = entry;
+                    break;
+            }
+        }
+
+        if (data3D is null)
+            throw new InvalidDataException("The LevelDB chunk is missing its biome record.");
+
+        int dataOffset = 0;
+        BinaryReader dataReader = new(data3D.Value.Data, ref dataOffset);
+        if (dataReader.Remaining < 512)
+            throw new InvalidDataException("The LevelDB chunk heightmap is incomplete.");
+        dataReader.Offset += 512;
+        for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+            byte header = dataReader.ReadUInt8();
+            if ((header >> 1) == 127)
+                continue;
+            dataReader.Offset--;
+            BiomeStorage biomes = BiomeStorage.Deserialize(ref dataReader, ChunkSerializationMode.LevelDb, true)!;
+            if (chunk.GetSubChunk(subChunkY) is { } subChunk) {
+                subChunk.Biomes = biomes;
+            }
+            else if (!biomes.Empty) {
+                chunk.GetOrCreateSubChunk(subChunkY).Biomes = biomes;
+            }
+        }
+        if (dataReader.Remaining != 0)
+            throw new InvalidDataException("The LevelDB biome record has trailing data.");
+
+        if (actors is { } actorEntry) {
+            int actorOffset = 0;
+            BinaryReader actorReader = new(actorEntry.Data, ref actorOffset);
+            while (actorReader.Remaining > 0) {
+                if (NbtCodec.Read(ref actorReader, Options.LittleEndian) is not CompoundTag actor ||
+                    !actor.TryGet("x", out IntTag? actorX) ||
+                    !actor.TryGet("y", out IntTag? actorY) ||
+                    !actor.TryGet("z", out IntTag? actorZ))
+                    throw new InvalidDataException("Stored block actor is missing its coordinates.");
+                int localX = actorX!.Value - x * 16;
+                int localZ = actorZ!.Value - z * 16;
+                if ((uint)localX > 15 || (uint)localZ > 15)
+                    throw new InvalidDataException("Stored block actor is outside its chunk.");
+                chunk.SetBlockNbt(localX, actorY!.Value, localZ, actor);
+            }
+        }
+
+        chunk.Revision = 0;
+        return chunk;
+    }
     static void SetCoordinate(CompoundTag actor, string name, int value) {
         if (actor.TryGet(name, out IntTag? tag)) {
             tag!.Value = value;

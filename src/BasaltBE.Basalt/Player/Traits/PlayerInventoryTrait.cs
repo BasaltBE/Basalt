@@ -3,6 +3,8 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Network.Handlers;
+using BasaltBE.Nbt.Enums;
+using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
@@ -100,12 +102,50 @@ public sealed class PlayerInventoryTrait : EntityTrait {
     }
 
     public override void OnSpawn() {
-        // Temp
-        Inventory.SetItem(0, new ItemStack("minecraft:stick", 64));
-        Inventory.SetItem(1, new ItemStack("minecraft:stone", 64));
         Inventory.AddPersistent((Player)Entity);
         Cursor.AddPersistent((Player)Entity);
         CraftingGrid.AddPersistent((Player)Entity);
+    }
+
+    public override void Read(CompoundTag entityTag) {
+        SelectedSlot = Math.Min((byte)8, entityTag.Get<ByteTag>("SelectedSlot")?.Value ?? 0);
+        if (entityTag.Get<ListTag>("Inventory") is not { } items)
+            return;
+
+        foreach (Tag entry in items.Value) {
+            if (entry is not CompoundTag item ||
+                !item.TryGet("Slot", out ByteTag? slot) ||
+                !item.TryGet("Name", out StringTag? name) ||
+                !item.TryGet("Count", out ByteTag? count) ||
+                slot!.Value >= Inventory.ContainerSize ||
+                ItemPalette.Find(name!.Value) is not { } type ||
+                count!.Value == 0)
+                continue;
+
+            uint metadata = item.Get<ShortTag>("Damage") is { } damage
+                ? unchecked((ushort)damage.Value)
+                : 0U;
+            Inventory.LoadItem(slot.Value, new ItemStack(type, count.Value, metadata, item.Get<CompoundTag>("tag")));
+        }
+    }
+
+    public override void Write(CompoundTag entityTag) {
+        entityTag.Add("SelectedSlot", new ByteTag { Value = SelectedSlot });
+        ListTag items = new() { ElementType = TagType.Compound };
+        for (int slot = 0; slot < Inventory.ContainerSize; slot++) {
+            if (Inventory.GetItem(slot) is not { } stack)
+                continue;
+
+            CompoundTag item = new();
+            item.Add("Name", new StringTag { Value = stack.Type.Identifier });
+            item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
+            item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
+            item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
+            if (stack.Nbt is not null)
+                item.Add("tag", stack.Clone().Nbt!);
+            items.Value.Add(item);
+        }
+        entityTag.Add("Inventory", items);
     }
 
     internal bool MatchesClientRequestNetId(Container container, int slot, int clientRequestNetId, ItemStack? item) =>

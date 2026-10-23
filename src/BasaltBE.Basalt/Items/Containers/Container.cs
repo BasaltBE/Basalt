@@ -29,6 +29,7 @@ public class Container {
     }
     public event Action? FirstViewerOpened;
     public event Action? LastViewerClosed;
+    public event Action? Changed;
 
     public Container(
         int size,
@@ -275,6 +276,7 @@ public class Container {
             recipients = [.. viewers];
         }
 
+        Changed?.Invoke();
         SendSlot(recipients, slot, item);
     }
 

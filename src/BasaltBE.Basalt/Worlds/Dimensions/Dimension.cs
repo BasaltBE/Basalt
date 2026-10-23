@@ -2,22 +2,22 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
-using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Entities;
-using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Items;
-using BasaltBE.NetherNet.Types;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Logging;
+using BasaltBE.Nbt.Types;
+using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
-using BasaltBE.Basalt.Worlds.Types;
-using BasaltBE.Logging;
 
 namespace BasaltBE.Basalt.Worlds.Dimensions;
 
-public sealed class Dimension : IDisposable {
+public sealed partial class Dimension : IDisposable {
     const float BroadcastRadius = 65;
     internal const int ChunkSendBudgetMilliseconds = 4;
     readonly Dictionary<long, Chunk?> chunks = new(ChunkKeyComparer.Instance);
@@ -40,38 +40,67 @@ public sealed class Dimension : IDisposable {
     internal ulong TickValue;
     internal long ChunkSendBudgetRemaining;
     internal int SimulationRadius = 4;
+    internal bool PrimaryStorageDimension;
     int nextPlayerTick;
     int chunkCount;
     int pendingRequestCount;
 
+    /// <summary>Unique dimension instance identifier within its world.</summary>
     public readonly string Identifier;
+    /// <summary>Bedrock dimension type used for client protocol packets.</summary>
+    public readonly DimensionType Type;
     public readonly IChunkGenerator Generator;
     public readonly Vec3 SpawnPosition = new() { X = 0.5f, Y = -57, Z = 0.5f };
     public Difficulty Difficulty = Difficulty.Normal;
     internal World? World;
     internal EventEmitter? Events;
 
-    public Dimension(string identifier, IChunkGenerator generator) {
+    public Dimension(string identifier, IChunkGenerator generator)
+        : this(identifier, GetDimensionType(identifier), generator) { }
+
+    public Dimension(string identifier, DimensionType type, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generator);
         Identifier = identifier;
+        Type = type;
         Generator = generator;
         generationService = new ChunkGenerationService(4, 1024);
         ownsGenerationService = true;
     }
 
     internal Dimension(string identifier, IChunkGenerator generator, ChunkGenerationService generationService)
-        : this(identifier, generator, generationService, false) { }
+        : this(identifier, GetDimensionType(identifier), generator, generationService, false) { }
 
-    Dimension(string identifier, IChunkGenerator generator, ChunkGenerationService generationService, bool ownsGenerationService) {
+    internal Dimension(
+        string identifier,
+        DimensionType type,
+        IChunkGenerator generator,
+        ChunkGenerationService generationService
+    ) : this(identifier, type, generator, generationService, false) { }
+
+    Dimension(
+        string identifier,
+        DimensionType type,
+        IChunkGenerator generator,
+        ChunkGenerationService generationService,
+        bool ownsGenerationService
+    ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generator);
         ArgumentNullException.ThrowIfNull(generationService);
         Identifier = identifier;
+        Type = type;
         Generator = generator;
         this.generationService = generationService;
         this.ownsGenerationService = ownsGenerationService;
     }
+
+    internal static DimensionType GetDimensionType(string identifier) => identifier switch {
+        "minecraft:overworld" or "overworld" => DimensionType.Overworld,
+        "minecraft:nether" or "nether" => DimensionType.Nether,
+        "minecraft:the_end" or "minecraft:end" or "the_end" or "end" => DimensionType.TheEnd,
+        _ => DimensionType.Overworld
+    };
 
     public int ChunkCount => Volatile.Read(ref chunkCount);
     public int PendingRequestCount => Volatile.Read(ref pendingRequestCount);
@@ -226,9 +255,7 @@ public sealed class Dimension : IDisposable {
             return chunk is null ? ChunkRequestStatus.AlreadyPending : ChunkRequestStatus.AlreadyLoaded;
         }
 
-        if (generationService.Request(this, Generator, key, chunkX, chunkZ)) {
-            chunks.Add(key, null);
-            pendingRequestCount++;
+        if (QueueChunk(chunkX, chunkZ, key)) {
             return ChunkRequestStatus.Queued;
         }
 
@@ -337,9 +364,7 @@ public sealed class Dimension : IDisposable {
                 continue;
             }
 
-            if (generationService.Request(this, Generator, key, position.X, position.Z)) {
-                chunks.Add(key, null);
-                pendingRequestCount++;
+            if (QueueChunk(position.X, position.Z, key)) {
                 queued++;
             }
             else {
@@ -370,6 +395,8 @@ public sealed class Dimension : IDisposable {
                     result.Chunk.Dimension = this;
                     chunks[result.Key] = result.Chunk;
                     chunkCount++;
+                    if (World?.Storage is not null)
+                        result.Chunk.MarkDirty();
                     committed++;
                 }
                 else {
@@ -588,6 +615,7 @@ public sealed class Dimension : IDisposable {
             ChunkSendBudgetRemaining = Stopwatch.Frequency * ChunkSendBudgetMilliseconds / 1000;
 
         TickValue++;
+        TickStorageCompletions();
         DrainGeneratedChunks();
 
         foreach ((Player player, var area) in playerAreas) {
@@ -699,6 +727,8 @@ public sealed class Dimension : IDisposable {
                 }
             } while (sentChunk && (World?.ChunkSendBudgetRemaining ?? ChunkSendBudgetRemaining) > 0);
         }
+
+        TickStorageSaves();
     }
 
     static long GetKey(int x, int z) => ((long)x << 32) | (uint)z;

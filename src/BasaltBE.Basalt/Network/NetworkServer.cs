@@ -212,6 +212,7 @@ public sealed class NetworkServer : IDisposable {
         if (!players.TryRemove(peer, out Player? removed) || !ReferenceEquals(player, removed))
             return;
 
+        Server.PlayerData.Save(player);
         player.OnDespawn();
         player.World.RemovePlayer(player);
         lock (rosterSync) {

@@ -30,6 +30,7 @@ public sealed class ShulkerBoxBlockActor : BlockActor {
             containerName: ContainerEnumName.ShulkerBox,
             bannedItems: BannedItems
         );
+        Container.Changed += MarkDirty;
         Container.FirstViewerOpened += OnFirstViewerOpened;
         Container.LastViewerClosed += OnLastViewerClosed;
     }

@@ -87,10 +87,13 @@ public abstract class BlockActor(BlockActorContext context) {
         OnWrite(update);
         foreach ((string name, Tag tag) in update.Tags)
             Nbt.Add(name, tag);
+        MarkDirty();
 
         Dimension.Broadcast(new BlockActorDataPacket {
             Position = Position,
             ActorData = update
         }, Position.X >> 4, Position.Z >> 4);
     }
+
+    protected void MarkDirty() => Dimension.GetChunk(Position.X >> 4, Position.Z >> 4)?.MarkDirty();
 }

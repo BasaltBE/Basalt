@@ -4,9 +4,15 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
+public enum ChunkSerializationMode {
+    Network,
+    LevelDb
+}
+
 public sealed class SubChunk {
     List<BlockStorage>? layers;
 
+    internal Chunk? Chunk;
     public BiomeStorage Biomes = new();
     public sbyte Index;
 
@@ -55,19 +61,28 @@ public sealed class SubChunk {
             return;
         }
 
+        if (GetPermutationAt(index, layer) == permutation)
+            return;
+
         layers ??= [];
         while (layers.Count <= layer) {
             layers.Add(new BlockStorage());
         }
 
         layers[layer].SetPermutationAt(index, permutation);
+        Chunk?.MarkDirty();
     }
 
     public int GetBiome(int x, int y, int z) => Biomes.GetBiome(x, y, z);
 
-    public void SetBiome(int x, int y, int z, int biome) => Biomes.SetBiome(x, y, z, biome);
+    public void SetBiome(int x, int y, int z, int biome) {
+        if (Biomes.GetBiome(x, y, z) == biome)
+            return;
+        Biomes.SetBiome(x, y, z, biome);
+        Chunk?.MarkDirty();
+    }
 
-    public void Serialize(ref BinaryWriter writer, sbyte index) {
+    public void Serialize(ref BinaryWriter writer, sbyte index, ChunkSerializationMode mode = ChunkSerializationMode.Network) {
         int layerCount = layers?.Count ?? 0;
         if (layerCount > 2) {
             throw new InvalidOperationException("A subchunk supports two block layers.");
@@ -81,13 +96,16 @@ public sealed class SubChunk {
         }
 
         foreach (BlockStorage layer in layers) {
-            layer.Serialize(ref writer);
+            layer.Serialize(ref writer, mode);
         }
     }
 
-    public static SubChunk Deserialize(ref BinaryReader reader) => Deserialize(ref reader, true)!;
+    public static SubChunk Deserialize(
+        ref BinaryReader reader,
+        ChunkSerializationMode mode = ChunkSerializationMode.Network
+    ) => Deserialize(ref reader, mode, true)!;
 
-    internal static SubChunk? Deserialize(ref BinaryReader reader, bool retainEmpty) {
+    internal static SubChunk? Deserialize(ref BinaryReader reader, ChunkSerializationMode mode, bool retainEmpty) {
         byte version = reader.ReadUInt8();
         if (version != 9) {
             throw new InvalidDataException($"Unsupported subchunk version {version}.");
@@ -105,9 +123,10 @@ public sealed class SubChunk {
 
         SubChunk subChunk = new() { Index = index };
         for (int i = 0; i < layerCount; i++) {
-            (subChunk.layers ??= []).Add(BlockStorage.Deserialize(ref reader));
+            (subChunk.layers ??= []).Add(BlockStorage.Deserialize(ref reader, mode));
         }
 
         return subChunk;
     }
+
 }
