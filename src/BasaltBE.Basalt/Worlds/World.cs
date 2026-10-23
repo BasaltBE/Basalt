@@ -42,7 +42,8 @@ public sealed class World : IDisposable {
     public readonly TickMetrics Ticks = new();
     public WorldStorageMetrics StorageMetrics => storage?.Metrics ?? default;
     private readonly Dictionary<string, Dimension> dimensions = new(StringComparer.OrdinalIgnoreCase);
-    public readonly IReadOnlyDictionary<string, Dimension> Dimensions;
+    private IReadOnlyDictionary<string, Dimension> dimensionSnapshot;
+    public IReadOnlyDictionary<string, Dimension> Dimensions => Volatile.Read(ref dimensionSnapshot);
     public bool Initialized => Volatile.Read(ref initialization) == 2;
 
     public World(
@@ -65,7 +66,7 @@ public sealed class World : IDisposable {
     ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
         ArgumentNullException.ThrowIfNull(generators);
-        Dimensions = new ReadOnlyDictionary<string, Dimension>(dimensions);
+        dimensionSnapshot = new ReadOnlyDictionary<string, Dimension>(new Dictionary<string, Dimension>(dimensions, StringComparer.OrdinalIgnoreCase));
         Identifier = identifier;
         this.generators = generators;
         LootTables = lootTables ?? new LootTableManager();
@@ -90,10 +91,10 @@ public sealed class World : IDisposable {
             events.Emit(new WorldInitializeEvent(this));
     }
 
-    public Dimension? GetDimension(string identifier) => dimensions.GetValueOrDefault(identifier);
+    public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);
 
     public Dimension? GetDimension(DimensionType type) {
-        foreach (Dimension dimension in dimensions.Values) {
+        foreach (Dimension dimension in Dimensions.Values) {
             if (dimension.Type == type)
                 return dimension;
         }
@@ -115,8 +116,10 @@ public sealed class World : IDisposable {
 
     Dimension CreateDimension(string identifier, DimensionType type, IChunkGenerator generator) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+        if (type is not (DimensionType.Overworld or DimensionType.Nether or DimensionType.TheEnd))
+            throw new ArgumentOutOfRangeException(nameof(type));
         if (Started)
-            throw new InvalidOperationException("Configure dimensions before starting the server.");
+            CheckOwnership();
 
         if (Dimensions.ContainsKey(identifier)) {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
@@ -128,6 +131,8 @@ public sealed class World : IDisposable {
         dimension.World = this;
         dimension.SimulationRadius = Server?.Properties.TickDistance ?? 4;
         dimensions.Add(identifier, dimension);
+        Volatile.Write(ref dimensionSnapshot,
+            new ReadOnlyDictionary<string, Dimension>(new Dictionary<string, Dimension>(dimensions, StringComparer.OrdinalIgnoreCase)));
         return dimension;
     }
 
@@ -204,7 +209,7 @@ public sealed class World : IDisposable {
              count < 256 && Stopwatch.GetTimestamp() < ingressDeadline && inbound.TryDequeue(out var entry);
              count++) {
             try {
-                Server!.Network.ProcessMessage(entry.Message);
+                Server!.Network.ProcessMessage(entry.Message, this);
             }
             finally {
                 if (entry.Buffer is not null) {
@@ -216,14 +221,14 @@ public sealed class World : IDisposable {
             }
         }
         ChunkSendBudgetRemaining = Stopwatch.Frequency * Dimension.ChunkSendBudgetMilliseconds / 1000;
-        foreach (Dimension dimension in dimensions.Values)
+        foreach (Dimension dimension in Dimensions.Values)
             dimension.Tick();
 
         Ticks.Record(start);
     }
 
     public void Dispose() {
-        foreach (Dimension dimension in dimensions.Values)
+        foreach (Dimension dimension in Dimensions.Values)
             dimension.FlushStorage();
         storage?.Dispose();
         if (ownsGenerationService)

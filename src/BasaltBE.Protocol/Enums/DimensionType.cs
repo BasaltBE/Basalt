@@ -4,5 +4,6 @@ public enum DimensionType {
     Overworld,
     Nether,
     TheEnd,
+    End = TheEnd,
     Undefined
 }

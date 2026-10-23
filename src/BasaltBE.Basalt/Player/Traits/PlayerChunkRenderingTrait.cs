@@ -73,6 +73,13 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
     public override void OnRemove() => OnDespawn();
 
+    internal void UnloadChunks() {
+        foreach (long hash in loadedChunks) {
+            GetPosition(hash, out int x, out int z);
+            SendUnload(x, z);
+        }
+    }
+
     public override void OnDespawn() {
         Volatile.Write(ref spawnReady, 0);
         started = false;

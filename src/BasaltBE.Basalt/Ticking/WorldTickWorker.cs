@@ -8,10 +8,11 @@ namespace BasaltBE.Basalt.Ticking;
 internal sealed class WorldTickWorker : IDisposable {
     private int disposed;
     private readonly Server server;
-    private readonly World[] worlds;
+    private World[] worlds;
     private readonly Thread thread;
     private readonly ManualResetEventSlim stop = new(false);
     private readonly ManualResetEventSlim ready = new(false);
+    private int ownerThread;
 
     internal WorldTickWorker(Server server, int index, World[] worlds) {
         this.server = server;
@@ -27,10 +28,19 @@ internal sealed class WorldTickWorker : IDisposable {
 
     internal void Stop() => stop.Set();
 
+    internal int WorldCount => worlds.Length;
+
+    internal void AddWorld(World world) {
+        world.OwnerThread = ownerThread;
+        world.Started = true;
+        worlds = [.. worlds, world];
+    }
+
     private void Run() {
         Profiler.SetThreadName(thread.Name!);
+        ownerThread = Environment.CurrentManagedThreadId;
         foreach (World world in worlds)
-            world.OwnerThread = Environment.CurrentManagedThreadId;
+            world.OwnerThread = ownerThread;
         ready.Set();
         long interval = Stopwatch.Frequency / 20;
         long deadline = Stopwatch.GetTimestamp();

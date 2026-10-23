@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Network.Events;
@@ -344,16 +345,27 @@ public sealed class NetworkServer : IDisposable {
     }
 
     internal void ReleaseInbound(NethernetMessage message) {
+        if (message.Disconnected)
+            return;
         if (inbound.TryGetValue(message.Peer, out InboundConnection? connection)) {
             Interlocked.Decrement(ref connection.Messages);
             Interlocked.Add(ref connection.Bytes, -message.Payload.Length);
         }
     }
 
-    internal void ProcessMessage(NethernetMessage message) {
+    internal void ProcessMessage(NethernetMessage message, World? owner = null) {
         using ProfilerZone messageZone = Profiler.BeginZone("Network.OnMessage");
         if (message.Connected)
             return;
+
+        if (owner is not null && players.TryGetValue(message.Peer, out Player? currentPlayer) &&
+            !ReferenceEquals(currentPlayer.World, owner)) {
+            if (message.Disconnected)
+                currentPlayer.World.Enqueue(message);
+            else
+                OnMessage(message);
+            return;
+        }
 
         if (message.Disconnected) {
             Login.Disconnected(message.Peer);

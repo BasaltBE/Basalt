@@ -22,8 +22,8 @@ public sealed class Player : Entity, IDisposable {
     public readonly PlayerAbilities Abilities = new();
     public readonly PlayerPermissions Permissions;
 
-    public readonly World World;
-    public readonly Dimension Dimension;
+    public World World;
+    public Dimension Dimension;
 
     /// <summary>NetherNet connection associated with this player.</summary>
     public readonly NethernetPeer Peer;
@@ -182,6 +182,85 @@ public sealed class Player : Entity, IDisposable {
         data.Add("GameType", new IntTag { Value = (int)GameType });
         Write(data);
         return data;
+    }
+
+    public void TransferTo(Dimension dimension) {
+        ArgumentNullException.ThrowIfNull(dimension);
+        using Lock.Scope tickSync = TickSync.EnterScope();
+        if (Disposed || !Spawned)
+            throw new InvalidOperationException("Only a spawned player can transfer dimensions.");
+
+        World sourceWorld = World;
+        Dimension sourceDimension = Dimension;
+        World targetWorld = dimension.World
+            ?? throw new InvalidOperationException("The target dimension does not belong to a world.");
+        if (!ReferenceEquals(targetWorld.Server, Network.Server))
+            throw new ArgumentException("The target dimension belongs to another server.", nameof(dimension));
+        if (dimension.Type == DimensionType.Undefined)
+            throw new ArgumentException("The target dimension has no supported Bedrock dimension type.", nameof(dimension));
+        if (ReferenceEquals(sourceDimension, dimension))
+            return;
+
+        sourceWorld.CheckOwnership();
+        targetWorld.CheckOwnership();
+        if (!ReferenceEquals(targetWorld, sourceWorld) &&
+            (targetWorld.GetPlayerByXuid(Xuid) is not null || targetWorld.GetPlayer(Username) is not null))
+            throw new InvalidOperationException("The target world already contains this player's identity.");
+
+        OpenedContainer?.Close(this);
+        GetTrait<PlayerChunkRenderingTrait>()?.UnloadChunks();
+        OnDespawn();
+        sourceWorld.RemovePlayer(this);
+
+        World = targetWorld;
+        Dimension = dimension;
+        Position.X = dimension.SpawnPosition.X;
+        Position.Y = dimension.SpawnPosition.Y;
+        Position.Z = dimension.SpawnPosition.Z;
+        Rotation.X = 0;
+        Rotation.Y = 0;
+        HeadRotation = 0;
+        SetFlag(ActorFlag.Moving, false);
+        SetFlag(ActorFlag.Sneaking, false);
+        SetFlag(ActorFlag.Sprinting, false);
+        SetFlag(ActorFlag.Swimming, false);
+        SetFlag(ActorFlag.Gliding, false);
+        SetFlag(ActorFlag.Crawling, false);
+        if (GetTrait<EntityMovementTrait>() is { } movement) {
+            movement.Motion.X = 0;
+            movement.Motion.Y = 0;
+            movement.Motion.Z = 0;
+            movement.Jumping = false;
+            movement.HorizontalCollision = false;
+            movement.VerticalCollision = false;
+            movement.Grounded = false;
+        }
+
+        targetWorld.AddPlayer(this);
+        OnSpawn();
+        OnMove();
+
+        if (sourceDimension.Type != dimension.Type) {
+            Network.SendPacket(this, new ChangeDimensionPacket {
+                Dimension = dimension.Type,
+                Position = GetHeadPosition(),
+                Respawn = true,
+                LoadingScreenId = 0
+            });
+        }
+        Network.SendPacket(this, new MovePlayerPacket {
+            PlayerRuntimeId = RuntimeId,
+            Position = GetHeadPosition(),
+            Rotation = Rotation,
+            HeadRotation = HeadRotation,
+            PositionMode = 1,
+            OnGround = false,
+            RidingRuntimeId = 0,
+            Tick = dimension.TickValue
+        });
+        Network.SendPacket(this, Attributes.CreateUpdate(RuntimeId, all: true, tick: dimension.TickValue)!);
+        Network.SendPacket(this, Flags.CreateUpdate(RuntimeId, dimension.TickValue));
+        Network.SendPacket(this, Abilities.CreateUpdate(UniqueId, Permissions));
     }
 
     public void Dispose() {

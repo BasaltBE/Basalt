@@ -33,6 +33,7 @@ public sealed class Server : IDisposable {
     internal readonly ReaderWriterLockSlim Gameplay = new();
     private WorldTickWorker[] workers = [];
     private ChunkGenerationService? generation;
+    private IReadOnlyList<World> worldSnapshot = Array.AsReadOnly(Array.Empty<World>());
     public readonly ServerProperties Properties;
     public readonly NetworkServer Network;
     public readonly EventEmitter Events = new();
@@ -41,7 +42,7 @@ public sealed class Server : IDisposable {
     public readonly LootTableManager LootTables = new();
     public readonly BlockActorRegistry BlockActors = new();
     private readonly List<World> worlds = [];
-    public readonly IReadOnlyList<World> Worlds;
+    public IReadOnlyList<World> Worlds => Volatile.Read(ref worldSnapshot);
     public readonly CommandRegistry Commands;
     public readonly PermissionStore Permissions;
     internal readonly PlayerDataStore PlayerData = new("players");
@@ -50,7 +51,6 @@ public sealed class Server : IDisposable {
     public bool Stopping => Volatile.Read(ref stopping) != 0;
 
     public Server(ServerProperties properties, IServerIdentity? identity = null, PermissionStore? permissions = null) {
-        Worlds = worlds.AsReadOnly();
         Commands = new CommandRegistry(this);
         Permissions = permissions ?? new PermissionStore();
         Properties = properties;
@@ -76,10 +76,15 @@ public sealed class Server : IDisposable {
         IWorldProvider? provider = null,
         string? providerName = null
     ) {
-        if (Started)
-            throw new InvalidOperationException("Create worlds before starting the server.");
+        if (Started && Properties.Ticking == "world" && !Gameplay.IsWriteLockHeld)
+            throw new InvalidOperationException("Create worlds during the exclusive gameplay phase.");
+        if (Started && Properties.Ticking == "default" && Environment.CurrentManagedThreadId != coordinatorThread)
+            throw new InvalidOperationException("Create worlds on the server thread.");
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(configure);
+        if (identifier is "." or ".." || identifier.IndexOfAny(['/', '\\']) >= 0 ||
+            identifier.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            throw new ArgumentException("World name contains invalid file-name characters.", nameof(identifier));
         if (provider is not null && providerName is not null)
             throw new ArgumentException("Specify a provider instance or provider name, not both.");
         foreach (World existing in Worlds) {
@@ -89,19 +94,37 @@ public sealed class Server : IDisposable {
 
         if (providerName is not null) {
             string worldDirectory = Path.GetFullPath(Path.Combine("worlds", identifier));
+            if (Started && Directory.Exists(worldDirectory))
+                throw new InvalidOperationException($"World storage already exists for '{identifier}'.");
             Directory.CreateDirectory(worldDirectory);
             provider = Providers.Create(providerName, worldDirectory);
         }
         World world = new(identifier, Generators, generation ??= new ChunkGenerationService(4, 1024), LootTables, provider: provider);
         world.Server = this;
-        worlds.Add(world);
         try {
             world.Initialize(configure, Events);
         }
         catch {
-            worlds.Remove(world);
             world.Dispose();
             throw;
+        }
+        worlds.Add(world);
+        Volatile.Write(ref worldSnapshot, Array.AsReadOnly(worlds.ToArray()));
+        if (Started) {
+            if (workers.Length == 0) {
+                world.OwnerThread = coordinatorThread;
+                world.Started = true;
+            }
+            else if (workers.Length < Properties.TickingThreads) {
+                WorldTickWorker worker = new(this, workers.Length, [world]);
+                world.Started = true;
+                worker.Start();
+                workers = [.. workers, worker];
+            }
+            else {
+                WorldTickWorker worker = workers.MinBy(candidate => candidate.WorldCount)!;
+                worker.AddWorld(world);
+            }
         }
         return world;
     }
@@ -109,7 +132,7 @@ public sealed class Server : IDisposable {
     public World GetWorld() => GetWorld(Properties.DefaultWorldName);
 
     public World GetWorld(string identifier) {
-        foreach (World world in worlds) {
+        foreach (World world in Worlds) {
             if (string.Equals(world.Identifier, identifier, StringComparison.OrdinalIgnoreCase))
                 return world;
         }
@@ -118,7 +141,7 @@ public sealed class Server : IDisposable {
     }
 
     public Player? GetPlayer(string username) {
-        foreach (World world in worlds) {
+        foreach (World world in Worlds) {
             Player? player = world.GetPlayer(username);
             if (player is not null)
                 return player;
@@ -128,7 +151,7 @@ public sealed class Server : IDisposable {
     }
 
     public Player? GetPlayerByXuid(string xuid) {
-        foreach (World world in worlds) {
+        foreach (World world in Worlds) {
             Player? player = world.GetPlayerByXuid(xuid);
             if (player is not null)
                 return player;
@@ -193,7 +216,7 @@ public sealed class Server : IDisposable {
         TickValue++;
         if (workers.Length == 0) {
             Commands.Tick();
-            foreach (World world in worlds)
+            foreach (World world in Worlds)
                 world.Tick();
         }
         else {
