@@ -353,21 +353,21 @@ public sealed class Chunk(int x, int z) {
                     data3D = entry;
                     break;
                 case ChunkStorageType.SubChunk: {
-                    if (entry.SubChunkY < minimumSubChunkY || entry.SubChunkY >= minimumSubChunkY + subChunkCount)
-                        break;
+                        if (entry.SubChunkY < minimumSubChunkY || entry.SubChunkY >= minimumSubChunkY + subChunkCount)
+                            break;
 
-                    int offset = 0;
-                    BinaryReader reader = new(entry.Data, ref offset);
-                    SubChunk subChunk = SubChunk.Deserialize(ref reader, ChunkSerializationMode.LevelDb);
-                    if (reader.Remaining != 0 || subChunk.Index != entry.SubChunkY)
-                        throw new InvalidDataException("The stored subchunk does not match its key.");
-                    subChunk.Chunk = chunk;
-                    if (chunk.subChunks is null)
-                        chunk.subChunks = [];
-                    if (!chunk.subChunks.TryAdd(entry.SubChunkY, subChunk))
-                        throw new InvalidDataException("The stored chunk contains a duplicate subchunk.");
-                    break;
-                }
+                        int offset = 0;
+                        BinaryReader reader = new(entry.Data, ref offset);
+                        SubChunk subChunk = SubChunk.Deserialize(ref reader, ChunkSerializationMode.LevelDb);
+                        if (reader.Remaining != 0 || subChunk.Index != entry.SubChunkY)
+                            throw new InvalidDataException("The stored subchunk does not match its key.");
+                        subChunk.Chunk = chunk;
+                        if (chunk.subChunks is null)
+                            chunk.subChunks = [];
+                        if (!chunk.subChunks.TryAdd(entry.SubChunkY, subChunk))
+                            throw new InvalidDataException("The stored chunk contains a duplicate subchunk.");
+                        break;
+                    }
                 case ChunkStorageType.BlockActor:
                     actors = entry;
                     break;

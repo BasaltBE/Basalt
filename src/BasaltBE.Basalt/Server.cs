@@ -7,6 +7,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
+using BasaltBE.Basalt.Experience;
 using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Network;
@@ -42,6 +43,7 @@ public sealed class Server : IDisposable {
     public readonly CustomDimensionRegistry CustomDimensions;
     public readonly WorldProviderRegistry Providers = new();
     public readonly LootTableManager LootTables = new();
+    public readonly ExperienceDropManager ExperienceDrops = new();
     public readonly EnchantmentRegistry Enchantments = new();
     public readonly BlockActorRegistry BlockActors = new();
     private readonly List<World> worlds = [];

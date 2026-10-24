@@ -215,6 +215,11 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                         dropAmount -= stackSize;
                     }
                 }
+
+                if (source is Player && dropWorld.Server is { } server) {
+                    int experience = server.ExperienceDrops.GetEntityExperience(entityType.Identifier);
+                    server.ExperienceDrops.Drop(dropDimension, Entity.Position, experience);
+                }
             }
 
             if (Entity is not Player && Entity.SpawnedDimension is { } deadDimension) {

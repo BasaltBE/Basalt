@@ -20,6 +20,7 @@ public sealed class FurnaceBlockActor : BlockActor {
 
     public readonly BlockContainer Container;
     public readonly string FurnaceType;
+    private int lastResultCount;
     public int BurnTime;
     public int BurnDuration;
     public int CookTime;
@@ -52,7 +53,19 @@ public sealed class FurnaceBlockActor : BlockActor {
             containerType,
             slotNames: [ingredient, ContainerEnumName.FurnaceFuel, ContainerEnumName.FurnaceResult]
         );
-        Container.Changed += MarkDirty;
+        Container.Changed += () => {
+            int resultCount = Container.GetItem(ResultSlot)?.StackSize ?? 0;
+            if (resultCount < lastResultCount && StoredExperience > 0) {
+                Dimension.World?.Server?.ExperienceDrops.Drop(Dimension, new Vec3 {
+                    X = Position.X + 0.5f,
+                    Y = Position.Y + 0.5f,
+                    Z = Position.Z + 0.5f
+                }, StoredExperience);
+                StoredExperience = 0;
+            }
+            lastResultCount = resultCount;
+            MarkDirty();
+        };
     }
 
     public override void OnRead(CompoundTag nbt) {
@@ -61,6 +74,7 @@ public sealed class FurnaceBlockActor : BlockActor {
         CookTime = Math.Max(0, (int)(nbt.Get<ShortTag>("CookTime")?.Value ?? 0));
         StoredExperience = Math.Max(0, nbt.Get<IntTag>("StoredXPInt")?.Value ?? 0);
         ReadItems(nbt, Container);
+        lastResultCount = Container.GetItem(ResultSlot)?.StackSize ?? 0;
     }
 
     public override void OnWrite(CompoundTag nbt) {
@@ -79,6 +93,7 @@ public sealed class FurnaceBlockActor : BlockActor {
     }
 
     public override void OnBreak(Player player) {
+        StoredExperience = 0;
         for (int slot = 0; slot < Container.ContainerSize; slot++) {
             if (Container.TakeItem(slot, ushort.MaxValue) is not { } item)
                 continue;
@@ -152,7 +167,10 @@ public sealed class FurnaceBlockActor : BlockActor {
         else
             output.IncrementStack(recipe.Count);
         Container.TakeItem(InputSlot);
-        StoredExperience++;
+        float experience = Dimension.World?.Server?.ExperienceDrops.GetSmeltExperience(recipe.Result.Identifier) * recipe.Count ?? 0;
+        StoredExperience += (int)MathF.Floor(experience);
+        if (Random.Shared.NextSingle() < experience - MathF.Floor(experience))
+            StoredExperience++;
     }
 
     private void SetLit(bool lit) {

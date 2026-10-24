@@ -61,6 +61,7 @@ internal static class Program {
             EntityPalette.RegisterTrait<EntityHealthTrait>();
             EntityPalette.RegisterTrait<PlayerHungerTrait>();
             EntityPalette.RegisterTrait<PlayerExperienceTrait>();
+            EntityPalette.RegisterTrait<ExperienceOrbTrait>();
             BlockPalette.RegisterTrait<CraftingTableTrait>();
             BlockPalette.RegisterTrait<EnchantingTableTrait>();
             BlockPalette.RegisterTrait<GrindstoneTrait>();

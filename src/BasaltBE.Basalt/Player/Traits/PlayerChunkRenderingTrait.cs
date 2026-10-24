@@ -198,9 +198,12 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         HeadRotation = entity.HeadRotation,
                         BodyRotation = entity.Rotation.Y,
                         Attributes = entity.Attributes.CreateSnapshot(),
-                        ActorData = entity is FallingBlockEntity fallingBlock
-                            ? [.. entity.Flags.CreateSnapshot(), fallingBlock.CreateBlockVariant()]
-                            : entity.Flags.CreateSnapshot()
+                        ActorData = entity switch {
+                            FallingBlockEntity fallingBlock => [.. entity.Flags.CreateSnapshot(), fallingBlock.CreateBlockVariant()],
+                            _ when entity.GetTrait<ExperienceOrbTrait>() is { } experienceOrb =>
+                                [.. entity.Flags.CreateSnapshot(), experienceOrb.CreateExperienceValue()],
+                            _ => entity.Flags.CreateSnapshot()
+                        }
                     });
                 }
                 state = new EntityRenderState(entity);

@@ -19,7 +19,7 @@ public sealed class SubChunkRequestPacket : DataPacket {
             throw new InvalidDataException("Subchunk request count is invalid.");
 
         PositionOffsets = new SubChunkPosOffset[(int)count];
-        for (int i = 0; i < PositionOffsets.Length; i++)  {
+        for (int i = 0; i < PositionOffsets.Length; i++) {
             SubChunkPosOffset offset = new();
             offset.Read(ref reader);
             PositionOffsets[i] = offset;

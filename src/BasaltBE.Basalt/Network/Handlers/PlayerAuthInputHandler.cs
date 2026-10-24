@@ -486,6 +486,16 @@ internal sealed class PlayerAuthInputHandler {
             }
         }
 
+        if (dropItems && (tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) ?? 0) == 0 &&
+            player.Network.Server.LootTables.CanHarvest(block.Identifier, tool)) {
+            int experience = player.Network.Server.ExperienceDrops.GetBlockExperience(block.Identifier);
+            player.Network.Server.ExperienceDrops.Drop(
+                player.Dimension,
+                new Vec3 { X = x + 0.5f, Y = y + 0.5f, Z = z + 0.5f },
+                experience
+            );
+        }
+
         tool?.DamageDurability(durabilityDamage);
         return true;
     }

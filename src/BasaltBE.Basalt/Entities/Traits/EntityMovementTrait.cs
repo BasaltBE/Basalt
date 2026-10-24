@@ -10,7 +10,7 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Entities.Traits;
 
 [EntityTraitAppliesTo(
-    Identifiers = ["minecraft:player"],
+    Identifiers = ["minecraft:player", "minecraft:xp_orb"],
     Components = ["minecraft:movement", "minecraft:movement.basic", "minecraft:movement.generic"]
 )]
 public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
@@ -31,6 +31,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     public const float KnockbackVertical = 0.435f;
     public const float KnockbackVerticalLimit = 0.435f;
     internal bool Grounded;
+    bool smallEntity;
     public bool Jumping;
     public bool HorizontalCollision;
     public bool VerticalCollision;
@@ -60,6 +61,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void OnAdd() {
+        smallEntity = Entity is ItemEntity || Entity.GetTrait<ExperienceOrbTrait>() is not null;
         if (Entity.Type?.PropertiesPayload?.Components.Movement is { } movement) {
             EntityNumericValue? value = movement.Value;
             double? speed = value?.Value ?? value?.Range?.RangeMax;
@@ -93,7 +95,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
 
         float width = 0.6f;
         float height = 1.8f;
-        if (Entity is ItemEntity) {
+        if (smallEntity) {
             width = 0.25f;
             height = 0.25f;
         }

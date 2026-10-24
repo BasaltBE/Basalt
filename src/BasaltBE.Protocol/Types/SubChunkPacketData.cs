@@ -20,8 +20,7 @@ public sealed class SubChunkPacketData : DataType {
         if (!Enum.IsDefined(Result))
             throw new InvalidDataException("Subchunk request result is invalid.");
 
-        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir))
-        {
+        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir)) {
             uint length = reader.ReadVarUInt();
             if (length > reader.Remaining)
                 throw new InvalidDataException("Subchunk data length exceeds the remaining packet data.");
@@ -43,8 +42,7 @@ public sealed class SubChunkPacketData : DataType {
 
         PositionOffset.Write(ref writer);
         writer.WriteUInt8((byte)Result);
-        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir))
-        {
+        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir)) {
             writer.WriteVarUInt((uint)SerializedSubChunk.Length);
             writer.WriteBytes(SerializedSubChunk.Span);
         }

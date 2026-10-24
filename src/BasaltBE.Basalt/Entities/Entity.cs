@@ -184,7 +184,7 @@ public class Entity {
             trait.OnUseItemOnEntity(item, target, hitPosition);
     }
 
-    public void Tick() {
+    public virtual void Tick() {
         SimulationAge++;
         Dispatch(static trait => trait.Tick());
         if (this is ItemEntity item)
