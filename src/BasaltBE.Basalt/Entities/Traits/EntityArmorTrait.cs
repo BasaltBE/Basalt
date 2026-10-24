@@ -1,6 +1,7 @@
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -126,11 +127,19 @@ public sealed class EntityArmorTrait : EntityTrait {
         if (cause is EntityDamageCause.Drowning or EntityDamageCause.Void)
             return damage;
 
-        int protection = 0;
-        for (int slot = 0; slot < Armor.ContainerSize; slot++)
-            protection += Armor.GetItem(slot)?.Type.ArmorProtection ?? 0;
+        int armorProtection = 0;
+        int enchantmentProtection = 0;
+        for (int slot = 0; slot < Armor.ContainerSize; slot++) {
+            ItemStack? item = Armor.GetItem(slot);
+            if (item is null)
+                continue;
 
-        return damage * (1 - Math.Clamp(protection, 0, 20) * 0.04f);
+            armorProtection += item.Type.ArmorProtection;
+            enchantmentProtection += item.GetEnchantmentLevel(EnchantmentPalette.Protection);
+        }
+
+        damage *= 1 - Math.Clamp(armorProtection, 0, 20) * 0.04f;
+        return damage * (1 - Math.Clamp(enchantmentProtection, 0, 20) * 0.04f);
     }
 
     public MobArmorEquipmentPacket CreateEquipmentPacket() => new() {

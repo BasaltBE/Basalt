@@ -138,6 +138,38 @@ public static class ItemPalette {
                 ToolMaterial.Diamond or ToolMaterial.Netherite => 3,
                 _ => 0
             };
+            if (type.PropertiesPayload.Values.GetValueOrDefault("item_properties") is CompoundTag itemProperties)
+                type.Enchantability = itemProperties.Get<IntTag>("enchantable_value")?.Value ?? 0;
+            if (type.Enchantability == 0) {
+                type.Enchantability = type.ToolMaterial switch {
+                    ToolMaterial.Wooden => 15,
+                    ToolMaterial.Stone => 5,
+                    ToolMaterial.Copper => 13,
+                    ToolMaterial.Iron => 14,
+                    ToolMaterial.Gold => 22,
+                    ToolMaterial.Diamond => 10,
+                    ToolMaterial.Netherite => 15,
+                    _ => 0
+                };
+            }
+            if (type.Enchantability == 0) {
+                foreach (string tag in type.Tags) {
+                    type.Enchantability = tag switch {
+                        "minecraft:leather_tier" => 15,
+                        "minecraft:chainmail_tier" => 12,
+                        "minecraft:iron_tier" => 9,
+                        "minecraft:golden_tier" => 25,
+                        "minecraft:diamond_tier" => 10,
+                        "minecraft:netherite_tier" => 15,
+                        "minecraft:copper_tier" => 13,
+                        _ => 0
+                    };
+                    if (type.Enchantability != 0)
+                        break;
+                }
+            }
+            if (type.Enchantability == 0 && type.PropertiesPayload.Components.Contains("minecraft:enchantable"))
+                type.Enchantability = 1;
             type.MiningSpeed = type.ToolType == ToolType.None ? 1 : type.ToolMaterial switch {
                 ToolMaterial.Wooden => 2,
                 ToolMaterial.Stone => 4,

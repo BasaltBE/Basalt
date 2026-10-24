@@ -60,6 +60,8 @@ public class Container {
         return bannedItems?.Contains(item.Type) != true;
     }
 
+    public virtual bool CanContain(int slot, ItemStack item) => CanContain(item);
+
     public ItemStack? GetItem(int slot) {
         ArgumentOutOfRangeException.ThrowIfNegative(slot);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
@@ -83,7 +85,7 @@ public class Container {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
 
         lock (sync) {
-            if (item is not null && !CanContain(item))
+            if (item is not null && !CanContain(slot, item))
                 throw new InvalidOperationException($"Container '{ContainerName}' does not accept '{item.Type.Identifier}'.");
             if (item is not null && item.Container is not null &&
                 (!ReferenceEquals(item.Container, this) || item.Slot != slot))
@@ -108,7 +110,7 @@ public class Container {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
         ArgumentNullException.ThrowIfNull(item);
         lock (sync) {
-            if (items[slot] is not null || item.StackSize == 0 || item.StackSize > item.Type.MaxAmount)
+            if (items[slot] is not null || item.StackSize == 0 || item.StackSize > item.Type.MaxAmount || !CanContain(slot, item))
                 return;
             items[slot] = item;
             item.Attach(this, slot);
@@ -123,9 +125,9 @@ public class Container {
         lock (sync) {
             for (int i = 0; i < items.Length && remaining > 0; i++) {
                 ItemStack? existing = items[i];
-                if (existing is null)
+                if (existing is null && CanContain(i, item))
                     remaining -= item.Type.MaxAmount;
-                else if (existing.CanStackWith(item))
+                else if (existing is not null && existing.CanStackWith(item))
                     remaining -= Math.Max(0, item.Type.MaxAmount - existing.StackSize);
             }
         }
@@ -144,7 +146,7 @@ public class Container {
         lock (sync) {
             for (int i = 0; i < items.Length && remaining > 0; i++) {
                 ItemStack? existing = items[i];
-                if (existing is null || !existing.CanStackWith(item) || existing.StackSize >= item.Type.MaxAmount)
+                if (existing is null || !CanContain(i, item) || !existing.CanStackWith(item) || existing.StackSize >= item.Type.MaxAmount)
                     continue;
 
                 int moved = Math.Min(remaining, item.Type.MaxAmount - existing.StackSize);
@@ -154,7 +156,7 @@ public class Container {
             }
 
             for (int i = 0; i < items.Length && remaining > 0; i++) {
-                if (items[i] is not null)
+                if (items[i] is not null || !CanContain(i, item))
                     continue;
 
                 int moved = Math.Min(remaining, item.Type.MaxAmount);
@@ -329,7 +331,8 @@ public class Container {
             Position = GetPosition(),
             TargetActorId = GetTargetActorId()
         });
-        Update(player);
+        if (Type != ContainerType.Enchantment)
+            Update(player);
         return true;
     }
 

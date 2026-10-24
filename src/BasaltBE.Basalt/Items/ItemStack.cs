@@ -1,6 +1,8 @@
 using Basalt.Binary;
 using BasaltBE.Basalt.Items.Containers;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Nbt.Enums;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Types;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -21,6 +23,8 @@ public sealed class ItemStack {
     public CompoundTag? Nbt;
     public ushort StackSize => stackSize;
     public bool IsStackFull => stackSize >= Type.MaxAmount;
+    public bool Enchanted => Nbt?.Get<ListTag>("ench")?.Value.Count > 0 ||
+        Nbt?.Get<ListTag>("basalt:enchantments")?.Value.Count > 0;
     public int Damage => Type.MaxDurability > 0
         ? checked((int)Metadata)
         : Nbt?.Get<ShortTag>("Damage")?.Value ?? Nbt?.Get<IntTag>("Damage")?.Value ?? 0;
@@ -84,20 +88,156 @@ public sealed class ItemStack {
 
         int minimumChance = Type.DurabilityDamageChanceMinimum;
         int maximumChance = Type.DurabilityDamageChanceMaximum;
-        int chance = minimumChance == maximumChance
-            ? minimumChance
-            : Random.Shared.Next(minimumChance, maximumChance + 1);
-        if (chance < 100 && Random.Shared.Next(100) >= chance)
-            return false;
+        int unbreaking = GetEnchantmentLevel(EnchantmentPalette.Unbreaking);
+        if (unbreaking == 0) {
+            int chance = minimumChance == maximumChance
+                ? minimumChance
+                : Random.Shared.Next(minimumChance, maximumChance + 1);
+            if (chance < 100 && Random.Shared.Next(100) >= chance)
+                return false;
+        }
 
         int damage = Damage;
-        if (amount >= Type.MaxDurability - damage) {
+        int applied = 0;
+        for (int i = 0; i < amount; i++) {
+            if (unbreaking > 0) {
+                int chance = minimumChance == maximumChance
+                    ? minimumChance
+                    : Random.Shared.Next(minimumChance, maximumChance + 1);
+                if (chance < 100 && Random.Shared.Next(100) >= chance)
+                    continue;
+
+                bool wears = Type.ArmorSlot is not null
+                    ? Random.Shared.Next(100) < 60 || Random.Shared.Next(unbreaking + 1) == 0
+                    : Random.Shared.Next(unbreaking + 1) == 0;
+                if (!wears)
+                    continue;
+            }
+
+            applied++;
+        }
+
+        if (applied == 0)
+            return false;
+        if (applied >= Type.MaxDurability - damage) {
             SetStackSize(0);
             return true;
         }
 
-        SetDamage(damage + amount);
+        SetDamage(damage + applied);
         return false;
+    }
+
+    public int GetEnchantmentLevel(Enchantment enchantment) {
+        ArgumentNullException.ThrowIfNull(enchantment);
+        return GetEnchantmentLevel(enchantment.Identifier, enchantment.BedrockId);
+    }
+
+    public void AddEnchantment(Enchantment enchantment, int level) {
+        ArgumentNullException.ThrowIfNull(enchantment);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(level);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(level, short.MaxValue);
+        if (Type.Identifier is not ("minecraft:book" or "minecraft:enchanted_book") && !enchantment.AppliesTo(Type))
+            throw new InvalidOperationException($"Enchantment '{enchantment.Identifier}' does not apply to '{Type.Identifier}'.");
+
+        foreach (string incompatible in enchantment.IncompatibleWith.Span)
+            if (GetEnchantmentLevel(incompatible) > 0)
+                throw new InvalidOperationException($"Enchantment '{enchantment.Identifier}' is incompatible with '{incompatible}'.");
+
+        if (GetEnchantmentLevel(enchantment) != level)
+            WriteEnchantment(enchantment, level);
+    }
+
+    public bool RemoveEnchantment(Enchantment enchantment) {
+        ArgumentNullException.ThrowIfNull(enchantment);
+        if (GetEnchantmentLevel(enchantment) == 0)
+            return false;
+
+        WriteEnchantment(enchantment, 0);
+        return true;
+    }
+
+    public int GetEnchantmentLevel(string identifier) =>
+        GetEnchantmentLevel(identifier, EnchantmentPalette.Find(identifier)?.BedrockId);
+
+    private int GetEnchantmentLevel(string identifier, short? bedrockId) {
+        if (bedrockId is short nativeId) {
+            if (Nbt?.Get<ListTag>("ench") is not { } enchantments)
+                return 0;
+
+            foreach (Tag entry in enchantments.Value)
+                if (entry is CompoundTag compound &&
+                    compound.Get<ShortTag>("id")?.Value == nativeId)
+                    return compound.Get<ShortTag>("lvl")?.Value ?? 0;
+            return 0;
+        }
+
+        if (Nbt?.Get<ListTag>("basalt:enchantments") is not { } customEnchantments)
+            return 0;
+        foreach (Tag entry in customEnchantments.Value)
+            if (entry is CompoundTag compound &&
+                string.Equals(compound.Get<StringTag>("id")?.Value, identifier, StringComparison.Ordinal))
+                return compound.Get<IntTag>("lvl")?.Value ?? 0;
+        return 0;
+    }
+
+    private void WriteEnchantment(Enchantment enchantment, int level) {
+        if (enchantment.BedrockId is short bedrockId) {
+            ListTag? enchantments = Nbt?.Get<ListTag>("ench");
+            int index = enchantments?.Value.FindIndex(entry =>
+                entry is CompoundTag compound && compound.Get<ShortTag>("id")?.Value == bedrockId) ?? -1;
+            if (level == 0) {
+                if (index < 0)
+                    return;
+                enchantments!.Value.RemoveAt(index);
+                if (enchantments.Value.Count == 0)
+                    Nbt!.Remove("ench");
+            }
+            else {
+                CompoundTag entry = new();
+                entry.Add("id", new ShortTag { Value = bedrockId });
+                entry.Add("lvl", new ShortTag { Value = checked((short)level) });
+                if (index < 0) {
+                    enchantments ??= new ListTag { ElementType = TagType.Compound };
+                    enchantments.Value.Add(entry);
+                    Nbt ??= new CompoundTag();
+                    Nbt.Add("ench", enchantments);
+                }
+                else {
+                    enchantments!.Value[index] = entry;
+                }
+            }
+        }
+        else {
+            ListTag? enchantments = Nbt?.Get<ListTag>("basalt:enchantments");
+            int index = enchantments?.Value.FindIndex(entry =>
+                entry is CompoundTag compound &&
+                string.Equals(compound.Get<StringTag>("id")?.Value, enchantment.Identifier, StringComparison.Ordinal)) ?? -1;
+            if (level == 0) {
+                if (index < 0)
+                    return;
+                enchantments!.Value.RemoveAt(index);
+                if (enchantments.Value.Count == 0)
+                    Nbt!.Remove("basalt:enchantments");
+            }
+            else {
+                CompoundTag entry = new();
+                entry.Add("id", new StringTag { Value = enchantment.Identifier });
+                entry.Add("lvl", new IntTag { Value = level });
+                if (index < 0) {
+                    enchantments ??= new ListTag { ElementType = TagType.Compound };
+                    enchantments.Value.Add(entry);
+                    Nbt ??= new CompoundTag();
+                    Nbt.Add("basalt:enchantments", enchantments);
+                }
+                else {
+                    enchantments!.Value[index] = entry;
+                }
+            }
+        }
+
+        netId = Interlocked.Increment(ref nextNetId);
+        Container?.ItemChanged(this, Slot);
     }
 
     public void IncrementStack(ushort amount = 1) => SetStackSize(checked((ushort)Math.Min(Type.MaxAmount, stackSize + amount)));
@@ -167,6 +307,11 @@ public sealed class ItemStack {
     internal void Detach() {
         Container = null;
         Slot = -1;
+    }
+
+    internal void RefreshNetId() {
+        netId = Interlocked.Increment(ref nextNetId);
+        Container?.ItemChanged(this, Slot);
     }
 
     internal ItemStack Clone(ushort? size = null, bool cloneNbt = true) {

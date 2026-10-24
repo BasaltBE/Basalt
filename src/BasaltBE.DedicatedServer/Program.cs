@@ -60,7 +60,10 @@ internal static class Program {
             EntityPalette.RegisterTrait<EntityMovementTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
             EntityPalette.RegisterTrait<PlayerHungerTrait>();
+            EntityPalette.RegisterTrait<PlayerExperienceTrait>();
             BlockPalette.RegisterTrait<CraftingTableTrait>();
+            BlockPalette.RegisterTrait<EnchantingTableTrait>();
+            BlockPalette.RegisterTrait<GrindstoneTrait>();
             BlockPalette.RegisterTrait<FenceTrait>();
             BlockPalette.RegisterTrait<FenceGateTrait>();
             BlockPalette.RegisterTrait<PaneConnectionTrait>();
@@ -90,6 +93,8 @@ internal static class Program {
 
             server.Commands.Register(new StatusCommand());
             server.Commands.Register(new GiveCommand());
+            server.Commands.Register(new ExperienceCommand());
+            server.Commands.Register(new EnchantCommand(server.Enchantments));
             server.Commands.Register(new ListCommand());
             server.Commands.Register(new OpCommand());
             server.Commands.Register(new DeopCommand());

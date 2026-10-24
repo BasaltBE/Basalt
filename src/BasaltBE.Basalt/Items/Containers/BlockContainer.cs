@@ -4,7 +4,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Items.Containers;
 
-public sealed class BlockContainer : Container {
+public class BlockContainer : Container {
     public readonly BlockPos Position;
 
     public BlockContainer(

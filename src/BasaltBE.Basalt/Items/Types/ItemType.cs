@@ -69,6 +69,9 @@ public sealed class ItemType {
     public int MaxDurability;
 
     [JsonIgnore]
+    public int Enchantability;
+
+    [JsonIgnore]
     public ArmorSlot? ArmorSlot;
 
     [JsonIgnore]

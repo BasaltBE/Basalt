@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Crafting;
+using BasaltBE.Basalt.Blocks.Traits;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Containers;
@@ -72,10 +73,25 @@ internal sealed class ItemStackRequestHandler {
                 return ErrorResponse(request.ClientRequestId);
             }
 
+            if (player.OpenedContainer is EnchantingTableContainer enchantingTable &&
+                Array.Exists(request.Actions, static action => action is CraftRecipeActionData)) {
+                ItemStackResponseInfo enchantingResponse = enchantingTable.ProcessRequest(request, out failureReason);
+                if (enchantingResponse.Result != ItemStackNetResult.Success) {
+                    enchantingTable.Update();
+                    inventory.Inventory.Update();
+                    inventory.Cursor.Update();
+                }
+                return enchantingResponse;
+            }
+
             ItemStackResponseInfo response = ProcessRequest(inventory, request, mineBlockNetId, blockDestroyed, out failureReason);
             if (response.Result != ItemStackNetResult.Success) {
                 inventory.Inventory.Update();
                 inventory.Cursor.Update();
+                if (player.OpenedContainer is EnchantingTableContainer openedEnchantingTable)
+                    openedEnchantingTable.Update();
+                if (player.OpenedContainer is GrindstoneContainer openedGrindstone)
+                    openedGrindstone.Update();
                 if (TouchesArmor(request))
                     inventory.Entity.GetTrait<EntityArmorTrait>()?.Armor.Update();
             }
@@ -140,6 +156,9 @@ internal sealed class ItemStackRequestHandler {
         state.InventoryTrait = inventoryTrait;
         state.MineBlockNetId = mineBlockNetId;
         state.BlockDestroyed = blockDestroyed;
+        state.GrindstoneCrafted = false;
+        state.GrindstoneOutputTaken = false;
+        state.GrindstoneExperience = 0;
         try {
             foreach (ItemStackRequestActionData action in request.Actions) {
                 if (!Apply(state, action)) {
@@ -148,6 +167,25 @@ internal sealed class ItemStackRequestHandler {
                         Result = ItemStackNetResult.Error,
                         ClientRequestId = request.ClientRequestId
                     };
+                }
+            }
+
+            if (state.GrindstoneCrafted) {
+                if (!state.GrindstoneResults || !state.GrindstoneOutputTaken) {
+                    failureReason = "grindstone result was not completed";
+                    return ErrorResponse(request.ClientRequestId);
+                }
+                for (int slot = 0; slot < 2; slot++) {
+                    SlotKey key = new(state.Grindstone!, slot);
+                    if (state.Staged.GetValueOrDefault(key, key.Container.GetItem(slot)) is null)
+                        continue;
+                    SetItem(
+                        state,
+                        key,
+                        null,
+                        slot == 0 ? ContainerEnumName.GrindstoneInput : ContainerEnumName.GrindstoneAdditional,
+                        state.Grindstone!.DynamicId
+                    );
                 }
             }
 
@@ -200,6 +238,9 @@ internal sealed class ItemStackRequestHandler {
             if (armorChanged)
                 armor?.SyncEquipment();
 
+            if (state.GrindstoneExperience > 0 && inventoryTrait?.Entity is Player grinder)
+                grinder.GetTrait<PlayerExperienceTrait>()?.AddPoints(state.GrindstoneExperience);
+
             if (inventoryTrait?.Entity is Player player) {
                 foreach (PendingDrop drop in state.DroppedItems)
                     new ItemEntity(drop.Item, player, drop.Randomly).Spawn(player.Dimension);
@@ -246,6 +287,9 @@ internal sealed class ItemStackRequestHandler {
             };
         }
         finally {
+            GrindstoneContainer? grindstone = state.Grindstone;
+            if (grindstone is not null)
+                grindstone.Crafting = false;
             state.Inventory = null!;
             state.Cursor = null!;
             state.OpenedContainer = null;
@@ -262,6 +306,13 @@ internal sealed class ItemStackRequestHandler {
             state.AutoCraftOutputSlot = null;
             state.CraftResults = null;
             state.CreativeCraft = false;
+            state.GrindstoneCrafted = false;
+            state.GrindstoneOutputTaken = false;
+            state.GrindstoneExperience = 0;
+            state.GrindstoneResults = false;
+            state.PendingGrindstoneResults = null;
+            state.GrindstonePreview = null;
+            state.Grindstone = null;
             state.CreatedOutput = null;
             state.Staged.Clear();
             state.StagedClientRequestNetIds.Clear();
@@ -272,6 +323,7 @@ internal sealed class ItemStackRequestHandler {
             state.DroppedItems.Clear();
             state.FailureReason = null;
             cachedState ??= state;
+            grindstone?.Refresh();
         }
     }
 
@@ -284,12 +336,72 @@ internal sealed class ItemStackRequestHandler {
         ConsumeActionData consume => Remove(state, consume.Amount, consume.Source, consume: true),
         CraftRecipeActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: false),
         CraftRecipeAutoActionData craft => SelectRecipe(state, craft.RecipeNetId, craft.NumberOfRequestedCrafts, autoCraft: true),
+        CraftRepairAndDisenchantActionData craft => PrepareGrindstoneCraft(state, craft),
         CraftCreativeActionData craft => CreateCreativeItem(state, craft),
         CreateActionData create => state.CreativeCraft || CreateCraftResult(state, create.ResultsIndex),
-        CraftResultsActionData results => state.CreativeCraft || RecordCraftResults(state, results),
+        CraftResultsActionData results => state.CreativeCraft ||
+            (state.OpenedContainer is GrindstoneContainer
+                ? RecordGrindstoneResults(state, results)
+                : RecordCraftResults(state, results)),
         MineBlockActionData mineBlock => MineBlock(state, mineBlock),
         _ => false
     };
+
+    private static bool PrepareGrindstoneCraft(RequestState state, CraftRepairAndDisenchantActionData action) {
+        if (state.OpenedContainer is not GrindstoneContainer grindstone || state.GrindstoneCrafted) {
+            state.FailureReason = "grindstone is not open";
+            return false;
+        }
+        if (action.NumberOfRequestedCrafts != 1) {
+            state.FailureReason = "grindstone requires one craft";
+            return false;
+        }
+
+        ItemStack? first = state.Staged.GetValueOrDefault(new SlotKey(grindstone, 0), grindstone.GetItem(0));
+        ItemStack? second = state.Staged.GetValueOrDefault(new SlotKey(grindstone, 1), grindstone.GetItem(1));
+        ItemStack? preview = grindstone.GetItem(2);
+        ItemStack? result = grindstone.CreateResult(first, second, out int experience);
+        if (result is null || preview is null) {
+            state.FailureReason = "grindstone has no valid result preview";
+            return false;
+        }
+
+        SetItem(state, new SlotKey(grindstone, 2), preview.Clone(), ContainerEnumName.GrindstoneResultPreview, grindstone.DynamicId);
+        grindstone.Crafting = true;
+        state.Grindstone = grindstone;
+        state.GrindstonePreview = preview.Clone();
+        state.GrindstoneCrafted = true;
+        state.GrindstoneExperience = experience;
+        return state.PendingGrindstoneResults is null || ValidateGrindstoneResults(state, state.PendingGrindstoneResults);
+    }
+
+    private static bool RecordGrindstoneResults(RequestState state, CraftResultsActionData results) {
+        if (state.PendingGrindstoneResults is not null || state.GrindstoneResults) {
+            state.FailureReason = "grindstone result was reported more than once";
+            return false;
+        }
+        if (state.GrindstoneCrafted)
+            return ValidateGrindstoneResults(state, results);
+
+        state.PendingGrindstoneResults = results;
+        return true;
+    }
+
+    private static bool ValidateGrindstoneResults(RequestState state, CraftResultsActionData results) {
+        if (state.OpenedContainer is not GrindstoneContainer || results.NumberOfCrafts != 1 ||
+            results.CraftResults.Length != 1 ||
+            state.GrindstonePreview is not { } preview ||
+            results.CraftResults[0] is not { ItemDescriptor: ItemNameDescriptorData descriptor } reported ||
+            descriptor.FullName != preview.Type.Identifier || reported.StackSize != preview.StackSize ||
+            descriptor.AuxValue != 0x7FFF && unchecked((uint)descriptor.AuxValue) != preview.Metadata) {
+            state.FailureReason = "reported grindstone result does not match its preview";
+            return false;
+        }
+
+        state.GrindstoneResults = true;
+        state.PendingGrindstoneResults = null;
+        return true;
+    }
 
     private static bool CreateCreativeItem(RequestState state, CraftCreativeActionData action) {
         SlotKey cursor = new(state.Cursor, 0);
@@ -591,6 +703,13 @@ internal sealed class ItemStackRequestHandler {
             IsCraftSource(state, destinationKey.Container);
         bool autoCraftOutput = state.AutoCraft && ReferenceEquals(sourceKey.Container, state.CreatedOutput) &&
             ReferenceEquals(destinationKey.Container, state.Inventory);
+        if (sourceKey.Container is GrindstoneContainer grindstone && sourceKey.Slot == 2) {
+            if (!state.GrindstoneCrafted || destinationKey.Container == grindstone || amount != 1) {
+                state.FailureReason = "grindstone result transfer is invalid";
+                return false;
+            }
+            state.GrindstoneOutputTaken = true;
+        }
         if (state.Recipe is not null && touchesCraftGrid && !autoCraftOutput) {
             state.FailureReason = "recipe transfer touches the crafting input";
             return false;
@@ -601,7 +720,11 @@ internal sealed class ItemStackRequestHandler {
             state.FailureReason = "source stack is empty or smaller than the transfer";
             return false;
         }
-        if (!destinationKey.Container.CanContain(sourceItem)) {
+        if (destinationKey.Container is GrindstoneContainer && destinationKey.Slot == 2) {
+            state.FailureReason = "grindstone result slot is read-only";
+            return false;
+        }
+        if (!destinationKey.Container.CanContain(destinationKey.Slot, sourceItem)) {
             state.FailureReason = $"{sourceItem.Type.Identifier} is not allowed in {destinationKey.Container.ContainerName}";
             return false;
         }
@@ -664,8 +787,14 @@ internal sealed class ItemStackRequestHandler {
         if (sourceKey == destinationKey)
             return true;
 
-        if ((sourceItem is not null && !destinationKey.Container.CanContain(sourceItem)) ||
-            (destinationItem is not null && !sourceKey.Container.CanContain(destinationItem))) {
+        if (sourceKey.Container is GrindstoneContainer && sourceKey.Slot == 2 ||
+            destinationKey.Container is GrindstoneContainer && destinationKey.Slot == 2) {
+            state.FailureReason = "grindstone result slot is read-only";
+            return false;
+        }
+
+        if ((sourceItem is not null && !destinationKey.Container.CanContain(destinationKey.Slot, sourceItem)) ||
+            (destinationItem is not null && !sourceKey.Container.CanContain(sourceKey.Slot, destinationItem))) {
             state.FailureReason = "an item is not allowed in the destination container";
             return false;
         }
@@ -686,6 +815,11 @@ internal sealed class ItemStackRequestHandler {
         }
         if (!TryGetItem(state, sourceInfo, out SlotKey sourceKey, out ItemStack? sourceItem)) {
             state.FailureReason = $"invalid source slot {sourceInfo.ContainerName.ContainerName}[{sourceInfo.Slot}] netId={sourceInfo.NetIdVariant}";
+            return false;
+        }
+        if (state.GrindstoneCrafted &&
+            (!consume || !ReferenceEquals(sourceKey.Container, state.Grindstone) || sourceKey.Slot > 1)) {
+            state.FailureReason = "grindstone can only consume its input items";
             return false;
         }
         if (sourceItem is null || amount > sourceItem.StackSize) {
@@ -791,7 +925,9 @@ internal sealed class ItemStackRequestHandler {
 
         bool createdOutputCursor = info.ContainerName.ContainerName == ContainerEnumName.CreatedOutput &&
             ReferenceEquals(container, state.Cursor);
-        int localSlot = createdOutputCursor ? 0 : container.GetLocalSlot(info.Slot);
+        bool grindstoneOutput = info.ContainerName.ContainerName == ContainerEnumName.CreatedOutput &&
+            state.GrindstoneCrafted && ReferenceEquals(container, state.Grindstone);
+        int localSlot = createdOutputCursor ? 0 : grindstoneOutput ? 2 : container.GetLocalSlot(info.Slot);
         if (state.OpenedContainer is { Type: ContainerType.Furnace or ContainerType.BlastFurnace or ContainerType.Smoker } furnace &&
             (info.ContainerName.ContainerName is ContainerEnumName.FurnaceFuel or ContainerEnumName.FurnaceIngredient or ContainerEnumName.FurnaceResult or
                 ContainerEnumName.BlastFurnaceIngredient or ContainerEnumName.SmokerIngredient)) {
@@ -865,6 +1001,21 @@ internal sealed class ItemStackRequestHandler {
                 name.ContainerName == ContainerEnumName.SmokerIngredient && furnaceContainer.Type == ContainerType.Smoker) &&
             (name.DynamicId is null or 0)) {
             container = furnaceContainer;
+            return true;
+        }
+
+        if (state.OpenedContainer is EnchantingTableContainer enchantingTable &&
+            name.ContainerName is ContainerEnumName.EnchantingInput or ContainerEnumName.EnchantingMaterial &&
+            (enchantingTable.DynamicId == name.DynamicId || name.DynamicId is null or 0)) {
+            container = enchantingTable;
+            return true;
+        }
+
+        if (state.OpenedContainer is GrindstoneContainer grindstone &&
+            (name.ContainerName is ContainerEnumName.GrindstoneInput or ContainerEnumName.GrindstoneAdditional or ContainerEnumName.GrindstoneResultPreview ||
+                name.ContainerName == ContainerEnumName.CreatedOutput && state.GrindstoneCrafted && state.GrindstonePreview is not null) &&
+            (grindstone.DynamicId == name.DynamicId || name.DynamicId is null or 0)) {
+            container = grindstone;
             return true;
         }
 
@@ -997,6 +1148,13 @@ internal sealed class ItemStackRequestHandler {
         internal SlotKey? AutoCraftOutputSlot;
         internal CraftResultsActionData? CraftResults;
         internal bool CreativeCraft;
+        internal bool GrindstoneCrafted;
+        internal bool GrindstoneOutputTaken;
+        internal int GrindstoneExperience;
+        internal bool GrindstoneResults;
+        internal CraftResultsActionData? PendingGrindstoneResults;
+        internal ItemStack? GrindstonePreview;
+        internal GrindstoneContainer? Grindstone;
         internal Container? CreatedOutput;
         internal readonly Dictionary<SlotKey, ItemStack?> Staged = [];
         internal readonly Dictionary<SlotKey, int> StagedClientRequestNetIds = [];

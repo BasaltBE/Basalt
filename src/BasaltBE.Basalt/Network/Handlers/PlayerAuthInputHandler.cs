@@ -7,6 +7,7 @@ using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
@@ -304,6 +305,10 @@ internal sealed class PlayerAuthInputHandler {
         float miningSpeed = tool is not null && (type.ToolTypes & tool.Type.ToolType) != 0
             ? tool.Type.MiningSpeed
             : 1;
+        if (miningSpeed > 1 && tool is not null) {
+            int efficiency = tool.GetEnchantmentLevel(EnchantmentPalette.Efficiency);
+            miningSpeed += efficiency * efficiency + 1;
+        }
         uint duration = BreakDurationTicks(type.Hardness, miningSpeed, canHarvest);
         if (duration == 0)
             return;
@@ -461,7 +466,9 @@ internal sealed class PlayerAuthInputHandler {
             item.Spawn(player.Dimension);
         }
         else if (dropItems) {
-            ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool);
+            int fortune = tool?.GetEnchantmentLevel(EnchantmentPalette.Fortune) ?? 0;
+            bool silkTouch = tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) > 0;
+            ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool, fortune, silkTouch);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);
                 if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
