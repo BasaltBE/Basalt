@@ -76,7 +76,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
 
             if (Entity.SimulationAge >= PickupDelayTicks && nearestDistance <= PickupRadiusSquared &&
                 nearest.GetTrait<PlayerExperienceTrait>() is { } experience) {
-                experience.AddPoints(ExperienceValue);
+                experience.Collect(ExperienceValue);
                 dimension.Broadcast(new TakeItemActorPacket {
                     ItemRuntimeId = Entity.RuntimeId,
                     ActorRuntimeId = nearest.RuntimeId

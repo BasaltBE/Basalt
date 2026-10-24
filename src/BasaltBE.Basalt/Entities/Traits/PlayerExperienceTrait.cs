@@ -1,4 +1,6 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
@@ -60,6 +62,54 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
         if (Level == MaximumLevel)
             Progress = Math.Clamp(Progress, 0, MathF.BitDecrement(1));
         Sync();
+    }
+
+    internal void Collect(int amount) {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        if (amount == 0)
+            return;
+
+        if (Entity is Player player) {
+            PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
+            EntityArmorTrait? armor = player.GetTrait<EntityArmorTrait>();
+
+            while (amount > 0) {
+                ItemStack? selected = null;
+                int candidates = 0;
+
+                if (inventory is not null) {
+                    for (int slot = 0; slot < inventory.Inventory.ContainerSize; slot++) {
+                        ItemStack? item = inventory.Inventory.GetItem(slot);
+                        if (item is null || item.Damage == 0 ||
+                            item.GetEnchantmentLevel(EnchantmentPalette.Mending) == 0)
+                            continue;
+                        if (Random.Shared.Next(++candidates) == 0)
+                            selected = item;
+                    }
+                }
+
+                if (armor is not null) {
+                    for (int slot = 0; slot < armor.Armor.ContainerSize; slot++) {
+                        ItemStack? item = armor.Armor.GetItem(slot);
+                        if (item is null || item.Damage == 0 ||
+                            item.GetEnchantmentLevel(EnchantmentPalette.Mending) == 0)
+                            continue;
+                        if (Random.Shared.Next(++candidates) == 0)
+                            selected = item;
+                    }
+                }
+
+                if (selected is null)
+                    break;
+
+                long repairCapacity = (long)amount * 2;
+                int repair = (int)Math.Min(repairCapacity, selected.Damage);
+                selected.SetDamage(selected.Damage - repair);
+                amount -= (int)(repair * (long)amount / repairCapacity);
+            }
+        }
+
+        AddPoints(amount);
     }
 
     public void AddLevels(int amount) {
