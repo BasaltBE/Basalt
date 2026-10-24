@@ -36,8 +36,10 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     StructureData = structureData
                 });
                 network.SendPacket(player, new VoxelShapesPacket());
-                if (network.Server.CustomDimensions.Count > 0)
+                if (network.Server.CustomDimensions.Count > 0) {
                     network.SendPreparedPacket(player, network.SerializedPackets.Get<DimensionDataPacket>());
+                    network.SendPreparedPacket(player, network.SerializedPackets.Get<BiomeDefinitionListPacket>());
+                }
                 network.SendPacket(player, new StartGamePacket {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,

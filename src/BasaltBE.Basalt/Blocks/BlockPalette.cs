@@ -157,7 +157,7 @@ public static class BlockPalette {
     }
 
     internal static bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
-        if (y < -64 || y >= 320 || dimension.GetChunk(x >> 4, z >> 4) is null)
+        if (y < dimension.MinimumY || y > dimension.MaximumY || dimension.GetChunk(x >> 4, z >> 4) is null)
             return false;
 
         BlockPermutation current = dimension.GetPermutation(x, y, z);

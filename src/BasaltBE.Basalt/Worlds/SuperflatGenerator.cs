@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Basalt.Worlds.Types;
 
@@ -9,12 +10,12 @@ public sealed class SuperflatGenerator : IChunkGenerator {
     static readonly BlockPermutation Dirt = Find("minecraft:dirt");
     static readonly BlockPermutation Grass = Find("minecraft:grass_block");
 
-    public Chunk Generate(int chunkX, int chunkZ) {
+    public Chunk Generate(Dimension dimension, int chunkX, int chunkZ) {
         Chunk chunk = new(chunkX, chunkZ);
-        SetLayer(chunk, -64, Bedrock);
-        SetLayer(chunk, -63, Dirt);
-        SetLayer(chunk, -62, Dirt);
-        SetLayer(chunk, -61, Grass);
+        SetLayer(chunk, dimension.MinimumY, Bedrock);
+        SetLayer(chunk, dimension.MinimumY + 1, Dirt);
+        SetLayer(chunk, dimension.MinimumY + 2, Dirt);
+        SetLayer(chunk, dimension.MinimumY + 3, Grass);
         return chunk;
     }
 

@@ -13,9 +13,6 @@ namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class Chunk(int x, int z) {
     static readonly Options NetworkNbtOptions = new() { VarInt = true, StringLengthVarInt = true };
-    const int MinimumSubChunkY = -4;
-    const int WorldSubChunkCount = 24;
-
     Dictionary<int, SubChunk>? subChunks;
     internal Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
     Dictionary<(int X, int Y, int Z), BlockActor>? actors;
@@ -65,7 +62,10 @@ public sealed class Chunk(int x, int z) {
             return subChunk;
         }
 
-        subChunk = new SubChunk { Index = checked((sbyte)subChunkY) };
+        subChunk = new SubChunk {
+            Index = checked((sbyte)subChunkY),
+            Biomes = new BiomeStorage(Dimension?.CustomDefinition?.DefaultBiomeId ?? 0)
+        };
         subChunk.Chunk = this;
         subChunks.Add(subChunkY, subChunk);
         return subChunk;
@@ -163,7 +163,7 @@ public sealed class Chunk(int x, int z) {
     /// <param name="minimumSubChunkY">The first signed subchunk index in the payload.</param>
     /// <param name="subChunkCount">The number of subchunks requested by the level chunk packet.</param>
     /// <param name="biomeCount">The number of biome storages required for the dimension height.</param>
-    public void Serialize(ref BinaryWriter writer, int minimumSubChunkY, int subChunkCount, int biomeCount) {
+    public void Serialize(ref BinaryWriter writer, int minimumSubChunkY, int subChunkCount, int biomeCount, int defaultBiome = 0) {
         if (subChunkCount is < 0 or > 256 || biomeCount is < 0 or > 256) {
             throw new ArgumentOutOfRangeException(nameof(subChunkCount), "Chunk section counts must be from 0 to 256.");
         }
@@ -183,11 +183,11 @@ public sealed class Chunk(int x, int z) {
 
         for (int i = 0; i < biomeCount; i++) {
             int subChunkY = checked(minimumSubChunkY + i);
-            if (GetSubChunk(subChunkY) is { } subChunk) {
+            if (GetSubChunk(subChunkY) is { Biomes.Initialized: true } subChunk) {
                 subChunk.Biomes.Serialize(ref writer);
             }
             else {
-                BiomeStorage.SerializeDefault(ref writer);
+                BiomeStorage.SerializeDefault(ref writer, defaultBiome);
             }
         }
 
@@ -275,17 +275,21 @@ public sealed class Chunk(int x, int z) {
     }
 
     public ChunkStorageEntry[] Serialize() {
-        List<ChunkStorageEntry> entries = new(WorldSubChunkCount + 2);
+        int minimumY = Dimension?.MinimumY ?? -64;
+        int maximumY = Dimension?.MaximumY ?? 319;
+        int minimumSubChunkY = minimumY >> 4;
+        int subChunkCount = (Dimension?.HeightRange ?? 384) >> 4;
+        List<ChunkStorageEntry> entries = new(subChunkCount + 2);
         using (BinaryStream stream = BinaryStream.Rent(64 * 1024)) {
             BinaryWriter writer = stream.GetWriter();
             for (int z = 0; z < 16; z++) {
                 for (int x = 0; x < 16; x++) {
                     int height = 0;
-                    for (int y = 319; y >= -64; y--) {
+                    for (int y = maximumY; y >= minimumY; y--) {
                         BlockPermutation permutation = GetPermutation(x, y, z);
                         BlockType? type = BlockPalette.FindType(permutation.Identifier);
                         if (type is { Opacity: > 0 } or { Solid: true } or { Liquid: true }) {
-                            height = y + 65;
+                            height = y - minimumY + 1;
                             break;
                         }
                     }
@@ -293,10 +297,17 @@ public sealed class Chunk(int x, int z) {
                 }
             }
 
-            for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+            for (int subChunkY = minimumSubChunkY; subChunkY < minimumSubChunkY + subChunkCount; subChunkY++) {
                 SubChunk? subChunk = GetSubChunk(subChunkY);
                 if (subChunk is null) {
                     writer.WriteUInt8(0xFF);
+                }
+                else if (!subChunk.Biomes.Initialized) {
+                    BiomeStorage.SerializeDefault(
+                        ref writer,
+                        Dimension?.CustomDefinition?.DefaultBiomeId ?? 0,
+                        ChunkSerializationMode.LevelDb
+                    );
                 }
                 else {
                     subChunk.Biomes.Serialize(ref writer, ChunkSerializationMode.LevelDb);
@@ -305,7 +316,7 @@ public sealed class Chunk(int x, int z) {
             entries.Add(new ChunkStorageEntry(ChunkStorageType.Data3D, 0, stream.Buffer[..stream.Offset].ToArray()));
         }
 
-        for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+        for (int subChunkY = minimumSubChunkY; subChunkY < minimumSubChunkY + subChunkCount; subChunkY++) {
             if (GetSubChunk(subChunkY) is not { Empty: false } subChunk)
                 continue;
             using BinaryStream stream = BinaryStream.Rent(64 * 1024);
@@ -329,8 +340,11 @@ public sealed class Chunk(int x, int z) {
         return entries.ToArray();
     }
 
-    public static Chunk Deserialize(int x, int z, ChunkStorageEntry[] entries) {
+    public static Chunk Deserialize(int x, int z, ChunkStorageEntry[] entries, Dimension dimension) {
         Chunk chunk = new(x, z);
+        chunk.Dimension = dimension;
+        int minimumSubChunkY = dimension.MinimumY >> 4;
+        int subChunkCount = dimension.HeightRange >> 4;
         ChunkStorageEntry? data3D = null;
         ChunkStorageEntry? actors = null;
         foreach (ChunkStorageEntry entry in entries) {
@@ -339,6 +353,9 @@ public sealed class Chunk(int x, int z) {
                     data3D = entry;
                     break;
                 case ChunkStorageType.SubChunk: {
+                    if (entry.SubChunkY < minimumSubChunkY || entry.SubChunkY >= minimumSubChunkY + subChunkCount)
+                        break;
+
                     int offset = 0;
                     BinaryReader reader = new(entry.Data, ref offset);
                     SubChunk subChunk = SubChunk.Deserialize(ref reader, ChunkSerializationMode.LevelDb);
@@ -365,7 +382,7 @@ public sealed class Chunk(int x, int z) {
         if (dataReader.Remaining < 512)
             throw new InvalidDataException("The LevelDB chunk heightmap is incomplete.");
         dataReader.Offset += 512;
-        for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + WorldSubChunkCount; subChunkY++) {
+        for (int subChunkY = minimumSubChunkY; subChunkY < minimumSubChunkY + subChunkCount; subChunkY++) {
             byte header = dataReader.ReadUInt8();
             if ((header >> 1) == 127)
                 continue;

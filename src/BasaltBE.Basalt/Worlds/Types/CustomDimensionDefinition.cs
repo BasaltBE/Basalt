@@ -8,6 +8,7 @@ public sealed class CustomDimensionDefinition {
     public readonly int HeightRange;
     public readonly GeneratorType GeneratorType;
     public readonly string DefaultBiome;
+    public readonly int DefaultBiomeId;
     public readonly int CloudHeight;
     public readonly bool RenderClouds;
     public readonly Guid PackId;
@@ -19,6 +20,7 @@ public sealed class CustomDimensionDefinition {
         int heightRange,
         GeneratorType generatorType,
         string defaultBiome,
+        int defaultBiomeId,
         int cloudHeight,
         bool renderClouds,
         Guid packId,
@@ -29,6 +31,7 @@ public sealed class CustomDimensionDefinition {
         HeightRange = heightRange;
         GeneratorType = generatorType;
         DefaultBiome = defaultBiome;
+        DefaultBiomeId = defaultBiomeId;
         CloudHeight = cloudHeight;
         RenderClouds = renderClouds;
         PackId = packId;

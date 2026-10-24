@@ -509,7 +509,8 @@ internal sealed class PlayerAuthInputHandler {
     }
 
     private static bool ValidBlockTarget(Player player, BlockPos position) {
-        if (position.Y is < -64 or >= 320 || player.Dimension.GetChunk(position.X >> 4, position.Z >> 4) is null)
+        if (position.Y < player.Dimension.MinimumY || position.Y > player.Dimension.MaximumY ||
+            player.Dimension.GetChunk(position.X >> 4, position.Z >> 4) is null)
             return false;
 
         float deltaX = player.Position.X - position.X - 0.5f;
@@ -535,7 +536,8 @@ internal sealed class PlayerAuthInputHandler {
     }
 
     private static void SendBlockUpdate(Player player, int x, int y, int z) {
-        if (y is < -64 or >= 320 || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk)
+        if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY ||
+            player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk)
             return;
 
         UpdateBlockPacket update = blockUpdate ?? new();

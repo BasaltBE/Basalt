@@ -10,8 +10,8 @@ using LevelDB.Platform;
 namespace BasaltBE.Basalt.Worlds.Providers;
 
 public sealed class LevelDbProvider : IWorldProvider {
-    private const int MinimumSubChunkY = -4;
-    private const int SubChunkCount = 24;
+    private const int MinimumSubChunkY = -32;
+    private const int SubChunkCount = 64;
     private const byte BedrockChunkVersion = 42;
     private static readonly byte[] DimensionKeyPrefix = "BasaltBE.Dimension."u8.ToArray();
     private static readonly byte[] FinalizedChunkData = [2, 0, 0, 0];

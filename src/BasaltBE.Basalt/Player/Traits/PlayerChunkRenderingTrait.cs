@@ -19,8 +19,6 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     const int PendingChecksPerTick = ChunksPerTick * 4;
     const int ChunkDataCapacity = 64 * 1024;
     const int MaximumChunkDataCapacity = 4 * 1024 * 1024 - 128;
-    const int MinimumSubChunkY = -4;
-    const int SubChunkCount = 24;
     [ThreadStatic]
     static ChunkSendResources? chunkSendResources;
 
@@ -404,12 +402,20 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
     void SendChunk(Chunk chunk) {
         ChunkSendResources resources = chunkSendResources ??= new();
-        int subChunkCount = chunk.GetSubChunkSendCount(MinimumSubChunkY, SubChunkCount);
+        int minimumSubChunkY = player.Dimension.MinimumY >> 4;
+        int dimensionSubChunkCount = player.Dimension.HeightRange >> 4;
+        int subChunkCount = chunk.GetSubChunkSendCount(minimumSubChunkY, dimensionSubChunkCount);
         while (true) {
             resources.Stream.Offset = 0;
             BinaryWriter writer = resources.Stream.GetWriter();
             try {
-                chunk.Serialize(ref writer, MinimumSubChunkY, subChunkCount, SubChunkCount);
+                chunk.Serialize(
+                    ref writer,
+                    minimumSubChunkY,
+                    subChunkCount,
+                    dimensionSubChunkCount,
+                    player.Dimension.CustomDefinition?.DefaultBiomeId ?? 0
+                );
                 break;
             }
             catch (ArgumentOutOfRangeException) {

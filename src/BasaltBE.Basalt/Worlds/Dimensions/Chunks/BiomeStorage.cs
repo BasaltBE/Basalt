@@ -12,7 +12,13 @@ public sealed class BiomeStorage {
     int singletonBiome;
     int nonDefaultCount;
 
+    public BiomeStorage(int defaultBiome = 0) {
+        singletonBiome = defaultBiome;
+        nonDefaultCount = defaultBiome == 0 ? 0 : CellCount;
+    }
+
     public bool Empty => nonDefaultCount == 0;
+    internal bool Initialized;
 
     public int GetBiome(int x, int y, int z) {
         int index = BlockStorage.GetIndex(x, y, z);
@@ -36,6 +42,8 @@ public sealed class BiomeStorage {
         if (oldBiome == biome) {
             return;
         }
+
+        Initialized = true;
 
         if (oldBiome == 0 && biome != 0) {
             nonDefaultCount++;
@@ -99,9 +107,16 @@ public sealed class BiomeStorage {
         }
     }
 
-    internal static void SerializeDefault(ref BinaryWriter writer) {
+    internal static void SerializeDefault(
+        ref BinaryWriter writer,
+        int biome = 0,
+        ChunkSerializationMode mode = ChunkSerializationMode.Network
+    ) {
         writer.WriteUInt8(1);
-        writer.WriteZigZag(0);
+        if (mode == ChunkSerializationMode.Network)
+            writer.WriteZigZag(biome);
+        else
+            writer.WriteInt32(biome, true);
     }
 
     public static BiomeStorage Deserialize(ref BinaryReader reader) =>
@@ -125,7 +140,8 @@ public sealed class BiomeStorage {
             }
             return new BiomeStorage {
                 singletonBiome = biome,
-                nonDefaultCount = biome == 0 ? 0 : CellCount
+                nonDefaultCount = biome == 0 ? 0 : CellCount,
+                Initialized = true
             };
         }
 
@@ -157,6 +173,7 @@ public sealed class BiomeStorage {
         }
 
         storage.indices = indices;
+        storage.Initialized = true;
         for (int i = 0; i < CellCount; i++) {
             ushort paletteIndex = indices[i];
             if (paletteIndex >= paletteCount) {

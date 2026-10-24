@@ -16,6 +16,7 @@ using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Providers;
+using BasaltBE.Basalt.Worlds.Types;
 using BasaltBE.Logging;
 using BasaltBE.Logging.Enums;
 using BasaltBE.Protocol.Enums;

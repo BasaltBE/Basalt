@@ -244,7 +244,7 @@ internal sealed class WorldProviderService : IDisposable {
                         dataBytes = entryBytes;
                         long decodeStart = Stopwatch.GetTimestamp();
                         try {
-                            chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries);
+                            chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries, request.Dimension);
                         }
                         catch (Exception exception) {
                             Interlocked.Add(ref pendingBytes, -dataBytes);

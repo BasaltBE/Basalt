@@ -49,6 +49,9 @@ public sealed partial class Dimension : IDisposable {
     public readonly string Identifier;
     public readonly DimensionType Type;
     public readonly int RuntimeId;
+    public readonly int MinimumY;
+    public readonly int HeightRange;
+    public int MaximumY => MinimumY + HeightRange - 1;
     public readonly CustomDimensionDefinition? CustomDefinition;
     public GeneratorType GeneratorType => CustomDefinition?.GeneratorType ?? Type switch {
         DimensionType.Overworld => GeneratorType.Overworld,
@@ -71,6 +74,8 @@ public sealed partial class Dimension : IDisposable {
         Identifier = identifier;
         Type = type;
         RuntimeId = (int)type;
+        MinimumY = -64;
+        HeightRange = 384;
         Generator = generator;
         generationService = new ChunkGenerationService(4, 1024);
         ownsGenerationService = true;
@@ -98,6 +103,9 @@ public sealed partial class Dimension : IDisposable {
         ArgumentNullException.ThrowIfNull(generationService);
         Identifier = identifier;
         Type = type;
+        RuntimeId = (int)type;
+        MinimumY = -64;
+        HeightRange = 384;
         Generator = generator;
         this.generationService = generationService;
         this.ownsGenerationService = ownsGenerationService;
@@ -116,6 +124,8 @@ public sealed partial class Dimension : IDisposable {
         Identifier = identifier;
         Type = DimensionType.Undefined;
         RuntimeId = definition.RuntimeId;
+        MinimumY = definition.MinimumY;
+        HeightRange = definition.HeightRange;
         CustomDefinition = definition;
         Generator = generator;
         this.generationService = generationService;

@@ -73,11 +73,15 @@ public sealed class SubChunk {
         Chunk?.MarkDirty();
     }
 
-    public int GetBiome(int x, int y, int z) => Biomes.GetBiome(x, y, z);
+    public int GetBiome(int x, int y, int z) => Biomes.Initialized
+        ? Biomes.GetBiome(x, y, z)
+        : Chunk?.Dimension?.CustomDefinition?.DefaultBiomeId ?? Biomes.GetBiome(x, y, z);
 
     public void SetBiome(int x, int y, int z, int biome) {
-        if (Biomes.GetBiome(x, y, z) == biome)
+        if (GetBiome(x, y, z) == biome)
             return;
+        if (!Biomes.Initialized && Chunk?.Dimension?.CustomDefinition is { } definition)
+            Biomes = new BiomeStorage(definition.DefaultBiomeId);
         Biomes.SetBiome(x, y, z, biome);
         Chunk?.MarkDirty();
     }

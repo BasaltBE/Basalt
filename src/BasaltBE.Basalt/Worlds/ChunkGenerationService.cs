@@ -70,7 +70,7 @@ internal sealed class ChunkGenerationService : IDisposable {
     void Work() {
         foreach (GenerationRequest request in requests.GetConsumingEnumerable()) {
             try {
-                Chunk chunk = request.Generator.Generate(request.ChunkX, request.ChunkZ);
+                Chunk chunk = request.Generator.Generate(request.Dimension, request.ChunkX, request.ChunkZ);
                 if (chunk.X != request.ChunkX || chunk.Z != request.ChunkZ) {
                     throw new InvalidOperationException("A chunk generator returned a chunk with different coordinates.");
                 }

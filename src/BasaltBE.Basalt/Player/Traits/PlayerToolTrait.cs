@@ -36,7 +36,7 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
         }
 
         if (item.Type.ToolType is ToolType.Hoe or ToolType.Shovel &&
-            (position.Y >= 319 || player.Dimension.GetPermutation(position.X, position.Y + 1, position.Z).Identifier is not (
+            (position.Y >= player.Dimension.MaximumY || player.Dimension.GetPermutation(position.X, position.Y + 1, position.Z).Identifier is not (
                 "minecraft:air" or "minecraft:cave_air" or "minecraft:void_air")))
             return;
         if (updated is null || updated == block)

@@ -26,8 +26,10 @@ public sealed class SerializedPacketPalette(NetworkServer network) {
         Serialize(ItemPalette.RegistryPacket);
         Serialize(ItemPalette.CreativeContentPacket);
         Serialize(CraftingPalette.Packet);
-        if (network.Server.CustomDimensions.Count > 0)
+        if (network.Server.CustomDimensions.Count > 0) {
             Serialize(network.Server.CustomDimensions.CreatePacket());
+            Serialize(network.Server.CustomDimensions.CreateBiomePacket());
+        }
 
         CompoundTag actorIdentifiers = new();
         ListTag identifierList = new();

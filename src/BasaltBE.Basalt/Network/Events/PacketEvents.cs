@@ -27,4 +27,5 @@ public static class PacketEvents {
     public static readonly PacketEvent<ResourcePacksInfoPacket> ResourcePacksInfo = new();
     public static readonly PacketEvent<ResourcePackStackPacket> ResourcePackStack = new();
     public static readonly PacketEvent<NetworkSettingsPacket> NetworkSettings = new();
+    public static readonly PacketEvent<PacketViolationWarningPacket> PacketViolationWarning = new();
 }

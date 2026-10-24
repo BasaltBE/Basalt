@@ -20,7 +20,7 @@ internal sealed class BlockPickRequestHandler {
         if (player is null)
             throw new InvalidDataException("Block pick request arrived before player login.");
         if (!player.Spawned || player.Disposed ||
-            packet.Position.Y is < -64 or >= 320 ||
+            packet.Position.Y < player.Dimension.MinimumY || packet.Position.Y > player.Dimension.MaximumY ||
             player.Dimension.GetChunk(packet.Position.X >> 4, packet.Position.Z >> 4) is not { } chunk ||
             player.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(packet.Position.X >> 4, packet.Position.Z >> 4) != true)
             return;

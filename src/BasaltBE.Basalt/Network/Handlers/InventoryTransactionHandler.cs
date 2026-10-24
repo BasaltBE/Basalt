@@ -495,7 +495,7 @@ internal sealed class InventoryTransactionHandler {
 
     private static bool UseItemOnBlock(Player player, PlayerInventoryTrait inventory, ItemStack? item, ItemUseInventoryTransaction use) {
         PlayerChunkRenderingTrait? rendering = player.GetTrait<PlayerChunkRenderingTrait>();
-        if (use.Face > 5 || use.Position.Y < -64 || use.Position.Y >= 320 ||
+        if (use.Face > 5 || use.Position.Y < player.Dimension.MinimumY || use.Position.Y > player.Dimension.MaximumY ||
             use.ClientInteractPrediction is not (ItemUseInventoryTransactionPredictedResult.Failure or
                 ItemUseInventoryTransactionPredictedResult.Success) ||
             !float.IsFinite(use.ClickPosition.X) || !float.IsFinite(use.ClickPosition.Y) ||
@@ -573,7 +573,17 @@ internal sealed class InventoryTransactionHandler {
         }
 
         var chunk = player.Dimension.GetChunk(x >> 4, z >> 4);
-        if (!player.Abilities.Get(PlayerAbility.Build) || y < -64 || y >= 320 ||
+        if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY) {
+            player.Network.SendPacket(player, new TextPacket {
+                Type = TextMessageType.SystemMessage,
+                Message = "Can not place blocks outside dimension bounds."
+            });
+            RepairPlacement(player, use);
+            inventory.Inventory.UpdateSlot(use.Slot);
+            return false;
+        }
+
+        if (!player.Abilities.Get(PlayerAbility.Build) ||
             x < -30_000_000 || x >= 30_000_000 || z < -30_000_000 || z >= 30_000_000 ||
             chunk is null || !rendering.Viewing(x >> 4, z >> 4) ||
             permutation.Identifier == "minecraft:air" ||
@@ -712,7 +722,7 @@ internal sealed class InventoryTransactionHandler {
     }
 
     private static void SendBlockUpdate(Player player, int x, int y, int z, uint layer, bool broadcast, bool playPlaceSound = true) {
-        if (y < -64 || y >= 320 || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
+        if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
             (!broadcast && player.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(x >> 4, z >> 4) != true))
             return;
 
