@@ -1,5 +1,6 @@
 using System.Reflection;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Nbt.Types;
 using ArmorSlot = BasaltBE.Basalt.Items.Types.ArmorSlot;
@@ -13,7 +14,7 @@ public static class ItemPalette {
     public static readonly ItemType[] Types = LoadTypes();
     static readonly Dictionary<string, ItemType> ByIdentifier = Types.ToDictionary(type => type.Identifier, StringComparer.Ordinal);
     static readonly Dictionary<int, ItemType> ByNetworkId = Types.ToDictionary(type => type.NetworkId);
-    static readonly Dictionary<uint, ItemType> ByCreativeNetId = [];
+    static readonly Dictionary<uint, ItemStack> ByCreativeNetId = [];
     internal static readonly ItemRegistryPacket RegistryPacket = CreateRegistryPacket();
     internal static readonly CreativeContentPacket CreativeContentPacket = CreateCreativeContentPacket();
 
@@ -22,8 +23,8 @@ public static class ItemPalette {
     public static ItemType? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
 
     internal static ItemStack? CreateCreativeItem(uint creativeNetId) =>
-        ByCreativeNetId.TryGetValue(creativeNetId, out ItemType? type)
-            ? new ItemStack(type, checked((ushort)type.MaxAmount))
+        ByCreativeNetId.TryGetValue(creativeNetId, out ItemStack? item)
+            ? item.Clone()
             : null;
 
     static ItemRegistryPacket CreateRegistryPacket() {
@@ -93,7 +94,30 @@ public static class ItemPalette {
                 },
                 GroupIndex = checked((uint)groupIndex)
             });
-            ByCreativeNetId.Add(checked((uint)entries.Count), type);
+            ByCreativeNetId.Add(
+                checked((uint)entries.Count),
+                new ItemStack(type, checked((ushort)type.MaxAmount))
+            );
+        }
+
+        ItemType enchantedBookType = Find("minecraft:enchanted_book")
+            ?? throw new InvalidDataException("Enchanted book item is missing.");
+        int enchantedBookGroup = groupIndices[(CreativeItemCategory.Items, "itemGroup.name.enchantedBook")];
+        foreach (Enchantment enchantment in EnchantmentPalette.Enchantments) {
+            for (int level = 1; level <= enchantment.MaximumLevel; level++) {
+                ItemStack book = new(enchantedBookType);
+                book.AddEnchantment(enchantment, level);
+                entries.Add(new CreativeItemEntryPayload {
+                    CreativeNetId = entries.Count + 1,
+                    ItemInstance = new NetworkItemInstanceDescriptor {
+                        Id = enchantedBookType.NetworkId,
+                        StackSize = 1,
+                        UserDataBuffer = book.ToNetworkStackDescriptor().UserData
+                    },
+                    GroupIndex = checked((uint)enchantedBookGroup)
+                });
+                ByCreativeNetId.Add(checked((uint)entries.Count), book);
+            }
         }
 
         return new CreativeContentPacket {

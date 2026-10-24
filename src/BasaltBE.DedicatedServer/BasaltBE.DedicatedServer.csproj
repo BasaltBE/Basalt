@@ -13,6 +13,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
     <PublishAot>false</PublishAot>
     <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>

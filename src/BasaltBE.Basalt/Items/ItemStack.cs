@@ -25,9 +25,8 @@ public sealed class ItemStack {
     public bool IsStackFull => stackSize >= Type.MaxAmount;
     public bool Enchanted => Nbt?.Get<ListTag>("ench")?.Value.Count > 0 ||
         Nbt?.Get<ListTag>("basalt:enchantments")?.Value.Count > 0;
-    public int Damage => Type.MaxDurability > 0
-        ? checked((int)Metadata)
-        : Nbt?.Get<ShortTag>("Damage")?.Value ?? Nbt?.Get<IntTag>("Damage")?.Value ?? 0;
+    public int Damage => Nbt?.Get<IntTag>("Damage")?.Value ?? Nbt?.Get<ShortTag>("Damage")?.Value ??
+        (Type.MaxDurability > 0 ? checked((int)Metadata) : 0);
     public int RemainingDurability => Math.Max(0, Type.MaxDurability - Damage);
 
     public ItemStack(ItemType type, ushort stackSize = 1, uint metadata = 0, CompoundTag? nbt = null) {
@@ -76,10 +75,9 @@ public sealed class ItemStack {
         if (Damage == value)
             return;
 
-        SetMetadataRaw((uint)value);
         Nbt ??= new CompoundTag();
         Nbt.Add("Damage", new IntTag { Value = value });
-        Container?.ItemChanged(this, Slot);
+        RefreshNetId();
     }
 
     public bool DamageDurability(int amount = 1) {

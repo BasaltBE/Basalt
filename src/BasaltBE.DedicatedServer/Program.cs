@@ -64,6 +64,7 @@ internal static class Program {
             BlockPalette.RegisterTrait<CraftingTableTrait>();
             BlockPalette.RegisterTrait<EnchantingTableTrait>();
             BlockPalette.RegisterTrait<GrindstoneTrait>();
+            BlockPalette.RegisterTrait<AnvilTrait>();
             BlockPalette.RegisterTrait<FenceTrait>();
             BlockPalette.RegisterTrait<FenceGateTrait>();
             BlockPalette.RegisterTrait<PaneConnectionTrait>();

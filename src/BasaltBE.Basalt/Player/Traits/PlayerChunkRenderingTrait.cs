@@ -198,7 +198,9 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         HeadRotation = entity.HeadRotation,
                         BodyRotation = entity.Rotation.Y,
                         Attributes = entity.Attributes.CreateSnapshot(),
-                        ActorData = entity.Flags.CreateSnapshot()
+                        ActorData = entity is FallingBlockEntity fallingBlock
+                            ? [.. entity.Flags.CreateSnapshot(), fallingBlock.CreateBlockVariant()]
+                            : entity.Flags.CreateSnapshot()
                     });
                 }
                 state = new EntityRenderState(entity);
