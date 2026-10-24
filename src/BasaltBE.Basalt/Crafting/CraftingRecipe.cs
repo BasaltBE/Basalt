@@ -169,9 +169,23 @@ internal sealed class CraftingRecipe(
 
     private static bool Matches(RecipeIngredient ingredient, ItemStack stack) {
         ItemType item = stack.Type;
-        if (ingredient.Descriptor == "name")
-            return item.Identifier == ingredient.DescriptorValue &&
-                (ingredient.AuxValue is 0x7FFF or -1 || stack.Metadata == unchecked((uint)ingredient.AuxValue));
+        if (ingredient.Descriptor == "name") {
+            bool legacyLog = item.Identifier is "minecraft:log" or "minecraft:log2";
+            string identifier = legacyLog
+                ? (item.Identifier, stack.Metadata) switch {
+                    ("minecraft:log", 0) => "minecraft:oak_log",
+                    ("minecraft:log", 1) => "minecraft:spruce_log",
+                    ("minecraft:log", 2) => "minecraft:birch_log",
+                    ("minecraft:log", 3) => "minecraft:jungle_log",
+                    ("minecraft:log2", 0) => "minecraft:acacia_log",
+                    ("minecraft:log2", 1) => "minecraft:dark_oak_log",
+                    _ => string.Empty
+                }
+                : item.Identifier;
+            return identifier == ingredient.DescriptorValue &&
+                (ingredient.AuxValue is 0x7FFF or -1 ||
+                    (legacyLog ? ingredient.AuxValue == 0 : stack.Metadata == unchecked((uint)ingredient.AuxValue)));
+        }
         if (ingredient.Descriptor != "item_tag")
             return false;
 

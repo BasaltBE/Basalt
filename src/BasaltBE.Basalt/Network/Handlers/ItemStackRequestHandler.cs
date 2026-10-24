@@ -340,6 +340,7 @@ internal sealed class ItemStackRequestHandler {
             state.Recipe = null;
             state.CraftCount = 0;
             state.CraftConsumption = null;
+            state.CraftInputItems = null;
             state.CraftConsumed = null;
             state.CraftSources = null;
             state.AutoCraft = false;
@@ -576,6 +577,7 @@ internal sealed class ItemStackRequestHandler {
         }
 
         Container[] sources;
+        ItemStack?[] items;
         int[] consumption;
         if (autoCraft) {
             Container? workbench = state.OpenedContainer is { Type: ContainerType.Workbench, ContainerName: ContainerEnumName.CraftingInput } table
@@ -590,11 +592,13 @@ internal sealed class ItemStackRequestHandler {
             else
                 sources = [state.Inventory];
 
-            ItemStack?[] items = new ItemStack?[sources.Sum(static source => source.ContainerSize)];
+            items = new ItemStack?[sources.Sum(static source => source.ContainerSize)];
             int itemIndex = 0;
             foreach (Container source in sources) {
-                for (int slot = 0; slot < source.ContainerSize; slot++)
-                    items[itemIndex++] = source.GetItem(slot);
+                for (int slot = 0; slot < source.ContainerSize; slot++) {
+                    SlotKey key = new(source, slot);
+                    items[itemIndex++] = state.Staged.GetValueOrDefault(key, source.GetItem(slot));
+                }
             }
 
             consumption = new int[items.Length];
@@ -615,13 +619,19 @@ internal sealed class ItemStackRequestHandler {
             }
 
             int gridWidth = grid.ContainerSize == 9 ? 3 : 2;
-            ItemStack?[] items = new ItemStack?[grid.ContainerSize];
-            for (int i = 0; i < items.Length; i++)
-                items[i] = grid.GetItem(i);
+            items = new ItemStack?[grid.ContainerSize];
+            for (int i = 0; i < items.Length; i++) {
+                SlotKey key = new(grid, i);
+                items[i] = state.Staged.GetValueOrDefault(key, grid.GetItem(i));
+            }
 
             consumption = new int[items.Length];
             if (!recipe.TryMatch(items, gridWidth, crafts, consumption)) {
-                state.FailureReason = $"recipe {netId} does not match crafting grid items";
+                string gridItems = string.Join(", ", items.Select((item, slot) =>
+                    item is null
+                        ? $"{slot}:empty"
+                        : $"{slot}:{item.Type.Identifier} x{item.StackSize} metadata:{item.Metadata}"));
+                state.FailureReason = $"recipe {netId} does not match crafting grid items (grid: {gridItems})";
                 return false;
             }
             sources = [grid];
@@ -630,6 +640,9 @@ internal sealed class ItemStackRequestHandler {
         state.Recipe = recipe;
         state.CraftCount = crafts;
         state.CraftConsumption = consumption;
+        state.CraftInputItems = new ItemStack?[items.Length];
+        for (int i = 0; i < items.Length; i++)
+            state.CraftInputItems[i] = items[i]?.Clone();
         state.CraftConsumed = new int[consumption.Length];
         state.CraftSources = sources;
         state.AutoCraft = autoCraft;
@@ -690,30 +703,13 @@ internal sealed class ItemStackRequestHandler {
         }
 
         int[] consumption = new int[state.CraftConsumption!.Length];
-        if (state.AutoCraft) {
-            ItemStack?[] items = new ItemStack?[consumption.Length];
-            int itemIndex = 0;
-            foreach (Container source in state.CraftSources!) {
-                for (int slot = 0; slot < source.ContainerSize; slot++)
-                    items[itemIndex++] = source.GetItem(slot);
-            }
-
-            if (!recipe.TryMatchInventory(items, crafts, consumption)) {
-                state.FailureReason = "craft result count exceeds available ingredients";
-                return false;
-            }
-        }
-        else {
-            Container grid = state.CraftSources![0];
-            int gridWidth = grid.ContainerSize == 9 ? 3 : 2;
-            ItemStack?[] items = new ItemStack?[grid.ContainerSize];
-            for (int slot = 0; slot < grid.ContainerSize; slot++)
-                items[slot] = grid.GetItem(slot);
-
-            if (!recipe.TryMatch(items, gridWidth, crafts, consumption)) {
-                state.FailureReason = "craft result count exceeds available ingredients";
-                return false;
-            }
+        ItemStack?[] items = state.CraftInputItems!;
+        bool matched = state.AutoCraft
+            ? recipe.TryMatchInventory(items, crafts, consumption)
+            : recipe.TryMatch(items, state.CraftSources![0].ContainerSize == 9 ? 3 : 2, crafts, consumption);
+        if (!matched) {
+            state.FailureReason = "craft result count exceeds available ingredients";
+            return false;
         }
 
         NetworkItemInstanceDescriptorData result = results.CraftResults[0];
@@ -760,7 +756,7 @@ internal sealed class ItemStackRequestHandler {
                 bool isAutoCraftOutput = state.AutoCraftOutputSlot == key;
                 if (state.CraftConsumed![index] != consumption[index] || isAutoCraftOutput && consumption[index] != 0)
                     return false;
-                ItemStack? original = source.GetItem(slot);
+                ItemStack? original = state.CraftInputItems![index];
                 if (isAutoCraftOutput)
                     continue;
                 ItemStack? current = state.Staged.TryGetValue(key, out ItemStack? staged) ? staged : original;
@@ -1282,6 +1278,7 @@ internal sealed class ItemStackRequestHandler {
         internal CraftingRecipe? Recipe;
         internal byte CraftCount;
         internal int[]? CraftConsumption;
+        internal ItemStack?[]? CraftInputItems;
         internal int[]? CraftConsumed;
         internal Container[]? CraftSources;
         internal bool AutoCraft;

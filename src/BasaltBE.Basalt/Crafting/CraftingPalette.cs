@@ -52,7 +52,7 @@ internal static class CraftingPalette {
                 StackSize = resultCount,
                 AuxValue = resultMetadata
             };
-            string tag = ResolveTag(ReadString(recipe, "block"));
+            string tag = ResolveTag(ReadString(recipe, "block"), identifier);
             int priority = ReadInt(recipe, "priority", 0);
             Uuid uuid = CreateUuid(Guid.NewGuid());
             int recipeNetId = checked((int)netId);
@@ -185,10 +185,11 @@ internal static class CraftingPalette {
         return type ?? (identifier.Contains(':') ? null : ItemPalette.Find("minecraft:" + identifier));
     }
 
-    static string ResolveTag(string block) => block switch {
+    static string ResolveTag(string block, string identifier) => block switch {
         "stonecutter" => "stonecutter",
         "furnace" or "blast_furnace" or "smoker" or "campfire" => block,
         "smithing_table" => "smithing_table",
+        "deprecated" when identifier.StartsWith("minecraft:furnace_", StringComparison.Ordinal) => "furnace",
         _ => "crafting_table"
     };
 
