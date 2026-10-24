@@ -36,6 +36,8 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     StructureData = structureData
                 });
                 network.SendPacket(player, new VoxelShapesPacket());
+                if (network.Server.CustomDimensions.Count > 0)
+                    network.SendPreparedPacket(player, network.SerializedPackets.Get<DimensionDataPacket>());
                 network.SendPacket(player, new StartGamePacket {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
@@ -44,14 +46,9 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     Settings = new LevelSettings {
                         SpawnSettings = new SpawnSettings {
                             SpawnBiomeType = SpawnBiomeType.Default,
-                            Dimension = (int)player.Dimension.Type
+                            Dimension = player.Dimension.RuntimeId
                         },
-                        GeneratorType = player.Dimension.Type switch {
-                            DimensionType.Overworld => GeneratorType.Overworld,
-                            DimensionType.Nether => GeneratorType.Nether,
-                            DimensionType.TheEnd => GeneratorType.TheEnd,
-                            _ => GeneratorType.Undefined
-                        },
+                        GeneratorType = player.Dimension.GeneratorType,
                         GameType = player.GameType,
                         GameDifficulty = player.Dimension.Difficulty,
                         DefaultSpawnBlockPosition = new BlockPos {

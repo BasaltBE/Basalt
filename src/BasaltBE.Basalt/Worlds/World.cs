@@ -114,10 +114,23 @@ public sealed class World : IDisposable {
     public Dimension CreateDimension(string identifier, DimensionType type, string generatorIdentifier) =>
         CreateDimension(identifier, type, generators.Create(generatorIdentifier));
 
-    Dimension CreateDimension(string identifier, DimensionType type, IChunkGenerator generator) {
+    public Dimension CreateDimension(string identifier, CustomDimensionDefinition definition) =>
+        CreateDimension(identifier, DimensionType.Undefined, generators.CreateDefault(), definition);
+
+    public Dimension CreateDimension(string identifier, CustomDimensionDefinition definition, string generatorIdentifier) =>
+        CreateDimension(identifier, DimensionType.Undefined, generators.Create(generatorIdentifier), definition);
+
+    Dimension CreateDimension(
+        string identifier,
+        DimensionType type,
+        IChunkGenerator generator,
+        CustomDimensionDefinition? customDefinition = null
+    ) {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
-        if (type is not (DimensionType.Overworld or DimensionType.Nether or DimensionType.TheEnd))
+        if (customDefinition is null && type is not (DimensionType.Overworld or DimensionType.Nether or DimensionType.TheEnd))
             throw new ArgumentOutOfRangeException(nameof(type));
+        if (customDefinition is not null && Server?.CustomDimensions.Contains(customDefinition) != true)
+            throw new ArgumentException("Custom dimension definition is not registered with this server.", nameof(customDefinition));
         if (Started)
             CheckOwnership();
 
@@ -125,7 +138,9 @@ public sealed class World : IDisposable {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
         }
 
-        Dimension dimension = new(identifier, type, generator, generationService);
+        Dimension dimension = customDefinition is null
+            ? new Dimension(identifier, type, generator, generationService)
+            : new Dimension(identifier, customDefinition, generator, generationService);
         dimension.PrimaryStorageDimension = !dimensions.Values.Any(existing => existing.Type == type);
         dimension.Events = events;
         dimension.World = this;

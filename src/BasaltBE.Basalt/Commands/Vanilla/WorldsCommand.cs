@@ -136,7 +136,7 @@ public sealed class WorldsCommand : Command {
                 .Append(chunks).Append("§7 chunks)§r");
             foreach (Dimension dimension in world.Dimensions.Values) {
                 output.Append("\n§8  ` §a").Append(dimension.Identifier)
-                    .Append(" (§w").Append(dimension.Type.ToString().ToLowerInvariant())
+                    .Append(" (§w").Append(dimension.CustomDefinition?.Identifier ?? dimension.Type.ToString().ToLowerInvariant())
                     .Append("§7, §w").Append(dimension.ChunkCount).Append("§7 chunks)§r");
             }
         }

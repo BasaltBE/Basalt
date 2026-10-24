@@ -82,6 +82,7 @@ public sealed class NetworkServer : IDisposable {
         Events.Subscribe(PacketEvents.ItemStackRequest, new ItemStackRequestHandler().Handle);
         Events.Subscribe(PacketEvents.PlayerAuthInput, new PlayerAuthInputHandler().Handle);
         Events.Subscribe(PacketEvents.Respawn, new RespawnHandler().Handle);
+        Events.Subscribe(PacketEvents.PacketViolationWarning, new PacketViolationWarningHandler().Handle);
         Events.Subscribe(PacketEvents.RequestChunkRadius, new RequestChunkRadiusHandler(this).Handle);
         Events.Subscribe(PacketEvents.SetLocalPlayerAsInitialized, new SetLocalPlayerAsInitializedHandler().Handle);
         ResourcePackClientResponseHandler resourcePackResponse = new(this);
@@ -434,6 +435,8 @@ public sealed class NetworkServer : IDisposable {
 
                 player = players.GetValueOrDefault(message.Peer);
             }
+        }
+        catch (PeerDisconnectedException) {
         }
         catch (Exception error) when (
             error is InvalidDataException

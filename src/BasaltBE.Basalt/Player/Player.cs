@@ -196,7 +196,7 @@ public sealed class Player : Entity, IDisposable {
             ?? throw new InvalidOperationException("The target dimension does not belong to a world.");
         if (!ReferenceEquals(targetWorld.Server, Network.Server))
             throw new ArgumentException("The target dimension belongs to another server.", nameof(dimension));
-        if (dimension.Type == DimensionType.Undefined)
+        if (dimension.Type == DimensionType.Undefined && dimension.CustomDefinition is null)
             throw new ArgumentException("The target dimension has no supported Bedrock dimension type.", nameof(dimension));
         if (ReferenceEquals(sourceDimension, dimension))
             return;
@@ -240,9 +240,9 @@ public sealed class Player : Entity, IDisposable {
         OnSpawn();
         OnMove();
 
-        if (sourceDimension.Type != dimension.Type) {
+        if (sourceDimension.RuntimeId != dimension.RuntimeId) {
             Network.SendPacket(this, new ChangeDimensionPacket {
-                Dimension = dimension.Type,
+                DimensionId = dimension.RuntimeId,
                 Position = GetHeadPosition(),
                 Respawn = true,
                 LoadingScreenId = 0

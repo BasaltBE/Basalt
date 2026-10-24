@@ -38,6 +38,7 @@ public sealed class Server : IDisposable {
     public readonly NetworkServer Network;
     public readonly EventEmitter Events = new();
     public readonly ChunkGeneratorRegistry Generators = new();
+    public readonly CustomDimensionRegistry CustomDimensions;
     public readonly WorldProviderRegistry Providers = new();
     public readonly LootTableManager LootTables = new();
     public readonly BlockActorRegistry BlockActors = new();
@@ -52,6 +53,7 @@ public sealed class Server : IDisposable {
 
     public Server(ServerProperties properties, IServerIdentity? identity = null, PermissionStore? permissions = null) {
         Commands = new CommandRegistry(this);
+        CustomDimensions = new CustomDimensionRegistry(this);
         Permissions = permissions ?? new PermissionStore();
         Properties = properties;
         ArgumentException.ThrowIfNullOrWhiteSpace(Properties.DefaultWorldName);

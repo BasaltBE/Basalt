@@ -47,8 +47,15 @@ public sealed partial class Dimension : IDisposable {
 
     /// <summary>Unique dimension instance identifier within its world.</summary>
     public readonly string Identifier;
-    /// <summary>Bedrock dimension type used for client protocol packets.</summary>
     public readonly DimensionType Type;
+    public readonly int RuntimeId;
+    public readonly CustomDimensionDefinition? CustomDefinition;
+    public GeneratorType GeneratorType => CustomDefinition?.GeneratorType ?? Type switch {
+        DimensionType.Overworld => GeneratorType.Overworld,
+        DimensionType.Nether => GeneratorType.Nether,
+        DimensionType.TheEnd => GeneratorType.TheEnd,
+        _ => GeneratorType.Undefined
+    };
     public readonly IChunkGenerator Generator;
     public readonly Vec3 SpawnPosition = new() { X = 0.5f, Y = -57, Z = 0.5f };
     public Difficulty Difficulty = Difficulty.Normal;
@@ -63,6 +70,7 @@ public sealed partial class Dimension : IDisposable {
         ArgumentNullException.ThrowIfNull(generator);
         Identifier = identifier;
         Type = type;
+        RuntimeId = (int)type;
         Generator = generator;
         generationService = new ChunkGenerationService(4, 1024);
         ownsGenerationService = true;
@@ -93,6 +101,24 @@ public sealed partial class Dimension : IDisposable {
         Generator = generator;
         this.generationService = generationService;
         this.ownsGenerationService = ownsGenerationService;
+    }
+
+    internal Dimension(
+        string identifier,
+        CustomDimensionDefinition definition,
+        IChunkGenerator generator,
+        ChunkGenerationService generationService
+    ) {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(generator);
+        ArgumentNullException.ThrowIfNull(generationService);
+        Identifier = identifier;
+        Type = DimensionType.Undefined;
+        RuntimeId = definition.RuntimeId;
+        CustomDefinition = definition;
+        Generator = generator;
+        this.generationService = generationService;
     }
 
     internal static DimensionType GetDimensionType(string identifier) => identifier switch {
