@@ -1,0 +1,767 @@
+﻿{
+  "block": [
+    {
+      "maximum": 5,
+      "identifier": "minecraft:calibrated_sculk_sensor",
+      "minimum": 5
+    },
+    {
+      "maximum": 2,
+      "identifier": "minecraft:coal_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:copper_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 24,
+      "identifier": "minecraft:creaking_heart",
+      "minimum": 20
+    },
+    {
+      "maximum": 2,
+      "identifier": "minecraft:deepslate_coal_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:deepslate_copper_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 7,
+      "identifier": "minecraft:deepslate_diamond_ore",
+      "minimum": 3
+    },
+    {
+      "maximum": 7,
+      "identifier": "minecraft:deepslate_emerald_ore",
+      "minimum": 3
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:deepslate_gold_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:deepslate_iron_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:deepslate_lapis_ore",
+      "minimum": 2
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:deepslate_redstone_ore",
+      "minimum": 1
+    },
+    {
+      "maximum": 7,
+      "identifier": "minecraft:diamond_ore",
+      "minimum": 3
+    },
+    {
+      "maximum": 7,
+      "identifier": "minecraft:emerald_ore",
+      "minimum": 3
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:gold_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:iron_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:lapis_ore",
+      "minimum": 2
+    },
+    {
+      "maximum": 43,
+      "identifier": "minecraft:mob_spawner",
+      "minimum": 15
+    },
+    {
+      "maximum": 1,
+      "identifier": "minecraft:nether_gold_ore",
+      "minimum": 0
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:nether_quartz_ore",
+      "minimum": 2
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:redstone_ore",
+      "minimum": 1
+    },
+    {
+      "maximum": 1,
+      "identifier": "minecraft:sculk",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:sculk_catalyst",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:sculk_sensor",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:sculk_shrieker",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:lit_deepslate_redstone_ore",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:lit_redstone_ore",
+      "minimum": 1
+    }
+  ],
+  "entity": [
+    {
+      "maximum": 3,
+      "identifier": "minecraft:ocelot",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:bee",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:strider",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:llama",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zombie_villager",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:endermite",
+      "minimum": 3
+    },
+    {
+      "maximum": 10,
+      "identifier": "minecraft:elder_guardian",
+      "minimum": 10
+    },
+    {
+      "maximum": 4,
+      "identifier": "minecraft:magma_cube",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:parched",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:camel",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:goat",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:zombie_horse",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:stray",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zombie_villager_v2",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:drowned",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:phantom",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:donkey",
+      "minimum": 1
+    },
+    {
+      "maximum": 10,
+      "identifier": "minecraft:guardian",
+      "minimum": 10
+    },
+    {
+      "maximum": 4,
+      "identifier": "minecraft:slime",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:warden",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:enderman",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:fox",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:salmon",
+      "minimum": 1
+    },
+    {
+      "maximum": 10,
+      "identifier": "minecraft:evocation_illager",
+      "minimum": 10
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:vindicator",
+      "minimum": 5
+    },
+    {
+      "maximum": 50,
+      "identifier": "minecraft:wither",
+      "minimum": 50
+    },
+    {
+      "maximum": 20,
+      "identifier": "minecraft:ravager",
+      "minimum": 20
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:sheep",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:mule",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:axolotl",
+      "minimum": 1
+    },
+    {
+      "maximum": 0,
+      "identifier": "minecraft:creaking",
+      "minimum": 0
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:cat",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:cow",
+      "minimum": 1
+    },
+    {
+      "maximum": 10,
+      "identifier": "minecraft:breeze",
+      "minimum": 10
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:horse",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:wolf",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:skeleton",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:shulker",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:chicken",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:frog",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:sniffer",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:cod",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:turtle",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:glow_squid",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zombie",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zoglin",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:wither_skeleton",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:silverfish",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:polar_bear",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:vex",
+      "minimum": 3
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:cave_spider",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:panda",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:hoglin",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:mooshroom",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:rabbit",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:squid",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zombie_pigman",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:creeper",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:dolphin",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:zombie_nautilus",
+      "minimum": 5
+    },
+    {
+      "maximum": 10,
+      "identifier": "minecraft:blaze",
+      "minimum": 10
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:pillager",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:ghast",
+      "minimum": 5
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:armadillo",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:trader_llama",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:allay",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:pufferfish",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:pig",
+      "minimum": 1
+    },
+    {
+      "maximum": 20,
+      "identifier": "minecraft:piglin_brute",
+      "minimum": 20
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:tropical_fish",
+      "minimum": 1
+    },
+    {
+      "maximum": 3,
+      "identifier": "minecraft:skeleton_horse",
+      "minimum": 1
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:witch",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:piglin",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:bogged",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:husk",
+      "minimum": 5
+    },
+    {
+      "maximum": 5,
+      "identifier": "minecraft:spider",
+      "minimum": 5
+    }
+  ],
+  "smelt": [
+    {
+      "identifier": "minecraft:baked_potato",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:black_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:blue_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:brick",
+      "experience": 0.3
+    },
+    {
+      "identifier": "minecraft:brown_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:charcoal",
+      "experience": 0.15
+    },
+    {
+      "identifier": "minecraft:coal",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cooked_beef",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_chicken",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_cod",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_mutton",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_porkchop",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_rabbit",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:cooked_salmon",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:copper_ingot",
+      "experience": 0.7
+    },
+    {
+      "identifier": "minecraft:copper_nugget",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cracked_deepslate_bricks",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cracked_deepslate_tiles",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cracked_nether_bricks",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cracked_polished_blackstone_bricks",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cracked_stone_bricks",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:cyan_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:deepslate",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:diamond",
+      "experience": 1
+    },
+    {
+      "identifier": "minecraft:dried_kelp",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:emerald",
+      "experience": 1
+    },
+    {
+      "identifier": "minecraft:glass",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:gold_ingot",
+      "experience": 1
+    },
+    {
+      "identifier": "minecraft:gold_nugget",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:gray_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:green_dye",
+      "experience": 1
+    },
+    {
+      "identifier": "minecraft:green_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:iron_ingot",
+      "experience": 0.7
+    },
+    {
+      "identifier": "minecraft:iron_nugget",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:lapis_lazuli",
+      "experience": 0.2
+    },
+    {
+      "identifier": "minecraft:leaf_litter",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:light_blue_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:light_gray_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:lime_dye",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:lime_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:magenta_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:nether_brick",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:netherite_scrap",
+      "experience": 2
+    },
+    {
+      "identifier": "minecraft:orange_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:pink_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:popped_chorus_fruit",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:purple_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:quartz",
+      "experience": 0.2
+    },
+    {
+      "identifier": "minecraft:red_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:redstone",
+      "experience": 0.7
+    },
+    {
+      "identifier": "minecraft:resin_brick",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:smooth_basalt",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:smooth_quartz",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:smooth_red_sandstone",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:smooth_sandstone",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:smooth_stone",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:sponge",
+      "experience": 0.15
+    },
+    {
+      "identifier": "minecraft:stone",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:terracotta",
+      "experience": 0.35
+    },
+    {
+      "identifier": "minecraft:white_glazed_terracotta",
+      "experience": 0.1
+    },
+    {
+      "identifier": "minecraft:yellow_glazed_terracotta",
+      "experience": 0.1
+    }
+  ]
+}
