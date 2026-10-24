@@ -19,7 +19,7 @@ public sealed class LevelChunkPacket : DataPacket {
 
     public override void Serialize(ref BinaryWriter writer) {
         ArgumentNullException.ThrowIfNull(Position);
-        if (SubChunkCount > 64) {
+        if (SubChunkCount > 64 && SubChunkCount is not (uint.MaxValue or uint.MaxValue - 1)) {
             throw new InvalidDataException("Level chunk subchunk count cannot exceed 64.");
         }
         if (ClientRequestSubChunkLimit is < -1 or > 64) {
@@ -50,7 +50,7 @@ public sealed class LevelChunkPacket : DataPacket {
         Position.Read(ref reader);
         DimensionId = reader.ReadZigZag();
         SubChunkCount = reader.ReadVarUInt();
-        if (SubChunkCount > 64) {
+        if (SubChunkCount > 64 && SubChunkCount is not (uint.MaxValue or uint.MaxValue - 1)) {
             throw new InvalidDataException("Level chunk subchunk count cannot exceed 64.");
         }
 

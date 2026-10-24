@@ -57,7 +57,7 @@ build/
 .yarn/unplugged/
 .yarn/install-state.gz
 .pnp.*
-.project
+.project/*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
