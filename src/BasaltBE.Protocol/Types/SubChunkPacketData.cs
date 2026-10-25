@@ -16,11 +16,12 @@ public sealed class SubChunkPacketData : DataType {
 
     internal void Read(ref BinaryReader reader, bool cacheEnabled) {
         PositionOffset.Read(ref reader);
-        Result = (SubChunkRequestResult)reader.ReadUInt8();
+        byte result = reader.ReadUInt8();
+        Result = (SubChunkRequestResult)result;
         if (!Enum.IsDefined(Result))
-            throw new InvalidDataException("Subchunk request result is invalid.");
+            throw new InvalidDataException($"Subchunk request result {result} is invalid.");
 
-        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir) && reader.ReadBool()) {
+        if (reader.ReadBool()) {
             uint length = reader.ReadVarUInt();
             if (length > reader.Remaining)
                 throw new InvalidDataException("Subchunk data length exceeds the remaining packet data.");
@@ -42,12 +43,10 @@ public sealed class SubChunkPacketData : DataType {
 
         PositionOffset.Write(ref writer);
         writer.WriteUInt8((byte)Result);
-        if (!(cacheEnabled && Result == SubChunkRequestResult.SuccessAllAir)) {
-            writer.WriteBool(!SerializedSubChunk.IsEmpty);
-            if (!SerializedSubChunk.IsEmpty) {
-                writer.WriteVarUInt((uint)SerializedSubChunk.Length);
-                writer.WriteBytes(SerializedSubChunk.Span);
-            }
+        writer.WriteBool(!SerializedSubChunk.IsEmpty);
+        if (!SerializedSubChunk.IsEmpty) {
+            writer.WriteVarUInt((uint)SerializedSubChunk.Length);
+            writer.WriteBytes(SerializedSubChunk.Span);
         }
 
         Heightmap.Write(ref writer);

@@ -40,10 +40,14 @@ public struct ServerProperties {
     [ServerProperty("Ticking", 13, "tick-distance", "Square simulation radius in chunks, separate from render distance.")]
     public int TickDistance;
 
+    [ServerProperty("Storage", 14, "autosave-interval", "Seconds between periodic player saves and world provider flushes. Set to 0 to disable them; dirty chunk saves continue.")]
+    public int AutosaveIntervalSeconds;
+
     public ServerProperties() {
         Ticking = "default";
         TickingThreads = 4;
         TickDistance = 4;
+        AutosaveIntervalSeconds = 300;
         ServerName = "BasaltBE";
         LevelName = "Bedrock level";
         ServerPort = 19132;

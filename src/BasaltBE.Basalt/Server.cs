@@ -50,7 +50,7 @@ public sealed class Server : IDisposable {
     public IReadOnlyList<World> Worlds => Volatile.Read(ref worldSnapshot);
     public readonly CommandRegistry Commands;
     public readonly PermissionStore Permissions;
-    internal readonly PlayerDataStore PlayerData = new("players");
+    internal readonly PlayerDataStore PlayerData;
     internal ulong TickValue;
     public readonly TickMetrics Ticks = new();
     public bool Stopping => Volatile.Read(ref stopping) != 0;
@@ -74,6 +74,7 @@ public sealed class Server : IDisposable {
             DiscoveryAddress = new IPEndPoint(IPAddress.Any, Properties.DiscoveryPort),
             IdentityKeyPath = Properties.IdentityKeyPath
         }, identity, ResourcePackManager.Load(Properties.ResourcePacksPath));
+        PlayerData = new PlayerDataStore("players");
     }
 
     public World CreateWorld(
@@ -250,6 +251,7 @@ public sealed class Server : IDisposable {
         Gameplay.EnterWriteLock();
         try {
             Network.Dispose();
+            PlayerData.Dispose();
             generation?.Dispose();
             foreach (World world in worlds)
                 world.Dispose();

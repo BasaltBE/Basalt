@@ -33,9 +33,12 @@ public sealed class World : IDisposable {
     readonly ConcurrentQueue<(NethernetMessage Message, byte[]? Buffer)> inbound = new();
     long queuedBytes;
     int queuedMessages;
+    Player[] autosavePlayers = [];
+    int autosavePlayerIndex;
 
     int initialization;
     internal ulong TickValue;
+    ulong nextAutosaveTick;
 
     public readonly string Identifier;
     public readonly LootTableManager LootTables;
@@ -86,6 +89,8 @@ public sealed class World : IDisposable {
         if (Dimensions.Count == 0)
             throw new InvalidOperationException($"World '{Identifier}' requires at least one dimension.");
 
+        int autosaveInterval = Server?.Properties.AutosaveIntervalSeconds ?? 0;
+        nextAutosaveTick = autosaveInterval > 0 ? (ulong)autosaveInterval * 20 : ulong.MaxValue;
         Volatile.Write(ref initialization, 2);
         if (events.HasSubscribers<WorldInitializeEvent>())
             events.Emit(new WorldInitializeEvent(this));
@@ -238,6 +243,39 @@ public sealed class World : IDisposable {
         ChunkSendBudgetRemaining = Stopwatch.Frequency * Dimension.ChunkSendBudgetMilliseconds / 1000;
         foreach (Dimension dimension in Dimensions.Values)
             dimension.Tick();
+
+        if (Server is { } server && server.Properties.AutosaveIntervalSeconds > 0) {
+            if (TickValue >= nextAutosaveTick) {
+                ulong intervalTicks = (ulong)server.Properties.AutosaveIntervalSeconds * 20;
+                nextAutosaveTick = TickValue + intervalTicks;
+                if (storage is not null && !storage.Flush())
+                    Logger.Scoped("Storage").Warn($"Could not queue autosave flush for world {Identifier}; provider queue is full.");
+
+                if (autosavePlayerIndex >= autosavePlayers.Length) {
+                    List<Player> snapshot = [];
+                    foreach (Dimension dimension in Dimensions.Values) {
+                        foreach (Player player in dimension.GetPlayers())
+                            snapshot.Add(player);
+                    }
+                    autosavePlayers = snapshot.ToArray();
+                    autosavePlayerIndex = 0;
+                }
+            }
+
+            if (autosavePlayerIndex < autosavePlayers.Length) {
+                long deadline = Stopwatch.GetTimestamp() + Stopwatch.Frequency / 1000;
+                do {
+                    Player player = autosavePlayers[autosavePlayerIndex++];
+                    if (!player.Disposed)
+                        server.PlayerData.Save(player);
+                } while (autosavePlayerIndex < autosavePlayers.Length && Stopwatch.GetTimestamp() < deadline);
+
+                if (autosavePlayerIndex == autosavePlayers.Length) {
+                    autosavePlayers = [];
+                    autosavePlayerIndex = 0;
+                }
+            }
+        }
 
         Ticks.Record(start);
     }

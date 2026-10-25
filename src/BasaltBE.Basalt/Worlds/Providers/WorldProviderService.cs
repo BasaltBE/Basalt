@@ -104,6 +104,16 @@ internal sealed class WorldProviderService : IDisposable {
         0
     ));
 
+    internal bool Flush() => Add(new StorageRequest(
+        null,
+        WorldStorageOperation.Flush,
+        default,
+        0,
+        0,
+        null,
+        0
+    ));
+
     private bool Add(StorageRequest request) {
         if (Volatile.Read(ref disposed) != 0)
             return false;
@@ -197,7 +207,7 @@ internal sealed class WorldProviderService : IDisposable {
 
         for (int index = 0; index < count; index++) {
             StorageRequest request = batchRequests[index];
-            request.Dimension.CompletedStorage.Enqueue(new WorldStorageCompletion(
+            request.Dimension!.CompletedStorage.Enqueue(new WorldStorageCompletion(
                 request.Operation,
                 request.Key,
                 request.RequestId,
@@ -244,7 +254,7 @@ internal sealed class WorldProviderService : IDisposable {
                         dataBytes = entryBytes;
                         long decodeStart = Stopwatch.GetTimestamp();
                         try {
-                            chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries, request.Dimension);
+                            chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries, request.Dimension!);
                         }
                         catch (Exception exception) {
                             Interlocked.Add(ref pendingBytes, -dataBytes);
@@ -261,28 +271,37 @@ internal sealed class WorldProviderService : IDisposable {
                 case WorldStorageOperation.Delete:
                     deleted = provider.DeleteChunk(request.Key);
                     break;
+                case WorldStorageOperation.Flush:
+                    provider.Flush();
+                    break;
             }
         }
         catch (Exception exception) {
             error = exception;
         }
 
-        if (error is not null)
-            Logger.Scoped("Storage").Error(
-                $"Provider {provider.Identifier} could not {request.Operation.ToString().ToLowerInvariant()} " +
-                $"chunk {request.Key.DimensionIdentifier} ({request.Key.X}, {request.Key.Z}): {error.Message}"
-            );
+        if (error is not null) {
+            if (request.Operation == WorldStorageOperation.Flush)
+                Logger.Scoped("Storage").Error($"Provider {provider.Identifier} could not flush: {error.Message}");
+            else
+                Logger.Scoped("Storage").Error(
+                    $"Provider {provider.Identifier} could not {request.Operation.ToString().ToLowerInvariant()} " +
+                    $"chunk {request.Key.DimensionIdentifier} ({request.Key.X}, {request.Key.Z}): {error.Message}"
+                );
+        }
 
-        request.Dimension.CompletedStorage.Enqueue(new WorldStorageCompletion(
-            request.Operation,
-            request.Key,
-            request.RequestId,
-            request.Version,
-            chunk,
-            dataBytes,
-            deleted,
-            error
-        ));
+        if (request.Dimension is { } dimension) {
+            dimension.CompletedStorage.Enqueue(new WorldStorageCompletion(
+                request.Operation,
+                request.Key,
+                request.RequestId,
+                request.Version,
+                chunk,
+                dataBytes,
+                deleted,
+                error
+            ));
+        }
         Interlocked.Decrement(ref pendingOperations);
     }
 
@@ -299,7 +318,7 @@ internal sealed class WorldProviderService : IDisposable {
     }
 
     private readonly record struct StorageRequest(
-        Dimension Dimension,
+        Dimension? Dimension,
         WorldStorageOperation Operation,
         ChunkStorageKey Key,
         long RequestId,

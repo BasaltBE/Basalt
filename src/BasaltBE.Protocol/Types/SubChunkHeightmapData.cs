@@ -13,43 +13,26 @@ public sealed class SubChunkHeightmapData : DataType {
 
     public override void Read(ref BinaryReader reader) {
         HeightmapType = (SubChunkHeightmapType)reader.ReadUInt8();
-        if (HeightmapType == SubChunkHeightmapType.HasData) {
-            if (reader.ReadVarUInt() != 16)
-                throw new InvalidDataException("Subchunk heightmap must contain 16 rows.");
-
+        if (reader.ReadBool()) {
             Heightmap = new sbyte[256];
-            int offset = 0;
-            for (int z = 0; z < 16; z++) {
-                if (reader.ReadVarUInt() != 16)
-                    throw new InvalidDataException("Subchunk heightmap rows must contain 16 values.");
-                for (int x = 0; x < 16; x++)
-                    Heightmap[offset++] = reader.ReadInt8();
-            }
+            for (int i = 0; i < Heightmap.Length; i++)
+                Heightmap[i] = reader.ReadInt8();
         }
         else {
             Heightmap = [];
         }
 
         RenderHeightmapType = (SubChunkRenderHeightmapType)reader.ReadUInt8();
-        if (RenderHeightmapType == SubChunkRenderHeightmapType.HasData) {
-            if (reader.ReadVarUInt() != 16)
-                throw new InvalidDataException("Subchunk heightmap must contain 16 rows.");
-
+        if (reader.ReadBool()) {
             RenderHeightmap = new sbyte[256];
-            int offset = 0;
-            for (int z = 0; z < 16; z++) {
-                if (reader.ReadVarUInt() != 16)
-                    throw new InvalidDataException("Subchunk heightmap rows must contain 16 values.");
-                for (int x = 0; x < 16; x++)
-                    RenderHeightmap[offset++] = reader.ReadInt8();
-            }
+            for (int i = 0; i < RenderHeightmap.Length; i++)
+                RenderHeightmap[i] = reader.ReadInt8();
         }
         else {
             RenderHeightmap = [];
         }
 
-        if (!Enum.IsDefined(HeightmapType) || !Enum.IsDefined(RenderHeightmapType))
-            throw new InvalidDataException("Subchunk heightmap type is invalid.");
+
     }
 
     public override void Write(ref BinaryWriter writer) {
@@ -61,22 +44,16 @@ public sealed class SubChunkHeightmapData : DataType {
             throw new InvalidDataException("Subchunk render heightmap must contain 256 values.");
 
         writer.WriteUInt8((byte)HeightmapType);
+        writer.WriteBool(HeightmapType == SubChunkHeightmapType.HasData);
         if (HeightmapType == SubChunkHeightmapType.HasData) {
-            writer.WriteVarUInt(16);
-            for (int z = 0; z < 16; z++) {
-                writer.WriteVarUInt(16);
-                for (int x = 0; x < 16; x++)
-                    writer.WriteInt8(Heightmap[z * 16 + x]);
-            }
+            foreach (sbyte height in Heightmap)
+                writer.WriteInt8(height);
         }
         writer.WriteUInt8((byte)RenderHeightmapType);
+        writer.WriteBool(RenderHeightmapType == SubChunkRenderHeightmapType.HasData);
         if (RenderHeightmapType == SubChunkRenderHeightmapType.HasData) {
-            writer.WriteVarUInt(16);
-            for (int z = 0; z < 16; z++) {
-                writer.WriteVarUInt(16);
-                for (int x = 0; x < 16; x++)
-                    writer.WriteInt8(RenderHeightmap[z * 16 + x]);
-            }
+            foreach (sbyte height in RenderHeightmap)
+                writer.WriteInt8(height);
         }
     }
 }

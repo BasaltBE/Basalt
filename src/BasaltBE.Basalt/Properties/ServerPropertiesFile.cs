@@ -42,6 +42,7 @@ public static class ServerPropertiesFile {
         properties = (ServerProperties)boxedProperties;
         properties.MaxPlayers = Math.Max(properties.MaxPlayers, 1);
         properties.MaxViewDistance = Math.Clamp(properties.MaxViewDistance, 0, 96);
+        properties.AutosaveIntervalSeconds = Math.Clamp(properties.AutosaveIntervalSeconds, 0, 86400);
         return properties;
     }
 
