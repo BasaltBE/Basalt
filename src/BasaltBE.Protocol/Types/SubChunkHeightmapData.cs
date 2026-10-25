@@ -13,26 +13,38 @@ public sealed class SubChunkHeightmapData : DataType {
 
     public override void Read(ref BinaryReader reader) {
         HeightmapType = (SubChunkHeightmapType)reader.ReadUInt8();
+        if (!Enum.IsDefined(HeightmapType))
+            throw new InvalidDataException("Subchunk heightmap type is invalid.");
         if (reader.ReadBool()) {
             Heightmap = new sbyte[256];
-            for (int i = 0; i < Heightmap.Length; i++)
-                Heightmap[i] = reader.ReadInt8();
+            for (int z = 0; z < 16; z++) {
+                uint rowLength = reader.ReadVarUInt();
+                if (rowLength != 16)
+                    throw new InvalidDataException($"Subchunk heightmap row length {rowLength} is invalid.");
+                for (int x = 0; x < 16; x++)
+                    Heightmap[z * 16 + x] = reader.ReadInt8();
+            }
         }
         else {
             Heightmap = [];
         }
 
         RenderHeightmapType = (SubChunkRenderHeightmapType)reader.ReadUInt8();
+        if (!Enum.IsDefined(RenderHeightmapType))
+            throw new InvalidDataException("Subchunk render heightmap type is invalid.");
         if (reader.ReadBool()) {
             RenderHeightmap = new sbyte[256];
-            for (int i = 0; i < RenderHeightmap.Length; i++)
-                RenderHeightmap[i] = reader.ReadInt8();
+            for (int z = 0; z < 16; z++) {
+                uint rowLength = reader.ReadVarUInt();
+                if (rowLength != 16)
+                    throw new InvalidDataException($"Subchunk render heightmap row length {rowLength} is invalid.");
+                for (int x = 0; x < 16; x++)
+                    RenderHeightmap[z * 16 + x] = reader.ReadInt8();
+            }
         }
         else {
             RenderHeightmap = [];
         }
-
-
     }
 
     public override void Write(ref BinaryWriter writer) {
@@ -46,14 +58,20 @@ public sealed class SubChunkHeightmapData : DataType {
         writer.WriteUInt8((byte)HeightmapType);
         writer.WriteBool(HeightmapType == SubChunkHeightmapType.HasData);
         if (HeightmapType == SubChunkHeightmapType.HasData) {
-            foreach (sbyte height in Heightmap)
-                writer.WriteInt8(height);
+            for (int z = 0; z < 16; z++) {
+                writer.WriteVarUInt(16);
+                for (int x = 0; x < 16; x++)
+                    writer.WriteInt8(Heightmap[z * 16 + x]);
+            }
         }
         writer.WriteUInt8((byte)RenderHeightmapType);
         writer.WriteBool(RenderHeightmapType == SubChunkRenderHeightmapType.HasData);
         if (RenderHeightmapType == SubChunkRenderHeightmapType.HasData) {
-            foreach (sbyte height in RenderHeightmap)
-                writer.WriteInt8(height);
+            for (int z = 0; z < 16; z++) {
+                writer.WriteVarUInt(16);
+                for (int x = 0; x < 16; x++)
+                    writer.WriteInt8(RenderHeightmap[z * 16 + x]);
+            }
         }
     }
 }

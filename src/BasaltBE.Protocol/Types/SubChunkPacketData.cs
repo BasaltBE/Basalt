@@ -12,9 +12,7 @@ public sealed class SubChunkPacketData : DataType {
     public SubChunkHeightmapData Heightmap = new();
     public ulong? BlobId;
 
-    public override void Read(ref BinaryReader reader) => Read(ref reader, false);
-
-    internal void Read(ref BinaryReader reader, bool cacheEnabled) {
+    public override void Read(ref BinaryReader reader) {
         PositionOffset.Read(ref reader);
         byte result = reader.ReadUInt8();
         Result = (SubChunkRequestResult)result;
@@ -29,13 +27,11 @@ public sealed class SubChunkPacketData : DataType {
         }
 
         Heightmap.Read(ref reader);
-        if (cacheEnabled && Result is (SubChunkRequestResult.Success or SubChunkRequestResult.SuccessAllAir) && reader.ReadBool())
+        if (reader.ReadBool())
             BlobId = reader.ReadUInt64(true);
     }
 
-    public override void Write(ref BinaryWriter writer) => Write(ref writer, false);
-
-    internal void Write(ref BinaryWriter writer, bool cacheEnabled) {
+    public override void Write(ref BinaryWriter writer) {
         ArgumentNullException.ThrowIfNull(PositionOffset);
         ArgumentNullException.ThrowIfNull(Heightmap);
         if (!Enum.IsDefined(Result))
@@ -50,10 +46,8 @@ public sealed class SubChunkPacketData : DataType {
         }
 
         Heightmap.Write(ref writer);
-        if (cacheEnabled && Result is (SubChunkRequestResult.Success or SubChunkRequestResult.SuccessAllAir)) {
-            writer.WriteBool(BlobId.HasValue);
-            if (BlobId is ulong blobId)
-                writer.WriteUInt64(blobId, true);
-        }
+        writer.WriteBool(BlobId.HasValue);
+        if (BlobId is ulong blobId)
+            writer.WriteUInt64(blobId, true);
     }
 }

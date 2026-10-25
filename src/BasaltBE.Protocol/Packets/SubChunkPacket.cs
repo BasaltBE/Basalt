@@ -23,7 +23,7 @@ public sealed class SubChunkPacket : DataPacket {
         SubChunks = new SubChunkPacketData[(int)count];
         for (int i = 0; i < SubChunks.Length; i++) {
             SubChunkPacketData data = new();
-            data.Read(ref reader, CacheEnabled);
+            data.Read(ref reader);
             SubChunks[i] = data;
         }
     }
@@ -38,7 +38,7 @@ public sealed class SubChunkPacket : DataPacket {
         writer.WriteVarUInt((uint)SubChunks.Length);
         foreach (SubChunkPacketData data in SubChunks) {
             ArgumentNullException.ThrowIfNull(data);
-            data.Write(ref writer, CacheEnabled);
+            data.Write(ref writer);
         }
     }
 }

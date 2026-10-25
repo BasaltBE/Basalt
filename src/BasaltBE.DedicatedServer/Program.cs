@@ -101,8 +101,10 @@ internal static class Program {
             server.Commands.Register(new OpCommand());
             server.Commands.Register(new DeopCommand());
             server.Commands.Register(new StopCommand());
+            server.Commands.Register(new SaveAllCommand());
             server.Commands.Register(new SummonCommand());
             server.Commands.Register(new GameModeCommand());
+            server.Commands.Register(new GameRuleCommand());
             server.Commands.Register(new WorldsCommand());
 
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
