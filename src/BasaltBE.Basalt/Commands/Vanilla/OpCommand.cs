@@ -6,7 +6,7 @@ using BasaltBE.Basalt.Permissions;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class OpCommand : Command {
-    public OpCommand() : base("op", "Grant operator access to players.", "basalt.operator") {
+    public OpCommand() : base("op", "Grants operator status to a player.", "basalt.operator") {
         AddOverload(new CommandParameter("targets", new TargetEnum(playersOnly: true, selectorsOnly: true)));
         AddOverload(new CommandParameter("player", new StringEnum()));
     }
@@ -16,15 +16,15 @@ public sealed class OpCommand : Command {
             if (targets.Length == 0)
                 return new(false, "No players matched the target.");
 
-            int granted = 0;
+            List<string> granted = [];
             foreach (Entity target in targets) {
                 if (target is Player player &&
                     context.Server.Permissions.Get(player.Xuid, player.Username).Add("basalt.operator"))
-                    granted++;
+                    granted.Add(player.Username);
             }
-            return granted == 0
-                ? new(false, "All selected players already have operator access.")
-                : new(true, $"Granted operator access to {granted} player(s).");
+            return granted.Count == 0
+                ? new(false, $"Could not op (already op or higher): {string.Join(", ", targets.OfType<Player>().Select(static player => player.Username))}.")
+                : new(true, $"Opped: {string.Join(", ", granted)}.");
         }
 
         string name = context.Get<string>("player");
@@ -32,8 +32,8 @@ public sealed class OpCommand : Command {
         if (permissions is null)
             return new(false, $"Unknown player '{name}'. The player must have joined before.");
         if (!permissions.Add("basalt.operator"))
-            return new(false, $"{name} already has operator access.");
+            return new(false, $"Could not op (already op or higher): {name}.");
 
-        return new(true, $"Granted operator access to {name}.");
+        return new(true, $"Opped: {name}.");
     }
 }

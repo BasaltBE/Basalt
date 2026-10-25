@@ -217,7 +217,7 @@ public sealed class CommandRegistry(Server server) {
                 result = new(false, "A player disconnected while the command was running. Some changes may have been applied.");
             }
             catch (Exception error) {
-                Logger.Scoped("Commands").Error($"Command execution failed: {error}");
+                Logger.Scoped("Commands").Error($"Command execution failed (command: {request.Command}): {error}");
                 result = new(false, "Command execution failed.");
             }
             finally {

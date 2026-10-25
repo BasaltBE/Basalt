@@ -8,7 +8,7 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class SummonCommand : Command {
-    public SummonCommand() : base("summon", "Summon an entity.", "basalt.command.summon") {
+    public SummonCommand() : base("summon", "Summons an entity.", "basalt.command.summon") {
         AddOverload(
             new CommandParameter("entity", new EntityEnum()),
             new CommandParameter("position", new PositionEnum(), optional: true)
@@ -18,7 +18,7 @@ public sealed class SummonCommand : Command {
     public override CommandResult Execute(CommandContext context) {
         EntityType type = context.Get<EntityType>("entity");
         if (type.Summonable == false)
-            return new(false, $"Entity '{type.Identifier}' cannot be summoned.");
+            return new(false, "Unable to summon object.");
 
         Dimension? dimension = context.Player?.Dimension;
         float x = 0.5f;
@@ -42,13 +42,13 @@ public sealed class SummonCommand : Command {
         }
 
         if (dimension is null)
-            return new(false, "No dimension is available to summon the entity.");
+            return new(false, "Unable to summon object.");
 
         Entity entity = new(type);
         entity.Position.X = x;
         entity.Position.Y = y;
         entity.Position.Z = z;
         entity.Spawn(dimension);
-        return new(true, $"Summoned {type.Identifier}.");
+        return new(true, "Object successfully summoned.");
     }
 }

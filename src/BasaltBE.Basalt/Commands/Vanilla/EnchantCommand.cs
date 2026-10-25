@@ -9,7 +9,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class EnchantCommand : Command {
     public EnchantCommand(EnchantmentRegistry enchantments)
-        : base("enchant", "Enchant a player's held item.", "basalt.command.enchant") {
+        : base("enchant", "Adds an enchantment to a player's selected item.", "basalt.command.enchant") {
         AddOverload(
             new("target", new TargetEnum(playersOnly: true)),
             new("enchantment", new EnchantmentEnum(enchantments)),
@@ -24,7 +24,7 @@ public sealed class EnchantCommand : Command {
         if (targets.Length is 0 or > 128)
             return new(false, "Select between 1 and 128 players.");
 
-        int enchanted = 0;
+        List<string> enchanted = [];
         foreach (Entity entity in targets) {
             if (entity is not Player { Spawned: true, Disposed: false } player ||
                 player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
@@ -41,11 +41,11 @@ public sealed class EnchantCommand : Command {
                 continue;
 
             item.AddEnchantment(enchantment, level);
-            enchanted++;
+            enchanted.Add(player.Username);
         }
 
-        return enchanted == 0
-            ? new(false, "No selected player held an item that can receive this enchantment.")
-            : new(true, $"Enchanted {enchanted} player item(s) with {enchantment.Identifier} {level}.");
+        return enchanted.Count == 0
+            ? new(false, $"The selected enchantment can't be added to the target item: {enchantment.Identifier}.")
+            : new(true, $"Enchanting succeeded for {string.Join(", ", enchanted)}.");
     }
 }

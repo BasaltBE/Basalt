@@ -7,7 +7,7 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class ListCommand : Command {
-    public ListCommand() : base("list", "List connected players.") {
+    public ListCommand() : base("list", "Lists players on the server.") {
         Concurrent = true;
         AddOverload();
     }
@@ -25,6 +25,8 @@ public sealed class ListCommand : Command {
                 }
             }
         }
-        return new(true, FormattableString.Invariant($"Players ({count}/{context.Server.Properties.MaxPlayers}): {names}"));
+        return new(true, FormattableString.Invariant(
+            $"There are {count}/{context.Server.Properties.MaxPlayers} players online{(count == 0 ? "." : $": {names}.")}"
+        ));
     }
 }

@@ -6,7 +6,7 @@ using BasaltBE.Basalt.Worlds.Types;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class GameRuleCommand : Command {
-    public GameRuleCommand() : base("gamerule", "View or change a world game rule.", "basalt.command.gamerule") {
+    public GameRuleCommand() : base("gamerule", "Sets or queries a game rule value.", "basalt.command.gamerule") {
         CustomEnum rules = new("GameRule", ["keepinventory", "showcoordinates", "falldamage"]);
         AddOverload(new CommandParameter("rule", rules));
         AddOverload(new CommandParameter("rule", rules), new CommandParameter("value", new BoolEnum()));
@@ -22,11 +22,12 @@ public sealed class GameRuleCommand : Command {
         if (Array.Exists(context.Parameters, static parameter => parameter.Name == "value")) {
             bool value = context.Get<bool>("value");
             bool changed = world.GameRules.Set(rule, value);
+            string state = value ? "true" : "false";
             return new(true, changed
-                ? $"{name} is {(value ? "on" : "off")}."
-                : $"{name} is already {(value ? "on" : "off")}.");
+                ? $"Game rule {name} has been updated to {state}."
+                : $"Game rule {name} is already {state}.");
         }
 
-        return new(true, $"{name} is {(world.GameRules.Get(rule) ? "on" : "off")}.");
+        return new(true, $"Game rule {name} is {(world.GameRules.Get(rule) ? "true" : "false")}.");
     }
 }

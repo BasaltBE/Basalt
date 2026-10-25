@@ -8,7 +8,7 @@ using BasaltBE.Basalt.Items.Types;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class GiveCommand : Command {
-    public GiveCommand() : base("give", "Give items to players.", "basalt.command.give") {
+    public GiveCommand() : base("give", "Gives an item to a player.", "basalt.command.give") {
         AddOverload(
             new("player", new TargetEnum(playersOnly: true)),
             new("item", new ItemEnum()),
@@ -26,7 +26,7 @@ public sealed class GiveCommand : Command {
             return new(false, "This item cannot be given.");
 
         int given = 0;
-        int recipients = 0;
+        List<string> recipients = [];
         foreach (Entity target in targets) {
             if (target is not Player { Disposed: false, Spawned: true } player)
                 continue;
@@ -37,8 +37,13 @@ public sealed class GiveCommand : Command {
             ItemStack? leftover = inventory.Inventory.AddItem(new ItemStack(item, (ushort)amount));
             int inserted = amount - (leftover?.StackSize ?? 0);
             given += inserted;
-            recipients++;
+            recipients.Add(player.Username);
         }
-        return new(recipients > 0, FormattableString.Invariant($"Gave {given} {item.Identifier} to {recipients} player(s)."));
+        if (recipients.Count == 0)
+            return new(false, "No selected players are online and spawned.");
+
+        return new(true, FormattableString.Invariant(
+            $"Gave {given} {item.Identifier} to {string.Join(", ", recipients)}."
+        ));
     }
 }

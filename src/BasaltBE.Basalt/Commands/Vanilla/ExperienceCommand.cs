@@ -1,4 +1,4 @@
-using System.Globalization;
+using System.Text;
 using BasaltBE.Basalt.Commands.Enums;
 using BasaltBE.Basalt.Commands.Types;
 using BasaltBE.Basalt.Entities;
@@ -9,7 +9,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 public sealed class ExperienceCommand : Command {
     public ExperienceCommand() : base(
         "experience",
-        "Add, set, or query player experience.",
+        "Adds or removes player experience, and can set or query experience.",
         "basalt.command.xp",
         ["xp"]
     ) {
@@ -35,8 +35,10 @@ public sealed class ExperienceCommand : Command {
         int amount = context.Get("amount", 0);
         string unit = context.Get("unit", action == "query" ? string.Empty : "points").ToLowerInvariant();
 
-        if (targets.Length is 0 or > 128)
-            return new(false, "Select between 1 and 128 players.");
+        if (targets.Length == 0)
+            return new(false, "No players matched the target.");
+        if (targets.Length > 128)
+            return new(false, "Select no more than 128 players.");
 
         if (action is not ("add" or "set" or "query"))
             return new(false, "Use add, set, or query.");
@@ -45,7 +47,7 @@ public sealed class ExperienceCommand : Command {
             return new(false, "Use points or levels.");
 
         if ((action == "query") == hasAmount)
-            return new(false, "Query needs a unit. Add and set need an amount.");
+            return new(false, "Query requires a unit. Add and set require an amount.");
 
         if (action == "set" && amount < 0)
             return new(false, "Experience cannot be set below zero.");
@@ -53,8 +55,8 @@ public sealed class ExperienceCommand : Command {
         if (action == "set" && unit == "levels" && amount > PlayerExperienceTrait.MaximumLevel)
             return new(false, $"Player levels cannot exceed {PlayerExperienceTrait.MaximumLevel}.");
 
-        int changed = 0;
-        int lastValue = 0;
+        List<string> changed = [];
+        StringBuilder query = new();
         foreach (Entity entity in targets) {
             if (entity is not Player { Spawned: true, Disposed: false } player ||
                 player.GetTrait<PlayerExperienceTrait>() is not { } experience)
@@ -62,8 +64,12 @@ public sealed class ExperienceCommand : Command {
             using Lock.Scope tickSync = player.TickSync.EnterScope();
             using Lock.Scope sync = player.Sync.EnterScope();
             if (action == "query") {
-                lastValue = unit == "levels" ? experience.Level : experience.Points;
-                changed++;
+                if (query.Length > 0)
+                    query.Append('\n');
+                query.Append(FormattableString.Invariant(
+                    $"{player.Username} has {(unit == "levels" ? experience.Level : experience.Points)} {unit}."
+                ));
+                changed.Add(player.Username);
                 continue;
             }
 
@@ -79,18 +85,26 @@ public sealed class ExperienceCommand : Command {
                 experience.AddPoints(amount);
             else if (!experience.SetPoints(amount))
                 continue;
-            changed++;
-            lastValue = unit == "levels" ? experience.Level : experience.Points;
+            changed.Add(player.Username);
         }
 
-        if (changed == 0)
+        if (changed.Count == 0)
             return new(false, action == "set" && unit == "points"
-                ? "Points must be less than the points needed for the next level."
+                ? "The points value must be less than the points needed for the next level."
                 : "No selected players are online and spawned.");
 
-        string result = action == "query"
-            ? FormattableString.Invariant($"{changed} player(s) have {lastValue} {unit}.")
-            : FormattableString.Invariant($"{(action == "add" ? "Added" : "Set")} {amount} {unit} for {changed} player(s).");
+        if (action == "query")
+            return new(true, query.ToString());
+
+        string names = string.Join(", ", changed);
+        string result = action switch {
+            "set" when unit == "levels" => FormattableString.Invariant($"Set {amount} levels for {names}."),
+            "set" => FormattableString.Invariant($"Set experience to {amount} points for {names}."),
+            "add" when unit == "levels" && amount < 0 => FormattableString.Invariant($"Taken {-(long)amount} levels from {names}."),
+            "add" when unit == "levels" => FormattableString.Invariant($"Gave {amount} levels to {names}."),
+            "add" when amount < 0 => FormattableString.Invariant($"Removed {-(long)amount} experience from {names}."),
+            _ => FormattableString.Invariant($"Gave {amount} experience to {names}.")
+        };
         return new(true, result);
     }
 }

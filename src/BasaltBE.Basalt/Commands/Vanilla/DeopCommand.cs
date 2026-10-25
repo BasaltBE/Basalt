@@ -5,7 +5,7 @@ using BasaltBE.Basalt.Entities;
 namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class DeopCommand : Command {
-    public DeopCommand() : base("deop", "Remove operator access from players.", "basalt.operator") {
+    public DeopCommand() : base("deop", "Revokes operator status from a player.", "basalt.operator") {
         AddOverload(new CommandParameter("targets", new TargetEnum(playersOnly: true, selectorsOnly: true)));
         AddOverload(new CommandParameter("player", new StringEnum()));
     }
@@ -15,14 +15,14 @@ public sealed class DeopCommand : Command {
             if (targets.Length == 0)
                 return new(false, "No players matched the target.");
 
-            int removed = 0;
+            List<string> removed = [];
             foreach (Entity target in targets) {
                 if (target is Player player && player.Permissions.Remove("basalt.operator"))
-                    removed++;
+                    removed.Add(player.Username);
             }
-            return removed == 0
-                ? new(false, "No selected players have operator access.")
-                : new(true, $"Removed operator access from {removed} player(s).");
+            return removed.Count == 0
+                ? new(false, $"Could not de-op (permission level too high): {string.Join(", ", targets.OfType<Player>().Select(static player => player.Username))}.")
+                : new(true, $"De-opped: {string.Join(", ", removed)}.");
         }
 
         string name = context.Get<string>("player");
@@ -30,8 +30,8 @@ public sealed class DeopCommand : Command {
         if (permissions is null)
             return new(false, $"Unknown player '{name}'. The player must have joined before.");
         if (!permissions.Remove("basalt.operator"))
-            return new(false, $"{name} does not have operator access.");
+            return new(false, $"Could not de-op (permission level too high): {name}.");
 
-        return new(true, $"Removed operator access from {name}.");
+        return new(true, $"De-opped: {name}.");
     }
 }
