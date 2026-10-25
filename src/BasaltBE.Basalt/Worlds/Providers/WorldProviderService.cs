@@ -104,14 +104,15 @@ internal sealed class WorldProviderService : IDisposable {
         0
     ));
 
-    internal bool Flush() => Add(new StorageRequest(
+    internal bool Flush(string worldIdentifier) => Add(new StorageRequest(
         null,
         WorldStorageOperation.Flush,
         default,
         0,
         0,
         null,
-        0
+        0,
+        worldIdentifier
     ));
 
     private bool Add(StorageRequest request) {
@@ -272,7 +273,14 @@ internal sealed class WorldProviderService : IDisposable {
                     deleted = provider.DeleteChunk(request.Key);
                     break;
                 case WorldStorageOperation.Flush:
+                    long flushStart = Stopwatch.GetTimestamp();
                     provider.Flush();
+                    double flushMilliseconds = (Stopwatch.GetTimestamp() - flushStart) * 1000.0 / Stopwatch.Frequency;
+                    Logger.Scoped("Storage").Info(
+                        FormattableString.Invariant(
+                            $"Autosave flush for world {request.WorldIdentifier}: {flushMilliseconds:F3} ms."
+                        )
+                    );
                     break;
             }
         }
@@ -282,7 +290,9 @@ internal sealed class WorldProviderService : IDisposable {
 
         if (error is not null) {
             if (request.Operation == WorldStorageOperation.Flush)
-                Logger.Scoped("Storage").Error($"Provider {provider.Identifier} could not flush: {error.Message}");
+                Logger.Scoped("Storage").Error(
+                    $"Provider {provider.Identifier} could not flush world {request.WorldIdentifier}: {error.Message}"
+                );
             else
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not {request.Operation.ToString().ToLowerInvariant()} " +
@@ -324,6 +334,7 @@ internal sealed class WorldProviderService : IDisposable {
         long RequestId,
         long Version,
         ChunkStorageEntry[]? Entries,
-        int DataBytes
+        int DataBytes,
+        string? WorldIdentifier = null
     );
 }

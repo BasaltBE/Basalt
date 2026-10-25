@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Basalt.Binary;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Logging;
@@ -53,7 +54,7 @@ internal sealed class PlayerDataStore : IDisposable {
         }
     }
 
-    internal void Save(Player player) {
+    internal bool Save(Player player, bool autosave = false) {
         CompoundTag data = player.SaveData();
         data.Add("DataVersion", new IntTag { Value = DataVersion });
         data.Add("Xuid", new StringTag { Value = player.Xuid });
@@ -62,15 +63,16 @@ internal sealed class PlayerDataStore : IDisposable {
         BasaltBE.Nbt.Nbt.Write(data, ref writer);
 
         byte[] bytes = stream.Buffer.Span[..stream.Offset].ToArray();
-        PlayerDataWrite save = new(player.Xuid, GetPath(player.Xuid), bytes);
+        PlayerDataWrite save = new(player.Xuid, player.Username, GetPath(player.Xuid), bytes, autosave);
         lock (sync) {
             if (disposed || pendingBytes + bytes.Length > MaximumPendingBytes || !writes.TryAdd(save)) {
                 Logger.Scoped("PlayerData").Warn($"Could not queue a save for {player.Username}; the player-data queue is full.");
-                return;
+                return false;
             }
 
             pending[player.Xuid] = save;
             pendingBytes += bytes.Length;
+            return true;
         }
     }
 
@@ -81,6 +83,7 @@ internal sealed class PlayerDataStore : IDisposable {
                 current = pending.TryGetValue(save.Xuid, out PlayerDataWrite? latest) && ReferenceEquals(latest, save);
 
             if (current) {
+                long start = Stopwatch.GetTimestamp();
                 try {
                     string temporaryPath = save.Path + ".tmp";
                     File.WriteAllBytes(temporaryPath, save.Data);
@@ -88,6 +91,14 @@ internal sealed class PlayerDataStore : IDisposable {
                 }
                 catch (Exception error) {
                     Logger.Scoped("PlayerData").Warn($"Could not save player data for {save.Xuid}: {error.Message}");
+                }
+                finally {
+                    if (save.Autosave) {
+                        double milliseconds = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+                        Logger.Scoped("PlayerData").Debug(
+                            FormattableString.Invariant($"Player autosave write: {save.Username}, {milliseconds:F3} ms.")
+                        );
+                    }
                 }
             }
 
@@ -121,5 +132,5 @@ internal sealed class PlayerDataStore : IDisposable {
         writes.Dispose();
     }
 
-    private sealed record PlayerDataWrite(string Xuid, string Path, byte[] Data);
+    private sealed record PlayerDataWrite(string Xuid, string Username, string Path, byte[] Data, bool Autosave);
 }
