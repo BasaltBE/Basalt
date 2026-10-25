@@ -3,12 +3,15 @@ using BasaltBE.Basalt.Events.Entities;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.LootTables;
+using BasaltBE.Basalt.Worlds.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 using BasaltBE.Nbt.Types;
+using GameRule = BasaltBE.Basalt.Worlds.Types.GameRule;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -197,6 +200,37 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                     State = PlayerRespawnState.SearchingForSpawn,
                     RuntimeId = player.RuntimeId
                 });
+
+                if (player.GameType is GameType.Survival or GameType.Adventure &&
+                    playerDimension.World?.GameRules.Get(GameRule.KeepInventory) != true) {
+                    player.OpenedContainer?.Close(player);
+                    if (player.GetTrait<PlayerInventoryTrait>() is { } inventory) {
+                        Container[] containers = [inventory.Inventory, inventory.CraftingGrid, inventory.Cursor];
+                        if (player.GetTrait<EntityArmorTrait>() is { } armor)
+                            containers = [.. containers, armor.Armor];
+
+                        foreach (Container container in containers) {
+                            for (int slot = 0; slot < container.ContainerSize; slot++) {
+                                if (container.GetItem(slot) is { } item &&
+                                    container.TakeItem(slot, item.StackSize) is { } dropped)
+                                    new ItemEntity(dropped, player).Spawn(playerDimension);
+                            }
+                        }
+                    }
+
+                    if (player.GetTrait<PlayerExperienceTrait>() is { } experience) {
+                        int droppedExperience = Math.Min(100, experience.Level * 7);
+                        if (droppedExperience > 0)
+                            playerDimension.World?.Server?.ExperienceDrops.Drop(
+                                playerDimension,
+                                player.Position,
+                                droppedExperience
+                            );
+                        experience.TotalExperience = 0;
+                        experience.SetLevels(0);
+                        experience.SetPoints(0);
+                    }
+                }
             }
             if (Entity is not Player && Entity.SpawnedDimension is { } dropDimension &&
                 dropDimension.World is { } dropWorld && Entity.Type is { } entityType) {
@@ -286,6 +320,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         EntityMovementTrait? movement = Entity.GetTrait<EntityMovementTrait>();
         float damageMultiplier = GetLandingDamageMultiplier(player);
         if ((player.GameType is GameType.Survival or GameType.Adventure) &&
+            player.Dimension.World?.GameRules.Get(GameRule.FallDamage) != false &&
             movement?.VerticalCollision == true &&
             !player.Abilities.Get(PlayerAbility.Flying) &&
             !player.Flags.Get(ActorFlag.Swimming) &&

@@ -46,6 +46,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     GameType = player.GameType,
                     Position = player.GetHeadPosition(),
                     Settings = new LevelSettings {
+                        Rules = player.Dimension.World?.GameRules.CreatePacketData() ?? new GameRulesChangedPacketData(),
                         SpawnSettings = new SpawnSettings {
                             SpawnBiomeType = SpawnBiomeType.Default,
                             Dimension = player.Dimension.RuntimeId

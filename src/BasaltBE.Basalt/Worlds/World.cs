@@ -44,6 +44,7 @@ public sealed class World : IDisposable {
     ulong nextAutosaveTick;
 
     public readonly string Identifier;
+    public readonly GameRules GameRules;
     public readonly LootTableManager LootTables;
     public readonly TickMetrics Ticks = new();
     public WorldStorageMetrics StorageMetrics => storage?.Metrics ?? default;
@@ -74,6 +75,7 @@ public sealed class World : IDisposable {
         ArgumentNullException.ThrowIfNull(generators);
         dimensionSnapshot = new ReadOnlyDictionary<string, Dimension>(new Dictionary<string, Dimension>(dimensions, StringComparer.OrdinalIgnoreCase));
         Identifier = identifier;
+        GameRules = new GameRules(this);
         this.generators = generators;
         LootTables = lootTables ?? new LootTableManager();
         ownsGenerationService = generationService is null;
