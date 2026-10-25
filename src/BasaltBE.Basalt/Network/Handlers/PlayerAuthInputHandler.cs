@@ -387,6 +387,9 @@ internal sealed class PlayerAuthInputHandler {
             return false;
         }
 
+        bool upperDoor = BlockPalette.IsDoor(block.Identifier) &&
+            block.State.Values.GetValueOrDefault("upper_block_bit") is true;
+
         ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
             ? inventory.Inventory.GetItem(inventory.SelectedSlot)
             : null;
@@ -465,7 +468,7 @@ internal sealed class PlayerAuthInputHandler {
             ItemEntity item = new(actorDrop, player, x, y, z);
             item.Spawn(player.Dimension);
         }
-        else if (dropItems) {
+        else if (dropItems && !upperDoor) {
             int fortune = tool?.GetEnchantmentLevel(EnchantmentPalette.Fortune) ?? 0;
             bool silkTouch = tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) > 0;
             ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool, fortune, silkTouch);
@@ -486,7 +489,7 @@ internal sealed class PlayerAuthInputHandler {
             }
         }
 
-        if (dropItems && (tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) ?? 0) == 0 &&
+        if (dropItems && !upperDoor && (tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) ?? 0) == 0 &&
             player.Network.Server.LootTables.CanHarvest(block.Identifier, tool)) {
             int experience = player.Network.Server.ExperienceDrops.GetBlockExperience(block.Identifier);
             player.Network.Server.ExperienceDrops.Drop(

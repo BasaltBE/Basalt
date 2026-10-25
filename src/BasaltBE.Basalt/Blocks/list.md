@@ -10,3 +10,5 @@
 [x] Furnace
 [x] Smoker
 [x] Blast Furnace
+[x] Doors
+[x] Trapdoors

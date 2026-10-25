@@ -62,7 +62,7 @@ public sealed class FenceGateTrait : BlockTrait {
             BlockRuntimeId = unchecked((uint)updated.Hash),
             Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
         }, position.X >> 4, position.Z >> 4, additionalPacket: new LevelSoundEventPacket {
-            SoundEvent = open ? "fence_gate_close" : "fence_gate_open",
+            SoundEvent = open ? "fence_gate.close" : "fence_gate.open",
             Position = new Vec3 { X = position.X + 0.5f, Y = position.Y + 0.5f, Z = position.Z + 0.5f },
             ActorUniqueId = -1
         });

@@ -32,13 +32,17 @@ public sealed class ItemEntity : Entity {
         : this(item, player, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
     }
 
+    public ItemEntity(ItemStack item, int blockX, int blockY, int blockZ)
+        : this(item, null, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
+    }
+
     public ItemEntity(ItemStack item, Entity source)
         : this(item, source, 0, 0, 0, blockDrop: false, randomly: true, entityDrop: true) {
     }
 
     private ItemEntity(
         ItemStack item,
-        Entity source,
+        Entity? source,
         int blockX,
         int blockY,
         int blockZ,
@@ -48,9 +52,10 @@ public sealed class ItemEntity : Entity {
     )
         : base(ItemType) {
         ArgumentNullException.ThrowIfNull(item);
-        ArgumentNullException.ThrowIfNull(source);
         if (!blockDrop && !entityDrop && source is not Player)
             throw new ArgumentException("Player drops require a player source.", nameof(source));
+        if (entityDrop && source is null)
+            throw new ArgumentNullException(nameof(source));
         if (item.StackSize == 0 || item.Type.NetworkId == 0)
             throw new ArgumentException("Dropped items must have a valid non-empty stack.", nameof(item));
         if (item.Container is not null)
@@ -73,15 +78,16 @@ public sealed class ItemEntity : Entity {
             movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
         }
         else if (entityDrop) {
-            Position.X = source.Position.X;
-            Position.Y = source.Position.Y + 0.3f;
-            Position.Z = source.Position.Z;
+            Entity entity = source ?? throw new ArgumentNullException(nameof(source));
+            Position.X = entity.Position.X;
+            Position.Y = entity.Position.Y + 0.3f;
+            Position.Z = entity.Position.Z;
             movement.Motion.X = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
             movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
             movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
         }
         else {
-            Player player = (Player)source;
+            Player player = (Player)source!;
             float pitch = player.Rotation.X * (MathF.PI / 180);
             float yaw = player.Rotation.Y * (MathF.PI / 180);
             float pitchCosine = MathF.Cos(pitch);

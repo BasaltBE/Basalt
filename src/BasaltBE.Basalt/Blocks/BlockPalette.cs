@@ -37,6 +37,10 @@ public static class BlockPalette {
         ["in_wall_bit", "minecraft:cardinal_direction", "open_bit"],
         "fence_gate"
     );
+    static readonly HashSet<string> DoorIdentifiers = BuildIdentifiers(
+        ["door_hinge_bit", "minecraft:cardinal_direction", "open_bit", "upper_block_bit"]
+    );
+    static readonly HashSet<string> TrapdoorIdentifiers = BuildIdentifiers(["direction", "open_bit", "upside_down_bit"]);
     static readonly HashSet<string> WallIdentifiers = BuildIdentifiers(
         ["wall_connection_type_east", "wall_connection_type_north", "wall_connection_type_south", "wall_connection_type_west"]
     );
@@ -66,6 +70,17 @@ public static class BlockPalette {
     internal static bool IsFence(string identifier) => FenceIdentifiers.Contains(identifier);
 
     internal static bool IsFenceGate(string identifier) => FenceGateIdentifiers.Contains(identifier);
+
+    internal static bool IsDoor(string identifier) => DoorIdentifiers.Contains(identifier);
+
+    internal static bool IsTrapdoor(string identifier) => TrapdoorIdentifiers.Contains(identifier);
+
+    internal static bool Replaceable(BlockPermutation block) => block.Identifier is
+        "minecraft:air" or "minecraft:cave_air" or "minecraft:void_air" or
+        "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava" or
+        "minecraft:short_grass" or "minecraft:tall_grass" or "minecraft:fern" or "minecraft:large_fern" or
+        "minecraft:dead_bush" or "minecraft:vine" or "minecraft:seagrass" or "minecraft:tall_seagrass" or
+        "minecraft:snow_layer" or "minecraft:fire";
 
     internal static bool IsWall(string identifier) => WallIdentifiers.Contains(identifier);
 
@@ -122,7 +137,7 @@ public static class BlockPalette {
         RegisterTrait<TTrait>(identifiers);
     }
 
-    static void RegisterTrait<TTrait>(string[] identifiers) where TTrait : BlockTrait, new() {
+    public static void RegisterTrait<TTrait>(string[] identifiers) where TTrait : BlockTrait, new() {
         Type traitType = typeof(TTrait);
         if (RegisteredTraits.Contains(traitType))
             throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
@@ -151,6 +166,26 @@ public static class BlockPalette {
 
         foreach (BlockTrait trait in traits) {
             if (trait.OnInteract(player, position))
+                return true;
+        }
+        return false;
+    }
+
+    internal static bool OnPlace(
+        string identifier,
+        Player player,
+        int x,
+        int y,
+        int z,
+        byte face,
+        Vec3 clickPosition,
+        ref BlockPermutation permutation
+    ) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
+            return false;
+
+        foreach (BlockTrait trait in traits) {
+            if (trait.OnPlace(player, x, y, z, face, clickPosition, ref permutation))
                 return true;
         }
         return false;

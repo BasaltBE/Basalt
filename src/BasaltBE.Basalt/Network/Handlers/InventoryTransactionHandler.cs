@@ -552,7 +552,7 @@ internal sealed class InventoryTransactionHandler {
         string placedHalf = use.Face == 0 || (use.Face != 1 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
         string mergedHalf = use.Face == 1 || (use.Face != 0 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
         bool mergingSlab = false;
-        if (!Replaceable(clicked)) {
+        if (!BlockPalette.Replaceable(clicked)) {
             if (clicked.Identifier == permutation.Identifier &&
                 BlockPalette.FindDoubleSlab(permutation.Identifier, mergedHalf) is { } doubleSlab &&
                 clicked.State.Values.TryGetValue("minecraft:vertical_half", out object? clickedHalf) &&
@@ -587,7 +587,7 @@ internal sealed class InventoryTransactionHandler {
             x < -30_000_000 || x >= 30_000_000 || z < -30_000_000 || z >= 30_000_000 ||
             chunk is null || !rendering.Viewing(x >> 4, z >> 4) ||
             permutation.Identifier == "minecraft:air" ||
-            permutation.State.Values.ContainsKey("upper_block_bit") ||
+            (permutation.State.Values.ContainsKey("upper_block_bit") && !BlockPalette.IsDoor(permutation.Identifier)) ||
             permutation.State.Values.ContainsKey("head_piece_bit")) {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
@@ -595,7 +595,7 @@ internal sealed class InventoryTransactionHandler {
         }
 
         BlockPermutation existing = chunk.GetPermutation(x & 15, y, z & 15);
-        if (!mergingSlab && (!Replaceable(existing) || existing.Identifier == permutation.Identifier)) {
+        if (!mergingSlab && (!BlockPalette.Replaceable(existing) || existing.Identifier == permutation.Identifier)) {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
@@ -649,6 +649,14 @@ internal sealed class InventoryTransactionHandler {
         if (permutation.State.Values.ContainsKey("facing_direction"))
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)use.Face) ?? permutation;
 
+        if (BlockPalette.IsDoor(permutation.Identifier) || BlockPalette.IsTrapdoor(permutation.Identifier)) {
+            if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation)) {
+                RepairPlacement(player, use);
+                inventory.Inventory.UpdateSlot(use.Slot);
+                return false;
+            }
+        }
+
         player.Dimension.RemoveBlockActor(x, y, z);
         chunk.SetPermutation(x & 15, y, z & 15, permutation);
         BlockPalette.OnNeighborUpdate(player.Dimension, x, y, z);
@@ -663,6 +671,8 @@ internal sealed class InventoryTransactionHandler {
         finally {
             SendBlockUpdate(player, x, y, z, 0, broadcast: true);
             player.Dimension.UpdateNeighbors(x, y, z);
+            if (BlockPalette.IsDoor(permutation.Identifier))
+                SendBlockUpdate(player, x, y + 1, z, 0, broadcast: true, playPlaceSound: false);
         }
         player.Dimension.PlaceBlockActor(x, y, z, permutation.Identifier, item, use.Face)?.Update();
         return true;
@@ -677,13 +687,6 @@ internal sealed class InventoryTransactionHandler {
             _ => 0
         };
     }
-
-    private static bool Replaceable(BlockPermutation block) => block.Identifier is
-        "minecraft:air" or "minecraft:cave_air" or "minecraft:void_air" or
-        "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava" or
-        "minecraft:short_grass" or "minecraft:tall_grass" or "minecraft:fern" or "minecraft:large_fern" or
-        "minecraft:dead_bush" or "minecraft:vine" or "minecraft:seagrass" or "minecraft:tall_seagrass" or
-        "minecraft:snow_layer" or "minecraft:fire";
 
     private static bool Collides(Player player, int x, int y, int z) {
         bool lowPose = player.Flags.Get(ActorFlag.Swimming) || player.Flags.Get(ActorFlag.Gliding) || player.Flags.Get(ActorFlag.Crawling);

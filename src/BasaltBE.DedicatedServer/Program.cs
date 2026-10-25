@@ -70,6 +70,16 @@ internal static class Program {
             BlockPalette.RegisterTrait<FenceGateTrait>();
             BlockPalette.RegisterTrait<PaneConnectionTrait>();
             BlockPalette.RegisterTrait<StairShapeTrait>("minecraft:cornerable_stairs");
+            BlockPalette.RegisterTrait<DoorTrait>(BlockPalette.Types
+                .Where(type => Array.IndexOf(type.States, "door_hinge_bit") >= 0)
+                .Select(type => type.Identifier)
+                .ToArray());
+            BlockPalette.RegisterTrait<TrapdoorTrait>(BlockPalette.Types
+                .Where(type => Array.IndexOf(type.States, "direction") >= 0 &&
+                    Array.IndexOf(type.States, "open_bit") >= 0 &&
+                    Array.IndexOf(type.States, "upside_down_bit") >= 0)
+                .Select(type => type.Identifier)
+                .ToArray());
 
             PermissionStore permissions = new();
             using PermissionFile permissionFile = new(permissions, "permissions.json");
