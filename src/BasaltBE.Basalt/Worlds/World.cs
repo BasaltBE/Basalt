@@ -75,7 +75,7 @@ public sealed class World : IDisposable {
         ArgumentNullException.ThrowIfNull(generators);
         dimensionSnapshot = new ReadOnlyDictionary<string, Dimension>(new Dictionary<string, Dimension>(dimensions, StringComparer.OrdinalIgnoreCase));
         Identifier = identifier;
-        GameRules = new GameRules(this);
+        GameRules = new GameRules(this, (provider as IWorldDataProvider)?.ReadWorldData());
         this.generators = generators;
         LootTables = lootTables ?? new LootTableManager();
         ownsGenerationService = generationService is null;
@@ -253,6 +253,8 @@ public sealed class World : IDisposable {
             if (TickValue >= nextAutosaveTick) {
                 ulong intervalTicks = (ulong)server.Properties.AutosaveIntervalSeconds * 20;
                 nextAutosaveTick = TickValue + intervalTicks;
+                if (storage is { SupportsWorldData: true } && !GameRules.Save())
+                    Logger.Scoped("Storage").Warn($"Could not queue game-rule save for world {Identifier}; provider queue is full.");
                 if (storage is not null && !storage.Flush(Identifier))
                     Logger.Scoped("Storage").Warn($"Could not queue autosave flush for world {Identifier}; provider queue is full.");
 
@@ -302,6 +304,8 @@ public sealed class World : IDisposable {
     public void Dispose() {
         foreach (Dimension dimension in Dimensions.Values)
             dimension.FlushStorage();
+        if (storage is { SupportsWorldData: true } && !GameRules.Save())
+            Logger.Scoped("Storage").Warn($"Could not queue game-rule save for world {Identifier}; provider queue is full.");
         storage?.Dispose();
         if (ownsGenerationService)
             generationService.Dispose();

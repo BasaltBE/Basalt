@@ -9,11 +9,12 @@ using LevelDB.Platform;
 
 namespace BasaltBE.Basalt.Worlds.Providers;
 
-public sealed class LevelDbProvider : IWorldProvider {
+public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider {
     private const int MinimumSubChunkY = -32;
     private const int SubChunkCount = 64;
     private const byte BedrockChunkVersion = 42;
     private static readonly byte[] DimensionKeyPrefix = "BasaltBE.Dimension."u8.ToArray();
+    private static readonly byte[] LegacyWorldDataKey = "BasaltBE.WorldData"u8.ToArray();
     private static readonly byte[] FinalizedChunkData = [2, 0, 0, 0];
     private static readonly byte[] ChunkMetadataHash = [0xA4, 0x10, 0xCE, 0xC8, 0x86, 0xD7, 0x1C, 0x4F];
     private static readonly byte[] ChunkBlendingData = [0, 11];
@@ -21,6 +22,8 @@ public sealed class LevelDbProvider : IWorldProvider {
     private readonly IDB database;
     private readonly ReadOptions readOptions = new();
     private readonly WriteOptions writeOptions = new() { Sync = true };
+    private readonly string levelDatPath;
+    private int levelDatVersion = 10;
 
     public string Identifier => "leveldb";
     public string DatabasePath { get; }
@@ -29,6 +32,7 @@ public sealed class LevelDbProvider : IWorldProvider {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         DatabasePath = Path.GetFullPath(path);
         Directory.CreateDirectory(DatabasePath);
+        levelDatPath = Path.Combine(Directory.GetParent(DatabasePath)!.FullName, "level.dat");
 
         Options options = McpeOptions.Create(new Options { CreateIfMissing = true });
         DB.Open(options, DatabasePath, out IDB? opened).ThrowIfNotOk();
@@ -102,6 +106,49 @@ public sealed class LevelDbProvider : IWorldProvider {
             batch.Delete(new Slice(CreateKey(key, ChunkStorageType.SubChunk, checked((sbyte)subChunkY))));
         database.Write(writeOptions, batch).ThrowIfNotOk();
         return true;
+    }
+
+    public byte[]? ReadWorldData() {
+        string path = File.Exists(levelDatPath) ? levelDatPath : levelDatPath + "_old";
+        if (!File.Exists(path)) {
+            Status status = database.Get(readOptions, new Slice(LegacyWorldDataKey), out Slice legacyData);
+            if (status.IsNotFound)
+                return null;
+
+            status.ThrowIfNotOk();
+            return legacyData.ToArray();
+        }
+
+        byte[] file = File.ReadAllBytes(path);
+        if (file.Length < 8)
+            throw new InvalidDataException("The level.dat header is incomplete.");
+
+        levelDatVersion = BinaryPrimitives.ReadInt32LittleEndian(file);
+        int dataLength = BinaryPrimitives.ReadInt32LittleEndian(file.AsSpan(sizeof(int)));
+        if (levelDatVersion < 1 || dataLength != file.Length - 8)
+            throw new InvalidDataException("The level.dat header or payload length is invalid.");
+
+        return file.AsSpan(8).ToArray();
+    }
+
+    public void WriteWorldData(ReadOnlySpan<byte> data) {
+        byte[] file = new byte[checked(sizeof(int) * 2 + data.Length)];
+        BinaryPrimitives.WriteInt32LittleEndian(file, levelDatVersion);
+        BinaryPrimitives.WriteInt32LittleEndian(file.AsSpan(sizeof(int)), data.Length);
+        data.CopyTo(file.AsSpan(sizeof(int) * 2));
+
+        string temporaryPath = levelDatPath + "_new";
+        string oldPath = levelDatPath + "_old";
+        File.WriteAllBytes(temporaryPath, file);
+        if (File.Exists(oldPath))
+            File.Delete(oldPath);
+        if (File.Exists(levelDatPath))
+            File.Move(levelDatPath, oldPath);
+        File.Move(temporaryPath, levelDatPath);
+
+        WriteBatch batch = new();
+        batch.Delete(new Slice(LegacyWorldDataKey));
+        database.Write(writeOptions, batch).ThrowIfNotOk();
     }
 
     public void Flush() { }

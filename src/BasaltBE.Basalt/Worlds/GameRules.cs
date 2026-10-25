@@ -1,20 +1,55 @@
+using Basalt.Binary;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Types;
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Worlds.Providers;
+using BasaltBE.Logging;
+using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 using GameRule = BasaltBE.Basalt.Worlds.Types.GameRule;
+using BinaryWriter = Basalt.Binary.BinaryWriter;
 
 namespace BasaltBE.Basalt.Worlds;
 
 public sealed class GameRules {
     private readonly World world;
+    private readonly CompoundTag worldData = new();
     private bool keepInventory;
     private bool showCoordinates;
     private bool fallDamage = true;
 
-    internal GameRules(World world) => this.world = world;
+    internal GameRules(World world, byte[]? data) {
+        this.world = world;
+        if (data is null)
+            return;
+
+        try {
+            int offset = 0;
+            if (BasaltBE.Nbt.Nbt.Read(data, ref offset) is not CompoundTag savedWorldData || offset != data.Length)
+                throw new InvalidDataException("World data has an invalid NBT format.");
+
+            if (savedWorldData.Get<IntTag>("DataVersion")?.Value == 1) {
+                worldData.Add("keepinventory", savedWorldData.Get<ByteTag>("keepinventory") ?? new ByteTag());
+                worldData.Add("showcoordinates", savedWorldData.Get<ByteTag>("showcoordinates") ?? new ByteTag());
+                worldData.Add("falldamage", savedWorldData.Get<ByteTag>("falldamage") ?? new ByteTag { Value = 1 });
+            } else {
+                foreach ((string name, Tag tag) in savedWorldData.Tags)
+                    worldData.Add(name, tag);
+            }
+
+            if (worldData.Get<ByteTag>("keepinventory") is { } keepInventoryTag)
+                keepInventory = keepInventoryTag.Value != 0;
+            if (worldData.Get<ByteTag>("showcoordinates") is { } showCoordinatesTag)
+                showCoordinates = showCoordinatesTag.Value != 0;
+            if (worldData.Get<ByteTag>("falldamage") is { } fallDamageTag)
+                fallDamage = fallDamageTag.Value != 0;
+        }
+        catch (Exception error) when (error is IOException or ArgumentException or IndexOutOfRangeException or OverflowException) {
+            Logger.Scoped("Storage").Warn($"Could not load game rules for world {world.Identifier}: {error.Message}");
+        }
+    }
 
     public bool Get(GameRule rule) => rule switch {
         GameRule.KeepInventory => keepInventory,
@@ -42,6 +77,9 @@ public sealed class GameRules {
                 throw new ArgumentOutOfRangeException(nameof(rule));
         }
 
+        if (world.Storage is { SupportsWorldData: true } && !Save())
+            Logger.Scoped("Storage").Warn($"Could not queue game-rule save for world {world.Identifier}.");
+
         GameRulesChangedPacket packet = new() {
             Data = new GameRulesChangedPacketData {
                 Rules = [new Protocol.Types.GameRule {
@@ -67,6 +105,19 @@ public sealed class GameRules {
             CreatePacketRule(GameRule.FallDamage, fallDamage)
         ]
     };
+
+    internal bool Save() {
+        if (world.Storage is not { SupportsWorldData: true } storage)
+            return false;
+
+        worldData.Add("keepinventory", new ByteTag { Value = keepInventory ? (byte)1 : (byte)0 });
+        worldData.Add("showcoordinates", new ByteTag { Value = showCoordinates ? (byte)1 : (byte)0 });
+        worldData.Add("falldamage", new ByteTag { Value = fallDamage ? (byte)1 : (byte)0 });
+        using BinaryStream stream = BinaryStream.Rent(worldData.GetSize());
+        BinaryWriter writer = stream.GetWriter();
+        BasaltBE.Nbt.Nbt.Write(worldData, ref writer);
+        return storage.WriteWorldData(stream.Buffer.Span[..stream.Offset].ToArray());
+    }
 
     private static Protocol.Types.GameRule CreatePacketRule(GameRule rule, bool value) => new() {
         Name = GetName(rule),

@@ -215,6 +215,34 @@ public sealed class Server : IDisposable {
         Interlocked.Exchange(ref stopping, 1);
     }
 
+    /// <summary>Queues saves for world chunks, game rules, and online player data.</summary>
+    public bool SaveAll() {
+        if (Started && Properties.Ticking == "world" && !Gameplay.IsWriteLockHeld)
+            throw new InvalidOperationException("Save worlds during the exclusive gameplay phase.");
+        if (Started && Properties.Ticking == "default" && Environment.CurrentManagedThreadId != coordinatorThread)
+            throw new InvalidOperationException("Save worlds on the server thread.");
+
+        bool queued = true;
+        foreach (World world in Worlds) {
+            foreach (Dimension dimension in world.Dimensions.Values) {
+                dimension.FlushStorage();
+                foreach (Player player in dimension.GetPlayers()) {
+                    if (!player.Disposed && !PlayerData.Save(player))
+                        queued = false;
+                }
+            }
+
+            if (world.Storage is { } storage) {
+                if (storage.SupportsWorldData && !world.GameRules.Save())
+                    queued = false;
+                if (!storage.Flush(world.Identifier))
+                    queued = false;
+            }
+        }
+
+        return queued;
+    }
+
     public void Tick() {
         if (Started && Environment.CurrentManagedThreadId != coordinatorThread)
             throw new InvalidOperationException("Server.Tick must run on the server thread.");

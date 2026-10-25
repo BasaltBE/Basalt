@@ -4,5 +4,6 @@ internal enum WorldStorageOperation : byte {
     Read,
     Write,
     Delete,
+    WriteWorldData,
     Flush
 }

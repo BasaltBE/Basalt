@@ -13,6 +13,7 @@ internal sealed class WorldProviderService : IDisposable {
     private const int MaximumWriteBatch = 64;
     internal const int MaximumChunkDataBytes = 16 * 1024 * 1024;
     private readonly IWorldProvider provider;
+    private readonly IWorldDataProvider? worldDataProvider;
     private readonly BlockingCollection<StorageRequest> requests = new(new ConcurrentQueue<StorageRequest>(), MaximumPendingOperations);
     private readonly ChunkStorageRecord[] writeBatch = new ChunkStorageRecord[MaximumWriteBatch];
     private readonly StorageRequest[] batchRequests = new StorageRequest[MaximumWriteBatch];
@@ -29,6 +30,7 @@ internal sealed class WorldProviderService : IDisposable {
 
     internal WorldProviderService(IWorldProvider provider) {
         this.provider = provider;
+        worldDataProvider = provider as IWorldDataProvider;
         worker = new Thread(Work) {
             IsBackground = true,
             Name = $"Basalt storage {provider.Identifier}"
@@ -37,6 +39,7 @@ internal sealed class WorldProviderService : IDisposable {
     }
 
     internal int PendingOperations => Volatile.Read(ref pendingOperations);
+    internal bool SupportsWorldData => worldDataProvider is not null;
     internal long PendingBytes => Interlocked.Read(ref pendingBytes);
     internal long ReadCount => Interlocked.Read(ref readCount);
     internal long WriteCount => Interlocked.Read(ref writeCount);
@@ -114,6 +117,30 @@ internal sealed class WorldProviderService : IDisposable {
         0,
         worldIdentifier
     ));
+
+    internal bool WriteWorldData(byte[] data) {
+        if (worldDataProvider is null || data.Length > MaximumChunkDataBytes)
+            return false;
+        if (Interlocked.Add(ref pendingBytes, data.Length) > MaximumPendingBytes) {
+            Interlocked.Add(ref pendingBytes, -data.Length);
+            return false;
+        }
+
+        if (Add(new StorageRequest(
+            null,
+            WorldStorageOperation.WriteWorldData,
+            default,
+            0,
+            0,
+            null,
+            data.Length,
+            WorldData: data
+        )))
+            return true;
+
+        Interlocked.Add(ref pendingBytes, -data.Length);
+        return false;
+    }
 
     private bool Add(StorageRequest request) {
         if (Volatile.Read(ref disposed) != 0)
@@ -272,13 +299,16 @@ internal sealed class WorldProviderService : IDisposable {
                 case WorldStorageOperation.Delete:
                     deleted = provider.DeleteChunk(request.Key);
                     break;
+                case WorldStorageOperation.WriteWorldData:
+                    worldDataProvider!.WriteWorldData(request.WorldData!);
+                    break;
                 case WorldStorageOperation.Flush:
                     long flushStart = Stopwatch.GetTimestamp();
                     provider.Flush();
                     double flushMilliseconds = (Stopwatch.GetTimestamp() - flushStart) * 1000.0 / Stopwatch.Frequency;
                     Logger.Scoped("Storage").Info(
                         FormattableString.Invariant(
-                            $"Autosave flush for world {request.WorldIdentifier}: {flushMilliseconds:F3} ms."
+                            $"Storage flush for world {request.WorldIdentifier}: {flushMilliseconds:F3} ms."
                         )
                     );
                     break;
@@ -293,12 +323,19 @@ internal sealed class WorldProviderService : IDisposable {
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not flush world {request.WorldIdentifier}: {error.Message}"
                 );
+            else if (request.Operation == WorldStorageOperation.WriteWorldData)
+                Logger.Scoped("Storage").Error(
+                    $"Provider {provider.Identifier} could not write world data: {error.Message}"
+                );
             else
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not {request.Operation.ToString().ToLowerInvariant()} " +
                     $"chunk {request.Key.DimensionIdentifier} ({request.Key.X}, {request.Key.Z}): {error.Message}"
                 );
         }
+
+        if (request.Operation == WorldStorageOperation.WriteWorldData)
+            Interlocked.Add(ref pendingBytes, -request.DataBytes);
 
         if (request.Dimension is { } dimension) {
             dimension.CompletedStorage.Enqueue(new WorldStorageCompletion(
@@ -335,6 +372,7 @@ internal sealed class WorldProviderService : IDisposable {
         long Version,
         ChunkStorageEntry[]? Entries,
         int DataBytes,
-        string? WorldIdentifier = null
+        string? WorldIdentifier = null,
+        byte[]? WorldData = null
     );
 }
