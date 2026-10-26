@@ -1061,6 +1061,42 @@
     ]
   },
   {
+    "identifier": "redstone_east",
+    "type": "string",
+    "values": [
+      "none",
+      "side",
+      "up"
+    ]
+  },
+  {
+    "identifier": "redstone_north",
+    "type": "string",
+    "values": [
+      "none",
+      "side",
+      "up"
+    ]
+  },
+  {
+    "identifier": "redstone_south",
+    "type": "string",
+    "values": [
+      "none",
+      "side",
+      "up"
+    ]
+  },
+  {
+    "identifier": "redstone_west",
+    "type": "string",
+    "values": [
+      "none",
+      "side",
+      "up"
+    ]
+  },
+  {
     "identifier": "redstone_signal",
     "type": "int",
     "values": [

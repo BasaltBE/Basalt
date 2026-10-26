@@ -11448,7 +11448,11 @@
   {
     "identifier": "minecraft:redstone_wire",
     "states": [
-      "redstone_signal"
+      "redstone_east",
+      "redstone_north",
+      "redstone_signal",
+      "redstone_south",
+      "redstone_west"
     ],
     "components": {
       "minecraft:precipitation_interactions": {},

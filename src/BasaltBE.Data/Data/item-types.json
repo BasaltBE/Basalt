@@ -18780,6 +18780,7 @@
   },
   {
     "identifier": "minecraft:redstone",
+    "blockIdentifier": "minecraft:redstone_wire",
     "catalog": {
       "categoryName": "items",
       "group_identifier": {}
@@ -41027,6 +41028,7 @@
   },
   {
     "identifier": "minecraft:fence",
+    "blockIdentifier": "minecraft:oak_fence",
     "tags": [],
     "stackable": true,
     "maxAmount": 64,
