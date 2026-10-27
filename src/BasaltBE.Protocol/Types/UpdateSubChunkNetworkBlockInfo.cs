@@ -9,7 +9,7 @@ public sealed class UpdateSubChunkNetworkBlockInfo : DataType {
     public BlockPos Position = new();
     public uint RuntimeId;
     public UpdateBlockFlags Flags;
-    public ulong SyncEntityUniqueId;
+    public ulong SyncEntityUniqueId = ulong.MaxValue;
     public uint SyncMessage;
 
     public override void Read(ref BinaryReader reader) {

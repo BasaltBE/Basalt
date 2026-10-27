@@ -633,32 +633,24 @@ internal sealed class InventoryTransactionHandler {
         }
         if (blockType is not null && Array.IndexOf(blockType.States, "minecraft:cardinal_direction") >= 0) {
             int facing = ((int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3);
-            string direction = facing switch {
-                0 => "north",
-                1 => "east",
-                2 => "south",
-                _ => "west"
-            };
             permutation = BlockPalette.Find(
                 permutation.Identifier,
                 permutation.State,
                 "minecraft:cardinal_direction",
-                direction
+                BlockDirections.CardinalDirectionByYaw[facing]
             ) ?? permutation;
         }
         if (permutation.State.Values.ContainsKey("facing_direction"))
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)use.Face) ?? permutation;
 
-        if (BlockPalette.IsDoor(permutation.Identifier) || BlockPalette.IsTrapdoor(permutation.Identifier)) {
-            if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation)) {
-                RepairPlacement(player, use);
-                inventory.Inventory.UpdateSlot(use.Slot);
-                return false;
-            }
+        if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation)) {
+            RepairPlacement(player, use);
+            inventory.Inventory.UpdateSlot(use.Slot);
+            return false;
         }
 
-        player.Dimension.RemoveBlockActor(x, y, z);
-        chunk.SetPermutation(x & 15, y, z & 15, permutation);
+        player.Dimension.SetPermutation(x, y, z, permutation);
+        BlockPalette.OnPlaced(permutation.Identifier, player.Dimension, x, y, z);
         BlockPalette.OnNeighborUpdate(player.Dimension, x, y, z);
         Logger.Scoped("Network").Debug($"Player {player.Username} placed {permutation.Identifier} at ({x}, {y}, {z}) in {player.Dimension.Identifier}.");
         try {
@@ -739,17 +731,21 @@ internal sealed class InventoryTransactionHandler {
             update.BlockRuntimeId = unchecked((uint)block.NetworkId);
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = layer;
-            if (broadcast && playPlaceSound)
-                player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: new LevelSoundEventPacket {
+            if (!broadcast) {
+                player.Network.SendPacket(player, update);
+            }
+            else {
+                LevelSoundEventPacket? sound = playPlaceSound ? new LevelSoundEventPacket {
                     SoundEvent = "place",
                     Position = new Vec3 { X = x + 0.5f, Y = y + 0.5f, Z = z + 0.5f },
                     Data = block.NetworkId,
                     ActorUniqueId = -1
-                });
-            else if (broadcast)
-                player.Dimension.Broadcast(update, x >> 4, z >> 4);
-            else
+                } : null;
                 player.Network.SendPacket(player, update);
+                if (sound is not null)
+                    player.Network.SendPacket(player, sound);
+                player.Dimension.Broadcast(update, x >> 4, z >> 4, player, sound);
+            }
         }
         finally {
             blockUpdate ??= update;

@@ -2,6 +2,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
+using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.Basalt.Worlds.Providers.Types;
 using BasaltBE.Nbt.Types;
 using Basalt.Binary;
@@ -13,11 +14,14 @@ namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 public sealed class Chunk(int x, int z) {
     static readonly Options NetworkNbtOptions = new() { VarInt = true, StringLengthVarInt = true };
+    static readonly NbtReadLimits PendingTickReadLimits = new(32, 262_144, 65_536, 1_048_576);
     Dictionary<int, SubChunk>? subChunks;
     internal Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
     Dictionary<(int X, int Y, int Z), BlockActor>? actors;
     internal Dimension? Dimension;
     internal long Revision;
+    internal CompoundTag? PendingTicks;
+    internal bool PendingTicksInvalid;
 
     public readonly int X = x;
     public readonly int Z = z;
@@ -35,7 +39,7 @@ public sealed class Chunk(int x, int z) {
 
     public bool Empty {
         get {
-            if (blockActors is { Count: > 0 }) {
+            if (blockActors is { Count: > 0 } || PendingTicks is not null) {
                 return false;
             }
 
@@ -337,6 +341,20 @@ public sealed class Chunk(int x, int z) {
             entries.Add(new ChunkStorageEntry(ChunkStorageType.BlockActor, 0, stream.Buffer[..stream.Offset].ToArray()));
         }
 
+        if (PendingTicks is { } pendingTicks) {
+            int pendingSize = pendingTicks.GetSize(Options.LittleEndian);
+            int existingSize = 0;
+            foreach (ChunkStorageEntry entry in entries)
+                existingSize = checked(existingSize + entry.Data.Length);
+            if (pendingSize > WorldProviderService.MaximumChunkDataBytes - existingSize)
+                throw new InvalidDataException("Pending ticks exceed the remaining chunk storage limit.");
+
+            byte[] data = new byte[pendingSize];
+            int offset = 0;
+            NbtCodec.Write(pendingTicks, data, ref offset, Options.LittleEndian);
+            entries.Add(new ChunkStorageEntry(ChunkStorageType.PendingTicks, 0, data));
+        }
+
         return entries.ToArray();
     }
 
@@ -347,6 +365,7 @@ public sealed class Chunk(int x, int z) {
         int subChunkCount = dimension.HeightRange >> 4;
         ChunkStorageEntry? data3D = null;
         ChunkStorageEntry? actors = null;
+        ChunkStorageEntry? pendingTicks = null;
         foreach (ChunkStorageEntry entry in entries) {
             switch (entry.Type) {
                 case ChunkStorageType.Data3D:
@@ -370,6 +389,11 @@ public sealed class Chunk(int x, int z) {
                     }
                 case ChunkStorageType.BlockActor:
                     actors = entry;
+                    break;
+                case ChunkStorageType.PendingTicks:
+                    if (pendingTicks is not null)
+                        throw new InvalidDataException("The stored chunk contains duplicate pending tick records.");
+                    pendingTicks = entry;
                     break;
             }
         }
@@ -413,6 +437,16 @@ public sealed class Chunk(int x, int z) {
                     throw new InvalidDataException("Stored block actor is outside its chunk.");
                 chunk.SetBlockNbt(localX, actorY!.Value, localZ, actor);
             }
+        }
+
+        if (pendingTicks is { } pendingEntry) {
+            if (pendingEntry.Data.Length > WorldProviderService.MaximumChunkDataBytes)
+                throw new InvalidDataException("The stored pending tick record exceeds the chunk storage limit.");
+            int offset = 0;
+            BinaryReader reader = new(pendingEntry.Data, ref offset);
+            if (NbtCodec.Read(ref reader, Options.LittleEndian, PendingTickReadLimits) is not CompoundTag ticks || reader.Remaining != 0)
+                throw new InvalidDataException("The stored pending tick record is invalid.");
+            chunk.PendingTicks = ticks;
         }
 
         chunk.Revision = 0;

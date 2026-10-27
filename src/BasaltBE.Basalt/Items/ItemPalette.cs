@@ -22,6 +22,13 @@ public static class ItemPalette {
 
     public static ItemType? FindByNetworkId(int networkId) => ByNetworkId.GetValueOrDefault(networkId);
 
+    public static void RegisterBlockPlacement(string itemIdentifier, string blockIdentifier) {
+        ItemType item = Find(itemIdentifier)
+            ?? throw new ArgumentException($"Unknown item '{itemIdentifier}'.", nameof(itemIdentifier));
+        item.PlacementPermutation = BlockPalette.FindDefaultPermutation(blockIdentifier)
+            ?? throw new ArgumentException($"Unknown block '{blockIdentifier}'.", nameof(blockIdentifier));
+    }
+
     internal static ItemStack? CreateCreativeItem(uint creativeNetId) =>
         ByCreativeNetId.TryGetValue(creativeNetId, out ItemStack? item)
             ? item.Clone()
@@ -226,9 +233,7 @@ public static class ItemPalette {
                 tag is "minecraft:is_pickaxe" or "minecraft:is_axe" or "minecraft:is_shovel" or "minecraft:is_hoe" or
                     "minecraft:is_sword" or "minecraft:is_spear" or "minecraft:is_trident" or "minecraft:is_shears") ? 1 : 0;
 
-            string identifier = type.Identifier == "minecraft:fence"
-                ? "minecraft:oak_fence"
-                : type.Identifier;
+            string identifier = type.BlockIdentifier ?? type.Identifier;
             if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:block_placer") is CompoundTag placer &&
                 placer.Get<StringTag>("block") is { } block)
                 identifier = block.Value;

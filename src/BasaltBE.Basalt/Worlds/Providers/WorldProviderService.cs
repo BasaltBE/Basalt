@@ -303,14 +303,7 @@ internal sealed class WorldProviderService : IDisposable {
                     worldDataProvider!.WriteWorldData(request.WorldData!);
                     break;
                 case WorldStorageOperation.Flush:
-                    long flushStart = Stopwatch.GetTimestamp();
                     provider.Flush();
-                    double flushMilliseconds = (Stopwatch.GetTimestamp() - flushStart) * 1000.0 / Stopwatch.Frequency;
-                    Logger.Scoped("Storage").Info(
-                        FormattableString.Invariant(
-                            $"Storage flush for world {request.WorldIdentifier}: {flushMilliseconds:F3} ms."
-                        )
-                    );
                     break;
             }
         }

@@ -5,6 +5,7 @@ public enum ChunkStorageType : byte {
     Version = 0x2C,
     SubChunk = 0x2F,
     BlockActor = 0x31,
+    PendingTicks = 0x33,
     FinalizedState = 0x36,
     MetadataHash = 0x3F,
     BlendingData = 0x40,

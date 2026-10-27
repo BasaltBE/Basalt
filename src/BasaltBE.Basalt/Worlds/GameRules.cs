@@ -34,11 +34,16 @@ public sealed class GameRules {
                 worldData.Add("keepinventory", savedWorldData.Get<ByteTag>("keepinventory") ?? new ByteTag());
                 worldData.Add("showcoordinates", savedWorldData.Get<ByteTag>("showcoordinates") ?? new ByteTag());
                 worldData.Add("falldamage", savedWorldData.Get<ByteTag>("falldamage") ?? new ByteTag { Value = 1 });
+                if (savedWorldData.Get<LongTag>("Time") is { } savedTime)
+                    worldData.Add("Time", savedTime);
+                if (savedWorldData.Get<LongTag>("currentTick") is { } savedCurrentTick)
+                    worldData.Add("currentTick", savedCurrentTick);
             } else {
                 foreach ((string name, Tag tag) in savedWorldData.Tags)
                     worldData.Add(name, tag);
             }
 
+            world.GameTime = worldData.Get<LongTag>("Time")?.Value ?? worldData.Get<LongTag>("currentTick")?.Value ?? 0;
             if (worldData.Get<ByteTag>("keepinventory") is { } keepInventoryTag)
                 keepInventory = keepInventoryTag.Value != 0;
             if (worldData.Get<ByteTag>("showcoordinates") is { } showCoordinatesTag)
@@ -113,6 +118,8 @@ public sealed class GameRules {
         worldData.Add("keepinventory", new ByteTag { Value = keepInventory ? (byte)1 : (byte)0 });
         worldData.Add("showcoordinates", new ByteTag { Value = showCoordinates ? (byte)1 : (byte)0 });
         worldData.Add("falldamage", new ByteTag { Value = fallDamage ? (byte)1 : (byte)0 });
+        worldData.Add("Time", new LongTag { Value = world.GameTime });
+        worldData.Add("currentTick", new LongTag { Value = world.GameTime });
         using BinaryStream stream = BinaryStream.Rent(worldData.GetSize());
         BinaryWriter writer = stream.GetWriter();
         BasaltBE.Nbt.Nbt.Write(worldData, ref writer);

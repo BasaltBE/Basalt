@@ -48,6 +48,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
 
     internal Task ChannelsReady => channelsReady.Task;
     internal Task<Exception?> Completion => completion.Task;
+    internal ulong OutgoingBufferedBytes => reliable?.bufferedAmount ?? 0;
 
     internal Action<NethernetMessage>? MessageHandler { get; set; }
     internal void Close(Exception error) => End(error);

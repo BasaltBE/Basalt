@@ -67,6 +67,9 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider {
         byte[]? actors = ReadRecord(key, ChunkStorageType.BlockActor);
         if (actors is not null)
             entries.Add(new ChunkStorageEntry(ChunkStorageType.BlockActor, 0, actors));
+        byte[]? pendingTicks = ReadRecord(key, ChunkStorageType.PendingTicks);
+        if (pendingTicks is not null)
+            entries.Add(new ChunkStorageEntry(ChunkStorageType.PendingTicks, 0, pendingTicks));
         return entries.ToArray();
     }
 
@@ -82,6 +85,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider {
             batch.Put(new Slice(CreateKey(chunk.Key, ChunkStorageType.BlendingData)), new Slice(ChunkBlendingData));
             batch.Put(new Slice(CreateKey(chunk.Key, ChunkStorageType.ActorDigestVersion)), new Slice(ChunkActorDigestVersion));
             batch.Delete(new Slice(CreateKey(chunk.Key, ChunkStorageType.BlockActor)));
+            batch.Delete(new Slice(CreateKey(chunk.Key, ChunkStorageType.PendingTicks)));
             for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + SubChunkCount; subChunkY++)
                 batch.Delete(new Slice(CreateKey(chunk.Key, ChunkStorageType.SubChunk, checked((sbyte)subChunkY))));
             foreach (ChunkStorageEntry entry in chunk.Entries) {
@@ -102,6 +106,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider {
         batch.Delete(new Slice(CreateKey(key, ChunkStorageType.BlendingData)));
         batch.Delete(new Slice(CreateKey(key, ChunkStorageType.ActorDigestVersion)));
         batch.Delete(new Slice(CreateKey(key, ChunkStorageType.BlockActor)));
+        batch.Delete(new Slice(CreateKey(key, ChunkStorageType.PendingTicks)));
         for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + SubChunkCount; subChunkY++)
             batch.Delete(new Slice(CreateKey(key, ChunkStorageType.SubChunk, checked((sbyte)subChunkY))));
         database.Write(writeOptions, batch).ThrowIfNotOk();

@@ -34,6 +34,20 @@ public sealed class SubChunk {
 
     public int LayerCount => layers?.Count ?? 0;
 
+    internal bool HasRedstone {
+        get {
+            if (layers is null)
+                return false;
+
+            foreach (BlockStorage layer in layers) {
+                if (layer.HasRedstone)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
     public BlockPermutation GetPermutation(int x, int y, int z, int layer = 0) {
         if ((uint)layer > 1) {
             throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");

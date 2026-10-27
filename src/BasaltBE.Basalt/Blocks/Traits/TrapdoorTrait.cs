@@ -9,8 +9,6 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Blocks.Traits;
 
 public sealed class TrapdoorTrait : BlockTrait {
-    static readonly int[] DirectionByPlayerFacing = [3, 0, 2, 1];
-
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
         Dimension dimension = player.Dimension;
         bool supported = BlockPalette.FindType(dimension.GetPermutation(x + 1, y, z).Identifier)?.Solid == true ||
@@ -23,7 +21,7 @@ public sealed class TrapdoorTrait : BlockTrait {
             return false;
 
         int facing = (int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3;
-        int direction = DirectionByPlayerFacing[facing];
+        int direction = BlockDirections.TrapdoorDirectionByYaw[facing];
         bool upsideDown = face == 0 || face is not (0 or 1) && clickPosition.Y > 0.5f;
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "direction", direction) ?? permutation;
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "upside_down_bit", upsideDown) ?? permutation;

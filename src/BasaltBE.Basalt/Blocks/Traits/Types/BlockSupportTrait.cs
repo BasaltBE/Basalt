@@ -11,7 +11,7 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Blocks.Traits.Types;
 
 public abstract class BlockSupportTrait : BlockTrait {
-    protected abstract bool HasSupport(Dimension dimension, int x, int y, int z);
+    protected abstract bool? HasSupport(Dimension dimension, int x, int y, int z);
 
     protected virtual void OnSupportLost(Dimension dimension, int x, int y, int z, bool dropItem) {
         BlockPermutation block = dimension.GetPermutation(x, y, z);
@@ -49,7 +49,7 @@ public abstract class BlockSupportTrait : BlockTrait {
     }
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
-        if (HasSupport(dimension, x, y, z))
+        if (HasSupport(dimension, x, y, z) is not false)
             return false;
 
         OnSupportLost(dimension, x, y, z, dropItem: true);

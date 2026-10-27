@@ -85,6 +85,9 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         return connection.SendAsync(payload, reliability, cancellationToken);
     }
 
+    public ulong GetOutgoingBufferedBytes(NethernetPeer peer) =>
+        connections.TryGetValue(peer, out NethernetConnection? connection) ? connection.OutgoingBufferedBytes : 0;
+
     public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) =>
         SendAsync(peer, payload, reliability).AsTask().GetAwaiter().GetResult();
 

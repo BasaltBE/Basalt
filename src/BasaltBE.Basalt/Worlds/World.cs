@@ -30,6 +30,7 @@ public sealed class World : IDisposable {
     internal Server? Server;
     internal int OwnerThread;
     internal bool Started;
+    internal long GameTime;
     readonly ConcurrentQueue<(NethernetMessage Message, byte[]? Buffer)> inbound = new();
     long queuedBytes;
     int queuedMessages;
@@ -37,7 +38,6 @@ public sealed class World : IDisposable {
     int autosavePlayerIndex;
     long autosaveStarted;
     int autosavePlayerCount;
-    int autosaveQueuedPlayers;
 
     int initialization;
     internal ulong TickValue;
@@ -227,6 +227,8 @@ public sealed class World : IDisposable {
         long start = Stopwatch.GetTimestamp();
         using ProfilerZone zone = Profiler.BeginZone("World.Tick");
         TickValue++;
+        if (GameTime < long.MaxValue)
+            GameTime++;
         Server?.Network.Login.ProcessCompletions(this);
 
         long ingressDeadline = start + Stopwatch.Frequency / 250;
@@ -254,12 +256,13 @@ public sealed class World : IDisposable {
                 ulong intervalTicks = (ulong)server.Properties.AutosaveIntervalSeconds * 20;
                 nextAutosaveTick = TickValue + intervalTicks;
                 if (storage is { SupportsWorldData: true } && !GameRules.Save())
-                    Logger.Scoped("Storage").Warn($"Could not queue game-rule save for world {Identifier}; provider queue is full.");
+                    Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
                 if (storage is not null && !storage.Flush(Identifier))
                     Logger.Scoped("Storage").Warn($"Could not queue autosave flush for world {Identifier}; provider queue is full.");
 
                 if (autosavePlayerIndex >= autosavePlayers.Length) {
                     autosaveStarted = Stopwatch.GetTimestamp();
+                    Logger.Scoped("Storage").Info($"Starting autosave for world {Identifier}.");
                     List<Player> snapshot = [];
                     foreach (Dimension dimension in Dimensions.Values) {
                         foreach (Player player in dimension.GetPlayers())
@@ -268,11 +271,12 @@ public sealed class World : IDisposable {
                     autosavePlayers = snapshot.ToArray();
                     autosavePlayerIndex = 0;
                     autosavePlayerCount = autosavePlayers.Length;
-                    autosaveQueuedPlayers = 0;
                     if (autosavePlayerCount == 0) {
+                        double milliseconds = (Stopwatch.GetTimestamp() - autosaveStarted) * 1000.0 / Stopwatch.Frequency;
                         Logger.Scoped("Storage").Info(
-                            FormattableString.Invariant($"Autosave queued for world {Identifier}: players 0, snapshot 0.000 ms.")
+                            FormattableString.Invariant($"Autosave for world {Identifier} completed in {milliseconds:F3} ms.")
                         );
+                        autosaveStarted = 0;
                     }
                 }
             }
@@ -281,21 +285,23 @@ public sealed class World : IDisposable {
                 long deadline = Stopwatch.GetTimestamp() + Stopwatch.Frequency / 1000;
                 do {
                     Player player = autosavePlayers[autosavePlayerIndex++];
-                    if (!player.Disposed && server.PlayerData.Save(player, autosave: true))
-                        autosaveQueuedPlayers++;
+                    if (!player.Disposed)
+                        server.PlayerData.Save(player, autosave: true);
                 } while (autosavePlayerIndex < autosavePlayers.Length && Stopwatch.GetTimestamp() < deadline);
 
                 if (autosavePlayerIndex == autosavePlayers.Length) {
                     double milliseconds = (Stopwatch.GetTimestamp() - autosaveStarted) * 1000.0 / Stopwatch.Frequency;
                     Logger.Scoped("Storage").Info(
                         FormattableString.Invariant(
-                            $"Autosave queued for world {Identifier}: players {autosaveQueuedPlayers}/{autosavePlayerCount}, snapshot {milliseconds:F3} ms."
+                            $"Autosave for world {Identifier} completed in {milliseconds:F3} ms."
                         )
                     );
                     autosavePlayers = [];
                     autosavePlayerIndex = 0;
+                    autosaveStarted = 0;
                 }
             }
+
         }
 
         Ticks.Record(start);
@@ -305,7 +311,7 @@ public sealed class World : IDisposable {
         foreach (Dimension dimension in Dimensions.Values)
             dimension.FlushStorage();
         if (storage is { SupportsWorldData: true } && !GameRules.Save())
-            Logger.Scoped("Storage").Warn($"Could not queue game-rule save for world {Identifier}; provider queue is full.");
+            Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
         storage?.Dispose();
         if (ownsGenerationService)
             generationService.Dispose();

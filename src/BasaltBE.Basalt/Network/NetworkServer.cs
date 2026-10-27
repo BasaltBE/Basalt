@@ -175,6 +175,8 @@ public sealed class NetworkServer : IDisposable {
     internal bool PeerConnected(NethernetPeer peer) =>
         inbound.TryGetValue(peer, out InboundConnection? connection) && Volatile.Read(ref connection.Closed) == 0;
 
+    internal ulong GetOutgoingBufferedBytes(Player player) => nethernet.GetOutgoingBufferedBytes(player.Peer);
+
     internal void Disconnect(NethernetPeer peer) => nethernet.Disconnect(peer);
 
     internal void SendPacket(

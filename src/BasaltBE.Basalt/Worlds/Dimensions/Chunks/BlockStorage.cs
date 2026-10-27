@@ -24,6 +24,20 @@ public sealed class BlockStorage {
 
     public bool Empty => nonAirCount == 0;
 
+    internal bool HasRedstone {
+        get {
+            if (palette is null)
+                return IsRedstone(implicitPermutation);
+
+            foreach (BlockPermutation permutation in palette) {
+                if (IsRedstone(permutation))
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
     public BlockPermutation GetPermutation(int x, int y, int z) => GetPermutationAt(GetIndex(x, y, z));
 
     internal BlockPermutation GetPermutationAt(int index) => indices is null ? implicitPermutation : palette![indices[index]];
@@ -206,7 +220,10 @@ public sealed class BlockStorage {
         return storage;
     }
 
-    static void WritePermutation(ref BinaryWriter writer, BlockPermutation permutation) {
+    static void WritePermutation(ref BinaryWriter writer, BlockPermutation permutation) =>
+        NbtCodec.Write(CreatePermutationTag(permutation), ref writer, Options.LittleEndian);
+
+    internal static CompoundTag CreatePermutationTag(BlockPermutation permutation) {
         CompoundTag state = new();
         CompoundTag blockStates = new();
         foreach ((string name, object value) in permutation.State.Values) {
@@ -227,47 +244,56 @@ public sealed class BlockStorage {
         state.Add("name", new StringTag { Value = permutation.Identifier });
         state.Add("states", blockStates);
         state.Add("version", new IntTag { Value = 18168865 });
-        NbtCodec.Write(state, ref writer, Options.LittleEndian);
+        return state;
     }
 
     static BlockPermutation ReadPermutation(ref BinaryReader reader, out byte[] nativeNbt) {
         int start = reader.Offset;
-        if (NbtCodec.Read(ref reader, Options.LittleEndian) is not CompoundTag state ||
-            state.Get<StringTag>("name") is not { } identifier ||
-            state.Get<CompoundTag>("states") is not { } blockStates)
+        if (NbtCodec.Read(ref reader, Options.LittleEndian) is not CompoundTag state)
             throw new InvalidDataException("A stored block palette entry has invalid NBT.");
 
         nativeNbt = reader.Buffer[start..reader.Offset].ToArray();
+        BlockPermutation? permutation = ReadPermutation(state);
+        if (permutation is null)
+            throw new InvalidDataException("A stored block palette entry has an unknown block state.");
+
+        return permutation;
+    }
+
+    internal static BlockPermutation? ReadPermutation(CompoundTag state) {
+        if (state.Get<StringTag>("name") is not { } identifier ||
+            state.Get<CompoundTag>("states") is not { } blockStates)
+            return null;
+
         BlockType? type = BlockPalette.FindType(identifier.Value);
         if (type is null)
-            throw new InvalidDataException($"Unknown stored block type '{identifier.Value}'.");
+            return null;
 
         BlockState blockState = new();
         foreach ((string name, Tag tag) in blockStates.Tags) {
             if (Array.IndexOf(type.States, name) < 0)
                 continue;
 
-            blockState.Values.Add(name, tag switch {
-                ByteTag value => BlockPalette.GetStateType(name) switch {
-                    "bool" => value.Value != 0,
-                    "int" => (int)value.Value,
-                    _ => value.Value
+            object? stateValue = tag switch {
+                ByteTag byteTag => BlockPalette.GetStateType(name) switch {
+                    "bool" => byteTag.Value != 0,
+                    "int" => (int)byteTag.Value,
+                    _ => byteTag.Value
                 },
-                ShortTag value => value.Value,
-                IntTag value => value.Value,
-                LongTag value => value.Value,
-                FloatTag value => value.Value,
-                DoubleTag value => value.Value,
-                StringTag value => value.Value,
-                _ => throw new InvalidDataException($"Unsupported stored block state tag {tag.Type}.")
-            });
+                ShortTag shortTag => shortTag.Value,
+                IntTag intTag => intTag.Value,
+                LongTag longTag => longTag.Value,
+                FloatTag floatTag => floatTag.Value,
+                DoubleTag doubleTag => doubleTag.Value,
+                StringTag stringTag => stringTag.Value,
+                _ => null
+            };
+            if (stateValue is null)
+                return null;
+            blockState.Values.Add(name, stateValue);
         }
 
-        return BlockPalette.Find(identifier.Value, blockState)
-            ?? throw new InvalidDataException(
-                $"Unknown stored block permutation '{identifier.Value}' with state " +
-                string.Join(", ", blockState.Values.Select(value => $"{value.Key}: {value.Value}")) + "."
-            );
+        return BlockPalette.FindStored(identifier.Value, blockState);
     }
 
     internal static int GetIndex(int x, int y, int z) {
@@ -277,4 +303,13 @@ public sealed class BlockStorage {
 
         return (x << 8) | (z << 4) | y;
     }
+
+    static bool IsRedstone(BlockPermutation permutation) =>
+        permutation.Identifier is "minecraft:redstone_wire" or "minecraft:observer" or
+            "minecraft:lever" or "minecraft:powered_repeater" or "minecraft:unpowered_repeater" or
+            "minecraft:powered_comparator" or "minecraft:unpowered_comparator" or
+            "minecraft:redstone_torch" or "minecraft:unlit_redstone_torch" or
+            "minecraft:daylight_detector" or "minecraft:daylight_detector_inverted" ||
+        permutation.State.Values.ContainsKey("button_pressed_bit") ||
+        BlockPalette.FindType(permutation.Identifier)?.Components.RedstoneProducer is not null;
 }

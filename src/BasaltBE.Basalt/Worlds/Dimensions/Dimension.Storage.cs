@@ -103,6 +103,8 @@ public sealed partial class Dimension {
             chunks[key] = chunk;
             chunkCount++;
             pendingRequestCount--;
+            LoadScheduledTicks(chunk);
+            Redstone.ChunkLoaded(this, chunk);
             return;
         }
 
@@ -146,6 +148,7 @@ public sealed partial class Dimension {
             if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null)
                 continue;
 
+            PrepareScheduledTicks(chunk);
             if (SerializeChunk(chunk) is not { } entries)
                 continue;
             if (!storage.Write(
@@ -167,10 +170,17 @@ public sealed partial class Dimension {
         if (World?.Storage is not { } storage)
             return;
 
+        foreach ((long key, ScheduledChunk state) in scheduledChunks) {
+            if ((state.Ticks.Count > 0 || state.HasUnindexedRecords) &&
+                chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null)
+                chunk.MarkDirty();
+        }
+
         foreach ((long key, long revision) in dirtyChunks) {
             if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null ||
                 savingChunks.TryGetValue(key, out long savingRevision) && savingRevision == revision)
                 continue;
+            PrepareScheduledTicks(chunk);
             if (SerializeChunk(chunk) is not { } entries)
                 continue;
 
@@ -187,7 +197,17 @@ public sealed partial class Dimension {
     }
 
     ChunkStorageEntry[]? SerializeChunk(Chunk chunk) {
-        ChunkStorageEntry[] entries = chunk.Serialize();
+        ChunkStorageEntry[] entries;
+        try {
+            entries = chunk.Serialize();
+        }
+        catch (Exception error) when (error is InvalidDataException or OverflowException) {
+            Logger.Scoped("Storage").Error(
+                $"Could not serialize chunk ({chunk.X}, {chunk.Z}) in {Identifier}: {error.Message}"
+            );
+            return null;
+        }
+
         int dataLength = 0;
         foreach (ChunkStorageEntry entry in entries)
             dataLength = checked(dataLength + entry.Data.Length);

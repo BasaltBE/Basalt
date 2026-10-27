@@ -44,6 +44,9 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
                     GameType = player.GameType,
+                    LevelCurrentTime = player.Dimension.World is { } world
+                        ? (ulong)((world.GameTime % 24000 + 24000) % 24000)
+                        : player.Dimension.TickValue % 24000,
                     Position = player.GetHeadPosition(),
                     Settings = new LevelSettings {
                         Rules = player.Dimension.World?.GameRules.CreatePacketData() ?? new GameRulesChangedPacketData(),

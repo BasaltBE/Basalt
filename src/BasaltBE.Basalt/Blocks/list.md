@@ -12,3 +12,7 @@
 [x] Blast Furnace
 [x] Doors
 [x] Trapdoors
+[x] Redstone Wire
+[x] Redstone Torches
+[x] Levers
+[x] Buttons

@@ -1,9 +1,12 @@
 using System.IO.Compression;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading.Channels;
 using Basalt.Binary;
+using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.Traits;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.NetherNet;
@@ -17,7 +20,75 @@ using Xunit;
 
 namespace BasaltBE.Basalt.Tests;
 
+[Collection("Block trait registrations")]
 public sealed class MultiplayerTransportTests {
+    [Fact]
+    public async Task ScheduledButtonUpdateAndSoundReachItsChunkViewer() {
+        using TcpListener reservation = new(IPAddress.Loopback, 0);
+        reservation.Start();
+        ushort port = (ushort)((IPEndPoint)reservation.LocalEndpoint).Port;
+        reservation.Stop();
+        using MultiplayerFixture fixture = new(port);
+        var network = fixture.Server.Network;
+        NethernetServer transport = (NethernetServer)typeof(Network.NetworkServer)
+            .GetField("nethernet", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(network)!;
+        Channel<NethernetPeer> connected = Channel.CreateUnbounded<NethernetPeer>();
+        transport.Start(message => {
+            if (message.Connected)
+                connected.Writer.TryWrite(message.Peer);
+        });
+
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(45));
+        await using NethernetClient client = new(new NethernetClientOptions {
+            SignalingUri = new Uri($"http://127.0.0.1:{port}")
+        });
+        await client.ConnectAsync(timeout.Token);
+        Player player = fixture.CreatePlayer(await connected.Reader.ReadAsync(timeout.Token));
+        network.AddPlayer(player);
+        fixture.Dimension.AddChunkViewer(player, 0, 0);
+        fixture.Dimension.Tick();
+        Assert.Equal(29u, (await ReceivePacket(client, timeout.Token)).Id);
+
+        Stopwatch chunkWait = Stopwatch.StartNew();
+        while (fixture.Dimension.GetChunk(0, 0) is null && chunkWait.Elapsed < TimeSpan.FromSeconds(5)) {
+            fixture.Dimension.Tick();
+            await Task.Delay(1, timeout.Token);
+        }
+        Assert.NotNull(fixture.Dimension.GetChunk(0, 0));
+
+        BlockPermutation button = BlockPalette.FindDefaultPermutation("minecraft:stone_button")!;
+        BlockPermutation pressed = BlockPalette.Find(button.Identifier, button.State, "button_pressed_bit", true)!;
+        fixture.Dimension.SetPermutation(2, 10, 2, pressed);
+        fixture.Dimension.AddTickingArea("test", [new ChunkPos { X = 0, Z = 0 }]);
+        fixture.Dimension.ScheduleBlockUpdate(2, 10, 2, 2);
+        fixture.Dimension.Tick();
+        fixture.Dimension.Tick();
+
+        (uint updateId, byte[] updatePayload) = await ReceivePacket(client, timeout.Token);
+        while (updateId == 39u)
+            (updateId, updatePayload) = await ReceivePacket(client, timeout.Token);
+        Assert.Equal(21u, updateId);
+        int updateOffset = 0;
+        BinaryReader updateReader = new(updatePayload, ref updateOffset);
+        UpdateBlockPacket update = new();
+        update.Deserialize(ref updateReader);
+        Assert.Equal(updatePayload.Length, updateOffset);
+        Assert.Equal((2, 10, 2), (update.Position.X, update.Position.Y, update.Position.Z));
+        Assert.Equal(unchecked((uint)BlockPalette.Find(button.Identifier, button.State, "button_pressed_bit", false)!.Hash), update.BlockRuntimeId);
+
+        (uint soundId, byte[] soundPayload) = await ReceivePacket(client, timeout.Token);
+        Assert.Equal(123u, soundId);
+        int soundOffset = 0;
+        BinaryReader soundReader = new(soundPayload, ref soundOffset);
+        LevelSoundEventPacket sound = new();
+        sound.Deserialize(ref soundReader);
+        Assert.Equal(soundPayload.Length, soundOffset);
+        Assert.Equal("random.click", sound.SoundEvent);
+        Assert.Equal(2.5f, sound.Position.X);
+        Assert.Equal(10.5f, sound.Position.Y);
+        Assert.Equal(2.5f, sound.Position.Z);
+    }
+
     [Fact]
     public async Task ThreePeersReceiveBatchedRostersAndOrderedActorRemoval() {
         using TcpListener reservation = new(IPAddress.Loopback, 0);

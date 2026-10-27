@@ -11,6 +11,7 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Events.Players;
+using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Permissions;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
@@ -62,10 +63,23 @@ internal static class Program {
             EntityPalette.RegisterTrait<PlayerHungerTrait>();
             EntityPalette.RegisterTrait<PlayerExperienceTrait>();
             EntityPalette.RegisterTrait<ExperienceOrbTrait>();
+            ItemPalette.RegisterBlockPlacement("minecraft:repeater", "minecraft:unpowered_repeater");
+            ItemPalette.RegisterBlockPlacement("minecraft:comparator", "minecraft:unpowered_comparator");
             BlockPalette.RegisterTrait<CraftingTableTrait>();
             BlockPalette.RegisterTrait<EnchantingTableTrait>();
             BlockPalette.RegisterTrait<GrindstoneTrait>();
             BlockPalette.RegisterTrait<AnvilTrait>();
+            BlockPalette.RegisterTrait<RedstoneWireTrait>();
+            BlockPalette.RegisterTrait<RedstoneTorchTrait>();
+            BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
+            BlockPalette.RegisterTrait<ObserverTrait>();
+            BlockPalette.RegisterTrait<DaylightDetectorTrait>();
+            BlockPalette.RegisterTrait<LeverTrait>();
+            BlockPalette.RegisterTrait<ButtonTrait>(BlockPalette.Types
+                .Where(type => Array.IndexOf(type.States, "button_pressed_bit") >= 0 &&
+                    Array.IndexOf(type.States, "facing_direction") >= 0)
+                .Select(type => type.Identifier)
+                .ToArray());
             BlockPalette.RegisterTrait<FenceTrait>();
             BlockPalette.RegisterTrait<FenceGateTrait>();
             BlockPalette.RegisterTrait<PaneConnectionTrait>();
@@ -88,6 +102,8 @@ internal static class Program {
             server.Providers.Register("memory", static _ => new InMemoryProvider());
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
             server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
+            server.BlockActors.Register("minecraft:powered_comparator", static context => new ComparatorBlockActor(context));
+            server.BlockActors.Register("minecraft:unpowered_comparator", static context => new ComparatorBlockActor(context));
             foreach (string identifier in new[] {
                 "minecraft:furnace", "minecraft:lit_furnace",
                 "minecraft:blast_furnace", "minecraft:lit_blast_furnace",

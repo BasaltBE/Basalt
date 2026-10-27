@@ -17,26 +17,10 @@ public sealed class DoorTrait : BlockSupportTrait {
             return false;
 
         int facing = (int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3;
-        string facingDirection = facing switch {
-            0 => "south",
-            1 => "west",
-            2 => "north",
-            _ => "east"
-        };
-        string direction = facingDirection switch {
-            "north" => "east",
-            "east" => "south",
-            "south" => "west",
-            _ => "north"
-        };
+        string direction = BlockDirections.ByYaw[(facing + 1) & 3];
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "minecraft:cardinal_direction", direction) ?? permutation;
 
-        (int leftX, int leftZ) = facingDirection switch {
-            "north" => (-1, 0),
-            "east" => (0, -1),
-            "south" => (1, 0),
-            _ => (0, 1)
-        };
+        (int leftX, int leftZ) = BlockDirections.LeftByYaw[facing];
         BlockPermutation left = dimension.GetPermutation(x + leftX, y, z + leftZ);
         BlockPermutation right = dimension.GetPermutation(x - leftX, y, z - leftZ);
         bool leftTransparent = (BlockPalette.FindType(left.Identifier)?.Opacity ?? 0) < 15;
@@ -90,20 +74,27 @@ public sealed class DoorTrait : BlockSupportTrait {
         return true;
     }
 
-    protected override bool HasSupport(Dimension dimension, int x, int y, int z) {
-        BlockPermutation current = dimension.GetPermutation(x, y, z);
+    protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
+        BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
+        if (current is null)
+            return null;
         if (!BlockPalette.IsDoor(current.Identifier) ||
             current.State.Values.GetValueOrDefault("upper_block_bit") is not bool upper)
             return false;
 
         if (upper) {
-            BlockPermutation lower = dimension.GetPermutation(x, y - 1, z);
+            BlockPermutation? lower = dimension.GetLoadedPermutation(x, y - 1, z);
+            if (lower is null)
+                return null;
             return lower.Identifier == current.Identifier && lower.State.Values.GetValueOrDefault("upper_block_bit") is false;
         }
 
-        BlockPermutation top = dimension.GetPermutation(x, y + 1, z);
+        BlockPermutation? top = dimension.GetLoadedPermutation(x, y + 1, z);
+        BlockPermutation? support = dimension.GetLoadedPermutation(x, y - 1, z);
+        if (top is null || support is null)
+            return null;
         bool validTop = top.Identifier == current.Identifier && top.State.Values.GetValueOrDefault("upper_block_bit") is true;
-        bool supported = BlockPalette.FindType(dimension.GetPermutation(x, y - 1, z).Identifier)?.Solid == true;
+        bool supported = BlockPalette.FindType(support.Identifier)?.Solid == true;
         return validTop && supported;
     }
 

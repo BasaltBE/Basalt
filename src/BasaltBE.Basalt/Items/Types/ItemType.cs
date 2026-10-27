@@ -38,6 +38,9 @@ public sealed class ItemType {
     [JsonInclude, JsonPropertyName("identifier")]
     public string Identifier = string.Empty;
 
+    [JsonInclude, JsonPropertyName("blockIdentifier")]
+    public string? BlockIdentifier;
+
     [JsonInclude, JsonPropertyName("catalog")]
     public ItemCatalog? Catalog;
 

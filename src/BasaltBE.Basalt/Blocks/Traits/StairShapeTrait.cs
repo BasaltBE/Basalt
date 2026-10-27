@@ -8,6 +8,7 @@ public sealed class StairShapeTrait : BlockTrait {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
         if (!current.State.Values.TryGetValue("weirdo_direction", out object? directionValue) ||
             directionValue is not int direction ||
+            (uint)direction >= (uint)BlockDirections.StairFacingByDirection.Length ||
             !current.State.Values.TryGetValue("upside_down_bit", out object? upsideDownValue) ||
             upsideDownValue is not bool upsideDown)
             return false;
@@ -26,20 +27,20 @@ public sealed class StairShapeTrait : BlockTrait {
     }
 
     static string FindCorner(Dimension dimension, int x, int y, int z, int direction, bool upsideDown) {
-        int frontX = x + OffsetX(direction);
-        int frontZ = z + OffsetZ(direction);
+        int frontX = x + BlockDirections.StairOffsetXByDirection[direction];
+        int frontZ = z + BlockDirections.StairOffsetZByDirection[direction];
         if (StairTurn(dimension, frontX, y, frontZ, upsideDown, direction, out int frontDirection) &&
             !StairShapeBlocked(dimension, x, y, z, direction, frontDirection, upsideDown, outer: true)) {
-            int turn = (StairFacing(frontDirection) - StairFacing(direction) + 4) & 3;
+            int turn = (BlockDirections.StairFacingByDirection[frontDirection] - BlockDirections.StairFacingByDirection[direction] + 4) & 3;
             return turn == 3 ? "outer_left" : "outer_right";
         }
 
-        int backDirection = Opposite(direction);
-        int backX = x + OffsetX(backDirection);
-        int backZ = z + OffsetZ(backDirection);
+        int backDirection = BlockDirections.StairOppositeByDirection[direction];
+        int backX = x + BlockDirections.StairOffsetXByDirection[backDirection];
+        int backZ = z + BlockDirections.StairOffsetZByDirection[backDirection];
         if (StairTurn(dimension, backX, y, backZ, upsideDown, direction, out int rearDirection) &&
             !StairShapeBlocked(dimension, x, y, z, direction, rearDirection, upsideDown, outer: false)) {
-            int turn = (StairFacing(rearDirection) - StairFacing(direction) + 4) & 3;
+            int turn = (BlockDirections.StairFacingByDirection[rearDirection] - BlockDirections.StairFacingByDirection[direction] + 4) & 3;
             return turn == 3 ? "inner_left" : "inner_right";
         }
 
@@ -47,9 +48,9 @@ public sealed class StairShapeTrait : BlockTrait {
     }
 
     static bool StairShapeBlocked(Dimension dimension, int x, int y, int z, int direction, int neighborDirection, bool upsideDown, bool outer) {
-        int checkDirection = outer ? Opposite(neighborDirection) : neighborDirection;
-        int checkX = x + OffsetX(checkDirection);
-        int checkZ = z + OffsetZ(checkDirection);
+        int checkDirection = outer ? BlockDirections.StairOppositeByDirection[neighborDirection] : neighborDirection;
+        int checkX = x + BlockDirections.StairOffsetXByDirection[checkDirection];
+        int checkZ = z + BlockDirections.StairOffsetZByDirection[checkDirection];
         if (dimension.GetChunk(checkX >> 4, checkZ >> 4) is null)
             return false;
 
@@ -70,41 +71,16 @@ public sealed class StairShapeTrait : BlockTrait {
         if (!BlockPalette.IsCornerableStairs(neighbor.Identifier) ||
             !neighbor.State.Values.TryGetValue("weirdo_direction", out object? directionValue) ||
             directionValue is not int foundDirection ||
+            (uint)foundDirection >= (uint)BlockDirections.StairFacingByDirection.Length ||
             !neighbor.State.Values.TryGetValue("upside_down_bit", out object? upsideDownValue) ||
             upsideDownValue is not bool foundUpsideDown || foundUpsideDown != upsideDown)
             return false;
 
-        int turn = (StairFacing(foundDirection) - StairFacing(direction) + 4) & 3;
+        int turn = (BlockDirections.StairFacingByDirection[foundDirection] - BlockDirections.StairFacingByDirection[direction] + 4) & 3;
         if (turn is not (1 or 3))
             return false;
 
         neighborDirection = foundDirection;
         return true;
     }
-
-    static int StairFacing(int direction) => direction switch {
-        0 => 1,
-        1 => 3,
-        2 => 2,
-        _ => 0
-    };
-
-    static int Opposite(int direction) => direction switch {
-        0 => 1,
-        1 => 0,
-        2 => 3,
-        _ => 2
-    };
-
-    static int OffsetX(int direction) => direction switch {
-        0 => 1,
-        1 => -1,
-        _ => 0
-    };
-
-    static int OffsetZ(int direction) => direction switch {
-        2 => 1,
-        3 => -1,
-        _ => 0
-    };
 }

@@ -17,6 +17,7 @@ namespace BasaltBE.Basalt.Entities.Traits;
 public sealed class PlayerChunkRenderingTrait : EntityTrait {
     const int ChunksPerTick = 64;
     const int PendingChecksPerTick = ChunksPerTick * 4;
+    const ulong MaximumOutgoingBufferedBytes = 128 * 1024;
     const int ChunkDataCapacity = 64 * 1024;
     const int MaximumChunkDataCapacity = 4 * 1024 * 1024 - 128;
     [ThreadStatic]
@@ -296,6 +297,12 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         if (Volatile.Read(ref spawnReady) == 0 || player.Disposed || pendingChunks.Count == 0 ||
             chunkSendBlockedTick == player.Dimension.TickValue)
             return false;
+
+        ulong outgoingBufferedBytes = player.Network.GetOutgoingBufferedBytes(player);
+        if (outgoingBufferedBytes >= MaximumOutgoingBufferedBytes) {
+            chunkSendBlockedTick = player.Dimension.TickValue;
+            return false;
+        }
 
         int checks = Math.Min(pendingChunks.Count, PendingChecksPerTick);
         while (checks > 0 && pendingChunks.Count > 0) {

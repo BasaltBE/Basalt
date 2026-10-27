@@ -41,6 +41,7 @@ public sealed partial class Dimension : IDisposable {
     internal long ChunkSendBudgetRemaining;
     internal int SimulationRadius = 4;
     internal bool PrimaryStorageDimension;
+    internal readonly RedstoneController Redstone = new();
     int nextPlayerTick;
     int chunkCount;
     int pendingRequestCount;
@@ -168,7 +169,11 @@ public sealed partial class Dimension : IDisposable {
 
     public void Broadcast(DataPacket packet, int chunkX, int chunkZ, Player? exclude = null, DataPacket? additionalPacket = null) {
         ArgumentNullException.ThrowIfNull(packet);
-        foreach (Player player in GetChunkViewers(chunkX, chunkZ)) {
+        Broadcast(packet, GetChunkViewers(chunkX, chunkZ), exclude, additionalPacket);
+    }
+
+    void Broadcast(DataPacket packet, ReadOnlySpan<Player> viewers, Player? exclude, DataPacket? additionalPacket) {
+        foreach (Player player in viewers) {
             if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
                 continue;
             try {
@@ -273,8 +278,10 @@ public sealed partial class Dimension : IDisposable {
     public Chunk GetOrCreateChunk(int chunkX, int chunkZ) {
         World?.CheckOwnership();
         long key = GetKey(chunkX, chunkZ);
-        if (chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
-            return chunk;
+        if (chunks.TryGetValue(key, out Chunk? chunk)) {
+            return chunk ?? throw new InvalidOperationException(
+                $"Chunk ({chunkX}, {chunkZ}) is still loading."
+            );
         }
 
         chunk = new Chunk(chunkX, chunkZ);
@@ -431,6 +438,8 @@ public sealed partial class Dimension : IDisposable {
                     result.Chunk.Dimension = this;
                     chunks[result.Key] = result.Chunk;
                     chunkCount++;
+                    LoadScheduledTicks(result.Chunk);
+                    Redstone.ChunkLoaded(this, result.Chunk);
                     if (World?.Storage is not null)
                         result.Chunk.MarkDirty();
                     committed++;
@@ -463,6 +472,15 @@ public sealed partial class Dimension : IDisposable {
             : BlockStorage.Air;
     }
 
+    internal BlockPermutation? GetLoadedPermutation(int x, int y, int z, int layer = 0) {
+        if ((uint)layer > 1)
+            throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");
+
+        return chunks.TryGetValue(GetKey(x >> 4, z >> 4), out Chunk? chunk) && chunk is not null
+            ? chunk.GetPermutation(x & 15, y, z & 15, layer)
+            : null;
+    }
+
     public void SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0) {
         World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(permutation);
@@ -472,7 +490,12 @@ public sealed partial class Dimension : IDisposable {
 
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
-        if (!chunks.TryGetValue(GetKey(chunkX, chunkZ), out Chunk? chunk) || chunk is null) {
+        long key = GetKey(chunkX, chunkZ);
+        if (chunks.TryGetValue(key, out Chunk? chunk)) {
+            if (chunk is null)
+                throw new InvalidOperationException($"Chunk ({chunkX}, {chunkZ}) is still loading.");
+        }
+        else {
             if (permutation == BlockStorage.Air) {
                 return;
             }
@@ -480,9 +503,21 @@ public sealed partial class Dimension : IDisposable {
             chunk = GetOrCreateChunk(chunkX, chunkZ);
         }
 
-        if (layer == 0 && chunk.GetPermutation(x & 15, y, z & 15, layer) != permutation)
-            RemoveBlockActor(x, y, z);
+        BlockPermutation previous = chunk.GetPermutation(x & 15, y, z & 15, layer);
+        if (layer == 0 && previous.Identifier != permutation.Identifier) {
+            bool sameDevice =
+                (previous.Identifier is "minecraft:powered_comparator" or "minecraft:unpowered_comparator") &&
+                (permutation.Identifier is "minecraft:powered_comparator" or "minecraft:unpowered_comparator") ||
+                (previous.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater") &&
+                (permutation.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater");
+            if (!sameDevice)
+                CancelScheduledBlockUpdate(x, y, z);
+            if (!sameDevice)
+                RemoveBlockActor(x, y, z);
+        }
         chunk.SetPermutation(x & 15, y, z & 15, permutation, layer);
+        if (layer == 0 && previous != permutation)
+            Redstone.BlockChanged(this, x, y, z, previous, permutation);
     }
 
     internal void UpdateNeighbors(int x, int y, int z) {
@@ -499,11 +534,20 @@ public sealed partial class Dimension : IDisposable {
             return;
 
         BlockPermutation permutation = GetPermutation(x, y, z);
+        BroadcastBlockUpdate(x, y, z, permutation);
+        Redstone.MarkDirty(x, y, z);
+    }
+
+    internal void BroadcastBlockUpdate(int x, int y, int z, BlockPermutation permutation) {
+        ReadOnlySpan<Player> viewers = GetChunkViewers(x >> 4, z >> 4);
+        if (viewers.IsEmpty)
+            return;
+
         Broadcast(new UpdateBlockPacket {
             Position = new BlockPos { X = x, Y = y, Z = z },
             BlockRuntimeId = unchecked((uint)permutation.Hash),
             Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
-        }, x >> 4, z >> 4);
+        }, viewers, null, null);
     }
 
     internal BlockActor? GetBlockActor(Chunk chunk, int x, int y, int z) {
@@ -605,15 +649,24 @@ public sealed partial class Dimension : IDisposable {
     }
 
     void ChangeSimulation(long key, int change) {
+        int previous = simulationReferences.GetValueOrDefault(key);
         int count = simulationReferences.GetValueOrDefault(key) + change;
 
         if (count == 0) {
             simulationReferences.Remove(key);
             simulatedChunks.Remove(key);
+            if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state))
+                DeactivateScheduledTicks(key, state);
         }
         else {
             simulationReferences[key] = count;
             simulatedChunks.Add(key);
+            if (previous == 0 && chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
+                if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state))
+                    ActivateScheduledTicks(key, state);
+                else
+                    LoadScheduledTicks(chunk);
+            }
         }
     }
 
@@ -678,6 +731,86 @@ public sealed partial class Dimension : IDisposable {
             playerAreas[player] = current;
         }
 
+        int dispatchedScheduledUpdates = 0;
+        dispatchedScheduledChunks.Clear();
+        while (dispatchedScheduledUpdates < MaximumScheduledUpdatesPerTick &&
+            scheduledChunkHeads.TryPeek(out var head, out (ulong Tick, long Order, long Key) priority) && priority.Tick <= TickValue) {
+            scheduledChunkHeads.Dequeue();
+            if (!scheduledChunks.TryGetValue(head.Key, out ScheduledChunk? state) ||
+                !state.Active || state.Generation != head.Generation || state.QueuedTick != priority.Tick ||
+                !chunks.TryGetValue(head.Key, out Chunk? chunk) || chunk is null)
+                continue;
+
+            state.QueuedTick = null;
+            long clock = ScheduledClock(state);
+            if (state.Ticks.Count == 0 || state.Ticks.Min!.Due > clock)
+                continue;
+
+            ScheduledTick scheduled = state.Ticks.Min!;
+            state.Ticks.Remove(scheduled);
+            state.QueueOrder = ++nextScheduledTickOrder;
+            var position = (scheduled.X, scheduled.Y, scheduled.Z);
+            List<ScheduledTick> positionTicks = state.TicksByPosition[position];
+            positionTicks.RemoveAt(0);
+            if (positionTicks.Count == 0)
+                state.TicksByPosition.Remove(position);
+            (state.CanceledRecords ??= []).Add(scheduled.Record);
+            if (!state.RecordChangesPending) {
+                state.RecordChangesPending = true;
+                dispatchedScheduledChunks.Add((head.Key, state));
+            }
+            dispatchedScheduledUpdates++;
+
+            try {
+                BlockPalette.OnScheduledUpdate(this, scheduled.X, scheduled.Y, scheduled.Z, scheduled.Permutation);
+            }
+            catch (Exception error) {
+                Logger.Scoped("World").Warn(
+                    $"Scheduled block update failed in {Identifier} at ({scheduled.X}, {scheduled.Y}, {scheduled.Z}): {error.Message}"
+                );
+            }
+
+            if (state.Ticks.Count > 0)
+                QueueScheduledChunk(head.Key, state);
+        }
+
+        foreach ((long key, ScheduledChunk state) in dispatchedScheduledChunks) {
+            if (chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
+                if (chunk.PendingTicks is { } pending && state.CanceledRecords is { Count: > 0 } consumedRecords &&
+                    pending.Get<ListTag>("tickList") is { } pendingTicks) {
+                    pendingTicks.Value.RemoveAll(record =>
+                        record is CompoundTag compound && consumedRecords.Contains(compound)
+                    );
+                    if (pending.Tags.Count == 2 && pendingTicks.Value.Count == 0)
+                        chunk.PendingTicks = null;
+                }
+
+                chunk.MarkDirty();
+                state.CanceledRecords = null;
+                state.RecordChangesPending = false;
+                if (state.Ticks.Count == 0 && !state.HasUnindexedRecords)
+                    scheduledChunks.Remove(key);
+            }
+        }
+
+        if (dispatchedScheduledUpdates == MaximumScheduledUpdatesPerTick)
+            UpdateScheduledTickBacklog();
+        else {
+            Volatile.Write(ref overdueScheduledChunks, 0);
+            Volatile.Write(ref oldestScheduledTickOverdue, 0);
+        }
+        dispatchedScheduledChunks.Clear();
+
+        if (TickValue % 20 == 0) {
+            foreach ((long key, ScheduledChunk state) in scheduledChunks) {
+                if (!state.Active || (state.Ticks.Count == 0 && !state.HasUnindexedRecords) ||
+                    !chunks.TryGetValue(key, out Chunk? chunk) || chunk is null)
+                    continue;
+
+                chunk.MarkDirty();
+            }
+        }
+
         EntityIndex.Collect(simulatedChunks, simulation);
         var server = World?.Server;
         foreach (long key in simulatedChunks) {
@@ -723,8 +856,8 @@ public sealed partial class Dimension : IDisposable {
         World?.Server?.Network.Tick(this);
 
         ReadOnlySpan<Player> currentPlayers = GetPlayers();
+        int startPlayer = currentPlayers.IsEmpty ? 0 : nextPlayerTick % currentPlayers.Length;
         if (!currentPlayers.IsEmpty) {
-            int startPlayer = nextPlayerTick % currentPlayers.Length;
             for (int offset = 0; offset < currentPlayers.Length; offset++) {
                 Player player = currentPlayers[(startPlayer + offset) % currentPlayers.Length];
                 if (player.Disposed)
@@ -740,7 +873,11 @@ public sealed partial class Dimension : IDisposable {
             }
 
             nextPlayerTick = (startPlayer + 1) % currentPlayers.Length;
+        }
 
+        Redstone.Update(this);
+
+        if (!currentPlayers.IsEmpty) {
             bool sentChunk;
             do {
                 sentChunk = false;

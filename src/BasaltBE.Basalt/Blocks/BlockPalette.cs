@@ -48,6 +48,7 @@ public static class BlockPalette {
     static readonly Dictionary<(string Identifier, byte Connections), BlockPermutation> PanePermutations = BuildConnectionPermutations(PaneAndBarIdentifiers);
     static readonly Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> FenceGatePermutations = BuildFenceGatePermutations();
     static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
+    static readonly HashSet<string> ScheduledUpdateIdentifiers = new(StringComparer.Ordinal);
     static readonly HashSet<Type> RegisteredTraits = [];
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
@@ -157,6 +158,8 @@ public static class BlockPalette {
             current.CopyTo(updated, 0);
             updated[^1] = trait;
             TraitsByIdentifier[identifier] = updated;
+            if (trait.HasScheduledUpdates)
+                ScheduledUpdateIdentifiers.Add(identifier);
         }
     }
 
@@ -182,13 +185,35 @@ public static class BlockPalette {
         ref BlockPermutation permutation
     ) {
         if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
-            return false;
+            return true;
 
+        bool accepted = true;
         foreach (BlockTrait trait in traits) {
-            if (trait.OnPlace(player, x, y, z, face, clickPosition, ref permutation))
-                return true;
+            accepted &= trait.OnPlace(player, x, y, z, face, clickPosition, ref permutation);
         }
-        return false;
+        return accepted;
+    }
+
+    internal static void OnPlaced(string identifier, Dimension dimension, int x, int y, int z) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
+            return;
+
+        foreach (BlockTrait trait in traits)
+            trait.OnPlaced(dimension, x, y, z);
+    }
+
+    internal static bool HasScheduledUpdates(string identifier) => ScheduledUpdateIdentifiers.Contains(identifier);
+
+    internal static void OnScheduledUpdate(Dimension dimension, int x, int y, int z, BlockPermutation scheduled) {
+        BlockPermutation current = dimension.GetPermutation(x, y, z);
+        if (!TraitsByIdentifier.TryGetValue(scheduled.Identifier, out BlockTrait[]? traits))
+            return;
+
+        for (int index = 0; index < traits.Length; index++) {
+            traits[index].OnScheduledUpdate(dimension, x, y, z, current, scheduled);
+            if (index + 1 < traits.Length)
+                current = dimension.GetPermutation(x, y, z);
+        }
     }
 
     internal static bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
@@ -218,6 +243,20 @@ public static class BlockPalette {
         return null;
     }
 
+    internal static BlockPermutation? FindStored(string identifier, BlockState state) {
+        BlockPermutation? permutation = Find(identifier, state);
+        if (permutation is not null || !DefaultPermutations.TryGetValue(identifier, out BlockPermutation? defaults))
+            return permutation;
+
+        BlockState completeState = new() {
+            Values = new(defaults.State.Values, StringComparer.Ordinal)
+        };
+        foreach ((string name, object value) in state.Values)
+            completeState.Values[name] = value;
+
+        return Find(identifier, completeState);
+    }
+
     public static BlockPermutation? Find(string identifier, BlockState state, string name, object value) {
         if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations)) {
             return null;
@@ -227,6 +266,17 @@ public static class BlockPalette {
             if (StateMatches(permutation.State, state, name, value)) {
                 return permutation;
             }
+        }
+        return null;
+    }
+
+    public static BlockPermutation? Find(string identifier, BlockState state, string name, int value) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations))
+            return null;
+
+        foreach (BlockPermutation permutation in permutations) {
+            if (StateMatches(permutation.State, state, name, value))
+                return permutation;
         }
         return null;
     }
@@ -425,6 +475,18 @@ public static class BlockPalette {
         return hash;
     }
 
+    static int StateHash(BlockState state, string name, int value) {
+        bool containsName = state.Values.ContainsKey(name);
+        int hash = containsName ? state.Values.Count : state.Values.Count + 1;
+        foreach ((string stateName, object stateValue) in state.Values) {
+            int valueHash = stateName == name ? value : stateValue?.GetHashCode() ?? 0;
+            hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(stateName), valueHash));
+        }
+        if (!containsName)
+            hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value));
+        return hash;
+    }
+
     static int StateHash(BlockState state, BlockState changes) {
         int count = state.Values.Count;
         foreach (string name in changes.Values.Keys) {
@@ -474,6 +536,23 @@ public static class BlockPalette {
                 return false;
             }
             if (!Equals(candidateValue, expectedValue)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool StateMatches(BlockState candidate, BlockState state, string name, int value) {
+        int expectedCount = state.Values.Count + (state.Values.ContainsKey(name) ? 0 : 1);
+        if (candidate.Values.Count != expectedCount)
+            return false;
+
+        foreach ((string candidateName, object candidateValue) in candidate.Values) {
+            if (candidateName == name) {
+                if (candidateValue is not int candidateInteger || candidateInteger != value)
+                    return false;
+            }
+            else if (!state.Values.TryGetValue(candidateName, out object? expectedValue) || !Equals(candidateValue, expectedValue)) {
                 return false;
             }
         }
