@@ -17,7 +17,7 @@ public abstract class Tag {
         return checked(sizeof(byte) + (options.HasName ? Nbt.GetStringSize(Name, options) : 0) + GetPayloadSize(options));
     }
 
-    internal abstract void Read(ref BinaryReader reader, Options options);
+    internal abstract void Read(ref BinaryReader reader, Options options, ref NbtReadContext context);
     internal abstract void Write(ref BinaryWriter writer, Options options);
     internal abstract int GetPayloadSize(Options options);
 }

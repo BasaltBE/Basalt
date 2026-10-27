@@ -9,15 +9,18 @@ public sealed class ListTag : Tag {
     public List<Tag> Value = [];
     public override TagType Type => TagType.List;
 
-    internal override void Read(ref BinaryReader reader, Options options) {
+    internal override void Read(ref BinaryReader reader, Options options, ref NbtReadContext context) {
         ElementType = Nbt.ReadTagType(ref reader);
         int count = Nbt.ReadLength(ref reader, options);
+        context.CheckListLength(count);
         if (ElementType == TagType.End && count != 0)
             throw new InvalidDataException("NBT list with End element type must be empty.");
+        if (count > reader.Remaining)
+            throw new InvalidDataException("NBT list length exceeds the remaining data.");
 
         Value = new List<Tag>(count);
         for (int i = 0; i < count; i++)
-            Value.Add(Nbt.Read(ref reader, ElementType, options));
+            Value.Add(Nbt.Read(ref reader, ElementType, options, ref context));
     }
 
     internal override void Write(ref BinaryWriter writer, Options options) {

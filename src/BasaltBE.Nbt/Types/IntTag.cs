@@ -8,7 +8,7 @@ public sealed class IntTag : Tag {
     public int Value;
     public override TagType Type => TagType.Int;
 
-    internal override void Read(ref BinaryReader reader, Options options) =>
+    internal override void Read(ref BinaryReader reader, Options options, ref NbtReadContext context) =>
         Value = options.VarInt ? reader.ReadZigZag() : reader.ReadInt32(options.ByteOrder == ByteOrder.LittleEndian);
 
     internal override void Write(ref BinaryWriter writer, Options options) {

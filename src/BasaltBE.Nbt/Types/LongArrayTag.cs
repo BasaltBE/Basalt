@@ -8,8 +8,12 @@ public sealed class LongArrayTag : Tag {
     public long[] Value = [];
     public override TagType Type => TagType.LongArray;
 
-    internal override void Read(ref BinaryReader reader, Options options) {
-        Value = new long[Nbt.ReadLength(ref reader, options)];
+    internal override void Read(ref BinaryReader reader, Options options, ref NbtReadContext context) {
+        int count = Nbt.ReadLength(ref reader, options);
+        context.CheckArrayLength(count);
+        if (count > reader.Remaining / (options.VarInt ? 1 : sizeof(long)))
+            throw new InvalidDataException("NBT long array length exceeds the remaining data.");
+        Value = new long[count];
         for (int i = 0; i < Value.Length; i++)
             Value[i] = options.VarInt ? reader.ReadZigZong() : reader.ReadInt64(options.ByteOrder == ByteOrder.LittleEndian);
     }

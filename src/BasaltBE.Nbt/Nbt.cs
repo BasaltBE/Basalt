@@ -8,28 +8,39 @@ using BinaryWriter = Basalt.Binary.BinaryWriter;
 namespace BasaltBE.Nbt;
 
 public static class Nbt {
-    public static Tag Read(ReadOnlySpan<byte> buffer, ref int offset, Options? options = null) {
+    public static Tag Read(ReadOnlySpan<byte> buffer, ref int offset, Options? options = null) =>
+        Read(buffer, ref offset, options, null);
+
+    public static Tag Read(ReadOnlySpan<byte> buffer, ref int offset, Options? options, NbtReadLimits? limits) {
         BinaryReader reader = new(buffer, ref offset);
-        return Read(ref reader, options);
+        return Read(ref reader, options, limits);
     }
 
-    public static Tag Read(BinaryStream stream, Options? options = null) {
+    public static Tag Read(BinaryStream stream, Options? options = null) => Read(stream, options, null);
+
+    public static Tag Read(BinaryStream stream, Options? options, NbtReadLimits? limits) {
         ArgumentNullException.ThrowIfNull(stream);
         BinaryReader reader = stream.GetReader();
-        return Read(ref reader, options);
+        return Read(ref reader, options, limits);
     }
 
-    public static Tag Read(ref BinaryReader reader, Options? options = null) {
+    public static Tag Read(ref BinaryReader reader, Options? options = null) => Read(ref reader, options, null);
+
+    public static Tag Read(ref BinaryReader reader, Options? options, NbtReadLimits? limits) {
         options ??= Options.LittleEndian;
+        NbtReadContext context = new(limits);
         TagType type = ReadTagType(ref reader);
         if (type == TagType.End) return new EndTag();
         string name = options.HasName ? ReadString(ref reader, options) : string.Empty;
-        Tag tag = Read(ref reader, type, options);
+        Tag tag = Read(ref reader, type, options, ref context);
         tag.Name = name;
         return tag;
     }
 
-    internal static Tag Read(ref BinaryReader reader, TagType type, Options options) {
+    internal static Tag Read(ref BinaryReader reader, TagType type, Options options, ref NbtReadContext context) {
+        if (context.Limits is not null)
+            context.EnterTag();
+
         Tag tag = type switch {
             TagType.Byte => new ByteTag(),
             TagType.Short => new ShortTag(),
@@ -45,7 +56,17 @@ public static class Nbt {
             TagType.LongArray => new LongArrayTag(),
             _ => throw new InvalidDataException($"Unknown NBT tag type {(byte)type}.")
         };
-        tag.Read(ref reader, options);
+        if (context.Limits is null) {
+            tag.Read(ref reader, options, ref context);
+        }
+        else {
+            try {
+                tag.Read(ref reader, options, ref context);
+            }
+            finally {
+                context.ExitTag();
+            }
+        }
         return tag;
     }
 

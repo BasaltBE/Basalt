@@ -34,7 +34,7 @@ public sealed class CompoundTag : Tag {
 
     public TTag? Get<TTag>(string name) where TTag : Tag => TryGet<TTag>(name, out TTag? tag) ? tag : null;
 
-    internal override void Read(ref BinaryReader reader, Options options) {
+    internal override void Read(ref BinaryReader reader, Options options, ref NbtReadContext context) {
         tags.Clear();
         while (true) {
             TagType type = Nbt.ReadTagType(ref reader);
@@ -42,7 +42,7 @@ public sealed class CompoundTag : Tag {
                 return;
 
             string name = options.HasName ? Nbt.ReadString(ref reader, options) : string.Empty;
-            Tag tag = Nbt.Read(ref reader, type, options);
+            Tag tag = Nbt.Read(ref reader, type, options, ref context);
             Add(name, tag);
         }
     }

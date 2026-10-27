@@ -8,7 +8,7 @@ public sealed class LongTag : Tag {
     public long Value;
     public override TagType Type => TagType.Long;
 
-    internal override void Read(ref BinaryReader reader, Options options) =>
+    internal override void Read(ref BinaryReader reader, Options options, ref NbtReadContext context) =>
         Value = options.VarInt ? reader.ReadZigZong() : reader.ReadInt64(options.ByteOrder == ByteOrder.LittleEndian);
 
     internal override void Write(ref BinaryWriter writer, Options options) {
