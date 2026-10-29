@@ -10,5 +10,8 @@ internal readonly record struct WorldStorageCompletion(
     Chunk? Chunk,
     int DataBytes,
     bool Deleted,
-    Exception? Error
+    Exception? Error,
+    long GroupId = 0,
+    ChunkStorageKey[]? GroupKeys = null,
+    long[]? GroupVersions = null
 );

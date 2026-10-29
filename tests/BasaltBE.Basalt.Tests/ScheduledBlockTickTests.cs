@@ -34,13 +34,16 @@ namespace BasaltBE.Basalt.Tests;
 public sealed class BlockTraitRegistrationCollection : ICollectionFixture<BlockTraitRegistrationFixture> { }
 
 public sealed class BlockTraitRegistrationFixture {
-    public BlockTraitRegistrationFixture() => BlockPalette.RegisterTrait<ButtonTrait>(["minecraft:stone_button"]);
+    public BlockTraitRegistrationFixture() {
+        BlockPalette.RegisterTrait<ButtonTrait>(["minecraft:stone_button"]);
+        BlockPalette.RegisterTrait<FenceTrait>();
+        BlockPalette.RegisterTrait<ObserverTrait>();
+    }
 }
 
 [Collection("Block trait registrations")]
 public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
     static int registered;
-    static int observerRegistered;
     static int redstoneDevicesRegistered;
     static int redstoneWireRegistered;
     static int daylightDetectorRegistered;
@@ -49,8 +52,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ObserverPulseSurvivesChunkSaveAndRestart() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         using Dimension original = new("test:observer-original", new VoidGenerator());
         Chunk originalChunk = original.GetOrCreateChunk(0, 0);
@@ -98,8 +99,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ChunkTickClockRemainsSafePastBedrockIntMaximum() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         BlockPermutation observer = BlockPalette.FindDefaultPermutation("minecraft:observer")!;
         using Dimension active = new("test:clock-limit-active", new VoidGenerator());
@@ -197,8 +196,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ScheduledRedstoneTicksResumeThroughLevelDbWorldRestart() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         string root = Path.Combine(Path.GetTempPath(), "basalt-scheduled-restart-" + Guid.NewGuid().ToString("N"));
         string path = Path.Combine(root, "db");
@@ -697,8 +694,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ValidPendingTicksRunAlongsideMalformedRecordsWhichRemainUnchanged() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         ChunkGeneratorRegistry generators = new();
         generators.Register<VoidGenerator>("void");
@@ -955,8 +950,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void BenchmarkObserverPulsesAcrossManyActiveChunks() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         const int chunkCount = 64;
         const int observersPerChunk = 32;
@@ -1084,8 +1077,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public async Task BenchmarkServerTickLoadWithSyntheticPlayersAndScheduledRedstone() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         using TcpListener reservation = new(IPAddress.Loopback, 0);
         reservation.Start();
@@ -1386,8 +1377,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void CleanWorldShutdownPersistsTheLatestActiveChunkClock() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         string root = Path.Combine(Path.GetTempPath(), "basalt-scheduled-clock-" + Guid.NewGuid().ToString("N"));
         string path = Path.Combine(root, "db");
@@ -1668,8 +1657,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ReplacingABlockCancelsOnlyItsIndexedScheduledTicks() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         using Dimension dimension = new("test:cancel-position", new VoidGenerator());
         Chunk chunk = dimension.GetOrCreateChunk(0, 0);
@@ -1691,8 +1678,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void ChangingBlockStateDoesNotCancelItsScheduledTick() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         using Dimension dimension = new("test:state-change", new VoidGenerator());
         BlockPermutation observer = BlockPalette.FindDefaultPermutation("minecraft:observer")!;
@@ -1776,8 +1761,6 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
 
     [Fact]
     public void RedstoneWireRecalculatesWhenNeighborChunkLoads() {
-        if (Interlocked.Exchange(ref observerRegistered, 1) == 0)
-            BlockPalette.RegisterTrait<ObserverTrait>();
 
         using Dimension dimension = new("test:redstone-late-neighbor", new VoidGenerator());
         BlockPermutation wire = BlockPalette.FindDefaultPermutation("minecraft:redstone_wire")!;

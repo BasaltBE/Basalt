@@ -5,6 +5,7 @@ using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Worlds.Dimensions;
 
@@ -26,8 +27,34 @@ internal sealed class RedstoneController {
     readonly BlockState connectionChanges = new();
     readonly Dictionary<(int X, int Y, int Z), RedstoneUpdateBatch> updates = [];
     readonly Stack<RedstoneUpdateBatch> reusableUpdates = [];
+    readonly Dictionary<Position, (int X, int Z)> pistonWaitChunks = [];
+    readonly Dictionary<(int X, int Z), HashSet<Position>> pistonsWaitingByChunk = [];
+
     internal void MarkDirty(int x, int y, int z) {
         dirty.Add(new Position(x, y, z));
+    }
+
+    internal void ClearPistonWait(int x, int y, int z) {
+        Position piston = new(x, y, z);
+        if (!pistonWaitChunks.Remove(piston, out (int X, int Z) missingChunk) ||
+            !pistonsWaitingByChunk.TryGetValue(missingChunk, out HashSet<Position>? waiting))
+            return;
+
+        waiting.Remove(piston);
+        if (waiting.Count == 0)
+            pistonsWaitingByChunk.Remove(missingChunk);
+    }
+
+    internal void WaitForPiston(int pistonX, int pistonY, int pistonZ, int chunkX, int chunkZ) {
+        ClearPistonWait(pistonX, pistonY, pistonZ);
+        Position piston = new(pistonX, pistonY, pistonZ);
+        (int X, int Z) missingChunk = (chunkX, chunkZ);
+        pistonWaitChunks.Add(piston, missingChunk);
+        if (!pistonsWaitingByChunk.TryGetValue(missingChunk, out HashSet<Position>? waiting)) {
+            waiting = [];
+            pistonsWaitingByChunk.Add(missingChunk, waiting);
+        }
+        waiting.Add(piston);
     }
 
     internal void ChunkLoaded(Dimension dimension, Chunk chunk) {
@@ -141,6 +168,29 @@ internal sealed class RedstoneController {
                     }
                 }
             }
+        }
+
+        for (int offsetX = -1; offsetX <= 1; offsetX++) {
+            for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+                Chunk? actorChunk = (offsetX, offsetZ) == (0, 0)
+                    ? chunk
+                    : dimension.GetChunk(chunk.X + offsetX, chunk.Z + offsetZ);
+                if (actorChunk?.blockActors is not { } actors)
+                    continue;
+
+                foreach (((int X, int Y, int Z) position, CompoundTag actor) in actors) {
+                    if (actor.Get<StringTag>("id")?.Value == "PistonArm")
+                        dimension.ScheduleBlockUpdate(actorChunk.X * 16 + position.X, position.Y, actorChunk.Z * 16 + position.Z, 1);
+                }
+            }
+        }
+
+        if (!pistonsWaitingByChunk.Remove((chunk.X, chunk.Z), out HashSet<Position>? waitingPistons))
+            return;
+
+        foreach (Position piston in waitingPistons) {
+            pistonWaitChunks.Remove(piston);
+            dimension.ScheduleBlockUpdate(piston.X, piston.Y, piston.Z, 1);
         }
     }
 
@@ -293,6 +343,12 @@ internal sealed class RedstoneController {
             int supportY = y + offsetY;
             int supportZ = z + offsetZ;
             BlockPermutation neighbor = dimension.GetPermutation(supportX, supportY, supportZ);
+            if ((neighbor.Identifier is "minecraft:piston" or "minecraft:sticky_piston") &&
+                BlockPalette.OnNeighborUpdate(dimension, supportX, supportY, supportZ)) {
+                dimension.BroadcastBlockUpdate(supportX, supportY, supportZ, dimension.GetPermutation(supportX, supportY, supportZ));
+                dimension.UpdateNeighbors(supportX, supportY, supportZ);
+            }
+
             if (IsPowerDevice(neighbor.Identifier)) {
                 if (neighbor.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
                     ScheduleRepeaterUpdate(dimension, supportX, supportY, supportZ, neighbor);

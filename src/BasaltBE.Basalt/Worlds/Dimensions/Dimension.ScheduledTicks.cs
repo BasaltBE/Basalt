@@ -6,7 +6,7 @@ using BasaltBE.Logging;
 namespace BasaltBE.Basalt.Worlds.Dimensions;
 
 public sealed partial class Dimension {
-    const int MaximumScheduledUpdatesPerTick = 256;
+    const int ScheduledUpdateLimit = 256;
     readonly Dictionary<long, ScheduledChunk> scheduledChunks = [];
     readonly Dictionary<BlockPermutation, CompoundTag> scheduledBlockStates = [];
     readonly PriorityQueue<(long Key, int Generation), (ulong Tick, long Order, long Key)> scheduledChunkHeads = new();
@@ -342,6 +342,123 @@ public sealed partial class Dimension {
             QueueScheduledChunk(key, state);
         }
     }
+
+    void MoveBlockTicks(ReadOnlySpan<PistonMove> moves) {
+        List<(PistonMove Move, ScheduledTick Tick, long Remaining)>? transfer = null;
+        foreach (PistonMove move in moves) {
+            long sourceKey = GetKey(move.Source.X >> 4, move.Source.Z >> 4);
+            if (!scheduledChunks.TryGetValue(sourceKey, out ScheduledChunk? sourceState) ||
+                !sourceState.TicksByPosition.TryGetValue(move.Source, out List<ScheduledTick>? ticks))
+                continue;
+
+            long sourceClock = ScheduledClock(sourceState);
+            foreach (ScheduledTick tick in ticks)
+                (transfer ??= []).Add((move, tick, Math.Max(0, tick.Due - sourceClock)));
+        }
+
+        if (transfer is null)
+            return;
+
+        HashSet<long> updatedChunks = [];
+        foreach (var (move, tick, _) in transfer) {
+            long sourceKey = GetKey(move.Source.X >> 4, move.Source.Z >> 4);
+            ScheduledChunk sourceState = scheduledChunks[sourceKey];
+            sourceState.Ticks.Remove(tick);
+            if (sourceState.TicksByPosition.TryGetValue(move.Source, out List<ScheduledTick>? sourceTicks)) {
+                sourceTicks.Remove(tick);
+                if (sourceTicks.Count == 0)
+                    sourceState.TicksByPosition.Remove(move.Source);
+            }
+            if (move.SourceChunk.PendingTicks?.Get<ListTag>("tickList") is { } sourceTickList)
+                sourceTickList.Value.Remove(tick.Record);
+            if (move.SourceChunk.PendingTicks is { } sourcePending &&
+                sourcePending.Get<ListTag>("tickList") is { Value.Count: 0 } &&
+                sourcePending.Tags.Count == 2)
+                move.SourceChunk.PendingTicks = null;
+
+            move.SourceChunk.MarkDirty();
+            sourceState.QueuedTick = null;
+            sourceState.Generation++;
+            updatedChunks.Add(sourceKey);
+        }
+
+        foreach ((PistonMove move, ScheduledTick tick, long remaining) in transfer) {
+            long destinationKey = GetKey(move.Destination.X >> 4, move.Destination.Z >> 4);
+            if (!scheduledChunks.TryGetValue(destinationKey, out ScheduledChunk? destinationState)) {
+                long clock = move.DestinationChunk.PendingTicks?.Get<IntTag>("currentTick") is { } savedClock
+                    ? Math.Max(0, savedClock.Value)
+                    : (long)Math.Min(TickValue, (ulong)long.MaxValue);
+                destinationState = new ScheduledChunk { Clock = clock };
+                scheduledChunks.Add(destinationKey, destinationState);
+            }
+
+            if (simulatedChunks.Contains(destinationKey) && !destinationState.Active) {
+                destinationState.Active = true;
+                destinationState.ActivatedAt = TickValue;
+            }
+
+            long destinationClock = ScheduledClock(destinationState);
+            long due = remaining > long.MaxValue - destinationClock
+                ? long.MaxValue
+                : destinationClock + remaining;
+            tick.Record.Get<LongTag>("time")!.Value = due;
+            tick.Record.Get<IntTag>("x")!.Value = move.Destination.X;
+            tick.Record.Get<IntTag>("y")!.Value = move.Destination.Y;
+            tick.Record.Get<IntTag>("z")!.Value = move.Destination.Z;
+            if (move.DestinationChunk.PendingTicks is null) {
+                move.DestinationChunk.PendingTicks = new CompoundTag();
+                move.DestinationChunk.PendingTicks.Add("currentTick", new IntTag {
+                    Value = (int)Math.Min(destinationState.Clock, int.MaxValue)
+                });
+            }
+            if (move.DestinationChunk.PendingTicks.Get<IntTag>("currentTick") is null)
+                move.DestinationChunk.PendingTicks.Add("currentTick", new IntTag {
+                    Value = (int)Math.Min(destinationState.Clock, int.MaxValue)
+                });
+            if (move.DestinationChunk.PendingTicks.Get<ListTag>("tickList") is not { } destinationTickList) {
+                destinationTickList = new ListTag { ElementType = BasaltBE.Nbt.Enums.TagType.Compound };
+                move.DestinationChunk.PendingTicks.Add("tickList", destinationTickList);
+            }
+            destinationTickList.Value.Add(tick.Record);
+
+            ScheduledTick transferred = new(
+                tick.Record,
+                move.Destination.X,
+                move.Destination.Y,
+                move.Destination.Z,
+                tick.Permutation,
+                due,
+                ++nextScheduledTickOrder
+            );
+            destinationState.Ticks.Add(transferred);
+            (int X, int Y, int Z) destination = move.Destination;
+            if (!destinationState.TicksByPosition.TryGetValue(destination, out List<ScheduledTick>? destinationTicks)) {
+                destinationTicks = [];
+                destinationState.TicksByPosition.Add(destination, destinationTicks);
+            }
+            int insert = destinationTicks.BinarySearch(transferred, destinationState.Ticks.Comparer);
+            destinationTicks.Insert(insert < 0 ? ~insert : insert, transferred);
+            destinationState.QueuedTick = null;
+            destinationState.Generation++;
+            move.DestinationChunk.MarkDirty();
+            updatedChunks.Add(destinationKey);
+        }
+
+        foreach (long key in updatedChunks) {
+            if (!scheduledChunks.TryGetValue(key, out ScheduledChunk? state))
+                continue;
+            if (state.Ticks.Count == 0 && !state.HasUnindexedRecords &&
+                chunks.TryGetValue(key, out Chunk? chunk) && chunk?.PendingTicks is null) {
+                scheduledChunks.Remove(key);
+                continue;
+            }
+            QueueScheduledChunk(key, state);
+        }
+    }
+
+    internal bool HasPendingBlockUpdate(int x, int y, int z) =>
+        scheduledChunks.TryGetValue(GetKey(x >> 4, z >> 4), out ScheduledChunk? state) &&
+        state.TicksByPosition.ContainsKey((x, y, z));
 
     internal void PrepareScheduledTicks(Chunk chunk) {
         if (chunk.PendingTicksInvalid)

@@ -412,11 +412,14 @@ internal sealed class PlayerAuthInputHandler {
         BlockActor? actor = player.Dimension.GetBlockActor(chunk, x & 15, y, z & 15);
         ItemStack? actorDrop = null;
         if (actor is not null) {
+            if (!actor.CanRemove()) {
+                SendBlockUpdate(player, x, y, z);
+                return false;
+            }
             actor.OnBreak(player);
             if (dropItems || actor.DropsInCreative)
                 actorDrop = actor.CreateDrop();
         }
-        player.Dimension.RemoveBlockActor(x, y, z);
         player.Dimension.SetPermutation(x, y, z, BlockStorage.Air);
 
         LevelEventPacket particles = blockBreakEvent ?? new();

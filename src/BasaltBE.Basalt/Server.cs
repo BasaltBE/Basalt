@@ -225,7 +225,8 @@ public sealed class Server : IDisposable {
         bool queued = true;
         foreach (World world in Worlds) {
             foreach (Dimension dimension in world.Dimensions.Values) {
-                dimension.FlushStorage();
+                if (!dimension.FlushStorage())
+                    queued = false;
                 foreach (Player player in dimension.GetPlayers()) {
                     if (!player.Disposed && !PlayerData.Save(player))
                         queued = false;

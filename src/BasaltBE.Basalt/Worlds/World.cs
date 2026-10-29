@@ -308,8 +308,10 @@ public sealed class World : IDisposable {
     }
 
     public void Dispose() {
-        foreach (Dimension dimension in Dimensions.Values)
-            dimension.FlushStorage();
+        foreach (Dimension dimension in Dimensions.Values) {
+            if (!dimension.FlushStorage())
+                Logger.Scoped("Storage").Error($"World {Identifier} closed with unsaved piston changes.");
+        }
         if (storage is { SupportsWorldData: true } && !GameRules.Save())
             Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
         storage?.Dispose();

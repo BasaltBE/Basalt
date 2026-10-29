@@ -9,7 +9,7 @@ namespace BasaltBE.Basalt.Worlds.Providers;
 
 internal sealed class WorldProviderService : IDisposable {
     private const int MaximumPendingOperations = 4096;
-    private const long MaximumPendingBytes = 256L * 1024 * 1024;
+    internal const long MaximumPendingBytes = 256L * 1024 * 1024;
     private const int MaximumWriteBatch = 64;
     internal const int MaximumChunkDataBytes = 16 * 1024 * 1024;
     private readonly IWorldProvider provider;
@@ -91,6 +91,54 @@ internal sealed class WorldProviderService : IDisposable {
         }
 
         if (Add(new StorageRequest(dimension, WorldStorageOperation.Write, key, 0, version, entries, dataBytes)))
+            return true;
+
+        Interlocked.Add(ref pendingBytes, -dataBytes);
+        return false;
+    }
+
+    internal bool WriteGroup(
+        Dimension dimension,
+        long groupId,
+        ChunkStorageRecord[] chunks,
+        long[] versions,
+        int dataBytes
+    ) {
+        ArgumentNullException.ThrowIfNull(chunks);
+        ArgumentNullException.ThrowIfNull(versions);
+        if (chunks.Length is < 1 or > 16 || chunks.Length != versions.Length ||
+            dataBytes < 0 || dataBytes > MaximumPendingBytes)
+            return false;
+
+        int actualBytes = 0;
+        foreach (ChunkStorageRecord chunk in chunks) {
+            int chunkBytes = 0;
+            foreach (ChunkStorageEntry entry in chunk.Entries)
+                chunkBytes = checked(chunkBytes + entry.Data.Length);
+            if (chunkBytes > MaximumChunkDataBytes)
+                return false;
+            actualBytes = checked(actualBytes + chunkBytes);
+        }
+        if (actualBytes != dataBytes)
+            return false;
+
+        if (Interlocked.Add(ref pendingBytes, dataBytes) > MaximumPendingBytes) {
+            Interlocked.Add(ref pendingBytes, -dataBytes);
+            return false;
+        }
+
+        if (Add(new StorageRequest(
+            dimension,
+            WorldStorageOperation.WriteGroup,
+            chunks[0].Key,
+            0,
+            0,
+            null,
+            dataBytes,
+            GroupId: groupId,
+            GroupChunks: chunks,
+            GroupVersions: versions
+        )))
             return true;
 
         Interlocked.Add(ref pendingBytes, -dataBytes);
@@ -259,6 +307,13 @@ internal sealed class WorldProviderService : IDisposable {
         Exception? error = null;
         try {
             switch (request.Operation) {
+                case WorldStorageOperation.WriteGroup: {
+                        long start = Stopwatch.GetTimestamp();
+                        provider.WriteChunks(request.GroupChunks!);
+                        Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - start);
+                        Interlocked.Add(ref writeCount, request.GroupChunks!.Length);
+                        break;
+                    }
                 case WorldStorageOperation.Read:
                     long readStart = Stopwatch.GetTimestamp();
                     ChunkStorageEntry[]? entries = provider.ReadChunk(request.Key);
@@ -320,6 +375,10 @@ internal sealed class WorldProviderService : IDisposable {
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not write world data: {error.Message}"
                 );
+            else if (request.Operation == WorldStorageOperation.WriteGroup)
+                Logger.Scoped("Storage").Error(
+                    $"Provider {provider.Identifier} could not write chunk group {request.GroupId} in {request.Key.DimensionIdentifier}: {error.Message}"
+                );
             else
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not {request.Operation.ToString().ToLowerInvariant()} " +
@@ -327,7 +386,7 @@ internal sealed class WorldProviderService : IDisposable {
                 );
         }
 
-        if (request.Operation == WorldStorageOperation.WriteWorldData)
+        if (request.Operation is WorldStorageOperation.WriteWorldData or WorldStorageOperation.WriteGroup)
             Interlocked.Add(ref pendingBytes, -request.DataBytes);
 
         if (request.Dimension is { } dimension) {
@@ -339,7 +398,10 @@ internal sealed class WorldProviderService : IDisposable {
                 chunk,
                 dataBytes,
                 deleted,
-                error
+                error,
+                request.GroupId,
+                request.GroupChunks?.Select(static chunk => chunk.Key).ToArray(),
+                request.GroupVersions
             ));
         }
         Interlocked.Decrement(ref pendingOperations);
@@ -366,6 +428,9 @@ internal sealed class WorldProviderService : IDisposable {
         ChunkStorageEntry[]? Entries,
         int DataBytes,
         string? WorldIdentifier = null,
-        byte[]? WorldData = null
+        byte[]? WorldData = null,
+        long GroupId = 0,
+        ChunkStorageRecord[]? GroupChunks = null,
+        long[]? GroupVersions = null
     );
 }

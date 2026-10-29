@@ -73,6 +73,7 @@ internal static class Program {
             BlockPalette.RegisterTrait<RedstoneTorchTrait>();
             BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
             BlockPalette.RegisterTrait<ObserverTrait>();
+            BlockPalette.RegisterTrait<PistonTrait>();
             BlockPalette.RegisterTrait<DaylightDetectorTrait>();
             BlockPalette.RegisterTrait<LeverTrait>();
             BlockPalette.RegisterTrait<ButtonTrait>(BlockPalette.Types
@@ -102,6 +103,8 @@ internal static class Program {
             server.Providers.Register("memory", static _ => new InMemoryProvider());
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
             server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
+            server.BlockActors.Register("minecraft:piston", static context => new PistonArmBlockActor(context));
+            server.BlockActors.Register("minecraft:sticky_piston", static context => new PistonArmBlockActor(context));
             server.BlockActors.Register("minecraft:powered_comparator", static context => new ComparatorBlockActor(context));
             server.BlockActors.Register("minecraft:unpowered_comparator", static context => new ComparatorBlockActor(context));
             foreach (string identifier in new[] {

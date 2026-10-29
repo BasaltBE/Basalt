@@ -23,6 +23,7 @@ public abstract class BlockActor(BlockActorContext context) {
     public abstract void OnWrite(CompoundTag nbt);
     public virtual void OnPlace(ItemStack? item, byte face) { }
     public virtual void OnInteract(Player player) { }
+    public virtual bool CanRemove() => true;
     public virtual void OnBreak(Player player) { }
     public virtual void OnRemove() { }
     public virtual void Tick() { }
