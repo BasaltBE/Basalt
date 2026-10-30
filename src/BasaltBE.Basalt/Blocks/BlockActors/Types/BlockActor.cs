@@ -31,6 +31,36 @@ public abstract class BlockActor(BlockActorContext context)
     /// </summary>
     public virtual bool CanExtract(int slot, ItemStack item, byte face) => true;
 
+    internal ItemStack? InsertItem(ItemStack item, byte face)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (Inventory is not { } inventory)
+            return item;
+
+        for (int slot = 0; slot < inventory.ContainerSize && item.StackSize > 0; slot++)
+        {
+            if (!CanInsert(slot, item, face) || inventory.GetItem(slot) is not { } existing ||
+                !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxAmount)
+                continue;
+
+            ushort moved = (ushort)Math.Min(item.StackSize, existing.Type.MaxAmount - existing.StackSize);
+            existing.IncrementStack(moved);
+            item.DecrementStack(moved);
+        }
+
+        for (int slot = 0; slot < inventory.ContainerSize && item.StackSize > 0; slot++)
+        {
+            if (!CanInsert(slot, item, face) || inventory.GetItem(slot) is not null)
+                continue;
+
+            ushort moved = (ushort)Math.Min(item.StackSize, item.Type.MaxAmount);
+            inventory.SetItem(slot, item.Clone(moved));
+            item.DecrementStack(moved);
+        }
+
+        return item.StackSize == 0 ? null : item;
+    }
+
     public abstract void OnRead(CompoundTag nbt);
     public abstract void OnWrite(CompoundTag nbt);
     public virtual void OnPlace(ItemStack? item, byte face) { }
@@ -76,7 +106,7 @@ public abstract class BlockActor(BlockActorContext context)
         }
     }
 
-    protected static ListTag WriteItems(Container container)
+    protected static ListTag WriteItems(Container container, bool includePickupState = false)
     {
         ListTag items = new() { ElementType = TagType.Compound };
         for (int slot = 0; slot < container.ContainerSize; slot++)
@@ -89,6 +119,8 @@ public abstract class BlockActor(BlockActorContext context)
             item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
             item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
             item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
+            if (includePickupState)
+                item.Add("WasPickedUp", new ByteTag { Value = 0 });
             if (stack.Nbt is { } itemNbt)
                 item.Add("tag", itemNbt);
             items.Value.Add(item);

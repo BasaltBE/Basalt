@@ -48,4 +48,12 @@ internal static class BlockDirections
     internal static readonly int[] StairOppositeByDirection = [1, 0, 3, 2];
     internal static readonly int[] StairOffsetXByDirection = [1, -1, 0, 0];
     internal static readonly int[] StairOffsetZByDirection = [0, 0, 1, -1];
+
+    internal static int FacingByRotation(float pitch, float yaw) {
+        if (pitch > 45)
+            return 1;
+        if (pitch < -45)
+            return 0;
+        return PistonFacingByYaw[(int)MathF.Floor((yaw + 45) / 90) & 3];
+    }
 }

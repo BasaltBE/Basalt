@@ -106,7 +106,7 @@ public sealed class HopperBlockActor : BlockActor
         for (int slot = 0; slot < source.ContainerSize; slot++)
         {
             if (source.GetItem(slot) is not { } item || !actor.CanExtract(slot, item, 0) ||
-                !InsertOne(this, item, 1))
+                InsertItem(item.Clone(1), 1) is not null)
                 continue;
 
             source.TakeItem(slot);
@@ -135,7 +135,7 @@ public sealed class HopperBlockActor : BlockActor
                         item.Position.X < Position.X || item.Position.X >= Position.X + 1 ||
                         item.Position.Y < Position.Y + 0.5f || item.Position.Y >= Position.Y + 2 ||
                         item.Position.Z < Position.Z || item.Position.Z >= Position.Z + 1 ||
-                        !InsertOne(this, item.Item, 1))
+                        InsertItem(item.Item.Clone(1), 1) is not null)
                         continue;
 
                     item.TakeItems(1);
@@ -165,7 +165,7 @@ public sealed class HopperBlockActor : BlockActor
             return false;
         for (int slot = 0; slot < Container.ContainerSize; slot++)
         {
-            if (Container.GetItem(slot) is not { } item || !InsertOne(target, item, targetFace))
+            if (Container.GetItem(slot) is not { } item || target.InsertItem(item.Clone(1), targetFace) is not null)
                 continue;
 
             Container.TakeItem(slot);
@@ -174,28 +174,4 @@ public sealed class HopperBlockActor : BlockActor
         return false;
     }
 
-    static bool InsertOne(BlockActor destination, ItemStack item, byte face)
-    {
-        if (destination.Inventory is not { } inventory)
-            return false;
-
-        for (int slot = 0; slot < inventory.ContainerSize; slot++)
-        {
-            if (!destination.CanInsert(slot, item, face))
-                continue;
-
-            if (inventory.GetItem(slot) is { } existing)
-            {
-                if (!existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxAmount)
-                    continue;
-
-                existing.IncrementStack();
-                return true;
-            }
-
-            inventory.SetItem(slot, item.Clone(1));
-            return true;
-        }
-        return false;
-    }
 }

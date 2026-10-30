@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using BasaltBE.Nbt.Enums;
 using BasaltBE.Nbt.Types;
 
@@ -8,6 +9,8 @@ public sealed class ItemPropertiesPayload {
     public string[] ItemTags = [];
     public bool Stackable;
     public int MaxAmount;
+    [JsonInclude, JsonPropertyName("entityPlacer")]
+    public Dictionary<string, string>? EntityPlacer;
     public Dictionary<string, Tag> Values = new(StringComparer.Ordinal);
 
     public CompoundTag ToComponentData() {

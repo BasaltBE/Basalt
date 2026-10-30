@@ -17,3 +17,5 @@
 [x] Levers
 [x] Buttons
 [x] Hoppers
+[x] Droppers
+[x] Dispensers

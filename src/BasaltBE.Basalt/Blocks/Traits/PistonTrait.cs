@@ -18,14 +18,7 @@ public sealed class PistonTrait : BlockTrait {
     internal override bool HasScheduledUpdates => true;
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        int facing;
-        if (player.Rotation.X > 45)
-            facing = 1;
-        else if (player.Rotation.X < -45)
-            facing = 0;
-        else
-            facing = BlockDirections.PistonFacingByYaw[(int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3];
-
+        int facing = BlockDirections.FacingByRotation(player.Rotation.X, player.Rotation.Y);
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", facing) ?? permutation;
         return permutation.State.Values.GetValueOrDefault("facing_direction") is int placedFacing && placedFacing == facing;
     }

@@ -79,6 +79,7 @@ internal static class Program
             BlockPalette.RegisterTrait<ObserverTrait>();
             BlockPalette.RegisterTrait<PistonTrait>();
             BlockPalette.RegisterTrait<HopperTrait>();
+            BlockPalette.RegisterTrait<DispenserTrait>();
             BlockPalette.RegisterTrait<DaylightDetectorTrait>();
             BlockPalette.RegisterTrait<LeverTrait>();
             BlockPalette.RegisterTrait<ButtonTrait>(BlockPalette.Types
@@ -109,6 +110,8 @@ internal static class Program
             server.BlockActors.Register("minecraft:chest", static context => new ChestBlockActor(context));
             server.BlockActors.Register("minecraft:barrel", static context => new BarrelBlockActor(context));
             server.BlockActors.Register("minecraft:hopper", static context => new HopperBlockActor(context), tick: true);
+            server.BlockActors.Register("minecraft:dispenser", static context => new DispenserBlockActor(context));
+            server.BlockActors.Register("minecraft:dropper", static context => new DropperBlockActor(context));
             server.BlockActors.Register("minecraft:piston", static context => new PistonArmBlockActor(context));
             server.BlockActors.Register("minecraft:sticky_piston", static context => new PistonArmBlockActor(context));
             server.BlockActors.Register("minecraft:powered_comparator", static context => new ComparatorBlockActor(context));
