@@ -16,3 +16,4 @@
 [x] Redstone Torches
 [x] Levers
 [x] Buttons
+[x] Hoppers

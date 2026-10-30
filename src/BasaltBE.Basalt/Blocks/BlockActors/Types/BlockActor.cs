@@ -11,13 +11,25 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Blocks.BlockActors.Types;
 
-public abstract class BlockActor(BlockActorContext context) {
+public abstract class BlockActor(BlockActorContext context)
+{
     public readonly Dimension Dimension = context.Dimension;
     public readonly BlockPos Position = context.Position;
     public readonly string Identifier = context.Identifier;
     public readonly BlockPermutation Permutation = context.Permutation;
     public readonly CompoundTag Nbt = context.Nbt;
     public virtual string ActorIdentifier => Identifier;
+    public virtual Container? Inventory => null;
+
+    /// <summary>
+    /// Whether an item can enter this inventory through a certain face
+    /// </summary>
+    public virtual bool CanInsert(int slot, ItemStack item, byte face) => Inventory?.CanContain(slot, item) == true;
+
+    /// <summary>
+    /// Whether an item can leave this inventory through a certain face
+    /// </summary>
+    public virtual bool CanExtract(int slot, ItemStack item, byte face) => true;
 
     public abstract void OnRead(CompoundTag nbt);
     public abstract void OnWrite(CompoundTag nbt);
@@ -30,7 +42,8 @@ public abstract class BlockActor(BlockActorContext context) {
     public virtual bool DropsInCreative => false;
     public virtual ItemStack? CreateDrop() => null;
 
-    public virtual CompoundTag CreateItemData() {
+    public virtual CompoundTag CreateItemData()
+    {
         CompoundTag itemData = new();
         OnWrite(itemData);
         itemData.Remove("id");
@@ -40,11 +53,13 @@ public abstract class BlockActor(BlockActorContext context) {
         return itemData;
     }
 
-    protected static void ReadItems(CompoundTag nbt, Container container) {
+    protected static void ReadItems(CompoundTag nbt, Container container)
+    {
         if (nbt.Get<ListTag>("Items") is not { } items)
             return;
 
-        foreach (Tag entry in items.Value) {
+        foreach (Tag entry in items.Value)
+        {
             if (entry is not CompoundTag item ||
                 !item.TryGet("Slot", out ByteTag? slot) ||
                 !item.TryGet("Name", out StringTag? name) ||
@@ -61,9 +76,11 @@ public abstract class BlockActor(BlockActorContext context) {
         }
     }
 
-    protected static ListTag WriteItems(Container container) {
+    protected static ListTag WriteItems(Container container)
+    {
         ListTag items = new() { ElementType = TagType.Compound };
-        for (int slot = 0; slot < container.ContainerSize; slot++) {
+        for (int slot = 0; slot < container.ContainerSize; slot++)
+        {
             if (container.GetItem(slot) is not { } stack)
                 continue;
 
@@ -79,7 +96,8 @@ public abstract class BlockActor(BlockActorContext context) {
         return items;
     }
 
-    public void Update() {
+    public void Update()
+    {
         CompoundTag update = new();
         update.Add("id", new StringTag { Value = ActorIdentifier });
         update.Add("x", new IntTag { Value = Position.X });
@@ -90,7 +108,8 @@ public abstract class BlockActor(BlockActorContext context) {
             Nbt.Add(name, tag);
         MarkDirty();
 
-        Dimension.Broadcast(new BlockActorDataPacket {
+        Dimension.Broadcast(new BlockActorDataPacket
+        {
             Position = Position,
             ActorData = update
         }, Position.X >> 4, Position.Z >> 4);
