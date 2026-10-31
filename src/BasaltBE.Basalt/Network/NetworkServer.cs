@@ -31,7 +31,12 @@ namespace BasaltBE.Basalt.Network;
 
 public sealed class NetworkServer : IDisposable {
     private const int MaximumBatchLength = 4 * 1024 * 1024;
+    private const int MovementPacketCapacity = 64;
+    private const int LowPressureBatchTargetBytes = 1400;
+    private const int QueuePressureThresholdBytes = 16 * 1024;
+    private const int OutgoingBatchTargetBytes = 8 * 1024;
     internal const ushort CompressionThreshold = 512;
+
     private static readonly ConcurrentDictionary<Type, uint> packetIds = [];
     private readonly NethernetServer nethernet;
     internal readonly LoginHandler Login;
@@ -44,6 +49,7 @@ public sealed class NetworkServer : IDisposable {
     private readonly ConcurrentQueue<Player> removedPlayers = new();
     private readonly Lock rosterSync = new();
     private readonly ConcurrentDictionary<NethernetPeer, byte> compressionPeers = [];
+    private readonly ConcurrentDictionary<NethernetPeer, OutgoingPacketQueue> outgoingPackets = [];
     private int disposed;
 
     private readonly ConcurrentDictionary<NethernetPeer, InboundConnection> inbound = [];
@@ -52,6 +58,16 @@ public sealed class NetworkServer : IDisposable {
         internal int Messages;
         internal long Bytes;
         internal int Closed;
+    }
+
+    private sealed class OutgoingPacketQueue : IDisposable {
+        internal readonly PooledBufferStream Reliable = new(OutgoingBatchTargetBytes + MovementPacketCapacity);
+        internal readonly PooledBufferStream Unreliable = new(OutgoingBatchTargetBytes + MovementPacketCapacity);
+
+        public void Dispose() {
+            Reliable.Dispose();
+            Unreliable.Dispose();
+        }
     }
 
     public readonly EventEmitter Events = new();
@@ -98,16 +114,31 @@ public sealed class NetworkServer : IDisposable {
         nethernet.Start(OnMessage);
     }
 
-    public void SendPacket(
-        Player player,
-        DataPacket packet,
-        bool compress = true,
-        PacketCompressionAlgorithm method = PacketCompressionAlgorithm.ZLib
-    ) {
+    internal void SendPacket(Player player, DataPacket packet, bool reliable = true, bool immediate = false) {
         ArgumentNullException.ThrowIfNull(player);
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
             throw new PeerDisconnectedException(player.Peer);
-        SendPacket(player.Peer, player, packet, compress, method);
+        SendPacket(player.Peer, player, packet, true, PacketCompressionAlgorithm.ZLib,
+            reliability: reliable ? MessageReliability.Reliable : MessageReliability.Unreliable,
+            immediate: immediate);
+    }
+
+    internal void SendPacket(Player player, ReadOnlySpan<DataPacket> packets, bool reliable = true, bool immediate = false) {
+        if (packets.IsEmpty)
+            throw new ArgumentException("At least one packet is required.", nameof(packets));
+        ArgumentNullException.ThrowIfNull(player);
+        if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
+            throw new PeerDisconnectedException(player.Peer);
+        SendPacket(player.Peer, player, null, true, PacketCompressionAlgorithm.ZLib,
+            reliability: reliable ? MessageReliability.Reliable : MessageReliability.Unreliable,
+            immediate: immediate, packets: packets);
+    }
+
+    internal void SendPacket(Player player, DataPacket packet, bool compress, PacketCompressionAlgorithm method) {
+        ArgumentNullException.ThrowIfNull(player);
+        if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
+            throw new PeerDisconnectedException(player.Peer);
+        SendPacket(player.Peer, player, packet, compress, method, immediate: true);
     }
 
     internal void SendSerializedPacket(
@@ -120,7 +151,7 @@ public sealed class NetworkServer : IDisposable {
         ArgumentNullException.ThrowIfNull(player);
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
             throw new PeerDisconnectedException(player.Peer);
-        SendPacket(player.Peer, player, packet, compress, method, serializedPayload);
+        SendPacket(player.Peer, player, packet, compress, method, serializedPayload, immediate: true);
     }
 
     internal bool CompressionNegotiated(NethernetPeer peer) => compressionPeers.ContainsKey(peer);
@@ -166,10 +197,62 @@ public sealed class NetworkServer : IDisposable {
         if (!players.TryGetValue(player.Peer, out Player? current) || !ReferenceEquals(current, player))
             throw new PeerDisconnectedException(player.Peer);
 
+        FlushPackets(player);
         using Lock.Scope sync = player.Sync.EnterScope();
         if (player.Disposed)
             throw new ObjectDisposedException(nameof(Player));
         nethernet.Send(player.Peer, payload, MessageReliability.Reliable);
+    }
+
+    internal void FlushPackets(Player player) {
+        ArgumentNullException.ThrowIfNull(player);
+        using Lock.Scope sync = player.Sync.EnterScope();
+        if (player.Disposed || !outgoingPackets.TryGetValue(player.Peer, out OutgoingPacketQueue? queue))
+            return;
+
+        FlushPackets(player, queue);
+    }
+
+    private void FlushPackets(Player player, OutgoingPacketQueue queue) {
+        if (queue.Reliable.Length > 0) {
+            SendBatch(player.Peer, queue.Reliable.WrittenMemory, true, true,
+                PacketCompressionAlgorithm.ZLib, null, MessageReliability.Reliable);
+            queue.Reliable.Clear();
+        }
+        if (queue.Unreliable.Length > 0) {
+            SendBatch(player.Peer, queue.Unreliable.WrittenMemory, true, true,
+                PacketCompressionAlgorithm.ZLib, null, MessageReliability.Unreliable);
+            queue.Unreliable.Clear();
+        }
+    }
+
+    private void QueuePackets(Player player, ReadOnlyMemory<byte> packets, MessageReliability reliability) {
+        OutgoingPacketQueue queue = outgoingPackets.GetOrAdd(player.Peer, static _ => new OutgoingPacketQueue());
+        PooledBufferStream pending = reliability == MessageReliability.Unreliable ? queue.Unreliable : queue.Reliable;
+        ulong bufferedBytes = nethernet.GetOutgoingBufferedBytes(player.Peer);
+        int batchTargetBytes = bufferedBytes < QueuePressureThresholdBytes
+            ? LowPressureBatchTargetBytes
+            : OutgoingBatchTargetBytes;
+        if (pending.Length + packets.Length > batchTargetBytes) {
+            if (pending.Length > 0) {
+                SendBatch(player.Peer, pending.WrittenMemory, true, true,
+                    PacketCompressionAlgorithm.ZLib, null, reliability);
+                pending.Clear();
+            }
+
+            if (packets.Length > batchTargetBytes) {
+                SendBatch(player.Peer, packets, true, true,
+                    PacketCompressionAlgorithm.ZLib, null, reliability);
+                return;
+            }
+        }
+
+        pending.Write(packets.Span);
+        if (pending.Length >= batchTargetBytes) {
+            SendBatch(player.Peer, pending.WrittenMemory, true, true,
+                PacketCompressionAlgorithm.ZLib, null, reliability);
+            pending.Clear();
+        }
     }
 
     internal bool PeerConnected(NethernetPeer peer) =>
@@ -216,6 +299,8 @@ public sealed class NetworkServer : IDisposable {
         if (!players.TryRemove(peer, out Player? removed) || !ReferenceEquals(player, removed))
             return;
 
+        if (outgoingPackets.TryRemove(peer, out OutgoingPacketQueue? queue))
+            queue.Dispose();
         Server.PlayerData.Save(player);
         player.OnDespawn();
         player.World.RemovePlayer(player);
@@ -254,7 +339,7 @@ public sealed class NetworkServer : IDisposable {
                     continue;
                 try {
                     recipient.GetTrait<Entities.Traits.PlayerChunkRenderingTrait>()?.RemoveEntity(removed);
-                    SendPacket(recipient, removal);
+                    recipient.SendPacket(removal);
                 }
                 catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                     // Remaining ppl still need the removal.
@@ -285,7 +370,7 @@ public sealed class NetworkServer : IDisposable {
         for (int index = 0; index < existing.Length; index++)
             roster.Entries[index] = existing[index].ListEntry;
 
-        SendPacket(player, roster);
+        player.SendPacket(roster);
         player.Listed = true;
 
         PlayerListPacket addition = new() { Entries = [player.ListEntry] };
@@ -307,6 +392,9 @@ public sealed class NetworkServer : IDisposable {
         Login.Dispose();
         foreach (NethernetPeer peer in players.Keys)
             RemovePlayer(peer);
+        foreach (OutgoingPacketQueue queue in outgoingPackets.Values)
+            queue.Dispose();
+        outgoingPackets.Clear();
         removedPlayers.Clear();
         compressionPeers.Clear();
         inbound.Clear();
@@ -471,48 +559,112 @@ public sealed class NetworkServer : IDisposable {
     private void SendPacket(
         NethernetPeer peer,
         Player? player,
-        DataPacket packet,
+        DataPacket? packet,
         bool compress,
         PacketCompressionAlgorithm method,
         ReadOnlyMemory<byte>? serializedPayload = null,
-        Player[]? recipients = null
+        Player[]? recipients = null,
+        MessageReliability reliability = MessageReliability.Reliable,
+        int packetBufferCapacity = MaximumBatchLength,
+        bool immediate = false,
+        ReadOnlySpan<DataPacket> packets = default
     ) {
         using ProfilerZone sendZone = Profiler.BeginZone("Network.SendPacket");
-        ArgumentNullException.ThrowIfNull(packet);
-        uint packetId = GetPacketId(packet);
+        if (packet is null && packets.IsEmpty)
+            throw new ArgumentException("At least one packet is required.", nameof(packet));
+        if (packet is not null && !packets.IsEmpty)
+            throw new ArgumentException("Send either one packet or a packet span.", nameof(packets));
+        if (serializedPayload is not null && packet is null)
+            throw new ArgumentException("Serialized payloads require a packet.", nameof(serializedPayload));
 
         using Lock.Scope sync = player is null || recipients is not null ? default : player.Sync.EnterScope();
         if (recipients is null && player?.Disposed == true)
             throw new ObjectDisposedException(nameof(Player));
-        using BinaryStream packetStream = BinaryStream.Rent(MaximumBatchLength);
+        using BinaryStream packetStream = BinaryStream.Rent(packetBufferCapacity);
+        int writtenLength = 0;
+        try {
+            int batchLength = 0;
+            int packetCount = packet is null ? packets.Length : 1;
+            for (int index = 0; index < packetCount; index++) {
+                DataPacket currentPacket = packet ?? packets[index];
+                if (batchLength > MaximumBatchLength - 5)
+                    throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
+                int bodyOffset = batchLength + 5;
+                packetStream.Offset = bodyOffset;
+                using (Profiler.BeginZone("Network.SerializePacket")) {
+                    BinaryWriter packetWriter = packetStream.GetWriter();
+                    packetWriter.WriteVarUInt(GetPacketId(currentPacket));
+                    if (serializedPayload is ReadOnlyMemory<byte> cachedPayload)
+                        packetWriter.WriteBytes(cachedPayload.Span);
+                    else
+                        currentPacket.Serialize(ref packetWriter);
+                }
+                int packetLength = packetStream.Offset - bodyOffset;
+                writtenLength = Math.Max(writtenLength, packetStream.Offset);
+                if (packetLength > MaximumBatchLength - batchLength - 5)
+                    throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
+                Logger.Scoped("Network").Debug(
+                    $"Sending Bedrock packet ({currentPacket.GetType().Name}, {packetLength} bytes) to {peer.ConnectionId}."
+                );
+
+                int prefixOffset = batchLength;
+                BinaryWriter batchWriter = new(packetStream.Buffer.Span, ref prefixOffset);
+                batchWriter.WriteVarUInt((uint)packetLength);
+                packetStream.Buffer.Span.Slice(bodyOffset, packetLength).CopyTo(packetStream.Buffer.Span[prefixOffset..]);
+                batchLength = prefixOffset + packetLength;
+                packetStream.Offset = batchLength;
+            }
+            ReadOnlyMemory<byte> payload = packetStream.Buffer[..batchLength];
+            bool compressionNegotiated = player is not null || CompressionNegotiated(peer);
+            if (player is not null && compressionNegotiated && compress && method == PacketCompressionAlgorithm.ZLib && !immediate) {
+                if (recipients is null && !packets.IsEmpty) {
+                    int offset = 0;
+                    BinaryReader reader = new(payload.Span, ref offset);
+                    while (reader.Remaining > 0) {
+                        int frameOffset = offset;
+                        uint packetLength = reader.ReadVarUInt();
+                        if (packetLength == 0 || packetLength > reader.Remaining)
+                            throw new InvalidDataException("The serialized packet batch is invalid.");
+                        offset += checked((int)packetLength);
+                        QueuePackets(player, payload.Slice(frameOffset, offset - frameOffset), reliability);
+                    }
+                }
+                else if (recipients is null)
+                    QueuePackets(player, payload, reliability);
+                else {
+                    foreach (Player recipient in recipients) {
+                        using Lock.Scope recipientSync = recipient.Sync.EnterScope();
+                        if (recipient.Disposed || !players.TryGetValue(recipient.Peer, out Player? current) ||
+                            !ReferenceEquals(current, recipient))
+                            continue;
+                        QueuePackets(recipient, payload, reliability);
+                    }
+                }
+            }
+            else {
+                if (player is not null && outgoingPackets.TryGetValue(peer, out OutgoingPacketQueue? queue))
+                    FlushPackets(player, queue);
+                SendBatch(peer, payload, compressionNegotiated, compress, method, recipients, reliability);
+            }
+        }
+        finally {
+            CryptographicOperations.ZeroMemory(packetStream.Buffer.Span[..Math.Max(packetStream.Offset, writtenLength)]);
+        }
+    }
+
+    private void SendBatch(
+        NethernetPeer peer,
+        ReadOnlyMemory<byte> payload,
+        bool compressionNegotiated,
+        bool compress,
+        PacketCompressionAlgorithm method,
+        Player[]? recipients,
+        MessageReliability reliability
+    ) {
         byte[]? markedBatch = null;
         PooledBufferStream? compressedBatch = null;
         int markedBatchLength = 0;
         try {
-            packetStream.Offset = 5;
-            using (Profiler.BeginZone("Network.SerializePacket")) {
-                BinaryWriter packetWriter = packetStream.GetWriter();
-                packetWriter.WriteVarUInt(packetId);
-                if (serializedPayload is ReadOnlyMemory<byte> cachedPayload)
-                    packetWriter.WriteBytes(cachedPayload.Span);
-                else
-                    packet.Serialize(ref packetWriter);
-            }
-            int packetLength = packetStream.Offset - 5;
-            if (packetLength > MaximumBatchLength - 5)
-                throw new InvalidDataException("Bedrock packet batch exceeds the configured limit.");
-            Logger.Scoped("Network").Debug(
-                $"Sending Bedrock packet 0x{packetId:X} ({packet.GetType().Name}, {packetLength} bytes) to {peer.ConnectionId}."
-            );
-
-            int batchOffset = 0;
-            BinaryWriter batchWriter = new(packetStream.Buffer.Span, ref batchOffset);
-            batchWriter.WriteVarUInt((uint)packetLength);
-            packetStream.Buffer.Span[5..packetStream.Offset].CopyTo(packetStream.Buffer.Span[batchOffset..]);
-            int batchLength = batchOffset + packetLength;
-            ReadOnlyMemory<byte> payload = packetStream.Buffer[..batchLength];
-            bool compressionNegotiated = player is not null || CompressionNegotiated(peer);
-
             if (compressionNegotiated && compress) {
                 using ProfilerZone compressionZone = Profiler.BeginZone("Network.CompressPacket");
                 if (method == PacketCompressionAlgorithm.Snappy)
@@ -540,21 +692,20 @@ public sealed class NetworkServer : IDisposable {
                 }
             }
 
-            using (Profiler.BeginZone("Network.TransportSend")) {
-                if (recipients is null) {
-                    nethernet.Send(peer, payload, MessageReliability.Reliable);
-                }
-                else {
-                    foreach (Player recipient in recipients) {
-                        using Lock.Scope recipientSync = recipient.Sync.EnterScope();
-                        if (recipient.Disposed || !players.TryGetValue(recipient.Peer, out Player? current) ||
-                            !ReferenceEquals(current, recipient))
-                            continue;
-                        try {
-                            nethernet.Send(recipient.Peer, payload, MessageReliability.Reliable);
-                        }
-                        catch (PeerDisconnectedException) {
-                        }
+            using ProfilerZone transportZone = Profiler.BeginZone("Network.TransportSend");
+            if (recipients is null) {
+                nethernet.Send(peer, payload, reliability);
+            }
+            else {
+                foreach (Player recipient in recipients) {
+                    using Lock.Scope recipientSync = recipient.Sync.EnterScope();
+                    if (recipient.Disposed || !players.TryGetValue(recipient.Peer, out Player? current) ||
+                        !ReferenceEquals(current, recipient))
+                        continue;
+                    try {
+                        nethernet.Send(recipient.Peer, payload, reliability);
+                    }
+                    catch (PeerDisconnectedException) {
                     }
                 }
             }
@@ -565,7 +716,6 @@ public sealed class NetworkServer : IDisposable {
                 CryptographicOperations.ZeroMemory(markedBatch.AsSpan(0, markedBatchLength));
                 ArrayPool<byte>.Shared.Return(markedBatch);
             }
-            CryptographicOperations.ZeroMemory(packetStream.Buffer.Span[..packetStream.Offset]);
         }
     }
 

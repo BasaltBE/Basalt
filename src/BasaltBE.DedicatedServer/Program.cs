@@ -63,6 +63,7 @@ internal static class Program
             EntityPalette.RegisterTrait<EntityArmorTrait>();
             EntityPalette.RegisterTrait<PlayerToolTrait>();
             EntityPalette.RegisterTrait<EntityMovementTrait>();
+            EntityPalette.RegisterTrait<PrimedTntTrait>();
             EntityPalette.RegisterTrait<EntityHealthTrait>();
             EntityPalette.RegisterTrait<PlayerHungerTrait>();
             EntityPalette.RegisterTrait<PlayerExperienceTrait>();
@@ -80,6 +81,7 @@ internal static class Program
             BlockPalette.RegisterTrait<PistonTrait>();
             BlockPalette.RegisterTrait<HopperTrait>();
             BlockPalette.RegisterTrait<DispenserTrait>();
+            BlockPalette.RegisterTrait<TntTrait>();
             BlockPalette.RegisterTrait<DaylightDetectorTrait>();
             BlockPalette.RegisterTrait<LeverTrait>();
             BlockPalette.RegisterTrait<ButtonTrait>(BlockPalette.Types
@@ -145,6 +147,7 @@ internal static class Program
             server.Commands.Register(new GameModeCommand());
             server.Commands.Register(new GameRuleCommand());
             server.Commands.Register(new WorldsCommand());
+            server.Commands.Register(new FillCommand());
 
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
                 .Select(argument => argument[11..]).ToArray();

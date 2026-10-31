@@ -195,7 +195,8 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
             peer,
             options.MaximumPacketLength,
             options.ReliableFragmentLength,
-            options.UnreliableFragmentLength
+            options.UnreliableFragmentLength,
+            options.MaximumQueuedSendBytes
         );
         try {
             SetDescriptionResultEnum remote = peer.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offer });

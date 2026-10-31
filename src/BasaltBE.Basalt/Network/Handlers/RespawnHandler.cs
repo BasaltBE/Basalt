@@ -30,7 +30,7 @@ internal sealed class RespawnHandler {
         if (player.Network.Server.Events.HasSubscribers<PlayerRespawnEvent>())
             player.Network.Server.Events.Emit(new PlayerRespawnEvent(player));
 
-        player.Network.SendPacket(player, new RespawnPacket {
+        player.SendPacket(new RespawnPacket {
             Position = player.GetHeadPosition(),
             State = PlayerRespawnState.ReadyToSpawn,
             RuntimeId = player.RuntimeId

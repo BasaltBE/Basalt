@@ -75,7 +75,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
             offers = [];
             offeredItem = null;
             optionsSent = true;
-            player.Network.SendPacket(player, new PlayerEnchantOptionsPacket());
+            player.SendPacket(new PlayerEnchantOptionsPacket());
             return;
         }
         if (offeredItem?.CanStackWith(item) == true && optionsSent)
@@ -85,7 +85,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         if (item.Enchanted) {
             offers = [];
             optionsSent = true;
-            player.Network.SendPacket(player, new PlayerEnchantOptionsPacket());
+            player.SendPacket(new PlayerEnchantOptionsPacket());
             return;
         }
 
@@ -105,7 +105,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         if (eligible.Count == 0 || !isBook && !item.Type.PropertiesPayload.Components.Contains("minecraft:enchantable")) {
             offers = [];
             optionsSent = true;
-            player.Network.SendPacket(player, new PlayerEnchantOptionsPacket());
+            player.SendPacket(new PlayerEnchantOptionsPacket());
             return;
         }
 
@@ -153,7 +153,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         }
         offers = [.. currentOffers];
         optionsSent = true;
-        player.Network.SendPacket(player, new PlayerEnchantOptionsPacket { Options = [.. options] });
+        player.SendPacket(new PlayerEnchantOptionsPacket { Options = [.. options] });
     }
 
     internal ItemStackResponseInfo ProcessRequest(ItemStackRequestData request, out string? failureReason) {

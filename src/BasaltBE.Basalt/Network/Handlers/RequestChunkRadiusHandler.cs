@@ -19,7 +19,7 @@ internal sealed class RequestChunkRadiusHandler(NetworkServer network) {
             ChunkViewMath.MaxChebyshevForClientCircle(clientMaxCircle)
         );
         player.ChunkRadius = Math.Clamp(packet.ChunkRadius, 0, maxChebyshevRadius);
-        network.SendPacket(player, new ChunkRadiusUpdatedPacket {
+        player.SendPacket(new ChunkRadiusUpdatedPacket {
             ChunkRadius = ChunkViewMath.SquareToCircle(player.ChunkRadius)
         });
     }

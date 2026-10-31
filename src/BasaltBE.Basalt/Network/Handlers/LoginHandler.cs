@@ -159,7 +159,7 @@ internal sealed class LoginHandler(NetworkServer network) {
 
         try {
             network.AddPlayer(player);
-            network.SendPacket(player, new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
+            player.SendPacket(new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
             network.Server.Events.Emit(new PlayerJoinEvent(player));
             Logger.Scoped("Network").Info($"Player {player.Username} Logged in.");
         }

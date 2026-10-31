@@ -9,5 +9,6 @@ public enum EntityDamageCause {
     Void,
     Fall,
     Starvation,
-    Unknown
+    Unknown,
+    Explosion
 }

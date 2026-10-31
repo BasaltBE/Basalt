@@ -15,6 +15,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
     private readonly int maximumPacketLength;
     private readonly int reliableFragmentLength;
     private readonly int unreliableFragmentLength;
+    private readonly int maximumQueuedSendBytes;
     private readonly Lock receiveSync = new();
     private readonly SemaphoreSlim sendLock = new(1, 1);
     private byte[] fragments = [];
@@ -25,6 +26,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
     private int channelCount;
     private int closed;
     private int disposed;
+    private long queuedSendBytes;
     private readonly TaskCompletionSource<bool> channelsReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource<Exception?> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -32,13 +34,15 @@ public sealed class NethernetConnection : IAsyncDisposable {
         RTCPeerConnection peer,
         int maximumPacketLength,
         int reliableFragmentLength,
-        int unreliableFragmentLength
+        int unreliableFragmentLength,
+        int maximumQueuedSendBytes = 16 * 1024 * 1024
     ) {
         this.peer = peer;
         Peer = default;
         this.maximumPacketLength = maximumPacketLength;
         this.reliableFragmentLength = reliableFragmentLength;
         this.unreliableFragmentLength = unreliableFragmentLength;
+        this.maximumQueuedSendBytes = maximumQueuedSendBytes;
         peer.ondatachannel += Attach;
         peer.onconnectionstatechange += state => {
             if (state == RTCPeerConnectionState.failed) End(new IOException("WebRTC peer connection failed."));
@@ -48,7 +52,21 @@ public sealed class NethernetConnection : IAsyncDisposable {
 
     internal Task ChannelsReady => channelsReady.Task;
     internal Task<Exception?> Completion => completion.Task;
-    internal ulong OutgoingBufferedBytes => reliable?.bufferedAmount ?? 0;
+    internal ulong OutgoingBufferedBytes => (ulong)Math.Max(0, Volatile.Read(ref queuedSendBytes)) +
+        (reliable?.bufferedAmount ?? 0) + (unreliable?.bufferedAmount ?? 0);
+
+    internal bool ReserveQueuedSendBytes(int length) {
+        long current = Volatile.Read(ref queuedSendBytes);
+        while (current + length <= maximumQueuedSendBytes) {
+            long reserved = Interlocked.CompareExchange(ref queuedSendBytes, current + length, current);
+            if (reserved == current)
+                return true;
+            current = reserved;
+        }
+        return false;
+    }
+
+    internal void ReleaseQueuedSendBytes(int length) => Interlocked.Add(ref queuedSendBytes, -length);
 
     internal Action<NethernetMessage>? MessageHandler { get; set; }
     internal void Close(Exception error) => End(error);
@@ -57,7 +75,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref closed) != 0, this);
         int fragmentLength = reliability == MessageReliability.Reliable ? reliableFragmentLength : unreliableFragmentLength;
         RTCDataChannel channel = reliability == MessageReliability.Reliable ? reliable! : unreliable!;
-        int fragmentCount = Math.Max(1, (payload.Length + fragmentLength - 1) / fragmentLength);
+        int fragmentCount = Math.Max(1, 1 + (payload.Length - 1) / fragmentLength);
         if (payload.Length > maximumPacketLength || fragmentCount > 256 ||
             (reliability == MessageReliability.Unreliable && fragmentCount != 1))
             throw new ArgumentOutOfRangeException(nameof(payload), "The message exceeds the NetherNet framing limit.");

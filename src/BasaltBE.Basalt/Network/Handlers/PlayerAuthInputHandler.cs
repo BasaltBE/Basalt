@@ -111,7 +111,7 @@ internal sealed class PlayerAuthInputHandler {
                 correction.Rotation.Y = player.Rotation.Y;
                 correction.Tick = packet.ClientTick.Tick;
                 correction.OnGround = movement.VerticalCollision && movement.Motion.Y <= 0;
-                player.Network.SendPacket(player, correction);
+                player.SendPacket(correction);
             }
             finally {
                 movementCorrection ??= correction;
@@ -131,7 +131,7 @@ internal sealed class PlayerAuthInputHandler {
                 sneaking = player.Flags.Get(ActorFlag.Sneaking);
                 bool dirty = player.Flags.Dirty;
                 try {
-                    player.Network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, packet.ClientTick.Tick));
+                    player.SendPacket(player.Flags.CreateUpdate(player.RuntimeId, packet.ClientTick.Tick));
                 }
                 finally {
                     player.Flags.Dirty |= dirty;
@@ -234,7 +234,7 @@ internal sealed class PlayerAuthInputHandler {
                     $"Rejected item stack request {request.ClientRequestId} from {player.Username}: {response.Result}" +
                     (failureReason is null ? "." : $" ({failureReason}).")
                 );
-            player.Network.SendPacket(player, new ItemStackResponsePacket {
+            player.SendPacket(new ItemStackResponsePacket {
                 Responses = [response]
             });
         }
@@ -573,7 +573,7 @@ internal sealed class PlayerAuthInputHandler {
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = 0;
             try {
-                player.Network.SendPacket(player, update);
+                player.SendPacket(update);
             }
             catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }

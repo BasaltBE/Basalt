@@ -115,7 +115,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
                     dimension.Broadcast(new SetActorDataPacket {
                         ActorRuntimeId = Entity.RuntimeId,
                         ActorData = [CreateExperienceValue()],
-                        Tick = dimension.TickValue
+                        Tick = 0
                     }, Entity);
                     dimension.Broadcast(new RemoveActorPacket { ActorId = other.UniqueId }, other);
                     other.Despawn();

@@ -12,4 +12,8 @@ internal sealed class EntityRenderState(Entity entity) {
     internal float Yaw = entity.Rotation.Y;
     internal float HeadYaw = entity.HeadRotation;
     internal bool Grounded = entity.GetTrait<EntityMovementTrait>()?.Grounded ?? false;
+    internal int TicksSinceMovementUpdate;
+    internal float MotionX = entity.GetTrait<EntityMovementTrait>()?.Motion.X ?? 0;
+    internal float MotionY = entity.GetTrait<EntityMovementTrait>()?.Motion.Y ?? 0;
+    internal float MotionZ = entity.GetTrait<EntityMovementTrait>()?.Motion.Z ?? 0;
 }

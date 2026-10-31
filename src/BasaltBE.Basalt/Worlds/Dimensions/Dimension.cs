@@ -177,9 +177,9 @@ public sealed partial class Dimension : IDisposable {
             if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
                 continue;
             try {
-                player.Network.SendPacket(player, packet);
+                player.SendPacket(packet);
                 if (additionalPacket is not null)
-                    player.Network.SendPacket(player, additionalPacket);
+                    player.SendPacket(additionalPacket);
             }
             catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }
@@ -323,7 +323,7 @@ public sealed partial class Dimension : IDisposable {
             float z = player.Position.Z - position.Z;
             if (x * x + y * y + z * z <= radiusSquared) {
                 try {
-                    player.Network.SendPacket(player, packet);
+                    player.SendPacket(packet);
                 }
                 catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 }
@@ -339,7 +339,7 @@ public sealed partial class Dimension : IDisposable {
                 !ReferenceEquals(viewer, entity) && viewer.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(entity) != true)
                 continue;
             try {
-                viewer.Network.SendPacket(viewer, packet);
+                viewer.SendPacket(packet);
             }
             catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }
@@ -349,7 +349,7 @@ public sealed partial class Dimension : IDisposable {
     internal void Broadcast(DataPacket packet, Player? exclude) {
         foreach (Player player in Volatile.Read(ref players)) {
             if (!player.Disposed && !ReferenceEquals(player, exclude))
-                player.Network.SendPacket(player, packet);
+                player.SendPacket(packet);
         }
     }
 
@@ -533,7 +533,7 @@ public sealed partial class Dimension : IDisposable {
         UpdateNeighbor(x, y - 1, z);
     }
 
-    void UpdateNeighbor(int x, int y, int z) {
+    internal void UpdateNeighbor(int x, int y, int z) {
         if (!BlockPalette.OnNeighborUpdate(this, x, y, z))
             return;
 
@@ -906,6 +906,18 @@ public sealed partial class Dimension : IDisposable {
         }
 
         TickStorageSaves();
+
+        foreach (Player player in currentPlayers) {
+            if (player.Disposed)
+                continue;
+
+            try {
+                player.Network.FlushPackets(player);
+            }
+            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                player.Network.RemovePlayer(player.Peer);
+            }
+        }
     }
 
     static long GetKey(int x, int z) => ((long)x << 32) | (uint)z;

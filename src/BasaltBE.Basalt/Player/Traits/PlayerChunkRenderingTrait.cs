@@ -6,6 +6,7 @@ using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Logging;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
@@ -15,11 +16,16 @@ namespace BasaltBE.Basalt.Entities.Traits;
 
 [EntityTraitAppliesTo(Identifiers = ["minecraft:player"])]
 public sealed class PlayerChunkRenderingTrait : EntityTrait {
+    static readonly ScopedLogger Log = Logger.Scoped("Network");
     const int ChunksPerTick = 64;
     const int PendingChecksPerTick = ChunksPerTick * 4;
-    const ulong MaximumOutgoingBufferedBytes = 128 * 1024;
+    const int MovementPacketsPerBatch = 2048;
+    const ulong MaximumOutgoingBufferedBytes = 16 * 1024;
     const int ChunkDataCapacity = 64 * 1024;
     const int MaximumChunkDataCapacity = 4 * 1024 * 1024 - 128;
+    const float TntPositionChangeSquared = 0.0001f;
+    const float TntRotationChangeSquared = 1f;
+    const float TntMotionStopSquared = 0.0001f;
     [ThreadStatic]
     static ChunkSendResources? chunkSendResources;
 
@@ -33,8 +39,10 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     HashSet<ulong> visibleEntityIds = [];
     readonly List<ulong> removedEntities = [];
     readonly List<Entity> nearbyEntities = [];
+    readonly List<DataPacket> movementPackets = new(MovementPacketsPerBatch);
+    readonly Stack<MoveActorDeltaPacket> movementPacketPool = [];
+    readonly Stack<SetActorMotionPacket> motionPacketPool = [];
     readonly Action<DataPacket> sendEntityPacket;
-    readonly MoveActorAbsolutePacket actorMovement = new();
     ulong renderPass;
     readonly BlockPos publisherPosition = new();
     readonly NetworkChunkPublisherUpdatePacket publisherPacket = new();
@@ -51,10 +59,11 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     int publisherViewDistance = -1;
     bool started;
     ulong chunkSendBlockedTick;
+    long nextQueuePressureLog;
 
     public PlayerChunkRenderingTrait(Entity entity) : base(entity) {
         player = entity as Player ?? throw new ArgumentException("Player chunk rendering requires a Player entity.", nameof(entity));
-        sendEntityPacket = packet => player.Network.SendPacket(player, packet);
+        sendEntityPacket = packet => player.SendPacket(packet);
     }
 
     public override void OnSpawn() => Volatile.Write(ref spawnReady, 1);
@@ -138,6 +147,15 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             entities = player.Dimension.GetEntities();
         }
         UpdateEntities(entities, sendEntityPacket);
+
+        ulong outgoingBufferedBytes = player.Network.GetOutgoingBufferedBytes(player);
+        if (outgoingBufferedBytes >= MaximumOutgoingBufferedBytes) {
+            long now = Stopwatch.GetTimestamp();
+            if (now >= nextQueuePressureLog) {
+                Log.Info($"Outgoing transport queue for {player.Username}: {outgoingBufferedBytes} bytes.");
+                nextQueuePressureLog = now + Stopwatch.Frequency;
+            }
+        }
     }
 
     internal void UpdateEntities(ReadOnlySpan<Entity> entities, Action<DataPacket> send) {
@@ -175,7 +193,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                     send(new SetActorDataPacket {
                         ActorRuntimeId = other.RuntimeId,
                         ActorData = flags,
-                        Tick = player.Dimension.TickValue
+                        Tick = other.GetTrait<EntityMovementTrait>()?.InputTick ?? 0
                     });
                 }
                 else if (entity is ItemEntity item) {
@@ -189,50 +207,129 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                     });
                 }
                 else {
+                    PrimedTntTrait? primedTnt = entity.GetTrait<PrimedTntTrait>();
+                    Vec3 position = entity.Position;
+                    if (primedTnt is not null)
+                        position = new Vec3 { X = entity.Position.X, Y = entity.Position.Y + 0.5f, Z = entity.Position.Z };
+
                     send(new AddActorPacket {
                         ActorId = entity.UniqueId,
                         RuntimeId = entity.RuntimeId,
                         ActorType = entity.Type.Identifier,
-                        Position = entity.Position,
+                        Position = position,
                         Velocity = entity.GetTrait<EntityMovementTrait>()?.Motion ?? new Vec3(),
                         Rotation = entity.Rotation,
                         HeadRotation = entity.HeadRotation,
                         BodyRotation = entity.Rotation.Y,
                         Attributes = entity.Attributes.CreateSnapshot(),
-                        ActorData = entity switch {
-                            FallingBlockEntity fallingBlock => [.. entity.Flags.CreateSnapshot(), fallingBlock.CreateBlockVariant()],
-                            _ when entity.GetTrait<ExperienceOrbTrait>() is { } experienceOrb =>
-                                [.. entity.Flags.CreateSnapshot(), experienceOrb.CreateExperienceValue()],
-                            _ => entity.Flags.CreateSnapshot()
-                        }
+                        ActorData = primedTnt is not null
+                            ? [.. entity.Flags.CreateSnapshot(), primedTnt.CreateFuseTime()]
+                            : entity switch {
+                                FallingBlockEntity fallingBlock => [.. entity.Flags.CreateSnapshot(), fallingBlock.CreateBlockVariant()],
+                                _ when entity.GetTrait<ExperienceOrbTrait>() is { } experienceOrb =>
+                                    [.. entity.Flags.CreateSnapshot(), experienceOrb.CreateExperienceValue()],
+                                _ => entity.Flags.CreateSnapshot()
+                            }
                     });
                 }
                 state = new EntityRenderState(entity);
                 renderedEntities.Add(entity.RuntimeId, state);
                 membershipChanged = true;
             }
-            else if (entity is not Player && (state.X != entity.Position.X || state.Y != entity.Position.Y ||
-                state.Z != entity.Position.Z || state.Pitch != entity.Rotation.X || state.Yaw != entity.Rotation.Y ||
-                state.HeadYaw != entity.HeadRotation ||
-                state.Grounded != (entity.GetTrait<EntityMovementTrait>()?.Grounded ?? false))) {
+            else if (entity is not Player) {
+                bool isTnt = entity.Type?.Identifier == "minecraft:tnt";
+                int movementUpdateInterval = Math.Max(entity.MovementUpdateInterval, 1);
+                if (state.TicksSinceMovementUpdate < movementUpdateInterval)
+                    state.TicksSinceMovementUpdate++;
+
                 EntityMovementTrait? movement = entity.GetTrait<EntityMovementTrait>();
-                actorMovement.MoveData.ActorRuntimeId = entity.RuntimeId;
-                actorMovement.MoveData.Header = movement?.Grounded == true ? (byte)1 : (byte)0;
-                actorMovement.MoveData.Position = entity.Position;
-                actorMovement.MoveData.RotationX = unchecked((byte)(entity.Rotation.X * 256 / 360));
-                actorMovement.MoveData.RotationY = unchecked((byte)(entity.Rotation.Y * 256 / 360));
-                actorMovement.MoveData.RotationYHead = unchecked((byte)(entity.HeadRotation * 256 / 360));
-                send(actorMovement);
-                state.X = entity.Position.X;
-                state.Y = entity.Position.Y;
-                state.Z = entity.Position.Z;
-                state.Pitch = entity.Rotation.X;
-                state.Yaw = entity.Rotation.Y;
-                state.HeadYaw = entity.HeadRotation;
-                state.Grounded = movement?.Grounded ?? false;
+                float positionDeltaX = entity.Position.X - state.X;
+                float positionDeltaY = entity.Position.Y - state.Y;
+                float positionDeltaZ = entity.Position.Z - state.Z;
+                float rotationDeltaX = entity.Rotation.X - state.Pitch;
+                float rotationDeltaY = entity.Rotation.Y - state.Yaw;
+                float headRotationDelta = entity.HeadRotation - state.HeadYaw;
+                float positionDifference = positionDeltaX * positionDeltaX + positionDeltaY * positionDeltaY + positionDeltaZ * positionDeltaZ;
+                float rotationDifference = rotationDeltaX * rotationDeltaX + rotationDeltaY * rotationDeltaY + headRotationDelta * headRotationDelta;
+                bool positionChanged = isTnt
+                    ? positionDifference > TntPositionChangeSquared
+                    : positionDifference > 0;
+                bool rotationChanged = isTnt
+                    ? rotationDifference > TntRotationChangeSquared
+                    : rotationDifference > 0;
+                bool grounded = movement?.Grounded ?? false;
+                bool movementChanged = positionChanged || rotationChanged || state.Grounded != grounded;
+                bool movementUpdate = state.TicksSinceMovementUpdate >= movementUpdateInterval && (movementChanged || isTnt);
+
+                if (movementUpdate) {
+                    MoveActorDeltaPacket movementPacket = movementPacketPool.TryPop(out MoveActorDeltaPacket? pooledMovement)
+                        ? pooledMovement
+                        : new();
+                    movementPacket.MoveData.ActorRuntimeId = entity.RuntimeId;
+                    movementPacket.MoveData.PositionX = isTnt || state.X != entity.Position.X ? entity.Position.X : null;
+                    movementPacket.MoveData.PositionY = isTnt || state.Y != entity.Position.Y
+                        ? entity.Position.Y + (isTnt ? 0.5f : 0)
+                        : null;
+                    movementPacket.MoveData.PositionZ = isTnt || state.Z != entity.Position.Z ? entity.Position.Z : null;
+                    movementPacket.MoveData.RotationX = state.Pitch != entity.Rotation.X
+                        ? unchecked((sbyte)(entity.Rotation.X * 256 / 360))
+                        : null;
+                    movementPacket.MoveData.RotationY = state.Yaw != entity.Rotation.Y
+                        ? unchecked((sbyte)(entity.Rotation.Y * 256 / 360))
+                        : null;
+                    movementPacket.MoveData.RotationYHead = state.HeadYaw != entity.HeadRotation
+                        ? unchecked((sbyte)(entity.HeadRotation * 256 / 360))
+                        : null;
+                    movementPacket.MoveData.IsOnGround = movement?.Grounded == true;
+                    movementPacket.MoveData.ForceMove = false;
+                    movementPacket.MoveData.ForceMoveLocalEntity = false;
+                    movementPacket.MoveData.ForceCompletion = false;
+                    movementPacket.MoveData.Ticks = 0;
+                    movementPackets.Add(movementPacket);
+                    state.X = entity.Position.X;
+                    state.Y = entity.Position.Y;
+                    state.Z = entity.Position.Z;
+                    state.Pitch = entity.Rotation.X;
+                    state.Yaw = entity.Rotation.Y;
+                    state.HeadYaw = entity.HeadRotation;
+                    state.Grounded = movement?.Grounded ?? false;
+                    state.TicksSinceMovementUpdate = 0;
+                }
+
+                if (movement is not null && (movementUpdate || isTnt)) {
+                    float motionX = movement.Motion.X;
+                    float motionY = movement.Motion.Y;
+                    float motionZ = movement.Motion.Z;
+                    float motionDeltaX = motionX - state.MotionX;
+                    float motionDeltaY = motionY - state.MotionY;
+                    float motionDeltaZ = motionZ - state.MotionZ;
+                    float motionDifference = motionDeltaX * motionDeltaX + motionDeltaY * motionDeltaY + motionDeltaZ * motionDeltaZ;
+                    float currentMotion = motionX * motionX + motionY * motionY + motionZ * motionZ;
+                    bool motionStopped = isTnt && motionDifference > TntMotionStopSquared && currentMotion <= TntMotionStopSquared;
+                    bool motionChanged = motionDifference > 1e-7f ||
+                        (motionDifference > 0 && motionX == 0 && motionY == 0 && motionZ == 0);
+                    if (isTnt ? movementUpdate || motionStopped : movementUpdate && motionChanged) {
+                        SetActorMotionPacket motionPacket = motionPacketPool.TryPop(out SetActorMotionPacket? pooledMotion)
+                            ? pooledMotion
+                            : new();
+                        motionPacket.TargetRuntimeId = entity.RuntimeId;
+                        motionPacket.Motion.X = motionX;
+                        motionPacket.Motion.Y = motionY;
+                        motionPacket.Motion.Z = motionZ;
+                        motionPacket.Tick = 0;
+                        movementPackets.Add(motionPacket);
+                        state.MotionX = motionX;
+                        state.MotionY = motionY;
+                        state.MotionZ = motionZ;
+                    }
+                }
             }
             state.Seen = renderPass;
+            if (movementPackets.Count >= MovementPacketsPerBatch)
+                FlushMovementPackets();
         }
+
+        FlushMovementPackets();
 
         removedEntities.Clear();
         foreach ((ulong runtimeId, EntityRenderState state) in renderedEntities) {
@@ -251,6 +348,24 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         }
         if (membershipChanged || removedEntities.Count != 0)
             Volatile.Write(ref visibleEntityIds, new HashSet<ulong>(renderedEntities.Keys));
+    }
+
+    void FlushMovementPackets() {
+        if (movementPackets.Count == 0)
+            return;
+
+        try {
+            player.SendPacket(CollectionsMarshal.AsSpan(movementPackets), reliable: false);
+        }
+        finally {
+            foreach (DataPacket packet in movementPackets) {
+                if (packet is MoveActorDeltaPacket movement)
+                    movementPacketPool.Push(movement);
+                else if (packet is SetActorMotionPacket motion)
+                    motionPacketPool.Push(motion);
+            }
+            movementPackets.Clear();
+        }
     }
 
     void RetryDeferredChunks() {
@@ -357,7 +472,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         publisherPosition.Z = (int)MathF.Floor(player.Position.Z);
         publisherPacket.Position = publisherPosition;
         publisherPacket.Radius = ChunkViewMath.PublisherRadiusBlocks(viewDistance);
-        player.Network.SendPacket(player, publisherPacket);
+        player.SendPacket(publisherPacket);
         publisherChunkX = chunkX;
         publisherChunkZ = chunkZ;
         publisherViewDistance = viewDistance;
@@ -409,7 +524,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         resources.Packet.CacheMetadata = [];
         resources.Packet.SerializedChunkData = ReadOnlyMemory<byte>.Empty;
         resources.Packet.IsClientBiomeUpdate = false;
-        player.Network.SendPacket(player, resources.Packet);
+        player.SendPacket(resources.Packet);
     }
 
     void SendChunk(Chunk chunk) {
@@ -452,7 +567,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         resources.Packet.SerializedChunkData = resources.Stream.Buffer[..resources.Stream.Offset];
         resources.Packet.IsClientBiomeUpdate = false;
         try {
-            player.Network.SendPacket(player, resources.Packet);
+            player.SendPacket(resources.Packet);
         }
         finally {
             resources.Packet.SerializedChunkData = ReadOnlyMemory<byte>.Empty;

@@ -22,6 +22,6 @@ internal sealed class ResourcePackChunkRequestHandler(NetworkServer network) {
             ChunkId = chunk,
             ByteOffset = (ulong)chunk * ResourcePackManager.ChunkSize,
             ChunkData = chunkData
-        }, method: PacketCompressionAlgorithm.None);
+        }, compress: true, method: PacketCompressionAlgorithm.None);
     }
 }

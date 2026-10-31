@@ -24,7 +24,7 @@ internal sealed class ClientCacheStatusHandler(NetworkServer network) {
             };
         }
 
-        network.SendPacket(player, new ResourcePacksInfoPacket {
+        player.SendPacket(new ResourcePacksInfoPacket {
             ResourcePackRequired = network.ResourcePacks.Required,
             WorldTemplateIdVersion = new PackIdVersion { Version = "0.0.0" },
             ResourcePacks = packs

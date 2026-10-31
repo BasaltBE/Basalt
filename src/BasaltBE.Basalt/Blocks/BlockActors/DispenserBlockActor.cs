@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.Traits;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
@@ -119,6 +120,20 @@ public class DispenserBlockActor : BlockActor {
     protected virtual bool Dispense(int slot) {
         if (Container.GetItem(slot) is not { } stored || facing < 0)
             return false;
+
+        if (this is not DropperBlockActor &&
+            stored.Type.Identifier is "minecraft:flint_and_steel" or "minecraft:fire_charge") {
+            int targetX = Position.X + facingOffset.X;
+            int targetY = Position.Y + facingOffset.Y;
+            int targetZ = Position.Z + facingOffset.Z;
+            if (TntTrait.Prime(Dimension, targetX, targetY, targetZ)) {
+                if (stored.Type.Identifier == "minecraft:fire_charge")
+                    Container.TakeItem(slot);
+                else
+                    stored.DamageDurability();
+                return true;
+            }
+        }
 
         if (stored.Type.PropertiesPayload.EntityPlacer?.GetValueOrDefault("entity") is { } entityIdentifier &&
             EntityPalette.Find(entityIdentifier) is { } entityType) {

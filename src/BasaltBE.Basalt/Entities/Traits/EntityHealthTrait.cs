@@ -195,7 +195,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                 }, Entity);
                 foreach (Player viewer in playerDimension.GetPlayers())
                     viewer.GetTrait<PlayerChunkRenderingTrait>()?.RemoveEntity(Entity);
-                player.Network.SendPacket(player, new RespawnPacket {
+                player.SendPacket(new RespawnPacket {
                     Position = playerDimension.SpawnPosition,
                     State = PlayerRespawnState.SearchingForSpawn,
                     RuntimeId = player.RuntimeId
@@ -299,14 +299,16 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
 
         SetActorMotionPacket packet = new() {
             TargetRuntimeId = Entity.RuntimeId,
-            Tick = dimension.TickValue
+            Tick = Entity is Player
+                ? movement.InputTick ?? 0
+                : 0
         };
         if (!movement.CalculateKnockback(source, packet.Motion))
             return;
 
         if (Entity is Player player) {
             dimension.Broadcast(packet, Entity, exclude: player);
-            player.Network.SendPacket(player, packet);
+            player.SendPacket(packet);
         }
         else {
             movement.Motion.X = packet.Motion.X;

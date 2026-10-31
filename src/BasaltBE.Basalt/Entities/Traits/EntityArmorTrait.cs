@@ -157,7 +157,7 @@ public sealed class EntityArmorTrait : EntityTrait {
 
         MobArmorEquipmentPacket packet = CreateEquipmentPacket();
         if (Entity is Player player)
-            player.Network.SendPacket(player, packet);
+            player.SendPacket(packet);
         dimension.Broadcast(packet, Entity);
     }
 }

@@ -246,7 +246,7 @@ public sealed class CommandRegistry(Server server) {
         Player player = request.Executor.Player!;
 
         try {
-            player.Network.SendPacket(player, new CommandOutputPacket {
+            player.SendPacket(new CommandOutputPacket {
                 Origin = request.Origin,
                 Output = new CommandOutput {
                     Type = "alloutput",

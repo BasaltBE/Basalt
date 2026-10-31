@@ -264,7 +264,7 @@ public class Container {
         };
 
         foreach (Player player in recipients)
-            player.Network.SendPacket(player, packet);
+            player.SendPacket(packet);
     }
 
     public void UpdateSlot(int slot) {
@@ -302,7 +302,7 @@ public class Container {
             Item = descriptor
         };
         foreach (Player player in recipients)
-            player.Network.SendPacket(player, packet);
+            player.SendPacket(packet);
     }
 
     public bool Open(Player player) {
@@ -325,7 +325,7 @@ public class Container {
 
         if (firstViewer)
             FirstViewerOpened?.Invoke();
-        player.Network.SendPacket(player, new ContainerOpenPacket {
+        player.SendPacket(new ContainerOpenPacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
             Position = GetPosition(),
@@ -354,7 +354,7 @@ public class Container {
 
         if (lastViewer)
             LastViewerClosed?.Invoke();
-        player.Network.SendPacket(player, new ContainerClosePacket {
+        player.SendPacket(new ContainerClosePacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
             ServerInitiatedClose = serverInitiated
@@ -430,7 +430,7 @@ public class Container {
             return;
         }
 
-        player.Network.SendPacket(player, new InventoryContentPacket {
+        player.SendPacket(new InventoryContentPacket {
             ContainerId = unchecked((uint)(sbyte)ContainerId),
             Slots = Array.ConvertAll(snapshot, static item => item?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor()),
             FullContainerName = GetFullContainerName(),

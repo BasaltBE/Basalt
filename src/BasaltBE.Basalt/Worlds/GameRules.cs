@@ -19,6 +19,7 @@ public sealed class GameRules {
     private bool keepInventory;
     private bool showCoordinates;
     private bool fallDamage = true;
+    private bool tntExplodes = true;
 
     internal GameRules(World world, byte[]? data) {
         this.world = world;
@@ -34,6 +35,7 @@ public sealed class GameRules {
                 worldData.Add("keepinventory", savedWorldData.Get<ByteTag>("keepinventory") ?? new ByteTag());
                 worldData.Add("showcoordinates", savedWorldData.Get<ByteTag>("showcoordinates") ?? new ByteTag());
                 worldData.Add("falldamage", savedWorldData.Get<ByteTag>("falldamage") ?? new ByteTag { Value = 1 });
+                worldData.Add("tntexplodes", savedWorldData.Get<ByteTag>("tntexplodes") ?? new ByteTag { Value = 1 });
                 if (savedWorldData.Get<LongTag>("Time") is { } savedTime)
                     worldData.Add("Time", savedTime);
                 if (savedWorldData.Get<LongTag>("currentTick") is { } savedCurrentTick)
@@ -50,6 +52,8 @@ public sealed class GameRules {
                 showCoordinates = showCoordinatesTag.Value != 0;
             if (worldData.Get<ByteTag>("falldamage") is { } fallDamageTag)
                 fallDamage = fallDamageTag.Value != 0;
+            if (worldData.Get<ByteTag>("tntexplodes") is { } tntExplodesTag)
+                tntExplodes = tntExplodesTag.Value != 0;
         }
         catch (Exception error) when (error is IOException or ArgumentException or IndexOutOfRangeException or OverflowException) {
             Logger.Scoped("Storage").Warn($"Could not load game rules for world {world.Identifier}: {error.Message}");
@@ -60,6 +64,7 @@ public sealed class GameRules {
         GameRule.KeepInventory => keepInventory,
         GameRule.ShowCoordinates => showCoordinates,
         GameRule.FallDamage => fallDamage,
+        GameRule.TntExplodes => tntExplodes,
         _ => throw new ArgumentOutOfRangeException(nameof(rule))
     };
 
@@ -77,6 +82,9 @@ public sealed class GameRules {
                 break;
             case GameRule.FallDamage:
                 fallDamage = value;
+                break;
+            case GameRule.TntExplodes:
+                tntExplodes = value;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(rule));
@@ -97,7 +105,7 @@ public sealed class GameRules {
         };
         foreach (Dimension dimension in world.Dimensions.Values) {
             foreach (Player player in dimension.GetPlayers())
-                player.Network.SendPacket(player, packet);
+                player.SendPacket(packet);
         }
 
         return true;
@@ -107,7 +115,8 @@ public sealed class GameRules {
         Rules = [
             CreatePacketRule(GameRule.KeepInventory, keepInventory),
             CreatePacketRule(GameRule.ShowCoordinates, showCoordinates),
-            CreatePacketRule(GameRule.FallDamage, fallDamage)
+            CreatePacketRule(GameRule.FallDamage, fallDamage),
+            CreatePacketRule(GameRule.TntExplodes, tntExplodes)
         ]
     };
 
@@ -118,6 +127,7 @@ public sealed class GameRules {
         worldData.Add("keepinventory", new ByteTag { Value = keepInventory ? (byte)1 : (byte)0 });
         worldData.Add("showcoordinates", new ByteTag { Value = showCoordinates ? (byte)1 : (byte)0 });
         worldData.Add("falldamage", new ByteTag { Value = fallDamage ? (byte)1 : (byte)0 });
+        worldData.Add("tntexplodes", new ByteTag { Value = tntExplodes ? (byte)1 : (byte)0 });
         worldData.Add("Time", new LongTag { Value = world.GameTime });
         worldData.Add("currentTick", new LongTag { Value = world.GameTime });
         using BinaryStream stream = BinaryStream.Rent(worldData.GetSize());
@@ -137,6 +147,7 @@ public sealed class GameRules {
         GameRule.KeepInventory => "keepinventory",
         GameRule.ShowCoordinates => "showcoordinates",
         GameRule.FallDamage => "falldamage",
+        GameRule.TntExplodes => "tntexplodes",
         _ => throw new ArgumentOutOfRangeException(nameof(rule))
     };
 }

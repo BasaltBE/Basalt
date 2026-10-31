@@ -126,7 +126,7 @@ internal sealed class BlockPickRequestHandler {
                 ContainerId = (byte)ContainerId.Inventory
             };
             inventory.Inventory.Update();
-            player.Network.SendPacket(player, equipment);
+            player.SendPacket(equipment);
             player.Dimension.Broadcast(equipment, player, exclude: player);
         }
     }

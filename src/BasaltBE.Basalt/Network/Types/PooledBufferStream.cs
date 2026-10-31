@@ -13,6 +13,13 @@ internal sealed class PooledBufferStream : Stream {
     }
 
     internal ReadOnlyMemory<byte> WrittenMemory => buffer.AsMemory(0, length);
+
+    internal void Clear() {
+        ObjectDisposedException.ThrowIf(buffer.Length == 0, this);
+        CryptographicOperations.ZeroMemory(buffer.AsSpan(0, length));
+        length = 0;
+    }
+
     public override bool CanRead => false;
     public override bool CanSeek => false;
     public override bool CanWrite => buffer.Length != 0;

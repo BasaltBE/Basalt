@@ -36,7 +36,7 @@ internal sealed class ItemStackRequestHandler {
                 );
         }
 
-        player.Network.SendPacket(player, new ItemStackResponsePacket {
+        player.SendPacket(new ItemStackResponsePacket {
             Responses = responses
         });
     }

@@ -10,7 +10,7 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Entities.Traits;
 
 [EntityTraitAppliesTo(
-    Identifiers = ["minecraft:player", "minecraft:xp_orb"],
+    Identifiers = ["minecraft:player", "minecraft:xp_orb", "minecraft:tnt"],
     Components = ["minecraft:movement", "minecraft:movement.basic", "minecraft:movement.generic"]
 )]
 public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {

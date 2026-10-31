@@ -5,6 +5,7 @@ namespace BasaltBE.Basalt.Worlds.Types;
 
 internal sealed class EntitySpatialIndex {
     private readonly Dictionary<long, List<Entity>> chunks = new(ChunkKeyComparer.Instance);
+    private readonly Dictionary<long, List<Entity>> cells = new(ChunkKeyComparer.Instance);
     internal bool Deferred;
     private readonly List<Entity> changed = [];
 
@@ -38,6 +39,15 @@ internal sealed class EntitySpatialIndex {
         if (bucket.Count == 0)
             chunks.Remove(entity.SpatialChunk);
         entity.SpatialSlot = -1;
+
+        List<Entity> cell = cells[entity.SpatialCell];
+        Entity lastInCell = cell[^1];
+        cell[entity.SpatialCellSlot] = lastInCell;
+        lastInCell.SpatialCellSlot = entity.SpatialCellSlot;
+        cell.RemoveAt(cell.Count - 1);
+        if (cell.Count == 0)
+            cells.Remove(entity.SpatialCell);
+        entity.SpatialCellSlot = -1;
     }
 
     internal void Update(Entity entity) {
@@ -55,7 +65,10 @@ internal sealed class EntitySpatialIndex {
         int x = (int)MathF.Floor(entity.Position.X) >> 4;
         int z = (int)MathF.Floor(entity.Position.Z) >> 4;
         long key = ((long)x << 32) | (uint)z;
-        if (entity.SpatialSlot >= 0 && entity.SpatialChunk == key)
+        int cellX = (int)MathF.Floor(entity.Position.X) >> 3;
+        int cellZ = (int)MathF.Floor(entity.Position.Z) >> 3;
+        long cellKey = GetCellKey(cellX, cellZ);
+        if (entity.SpatialSlot >= 0 && entity.SpatialChunk == key && entity.SpatialCell == cellKey)
             return;
         Remove(entity);
         if (!chunks.TryGetValue(key, out List<Entity>? bucket)) {
@@ -65,6 +78,13 @@ internal sealed class EntitySpatialIndex {
         entity.SpatialChunk = key;
         entity.SpatialSlot = bucket.Count;
         bucket.Add(entity);
+        if (!cells.TryGetValue(cellKey, out List<Entity>? cell)) {
+            cell = [];
+            cells.Add(cellKey, cell);
+        }
+        entity.SpatialCell = cellKey;
+        entity.SpatialCellSlot = cell.Count;
+        cell.Add(entity);
     }
 
     internal void Update(ReadOnlySpan<Entity> entities) {
@@ -86,4 +106,11 @@ internal sealed class EntitySpatialIndex {
             ? CollectionsMarshal.AsSpan(bucket)
             : [];
     }
+
+    internal ReadOnlySpan<Entity> GetCellEntities(int cellX, int cellZ) =>
+        cells.TryGetValue(GetCellKey(cellX, cellZ), out List<Entity>? bucket)
+            ? CollectionsMarshal.AsSpan(bucket)
+            : [];
+
+    private static long GetCellKey(int x, int z) => ((long)x << 32) | (uint)z;
 }

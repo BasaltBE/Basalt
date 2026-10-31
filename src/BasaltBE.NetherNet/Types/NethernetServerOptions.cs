@@ -10,6 +10,7 @@ public sealed record NethernetServerOptions {
     public System.Security.Cryptography.X509Certificates.X509Certificate2? TlsCertificate { get; init; }
     public int MaximumPeers { get; init; } = 64;
     public int MaximumQueuedMessages { get; init; } = 128;
+    public int MaximumQueuedSendBytes { get; init; } = 16 * 1024 * 1024;
     public int MaximumSdpLength { get; init; } = 1_048_576;
     public int ReliableFragmentLength { get; init; } = 262_143;
     public int UnreliableFragmentLength { get; init; } = 262_143;

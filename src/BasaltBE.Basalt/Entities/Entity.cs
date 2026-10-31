@@ -27,6 +27,8 @@ public class Entity {
     internal ulong SimulationAge;
     internal long SpatialChunk;
     internal int SpatialSlot = -1;
+    internal long SpatialCell;
+    internal int SpatialCellSlot = -1;
     internal bool SpatialDirty;
     public bool Dead;
 
@@ -55,6 +57,8 @@ public class Entity {
 
     public long UniqueId = Interlocked.Increment(ref nextUniqueId);
     public ulong RuntimeId = checked((ulong)Interlocked.Increment(ref nextRuntimeId));
+    /// <summary>Number of ticks between movement updates sent to clients.</summary>
+    public int MovementUpdateInterval = 3;
     public EntityType? Type;
 
     /// <summary>
@@ -194,7 +198,7 @@ public class Entity {
             if (!player.Spawned || player.Disposed)
                 return;
 
-            ulong tick = player.Dimension.TickValue;
+            ulong tick = player.GetTrait<EntityMovementTrait>()?.InputTick ?? 0;
             if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } playerAttributes)
                 player.Dimension.Broadcast(playerAttributes, entity: player);
             if (Flags.Dirty)
@@ -213,11 +217,10 @@ public class Entity {
 
         if (SpawnedDimension is not { } dimension)
             return;
-        ulong entityTick = dimension.TickValue;
-        if (Attributes.CreateUpdate(RuntimeId, tick: entityTick) is { } attributes)
+        if (Attributes.CreateUpdate(RuntimeId) is { } attributes)
             dimension.Broadcast(attributes, this);
         if (Flags.Dirty)
-            dimension.Broadcast(Flags.CreateUpdate(RuntimeId, entityTick), this);
+            dimension.Broadcast(Flags.CreateUpdate(RuntimeId), this);
     }
 
     public void SetFlag(ActorFlag flag, bool enabled) {

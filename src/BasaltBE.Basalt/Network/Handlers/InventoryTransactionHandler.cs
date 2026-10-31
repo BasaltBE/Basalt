@@ -65,7 +65,7 @@ internal sealed class InventoryTransactionHandler {
                 return;
 
             if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction)) {
-                player.Network.SendPacket(player, new ItemStackResponsePacket {
+                player.SendPacket(new ItemStackResponsePacket {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -142,7 +142,7 @@ internal sealed class InventoryTransactionHandler {
                         bool placed = UseItemOnBlock(player, inventory, item, use);
                         if (legacyRequestId != 0) {
                             ItemStack? remaining = inventory.Inventory.GetItem(slot);
-                            player.Network.SendPacket(player, new ItemStackResponsePacket {
+                            player.SendPacket(new ItemStackResponsePacket {
                                 Responses = [new ItemStackResponseInfo {
                                     ClientRequestId = legacyRequestId,
                                     Result = placed ? ItemStackNetResult.Success : ItemStackNetResult.Error,
@@ -298,7 +298,7 @@ internal sealed class InventoryTransactionHandler {
             return Reject();
 
         equipped = armor.Armor.GetItem(armorSlot);
-        player.Network.SendPacket(player, new ItemStackResponsePacket {
+        player.SendPacket(new ItemStackResponsePacket {
             Responses = [new ItemStackResponseInfo {
                 ClientRequestId = legacyRequestId,
                 Result = ItemStackNetResult.Success,
@@ -327,7 +327,7 @@ internal sealed class InventoryTransactionHandler {
         return true;
 
         bool Reject() {
-            player.Network.SendPacket(player, new ItemStackResponsePacket {
+            player.SendPacket(new ItemStackResponsePacket {
                 Responses = [new ItemStackResponseInfo {
                     ClientRequestId = legacyRequestId,
                     Result = ItemStackNetResult.Error
@@ -439,7 +439,7 @@ internal sealed class InventoryTransactionHandler {
             Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: invalid inventory transaction.");
             inventory.Inventory.Update();
             if (legacyRequestId != 0) {
-                player.Network.SendPacket(player, new ItemStackResponsePacket {
+                player.SendPacket(new ItemStackResponsePacket {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -462,7 +462,7 @@ internal sealed class InventoryTransactionHandler {
             Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: source slot was empty.");
             inventory.Inventory.Update();
             if (legacyRequestId != 0) {
-                player.Network.SendPacket(player, new ItemStackResponsePacket {
+                player.SendPacket(new ItemStackResponsePacket {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -475,7 +475,7 @@ internal sealed class InventoryTransactionHandler {
 
         if (legacyRequestId != 0) {
             ItemStack? remaining = inventory.Inventory.GetItem((int)sourceAction.Slot);
-            player.Network.SendPacket(player, new ItemStackResponsePacket {
+            player.SendPacket(new ItemStackResponsePacket {
                 Responses = [new ItemStackResponseInfo {
                     ClientRequestId = legacyRequestId,
                     Result = ItemStackNetResult.Success,
@@ -574,7 +574,7 @@ internal sealed class InventoryTransactionHandler {
 
         var chunk = player.Dimension.GetChunk(x >> 4, z >> 4);
         if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY) {
-            player.Network.SendPacket(player, new TextPacket {
+            player.SendPacket(new TextPacket {
                 Type = TextMessageType.SystemMessage,
                 Message = "Can not place blocks outside dimension bounds."
             });
@@ -732,7 +732,7 @@ internal sealed class InventoryTransactionHandler {
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = layer;
             if (!broadcast) {
-                player.Network.SendPacket(player, update);
+                player.SendPacket(update);
             }
             else {
                 LevelSoundEventPacket? sound = playPlaceSound ? new LevelSoundEventPacket {
@@ -741,9 +741,9 @@ internal sealed class InventoryTransactionHandler {
                     Data = block.NetworkId,
                     ActorUniqueId = -1
                 } : null;
-                player.Network.SendPacket(player, update);
+                player.SendPacket(update);
                 if (sound is not null)
-                    player.Network.SendPacket(player, sound);
+                    player.SendPacket(sound);
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, player, sound);
             }
         }

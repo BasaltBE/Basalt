@@ -257,19 +257,19 @@ public sealed class FurnaceBlockActor : BlockActor
 
     private void SendProgress(Player player)
     {
-        player.Network.SendPacket(player, new ContainerSetDataPacket
+        player.SendPacket(new ContainerSetDataPacket
         {
             ContainerId = unchecked((byte)(sbyte)Container.ContainerId),
             Property = CookProgressProperty,
             Value = CookTime
         });
-        player.Network.SendPacket(player, new ContainerSetDataPacket
+        player.SendPacket(new ContainerSetDataPacket
         {
             ContainerId = unchecked((byte)(sbyte)Container.ContainerId),
             Property = BurnTimeProperty,
             Value = BurnTime
         });
-        player.Network.SendPacket(player, new ContainerSetDataPacket
+        player.SendPacket(new ContainerSetDataPacket
         {
             ContainerId = unchecked((byte)(sbyte)Container.ContainerId),
             Property = BurnDurationProperty,

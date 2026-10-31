@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
@@ -13,10 +14,13 @@ namespace BasaltBE.NetherNet;
 
 public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     private static readonly ScopedLogger Log = Logger.Scoped("NetherNet");
+    private const int MaximumOutgoingMessages = 8192;
+    private const long MaximumTotalQueuedSendBytes = 64L * 1024 * 1024;
     private readonly NethernetServerOptions options;
     private readonly IServerIdentity identity;
     private readonly bool ownsIdentity;
     private readonly Channel<NethernetMessage> incoming;
+    private readonly Channel<OutgoingMessage> outgoing;
     private readonly ConcurrentDictionary<NethernetPeer, NethernetConnection> connections = new();
     private readonly ConcurrentDictionary<NethernetPeer, Task> monitors = new();
     private readonly CancellationTokenSource cancellation = new();
@@ -25,15 +29,24 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     private CancellationTokenRegistration startupCancellation;
     private Task? disposeTask;
     private Task? messageTask;
+    private Thread? sendThread;
     private LanDiscovery? discovery;
     private HttpSignalingListener? http;
     private int started;
     private int disposed;
+    private long queuedSendBytes;
+
+    private readonly record struct OutgoingMessage(
+        NethernetConnection Connection,
+        byte[] Buffer,
+        int Length,
+        MessageReliability Reliability
+    );
 
     public NethernetServer(NethernetServerOptions options, IServerIdentity? identity = null) {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(options.Advertisement);
-        if (options.MaximumPeers < 1 || options.MaximumQueuedMessages < 1 || options.MaximumSdpLength < 1 ||
+        if (options.MaximumPeers < 1 || options.MaximumQueuedMessages < 1 || options.MaximumQueuedSendBytes < 1 || options.MaximumSdpLength < 1 ||
             options.MaximumPacketLength < 1 || options.ReliableFragmentLength is < 1 or > 262_143 ||
             options.UnreliableFragmentLength is < 1 or > 262_143 || options.NegotiationTimeout <= TimeSpan.Zero ||
             options.RequestTimeout <= TimeSpan.Zero)
@@ -43,6 +56,11 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         ownsIdentity = identity is null;
         peerCapacity = new SemaphoreSlim(options.MaximumPeers, options.MaximumPeers);
         incoming = Channel.CreateBounded<NethernetMessage>(new BoundedChannelOptions(options.MaximumQueuedMessages) {
+            FullMode = BoundedChannelFullMode.Wait,
+            SingleReader = true,
+            SingleWriter = false
+        });
+        outgoing = Channel.CreateBounded<OutgoingMessage>(new BoundedChannelOptions(MaximumOutgoingMessages) {
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
@@ -57,6 +75,8 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         if (Interlocked.Exchange(ref started, 1) != 0) throw new InvalidOperationException("NetherNet server has already started.");
         try {
             NetworkId = options.NetworkId == 0 ? RandomNetworkId() : options.NetworkId;
+            sendThread = new Thread(SendLoop) { IsBackground = true, Name = "NetherNet Send" };
+            sendThread.Start();
             discovery = new LanDiscovery(options, identity, NetworkId, AcceptLanAsync);
             http = new HttpSignalingListener(options, identity, AcceptAsync);
             startupCancellation = cancellationToken.Register(static state => ((NethernetServer)state!).StopOnCancellation(), this);
@@ -81,15 +101,60 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
     public ValueTask<NethernetMessage> ReceiveAsync(CancellationToken cancellationToken = default) => incoming.Reader.ReadAsync(cancellationToken);
 
     public ValueTask SendAsync(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable, CancellationToken cancellationToken = default) {
-        if (!connections.TryGetValue(peer, out NethernetConnection? connection)) throw new PeerDisconnectedException(peer);
-        return connection.SendAsync(payload, reliability, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        Send(peer, payload, reliability);
+        return ValueTask.CompletedTask;
     }
 
     public ulong GetOutgoingBufferedBytes(NethernetPeer peer) =>
         connections.TryGetValue(peer, out NethernetConnection? connection) ? connection.OutgoingBufferedBytes : 0;
 
-    public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) =>
-        SendAsync(peer, payload, reliability).AsTask().GetAwaiter().GetResult();
+    public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) {
+        if (!connections.TryGetValue(peer, out NethernetConnection? connection))
+            throw new PeerDisconnectedException(peer);
+        int fragmentLength = reliability == MessageReliability.Reliable
+            ? options.ReliableFragmentLength
+            : options.UnreliableFragmentLength;
+        int fragmentCount = Math.Max(1, 1 + (payload.Length - 1) / fragmentLength);
+        if (payload.Length > options.MaximumPacketLength || fragmentCount > 256 ||
+            (reliability == MessageReliability.Unreliable && fragmentCount != 1))
+            throw new ArgumentOutOfRangeException(nameof(payload), "The message exceeds the NetherNet framing limit.");
+        if (!connection.ReserveQueuedSendBytes(payload.Length)) {
+            Log.Warn($"Closing peer {peer.ConnectionId}: outgoing queue limit reached.");
+            connection.Close(new IOException("NetherNet outgoing queue is full."));
+            return;
+        }
+        if (!ReserveQueuedSendBytes(payload.Length)) {
+            connection.ReleaseQueuedSendBytes(payload.Length);
+            Log.Warn($"Closing peer {peer.ConnectionId}: server outgoing queue limit reached.");
+            connection.Close(new IOException("NetherNet server outgoing queue is full."));
+            return;
+        }
+
+        byte[]? buffer = null;
+        try {
+            buffer = ArrayPool<byte>.Shared.Rent(Math.Max(payload.Length, 1));
+            payload.Span.CopyTo(buffer);
+            if (outgoing.Writer.TryWrite(new OutgoingMessage(connection, buffer, payload.Length, reliability)))
+                return;
+        }
+        catch {
+            connection.ReleaseQueuedSendBytes(payload.Length);
+            Interlocked.Add(ref queuedSendBytes, -payload.Length);
+            if (buffer is not null) {
+                CryptographicOperations.ZeroMemory(buffer.AsSpan(0, payload.Length));
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+            throw;
+        }
+
+        connection.ReleaseQueuedSendBytes(payload.Length);
+        Interlocked.Add(ref queuedSendBytes, -payload.Length);
+        CryptographicOperations.ZeroMemory(buffer!.AsSpan(0, payload.Length));
+        ArrayPool<byte>.Shared.Return(buffer);
+        Log.Warn($"Closing peer {peer.ConnectionId}: outgoing queue is full.");
+        connection.Close(new IOException("NetherNet outgoing queue is full."));
+    }
 
     public void Disconnect(NethernetPeer peer) {
         if (connections.TryGetValue(peer, out NethernetConnection? connection))
@@ -108,6 +173,9 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         cancellation.Cancel();
         startupCancellation.Dispose();
         incoming.Writer.TryComplete();
+        outgoing.Writer.TryComplete();
+        if (sendThread is not null && sendThread != Thread.CurrentThread)
+            sendThread.Join();
         if (messageTask is not null) await messageTask.ConfigureAwait(false);
         if (http is not null) await http.DisposeAsync().ConfigureAwait(false);
         if (discovery is not null) await discovery.DisposeAsync().ConfigureAwait(false);
@@ -116,6 +184,42 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         if (ownsIdentity) identity.Dispose();
         peerCapacity.Dispose();
         cancellation.Dispose();
+    }
+
+    private void SendLoop() {
+        try {
+            while (outgoing.Reader.WaitToReadAsync().AsTask().GetAwaiter().GetResult()) {
+                while (outgoing.Reader.TryRead(out OutgoingMessage message)) {
+                    try {
+                        if (!message.Connection.Completion.IsCompleted)
+                            message.Connection.SendAsync(message.Buffer.AsMemory(0, message.Length), message.Reliability)
+                                .AsTask().GetAwaiter().GetResult();
+                    }
+                    catch (Exception error) {
+                        Log.Warn($"Send to peer {message.Connection.Peer.ConnectionId} failed: {error.Message}");
+                        message.Connection.Close(error);
+                    }
+                    finally {
+                        message.Connection.ReleaseQueuedSendBytes(message.Length);
+                        Interlocked.Add(ref queuedSendBytes, -message.Length);
+                        CryptographicOperations.ZeroMemory(message.Buffer.AsSpan(0, message.Length));
+                        ArrayPool<byte>.Shared.Return(message.Buffer);
+                    }
+                }
+            }
+        }
+        catch (ChannelClosedException) { }
+    }
+
+    private bool ReserveQueuedSendBytes(int length) {
+        long current = Volatile.Read(ref queuedSendBytes);
+        while (current + length <= MaximumTotalQueuedSendBytes) {
+            long reserved = Interlocked.CompareExchange(ref queuedSendBytes, current + length, current);
+            if (reserved == current)
+                return true;
+            current = reserved;
+        }
+        return false;
     }
 
     private async Task DispatchMessagesAsync(Action<NethernetMessage> handler) {
@@ -206,4 +310,3 @@ public sealed class NethernetServer : IDisposable, IAsyncDisposable {
         return System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
     }
 }
-

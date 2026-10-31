@@ -134,7 +134,8 @@ internal sealed class LanDiscovery : IAsyncDisposable {
             transport,
             options.MaximumPacketLength,
             options.ReliableFragmentLength,
-            options.UnreliableFragmentLength
+            options.UnreliableFragmentLength,
+            options.MaximumQueuedSendBytes
         );
         (ulong NetworkId, ulong ConnectionId) key = (remoteId, signal.ConnectionId);
         peers[key] = transport;

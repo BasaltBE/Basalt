@@ -19,3 +19,4 @@
 [x] Hoppers
 [x] Droppers
 [x] Dispensers
+[x] TNT

@@ -63,6 +63,13 @@ public sealed class Player : Entity, IDisposable {
 
     public bool Disposed;
 
+
+    public void SendPacket(DataPacket packet, bool reliable = true, bool immediate = false) =>
+        Network.SendPacket(this, packet, reliable, immediate);
+
+    public void SendPacket(ReadOnlySpan<DataPacket> packets, bool reliable = true, bool immediate = false) =>
+        Network.SendPacket(this, packets, reliable, immediate);
+
     public Player(
         NetworkServer network,
         World world,
@@ -134,8 +141,8 @@ public sealed class Player : Entity, IDisposable {
         Abilities.Set(PlayerAbility.NoClip, spectator);
 
         if (Spawned) {
-            Network.SendPacket(this, new SetPlayerGameTypePacket { GameType = gameType });
-            Network.SendPacket(this, Abilities.CreateUpdate(UniqueId, Permissions));
+            SendPacket(new SetPlayerGameTypePacket { GameType = gameType });
+            SendPacket(Abilities.CreateUpdate(UniqueId, Permissions));
             Dimension.Broadcast(new UpdatePlayerGameTypePacket {
                 GameType = gameType,
                 TargetPlayerUniqueId = UniqueId,
@@ -241,14 +248,15 @@ public sealed class Player : Entity, IDisposable {
         OnMove();
 
         if (sourceDimension.RuntimeId != dimension.RuntimeId) {
-            Network.SendPacket(this, new ChangeDimensionPacket {
+            SendPacket(new ChangeDimensionPacket {
                 DimensionId = dimension.RuntimeId,
                 Position = GetHeadPosition(),
                 Respawn = true,
                 LoadingScreenId = 0
             });
         }
-        Network.SendPacket(this, new MovePlayerPacket {
+        ulong inputTick = GetTrait<EntityMovementTrait>()?.InputTick ?? 0;
+        SendPacket(new MovePlayerPacket {
             PlayerRuntimeId = RuntimeId,
             Position = GetHeadPosition(),
             Rotation = Rotation,
@@ -256,11 +264,11 @@ public sealed class Player : Entity, IDisposable {
             PositionMode = 1,
             OnGround = false,
             RidingRuntimeId = 0,
-            Tick = dimension.TickValue
+            Tick = inputTick
         });
-        Network.SendPacket(this, Attributes.CreateUpdate(RuntimeId, all: true, tick: dimension.TickValue)!);
-        Network.SendPacket(this, Flags.CreateUpdate(RuntimeId, dimension.TickValue));
-        Network.SendPacket(this, Abilities.CreateUpdate(UniqueId, Permissions));
+        SendPacket(Attributes.CreateUpdate(RuntimeId, all: true, tick: inputTick)!);
+        SendPacket(Flags.CreateUpdate(RuntimeId, inputTick));
+        SendPacket(Abilities.CreateUpdate(UniqueId, Permissions));
     }
 
     public void Dispose() {

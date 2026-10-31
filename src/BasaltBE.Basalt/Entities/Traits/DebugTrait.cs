@@ -39,7 +39,7 @@ public sealed class DebugTrait : EntityTrait {
         };
 
         try {
-            player.Network.SendPacket(player, packet);
+            player.SendPacket(packet);
             lastSentTick = player.Dimension.TickValue;
         }
         catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {

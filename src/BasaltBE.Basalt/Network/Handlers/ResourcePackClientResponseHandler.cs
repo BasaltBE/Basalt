@@ -32,15 +32,15 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 structureData.Add("jigsaws", new ListTag());
                 structureData.Add("structure_sets", new ListTag());
 
-                network.SendPacket(player, new JigsawStructureDataPacket {
+                player.SendPacket(new JigsawStructureDataPacket {
                     StructureData = structureData
                 });
-                network.SendPacket(player, new VoxelShapesPacket());
+                player.SendPacket(new VoxelShapesPacket());
                 if (network.Server.CustomDimensions.Count > 0) {
                     network.SendPreparedPacket(player, network.SerializedPackets.Get<DimensionDataPacket>());
                     network.SendPreparedPacket(player, network.SerializedPackets.Get<BiomeDefinitionListPacket>());
                 }
-                network.SendPacket(player, new StartGamePacket {
+                player.SendPacket(new StartGamePacket {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
                     GameType = player.GameType,
@@ -85,15 +85,15 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     BlockNetworkIdsAreHashes = true
                 });
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<ItemRegistryPacket>());
-                network.SendPacket(player, player.Attributes.CreateUpdate(player.RuntimeId, all: true, tick: player.Dimension.TickValue)!);
-                network.SendPacket(player, player.Flags.CreateUpdate(player.RuntimeId, player.Dimension.TickValue));
+                player.SendPacket(player.Attributes.CreateUpdate(player.RuntimeId, all: true)!);
+                player.SendPacket(player.Flags.CreateUpdate(player.RuntimeId));
                 Volatile.Write(ref player.Permissions.Dirty, false);
-                network.SendPacket(player, player.Abilities.CreateUpdate(player.UniqueId, player.Permissions));
+                player.SendPacket(player.Abilities.CreateUpdate(player.UniqueId, player.Permissions));
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<AvailableActorIdentifiersPacket>());
-                network.SendPacket(player, new PlayStatusPacket {
+                player.SendPacket(new PlayStatusPacket {
                     Status = PlayStatus.PlayerSpawn
                 });
-                network.SendPacket(player, new SetCommandsEnabledPacket { Enabled = true });
+                player.SendPacket(new SetCommandsEnabledPacket { Enabled = true });
                 var commands = network.Server.Commands.GetCatalog(player.Permissions);
                 network.SendSerializedPacket(player, commands.Packet, commands.Payload);
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<CreativeContentPacket>());
@@ -102,7 +102,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
             case ResourcePackClientResponseCancel:
                 if (network.ResourcePacks.Required) {
                     const string message = "This server requires its resource packs.";
-                    network.SendPacket(player, new DisconnectPacket {
+                    player.SendPacket(new DisconnectPacket {
                         Reason = DisconnectFailReason.Unknown,
                         Message = message,
                         FilteredMessage = message
@@ -124,7 +124,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 throw new InvalidDataException($"Client requested unknown resource pack '{resourceName}'.");
 
             player.RequestedResourcePacks.Add(pack.Id);
-            network.SendPacket(player, new ResourcePackDataInfoPacket {
+            player.SendPacket(new ResourcePackDataInfoPacket {
                 ResourceName = pack.ResourceName,
                 ChunkSize = ResourcePackManager.ChunkSize,
                 NumberOfChunks = pack.GetChunkCount(ResourcePackManager.ChunkSize),
@@ -146,7 +146,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
             };
         }
 
-        network.SendPacket(player, new ResourcePackStackPacket {
+        player.SendPacket(new ResourcePackStackPacket {
             TexturePackRequired = network.ResourcePacks.Required,
             TexturePacks = texturePacks,
             BaseGameVersion = BedrockProtocol.MinecraftVersion
