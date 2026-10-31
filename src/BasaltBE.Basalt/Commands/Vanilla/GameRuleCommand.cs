@@ -7,7 +7,7 @@ namespace BasaltBE.Basalt.Commands.Vanilla;
 
 public sealed class GameRuleCommand : Command {
     public GameRuleCommand() : base("gamerule", "Sets or queries a game rule value.", "basalt.command.gamerule") {
-        CustomEnum rules = new("GameRule", ["keepinventory", "showcoordinates", "falldamage"]);
+        CustomEnum rules = new("GameRule", ["keepinventory", "showcoordinates", "falldamage", "tntexplodes"]);
         AddOverload(new CommandParameter("rule", rules));
         AddOverload(new CommandParameter("rule", rules), new CommandParameter("value", new BoolEnum()));
     }
