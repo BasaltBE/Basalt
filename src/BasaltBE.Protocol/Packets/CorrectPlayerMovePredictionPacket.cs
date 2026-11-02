@@ -1,4 +1,5 @@
 using BasaltBE.Protocol.Attributes;
+using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
 using BinaryReader = Basalt.Binary.BinaryReader;
 using BinaryWriter = Basalt.Binary.BinaryWriter;
@@ -7,7 +8,7 @@ namespace BasaltBE.Protocol.Packets;
 
 [PacketId(161)]
 public sealed class CorrectPlayerMovePredictionPacket : DataPacket {
-    public byte PredictionType;
+    public RewindType PredictionType;
     public Vec3 Position = new();
     public Vec3 PositionDelta = new();
     public Vec2 Rotation = new();
@@ -16,7 +17,7 @@ public sealed class CorrectPlayerMovePredictionPacket : DataPacket {
     public ulong Tick;
 
     public override void Deserialize(ref BinaryReader reader) {
-        PredictionType = reader.ReadUInt8();
+        PredictionType = (RewindType)reader.ReadUInt8();
         Position.Read(ref reader);
         PositionDelta.Read(ref reader);
         Rotation.Read(ref reader);
@@ -26,7 +27,7 @@ public sealed class CorrectPlayerMovePredictionPacket : DataPacket {
     }
 
     public override void Serialize(ref BinaryWriter writer) {
-        writer.WriteUInt8(PredictionType);
+        writer.WriteUInt8((byte)PredictionType);
         Position.Write(ref writer);
         PositionDelta.Write(ref writer);
         Rotation.Write(ref writer);

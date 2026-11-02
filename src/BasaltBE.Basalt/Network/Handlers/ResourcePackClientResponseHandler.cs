@@ -73,7 +73,7 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                     },
                     LevelName = network.Advertisement.Level,
                     MovementSettings = new SyncedPlayerMovementSettings {
-                        RewindHistorySize = 0,
+                        RewindHistorySize = 40,
                         ServerAuthoritativeBlockBreaking = true
                     },
                     MultiplayerCorrelationId = Guid.NewGuid().ToString(),

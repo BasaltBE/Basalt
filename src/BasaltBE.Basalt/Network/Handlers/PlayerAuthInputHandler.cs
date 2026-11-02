@@ -86,29 +86,31 @@ internal sealed class PlayerAuthInputHandler {
         float deltaY = feetY - player.Position.Y;
         float deltaZ = packet.Position.Z - player.Position.Z;
         bool moved = deltaX != 0 || deltaY != 0 || deltaZ != 0;
-        bool rejected = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 1;
+        bool canceled = false;
         bool jumping = inputs[(int)PlayerAuthInputData.Jumping] || inputs[(int)PlayerAuthInputData.StartJumping];
-        if (!rejected && moved && player.Network.Server.Events.HasSubscribers<PlayerMoveEvent>()) {
+        if (moved && player.Network.Server.Events.HasSubscribers<PlayerMoveEvent>()) {
             PlayerMoveEvent moving = new(player,
                 new Vector3(player.Position.X, player.Position.Y, player.Position.Z),
                 new Vector3(packet.Position.X, feetY, packet.Position.Z));
             player.Network.Server.Events.Emit(moving);
-            rejected = moving.IsCanceled();
+            canceled = moving.IsCanceled();
         }
-        if (!rejected && jumping && !movement.Jumping && player.Network.Server.Events.HasSubscribers<PlayerJumpEvent>()) {
+        if (!canceled && jumping && !movement.Jumping && player.Network.Server.Events.HasSubscribers<PlayerJumpEvent>()) {
             PlayerJumpEvent jump = new(player);
             player.Network.Server.Events.Emit(jump);
-            rejected = jump.IsCanceled();
+            canceled = jump.IsCanceled();
         }
         if (player.Disposed)
             return;
-        if (rejected) {
+        if (canceled) {
             CorrectPlayerMovePredictionPacket correction = movementCorrection ?? new();
             movementCorrection = null;
             try {
+                correction.PredictionType = RewindType.Player;
                 correction.Position = player.GetHeadPosition();
-                correction.Rotation.X = player.Rotation.X;
-                correction.Rotation.Y = player.Rotation.Y;
+                correction.PositionDelta.X = movement.Motion.X;
+                correction.PositionDelta.Y = movement.Motion.Y;
+                correction.PositionDelta.Z = movement.Motion.Z;
                 correction.Tick = packet.ClientTick.Tick;
                 correction.OnGround = movement.VerticalCollision && movement.Motion.Y <= 0;
                 player.SendPacket(correction);
