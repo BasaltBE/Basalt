@@ -536,6 +536,11 @@ internal sealed class InventoryTransactionHandler {
                 return true;
         }
 
+        if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success &&
+            player.GetTrait<PlayerBucketTrait>() is { } buckets &&
+            buckets.UseOnBlock(inventory, item, clicked, use.Position, use.Face))
+            return true;
+
         BlockPermutation? permutation = item?.Type.PlacementPermutation;
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
             if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success) {

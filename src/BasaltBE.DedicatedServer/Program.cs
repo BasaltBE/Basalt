@@ -59,6 +59,7 @@ internal static class Program
             ServerPropertiesFile.SaveToPath(propertiesPath, properties);
 
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
+            EntityPalette.RegisterTrait<PlayerBucketTrait>();
             EntityPalette.RegisterTrait<PlayerInventoryTrait>();
             EntityPalette.RegisterTrait<EntityArmorTrait>();
             EntityPalette.RegisterTrait<PlayerToolTrait>();
@@ -75,6 +76,7 @@ internal static class Program
             BlockPalette.RegisterTrait<GrindstoneTrait>();
             BlockPalette.RegisterTrait<AnvilTrait>();
             BlockPalette.RegisterTrait<RedstoneWireTrait>();
+            BlockPalette.RegisterTrait<FluidTrait>();
             BlockPalette.RegisterTrait<RedstoneTorchTrait>();
             BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
             BlockPalette.RegisterTrait<ObserverTrait>();

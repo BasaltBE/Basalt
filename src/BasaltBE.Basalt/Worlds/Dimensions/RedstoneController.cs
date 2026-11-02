@@ -1,6 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
@@ -195,21 +196,33 @@ internal sealed class RedstoneController {
     }
 
     internal void BlockChanged(Dimension dimension, int x, int y, int z, BlockPermutation previous, BlockPermutation current) {
-        if (previous.Identifier != "minecraft:redstone_wire" || current.Identifier != "minecraft:redstone_wire") {
-            bool previousConnection = IsConnectionDevice(previous.Identifier);
-            bool currentConnection = IsConnectionDevice(current.Identifier);
-            if ((previous.Identifier == "minecraft:redstone_wire") != (current.Identifier == "minecraft:redstone_wire") ||
-                previousConnection != currentConnection ||
-                previousConnection && currentConnection &&
-                    (!Equals(previous.State.Values.GetValueOrDefault("minecraft:cardinal_direction"),
-                        current.State.Values.GetValueOrDefault("minecraft:cardinal_direction")) ||
-                     !Equals(previous.State.Values.GetValueOrDefault("minecraft:facing_direction"),
-                        current.State.Values.GetValueOrDefault("minecraft:facing_direction"))) ||
-                previous.Identifier != current.Identifier &&
-                    (BlockPalette.FindType(previous.Identifier)?.Solid ?? false) != (BlockPalette.FindType(current.Identifier)?.Solid ?? false))
-                MarkTopologyDirty(x, y, z);
-            if (PowerChanged(previous, current)) {
-                MarkPowerChanged(dimension, x, y, z);
+        bool fluidChange = previous.Identifier is
+            "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava" ||
+            current.Identifier is
+            "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava";
+        bool nonSolidFluidChange = fluidChange && BlockPalette.Replaceable(previous) && BlockPalette.Replaceable(current);
+        if (nonSolidFluidChange && (x & 15) is > 0 and < 15 && (y & 15) is > 0 and < 15 && (z & 15) is > 0 and < 15 &&
+            dimension.GetChunk(x >> 4, z >> 4)?.GetSubChunk(y >> 4) is not { HasRedstone: true })
+            return;
+
+        using ProfilerZone zone = Profiler.BeginZone("Redstone.BlockChanged");
+        if (!nonSolidFluidChange) {
+            if (previous.Identifier != "minecraft:redstone_wire" || current.Identifier != "minecraft:redstone_wire") {
+                bool previousConnection = IsConnectionDevice(previous.Identifier);
+                bool currentConnection = IsConnectionDevice(current.Identifier);
+                if ((previous.Identifier == "minecraft:redstone_wire") != (current.Identifier == "minecraft:redstone_wire") ||
+                    previousConnection != currentConnection ||
+                    previousConnection && currentConnection &&
+                        (!Equals(previous.State.Values.GetValueOrDefault("minecraft:cardinal_direction"),
+                            current.State.Values.GetValueOrDefault("minecraft:cardinal_direction")) ||
+                         !Equals(previous.State.Values.GetValueOrDefault("minecraft:facing_direction"),
+                            current.State.Values.GetValueOrDefault("minecraft:facing_direction"))) ||
+                    previous.Identifier != current.Identifier &&
+                        (BlockPalette.FindType(previous.Identifier)?.Solid ?? false) != (BlockPalette.FindType(current.Identifier)?.Solid ?? false))
+                    MarkTopologyDirty(x, y, z);
+                if (PowerChanged(previous, current)) {
+                    MarkPowerChanged(dimension, x, y, z);
+                }
             }
         }
 

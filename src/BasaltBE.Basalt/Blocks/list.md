@@ -20,3 +20,4 @@
 [x] Droppers
 [x] Dispensers
 [x] TNT
+[x] Water and Lava

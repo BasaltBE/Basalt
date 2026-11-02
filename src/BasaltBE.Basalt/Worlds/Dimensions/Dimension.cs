@@ -1,11 +1,13 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors.Types;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Basalt.Worlds.Types;
 using BasaltBE.Logging;
@@ -21,12 +23,16 @@ public sealed partial class Dimension : IDisposable {
     const float BroadcastRadius = 65;
     internal const int ChunkSendBudgetMilliseconds = 4;
     readonly Dictionary<long, Chunk?> chunks = new(ChunkKeyComparer.Instance);
+    Chunk? lastLoadedChunk;
+    long lastLoadedChunkKey;
     readonly ConcurrentQueue<ChunkGenerationResult> completed = new();
     readonly ChunkGenerationService generationService;
     readonly bool ownsGenerationService;
     readonly Lock playersSync = new();
     readonly Dictionary<ulong, Entity> entities = [];
     readonly Dictionary<long, Player[]> chunkViewers = new(ChunkKeyComparer.Instance);
+    readonly Dictionary<long, List<DataPacket>> fluidBlockUpdates = new(ChunkKeyComparer.Instance);
+    readonly List<long> queuedFluidChunks = [];
     Player[] players = [];
     Entity[]? entitySnapshot;
     internal readonly EntitySpatialIndex EntityIndex = new();
@@ -476,9 +482,20 @@ public sealed partial class Dimension : IDisposable {
         if ((uint)layer > 1)
             throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");
 
-        return chunks.TryGetValue(GetKey(x >> 4, z >> 4), out Chunk? chunk) && chunk is not null
-            ? chunk.GetPermutation(x & 15, y, z & 15, layer)
-            : null;
+        long key = GetKey(x >> 4, z >> 4);
+        Chunk? chunk = lastLoadedChunk;
+        if (chunk is null || lastLoadedChunkKey != key) {
+            if (!chunks.TryGetValue(key, out chunk) || chunk is null) {
+                lastLoadedChunk = null;
+                lastLoadedChunkKey = key;
+                return null;
+            }
+
+            lastLoadedChunk = chunk;
+            lastLoadedChunkKey = key;
+        }
+
+        return chunk.GetPermutation(x & 15, y, z & 15, layer);
     }
 
     public bool SetPermutation(int x, int y, int z, BlockPermutation permutation, int layer = 0) {
@@ -524,17 +541,19 @@ public sealed partial class Dimension : IDisposable {
         return true;
     }
 
-    internal void UpdateNeighbors(int x, int y, int z) {
-        UpdateNeighbor(x + 1, y, z);
-        UpdateNeighbor(x - 1, y, z);
-        UpdateNeighbor(x, y, z + 1);
-        UpdateNeighbor(x, y, z - 1);
-        UpdateNeighbor(x, y + 1, z);
-        UpdateNeighbor(x, y - 1, z);
+    internal void UpdateNeighbors(int x, int y, int z, BlockPermutation? previous = null) {
+        using ProfilerZone zone = Profiler.BeginZone("Dimension.UpdateNeighbors");
+        BlockPermutation neighbor = GetPermutation(x, y, z);
+        UpdateNeighbor(x + 1, y, z, neighbor, previous);
+        UpdateNeighbor(x - 1, y, z, neighbor, previous);
+        UpdateNeighbor(x, y, z + 1, neighbor, previous);
+        UpdateNeighbor(x, y, z - 1, neighbor, previous);
+        UpdateNeighbor(x, y + 1, z, neighbor, previous);
+        UpdateNeighbor(x, y - 1, z, neighbor, previous);
     }
 
-    internal void UpdateNeighbor(int x, int y, int z) {
-        if (!BlockPalette.OnNeighborUpdate(this, x, y, z))
+    internal void UpdateNeighbor(int x, int y, int z, BlockPermutation? neighbor = null, BlockPermutation? previous = null) {
+        if (!BlockPalette.OnNeighborUpdate(this, x, y, z, neighbor, previous))
             return;
 
         BlockPermutation permutation = GetPermutation(x, y, z);
@@ -543,6 +562,7 @@ public sealed partial class Dimension : IDisposable {
     }
 
     internal void BroadcastBlockUpdate(int x, int y, int z, BlockPermutation permutation) {
+        using ProfilerZone zone = Profiler.BeginZone("Dimension.BroadcastBlockUpdate");
         ReadOnlySpan<Player> viewers = GetChunkViewers(x >> 4, z >> 4);
         if (viewers.IsEmpty)
             return;
@@ -552,6 +572,45 @@ public sealed partial class Dimension : IDisposable {
             BlockRuntimeId = unchecked((uint)permutation.Hash),
             Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
         }, viewers, null, null);
+    }
+
+    internal void QueueFluidBlockUpdate(int x, int y, int z, BlockPermutation permutation) {
+        long key = GetKey(x >> 4, z >> 4);
+        if (GetChunkViewers(x >> 4, z >> 4).IsEmpty)
+            return;
+
+        if (!fluidBlockUpdates.TryGetValue(key, out List<DataPacket>? packets)) {
+            packets = [];
+            fluidBlockUpdates.Add(key, packets);
+        }
+        if (packets.Count == 0)
+            queuedFluidChunks.Add(key);
+        packets.Add(new UpdateBlockPacket {
+            Position = new BlockPos { X = x, Y = y, Z = z },
+            BlockRuntimeId = unchecked((uint)permutation.Hash),
+            Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
+        });
+    }
+
+    void FlushFluidBlockUpdates() {
+        foreach (long key in queuedFluidChunks) {
+            List<DataPacket> packets = fluidBlockUpdates[key];
+            int chunkX = (int)(key >> 32);
+            int chunkZ = (int)key;
+            ReadOnlySpan<Player> viewers = GetChunkViewers(chunkX, chunkZ);
+            if (!viewers.IsEmpty) {
+                ReadOnlySpan<DataPacket> batch = CollectionsMarshal.AsSpan(packets);
+                foreach (Player player in viewers) {
+                    try {
+                        player.SendPacket(batch);
+                    }
+                    catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                    }
+                }
+            }
+            packets.Clear();
+        }
+        queuedFluidChunks.Clear();
     }
 
     internal BlockActor? GetBlockActor(Chunk chunk, int x, int y, int z) {
@@ -778,6 +837,8 @@ public sealed partial class Dimension : IDisposable {
                 QueueScheduledChunk(head.Key, state);
         }
 
+        FlushFluidBlockUpdates();
+
         foreach ((long key, ScheduledChunk state) in dispatchedScheduledChunks) {
             if (chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
                 if (chunk.PendingTicks is { } pending && state.CanceledRecords is { Count: > 0 } consumedRecords &&
@@ -797,8 +858,9 @@ public sealed partial class Dimension : IDisposable {
             }
         }
 
-        if (updatesProcessed == ScheduledUpdateLimit)
+        if (updatesProcessed == ScheduledUpdateLimit) {
             UpdateScheduledTickBacklog();
+        }
         else {
             Volatile.Write(ref overdueScheduledChunks, 0);
             Volatile.Write(ref oldestScheduledTickOverdue, 0);

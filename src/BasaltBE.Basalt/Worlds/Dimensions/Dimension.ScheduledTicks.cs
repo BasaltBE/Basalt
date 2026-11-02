@@ -214,7 +214,7 @@ public sealed partial class Dimension {
         if (chunk.PendingTicksInvalid)
             return;
 
-        BlockPermutation current = GetPermutation(x, y, z);
+        BlockPermutation current = chunk.GetPermutation(x & 15, y, z & 15);
         if (!BlockPalette.HasScheduledUpdates(current.Identifier))
             return;
         BlockPermutation permutation = scheduledPermutation ?? current;

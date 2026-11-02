@@ -22,6 +22,18 @@ public abstract class BlockTrait {
 
     public virtual bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) => false;
 
+    public virtual bool OnNeighborUpdate(Dimension dimension, int x, int y, int z, BlockPermutation neighbor) =>
+        OnNeighborUpdate(dimension, x, y, z);
+
+    public virtual bool OnNeighborUpdate(
+        Dimension dimension,
+        int x,
+        int y,
+        int z,
+        BlockPermutation previous,
+        BlockPermutation neighbor
+    ) => OnNeighborUpdate(dimension, x, y, z, neighbor);
+
     public virtual void OnScheduledUpdate(Dimension dimension, int x, int y, int z) { }
 
     internal virtual bool HasScheduledUpdates => false;

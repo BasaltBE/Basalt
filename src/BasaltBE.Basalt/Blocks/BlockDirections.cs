@@ -4,6 +4,14 @@ internal static class BlockDirections
 {
     internal static readonly string[] ByFace = ["down", "up", "north", "south", "west", "east"];
     internal static readonly byte[] OppositeByFace = [1, 0, 3, 2, 5, 4];
+    internal static readonly (int X, int Y, int Z)[] OffsetByFace = [
+        (0, -1, 0),
+        (0, 1, 0),
+        (0, 0, -1),
+        (0, 0, 1),
+        (-1, 0, 0),
+        (1, 0, 0)
+    ];
     internal static readonly string[] ByYaw = ["south", "west", "north", "east"];
     internal static readonly string[] TorchFacingByFace = [string.Empty, "top", "south", "north", "east", "west"];
     internal static readonly string[] CardinalDirectionByYaw = ["north", "east", "south", "west"];

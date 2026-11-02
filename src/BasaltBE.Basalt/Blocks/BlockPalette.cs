@@ -216,17 +216,32 @@ public static class BlockPalette {
         }
     }
 
-    internal static bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
-        if (y < dimension.MinimumY || y > dimension.MaximumY || dimension.GetChunk(x >> 4, z >> 4) is null)
+    internal static bool OnNeighborUpdate(
+        Dimension dimension,
+        int x,
+        int y,
+        int z,
+        BlockPermutation? neighbor = null,
+        BlockPermutation? previous = null
+    ) {
+        if (y < dimension.MinimumY || y > dimension.MaximumY)
             return false;
 
-        BlockPermutation current = dimension.GetPermutation(x, y, z);
+        BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
+        if (current is null)
+            return false;
         if (!TraitsByIdentifier.TryGetValue(current.Identifier, out BlockTrait[]? traits))
             return false;
 
         bool updated = false;
-        foreach (BlockTrait trait in traits)
-            updated |= trait.OnNeighborUpdate(dimension, x, y, z);
+        foreach (BlockTrait trait in traits) {
+            if (neighbor is null)
+                updated |= trait.OnNeighborUpdate(dimension, x, y, z);
+            else if (previous is null)
+                updated |= trait.OnNeighborUpdate(dimension, x, y, z, neighbor);
+            else
+                updated |= trait.OnNeighborUpdate(dimension, x, y, z, previous, neighbor);
+        }
         return updated;
     }
 
