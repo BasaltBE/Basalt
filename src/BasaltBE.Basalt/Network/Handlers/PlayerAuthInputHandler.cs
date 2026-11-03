@@ -476,7 +476,7 @@ internal sealed class PlayerAuthInputHandler {
         else if (dropItems && !upperDoor) {
             int fortune = tool?.GetEnchantmentLevel(EnchantmentPalette.Fortune) ?? 0;
             bool silkTouch = tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) > 0;
-            ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block.Identifier, tool, fortune, silkTouch);
+            ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block, tool, fortune, silkTouch);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);
                 if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)

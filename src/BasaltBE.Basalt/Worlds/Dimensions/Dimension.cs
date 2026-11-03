@@ -880,13 +880,30 @@ public sealed partial class Dimension : IDisposable {
         EntityIndex.Collect(simulatedChunks, simulation);
         var server = World?.Server;
         foreach (long key in simulatedChunks) {
-            if (!chunks.TryGetValue(key, out Chunk? chunk))
+            if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null) {
                 Request((int)(key >> 32), (int)key);
-            else if (chunk?.blockActors is { } actors && server is not null) {
+                continue;
+            }
+
+            if (chunk.blockActors is { } actors && server is not null) {
                 foreach ((int X, int Y, int Z) position in actors.Keys) {
                     BlockPermutation permutation = chunk.GetPermutation(position.X, position.Y, position.Z);
                     if (server.BlockActors.Ticks(permutation.Identifier))
                         GetBlockActor(chunk, position.X, position.Y, position.Z)?.Tick();
+                }
+            }
+
+            int chunkX = (int)(key >> 32);
+            int chunkZ = (int)key;
+            for (int subChunkY = MinimumY >> 4; subChunkY <= MaximumY >> 4; subChunkY++) {
+                if (chunk.GetSubChunk(subChunkY) is not { RandomTicking: true })
+                    continue;
+
+                for (int tick = 0; tick < 3; tick++) {
+                    int x = (chunkX << 4) + Random.Shared.Next(16);
+                    int y = (subChunkY << 4) + Random.Shared.Next(16);
+                    int z = (chunkZ << 4) + Random.Shared.Next(16);
+                    BlockPalette.OnRandomTick(this, x, y, z);
                 }
             }
         }

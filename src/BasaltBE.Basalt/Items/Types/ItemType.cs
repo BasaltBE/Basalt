@@ -9,6 +9,9 @@ public sealed class ItemType {
     internal BlockPermutation? PlacementPermutation;
 
     [JsonIgnore]
+    internal BlockPermutation? SeedCropPermutation;
+
+    [JsonIgnore]
     internal ToolType ToolType;
 
     [JsonIgnore]

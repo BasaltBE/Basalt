@@ -40,7 +40,8 @@ public sealed class GameRules {
                     worldData.Add("Time", savedTime);
                 if (savedWorldData.Get<LongTag>("currentTick") is { } savedCurrentTick)
                     worldData.Add("currentTick", savedCurrentTick);
-            } else {
+            }
+            else {
                 foreach ((string name, Tag tag) in savedWorldData.Tags)
                     worldData.Add(name, tag);
             }

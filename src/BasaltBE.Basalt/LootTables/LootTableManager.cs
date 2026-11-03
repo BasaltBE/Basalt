@@ -1,7 +1,9 @@
 using System.Reflection;
 using System.Text.Json;
+using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.LootTables;
 
@@ -20,6 +22,30 @@ public sealed class LootTableManager {
         "looting1_fireAspect2",
         "looting2_fireAspect2",
         "looting3_fireAspect2"
+    ];
+    static readonly BlockDrop[][] MatureWheatDrops = [
+        [new("minecraft:wheat", 1, 1), new("minecraft:wheat_seeds", 1, 4)],
+        [new("minecraft:wheat", 1, 1), new("minecraft:wheat_seeds", 1, 5)],
+        [new("minecraft:wheat", 1, 1), new("minecraft:wheat_seeds", 1, 6)],
+        [new("minecraft:wheat", 1, 1), new("minecraft:wheat_seeds", 1, 7)]
+    ];
+    static readonly BlockDrop[][] MatureBeetrootDrops = [
+        [new("minecraft:beetroot", 1, 1), new("minecraft:beetroot_seeds", 1, 4)],
+        [new("minecraft:beetroot", 1, 1), new("minecraft:beetroot_seeds", 1, 5)],
+        [new("minecraft:beetroot", 1, 1), new("minecraft:beetroot_seeds", 1, 6)],
+        [new("minecraft:beetroot", 1, 1), new("minecraft:beetroot_seeds", 1, 7)]
+    ];
+    static readonly BlockDrop[][] MatureCarrotDrops = [
+        [new("minecraft:carrot", 2, 5)],
+        [new("minecraft:carrot", 2, 6)],
+        [new("minecraft:carrot", 2, 7)],
+        [new("minecraft:carrot", 2, 8)]
+    ];
+    static readonly BlockDrop[][] MaturePotatoDrops = [
+        [new("minecraft:potato", 2, 5)],
+        [new("minecraft:potato", 2, 6)],
+        [new("minecraft:potato", 2, 7)],
+        [new("minecraft:potato", 2, 8)]
     ];
     static readonly Dictionary<string, int> ToolIndices;
     static readonly Dictionary<string, int[]> BlockDropSetIds;
@@ -170,6 +196,30 @@ public sealed class LootTableManager {
             toolIdentifier = "hand";
 
         return GetBlockDrops(blockIdentifier, toolIdentifier, fortuneLevel, silkTouch);
+    }
+
+    public ReadOnlySpan<BlockDrop> Get(
+        BlockPermutation block,
+        ItemStack? itemStack = null,
+        int fortuneLevel = 0,
+        bool silkTouch = false
+    ) {
+        RegistrySnapshot current = Volatile.Read(ref registry);
+        if (!current.CustomDrops.ContainsKey(block.Identifier) &&
+            !current.RemovedVanillaDrops.Contains(block.Identifier) &&
+            block.State.Values.GetValueOrDefault("growth") is int growth &&
+            (block.Identifier, growth) is ("minecraft:wheat", 7) or ("minecraft:beetroot", 3) or
+                ("minecraft:carrots", 7) or ("minecraft:potatoes", 7)) {
+            int fortune = Math.Clamp(fortuneLevel, 0, 3);
+            return block.Identifier switch {
+                "minecraft:wheat" => MatureWheatDrops[fortune],
+                "minecraft:beetroot" => MatureBeetrootDrops[fortune],
+                "minecraft:carrots" => MatureCarrotDrops[fortune],
+                _ => MaturePotatoDrops[fortune]
+            };
+        }
+
+        return Get(block.Identifier, itemStack, fortuneLevel, silkTouch);
     }
 
     public bool CanHarvest(string blockIdentifier, ItemStack? itemStack = null) {

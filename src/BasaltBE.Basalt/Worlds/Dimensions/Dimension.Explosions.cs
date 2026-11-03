@@ -291,7 +291,8 @@ public sealed partial class Dimension {
                                             solid = BlockPalette.FindType(
                                                 currentChunk.GetPermutation(blockX & 15, blockY, blockZ & 15).Identifier
                                             )?.Solid == true;
-                                        } else {
+                                        }
+                                        else {
                                             solid = false;
                                         }
                                     }

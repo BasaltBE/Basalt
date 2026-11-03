@@ -541,9 +541,20 @@ internal sealed class InventoryTransactionHandler {
             buckets.UseOnBlock(inventory, item, clicked, use.Position, use.Face))
             return true;
 
-        BlockPermutation? permutation = item?.Type.PlacementPermutation;
+        BlockPermutation? permutation = item?.Type.SeedCropPermutation ?? item?.Type.PlacementPermutation;
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
             if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success) {
+                if (BlockPalette.OnUseItemOnBlock(
+                    clicked.Identifier,
+                    player,
+                    item,
+                    clicked,
+                    use.Position,
+                    use.Face,
+                    use.ClickPosition
+                ))
+                    return true;
+
                 RepairPlacement(player, use);
                 inventory.Inventory.UpdateSlot(use.Slot);
             }
@@ -645,7 +656,7 @@ internal sealed class InventoryTransactionHandler {
                 BlockDirections.CardinalDirectionByYaw[facing]
             ) ?? permutation;
         }
-        if (permutation.State.Values.ContainsKey("facing_direction"))
+        if (item?.Type.SeedCropPermutation is null && permutation.State.Values.ContainsKey("facing_direction"))
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)use.Face) ?? permutation;
 
         if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation)) {

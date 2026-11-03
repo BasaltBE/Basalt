@@ -24,15 +24,13 @@ using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.DedicatedServer;
 
-internal static class Program
-{
+internal static class Program {
     private const int TickRate = 20;
     private const int MinimumSleepMilliseconds = 10;
     private const double WarningTickRate = 18;
     private static readonly ScopedLogger Log = Logger.Scoped("DedicatedServer");
 
-    private static void Main(string[] args)
-    {
+    private static void Main(string[] args) {
         #region Startup
 
         Profiler.Enabled = args.Contains("--tracy", StringComparer.OrdinalIgnoreCase);
@@ -40,8 +38,7 @@ internal static class Program
         Logger.MinimumLevel = LogLevel.Info;
 
         using ManualResetEventSlim shutdown = new(false);
-        ConsoleCancelEventHandler cancel = (_, eventArgs) =>
-        {
+        ConsoleCancelEventHandler cancel = (_, eventArgs) => {
             eventArgs.Cancel = true;
             Log.Info("Shutdown requested.");
             shutdown.Set();
@@ -50,13 +47,18 @@ internal static class Program
 
         #endregion
 
-        try
-        {
+        try {
             #region Server Setup
 
             const string propertiesPath = "server.properties";
             ServerProperties properties = ServerPropertiesFile.LoadFromPath(propertiesPath);
             ServerPropertiesFile.SaveToPath(propertiesPath, properties);
+
+            foreach (BlockType type in BlockPalette.Types) {
+                type.Solid |= type.Identifier is "minecraft:farmland" or "minecraft:grass_path" ||
+                    type.Identifier.EndsWith("_stairs", StringComparison.Ordinal) ||
+                    type.Identifier.EndsWith("_slab", StringComparison.Ordinal);
+            }
 
             EntityPalette.RegisterTrait<PlayerChunkRenderingTrait>();
             EntityPalette.RegisterTrait<PlayerBucketTrait>();
@@ -75,6 +77,7 @@ internal static class Program
             BlockPalette.RegisterTrait<EnchantingTableTrait>();
             BlockPalette.RegisterTrait<GrindstoneTrait>();
             BlockPalette.RegisterTrait<AnvilTrait>();
+            BlockPalette.RegisterTrait<FarmingTrait>();
             BlockPalette.RegisterTrait<RedstoneWireTrait>();
             BlockPalette.RegisterTrait<FluidTrait>();
             BlockPalette.RegisterTrait<RedstoneTorchTrait>();
@@ -126,8 +129,7 @@ internal static class Program
                 "minecraft:smoker", "minecraft:lit_smoker"
             })
                 server.BlockActors.Register(identifier, static context => new FurnaceBlockActor(context), tick: true);
-            foreach (BlockType type in BlockPalette.Types)
-            {
+            foreach (BlockType type in BlockPalette.Types) {
                 if (type.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal))
                     server.BlockActors.Register(type.Identifier, static context => new ShulkerBoxBlockActor(context));
             }
@@ -154,8 +156,7 @@ internal static class Program
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
                 .Select(argument => argument[11..]).ToArray();
 
-            server.Events.Subscribe<PlayerJoinEvent>(joined =>
-            {
+            server.Events.Subscribe<PlayerJoinEvent>(joined => {
                 if (operators.Contains(joined.Player.Username, StringComparer.OrdinalIgnoreCase) ||
                     operators.Contains(joined.Player.Xuid, StringComparer.Ordinal))
                     joined.Player.Permissions.Add("basalt.operator");
@@ -181,10 +182,8 @@ internal static class Program
             World? world = server.Worlds.FirstOrDefault(world =>
                 string.Equals(world.Identifier, properties.DefaultWorldName, StringComparison.OrdinalIgnoreCase)
             );
-            if (world is null)
-            {
-                world = server.CreateWorld(properties.DefaultWorldName, static world =>
-                {
+            if (world is null) {
+                world = server.CreateWorld(properties.DefaultWorldName, static world => {
                     world.CreateDimension("minecraft:overworld", DimensionType.Overworld);
                 }, providerName: properties.WorldProvider);
             }
@@ -199,32 +198,26 @@ internal static class Program
             #region Console Input
 
             ServerCommandExecutor console = new(server);
-            Action<CommandResult> commandCompleted = result =>
-            {
+            Action<CommandResult> commandCompleted = result => {
                 if (result.Success)
                     Log.Info(result.Message);
                 else
                     Log.Warn(result.Message);
             };
 
-            Thread input = new(() =>
-            {
-                try
-                {
-                    while (Console.ReadLine() is { } command)
-                    {
+            Thread input = new(() => {
+                try {
+                    while (Console.ReadLine() is { } command) {
                         if (string.IsNullOrWhiteSpace(command))
                             continue;
                         if (!server.Commands.Enqueue(command, console, commandCompleted))
                             Log.Warn("Console command queue is full.");
                     }
                 }
-                catch (IOException error)
-                {
+                catch (IOException error) {
                     Log.Warn($"Console input stopped: {error.Message}");
                 }
-            })
-            {
+            }) {
                 IsBackground = true,
                 Name = "Console input"
             };
@@ -247,25 +240,20 @@ internal static class Program
             int lastGen1CollectionCount = GC.CollectionCount(1);
             int lastGen2CollectionCount = GC.CollectionCount(2);
 
-            while (!shutdown.IsSet && !server.Stopping)
-            {
+            while (!shutdown.IsSet && !server.Stopping) {
                 long remaining = nextTick - Stopwatch.GetTimestamp();
                 long sleepTicks = remaining - sleepOvershoot;
-                if (sleepTicks > 0)
-                {
+                if (sleepTicks > 0) {
                     long sleepMilliseconds = sleepTicks * 1000 / Stopwatch.Frequency;
-                    if (sleepMilliseconds > 0)
-                    {
+                    if (sleepMilliseconds > 0) {
                         long requestedSleepTicks = sleepMilliseconds * Stopwatch.Frequency / 1000;
                         long beforeSleep = Stopwatch.GetTimestamp();
                         bool shuttingDown = false;
                         long sleepDeadline = beforeSleep + requestedSleepTicks;
-                        do
-                        {
+                        do {
                             server.Poll();
                             int wait = (int)Math.Clamp((sleepDeadline - Stopwatch.GetTimestamp()) * 1000 / Stopwatch.Frequency, 0, 5);
-                            if (shutdownWaitHandle.WaitOne(wait))
-                            {
+                            if (shutdownWaitHandle.WaitOne(wait)) {
                                 shuttingDown = true;
                                 break;
                             }
@@ -295,17 +283,14 @@ internal static class Program
 
                 server.Tick();
 
-                if (ticks == 0)
-                {
+                if (ticks == 0) {
                     reportStart = tickStart;
                     ticks = 1;
                 }
-                else
-                {
+                else {
                     ticks++;
                     long reportDuration = tickStart - reportStart;
-                    if (reportDuration >= Stopwatch.Frequency)
-                    {
+                    if (reportDuration >= Stopwatch.Frequency) {
                         double ticksPerSecond = (ticks - 1) * (double)Stopwatch.Frequency / reportDuration;
                         TimeSpan gcPauseDuration = GC.GetTotalPauseDuration();
                         double gcPauseMilliseconds = Math.Max(
@@ -322,8 +307,7 @@ internal static class Program
                         lastGen0CollectionCount = gen0Collections;
                         lastGen1CollectionCount = gen1Collections;
                         lastGen2CollectionCount = gen2Collections;
-                        if (ticksPerSecond < WarningTickRate)
-                        {
+                        if (ticksPerSecond < WarningTickRate) {
                             double averageMilliseconds = server.Ticks.AverageMilliseconds;
                             double lastMilliseconds = server.Ticks.LastMilliseconds;
                             double peakMilliseconds = server.Ticks.MaximumMilliseconds;
@@ -348,16 +332,14 @@ internal static class Program
 
                 nextTick += tickDuration;
                 long now = Stopwatch.GetTimestamp();
-                if (nextTick <= now)
-                {
+                if (nextTick <= now) {
                     nextTick += ((now - nextTick) / tickDuration + 1) * tickDuration;
                 }
             }
 
             #endregion
         }
-        finally
-        {
+        finally {
             Console.CancelKeyPress -= cancel;
         }
     }

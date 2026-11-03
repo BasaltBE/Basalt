@@ -43,7 +43,8 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
         if (current.Identifier is "minecraft:unpowered_repeater" or "minecraft:powered_repeater") {
             int delay = current.State.Values.GetValueOrDefault("repeater_delay") is int value ? (value + 1) & 3 : 0;
             updated = BlockPalette.Find(current.Identifier, current.State, "repeater_delay", delay);
-        } else if ((current.Identifier is "minecraft:unpowered_comparator" or "minecraft:powered_comparator") &&
+        }
+        else if ((current.Identifier is "minecraft:unpowered_comparator" or "minecraft:powered_comparator") &&
                    current.State.Values.GetValueOrDefault("output_subtract_bit") is bool subtract) {
             updated = BlockPalette.Find(current.Identifier, current.State, "output_subtract_bit", !subtract);
         }

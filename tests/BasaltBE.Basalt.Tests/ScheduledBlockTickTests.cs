@@ -1303,7 +1303,7 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
         torch = BlockPalette.Find(torch.Identifier, torch.State, "torch_facing_direction", "top")!;
         BlockPermutation comparator = BlockPalette.FindDefaultPermutation("minecraft:unpowered_comparator")!;
         comparator = BlockPalette.Find(comparator.Identifier, comparator.State, "minecraft:cardinal_direction", "north")!;
-                BlockPermutation daylightDetector = BlockPalette.FindDefaultPermutation("minecraft:daylight_detector")!;
+        BlockPermutation daylightDetector = BlockPalette.FindDefaultPermutation("minecraft:daylight_detector")!;
 
         try {
             using (Server original = new(new ServerProperties { DefaultWorldName = "test" })) {

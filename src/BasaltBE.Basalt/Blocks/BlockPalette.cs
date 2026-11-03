@@ -3,6 +3,7 @@ using System.Text.Json;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Blocks.Traits.Types;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
@@ -49,6 +50,7 @@ public static class BlockPalette {
     static readonly Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> FenceGatePermutations = BuildFenceGatePermutations();
     static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
     static readonly HashSet<string> ScheduledUpdateIdentifiers = new(StringComparer.Ordinal);
+    static readonly HashSet<string> RandomTickIdentifiers = new(StringComparer.Ordinal);
     static readonly HashSet<Type> RegisteredTraits = [];
 
     public static BlockType? FindType(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
@@ -160,6 +162,8 @@ public static class BlockPalette {
             TraitsByIdentifier[identifier] = updated;
             if (trait.HasScheduledUpdates)
                 ScheduledUpdateIdentifiers.Add(identifier);
+            if (trait.HasRandomTicks)
+                RandomTickIdentifiers.Add(identifier);
         }
     }
 
@@ -169,6 +173,25 @@ public static class BlockPalette {
 
         foreach (BlockTrait trait in traits) {
             if (trait.OnInteract(player, position))
+                return true;
+        }
+        return false;
+    }
+
+    internal static bool OnUseItemOnBlock(
+        string identifier,
+        Player player,
+        ItemStack? item,
+        BlockPermutation block,
+        BlockPos position,
+        byte face,
+        Vec3 clickPosition
+    ) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
+            return false;
+
+        foreach (BlockTrait trait in traits) {
+            if (trait.OnUseItemOnBlock(player, item, block, position, face, clickPosition))
                 return true;
         }
         return false;
@@ -203,6 +226,17 @@ public static class BlockPalette {
     }
 
     internal static bool HasScheduledUpdates(string identifier) => ScheduledUpdateIdentifiers.Contains(identifier);
+
+    internal static bool HasRandomTicks(string identifier) => RandomTickIdentifiers.Contains(identifier);
+
+    internal static void OnRandomTick(Dimension dimension, int x, int y, int z) {
+        BlockPermutation block = dimension.GetPermutation(x, y, z);
+        if (!TraitsByIdentifier.TryGetValue(block.Identifier, out BlockTrait[]? traits))
+            return;
+
+        foreach (BlockTrait trait in traits)
+            trait.OnRandomTick(dimension, block, x, y, z);
+    }
 
     internal static void OnScheduledUpdate(Dimension dimension, int x, int y, int z, BlockPermutation scheduled) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);

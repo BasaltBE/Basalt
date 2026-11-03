@@ -34,6 +34,8 @@ public sealed class SubChunk {
 
     public int LayerCount => layers?.Count ?? 0;
 
+    internal bool RandomTicking => layers is { Count: > 0 } && layers[0].RandomTickCount > 0;
+
     internal bool HasRedstone {
         get {
             if (layers is null)

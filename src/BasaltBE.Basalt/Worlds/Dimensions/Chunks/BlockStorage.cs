@@ -21,6 +21,7 @@ public sealed class BlockStorage {
     List<byte[]?>? nativePaletteNbt;
     byte[]? nativeImplicitNbt;
     int nonAirCount;
+    internal int RandomTickCount;
 
     public bool Empty => nonAirCount == 0;
 
@@ -61,11 +62,17 @@ public sealed class BlockStorage {
         }
 
         ushort oldIndex = indices[index];
-        if (palette![oldIndex] == permutation) {
+        BlockPermutation previous = palette![oldIndex];
+        if (previous == permutation) {
             return;
         }
 
-        bool wasAir = palette[oldIndex] == Air;
+        if (BlockPalette.HasRandomTicks(previous.Identifier))
+            RandomTickCount--;
+        if (BlockPalette.HasRandomTicks(permutation.Identifier))
+            RandomTickCount++;
+
+        bool wasAir = previous == Air;
         bool isAir = permutation == Air;
         if (wasAir && !isAir) {
             nonAirCount++;
@@ -175,6 +182,7 @@ public sealed class BlockStorage {
         }
 
         BlockStorage storage = new();
+        bool hasRandomTickingBlocks = false;
         for (int i = 0; i < paletteCount; i++) {
             BlockPermutation permutation;
             if (mode == ChunkSerializationMode.Network) {
@@ -189,10 +197,13 @@ public sealed class BlockStorage {
 
             if (bitsPerBlock == 0) {
                 storage.implicitPermutation = permutation;
+                hasRandomTickingBlocks = BlockPalette.HasRandomTicks(permutation.Identifier);
                 if (mode == ChunkSerializationMode.LevelDb)
                     storage.nativeImplicitNbt = storage.nativePaletteNbt![^1];
                 continue;
             }
+
+            hasRandomTickingBlocks |= BlockPalette.HasRandomTicks(permutation.Identifier);
 
             storage.palette ??= new List<BlockPermutation>(paletteCount);
             storage.paletteIndices ??= new Dictionary<BlockPermutation, ushort>(paletteCount);
@@ -202,6 +213,8 @@ public sealed class BlockStorage {
 
         if (bitsPerBlock == 0) {
             storage.nonAirCount = storage.implicitPermutation == Air ? 0 : CellCount;
+            if (BlockPalette.HasRandomTicks(storage.implicitPermutation.Identifier))
+                storage.RandomTickCount = CellCount;
         }
         else {
             storage.indices = indices;
@@ -214,6 +227,8 @@ public sealed class BlockStorage {
                 if (storage.palette![paletteIndex] != Air) {
                     storage.nonAirCount++;
                 }
+                if (hasRandomTickingBlocks && BlockPalette.HasRandomTicks(storage.palette[paletteIndex].Identifier))
+                    storage.RandomTickCount++;
             }
         }
 

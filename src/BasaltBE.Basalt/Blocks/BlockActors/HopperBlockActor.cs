@@ -9,8 +9,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Blocks.BlockActors;
 
-public sealed class HopperBlockActor : BlockActor
-{
+public sealed class HopperBlockActor : BlockActor {
     private const int TransferDelay = 8;
 
     public readonly BlockContainer Container;
@@ -18,8 +17,7 @@ public sealed class HopperBlockActor : BlockActor
     public override string ActorIdentifier => "Hopper";
     public override Container? Inventory => Container;
 
-    public HopperBlockActor(BlockActorContext context) : base(context)
-    {
+    public HopperBlockActor(BlockActorContext context) : base(context) {
         Container = new BlockContainer(
             context.Position,
             5,
@@ -30,21 +28,18 @@ public sealed class HopperBlockActor : BlockActor
         Container.Changed += MarkDirty;
     }
 
-    public override void OnRead(CompoundTag nbt)
-    {
+    public override void OnRead(CompoundTag nbt) {
         TransferCooldown = Math.Max(0, nbt.Get<IntTag>("TransferCooldown")?.Value ?? 0);
         ReadItems(nbt, Container);
     }
 
-    public override void OnWrite(CompoundTag nbt)
-    {
+    public override void OnWrite(CompoundTag nbt) {
         nbt.Add("BlockEntityVersion", new IntTag { Value = 0 });
         nbt.Add("TransferCooldown", new IntTag { Value = TransferCooldown });
         nbt.Add("Items", WriteItems(Container));
     }
 
-    public override void OnPlace(ItemStack? item, byte face)
-    {
+    public override void OnPlace(ItemStack? item, byte face) {
         CompoundTag? blockEntity = item?.Nbt?.Get<CompoundTag>("BlockEntityTag") ?? item?.Nbt;
         if (blockEntity is not null)
             OnRead(blockEntity);
@@ -52,10 +47,8 @@ public sealed class HopperBlockActor : BlockActor
 
     public override void OnInteract(Player player) => Container.Open(player);
 
-    public override void OnBreak(Player player)
-    {
-        for (int slot = 0; slot < Container.ContainerSize; slot++)
-        {
+    public override void OnBreak(Player player) {
+        for (int slot = 0; slot < Container.ContainerSize; slot++) {
             if (Container.TakeItem(slot, ushort.MaxValue) is not { } item)
                 continue;
 
@@ -65,10 +58,8 @@ public sealed class HopperBlockActor : BlockActor
 
     public override void OnRemove() => Container.CloseViewers();
 
-    public override void Tick()
-    {
-        if (TransferCooldown > 0)
-        {
+    public override void Tick() {
+        if (TransferCooldown > 0) {
             TransferCooldown--;
             if (TransferCooldown == 0)
                 MarkDirty();
@@ -82,8 +73,7 @@ public sealed class HopperBlockActor : BlockActor
         BlockPermutation current = Dimension.GetPermutation(Position.X, Position.Y, Position.Z);
         if (current.State.Values.GetValueOrDefault("toggle_bit") is bool locked && locked != isPowered &&
             BlockPalette.Find(current.Identifier, current.State, "toggle_bit", isPowered) is { } updated &&
-            Dimension.SetPermutation(Position.X, Position.Y, Position.Z, updated))
-        {
+            Dimension.SetPermutation(Position.X, Position.Y, Position.Z, updated)) {
             Dimension.BroadcastBlockUpdate(Position.X, Position.Y, Position.Z, updated);
         }
 
@@ -96,15 +86,13 @@ public sealed class HopperBlockActor : BlockActor
             return;
     }
 
-    bool PullFromAbove()
-    {
+    bool PullFromAbove() {
         if (Dimension.GetChunk(Position.X >> 4, Position.Z >> 4) is not { } chunk ||
             Dimension.GetBlockActor(chunk, Position.X & 15, Position.Y + 1, Position.Z & 15) is not { Inventory: { } source } actor ||
             ReferenceEquals(source, Container))
             return false;
 
-        for (int slot = 0; slot < source.ContainerSize; slot++)
-        {
+        for (int slot = 0; slot < source.ContainerSize; slot++) {
             if (source.GetItem(slot) is not { } item || !actor.CanExtract(slot, item, 0) ||
                 InsertItem(item.Clone(1), 1) is not null)
                 continue;
@@ -115,22 +103,18 @@ public sealed class HopperBlockActor : BlockActor
         return false;
     }
 
-    bool CollectItemsAbove()
-    {
+    bool CollectItemsAbove() {
         int firstChunkX = Position.X >> 4;
         int lastChunkX = (Position.X + 1) >> 4;
         int firstChunkZ = Position.Z >> 4;
         int lastChunkZ = (Position.Z + 1) >> 4;
-        for (int chunkZ = firstChunkZ; chunkZ <= lastChunkZ; chunkZ++)
-        {
-            for (int chunkX = firstChunkX; chunkX <= lastChunkX; chunkX++)
-            {
+        for (int chunkZ = firstChunkZ; chunkZ <= lastChunkZ; chunkZ++) {
+            for (int chunkX = firstChunkX; chunkX <= lastChunkX; chunkX++) {
                 if (Dimension.GetChunk(chunkX, chunkZ) is null)
                     continue;
 
                 ReadOnlySpan<Entity> entities = Dimension.EntityIndex.GetChunkEntities(chunkX, chunkZ);
-                foreach (Entity entity in entities)
-                {
+                foreach (Entity entity in entities) {
                     if (entity is not ItemEntity item || item.Dead ||
                         item.Position.X < Position.X || item.Position.X >= Position.X + 1 ||
                         item.Position.Y < Position.Y + 0.5f || item.Position.Y >= Position.Y + 2 ||
@@ -146,8 +130,7 @@ public sealed class HopperBlockActor : BlockActor
         return false;
     }
 
-    bool PushForward()
-    {
+    bool PushForward() {
         if (Permutation.State.Values.GetValueOrDefault("facing_direction") is not int face ||
             (uint)face >= BlockDirections.ByFace.Length ||
             !BlockDirections.OffsetByDirection.TryGetValue(BlockDirections.ByFace[face], out (int X, int Y, int Z) offset))
@@ -163,8 +146,7 @@ public sealed class HopperBlockActor : BlockActor
         byte targetFace = BlockDirections.OppositeByFace[face];
         if (ReferenceEquals(target.Inventory, Container))
             return false;
-        for (int slot = 0; slot < Container.ContainerSize; slot++)
-        {
+        for (int slot = 0; slot < Container.ContainerSize; slot++) {
             if (Container.GetItem(slot) is not { } item || target.InsertItem(item.Clone(1), targetFace) is not null)
                 continue;
 

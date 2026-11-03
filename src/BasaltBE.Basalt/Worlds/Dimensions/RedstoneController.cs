@@ -513,7 +513,8 @@ internal sealed class RedstoneController {
             if (components.TryGetValue(root, out WireNode wire)) {
                 dirtyComponents.Add(wire.Component);
                 wire.Component.DirtySources.Add(wire.Index);
-            } else {
+            }
+            else {
                 foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
                     Position neighbor = new(root.X + offsetX, root.Y + offsetY, root.Z + offsetZ);
                     if (!components.TryGetValue(neighbor, out wire))

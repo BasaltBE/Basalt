@@ -1,7 +1,6 @@
 namespace BasaltBE.Basalt.Blocks;
 
-internal static class BlockDirections
-{
+internal static class BlockDirections {
     internal static readonly string[] ByFace = ["down", "up", "north", "south", "west", "east"];
     internal static readonly byte[] OppositeByFace = [1, 0, 3, 2, 5, 4];
     internal static readonly (int X, int Y, int Z)[] OffsetByFace = [
@@ -24,15 +23,13 @@ internal static class BlockDirections
         (1, 0, 0),
         (-1, 0, 0)
     ];
-    internal static readonly Dictionary<string, (int X, int Y, int Z)> OffsetByCardinalDirection = new(StringComparer.Ordinal)
-    {
+    internal static readonly Dictionary<string, (int X, int Y, int Z)> OffsetByCardinalDirection = new(StringComparer.Ordinal) {
         ["north"] = (0, 0, -1),
         ["east"] = (1, 0, 0),
         ["south"] = (0, 0, 1),
         ["west"] = (-1, 0, 0)
     };
-    internal static readonly Dictionary<string, (int X, int Y, int Z)> OffsetByDirection = new(StringComparer.Ordinal)
-    {
+    internal static readonly Dictionary<string, (int X, int Y, int Z)> OffsetByDirection = new(StringComparer.Ordinal) {
         ["down"] = (0, -1, 0),
         ["up"] = (0, 1, 0),
         ["north"] = (0, 0, -1),
@@ -40,8 +37,7 @@ internal static class BlockDirections
         ["west"] = (-1, 0, 0),
         ["east"] = (1, 0, 0)
     };
-    internal static readonly Dictionary<string, (int X, int Y, int Z)> TorchSupportByDirection = new(StringComparer.Ordinal)
-    {
+    internal static readonly Dictionary<string, (int X, int Y, int Z)> TorchSupportByDirection = new(StringComparer.Ordinal) {
         ["unknown"] = (0, -1, 0),
         ["top"] = (0, -1, 0),
         ["north"] = (0, 0, -1),
