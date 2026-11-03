@@ -541,20 +541,20 @@ internal sealed class InventoryTransactionHandler {
             buckets.UseOnBlock(inventory, item, clicked, use.Position, use.Face))
             return true;
 
+        if (BlockPalette.OnUseItemOnBlock(
+            clicked.Identifier,
+            player,
+            item,
+            clicked,
+            use.Position,
+            use.Face,
+            use.ClickPosition
+        ))
+            return true;
+
         BlockPermutation? permutation = item?.Type.SeedCropPermutation ?? item?.Type.PlacementPermutation;
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
             if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success) {
-                if (BlockPalette.OnUseItemOnBlock(
-                    clicked.Identifier,
-                    player,
-                    item,
-                    clicked,
-                    use.Position,
-                    use.Face,
-                    use.ClickPosition
-                ))
-                    return true;
-
                 RepairPlacement(player, use);
                 inventory.Inventory.UpdateSlot(use.Slot);
             }

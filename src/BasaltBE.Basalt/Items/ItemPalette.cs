@@ -237,7 +237,8 @@ public static class ItemPalette {
             if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:block_placer") is CompoundTag placer &&
                 placer.Get<StringTag>("block") is { } block)
                 identifier = block.Value;
-            type.PlacementPermutation = BlockPalette.FindDefaultPermutation(identifier);
+            type.PlacementPermutation = BlockPalette.FindDefaultPermutation(identifier) ??
+                (type.LegacyName is { } legacyName ? BlockPalette.FindDefaultPermutation(legacyName) : null);
             if (type.PropertiesPayload.Values.GetValueOrDefault("minecraft:seed") is CompoundTag seed &&
                 seed.Get<StringTag>("crop_result") is { } crop && crop.Value is
                     "minecraft:wheat" or "minecraft:carrots" or "minecraft:potatoes" or "minecraft:beetroot" or

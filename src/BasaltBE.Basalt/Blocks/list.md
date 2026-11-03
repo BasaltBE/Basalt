@@ -22,3 +22,6 @@
 [x] TNT
 [x] Water and Lava
 [x] Farmland and Crops
+[x] Cactus
+[x] Sugar Cane
+[x] Bamboo

@@ -78,6 +78,9 @@ internal static class Program {
             BlockPalette.RegisterTrait<GrindstoneTrait>();
             BlockPalette.RegisterTrait<AnvilTrait>();
             BlockPalette.RegisterTrait<FarmingTrait>();
+            BlockPalette.RegisterTrait<CactusTrait>();
+            BlockPalette.RegisterTrait<SugarCaneTrait>();
+            BlockPalette.RegisterTrait<BambooTrait>();
             BlockPalette.RegisterTrait<RedstoneWireTrait>();
             BlockPalette.RegisterTrait<FluidTrait>();
             BlockPalette.RegisterTrait<RedstoneTorchTrait>();
