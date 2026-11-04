@@ -12,6 +12,7 @@ public sealed class StructureRegistry {
     private bool frozen;
 
     public int Count => structures.Count;
+    public IEnumerable<Structure> Values => structures.Values;
 
     public StructureRegistry() {
         Assembly dataAssembly = Assembly.Load("BasaltBE.Data");

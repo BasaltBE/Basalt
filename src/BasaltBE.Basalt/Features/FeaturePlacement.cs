@@ -1,36 +1,88 @@
 using System.Text.Json;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
+using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using BasaltBE.Nbt.Types;
+using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Packets;
+using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Features;
 
-internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimension, Random random) {
+internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimension, Random random, int maximumBlocks = 4096) {
     const int MaximumDepth = 32;
-    const int MaximumBlocks = 4096;
     readonly Dictionary<(int X, int Y, int Z), BlockPermutation> changed = [];
     int placed;
+    public bool Completed;
+    Dictionary<(int X, int Y, int Z), CompoundTag>? blockActors;
 
     public int Place(Feature feature, int x, int y, int z) {
-        Place(feature, x, y, z, 0);
-        foreach (((int blockX, int blockY, int blockZ), BlockPermutation permutation) in changed) {
-            dimension.BroadcastBlockUpdate(blockX, blockY, blockZ, permutation);
-            dimension.UpdateNeighbors(blockX, blockY, blockZ);
+        Completed = Place(feature, x, y, z, 0);
+        if (changed.Count < 64) {
+            foreach (((int blockX, int blockY, int blockZ), BlockPermutation permutation) in changed)
+                dimension.BroadcastBlockUpdate(blockX, blockY, blockZ, permutation);
         }
+        else {
+            Dictionary<(int X, int Y, int Z), List<UpdateSubChunkNetworkBlockInfo>> updates = [];
+            foreach (((int blockX, int blockY, int blockZ), BlockPermutation permutation) in changed) {
+                (int, int, int) key = (blockX >> 4, blockY >> 4, blockZ >> 4);
+                if (!updates.TryGetValue(key, out List<UpdateSubChunkNetworkBlockInfo>? entries)) {
+                    entries = [];
+                    updates.Add(key, entries);
+                }
+                entries.Add(new UpdateSubChunkNetworkBlockInfo {
+                    Position = new BlockPos { X = blockX, Y = blockY, Z = blockZ },
+                    RuntimeId = unchecked((uint)permutation.Hash),
+                    Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network
+                });
+            }
+            foreach (((int chunkX, int chunkY, int chunkZ), List<UpdateSubChunkNetworkBlockInfo> entries) in updates) {
+                dimension.Broadcast(new UpdateSubChunkBlocksPacket {
+                    Position = new BlockPos { X = chunkX << 4, Y = chunkY << 4, Z = chunkZ << 4 },
+                    BlocksChanged = new UpdateSubChunkBlocksChangedInfo { Standards = [.. entries] }
+                }, chunkX, chunkZ);
+            }
+        }
+        if (blockActors is not null) {
+            foreach (((int actorX, int actorY, int actorZ), CompoundTag data) in blockActors) {
+                dimension.Broadcast(new BlockActorDataPacket {
+                    Position = new BlockPos { X = actorX, Y = actorY, Z = actorZ },
+                    ActorData = data
+                }, actorX >> 4, actorZ >> 4);
+            }
+        }
+        HashSet<(int X, int Y, int Z)> neighbors = [];
+        foreach ((int blockX, int blockY, int blockZ) in changed.Keys) {
+            neighbors.Add((blockX + 1, blockY, blockZ));
+            neighbors.Add((blockX - 1, blockY, blockZ));
+            neighbors.Add((blockX, blockY + 1, blockZ));
+            neighbors.Add((blockX, blockY - 1, blockZ));
+            neighbors.Add((blockX, blockY, blockZ + 1));
+            neighbors.Add((blockX, blockY, blockZ - 1));
+        }
+        foreach ((int blockX, int blockY, int blockZ) in neighbors)
+            dimension.UpdateNeighbor(blockX, blockY, blockZ);
         return placed;
     }
 
     bool Place(Feature feature, int x, int y, int z, int depth) {
-        if (depth >= MaximumDepth || placed >= MaximumBlocks)
+        if (depth >= MaximumDepth || placed >= maximumBlocks)
             return false;
 
         if (feature.Type.Length == 0) {
-            FeatureContext context = new(dimension, random, MaximumBlocks - placed);
+            FeatureContext context = new(dimension, random, maximumBlocks - placed);
             if (!feature.Generate(context, x, y, z) || context.Invalid)
                 return false;
 
-            bool success = false;
+            foreach ((int blockX, int blockY, int blockZ) in context.Blocks.Keys) {
+                Chunk? chunk = dimension.GetChunk(blockX >> 4, blockZ >> 4);
+                if (chunk is not null && dimension.GetBlockActor(chunk, blockX & 15, blockY, blockZ & 15) is { } actor && !actor.CanRemove())
+                    return false;
+            }
+
+            bool success = true;
             foreach (((int blockX, int blockY, int blockZ), BlockPermutation permutation) in context.Blocks) {
                 if (dimension.GetPermutation(blockX, blockY, blockZ) == permutation ||
                     !dimension.SetPermutation(blockX, blockY, blockZ, permutation))
@@ -38,6 +90,28 @@ internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimen
                 changed[(blockX, blockY, blockZ)] = permutation;
                 placed++;
                 success = true;
+            }
+            if (context.BlockActors is not null) {
+                blockActors ??= [];
+                foreach (((int actorX, int actorY, int actorZ), CompoundTag data) in context.BlockActors) {
+                    dimension.RemoveBlockActor(actorX, actorY, actorZ);
+                    Chunk chunk = dimension.GetOrCreateChunk(actorX >> 4, actorZ >> 4);
+                    chunk.SetBlockNbt(actorX & 15, actorY, actorZ & 15, data);
+                    dimension.GetBlockActor(chunk, actorX & 15, actorY, actorZ & 15);
+                    blockActors[(actorX, actorY, actorZ)] = data;
+                    if (!changed.ContainsKey((actorX, actorY, actorZ))) {
+                        changed[(actorX, actorY, actorZ)] = dimension.GetPermutation(actorX, actorY, actorZ);
+                        placed++;
+                    }
+                    success = true;
+                }
+            }
+            if (context.Entities is not null) {
+                foreach (Entity entity in context.Entities) {
+                    entity.Spawn(dimension);
+                    placed++;
+                    success = true;
+                }
             }
             return success;
         }
@@ -86,7 +160,7 @@ internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimen
                 int iterations = distribution.TryGetProperty("iterations", out JsonElement iterationValue)
                     ? iterationValue.GetInt32()
                     : 1;
-                if (iterations is < 1 or > MaximumBlocks)
+                if (iterations < 1 || iterations > maximumBlocks)
                     return false;
                 int numerator = 1;
                 int denominator = 1;
@@ -97,7 +171,7 @@ internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimen
                         return false;
                 }
                 bool success = false;
-                for (int index = 0; index < iterations && placed < MaximumBlocks; index++) {
+                for (int index = 0; index < iterations && placed < maximumBlocks; index++) {
                     if (numerator < denominator && random.Next(denominator) >= numerator)
                         continue;
                     int targetX = x + Coordinate(distribution, "x");
@@ -116,7 +190,7 @@ internal sealed class FeaturePlacement(FeatureRegistry registry, Dimension dimen
 
     bool PlaceTree(JsonElement definition, int x, int y, int z) {
         TreePlacement tree = new(definition, dimension, random);
-        if (tree.Build(x, y, z) is not { } blocks || blocks.Count > MaximumBlocks - placed)
+        if (tree.Build(x, y, z) is not { } blocks || blocks.Count > maximumBlocks - placed)
             return false;
 
         foreach (((int blockX, int blockY, int blockZ), TreePlacement.BlockPlacement block) in blocks) {

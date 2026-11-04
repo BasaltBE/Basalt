@@ -91,7 +91,7 @@ public static class BlockPalette {
         if (PaneAndBarIdentifiers.Contains(neighborIdentifier) || GlassIdentifiers.Contains(neighborIdentifier))
             return true;
 
-        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 15;
+        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 1;
     }
 
     internal static BlockPermutation? FindStripped(BlockPermutation block) =>
@@ -121,7 +121,7 @@ public static class BlockPalette {
         if (IsWall(neighborIdentifier))
             return true;
 
-        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 15;
+        return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 1;
     }
 
     /// <summary>Registers one shared trait instance for each block identifier declared by the trait.</summary>

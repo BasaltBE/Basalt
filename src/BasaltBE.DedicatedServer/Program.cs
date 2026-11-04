@@ -156,6 +156,7 @@ internal static class Program {
             server.Commands.Register(new WorldsCommand());
             server.Commands.Register(new FillCommand());
             server.Commands.Register(new FeatureCommand(server.Features));
+            server.Commands.Register(new StructureCommand(server.Structures.Values));
 
             string[] operators = args.Where(argument => argument.StartsWith("--operator=", StringComparison.Ordinal))
                 .Select(argument => argument[11..]).ToArray();
