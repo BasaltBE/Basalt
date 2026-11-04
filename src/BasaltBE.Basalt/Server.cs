@@ -20,6 +20,8 @@ using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Ticking;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Providers;
+using BasaltBE.Basalt.Structures;
+using BasaltBE.Basalt.Features;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol;
@@ -46,6 +48,9 @@ public sealed class Server : IDisposable {
     public readonly ExperienceDropManager ExperienceDrops = new();
     public readonly EnchantmentRegistry Enchantments = new();
     public readonly BlockActorRegistry BlockActors = new();
+    public readonly StructureRegistry Structures = new();
+    public readonly FeatureRegistry Features = new();
+    public readonly FeatureRuleRegistry FeatureRules = new();
     private readonly List<World> worlds = [];
     public IReadOnlyList<World> Worlds => Volatile.Read(ref worldSnapshot);
     public readonly CommandRegistry Commands;
@@ -189,6 +194,9 @@ public sealed class Server : IDisposable {
         Commands.Prepare();
         CookingPalette.Initialize();
         BlockActors.Freeze();
+        Structures.Freeze();
+        Features.Freeze();
+        FeatureRules.Freeze();
         Network.SerializedPackets.SerializeDefault();
         coordinatorThread = Environment.CurrentManagedThreadId;
         Started = true;

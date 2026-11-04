@@ -366,6 +366,8 @@ public static class BlockPalette {
     static BlockType[] LoadBlockTypes() {
         BlockType[] types = Load<BlockType[]>("block-types.json");
         foreach (BlockType type in types) {
+            if (Array.IndexOf(type.States, "persistent_bit") >= 0 && Array.IndexOf(type.States, "update_bit") >= 0 &&
+                Array.IndexOf(type.Tags, "minecraft:leaves") < 0) type.Tags = [.. type.Tags, "minecraft:leaves"];
             foreach (string tag in type.Tags) {
                 type.ToolTypes |= tag switch {
                     "minecraft:is_pickaxe_item_destructible" => ToolType.Pickaxe,

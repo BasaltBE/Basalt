@@ -3,6 +3,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Data/**/*.json" />
     <EmbeddedResource Include="Data/**/*.bin" />
+    <EmbeddedResource Include="Data/**/*.nbt" />
   </ItemGroup>
 
   <PropertyGroup>

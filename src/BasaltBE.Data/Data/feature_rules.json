@@ -1,0 +1,699 @@
+[
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:dappled_forest_after_surface_brown_mushroom_feature_rules",
+        "places_feature": "minecraft:scatter_brown_mushroom_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "test": "has_biome_tag",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 2
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:forest_first_foliage_feature",
+        "places_feature": "minecraft:legacy:forest_foliage_feature"
+      },
+      "conditions": {
+        "placement_pass": "first_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "operator": "==",
+                "value": "forest"
+              },
+              {
+                "test": "has_biome_tag",
+                "operator": "==",
+                "value": "forest_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "roofed"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "extreme_hills"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "taiga"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "x": 0,
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": 0
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:forest_surface_trees_feature",
+        "places_feature": "minecraft:legacy:forest_tree_feature"
+      },
+      "conditions": {
+        "placement_pass": "surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "operator": "==",
+                "value": "forest"
+              },
+              {
+                "test": "has_biome_tag",
+                "operator": "==",
+                "value": "forest_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "birch"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "roofed"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "extreme_hills"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "taiga"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "coordinate_eval_order": "zxy",
+        "x": 0,
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": 0
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_bush_feature_rules",
+        "places_feature": "minecraft:scatter_bush_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "taiga"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "roofed"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "!=",
+            "value": "dappled_forest"
+          },
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "plains"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "extreme_hills"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "river"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "forest"
+              }
+            ]
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 4
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_extra_brown_mushroom_feature_rules",
+        "places_feature": "minecraft:scatter_brown_mushroom_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "pale_garden"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_extra_red_mushroom_feature_rules",
+        "places_feature": "minecraft:scatter_red_mushroom_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "pale_garden"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 512
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_firefly_bush_water_cluster",
+        "places_feature": "minecraft:firefly_bush_water_cluster_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "desert"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "swamp"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "mesa"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 8
+        },
+        "x": 0,
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": 0
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_flowers_feature_rules",
+        "places_feature": "minecraft:scatter_overworld_flower_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "jungle"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "flower_forest"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "swamp"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "mangrove_swamp"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "mesa"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "mooshroom_island"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "plains"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "cherry_grove"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "pale_garden"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "dappled_forest"
+          },
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "operator": "not",
+                "value": "savanna"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "mutated"
+              }
+            ]
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 32
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_pumpkin_feature_rules",
+        "places_feature": "minecraft:pumpkin_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 300
+        },
+        "coordinate_eval_order": "zxy",
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:overworld_after_surface_reeds_feature_rules",
+        "places_feature": "minecraft:reeds_feature"
+      },
+      "conditions": {
+        "placement_pass": "after_surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "any_of": [
+              {
+                "test": "has_biome_tag",
+                "value": "overworld"
+              },
+              {
+                "test": "has_biome_tag",
+                "value": "overworld_generation"
+              }
+            ]
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "desert"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "swamp"
+          },
+          {
+            "test": "has_biome_tag",
+            "operator": "not",
+            "value": "mesa"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "scatter_chance": {
+          "numerator": 1,
+          "denominator": 6
+        },
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:scatter_red_shrub_bush_feature_rules",
+        "places_feature": "minecraft:scatter_red_shrub_bush_feature"
+      },
+      "conditions": {
+        "placement_pass": "surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "test": "has_biome_tag",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 1,
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:feature_rules": {
+      "description": {
+        "identifier": "minecraft:scatter_tree_dappled_forest_feature_rules",
+        "places_feature": "minecraft:select_tree_dappled_forest_feature"
+      },
+      "conditions": {
+        "placement_pass": "surface_pass",
+        "minecraft:biome_filter": [
+          {
+            "test": "has_biome_tag",
+            "value": "dappled_forest"
+          }
+        ]
+      },
+      "distribution": {
+        "iterations": 6,
+        "x": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        },
+        "y": "query.heightmap(variable.worldx, variable.worldz)",
+        "z": {
+          "distribution": "uniform",
+          "extent": [
+            0,
+            16
+          ]
+        }
+      }
+    }
+  }
+]
