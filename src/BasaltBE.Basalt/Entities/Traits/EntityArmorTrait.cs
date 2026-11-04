@@ -103,7 +103,7 @@ public sealed class EntityArmorTrait : EntityTrait {
     }
 
     public override void OnHurt(Events.Entities.EntityHurtEvent hurt) {
-        if (hurt.Cause is EntityDamageCause.Drowning or EntityDamageCause.Void ||
+        if (hurt.Cause is EntityDamageCause.Drowning or EntityDamageCause.Void or EntityDamageCause.FireTick ||
             Entity is Player { GameType: GameType.Creative or GameType.Spectator })
             return;
 
@@ -136,9 +136,12 @@ public sealed class EntityArmorTrait : EntityTrait {
 
             armorProtection += item.Type.ArmorProtection;
             enchantmentProtection += item.GetEnchantmentLevel(EnchantmentPalette.Protection);
+            if (cause is EntityDamageCause.Fire or EntityDamageCause.FireTick or EntityDamageCause.Lava)
+                enchantmentProtection += item.GetEnchantmentLevel(EnchantmentPalette.FireProtection) * 2;
         }
 
-        damage *= 1 - Math.Clamp(armorProtection, 0, 20) * 0.04f;
+        if (cause != EntityDamageCause.FireTick)
+            damage *= 1 - Math.Clamp(armorProtection, 0, 20) * 0.04f;
         return damage * (1 - Math.Clamp(enchantmentProtection, 0, 20) * 0.04f);
     }
 

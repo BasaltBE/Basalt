@@ -19,7 +19,7 @@ public sealed class ItemUseOnActorInventoryTransaction : InventoryTransactionDat
     public override void Read(ref BinaryReader reader) {
         Actions.Read(ref reader);
         RuntimeId = reader.ReadVarULong();
-        ActionType = (ItemUseOnActorInventoryTransactionActionType)reader.ReadVarInt();
+        ActionType = (ItemUseOnActorInventoryTransactionActionType)reader.ReadZigZag();
         Slot = reader.ReadZigZag();
         Hand = (HandSlot)reader.ReadUInt8();
         Item.Read(ref reader);
@@ -30,7 +30,7 @@ public sealed class ItemUseOnActorInventoryTransaction : InventoryTransactionDat
     public override void Write(ref BinaryWriter writer) {
         Actions.Write(ref writer);
         writer.WriteVarULong(RuntimeId);
-        writer.WriteVarInt((int)ActionType);
+        writer.WriteZigZag((int)ActionType);
         writer.WriteZigZag(Slot);
         writer.WriteUInt8((byte)Hand);
         Item.Write(ref writer);

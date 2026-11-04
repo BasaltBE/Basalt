@@ -7,6 +7,7 @@ using BasaltBE.Nbt.Enums;
 using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities.Traits;
@@ -102,9 +103,17 @@ public sealed class PlayerInventoryTrait : EntityTrait {
     }
 
     public override void OnSpawn() {
-        Inventory.AddPersistent((Player)Entity);
-        Cursor.AddPersistent((Player)Entity);
-        CraftingGrid.AddPersistent((Player)Entity);
+        Player player = (Player)Entity;
+        Inventory.AddPersistent(player);
+        Cursor.AddPersistent(player);
+        CraftingGrid.AddPersistent(player);
+        player.SendPacket(new MobEquipmentPacket {
+            TargetRuntimeId = player.RuntimeId,
+            Item = Inventory.GetItem(SelectedSlot)?.ToNetworkStackDescriptor() ?? new NetworkItemStackDescriptor(),
+            Slot = SelectedSlot,
+            SelectedSlot = SelectedSlot,
+            ContainerId = (byte)ContainerId.Inventory
+        });
     }
 
     public override void Read(CompoundTag entityTag) {

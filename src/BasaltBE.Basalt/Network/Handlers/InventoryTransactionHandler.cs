@@ -6,6 +6,7 @@ using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Logging;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
@@ -100,8 +101,7 @@ internal sealed class InventoryTransactionHandler {
             if (descriptor is null || origin is null || hand != HandSlot.Mainhand ||
                 (uint)slot >= 9 || slot != inventory.SelectedSlot ||
                 !float.IsFinite(origin.X) || !float.IsFinite(origin.Y) || !float.IsFinite(origin.Z)) {
-                if (attack)
-                    Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: slot={slot}, selected={inventory.SelectedSlot}, hand={hand}.");
+
                 return;
             }
             ItemStack? item;
@@ -166,8 +166,7 @@ internal sealed class InventoryTransactionHandler {
                         ItemUseOnActorInventoryTransactionActionType.Attack) ||
                         !float.IsFinite(actor.HitPosition.X) || !float.IsFinite(actor.HitPosition.Y) ||
                         !float.IsFinite(actor.HitPosition.Z)) {
-                        if (attack)
-                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: invalid hit position.");
+
                         return;
                     }
 
@@ -175,8 +174,7 @@ internal sealed class InventoryTransactionHandler {
                     if (target is null || target.Dead || ReferenceEquals(target, player) ||
                         target is Player targetPlayer && (targetPlayer.Disposed || !targetPlayer.Spawned ||
                         !ReferenceEquals(targetPlayer.Dimension, player.Dimension))) {
-                        if (attack)
-                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is missing or unavailable.");
+
                         return;
                     }
 
@@ -200,8 +198,7 @@ internal sealed class InventoryTransactionHandler {
                     float distanceSquared = distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ;
                     float reach = player.InputMode == InputMode.Touch ? 6 : 3;
                     if (!float.IsFinite(distanceSquared) || distanceSquared > reach * reach) {
-                        if (attack)
-                            Logger.Scoped("Network").Info($"Rejected attack from {player.Username}: target {actor.RuntimeId} is out of reach ({MathF.Sqrt(distanceSquared):0.##} blocks, {reach} block limit for {player.InputMode} input).");
+
                         return;
                     }
 
@@ -220,7 +217,8 @@ internal sealed class InventoryTransactionHandler {
                         player.OnAttack(target, item);
                         if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health) {
                             float damage = (player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1) + (item?.Type.AttackDamageBonus ?? 0);
-                            health.ApplyDamage(damage, EntityDamageCause.Entity, player);
+                            int fireAspect = item?.GetEnchantmentLevel(EnchantmentPalette.FireAspect) ?? 0;
+                            health.ApplyDamage(damage, EntityDamageCause.Entity, player, ignitionTicks: fireAspect * 80);
                         }
                         if (damageItems)
                             item?.DamageDurability(durabilityDamage);

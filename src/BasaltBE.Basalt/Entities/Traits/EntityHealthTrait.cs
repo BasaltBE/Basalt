@@ -5,8 +5,11 @@ using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Items.Types;
+using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
+using System.Numerics;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
@@ -31,6 +34,21 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     private float previousY;
     private float highestY;
     private bool falling;
+    int fireTicks;
+    int fireContactTicks;
+    ulong? fireSource;
+    float contactHalfWidth = 0.3f;
+    float contactHeight = 1.8f;
+    Chunk? contactChunk;
+    long contactRevision;
+    Vector3 contactPosition;
+    bool waterContact;
+    bool lavaContact;
+    bool fireContact;
+    bool soulFireContact;
+
+    public int FireTicks => fireTicks;
+    public bool Burning => fireTicks > 0;
 
     public float FallDistance { get; private set; }
 
@@ -38,6 +56,13 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     public float Maximum => Entity.Attributes.Get(AttributeName)?.Maximum ?? 0;
 
     public override void OnAdd() {
+        if (Entity.Type?.Components.Contains("minecraft:fire_immune", StringComparer.Ordinal) == true)
+            Entity.SetFlag(ActorFlag.FireImmune, true);
+        var collision = Entity.Type?.PropertiesPayload?.Components.CollisionBox;
+        if (collision?.Width is double width && double.IsFinite(width) && width > 0 && width <= 64)
+            contactHalfWidth = (float)width * 0.5f;
+        if (collision?.Height is double height && double.IsFinite(height) && height > 0 && height <= 64)
+            contactHeight = (float)height;
         var component = Entity.Type?.PropertiesPayload?.Components.Health;
         double maximum = component?.Max
             ?? component?.Value?.Range?.RangeMax
@@ -63,19 +88,140 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         );
     }
 
-    public override void OnSpawn() => ResetFallDamage();
+    public override void OnSpawn() {
+        contactChunk = null;
+        ResetFallDamage();
+    }
 
     public override void Read(CompoundTag entityTag) {
         if (entityTag.Get<FloatTag>("Health") is { } health && float.IsFinite(health.Value))
             Entity.Attributes.SetCurrent(AttributeName, Math.Clamp(health.Value, 0, Maximum));
+        Extinguish();
+        if (entityTag.Get<ShortTag>("Fire") is { Value: > 0 } fire &&
+            !Entity.Flags.Get(ActorFlag.FireImmune) &&
+            !(Entity is Player player && player.Abilities.Get(PlayerAbility.Invulnerable))) {
+            fireTicks = fire.Value;
+            Entity.SetFlag(ActorFlag.OnFire, true);
+        }
     }
 
-    public override void Write(CompoundTag entityTag) =>
+    public override void Write(CompoundTag entityTag) {
         entityTag.Add("Health", new FloatTag { Value = Current });
+        entityTag.Add("Fire", new ShortTag { Value = checked((short)fireTicks) });
+    }
 
-    public override void OnRespawn() => ResetFallDamage();
+    public override void OnRespawn() {
+        contactChunk = null;
+        Extinguish();
+        ResetFallDamage();
+    }
+
+    public bool Ignite(int ticks, Entity? source = null) {
+        Entity.SpawnedDimension?.World?.CheckOwnership();
+        ArgumentOutOfRangeException.ThrowIfNegative(ticks);
+        if (Entity.Dead || Entity.Flags.Get(ActorFlag.FireImmune) ||
+            Entity is Player player && player.Abilities.Get(PlayerAbility.Invulnerable))
+            return false;
+        int protection = 0;
+        if (Entity.GetTrait<EntityArmorTrait>() is { } armor) {
+            for (int slot = 0; slot < armor.Armor.ContainerSize; slot++)
+                protection = Math.Max(protection, armor.Armor.GetItem(slot)?.GetEnchantmentLevel(EnchantmentPalette.FireProtection) ?? 0);
+        }
+        ticks = (int)(Math.Min(ticks, short.MaxValue) * Math.Max(0, 1 - protection * 0.15));
+        if (ticks <= fireTicks)
+            return false;
+        fireTicks = ticks;
+        fireSource = source is not null && ReferenceEquals(source.SpawnedDimension, Entity.SpawnedDimension) ? source.RuntimeId : null;
+        Entity.SetFlag(ActorFlag.OnFire, true);
+        return true;
+    }
+
+    public void Extinguish() {
+        Entity.SpawnedDimension?.World?.CheckOwnership();
+        fireTicks = 0;
+        fireContactTicks = 0;
+        fireSource = null;
+        Entity.SetFlag(ActorFlag.OnFire, false);
+    }
 
     public override void Tick() {
+        if (Entity.Dead || Entity.SpawnedDimension is not { } dimension)
+            return;
+        if (Entity.Flags.Get(ActorFlag.FireImmune) ||
+            Entity is Player immunePlayer && immunePlayer.Abilities.Get(PlayerAbility.Invulnerable)) {
+            if (Burning)
+                Extinguish();
+        }
+        else {
+            int minimumX = (int)MathF.Floor(Entity.Position.X - contactHalfWidth + 0.001f);
+            int maximumX = (int)MathF.Floor(Entity.Position.X + contactHalfWidth - 0.001f);
+            int minimumY = Math.Max(dimension.MinimumY, (int)MathF.Floor(Entity.Position.Y + 0.001f));
+            int maximumY = Math.Min(dimension.MaximumY, (int)MathF.Floor(Entity.Position.Y + contactHeight - 0.001f));
+            int minimumZ = (int)MathF.Floor(Entity.Position.Z - contactHalfWidth + 0.001f);
+            int maximumZ = (int)MathF.Floor(Entity.Position.Z + contactHalfWidth - 0.001f);
+            Chunk? currentChunk = dimension.GetChunk(minimumX >> 4, minimumZ >> 4);
+            bool cached = currentChunk is not null && ReferenceEquals(currentChunk, contactChunk) &&
+                currentChunk.Revision == contactRevision && contactPosition.X == Entity.Position.X &&
+                contactPosition.Y == Entity.Position.Y && contactPosition.Z == Entity.Position.Z;
+            bool water = waterContact;
+            bool lava = lavaContact;
+            bool fire = fireContact;
+            bool soulFire = soulFireContact;
+            if (!cached) {
+                water = lava = fire = soulFire = false;
+                for (int x = minimumX; x <= maximumX; x++) {
+                    for (int z = minimumZ; z <= maximumZ; z++) {
+                        if (dimension.GetChunk(x >> 4, z >> 4) is not { } chunk)
+                            continue;
+                        for (int y = minimumY; y <= maximumY; y++) {
+                            for (int layer = 0; layer < 2; layer++) {
+                                BlockPermutation contactBlock = chunk.GetPermutation(x & 15, y, z & 15, layer);
+                                if (contactBlock.Identifier is "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava") {
+                                    int depth = contactBlock.State.Values.GetValueOrDefault("liquid_depth") is int level ? level : 0;
+                                    float surface = y + (depth >= 8 ? 1 : 1 - (depth + 1) / 9f);
+                                    if (Entity.Position.Y + 0.001f >= surface)
+                                        continue;
+                                    water |= contactBlock.Identifier is "minecraft:water" or "minecraft:flowing_water";
+                                    lava |= contactBlock.Identifier is "minecraft:lava" or "minecraft:flowing_lava";
+                                }
+                                fire |= contactBlock.Identifier is "minecraft:fire" or "minecraft:soul_fire";
+                                soulFire |= contactBlock.Identifier == "minecraft:soul_fire";
+                            }
+                        }
+                    }
+                }
+                waterContact = water;
+                lavaContact = lava;
+                fireContact = fire;
+                soulFireContact = soulFire;
+                contactChunk = (minimumX >> 4) == (maximumX >> 4) && (minimumZ >> 4) == (maximumZ >> 4) ? currentChunk : null;
+                contactRevision = currentChunk?.Revision ?? 0;
+                contactPosition = new Vector3(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
+            }
+            if (water) {
+                Extinguish();
+            }
+            else {
+                if (lava || fire) {
+                    Ignite(lava ? 300 : 160);
+                    if (fireContactTicks == 0) {
+                        ApplyDamage(lava ? 4 : soulFire ? 2 : 1, lava ? EntityDamageCause.Lava : EntityDamageCause.Fire);
+                        fireContactTicks = 10;
+                    }
+                    fireContactTicks--;
+                }
+                else {
+                    fireContactTicks = 0;
+                }
+                if (fireTicks > 0) {
+                    fireTicks--;
+                    if (fireTicks == 0)
+                        Extinguish();
+                    else if (!lava && !fire && fireTicks % 20 == 0)
+                        ApplyDamage(1, EntityDamageCause.FireTick, fireSource is ulong id ? dimension.GetEntity(id) : null);
+                }
+            }
+        }
         if (Entity is not Player player || !player.Spawned || player.Disposed || player.Dead ||
             player.GameType is not (GameType.Survival or GameType.Adventure) ||
             player.Abilities.Get(PlayerAbility.Flying) || Entity.SimulationAge % SuffocationDamageInterval != 0)
@@ -119,10 +265,14 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             Land(player);
     }
 
-    public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null) {
+    public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null, int ignitionTicks = 0) {
         Entity.SpawnedDimension?.World?.CheckOwnership();
+        ArgumentOutOfRangeException.ThrowIfNegative(ignitionTicks);
         if (!float.IsFinite(amount) || amount <= 0 || Entity.Dead ||
             Entity.Attributes.Get(AttributeName) is not { } health)
+            return false;
+        if ((Entity is Player invulnerablePlayer && invulnerablePlayer.Abilities.Get(PlayerAbility.Invulnerable) && cause != EntityDamageCause.Void) ||
+            ((cause is EntityDamageCause.Fire or EntityDamageCause.FireTick or EntityDamageCause.Lava) && Entity.Flags.Get(ActorFlag.FireImmune)))
             return false;
 
         float damage = Entity.GetTrait<EntityArmorTrait>()?.ReduceDamage(amount, cause) ?? amount;
@@ -155,6 +305,8 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                 return false;
         }
 
+        if (ignitionTicks > 0)
+            Ignite(ignitionTicks, source);
         Entity.Attributes.SetCurrent(AttributeName, current);
         if (Entity is Player)
             Entity.GetTrait<PlayerHungerTrait>()?.AddExhaustion(damage * 0.1f);
@@ -234,7 +386,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             }
             if (Entity is not Player && Entity.SpawnedDimension is { } dropDimension &&
                 dropDimension.World is { } dropWorld && Entity.Type is { } entityType) {
-                foreach (EntityDrop drop in dropWorld.LootTables.GetEntityDrops(entityType.Identifier)) {
+                foreach (EntityDrop drop in dropWorld.LootTables.GetEntityDrops(entityType.Identifier, fireAspectLevel: Burning ? 1 : 0)) {
                     ItemType? itemType = ItemPalette.Find(drop.Identifier);
                     if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
                         continue;
