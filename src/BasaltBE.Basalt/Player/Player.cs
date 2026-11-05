@@ -121,6 +121,7 @@ public sealed class Player : Entity, IDisposable {
         SetFlag(ActorFlag.CanShowName, true);
         SetFlag(ActorFlag.AlwaysShowName, true);
         SetFlag(ActorFlag.CanClimb, true);
+        SetFlag(ActorFlag.CanSwim, true);
     }
 
     public bool SetGameType(GameType gameType) {

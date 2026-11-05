@@ -7,7 +7,15 @@ namespace BasaltBE.Basalt.Entities;
 
 public sealed class ActorFlags {
     private UInt128 value;
+    short? airSupply;
+    short maximumAirSupply;
     public bool Dirty;
+
+    internal void SetAirSupply(short supply, short maximum) {
+        Dirty |= airSupply != supply || maximumAirSupply != maximum;
+        airSupply = supply;
+        maximumAirSupply = maximum;
+    }
 
     public bool Get(ActorFlag flag) {
         int index = (int)flag;
@@ -40,10 +48,15 @@ public sealed class ActorFlags {
         };
     }
 
-    internal ActorDataItem[] CreateSnapshot() =>
-    [
-        new ActorDataItem { Id = (uint)ActorDataId.Reserved0, Type = DataItemType.Int64, Value = unchecked((long)(ulong)value) },
-        new ActorDataItem { Id = (uint)ActorDataId.AlwaysShowNameTag, Type = DataItemType.Byte, Value = (sbyte)(Get(ActorFlag.AlwaysShowName) ? 1 : 0) },
-        new ActorDataItem { Id = (uint)ActorDataId.Reserved092, Type = DataItemType.Int64, Value = unchecked((long)(ulong)(value >> 64)) }
-    ];
+    internal ActorDataItem[] CreateSnapshot() {
+        ActorDataItem[] data = new ActorDataItem[airSupply.HasValue ? 5 : 3];
+        data[0] = new() { Id = (uint)ActorDataId.Reserved0, Type = DataItemType.Int64, Value = unchecked((long)(ulong)value) };
+        data[1] = new() { Id = (uint)ActorDataId.AlwaysShowNameTag, Type = DataItemType.Byte, Value = (sbyte)(Get(ActorFlag.AlwaysShowName) ? 1 : 0) };
+        data[2] = new() { Id = (uint)ActorDataId.Reserved092, Type = DataItemType.Int64, Value = unchecked((long)(ulong)(value >> 64)) };
+        if (airSupply is short supply) {
+            data[3] = new() { Id = (uint)ActorDataId.AirSupply, Type = DataItemType.Short, Value = supply };
+            data[4] = new() { Id = (uint)ActorDataId.MaxAirSupply, Type = DataItemType.Short, Value = maximumAirSupply };
+        }
+        return data;
+    }
 }

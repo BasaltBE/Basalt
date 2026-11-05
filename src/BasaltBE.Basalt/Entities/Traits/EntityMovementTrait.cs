@@ -6,6 +6,7 @@ using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Entities.Types.Components;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Protocol.Enums;
 
 namespace BasaltBE.Basalt.Entities.Traits;
 
@@ -89,101 +90,150 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         if (Entity is Player || Entity.Dead || Entity.SpawnedDimension is not Dimension dimension)
             return;
 
+        FluidContact fluid = Entity.GetFluidContact();
+        bool water = fluid.WaterDepth > 0;
+        bool lava = !water && fluid.LavaDepth > 0;
         bool gravity = Entity.Flags.Get(ActorFlag.HasGravity);
-        if (!gravity && Motion.X == 0 && Motion.Y == 0 && Motion.Z == 0)
+        if (!gravity && Motion.X == 0 && Motion.Y == 0 && Motion.Z == 0 && !water && !lava)
             return;
 
-        float width = 0.6f;
-        float height = 1.8f;
-        if (smallEntity) {
-            width = 0.25f;
-            height = 0.25f;
-        }
-        else if (Entity.Type?.PropertiesPayload?.Components.CollisionBox is { } collisionBox) {
-            if (collisionBox.Width is double configuredWidth && double.IsFinite(configuredWidth) &&
-                configuredWidth > 0 && configuredWidth <= float.MaxValue)
-                width = (float)configuredWidth;
-            if (collisionBox.Height is double configuredHeight && double.IsFinite(configuredHeight) &&
-                configuredHeight > 0 && configuredHeight <= float.MaxValue)
-                height = (float)configuredHeight;
-        }
+        float width = Entity.CollisionWidth;
+        float height = Entity.GetCollisionHeight();
+        bool living = !smallEntity && (Entity.Type?.PropertiesPayload?.Components.Health is not null ||
+            Entity.GetTrait<EntityHealthTrait>() is not null);
         float drag = Math.Clamp(Drag, 0, 1);
         float verticalDrag = 1 - drag;
         float horizontalDrag = verticalDrag;
-        if (Grounded) {
+        if (Grounded && !water && !lava) {
             int blockX = (int)MathF.Floor(Entity.Position.X);
             int blockY = (int)MathF.Floor(Entity.Position.Y - CollisionEpsilon);
             int blockZ = (int)MathF.Floor(Entity.Position.Z);
             BlockType? surface = BlockPalette.FindType(dimension.GetPermutation(blockX, blockY, blockZ).Identifier);
-            float friction = surface is { Solid: true } && float.IsFinite(surface.Friction)
+            horizontalDrag *= surface is { Solid: true } && float.IsFinite(surface.Friction)
                 ? Math.Clamp(surface.Friction, 0.6f, 0.99f)
                 : 0.6f;
-            horizontalDrag *= friction;
         }
 
-        float velocityX = Motion.X * horizontalDrag;
-        float velocityY = Motion.Y;
-        float velocityZ = Motion.Z * horizontalDrag;
-        if (gravity) {
-            velocityY = VerticalDragBeforeGravity
-                ? velocityY * verticalDrag - Math.Max(0, Gravity)
-                : (velocityY - Math.Max(0, Gravity)) * verticalDrag;
-            velocityY = Math.Max(velocityY, TerminalVelocity);
+        Vector3 velocity = new(Motion.X, Motion.Y, Motion.Z);
+        if (water || lava) {
+            Vector3 current = water ? fluid.WaterFlow : fluid.LavaFlow;
+            if (!smallEntity && current.LengthSquared() > 0)
+                current = Vector3.Normalize(current);
+            float acceleration = water ? 0.014f : dimension.Type == DimensionType.Nether ? 0.007f : 0.0023333334f;
+            float depth = water ? fluid.WaterDepth : fluid.LavaDepth;
+            velocity += current * (acceleration * Math.Min(1, depth / 0.4f));
         }
-        else if (VerticalDragBeforeGravity) {
-            velocityY *= verticalDrag;
+        if (smallEntity && (water || lava)) {
+            float fluidDrag = (water ? 0.99f : 0.95f) * verticalDrag;
+            velocity.X *= fluidDrag;
+            velocity.Z *= fluidDrag;
+            if (gravity) {
+                if ((water ? fluid.WaterDepth : fluid.LavaDepth) <= 0.1f)
+                    velocity.Y = -0.02f;
+                else if (velocity.Y < 0.06f)
+                    velocity.Y += 0.0005f;
+            }
+            velocity.Y *= verticalDrag;
+        }
+        else if ((water || lava) && living) {
+            float slowdown = water ? 0.8f : 0.5f;
+            velocity *= slowdown;
+            if (gravity)
+                velocity.Y -= 0.02f;
+            if (Jumping)
+                velocity.Y += 0.04f;
+        }
+        else {
+            velocity.X *= horizontalDrag;
+            velocity.Z *= horizontalDrag;
+            if (gravity) {
+                velocity.Y = VerticalDragBeforeGravity
+                    ? velocity.Y * verticalDrag - Math.Max(0, Gravity)
+                    : (velocity.Y - Math.Max(0, Gravity)) * verticalDrag;
+                velocity.Y = Math.Max(velocity.Y, TerminalVelocity);
+            }
+            else if (VerticalDragBeforeGravity) {
+                velocity.Y *= verticalDrag;
+            }
         }
 
-        float previousX = Entity.Position.X;
-        float previousY = Entity.Position.Y;
-        float previousZ = Entity.Position.Z;
-        float nextX = Entity.Position.X + velocityX;
-        if (velocityX != 0 && Collides(dimension, nextX, Entity.Position.Y, Entity.Position.Z, width, height))
-            velocityX = 0;
-        else
-            Entity.Position.X = nextX;
+        Vector3 position = new(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
+        Vector3 moved = ClipMotion(dimension, position, velocity, width, height);
+        if (living && (Grounded || velocity.Y < 0 && moved.Y != velocity.Y) &&
+            (moved.X != velocity.X || moved.Z != velocity.Z)) {
+            Vector3 up = ClipMotion(dimension, position, new Vector3(0, 0.6f, 0), width, height);
+            Vector3 across = ClipMotion(dimension, position + up, new Vector3(velocity.X, 0, velocity.Z), width, height);
+            Vector3 down = ClipMotion(dimension, position + up + across, new Vector3(0, velocity.Y - up.Y, 0), width, height);
+            if (across.X * across.X + across.Z * across.Z > moved.X * moved.X + moved.Z * moved.Z)
+                moved = up + across + down;
+        }
+        HorizontalCollision = moved.X != velocity.X || moved.Z != velocity.Z;
+        VerticalCollision = moved.Y != velocity.Y;
+        Grounded = VerticalCollision && velocity.Y < 0;
+        Motion.X = moved.X != velocity.X || MathF.Abs(velocity.X) < 0.003f && !water && !lava ? 0 : velocity.X;
+        Motion.Y = VerticalCollision ? 0 : velocity.Y;
+        Motion.Z = moved.Z != velocity.Z || MathF.Abs(velocity.Z) < 0.003f && !water && !lava ? 0 : velocity.Z;
+        if (moved != Vector3.Zero) {
+            Entity.Position.X += moved.X;
+            Entity.Position.Y += moved.Y;
+            Entity.Position.Z += moved.Z;
+            Entity.OnMove();
+        }
+    }
 
-        float nextZ = Entity.Position.Z + velocityZ;
-        if (velocityZ != 0 && Collides(dimension, Entity.Position.X, Entity.Position.Y, nextZ, width, height))
-            velocityZ = 0;
-        else
-            Entity.Position.Z = nextZ;
-
-        float nextY = Entity.Position.Y + velocityY;
-        if (Collides(dimension, Entity.Position.X, nextY, Entity.Position.Z, width, height)) {
-            if (velocityY < 0) {
-                float landedY = float.NegativeInfinity;
-                int minX = (int)MathF.Floor(Entity.Position.X - width * 0.5f + CollisionEpsilon);
-                int maxX = (int)MathF.Floor(Entity.Position.X + width * 0.5f - CollisionEpsilon);
-                int minZ = (int)MathF.Floor(Entity.Position.Z - width * 0.5f + CollisionEpsilon);
-                int maxZ = (int)MathF.Floor(Entity.Position.Z + width * 0.5f - CollisionEpsilon);
-                int minY = (int)MathF.Floor(nextY + CollisionEpsilon);
-                int maxY = (int)MathF.Floor(Entity.Position.Y + CollisionEpsilon);
-                for (int x = minX; x <= maxX; x++) {
-                    for (int z = minZ; z <= maxZ; z++) {
-                        for (int y = minY; y <= maxY; y++) {
-                            if (BlockPalette.FindType(dimension.GetPermutation(x, y, z).Identifier)?.Solid == true)
-                                landedY = Math.Max(landedY, y + 1);
+    static Vector3 ClipMotion(Dimension dimension, Vector3 position, Vector3 motion, float width, float height) {
+        Vector3 minimum = new(position.X - width * 0.5f, position.Y, position.Z - width * 0.5f);
+        Vector3 maximum = new(position.X + width * 0.5f, position.Y + height, position.Z + width * 0.5f);
+        Span<BlockCollisionBox> boxes = stackalloc BlockCollisionBox[5];
+        for (int pass = 0; pass < 3; pass++) {
+            int axis = pass == 0 ? 1 : pass == 1 ? 0 : 2;
+            float delta = motion[axis];
+            if (delta == 0)
+                continue;
+            Vector3 sweptMinimum = minimum;
+            Vector3 sweptMaximum = maximum;
+            sweptMinimum[axis] += Math.Min(0, delta);
+            sweptMaximum[axis] += Math.Max(0, delta);
+            int minX = (int)MathF.Floor(sweptMinimum.X + CollisionEpsilon);
+            int maxX = (int)MathF.Floor(sweptMaximum.X - CollisionEpsilon);
+            int minY = Math.Max(dimension.MinimumY, (int)MathF.Floor(sweptMinimum.Y - 0.5f + CollisionEpsilon));
+            int maxY = Math.Min(dimension.MaximumY, (int)MathF.Floor(sweptMaximum.Y - CollisionEpsilon));
+            int minZ = (int)MathF.Floor(sweptMinimum.Z + CollisionEpsilon);
+            int maxZ = (int)MathF.Floor(sweptMaximum.Z - CollisionEpsilon);
+            for (int x = minX; x <= maxX && delta != 0; x++) {
+                for (int z = minZ; z <= maxZ && delta != 0; z++) {
+                    bool loaded = dimension.GetChunk(x >> 4, z >> 4) is not null;
+                    for (int y = minY; y <= maxY && delta != 0; y++) {
+                        int count;
+                        if (loaded) {
+                            count = dimension.GetPermutation(x, y, z).GetCollisionBoxes(boxes);
+                        }
+                        else {
+                            boxes[0] = new(0, 0, 0, 1, 1, 1);
+                            count = 1;
+                        }
+                        for (int boxIndex = 0; boxIndex < count; boxIndex++) {
+                            BlockCollisionBox box = boxes[boxIndex];
+                            Vector3 blockMin = new(x + box.MinX, y + box.MinY, z + box.MinZ);
+                            Vector3 blockMax = new(x + box.MaxX, y + box.MaxY, z + box.MaxZ);
+                            int first = (axis + 1) % 3;
+                            int second = (axis + 2) % 3;
+                            if (maximum[first] <= blockMin[first] + CollisionEpsilon || minimum[first] >= blockMax[first] - CollisionEpsilon ||
+                                maximum[second] <= blockMin[second] + CollisionEpsilon || minimum[second] >= blockMax[second] - CollisionEpsilon)
+                                continue;
+                            if (delta > 0 && maximum[axis] <= blockMin[axis] + CollisionEpsilon)
+                                delta = Math.Min(delta, Math.Max(0, blockMin[axis] - maximum[axis]));
+                            else if (delta < 0 && minimum[axis] >= blockMax[axis] - CollisionEpsilon)
+                                delta = Math.Max(delta, Math.Min(0, blockMax[axis] - minimum[axis]));
                         }
                     }
                 }
-
-                if (float.IsFinite(landedY))
-                    Entity.Position.Y = landedY;
-                Grounded = true;
             }
-            velocityY = 0;
+            minimum[axis] += delta;
+            maximum[axis] += delta;
+            motion[axis] = delta;
         }
-        else {
-            Entity.Position.Y = nextY;
-            Grounded = false;
-        }
-
-        Motion.X = MathF.Abs(velocityX) < 0.003f ? 0 : velocityX;
-        Motion.Y = velocityY;
-        Motion.Z = MathF.Abs(velocityZ) < 0.003f ? 0 : velocityZ;
-        if (Entity.Position.X != previousX || Entity.Position.Y != previousY || Entity.Position.Z != previousZ)
-            Entity.OnMove();
+        return motion;
     }
 
     internal bool CalculateKnockback(Entity source, Vec3 velocity) {
@@ -209,22 +259,4 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         return true;
     }
 
-    private static bool Collides(Dimension dimension, float x, float y, float z, float width, float height) {
-        int minX = (int)MathF.Floor(x - width * 0.5f + CollisionEpsilon);
-        int maxX = (int)MathF.Floor(x + width * 0.5f - CollisionEpsilon);
-        int minY = (int)MathF.Floor(y + CollisionEpsilon);
-        int maxY = (int)MathF.Floor(y + height - CollisionEpsilon);
-        int minZ = (int)MathF.Floor(z - width * 0.5f + CollisionEpsilon);
-        int maxZ = (int)MathF.Floor(z + width * 0.5f - CollisionEpsilon);
-        for (int blockX = minX; blockX <= maxX; blockX++) {
-            for (int blockY = minY; blockY <= maxY; blockY++) {
-                for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
-                    if (dimension.GetChunk(blockX >> 4, blockZ >> 4) is null ||
-                        BlockPalette.FindType(dimension.GetPermutation(blockX, blockY, blockZ).Identifier)?.Solid == true)
-                        return true;
-                }
-            }
-        }
-        return false;
-    }
 }

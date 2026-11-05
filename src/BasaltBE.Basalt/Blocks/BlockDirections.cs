@@ -1,6 +1,17 @@
 namespace BasaltBE.Basalt.Blocks;
 
 internal static class BlockDirections {
+    internal static readonly string[] DoorDirection = ["east", "south", "west", "north"];
+    internal static readonly (string State, int X, int Z)[] Connections = [
+        ("minecraft:connection_east", 1, 0), ("minecraft:connection_north", 0, -1),
+        ("minecraft:connection_south", 0, 1), ("minecraft:connection_west", -1, 0)
+    ];
+    internal static readonly (float MinX, float MinZ, float MaxX, float MaxZ)[] DoorBounds = [
+        (0, 0, 0.1825f, 1), (0, 0, 1, 0.1825f), (0.8175f, 0, 1, 1), (0, 0.8175f, 1, 1)
+    ];
+    internal static readonly (float MinX, float MinZ, float MaxX, float MaxZ)[] TrapdoorBounds = [
+        (0, 0, 0.1825f, 1), (0.8175f, 0, 1, 1), (0, 0, 1, 0.1825f), (0, 0.8175f, 1, 1)
+    ];
     internal static readonly string[] ByFace = ["down", "up", "north", "south", "west", "east"];
     internal static readonly byte[] OppositeByFace = [1, 0, 3, 2, 5, 4];
     internal static readonly (int X, int Y, int Z)[] OffsetByFace = [

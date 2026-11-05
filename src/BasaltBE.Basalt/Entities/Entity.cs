@@ -9,6 +9,9 @@ using BasaltBE.Basalt.Network;
 using BasaltBE.Nbt.Types;
 using BasaltBE.Protocol.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
+using BasaltBE.Basalt.Blocks.Traits;
+using System.Numerics;
+using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -31,6 +34,16 @@ public class Entity {
     internal int SpatialCellSlot = -1;
     internal bool SpatialDirty;
     public bool Dead;
+    public float CollisionWidth = 0.6f;
+    public float CollisionHeight = 1.8f;
+    Vector3 fluidPosition;
+    float fluidHeight;
+    float fluidWidth;
+    float fluidEyeHeight;
+    Dimension? fluidDimension;
+    FluidContact fluidContact;
+    Chunk? fluidChunk;
+    long fluidRevision;
 
     public Entity(EntityType? type = null, float headOffset = 0) {
         if (!float.IsFinite(headOffset) || headOffset < 0)
@@ -38,6 +51,14 @@ public class Entity {
 
         HeadOffset = headOffset;
         Type = type;
+        if (type?.PropertiesPayload?.Components.CollisionBox is { } collision) {
+            if (collision.Width is double width && double.IsFinite(width) && width > 0 && width <= 64)
+                CollisionWidth = (float)width;
+            if (collision.Height is double height && double.IsFinite(height) && height > 0 && height <= 64)
+                CollisionHeight = (float)height;
+        }
+        if (this is ItemEntity || type?.Identifier == "minecraft:xp_orb")
+            CollisionWidth = CollisionHeight = 0.25f;
         traits = EntityPalette.CreateTraits(this, type);
         if (traits is not null) {
             foreach (EntityTrait trait in traits)
@@ -70,6 +91,55 @@ public class Entity {
     /// Returns a new head-position snapshot.
     /// </summary>
     public Vec3 GetHeadPosition() => new() { X = Position.X, Y = Position.Y + HeadOffset, Z = Position.Z };
+
+    public float GetCollisionHeight() {
+        if (this is Player) {
+            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
+                return 0.6f;
+            if (Flags.Get(ActorFlag.Sneaking))
+                return 1.5f;
+        }
+        return CollisionHeight;
+    }
+
+    public float GetEyeHeight() {
+        if (this is Player) {
+            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
+                return 0.4f;
+            if (Flags.Get(ActorFlag.Sneaking))
+                return 1.27f;
+        }
+        return HeadOffset > 0 ? HeadOffset : CollisionHeight * 0.85f;
+    }
+
+    public FluidContact GetFluidContact() {
+        float height = GetCollisionHeight();
+        float eyeHeight = GetEyeHeight();
+        Vector3 position = new(Position.X, Position.Y, Position.Z);
+        Dimension? dimension = this is Player player ? player.Dimension : SpawnedDimension;
+        bool sameBounds = fluidPosition == position && fluidHeight == height && fluidEyeHeight == eyeHeight &&
+            fluidWidth == CollisionWidth && ReferenceEquals(fluidDimension, dimension);
+        bool unchanged = sameBounds && fluidChunk is not null && fluidRevision == fluidChunk.Revision &&
+            ReferenceEquals(fluidChunk, dimension?.GetChunk((int)MathF.Floor(position.X) >> 4, (int)MathF.Floor(position.Z) >> 4));
+        if (!unchanged) {
+            fluidContact = dimension is not null
+                ? FluidTrait.GetContact(dimension, position, CollisionWidth, height, eyeHeight, this is not Player)
+                : default;
+            fluidPosition = position;
+            fluidHeight = height;
+            fluidWidth = CollisionWidth;
+            fluidEyeHeight = eyeHeight;
+            fluidDimension = dimension;
+            int minX = (int)MathF.Floor(position.X - CollisionWidth * 0.5f) - 1;
+            int maxX = (int)MathF.Floor(position.X + CollisionWidth * 0.5f) + 1;
+            int minZ = (int)MathF.Floor(position.Z - CollisionWidth * 0.5f) - 1;
+            int maxZ = (int)MathF.Floor(position.Z + CollisionWidth * 0.5f) + 1;
+            fluidChunk = (minX >> 4) == (maxX >> 4) && (minZ >> 4) == (maxZ >> 4)
+                ? dimension?.GetChunk(minX >> 4, minZ >> 4) : null;
+            fluidRevision = fluidChunk?.Revision ?? 0;
+        }
+        return fluidContact;
+    }
 
     public void Spawn(Dimension dimension) {
         ArgumentNullException.ThrowIfNull(dimension);

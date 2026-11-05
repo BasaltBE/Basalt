@@ -3,6 +3,8 @@ using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Protocol.Enums;
+using BasaltBE.Basalt.Entities.Types;
+using System.Numerics;
 
 namespace BasaltBE.Basalt.Blocks.Traits;
 
@@ -13,6 +15,114 @@ namespace BasaltBE.Basalt.Blocks.Traits;
     "minecraft:flowing_lava"
 )]
 public sealed class FluidTrait : BlockTrait {
+    internal static FluidContact GetContact(Dimension dimension, Vector3 position, float width, float height, float eyeHeight, bool flow) {
+        FluidContact result = default;
+        int minX = (int)MathF.Floor(position.X - width * 0.5f + 0.001f);
+        int maxX = (int)MathF.Floor(position.X + width * 0.5f - 0.001f);
+        int minY = Math.Max(dimension.MinimumY, (int)MathF.Floor(position.Y + 0.001f));
+        int maxY = Math.Min(dimension.MaximumY, (int)MathF.Floor(position.Y + height - 0.001f));
+        int minZ = (int)MathF.Floor(position.Z - width * 0.5f + 0.001f);
+        int maxZ = (int)MathF.Floor(position.Z + width * 0.5f - 0.001f);
+        int eyeX = (int)MathF.Floor(position.X);
+        int eyeZ = (int)MathF.Floor(position.Z);
+        float eyeY = position.Y + eyeHeight;
+        int waterBlocks = 0;
+        int lavaBlocks = 0;
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (dimension.GetChunk(x >> 4, z >> 4) is not { } chunk)
+                    continue;
+                for (int y = minY; y <= maxY; y++) {
+                    for (int layer = 0; layer < 2; layer++) {
+                        BlockPermutation block = chunk.GetPermutation(x & 15, y, z & 15, layer);
+                        bool water = block.Identifier is "minecraft:water" or "minecraft:flowing_water";
+                        bool lava = block.Identifier is "minecraft:lava" or "minecraft:flowing_lava";
+                        if (!water && !lava) {
+                            result.Fire |= block.Identifier is "minecraft:fire" or "minecraft:soul_fire";
+                            result.SoulFire |= block.Identifier == "minecraft:soul_fire";
+                            continue;
+                        }
+                        float surface = y + SurfaceHeight(block);
+                        BlockPermutation above = chunk.GetPermutation(x & 15, y + 1, z & 15, layer);
+                        if (water ? above.Identifier is "minecraft:water" or "minecraft:flowing_water"
+                            : above.Identifier is "minecraft:lava" or "minecraft:flowing_lava")
+                            surface = y + 1;
+                        float depth = surface - position.Y;
+                        if (depth <= 0.001f)
+                            continue;
+                        bool head = x == eyeX && z == eyeZ && eyeY >= y && eyeY < surface;
+                        if (water) {
+                            result.WaterDepth = Math.Max(result.WaterDepth, depth);
+                            result.HeadInWater |= head;
+                            if (flow) {
+                                result.WaterFlow += GetFlow(dimension, x, y, z, block, layer);
+                                waterBlocks++;
+                            }
+                        }
+                        else {
+                            result.LavaDepth = Math.Max(result.LavaDepth, depth);
+                            result.HeadInLava |= head;
+                            if (flow) {
+                                result.LavaFlow += GetFlow(dimension, x, y, z, block, layer);
+                                lavaBlocks++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (waterBlocks > 0)
+            result.WaterFlow /= waterBlocks;
+        if (lavaBlocks > 0)
+            result.LavaFlow /= lavaBlocks;
+        return result;
+    }
+
+    internal static float SurfaceHeight(BlockPermutation block) {
+        int depth = block.State.Values.GetValueOrDefault("liquid_depth") is int level ? level : 0;
+        return depth >= 8 ? 8f / 9 : (8 - depth) / 9f;
+    }
+
+    internal static Vector3 GetFlow(Dimension dimension, int x, int y, int z, BlockPermutation block, int layer) {
+        bool lava = block.Identifier is "minecraft:lava" or "minecraft:flowing_lava";
+        float height = SurfaceHeight(block);
+        Vector3 flow = default;
+        bool wall = false;
+        bool falling = block.State.Values.GetValueOrDefault("liquid_depth") is int depth && depth >= 8;
+        foreach ((int dx, _, int dz) in BlockDirections.OffsetByFace.AsSpan(2)) {
+            BlockPermutation? neighbor = dimension.GetLoadedPermutation(x + dx, y, z + dz, layer);
+            if (neighbor is null)
+                continue;
+            bool matching = lava ? neighbor.Identifier is "minecraft:lava" or "minecraft:flowing_lava"
+                : neighbor.Identifier is "minecraft:water" or "minecraft:flowing_water";
+            float difference = 0;
+            if (matching) {
+                difference = height - SurfaceHeight(neighbor);
+            }
+            else if (!Fluid(neighbor.Identifier) && BlockPalette.FindType(neighbor.Identifier)?.Solid != true) {
+                BlockPermutation? below = dimension.GetLoadedPermutation(x + dx, y - 1, z + dz, layer);
+                if (below is not null && (lava ? below.Identifier is "minecraft:lava" or "minecraft:flowing_lava"
+                    : below.Identifier is "minecraft:water" or "minecraft:flowing_water"))
+                    difference = height - (SurfaceHeight(below) - 8f / 9);
+            }
+            flow.X += dx * difference;
+            flow.Z += dz * difference;
+            if (falling && !wall) {
+                wall = !matching && BlockPalette.FindType(neighbor.Identifier)?.Solid == true;
+                if (!wall) {
+                    BlockPermutation? upper = dimension.GetLoadedPermutation(x + dx, y + 1, z + dz, layer);
+                    wall = upper is not null && BlockPalette.FindType(upper.Identifier)?.Solid == true;
+                }
+            }
+        }
+        if (falling && wall) {
+            if (flow.LengthSquared() > 0)
+                flow = Vector3.Normalize(flow);
+            flow.Y -= 6;
+        }
+        return flow.LengthSquared() > 0 ? Vector3.Normalize(flow) : default;
+    }
+
     static readonly BlockPermutation?[] WaterLevels = new BlockPermutation?[16];
     static readonly BlockPermutation?[] LavaLevels = new BlockPermutation?[16];
     static readonly BlockPermutation WaterSource = BlockPalette.FindDefaultPermutation("minecraft:water")!;
