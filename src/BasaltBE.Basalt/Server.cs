@@ -7,6 +7,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.BlockActors;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Events;
+using BasaltBE.Basalt.Events.Server;
 using BasaltBE.Basalt.Experience;
 using BasaltBE.Basalt.Items.Enchantments;
 using BasaltBE.Basalt.LootTables;
@@ -287,16 +288,21 @@ public sealed class Server : IDisposable {
             worker.Dispose();
         Gameplay.EnterWriteLock();
         try {
-            Network.Dispose();
-            PlayerData.Dispose();
-            generation?.Dispose();
-            foreach (World world in worlds)
-                world.Dispose();
+            try {
+                Events.Emit(new ServerStoppingEvent());
+            }
+            finally {
+                Network.Dispose();
+                PlayerData.Dispose();
+                generation?.Dispose();
+                foreach (World world in worlds)
+                    world.Dispose();
+            }
         }
         finally {
             Gameplay.ExitWriteLock();
+            Events.Clear();
+            Gameplay.Dispose();
         }
-        Events.Clear();
-        Gameplay.Dispose();
     }
 }

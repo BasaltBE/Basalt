@@ -169,6 +169,7 @@ development_resource_packs/
 development_skin_packs/
 server.properties
 network.properties
+plugins/
 allowlist.json
 permissions.json
 permissions.players.json

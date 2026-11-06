@@ -19,6 +19,7 @@ using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.Basalt.Worlds.Types;
 using BasaltBE.Logging;
+using BasaltBE.Plugins;
 using BasaltBE.Logging.Enums;
 using BasaltBE.Protocol.Enums;
 
@@ -38,10 +39,12 @@ internal static class Program {
         Logger.MinimumLevel = LogLevel.Info;
 
         using ManualResetEventSlim shutdown = new(false);
+        using CancellationTokenSource startup = new();
         ConsoleCancelEventHandler cancel = (_, eventArgs) => {
             eventArgs.Cancel = true;
             Log.Info("Shutdown requested.");
             shutdown.Set();
+            startup.Cancel();
         };
         Console.CancelKeyPress += cancel;
 
@@ -184,6 +187,9 @@ internal static class Program {
             server.Generators.Register<VoidGenerator>("void");
             server.Generators.SetDefault("superflat");
 
+            PluginManager plugins = new(server);
+            plugins.LoadAll(startup.Token);
+
             World? world = server.Worlds.FirstOrDefault(world =>
                 string.Equals(world.Identifier, properties.DefaultWorldName, StringComparison.OrdinalIgnoreCase)
             );
@@ -196,6 +202,8 @@ internal static class Program {
                 ?? world.CreateDimension("minecraft:overworld", DimensionType.Overworld);
 
             #endregion
+
+            plugins.Enable();
 
             server.Start();
             Log.Info($"NetherNet is listening on network {server.Network.NetworkId}.");
@@ -343,6 +351,8 @@ internal static class Program {
             }
 
             #endregion
+        }
+        catch (OperationCanceledException) when (shutdown.IsSet) {
         }
         finally {
             Console.CancelKeyPress -= cancel;

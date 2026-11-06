@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="../BasaltBE.Plugins/BasaltBE.Plugins.csproj" />
     <ProjectReference Include="..\BasaltBE.Basalt\BasaltBE.Basalt.csproj" />
     <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
     <ProjectReference Include="..\BasaltBE.Protocol\BasaltBE.Protocol.csproj" />
