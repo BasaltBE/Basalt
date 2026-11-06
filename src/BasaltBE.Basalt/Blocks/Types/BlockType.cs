@@ -6,6 +6,9 @@ namespace BasaltBE.Basalt.Blocks.Types;
 
 public sealed class BlockType {
     [JsonIgnore]
+    internal BlockCollisionBox[]? CollisionBoxes;
+
+    [JsonIgnore]
     internal ToolType ToolTypes;
 
     [JsonInclude, JsonPropertyName("identifier")]

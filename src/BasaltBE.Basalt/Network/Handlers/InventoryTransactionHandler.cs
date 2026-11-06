@@ -740,10 +740,10 @@ internal sealed class InventoryTransactionHandler
 
         if (blockType?.Solid == true)
         {
-            bool collision = Collides(player, x, y, z);
+            bool collision = Collides(player, permutation, x, y, z);
             foreach (Player viewer in player.Dimension.GetChunkViewers(x >> 4, z >> 4))
             {
-                if (viewer.Spawned && !viewer.Disposed && !ReferenceEquals(viewer, player) && Collides(viewer, x, y, z))
+                if (viewer.Spawned && !viewer.Disposed && !ReferenceEquals(viewer, player) && Collides(viewer, permutation, x, y, z))
                 {
                     collision = true;
                     break;
@@ -806,15 +806,22 @@ internal sealed class InventoryTransactionHandler
         return true;
     }
 
-    private static bool Collides(Player player, int x, int y, int z)
+    private static bool Collides(Player player, BlockPermutation block, int x, int y, int z)
     {
         bool lowPose = player.Flags.Get(ActorFlag.Swimming) || player.Flags.Get(ActorFlag.Gliding) || player.Flags.Get(ActorFlag.Crawling);
         bool sneaking = player.Flags.Get(ActorFlag.Sneaking);
         float feet = player.Position.Y;
         float height = lowPose ? 0.6f : sneaking ? 1.5f : 1.8f;
-        return player.Position.X + 0.3f > x && player.Position.X - 0.3f < x + 1 &&
-            player.Position.Z + 0.3f > z && player.Position.Z - 0.3f < z + 1 &&
-            feet + height > y && feet < y + 1;
+        Span<BlockCollisionBox> boxes = stackalloc BlockCollisionBox[5];
+        int count = block.GetCollisionBoxes(boxes);
+        foreach (BlockCollisionBox box in boxes[..count])
+        {
+            if (player.Position.X + 0.3f > x + box.MinX && player.Position.X - 0.3f < x + box.MaxX &&
+                player.Position.Z + 0.3f > z + box.MinZ && player.Position.Z - 0.3f < z + box.MaxZ &&
+                feet + height > y + box.MinY && feet < y + box.MaxY)
+                return true;
+        }
+        return false;
     }
 
     private static void RepairPlacement(Player player, ItemUseInventoryTransaction use)

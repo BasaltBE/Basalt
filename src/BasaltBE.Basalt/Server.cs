@@ -52,6 +52,7 @@ public sealed class Server : IDisposable
     public readonly ExperienceDropManager ExperienceDrops = new();
     public readonly EnchantmentRegistry Enchantments = new();
     public readonly ItemRegistry Items = new();
+    public readonly BlockRegistry Blocks;
     public readonly EntityRegistry Entities = new();
     public readonly BlockActorRegistry BlockActors = new();
     public readonly StructureRegistry Structures = new();
@@ -68,6 +69,7 @@ public sealed class Server : IDisposable
 
     public Server(ServerProperties properties, IServerIdentity? identity = null, PermissionStore? permissions = null)
     {
+        Blocks = new BlockRegistry(this);
         Commands = new CommandRegistry(this);
         CustomDimensions = new CustomDimensionRegistry(this);
         Permissions = permissions ?? new PermissionStore();
@@ -219,6 +221,7 @@ public sealed class Server : IDisposable
 
         _ = GetWorld();
         EntityPalette.Freeze();
+        BlockPalette.Freeze();
         ItemPalette.Freeze();
         Commands.Prepare();
         CookingPalette.Initialize();

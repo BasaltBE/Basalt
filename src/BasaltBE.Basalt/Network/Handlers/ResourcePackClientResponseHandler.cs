@@ -1,4 +1,5 @@
 using BasaltBE.Basalt.Entities;
+using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Network.ResourcePacks;
 using BasaltBE.Logging;
@@ -11,13 +12,16 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Network.Handlers;
 
-internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
-    public void Handle(NethernetPeer peer, Player? player, ResourcePackClientResponsePacket packet) {
+internal sealed class ResourcePackClientResponseHandler(NetworkServer network)
+{
+    public void Handle(NethernetPeer peer, Player? player, ResourcePackClientResponsePacket packet)
+    {
         using ProfilerZone zone = Profiler.BeginZone("Network.ResourcePackResponse");
         if (player is null)
             throw new InvalidDataException("Resource pack response arrived before player login.");
 
-        switch (packet.Response) {
+        switch (packet.Response)
+        {
             case ResourcePackClientResponseDownloading downloading:
                 SendPackData(player, downloading);
                 break;
@@ -32,15 +36,18 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 structureData.Add("jigsaws", new ListTag());
                 structureData.Add("structure_sets", new ListTag());
 
-                player.SendPacket(new JigsawStructureDataPacket {
+                player.SendPacket(new JigsawStructureDataPacket
+                {
                     StructureData = structureData
                 });
                 player.SendPacket(new VoxelShapesPacket());
-                if (network.Server.CustomDimensions.Count > 0) {
+                if (network.Server.CustomDimensions.Count > 0)
+                {
                     network.SendPreparedPacket(player, network.SerializedPackets.Get<DimensionDataPacket>());
                     network.SendPreparedPacket(player, network.SerializedPackets.Get<BiomeDefinitionListPacket>());
                 }
-                player.SendPacket(new StartGamePacket {
+                player.SendPacket(new StartGamePacket
+                {
                     EntityId = player.UniqueId,
                     RuntimeId = player.RuntimeId,
                     GameType = player.GameType,
@@ -48,16 +55,19 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                         ? (ulong)((world.GameTime % 24000 + 24000) % 24000)
                         : player.Dimension.TickValue % 24000,
                     Position = player.GetHeadPosition(),
-                    Settings = new LevelSettings {
+                    Settings = new LevelSettings
+                    {
                         Rules = player.Dimension.World?.GameRules.CreatePacketData() ?? new GameRulesChangedPacketData(),
-                        SpawnSettings = new SpawnSettings {
+                        SpawnSettings = new SpawnSettings
+                        {
                             SpawnBiomeType = SpawnBiomeType.Default,
                             Dimension = player.Dimension.RuntimeId
                         },
                         GeneratorType = player.Dimension.GeneratorType,
                         GameType = player.GameType,
                         GameDifficulty = player.Dimension.Difficulty,
-                        DefaultSpawnBlockPosition = new BlockPos {
+                        DefaultSpawnBlockPosition = new BlockPos
+                        {
                             X = (int)MathF.Floor(player.Dimension.SpawnPosition.X),
                             Y = (int)MathF.Floor(player.Dimension.SpawnPosition.Y),
                             Z = (int)MathF.Floor(player.Dimension.SpawnPosition.Z)
@@ -72,17 +82,20 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                         BaseGameVersion = network.Advertisement.Version
                     },
                     LevelName = network.Advertisement.Level,
-                    MovementSettings = new SyncedPlayerMovementSettings {
+                    MovementSettings = new SyncedPlayerMovementSettings
+                    {
                         RewindHistorySize = 40,
                         ServerAuthoritativeBlockBreaking = true
                     },
                     MultiplayerCorrelationId = Guid.NewGuid().ToString(),
                     EnableItemStackNetManager = true,
                     ServerVersion = network.Advertisement.Version,
-                    ServerTelemetryData = new ServerTelemetryData {
+                    ServerTelemetryData = new ServerTelemetryData
+                    {
                         OwnerId = network.Advertisement.Name
                     },
-                    BlockNetworkIdsAreHashes = true
+                    BlockNetworkIdsAreHashes = true,
+                    BlockProperties = BlockPalette.Properties
                 });
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<ItemRegistryPacket>());
                 player.SendPacket(player.Attributes.CreateUpdate(player.RuntimeId, all: true)!);
@@ -90,7 +103,8 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 Volatile.Write(ref player.Permissions.Dirty, false);
                 player.SendPacket(player.Abilities.CreateUpdate(player.UniqueId, player.Permissions));
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<AvailableActorIdentifiersPacket>());
-                player.SendPacket(new PlayStatusPacket {
+                player.SendPacket(new PlayStatusPacket
+                {
                     Status = PlayStatus.PlayerSpawn
                 });
                 player.SendPacket(new SetCommandsEnabledPacket { Enabled = true });
@@ -100,9 +114,11 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
                 network.SendPreparedPacket(player, network.SerializedPackets.Get<CraftingDataPacket>());
                 break;
             case ResourcePackClientResponseCancel:
-                if (network.ResourcePacks.Required) {
+                if (network.ResourcePacks.Required)
+                {
                     const string message = "This server requires its resource packs.";
-                    player.SendPacket(new DisconnectPacket {
+                    player.SendPacket(new DisconnectPacket
+                    {
                         Reason = DisconnectFailReason.Unknown,
                         Message = message,
                         FilteredMessage = message
@@ -118,13 +134,16 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
         }
     }
 
-    private void SendPackData(Player player, ResourcePackClientResponseDownloading downloading) {
-        foreach (string resourceName in downloading.PackIds) {
+    private void SendPackData(Player player, ResourcePackClientResponseDownloading downloading)
+    {
+        foreach (string resourceName in downloading.PackIds)
+        {
             if (!network.ResourcePacks.TryGet(resourceName, out ResourcePack? pack) || pack is null)
                 throw new InvalidDataException($"Client requested unknown resource pack '{resourceName}'.");
 
             player.RequestedResourcePacks.Add(pack.Id);
-            player.SendPacket(new ResourcePackDataInfoPacket {
+            player.SendPacket(new ResourcePackDataInfoPacket
+            {
                 ResourceName = pack.ResourceName,
                 ChunkSize = ResourcePackManager.ChunkSize,
                 NumberOfChunks = pack.GetChunkCount(ResourcePackManager.ChunkSize),
@@ -135,18 +154,22 @@ internal sealed class ResourcePackClientResponseHandler(NetworkServer network) {
         }
     }
 
-    private void SendStack(Player player, bool includePacks) {
+    private void SendStack(Player player, bool includePacks)
+    {
         ResourcePack[] packs = includePacks ? network.ResourcePacks.Packs : [];
         PackInstanceId[] texturePacks = new PackInstanceId[packs.Length];
-        for (int i = 0; i < packs.Length; i++) {
+        for (int i = 0; i < packs.Length; i++)
+        {
             ResourcePack pack = packs[i];
-            texturePacks[i] = new PackInstanceId {
+            texturePacks[i] = new PackInstanceId
+            {
                 PackId = pack.Id.ToString(),
                 Version = pack.Version
             };
         }
 
-        player.SendPacket(new ResourcePackStackPacket {
+        player.SendPacket(new ResourcePackStackPacket
+        {
             TexturePackRequired = network.ResourcePacks.Required,
             TexturePacks = texturePacks,
             BaseGameVersion = BedrockProtocol.MinecraftVersion
