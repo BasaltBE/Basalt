@@ -3,6 +3,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Types;
@@ -15,12 +16,14 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Network.Handlers;
 
-internal sealed class InventoryTransactionHandler {
+internal sealed class InventoryTransactionHandler
+{
     private const float BlockReachSquared = 6 * 6;
     [ThreadStatic]
     private static UpdateBlockPacket? blockUpdate;
 
-    public void Handle(NethernetPeer peer, Player? player, InventoryTransactionPacket packet) {
+    public void Handle(NethernetPeer peer, Player? player, InventoryTransactionPacket packet)
+    {
         if (player is null)
             throw new InvalidDataException("Inventory transaction arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
@@ -39,20 +42,24 @@ internal sealed class InventoryTransactionHandler {
         InventoryTransactionData transaction,
         int legacyRequestId,
         LegacySetSlot[]? legacySetItemSlots
-    ) {
-        lock (player.Sync) {
+    )
+    {
+        lock (player.Sync)
+        {
             PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
             if (player.Disposed || !player.Spawned || inventory is null)
                 return;
 
-            if (transaction is ItemReleaseInventoryTransaction release) {
+            if (transaction is ItemReleaseInventoryTransaction release)
+            {
                 if (release.ActionType == ItemReleaseInventoryTransactionActionType.Release)
                     player.GetTrait<PlayerHungerTrait>()?.CancelEating();
                 return;
             }
 
             if (transaction is NormalTransactionData normal &&
-                normal.Actions.Actions.Any(action => action.Source.Type == InventorySourceType.WorldInteraction)) {
+                normal.Actions.Actions.Any(action => action.Source.Type == InventorySourceType.WorldInteraction))
+            {
                 DropWorldItem(player, inventory, normal.Actions.Actions, legacyRequestId);
                 return;
             }
@@ -65,8 +72,10 @@ internal sealed class InventoryTransactionHandler {
                 EquipArmorFromLegacyUse(player, inventory, legacyArmorUse, legacyRequestId, legacySetItemSlots))
                 return;
 
-            if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction)) {
-                player.SendPacket(new ItemStackResponsePacket {
+            if (legacyRequestId != 0 && transaction is not (ItemUseInventoryTransaction or ItemUseOnActorInventoryTransaction))
+            {
+                player.SendPacket(new ItemStackResponsePacket
+                {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -76,7 +85,8 @@ internal sealed class InventoryTransactionHandler {
                 return;
             }
 
-            var (slot, hand, descriptor, origin) = transaction switch {
+            var (slot, hand, descriptor, origin) = transaction switch
+            {
                 ItemUseInventoryTransaction use => (use.Slot, use.Hand, use.Item, use.FromPosition),
                 ItemUseOnActorInventoryTransaction actor => (actor.Slot, actor.Hand, actor.Item, actor.FromPosition),
                 _ => (-1, HandSlot.Mainhand, null, null)
@@ -89,46 +99,56 @@ internal sealed class InventoryTransactionHandler {
                 float.IsFinite(armorUse.FromPosition.Z) &&
                 inventory.Inventory.GetItem(armorUse.Slot)?.Type.ArmorSlot is not null &&
                 inventory.MatchesItem(armorUse.Slot, armorUse.Item, out _) &&
-                player.GetTrait<EntityArmorTrait>() is { } armor) {
+                player.GetTrait<EntityArmorTrait>() is { } armor)
+            {
                 armor.Equip(inventory, armorUse.Slot);
                 return;
             }
 
-            bool attack = transaction is ItemUseOnActorInventoryTransaction {
+            bool attack = transaction is ItemUseOnActorInventoryTransaction
+            {
                 ActionType: ItemUseOnActorInventoryTransactionActionType.Attack
             };
             bool damageItems = !player.Abilities.Get(PlayerAbility.InstantBuild);
             if (descriptor is null || origin is null || hand != HandSlot.Mainhand ||
                 (uint)slot >= 9 || slot != inventory.SelectedSlot ||
-                !float.IsFinite(origin.X) || !float.IsFinite(origin.Y) || !float.IsFinite(origin.Z)) {
+                !float.IsFinite(origin.X) || !float.IsFinite(origin.Y) || !float.IsFinite(origin.Z))
+            {
 
                 return;
             }
             ItemStack? item;
-            if (attack) {
+            if (attack)
+            {
                 item = inventory.Inventory.GetItem(slot);
             }
-            else if (!inventory.MatchesItem(slot, descriptor, out item)) {
+            else if (!inventory.MatchesItem(slot, descriptor, out item))
+            {
                 if (transaction is ItemUseInventoryTransaction { ActionType: ItemUseInventoryTransactionActionType.Place } predicted)
                     RepairPlacement(player, predicted);
                 inventory.Inventory.UpdateSlot(slot);
                 return;
             }
 
-            switch (transaction) {
+            switch (transaction)
+            {
                 case ItemUseInventoryTransaction use:
-                    if (use.ActionType == ItemUseInventoryTransactionActionType.Use) {
-                        if (item is not null && item.Type.FoodNutrition > 0) {
+                    if (use.ActionType == ItemUseInventoryTransactionActionType.Use)
+                    {
+                        if (item is not null && item.Type.FoodNutrition > 0)
+                        {
                             player.GetTrait<PlayerHungerTrait>()?.StartEating(slot, item);
                             break;
                         }
 
                         int durabilityDamage = item?.Type.MaxDurability > 0 && item.Type.ArmorSlot is null ? 1 : 0;
-                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>())
+                        {
                             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Use, durabilityDamage);
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
-                            if (itemUse.IsCanceled()) {
+                            if (itemUse.IsCanceled())
+                            {
                                 if (damageItems)
                                     item?.DamageDurability(durabilityDamage);
                                 break;
@@ -138,11 +158,14 @@ internal sealed class InventoryTransactionHandler {
                         if (damageItems)
                             item?.DamageDurability(durabilityDamage);
                     }
-                    else if (use.ActionType == ItemUseInventoryTransactionActionType.Place) {
+                    else if (use.ActionType == ItemUseInventoryTransactionActionType.Place)
+                    {
                         bool placed = UseItemOnBlock(player, inventory, item, use);
-                        if (legacyRequestId != 0) {
+                        if (legacyRequestId != 0)
+                        {
                             ItemStack? remaining = inventory.Inventory.GetItem(slot);
-                            player.SendPacket(new ItemStackResponsePacket {
+                            player.SendPacket(new ItemStackResponsePacket
+                            {
                                 Responses = [new ItemStackResponseInfo {
                                     ClientRequestId = legacyRequestId,
                                     Result = placed ? ItemStackNetResult.Success : ItemStackNetResult.Error,
@@ -165,7 +188,8 @@ internal sealed class InventoryTransactionHandler {
                         ItemUseOnActorInventoryTransactionActionType.ItemInteract or
                         ItemUseOnActorInventoryTransactionActionType.Attack) ||
                         !float.IsFinite(actor.HitPosition.X) || !float.IsFinite(actor.HitPosition.Y) ||
-                        !float.IsFinite(actor.HitPosition.Z)) {
+                        !float.IsFinite(actor.HitPosition.Z))
+                    {
 
                         return;
                     }
@@ -173,7 +197,8 @@ internal sealed class InventoryTransactionHandler {
                     Entity? target = player.Dimension.GetEntity(actor.RuntimeId);
                     if (target is null || target.Dead || ReferenceEquals(target, player) ||
                         target is Player targetPlayer && (targetPlayer.Disposed || !targetPlayer.Spawned ||
-                        !ReferenceEquals(targetPlayer.Dimension, player.Dimension))) {
+                        !ReferenceEquals(targetPlayer.Dimension, player.Dimension)))
+                    {
 
                         return;
                     }
@@ -197,25 +222,30 @@ internal sealed class InventoryTransactionHandler {
                     float distanceZ = eyeZ - closestZ;
                     float distanceSquared = distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ;
                     float reach = player.InputMode == InputMode.Touch ? 6 : 3;
-                    if (!float.IsFinite(distanceSquared) || distanceSquared > reach * reach) {
+                    if (!float.IsFinite(distanceSquared) || distanceSquared > reach * reach)
+                    {
 
                         return;
                     }
 
-                    if (attack) {
+                    if (attack)
+                    {
                         int durabilityDamage = item?.Type.AttackDurabilityDamage ?? 0;
-                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>())
+                        {
                             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.Attack, durabilityDamage);
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
-                            if (itemUse.IsCanceled()) {
+                            if (itemUse.IsCanceled())
+                            {
                                 if (damageItems)
                                     item?.DamageDurability(durabilityDamage);
                                 break;
                             }
                         }
                         player.OnAttack(target, item);
-                        if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health) {
+                        if (!player.Dead && target.GetTrait<EntityHealthTrait>() is { } health)
+                        {
                             float damage = (player.Attributes.Get("minecraft:attack_damage")?.Current ?? 1) + (item?.Type.AttackDamageBonus ?? 0);
                             int fireAspect = item?.GetEnchantmentLevel(EnchantmentPalette.FireAspect) ?? 0;
                             health.ApplyDamage(damage, EntityDamageCause.Entity, player, ignitionTicks: fireAspect * 80);
@@ -225,15 +255,19 @@ internal sealed class InventoryTransactionHandler {
                     }
                     else if (actor.ActionType == ItemUseOnActorInventoryTransactionActionType.Interact)
                         player.OnUseItemOnEntity(item, target, actor.HitPosition);
-                    if (transaction is ItemUseOnActorInventoryTransaction {
-                        ActionType: ItemUseOnActorInventoryTransactionActionType.ItemInteract
-                    }) {
+                    if (transaction is ItemUseOnActorInventoryTransaction
+                        {
+                            ActionType: ItemUseOnActorInventoryTransactionActionType.ItemInteract
+                        })
+                    {
                         int durabilityDamage = item?.Type.MaxDurability > 0 ? 1 : 0;
-                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
+                        if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>())
+                        {
                             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnEntity, durabilityDamage);
                             player.Network.Server.Events.Emit(itemUse);
                             durabilityDamage = itemUse.DurabilityDamage;
-                            if (itemUse.IsCanceled()) {
+                            if (itemUse.IsCanceled())
+                            {
                                 if (damageItems)
                                     item?.DamageDurability(durabilityDamage);
                                 break;
@@ -254,12 +288,14 @@ internal sealed class InventoryTransactionHandler {
         ItemUseInventoryTransaction transaction,
         int legacyRequestId,
         LegacySetSlot[]? legacySetItemSlots
-    ) {
+    )
+    {
         if (legacyRequestId == 0 || legacySetItemSlots is null)
             return false;
 
         byte? requestedArmorSlot = null;
-        foreach (LegacySetSlot legacySlot in legacySetItemSlots) {
+        foreach (LegacySetSlot legacySlot in legacySetItemSlots)
+        {
             if (legacySlot.ContainerEnum != ContainerEnumName.Armor)
                 continue;
             if (legacySlot.Slots.Length != 1 || requestedArmorSlot.HasValue)
@@ -296,7 +332,8 @@ internal sealed class InventoryTransactionHandler {
             return Reject();
 
         equipped = armor.Armor.GetItem(armorSlot);
-        player.SendPacket(new ItemStackResponsePacket {
+        player.SendPacket(new ItemStackResponsePacket
+        {
             Responses = [new ItemStackResponseInfo {
                 ClientRequestId = legacyRequestId,
                 Result = ItemStackNetResult.Success,
@@ -324,8 +361,10 @@ internal sealed class InventoryTransactionHandler {
         });
         return true;
 
-        bool Reject() {
-            player.SendPacket(new ItemStackResponsePacket {
+        bool Reject()
+        {
+            player.SendPacket(new ItemStackResponsePacket
+            {
                 Responses = [new ItemStackResponseInfo {
                     ClientRequestId = legacyRequestId,
                     Result = ItemStackNetResult.Error
@@ -337,7 +376,8 @@ internal sealed class InventoryTransactionHandler {
         }
     }
 
-    private static bool EquipArmor(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions) {
+    private static bool EquipArmor(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions)
+    {
         if (!actions.Any(static action => action.Source.ContainerId == (sbyte)ContainerId.Armor))
             return false;
 
@@ -345,8 +385,10 @@ internal sealed class InventoryTransactionHandler {
         InventoryAction? inventoryAction = null;
         InventoryAction? armorAction = null;
         bool valid = armor is not null && actions.Length == 2;
-        foreach (InventoryAction action in actions) {
-            if (action.Source.Type != InventorySourceType.ContainerInventory) {
+        foreach (InventoryAction action in actions)
+        {
+            if (action.Source.Type != InventorySourceType.ContainerInventory)
+            {
                 valid = false;
                 continue;
             }
@@ -363,7 +405,8 @@ internal sealed class InventoryTransactionHandler {
             inventoryAction.Slot < inventory.Inventory.ContainerSize &&
             armorAction.Slot < armor!.Armor.ContainerSize;
 
-        if (valid) {
+        if (valid)
+        {
             int inventorySlot = (int)inventoryAction!.Slot;
             int armorSlot = (int)armorAction!.Slot;
             ItemStack? item = inventory.Inventory.GetItem(inventorySlot);
@@ -380,7 +423,8 @@ internal sealed class InventoryTransactionHandler {
                 valid = armor.Equip(inventory, inventorySlot);
         }
 
-        if (!valid) {
+        if (!valid)
+        {
             inventory.Inventory.Update();
             armor?.Armor.Update();
         }
@@ -393,27 +437,34 @@ internal sealed class InventoryTransactionHandler {
         actual.AuxValue == expected.AuxValue && actual.BlockRuntimeId == expected.BlockRuntimeId &&
         actual.UserData == expected.UserData;
 
-    private static void DropWorldItem(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions, int legacyRequestId) {
+    private static void DropWorldItem(Player player, PlayerInventoryTrait inventory, InventoryAction[] actions, int legacyRequestId)
+    {
         InventoryAction? worldAction = null;
         InventoryAction? inventoryAction = null;
         bool invalidAction = false;
-        foreach (InventoryAction action in actions) {
-            if (action.Source.Type == InventorySourceType.WorldInteraction) {
-                if (worldAction is not null) {
+        foreach (InventoryAction action in actions)
+        {
+            if (action.Source.Type == InventorySourceType.WorldInteraction)
+            {
+                if (worldAction is not null)
+                {
                     invalidAction = true;
                     break;
                 }
                 worldAction = action;
             }
             else if (action.Source.Type == InventorySourceType.ContainerInventory &&
-                action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId) {
-                if (inventoryAction is not null) {
+                action.Source.ContainerId == (sbyte)inventory.Inventory.ContainerId)
+            {
+                if (inventoryAction is not null)
+                {
                     invalidAction = true;
                     break;
                 }
                 inventoryAction = action;
             }
-            else {
+            else
+            {
                 invalidAction = true;
                 break;
             }
@@ -424,7 +475,8 @@ internal sealed class InventoryTransactionHandler {
             inventoryAction.Slot < inventory.Inventory.ContainerSize &&
             inventory.MatchesItem((int)inventoryAction.Slot, inventoryAction.FromItem, out item) && item is not null;
         int amount = valid ? inventoryAction!.FromItem.StackSize - inventoryAction.ToItem.StackSize : 0;
-        if (valid) {
+        if (valid)
+        {
             NetworkItemStackDescriptor from = inventoryAction!.FromItem;
             NetworkItemStackDescriptor remaining = inventoryAction.ToItem;
             NetworkItemStackDescriptor dropped = worldAction!.ToItem;
@@ -433,11 +485,14 @@ internal sealed class InventoryTransactionHandler {
                 dropped.Id == from.Id && dropped.AuxValue == from.AuxValue && dropped.StackSize == amount;
         }
 
-        if (!valid) {
+        if (!valid)
+        {
             Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: invalid inventory transaction.");
             inventory.Inventory.Update();
-            if (legacyRequestId != 0) {
-                player.SendPacket(new ItemStackResponsePacket {
+            if (legacyRequestId != 0)
+            {
+                player.SendPacket(new ItemStackResponsePacket
+                {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -456,11 +511,14 @@ internal sealed class InventoryTransactionHandler {
             player,
             dropAction.Source.Flags == InventorySourceFlags.WorldInteractionRandom
         );
-        if (inventory.Inventory.TakeItem((int)sourceAction.Slot, (ushort)amount) is null) {
+        if (inventory.Inventory.TakeItem((int)sourceAction.Slot, (ushort)amount) is null)
+        {
             Logger.Scoped("Network").Warn($"Rejected item drop from {player.Username}: source slot was empty.");
             inventory.Inventory.Update();
-            if (legacyRequestId != 0) {
-                player.SendPacket(new ItemStackResponsePacket {
+            if (legacyRequestId != 0)
+            {
+                player.SendPacket(new ItemStackResponsePacket
+                {
                     Responses = [new ItemStackResponseInfo {
                         ClientRequestId = legacyRequestId,
                         Result = ItemStackNetResult.Error
@@ -471,9 +529,11 @@ internal sealed class InventoryTransactionHandler {
         }
         droppedEntity.Spawn(player.Dimension);
 
-        if (legacyRequestId != 0) {
+        if (legacyRequestId != 0)
+        {
             ItemStack? remaining = inventory.Inventory.GetItem((int)sourceAction.Slot);
-            player.SendPacket(new ItemStackResponsePacket {
+            player.SendPacket(new ItemStackResponsePacket
+            {
                 Responses = [new ItemStackResponseInfo {
                     ClientRequestId = legacyRequestId,
                     Result = ItemStackNetResult.Success,
@@ -491,7 +551,8 @@ internal sealed class InventoryTransactionHandler {
         }
     }
 
-    private static bool UseItemOnBlock(Player player, PlayerInventoryTrait inventory, ItemStack? item, ItemUseInventoryTransaction use) {
+    private static bool UseItemOnBlock(Player player, PlayerInventoryTrait inventory, ItemStack? item, ItemUseInventoryTransaction use)
+    {
         PlayerChunkRenderingTrait? rendering = player.GetTrait<PlayerChunkRenderingTrait>();
         if (use.Face > 5 || use.Position.Y < player.Dimension.MinimumY || use.Position.Y > player.Dimension.MaximumY ||
             use.ClientInteractPrediction is not (ItemUseInventoryTransactionPredictedResult.Failure or
@@ -501,7 +562,8 @@ internal sealed class InventoryTransactionHandler {
             use.ClickPosition.X < 0 || use.ClickPosition.X > 1 ||
             use.ClickPosition.Y < 0 || use.ClickPosition.Y > 1 ||
             use.ClickPosition.Z < 0 || use.ClickPosition.Z > 1 ||
-            rendering is null || !rendering.Viewing(use.Position.X >> 4, use.Position.Z >> 4)) {
+            rendering is null || !rendering.Viewing(use.Position.X >> 4, use.Position.Z >> 4))
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
@@ -511,22 +573,26 @@ internal sealed class InventoryTransactionHandler {
         float reachY = use.Position.Y + use.ClickPosition.Y - (player.Position.Y + player.HeadOffset);
         float reachZ = use.Position.Z + use.ClickPosition.Z - player.Position.Z;
         var clickedChunk = player.Dimension.GetChunk(use.Position.X >> 4, use.Position.Z >> 4);
-        if (reachX * reachX + reachY * reachY + reachZ * reachZ > BlockReachSquared || clickedChunk is null) {
+        if (reachX * reachX + reachY * reachY + reachZ * reachZ > BlockReachSquared || clickedChunk is null)
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
         }
 
         BlockPermutation clicked = clickedChunk.GetPermutation(use.Position.X & 15, use.Position.Y, use.Position.Z & 15);
-        if (unchecked((uint)clicked.Hash) != use.TargetBlockId || clicked.Identifier == "minecraft:air") {
+        if (unchecked((uint)clicked.Hash) != use.TargetBlockId || clicked.Identifier == "minecraft:air")
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
         }
 
         if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success &&
-            !player.Flags.Get(ActorFlag.Sneaking)) {
-            if (player.Dimension.GetBlockActor(clickedChunk, use.Position.X & 15, use.Position.Y, use.Position.Z & 15) is { } actor) {
+            !player.Flags.Get(ActorFlag.Sneaking))
+        {
+            if (player.Dimension.GetBlockActor(clickedChunk, use.Position.X & 15, use.Position.Y, use.Position.Z & 15) is { } actor)
+            {
                 actor.OnInteract(player);
                 return true;
             }
@@ -550,9 +616,46 @@ internal sealed class InventoryTransactionHandler {
         ))
             return true;
 
+        if (item?.Type.PropertiesPayload.EntityPlacer?.GetValueOrDefault("entity") is { } entityIdentifier &&
+            EntityPalette.Find(entityIdentifier) is { } entityType)
+        {
+            if (!player.Abilities.Get(PlayerAbility.Build))
+                return false;
+            var offset = BlockDirections.OffsetByFace[use.Face];
+            int spawnX = use.Position.X + offset.X;
+            int spawnY = use.Position.Y + offset.Y;
+            int spawnZ = use.Position.Z + offset.Z;
+
+            if (spawnY < player.Dimension.MinimumY || spawnY + (entityType.PropertiesPayload?.Components.CollisionBox?.Height ?? 1.8) > player.Dimension.MaximumY + 1 ||
+                player.Dimension.GetLoadedPermutation(spawnX, spawnY, spawnZ) is not { } target ||
+                !BlockPalette.Replaceable(target))
+                return false;
+
+            if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>())
+            {
+                PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnBlock, 0);
+                player.Network.Server.Events.Emit(itemUse);
+                if (itemUse.IsCanceled())
+                    return false;
+            }
+
+            Entity spawned = new(entityType);
+            spawned.Position.X = spawnX + 0.5f;
+            spawned.Position.Y = spawnY;
+            spawned.Position.Z = spawnZ + 0.5f;
+            spawned.Spawn(player.Dimension);
+
+            if (!player.Abilities.Get(PlayerAbility.InstantBuild))
+                item.DecrementStack();
+            inventory.Inventory.UpdateSlot(use.Slot);
+            return true;
+        }
+
         BlockPermutation? permutation = item?.Type.SeedCropPermutation ?? item?.Type.PlacementPermutation;
-        if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null) {
-            if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success) {
+        if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Failure || permutation is null)
+        {
+            if (use.ClientInteractPrediction == ItemUseInventoryTransactionPredictedResult.Success)
+            {
                 RepairPlacement(player, use);
                 inventory.Inventory.UpdateSlot(use.Slot);
             }
@@ -566,16 +669,20 @@ internal sealed class InventoryTransactionHandler {
         string placedHalf = use.Face == 0 || (use.Face != 1 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
         string mergedHalf = use.Face == 1 || (use.Face != 0 && use.ClickPosition.Y > 0.5f) ? "top" : "bottom";
         bool mergingSlab = false;
-        if (!BlockPalette.Replaceable(clicked)) {
+        if (!BlockPalette.Replaceable(clicked))
+        {
             if (clicked.Identifier == permutation.Identifier &&
                 BlockPalette.FindDoubleSlab(permutation.Identifier, mergedHalf) is { } doubleSlab &&
                 clicked.State.Values.TryGetValue("minecraft:vertical_half", out object? clickedHalf) &&
-                clickedHalf is string clickedHalfName && clickedHalfName != mergedHalf) {
+                clickedHalf is string clickedHalfName && clickedHalfName != mergedHalf)
+            {
                 permutation = doubleSlab;
                 mergingSlab = true;
             }
-            else {
-                switch (use.Face) {
+            else
+            {
+                switch (use.Face)
+                {
                     case 0: y--; break;
                     case 1: y++; break;
                     case 2: z--; break;
@@ -587,8 +694,10 @@ internal sealed class InventoryTransactionHandler {
         }
 
         var chunk = player.Dimension.GetChunk(x >> 4, z >> 4);
-        if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY) {
-            player.SendPacket(new TextPacket {
+        if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY)
+        {
+            player.SendPacket(new TextPacket
+            {
                 Type = TextMessageType.SystemMessage,
                 Message = "Can not place blocks outside dimension bounds."
             });
@@ -602,14 +711,16 @@ internal sealed class InventoryTransactionHandler {
             chunk is null || !rendering.Viewing(x >> 4, z >> 4) ||
             permutation.Identifier == "minecraft:air" ||
             (permutation.State.Values.ContainsKey("upper_block_bit") && !BlockPalette.IsDoor(permutation.Identifier)) ||
-            permutation.State.Values.ContainsKey("head_piece_bit")) {
+            permutation.State.Values.ContainsKey("head_piece_bit"))
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
         }
 
         BlockPermutation existing = chunk.GetPermutation(x & 15, y, z & 15);
-        if (!mergingSlab && (!BlockPalette.Replaceable(existing) || existing.Identifier == permutation.Identifier)) {
+        if (!mergingSlab && (!BlockPalette.Replaceable(existing) || existing.Identifier == permutation.Identifier))
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
@@ -619,33 +730,40 @@ internal sealed class InventoryTransactionHandler {
         bool cornerableStairs = BlockPalette.IsCornerableStairs(permutation.Identifier);
         if (BlockPalette.IsSlab(permutation.Identifier))
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "minecraft:vertical_half", placedHalf) ?? permutation;
-        if (cornerableStairs) {
-            int direction = StairDirection(player.Rotation.Y);
+        if (cornerableStairs)
+        {
+            int direction = BlockDirections.StairDirectionByYaw[(int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3];
             bool upsideDown = placedHalf == "top";
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "weirdo_direction", direction) ?? permutation;
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "upside_down_bit", upsideDown) ?? permutation;
         }
 
-        if (blockType?.Solid == true) {
+        if (blockType?.Solid == true)
+        {
             bool collision = Collides(player, x, y, z);
-            foreach (Player viewer in player.Dimension.GetChunkViewers(x >> 4, z >> 4)) {
-                if (viewer.Spawned && !viewer.Disposed && !ReferenceEquals(viewer, player) && Collides(viewer, x, y, z)) {
+            foreach (Player viewer in player.Dimension.GetChunkViewers(x >> 4, z >> 4))
+            {
+                if (viewer.Spawned && !viewer.Disposed && !ReferenceEquals(viewer, player) && Collides(viewer, x, y, z))
+                {
                     collision = true;
                     break;
                 }
             }
-            if (collision) {
+            if (collision)
+            {
                 RepairPlacement(player, use);
                 inventory.Inventory.UpdateSlot(use.Slot);
                 return false;
             }
         }
 
-        if (permutation.State.Values.ContainsKey("pillar_axis")) {
+        if (permutation.State.Values.ContainsKey("pillar_axis"))
+        {
             string axis = use.Face is 4 or 5 ? "x" : use.Face is 2 or 3 ? "z" : "y";
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "pillar_axis", axis) ?? permutation;
         }
-        if (blockType is not null && Array.IndexOf(blockType.States, "minecraft:cardinal_direction") >= 0) {
+        if (blockType is not null && Array.IndexOf(blockType.States, "minecraft:cardinal_direction") >= 0)
+        {
             int facing = ((int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3);
             permutation = BlockPalette.Find(
                 permutation.Identifier,
@@ -657,7 +775,8 @@ internal sealed class InventoryTransactionHandler {
         if (item?.Type.SeedCropPermutation is null && permutation.State.Values.ContainsKey("facing_direction"))
             permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)use.Face) ?? permutation;
 
-        if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation)) {
+        if (!BlockPalette.OnPlace(permutation.Identifier, player, x, y, z, use.Face, use.ClickPosition, ref permutation))
+        {
             RepairPlacement(player, use);
             inventory.Inventory.UpdateSlot(use.Slot);
             return false;
@@ -667,14 +786,17 @@ internal sealed class InventoryTransactionHandler {
         BlockPalette.OnPlaced(permutation.Identifier, player.Dimension, x, y, z);
         BlockPalette.OnNeighborUpdate(player.Dimension, x, y, z);
         Logger.Scoped("Network").Debug($"Player {player.Username} placed {permutation.Identifier} at ({x}, {y}, {z}) in {player.Dimension.Identifier}.");
-        try {
-            if (!player.Abilities.Get(PlayerAbility.InstantBuild)) {
+        try
+        {
+            if (!player.Abilities.Get(PlayerAbility.InstantBuild))
+            {
                 item!.DecrementStack();
                 if (use.Item.NetIdVariant is int predictedNetId)
                     inventory.RememberClientRequestNetId(inventory.Inventory, use.Slot, predictedNetId, inventory.Inventory.GetItem(use.Slot));
             }
         }
-        finally {
+        finally
+        {
             SendBlockUpdate(player, x, y, z, 0, broadcast: true);
             player.Dimension.UpdateNeighbors(x, y, z);
             if (BlockPalette.IsDoor(permutation.Identifier))
@@ -684,17 +806,8 @@ internal sealed class InventoryTransactionHandler {
         return true;
     }
 
-    private static int StairDirection(float yaw) {
-        int direction = (int)MathF.Floor((yaw + 45) / 90) & 3;
-        return direction switch {
-            0 => 2,
-            1 => 1,
-            2 => 3,
-            _ => 0
-        };
-    }
-
-    private static bool Collides(Player player, int x, int y, int z) {
+    private static bool Collides(Player player, int x, int y, int z)
+    {
         bool lowPose = player.Flags.Get(ActorFlag.Swimming) || player.Flags.Get(ActorFlag.Gliding) || player.Flags.Get(ActorFlag.Crawling);
         bool sneaking = player.Flags.Get(ActorFlag.Sneaking);
         float feet = player.Position.Y;
@@ -704,7 +817,8 @@ internal sealed class InventoryTransactionHandler {
             feet + height > y && feet < y + 1;
     }
 
-    private static void RepairPlacement(Player player, ItemUseInventoryTransaction use) {
+    private static void RepairPlacement(Player player, ItemUseInventoryTransaction use)
+    {
         if (use.Face > 5)
             return;
         float dx = use.Position.X + 0.5f - player.Position.X;
@@ -718,7 +832,8 @@ internal sealed class InventoryTransactionHandler {
         int z = use.Position.Z;
         for (uint layer = 0; layer < 2; layer++)
             SendBlockUpdate(player, x, y, z, layer, broadcast: false);
-        switch (use.Face) {
+        switch (use.Face)
+        {
             case 0: y--; break;
             case 1: y++; break;
             case 2: z--; break;
@@ -730,14 +845,16 @@ internal sealed class InventoryTransactionHandler {
             SendBlockUpdate(player, x, y, z, layer, broadcast: false);
     }
 
-    private static void SendBlockUpdate(Player player, int x, int y, int z, uint layer, bool broadcast, bool playPlaceSound = true) {
+    private static void SendBlockUpdate(Player player, int x, int y, int z, uint layer, bool broadcast, bool playPlaceSound = true)
+    {
         if (y < player.Dimension.MinimumY || y > player.Dimension.MaximumY || player.Dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
             (!broadcast && player.GetTrait<PlayerChunkRenderingTrait>()?.Viewing(x >> 4, z >> 4) != true))
             return;
 
         UpdateBlockPacket update = blockUpdate ?? new();
         blockUpdate = null;
-        try {
+        try
+        {
             update.Position.X = x;
             update.Position.Y = y;
             update.Position.Z = z;
@@ -745,11 +862,14 @@ internal sealed class InventoryTransactionHandler {
             update.BlockRuntimeId = unchecked((uint)block.NetworkId);
             update.Flags = UpdateBlockFlags.Neighbors | UpdateBlockFlags.Network;
             update.Layer = layer;
-            if (!broadcast) {
+            if (!broadcast)
+            {
                 player.SendPacket(update);
             }
-            else {
-                LevelSoundEventPacket? sound = playPlaceSound ? new LevelSoundEventPacket {
+            else
+            {
+                LevelSoundEventPacket? sound = playPlaceSound ? new LevelSoundEventPacket
+                {
                     SoundEvent = "place",
                     Position = new Vec3 { X = x + 0.5f, Y = y + 0.5f, Z = z + 0.5f },
                     Data = block.NetworkId,
@@ -761,7 +881,8 @@ internal sealed class InventoryTransactionHandler {
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, player, sound);
             }
         }
-        finally {
+        finally
+        {
             blockUpdate ??= update;
         }
     }

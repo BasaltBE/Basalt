@@ -60,6 +60,7 @@ internal static class BlockDirections {
     internal static readonly (int X, int Z)[] LeftByYaw = [(1, 0), (0, 1), (-1, 0), (0, -1)];
     internal static readonly int[] TrapdoorDirectionByYaw = [3, 0, 2, 1];
     internal static readonly int[] StairFacingByDirection = [1, 3, 2, 0];
+    internal static readonly int[] StairDirectionByYaw = [2, 1, 3, 0];
     internal static readonly int[] StairOppositeByDirection = [1, 0, 3, 2];
     internal static readonly int[] StairOffsetXByDirection = [1, -1, 0, 0];
     internal static readonly int[] StairOffsetZByDirection = [0, 0, 1, -1];

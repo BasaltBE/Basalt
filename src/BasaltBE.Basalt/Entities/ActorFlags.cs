@@ -5,26 +5,32 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class ActorFlags {
+public sealed class ActorFlags
+{
     private UInt128 value;
     short? airSupply;
     short maximumAirSupply;
+    internal float? CollisionWidth;
+    internal float CollisionHeight;
     public bool Dirty;
 
-    internal void SetAirSupply(short supply, short maximum) {
+    internal void SetAirSupply(short supply, short maximum)
+    {
         Dirty |= airSupply != supply || maximumAirSupply != maximum;
         airSupply = supply;
         maximumAirSupply = maximum;
     }
 
-    public bool Get(ActorFlag flag) {
+    public bool Get(ActorFlag flag)
+    {
         int index = (int)flag;
         if ((uint)index >= 127)
             throw new ArgumentOutOfRangeException(nameof(flag));
         return (value & ((UInt128)1 << index)) != 0;
     }
 
-    internal bool Set(ActorFlag flag, bool enabled) {
+    internal bool Set(ActorFlag flag, bool enabled)
+    {
         int index = (int)flag;
         if ((uint)index >= 127)
             throw new ArgumentOutOfRangeException(nameof(flag));
@@ -39,23 +45,33 @@ public sealed class ActorFlags {
         return changed;
     }
 
-    internal SetActorDataPacket CreateUpdate(ulong runtimeId, ulong tick = 0) {
+    internal SetActorDataPacket CreateUpdate(ulong runtimeId, ulong tick = 0)
+    {
         Dirty = false;
-        return new SetActorDataPacket {
+        return new SetActorDataPacket
+        {
             ActorRuntimeId = runtimeId,
             Tick = tick,
             ActorData = CreateSnapshot()
         };
     }
 
-    internal ActorDataItem[] CreateSnapshot() {
-        ActorDataItem[] data = new ActorDataItem[airSupply.HasValue ? 5 : 3];
+    internal ActorDataItem[] CreateSnapshot()
+    {
+        int length = airSupply.HasValue ? 5 : 3;
+        ActorDataItem[] data = new ActorDataItem[length + (CollisionWidth.HasValue ? 2 : 0)];
         data[0] = new() { Id = (uint)ActorDataId.Reserved0, Type = DataItemType.Int64, Value = unchecked((long)(ulong)value) };
         data[1] = new() { Id = (uint)ActorDataId.AlwaysShowNameTag, Type = DataItemType.Byte, Value = (sbyte)(Get(ActorFlag.AlwaysShowName) ? 1 : 0) };
         data[2] = new() { Id = (uint)ActorDataId.Reserved092, Type = DataItemType.Int64, Value = unchecked((long)(ulong)(value >> 64)) };
-        if (airSupply is short supply) {
+        if (airSupply is short supply)
+        {
             data[3] = new() { Id = (uint)ActorDataId.AirSupply, Type = DataItemType.Short, Value = supply };
             data[4] = new() { Id = (uint)ActorDataId.MaxAirSupply, Type = DataItemType.Short, Value = maximumAirSupply };
+        }
+        if (CollisionWidth is float width)
+        {
+            data[length] = new() { Id = (uint)ActorDataId.BoundingBoxWidth, Type = DataItemType.Float, Value = width };
+            data[length + 1] = new() { Id = (uint)ActorDataId.BoundingBoxHeight, Type = DataItemType.Float, Value = CollisionHeight };
         }
         return data;
     }

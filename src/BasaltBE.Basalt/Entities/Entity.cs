@@ -15,7 +15,8 @@ using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 namespace BasaltBE.Basalt.Entities;
 
-public class Entity {
+public class Entity
+{
     private static long nextUniqueId = 0;
     private static long nextRuntimeId = 0;
     EntityTrait[]? traits;
@@ -45,13 +46,15 @@ public class Entity {
     Chunk? fluidChunk;
     long fluidRevision;
 
-    public Entity(EntityType? type = null, float headOffset = 0) {
+    public Entity(EntityType? type = null, float headOffset = 0)
+    {
         if (!float.IsFinite(headOffset) || headOffset < 0)
             throw new ArgumentOutOfRangeException(nameof(headOffset));
 
         HeadOffset = headOffset;
         Type = type;
-        if (type?.PropertiesPayload?.Components.CollisionBox is { } collision) {
+        if (type?.PropertiesPayload?.Components.CollisionBox is { } collision)
+        {
             if (collision.Width is double width && double.IsFinite(width) && width > 0 && width <= 64)
                 CollisionWidth = (float)width;
             if (collision.Height is double height && double.IsFinite(height) && height > 0 && height <= 64)
@@ -59,18 +62,26 @@ public class Entity {
         }
         if (this is ItemEntity || type?.Identifier == "minecraft:xp_orb")
             CollisionWidth = CollisionHeight = 0.25f;
+        if (this is not Player)
+        {
+            Flags.CollisionWidth = CollisionWidth;
+            Flags.CollisionHeight = CollisionHeight;
+        }
         traits = EntityPalette.CreateTraits(this, type);
-        if (traits is not null) {
+        if (traits is not null)
+        {
             foreach (EntityTrait trait in traits)
                 trait.OnAdd();
         }
     }
 
     public Entity(string identifier, float headOffset = 0)
-        : this(Resolve(identifier), headOffset) {
+        : this(Resolve(identifier), headOffset)
+    {
     }
 
-    private static EntityType Resolve(string identifier) {
+    private static EntityType Resolve(string identifier)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         return EntityPalette.Find(identifier)
             ?? throw new KeyNotFoundException($"Entity type '{identifier}' was not found.");
@@ -92,8 +103,10 @@ public class Entity {
     /// </summary>
     public Vec3 GetHeadPosition() => new() { X = Position.X, Y = Position.Y + HeadOffset, Z = Position.Z };
 
-    public float GetCollisionHeight() {
-        if (this is Player) {
+    public float GetCollisionHeight()
+    {
+        if (this is Player)
+        {
             if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
                 return 0.6f;
             if (Flags.Get(ActorFlag.Sneaking))
@@ -102,8 +115,10 @@ public class Entity {
         return CollisionHeight;
     }
 
-    public float GetEyeHeight() {
-        if (this is Player) {
+    public float GetEyeHeight()
+    {
+        if (this is Player)
+        {
             if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
                 return 0.4f;
             if (Flags.Get(ActorFlag.Sneaking))
@@ -112,7 +127,8 @@ public class Entity {
         return HeadOffset > 0 ? HeadOffset : CollisionHeight * 0.85f;
     }
 
-    public FluidContact GetFluidContact() {
+    public FluidContact GetFluidContact()
+    {
         float height = GetCollisionHeight();
         float eyeHeight = GetEyeHeight();
         Vector3 position = new(Position.X, Position.Y, Position.Z);
@@ -121,7 +137,8 @@ public class Entity {
             fluidWidth == CollisionWidth && ReferenceEquals(fluidDimension, dimension);
         bool unchanged = sameBounds && fluidChunk is not null && fluidRevision == fluidChunk.Revision &&
             ReferenceEquals(fluidChunk, dimension?.GetChunk((int)MathF.Floor(position.X) >> 4, (int)MathF.Floor(position.Z) >> 4));
-        if (!unchanged) {
+        if (!unchanged)
+        {
             fluidContact = dimension is not null
                 ? FluidTrait.GetContact(dimension, position, CollisionWidth, height, eyeHeight, this is not Player)
                 : default;
@@ -141,7 +158,8 @@ public class Entity {
         return fluidContact;
     }
 
-    public void Spawn(Dimension dimension) {
+    public void Spawn(Dimension dimension)
+    {
         ArgumentNullException.ThrowIfNull(dimension);
         if (Type is null)
             throw new InvalidOperationException("An entity requires a type before it can spawn.");
@@ -150,23 +168,27 @@ public class Entity {
         dimension.AddEntity(this);
     }
 
-    public void Despawn() {
+    public void Despawn()
+    {
         if (this is Player)
             throw new InvalidOperationException("Players are removed through the network connection.");
         SpawnedDimension?.RemoveEntity(this);
     }
 
-    public void AddTrait(EntityTrait trait) {
+    public void AddTrait(EntityTrait trait)
+    {
         ArgumentNullException.ThrowIfNull(trait);
         if (!ReferenceEquals(trait.Entity, this))
             throw new ArgumentException("Trait belongs to a different entity.", nameof(trait));
         if (GetTrait(trait.GetType()) is not null)
             throw new InvalidOperationException($"Entity already has trait '{trait.GetType()}'.");
 
-        if (traits is null) {
+        if (traits is null)
+        {
             traits = [trait];
         }
-        else {
+        else
+        {
             EntityTrait[] expanded = new EntityTrait[traits.Length + 1];
             traits.CopyTo(expanded, 0);
             expanded[^1] = trait;
@@ -176,19 +198,23 @@ public class Entity {
         trait.OnAdd();
     }
 
-    public bool RemoveTrait<TTrait>() where TTrait : EntityTrait {
+    public bool RemoveTrait<TTrait>() where TTrait : EntityTrait
+    {
         if (traits is null)
             return false;
 
-        for (int i = 0; i < traits.Length; i++) {
+        for (int i = 0; i < traits.Length; i++)
+        {
             if (traits[i] is not TTrait)
                 continue;
 
             EntityTrait removed = traits[i];
-            if (traits.Length == 1) {
+            if (traits.Length == 1)
+            {
                 traits = null;
             }
-            else {
+            else
+            {
                 EntityTrait[] reduced = new EntityTrait[traits.Length - 1];
                 if (i > 0)
                     Array.Copy(traits, 0, reduced, 0, i);
@@ -204,11 +230,13 @@ public class Entity {
         return false;
     }
 
-    public TTrait? GetTrait<TTrait>() where TTrait : EntityTrait {
+    public TTrait? GetTrait<TTrait>() where TTrait : EntityTrait
+    {
         if (traits is null)
             return null;
 
-        foreach (EntityTrait trait in traits) {
+        foreach (EntityTrait trait in traits)
+        {
             if (trait is TTrait match)
                 return match;
         }
@@ -223,48 +251,55 @@ public class Entity {
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
     public void OnDeath(EntityDeathEvent death) => Dispatch(trait => trait.OnDeath(death));
     public void OnHurt(EntityHurtEvent hurt) => Dispatch(trait => trait.OnHurt(hurt));
-    public void OnMove() {
+    public void OnMove()
+    {
         SpawnedDimension?.World?.CheckOwnership();
         SpawnedDimension?.EntityIndex.Update(this);
         Dispatch(static trait => trait.OnMove());
     }
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
 
-    public void OnAttack(Entity target, ItemStack? item) {
+    public void OnAttack(Entity target, ItemStack? item)
+    {
         if (traits is null)
             return;
         foreach (EntityTrait trait in traits)
             trait.OnAttack(target, item);
     }
 
-    public void OnUseItem(ItemStack? item) {
+    public void OnUseItem(ItemStack? item)
+    {
         if (traits is null)
             return;
         foreach (EntityTrait trait in traits)
             trait.OnUseItem(item);
     }
 
-    public void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition) {
+    public void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition)
+    {
         if (traits is null)
             return;
         foreach (EntityTrait trait in traits)
             trait.OnUseItemOnBlock(item, block, position, face, clickPosition);
     }
 
-    public void OnUseItemOnEntity(ItemStack? item, Entity target, Vec3 hitPosition) {
+    public void OnUseItemOnEntity(ItemStack? item, Entity target, Vec3 hitPosition)
+    {
         if (traits is null)
             return;
         foreach (EntityTrait trait in traits)
             trait.OnUseItemOnEntity(item, target, hitPosition);
     }
 
-    public virtual void Tick() {
+    public virtual void Tick()
+    {
         SimulationAge++;
         Dispatch(static trait => trait.Tick());
         if (this is ItemEntity item)
             item.TickItem();
 
-        if (this is Player player) {
+        if (this is Player player)
+        {
             if (!player.Spawned || player.Disposed)
                 return;
 
@@ -278,7 +313,8 @@ public class Entity {
                 Volatile.Write(ref player.Permissions.Dirty, false);
             if (player.Abilities.Dirty || permissionsChanged)
                 player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), entity: player);
-            if (permissionsChanged) {
+            if (permissionsChanged)
+            {
                 var commands = player.Network.Server.Commands.GetCatalog(player.Permissions);
                 player.Network.SendSerializedPacket(player, commands.Packet, commands.Payload);
             }
@@ -293,11 +329,13 @@ public class Entity {
             dimension.Broadcast(Flags.CreateUpdate(RuntimeId), this);
     }
 
-    public void SetFlag(ActorFlag flag, bool enabled) {
+    public void SetFlag(ActorFlag flag, bool enabled)
+    {
         Flags.Set(flag, enabled);
     }
 
-    public void Read(CompoundTag entityTag) {
+    public void Read(CompoundTag entityTag)
+    {
         ArgumentNullException.ThrowIfNull(entityTag);
         if (traits is null)
             return;
@@ -306,7 +344,8 @@ public class Entity {
             trait.Read(entityTag);
     }
 
-    public void Write(CompoundTag entityTag) {
+    public void Write(CompoundTag entityTag)
+    {
         ArgumentNullException.ThrowIfNull(entityTag);
         if (traits is null)
             return;
@@ -315,7 +354,8 @@ public class Entity {
             trait.Write(entityTag);
     }
 
-    void Dispatch(Action<EntityTrait> callback) {
+    void Dispatch(Action<EntityTrait> callback)
+    {
         if (traits is null)
             return;
 
@@ -323,11 +363,13 @@ public class Entity {
             callback(trait);
     }
 
-    EntityTrait? GetTrait(Type traitType) {
+    EntityTrait? GetTrait(Type traitType)
+    {
         if (traits is null)
             return null;
 
-        foreach (EntityTrait trait in traits) {
+        foreach (EntityTrait trait in traits)
+        {
             if (trait.GetType() == traitType)
                 return trait;
         }
