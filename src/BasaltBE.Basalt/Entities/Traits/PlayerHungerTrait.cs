@@ -166,6 +166,12 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
         if (consumed is null)
             return false;
 
+        if (item.Type.FoodConvertsTo is { } conversion && ItemPalette.Find(conversion) is { } result) {
+            ItemStack container = new(result);
+            if (inventory.Inventory.AddItem(container) is { } remaining)
+                new ItemEntity(remaining, player, randomly: false).Spawn(player.Dimension);
+        }
+
         Entity.Attributes.SetCurrent(HungerAttribute, Hunger + Math.Max(0, eat.Nutrition));
         saturation = Math.Clamp(saturation + Math.Max(0, eat.Saturation), 0, Hunger);
         Entity.Attributes.SetCurrent(SaturationAttribute, saturation);

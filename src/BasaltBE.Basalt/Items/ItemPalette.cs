@@ -11,12 +11,76 @@ using BasaltBE.Protocol.Types;
 namespace BasaltBE.Basalt.Items;
 
 public static class ItemPalette {
-    public static readonly ItemType[] Types = LoadTypes();
+    public static ItemType[] Types = LoadTypes();
     static readonly Dictionary<string, ItemType> ByIdentifier = Types.ToDictionary(type => type.Identifier, StringComparer.Ordinal);
     static readonly Dictionary<int, ItemType> ByNetworkId = Types.ToDictionary(type => type.NetworkId);
     static readonly Dictionary<uint, ItemStack> ByCreativeNetId = [];
-    internal static readonly ItemRegistryPacket RegistryPacket = CreateRegistryPacket();
-    internal static readonly CreativeContentPacket CreativeContentPacket = CreateCreativeContentPacket();
+    private static readonly List<CustomItem> customItems = [];
+    private static readonly Lock registryLock = new();
+    private static ItemRegistryPacket? registryPacket;
+    private static CreativeContentPacket? creativePacket;
+    private static int nextCustomNetworkId = short.MaxValue;
+    internal static bool Frozen;
+    internal static ItemRegistryPacket RegistryPacket => registryPacket ??= CreateRegistryPacket();
+    internal static CreativeContentPacket CreativeContentPacket => creativePacket ??= CreateCreativeContentPacket();
+
+    internal static CustomItem Create(string identifier) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+        string[] parts = identifier.Split(':');
+        if (parts.Length != 2 || parts.Any(part => part.Length == 0 ||
+            part.Any(character => !char.IsAsciiLetterLower(character) && !char.IsAsciiDigit(character) && character is not ('_' or '-' or '.' or '/'))) ||
+            parts[0].Contains('/'))
+            throw new ArgumentException("Use a namespaced item identifier, such as custom:custom_item.", nameof(identifier));
+
+        lock (registryLock) {
+            if (Frozen)
+                throw new InvalidOperationException("Create items before starting the server.");
+            if (ByIdentifier.TryGetValue(identifier, out ItemType? existing)) {
+                CustomItem? registered = customItems.Find(item => ReferenceEquals(item.Type, existing));
+                if (registered is not null)
+                    return registered;
+
+                CustomItem existingDefinition = new(existing);
+                customItems.Add(existingDefinition);
+                Invalidate();
+                return existingDefinition;
+            }
+            while (nextCustomNetworkId > 0 && ByNetworkId.ContainsKey(nextCustomNetworkId))
+                nextCustomNetworkId--;
+            if (nextCustomNetworkId == 0)
+                throw new InvalidOperationException("No custom item network IDs remain.");
+
+            ItemType type = new() {
+                Identifier = identifier,
+                NetworkId = nextCustomNetworkId--,
+                ComponentBased = true,
+                Version = ItemVersion.DataDriven,
+                MaxAmount = 64,
+                Stackable = true
+            };
+            CustomItem definition = new(type);
+            ByIdentifier.Add(identifier, type);
+            ByNetworkId.Add(type.NetworkId, type);
+            Types = [.. Types, type];
+            customItems.Add(definition);
+            Invalidate();
+            return definition;
+        }
+    }
+
+    internal static void Freeze() {
+        lock (registryLock) {
+            foreach (CustomItem item in customItems)
+                item.Validate();
+            Invalidate();
+            Frozen = true;
+        }
+    }
+
+    internal static void Invalidate() {
+        registryPacket = null;
+        creativePacket = null;
+    }
 
     public static ItemType? Find(string identifier) => ByIdentifier.GetValueOrDefault(identifier);
 
@@ -35,15 +99,21 @@ public static class ItemPalette {
             : null;
 
     static ItemRegistryPacket CreateRegistryPacket() {
+        HashSet<ItemType> customTypes = customItems.Select(item => item.Type).ToHashSet();
         ItemData[] items = new ItemData[Types.Length];
         for (int i = 0; i < Types.Length; i++) {
             ItemType type = Types[i];
+            CompoundTag data = type.PropertiesPayload.ToComponentData();
+            if (customTypes.Contains(type)) {
+                data.Add("id", new IntTag { Value = type.NetworkId });
+                data.Add("name", new StringTag { Value = type.Identifier });
+            }
             items[i] = new ItemData {
                 Name = type.Identifier,
                 Id = checked((short)type.NetworkId),
                 ComponentBased = type.ComponentBased,
                 Version = type.Version,
-                ComponentData = type.PropertiesPayload.ToComponentData()
+                ComponentData = data
             };
         }
 
@@ -51,6 +121,7 @@ public static class ItemPalette {
     }
 
     static CreativeContentPacket CreateCreativeContentPacket() {
+        ByCreativeNetId.Clear();
         Dictionary<(CreativeItemCategory Category, string Name), int> groupIndices = [];
         List<CreativeGroupInfoPayload> groups = [];
         List<CreativeItemEntryPayload> entries = [];
@@ -72,9 +143,7 @@ public static class ItemPalette {
             (CreativeItemCategory Category, string Name) groupKey = (category, groupName);
             if (!groupIndices.TryGetValue(groupKey, out int groupIndex)) {
                 ItemType iconType = Find(groupIcon) ?? Find("minecraft:air")!;
-                int iconBlockRuntimeId = BlockPalette.FindType(iconType.Identifier) is null
-                    ? 0
-                    : BlockPalette.FindDefaultPermutation(iconType.Identifier)?.NetworkId ?? 0;
+                int iconBlockRuntimeId = iconType.PlacementPermutation?.NetworkId ?? 0;
 
                 groupIndex = groups.Count;
                 groupIndices.Add(groupKey, groupIndex);
@@ -89,9 +158,7 @@ public static class ItemPalette {
                 });
             }
 
-            int blockRuntimeId = BlockPalette.FindType(type.Identifier) is null
-                ? 0
-                : BlockPalette.FindDefaultPermutation(type.Identifier)?.NetworkId ?? 0;
+            int blockRuntimeId = type.PlacementPermutation?.NetworkId ?? 0;
             entries.Add(new CreativeItemEntryPayload {
                 CreativeNetId = entries.Count + 1,
                 ItemInstance = new NetworkItemInstanceDescriptor {
@@ -217,9 +284,11 @@ public static class ItemPalette {
                 (ToolType.Sword, ToolMaterial.Iron) => 5,
                 (ToolType.Sword, ToolMaterial.Diamond) => 6,
                 (ToolType.Sword, ToolMaterial.Netherite) => 7,
-                (ToolType.Axe, ToolMaterial.Wooden or ToolMaterial.Gold) => 6,
-                (ToolType.Axe, ToolMaterial.Stone or ToolMaterial.Copper or ToolMaterial.Iron or ToolMaterial.Diamond) => 8,
-                (ToolType.Axe, ToolMaterial.Netherite) => 9,
+                (ToolType.Axe, ToolMaterial.Wooden or ToolMaterial.Gold) => 3,
+                (ToolType.Axe, ToolMaterial.Stone or ToolMaterial.Copper) => 4,
+                (ToolType.Axe, ToolMaterial.Iron) => 5,
+                (ToolType.Axe, ToolMaterial.Diamond) => 6,
+                (ToolType.Axe, ToolMaterial.Netherite) => 7,
                 _ => 0
             };
 

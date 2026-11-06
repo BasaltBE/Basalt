@@ -7,7 +7,7 @@ public class CustomEnum : CommandEnum {
     private readonly FrozenSet<string> options;
     public readonly string Identifier;
     public readonly bool Soft;
-    public IEnumerable<string> Options => options;
+    public virtual IEnumerable<string> Options => options;
 
     public CustomEnum(string identifier, IEnumerable<string> values, bool soft = false)
         : base(CommandParameterType.String) {

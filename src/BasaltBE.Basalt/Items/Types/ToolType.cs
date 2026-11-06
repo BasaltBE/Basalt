@@ -1,7 +1,7 @@
 namespace BasaltBE.Basalt.Items.Types;
 
 [Flags]
-internal enum ToolType : byte {
+public enum ToolType : byte {
     None = 0,
     Pickaxe = 1,
     Axe = 2,

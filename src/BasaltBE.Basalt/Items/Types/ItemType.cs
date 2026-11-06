@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Basalt.Blocks;
+using BasaltBE.Basalt.Blocks.Types;
+using System.Collections.Frozen;
 
 namespace BasaltBE.Basalt.Items.Types;
 
@@ -94,4 +96,19 @@ public sealed class ItemType {
 
     [JsonIgnore]
     public int FoodUseDurationTicks = 32;
+
+    [JsonIgnore]
+    public string? FoodConvertsTo;
+
+    [JsonIgnore]
+    public int FuelDurationTicks;
+
+    [JsonIgnore]
+    public int ArmorToughness;
+
+    [JsonIgnore]
+    internal FrozenSet<BlockType>? DiggerBlocks;
+
+    [JsonIgnore]
+    internal bool CanDestroyInCreative = true;
 }

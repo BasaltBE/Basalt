@@ -10,6 +10,7 @@ using BasaltBE.Basalt.Events;
 using BasaltBE.Basalt.Events.Server;
 using BasaltBE.Basalt.Experience;
 using BasaltBE.Basalt.Items.Enchantments;
+using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.LootTables;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Network.ResourcePacks;
@@ -48,6 +49,7 @@ public sealed class Server : IDisposable {
     public readonly LootTableManager LootTables = new();
     public readonly ExperienceDropManager ExperienceDrops = new();
     public readonly EnchantmentRegistry Enchantments = new();
+    public readonly ItemRegistry Items = new();
     public readonly BlockActorRegistry BlockActors = new();
     public readonly StructureRegistry Structures = new();
     public readonly FeatureRegistry Features = new();
@@ -192,6 +194,7 @@ public sealed class Server : IDisposable {
             throw new InvalidOperationException("Create a world before starting the server.");
 
         _ = GetWorld();
+        ItemPalette.Freeze();
         Commands.Prepare();
         CookingPalette.Initialize();
         BlockActors.Freeze();

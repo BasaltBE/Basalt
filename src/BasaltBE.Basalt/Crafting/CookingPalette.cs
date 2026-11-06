@@ -43,7 +43,8 @@ internal static class CookingPalette {
             : null;
 
     internal static int GetBurnTime(ItemStack? fuel) =>
-        fuel is not null && fuelTimes.TryGetValue(fuel.Type.Identifier, out int ticks) ? ticks : 0;
+        fuel is null ? 0 : fuel.Type.FuelDurationTicks > 0 ? fuel.Type.FuelDurationTicks :
+            fuelTimes.GetValueOrDefault(fuel.Type.Identifier);
 
     private static void LoadRecipes() {
         recipes.Clear();

@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using BasaltBE.Plugins.Packaging;
 
@@ -50,11 +52,19 @@ public static class PluginBuilder {
                     Path.Combine(repository?.FullName ?? Environment.CurrentDirectory, "artifacts", "packages")
                 ];
                 foreach (string source in sources) {
-                    if (!Directory.Exists(source) || !Directory.EnumerateFiles(source, "BasaltBE.Plugins.*.nupkg").Any())
+                    string? package = Directory.Exists(source)
+                        ? Directory.EnumerateFiles(source, "BasaltBE.Plugins.*.nupkg").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
+                        : null;
+                    if (package is null)
                         continue;
 
                     string escaped = source.Replace("%", "%25").Replace(";", "%3B").Replace(",", "%2C");
                     start.ArgumentList.Add($"-p:RestoreAdditionalProjectSources={escaped}");
+                    using FileStream input = File.OpenRead(package);
+                    string hash = Convert.ToHexStringLower(SHA256.HashData(input));
+                    string cache = Path.Combine(source, ".restore", RuntimeInformation.RuntimeIdentifier, hash);
+                    string escapedCache = cache.Replace("%", "%25").Replace(";", "%3B").Replace(",", "%2C");
+                    start.ArgumentList.Add($"-p:RestorePackagesPath={escapedCache}");
                     break;
                 }
             }

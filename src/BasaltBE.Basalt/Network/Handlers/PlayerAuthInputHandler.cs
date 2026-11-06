@@ -304,8 +304,11 @@ internal sealed class PlayerAuthInputHandler {
             ? inventory.Inventory.GetItem(inventory.SelectedSlot)
             : null;
         bool canHarvest = player.Network.Server.LootTables.CanHarvest(block.Identifier, tool);
-        float miningSpeed = tool is not null && (type.ToolTypes & tool.Type.ToolType) != 0
-            ? tool.Type.MiningSpeed
+        bool effectiveTool = tool is not null && (tool.Type.DiggerBlocks is { } targets
+            ? targets.Contains(type)
+            : (type.ToolTypes & tool.Type.ToolType) != 0);
+        float miningSpeed = effectiveTool
+            ? tool!.Type.MiningSpeed
             : 1;
         if (miningSpeed > 1 && tool is not null) {
             int efficiency = tool.GetEnchantmentLevel(EnchantmentPalette.Efficiency);
@@ -395,6 +398,10 @@ internal sealed class PlayerAuthInputHandler {
         ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
             ? inventory.Inventory.GetItem(inventory.SelectedSlot)
             : null;
+        if (player.Abilities.Get(PlayerAbility.InstantBuild) && tool?.Type.CanDestroyInCreative == false) {
+            SendBlockUpdate(player, position.X, position.Y, position.Z);
+            return false;
+        }
         int durabilityDamage = dropItems ? tool?.Type.BlockDurabilityDamage ?? 0 : 0;
         if (dropItems && player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
             PlayerItemUseEvent itemUse = new(player, tool, PlayerItemUseAction.BreakBlock, durabilityDamage);
