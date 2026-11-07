@@ -4,6 +4,7 @@ using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -17,12 +18,50 @@ public sealed class ItemEntity : Entity {
     private const float PickupVerticalTolerance = 2f;
     private static readonly EntityType ItemType = new() { Identifier = "minecraft:item" };
     private readonly EntityMovementTrait movement;
-    private readonly ulong mergeUnlockTick = MergeDelayTicks;
-    private readonly ulong pickupUnlockTick = PickupDelayTicks;
+    private ulong mergeUnlockTick = MergeDelayTicks;
+    private ulong pickupUnlockTick = PickupDelayTicks;
     private ulong despawnTick = DespawnDelayTicks;
     private ulong nextMergeTick = MergeDelayTicks;
 
     public readonly ItemStack Item;
+
+    internal ItemEntity(ItemStack item) : base(ItemType) {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.StackSize == 0 || item.Type.NetworkId == 0 || item.Container is not null)
+            throw new ArgumentException("Dropped items require a detached non-empty stack.", nameof(item));
+        Item = item;
+        movement = new(this) { Gravity = 0.04f, Drag = 0.02f, VerticalDragBeforeGravity = true };
+        AddTrait(movement);
+    }
+
+    public override void Read(CompoundTag tag) {
+        base.Read(tag);
+        int age = Math.Clamp((int)(tag.Get<ShortTag>("Age")?.Value ?? 0), 0, (int)DespawnDelayTicks);
+        despawnTick = SimulationAge + DespawnDelayTicks - (ulong)age;
+        pickupUnlockTick = SimulationAge + (ulong)Math.Max(0, (int)(tag.Get<ShortTag>("PickupDelay")?.Value ?? 0));
+        mergeUnlockTick = SimulationAge + (ulong)Math.Max(0, tag.Get<IntTag>("MergeDelay")?.Value ?? 0);
+        nextMergeTick = mergeUnlockTick;
+    }
+
+    public override void Write(CompoundTag tag) {
+        base.Write(tag);
+        CompoundTag item = new();
+        item.Add("Name", new StringTag { Value = Item.Type.Identifier });
+        item.Add("Count", new ByteTag { Value = checked((byte)Item.StackSize) });
+        item.Add("Damage", new ShortTag { Value = unchecked((short)Item.Metadata) });
+        if (Item.Nbt is { } nbt) {
+            CompoundTag contents = new();
+            foreach ((string name, Tag value) in nbt.Tags)
+                contents.Add(name, value);
+            item.Add("tag", contents);
+        }
+        tag.Add("Item", item);
+
+        ulong remaining = despawnTick - Math.Min(SimulationAge, despawnTick);
+        tag.Add("Age", new ShortTag { Value = (short)(DespawnDelayTicks - Math.Min(DespawnDelayTicks, remaining)) });
+        tag.Add("PickupDelay", new ShortTag { Value = (short)Math.Min((ulong)short.MaxValue, pickupUnlockTick - Math.Min(SimulationAge, pickupUnlockTick)) });
+        tag.Add("MergeDelay", new IntTag { Value = (int)Math.Min((ulong)int.MaxValue, mergeUnlockTick - Math.Min(SimulationAge, mergeUnlockTick)) });
+    }
 
     public ItemEntity(ItemStack item, Player player, bool randomly)
         : this(item, player, 0, 0, 0, blockDrop: false, randomly) {
@@ -50,25 +89,11 @@ public sealed class ItemEntity : Entity {
         bool randomly,
         bool entityDrop = false
     )
-        : base(ItemType) {
-        ArgumentNullException.ThrowIfNull(item);
+        : this(item) {
         if (!blockDrop && !entityDrop && source is not Player)
             throw new ArgumentException("Player drops require a player source.", nameof(source));
         if (entityDrop && source is null)
             throw new ArgumentNullException(nameof(source));
-        if (item.StackSize == 0 || item.Type.NetworkId == 0)
-            throw new ArgumentException("Dropped items must have a valid non-empty stack.", nameof(item));
-        if (item.Container is not null)
-            throw new ArgumentException("Dropped items cannot belong to a container.", nameof(item));
-
-        Item = item;
-        movement = new(this) {
-            Gravity = 0.04f,
-            Drag = 0.02f,
-            VerticalDragBeforeGravity = true
-        };
-        AddTrait(movement);
-
         if (blockDrop) {
             Position.X = blockX + 0.5f;
             Position.Y = blockY + 0.25f;

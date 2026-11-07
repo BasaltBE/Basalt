@@ -2,17 +2,48 @@ using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
 public sealed class ActorFlags
 {
+    private static readonly (string Name, ActorFlag Flag)[] persistentFlags = [
+        ("IsBaby", ActorFlag.Baby),
+        ("IsAngry", ActorFlag.Angry),
+        ("IsTamed", ActorFlag.Tamed),
+        ("IsOrphaned", ActorFlag.Orphaned),
+        ("IsIllagerCaptain", ActorFlag.IllagerCaptain),
+        ("IsTrusting", ActorFlag.Trusting),
+        ("Saddled", ActorFlag.Saddled),
+        ("Sheared", ActorFlag.Sheared),
+        ("Chested", ActorFlag.Chested),
+        ("ShowBottom", ActorFlag.ShowBottom),
+        ("Sitting", ActorFlag.Sitting),
+        ("CustomNameVisible", ActorFlag.AlwaysShowName)
+    ];
+
     private UInt128 value;
     short? airSupply;
     short maximumAirSupply;
     internal float? CollisionWidth;
     internal float CollisionHeight;
     public bool Dirty;
+
+    internal void Read(CompoundTag tag)
+    {
+        foreach ((string name, ActorFlag flag) in persistentFlags)
+        {
+            if (tag.Get<ByteTag>(name) is { } saved)
+                Set(flag, saved.Value != 0);
+        }
+    }
+
+    internal void Write(CompoundTag tag)
+    {
+        foreach ((string name, ActorFlag flag) in persistentFlags)
+            tag.Add(name, new ByteTag { Value = Get(flag) ? (byte)1 : (byte)0 });
+    }
 
     internal void SetAirSupply(short supply, short maximum)
     {

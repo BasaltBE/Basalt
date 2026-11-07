@@ -10,6 +10,7 @@ using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
 
 namespace BasaltBE.Basalt.Entities;
 
@@ -24,7 +25,7 @@ internal sealed class FallingBlockEntity : Entity {
     };
     private readonly BlockPermutation Block;
     private readonly EntityMovementTrait movement;
-    private readonly float fallStart;
+    private float fallStart;
 
     internal FallingBlockEntity(BlockPermutation block, float x, float y, float z) : base(FallingBlockType) {
         Block = block;
@@ -36,6 +37,20 @@ internal sealed class FallingBlockEntity : Entity {
         movement = new(this) { Gravity = 0.04f, Drag = 0.02f };
         AddTrait(movement);
         AddTrait(new LandingTrait(this));
+    }
+
+    public override void Read(CompoundTag tag) {
+        base.Read(tag);
+        float distance = tag.Get<FloatTag>("FallDistance")?.Value ?? 0;
+        fallStart = Position.Y + distance;
+        if (!float.IsFinite(distance) || distance < 0 || !float.IsFinite(fallStart))
+            throw new InvalidDataException("Falling block start height is invalid.");
+    }
+
+    public override void Write(CompoundTag tag) {
+        base.Write(tag);
+        tag.Add("Block", BlockStorage.CreatePermutationTag(Block));
+        tag.Add("FallDistance", new FloatTag { Value = Math.Max(0, fallStart - Position.Y) });
     }
 
     private void Land(Dimension dimension) {

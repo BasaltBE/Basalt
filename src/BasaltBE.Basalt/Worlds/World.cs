@@ -255,6 +255,8 @@ public sealed class World : IDisposable {
             if (TickValue >= nextAutosaveTick) {
                 ulong intervalTicks = (ulong)server.Properties.AutosaveIntervalSeconds * 20;
                 nextAutosaveTick = TickValue + intervalTicks;
+                foreach (Dimension dimension in Dimensions.Values)
+                    dimension.QueueEntitySaves();
                 if (storage is { SupportsWorldData: true } && !GameRules.Save())
                     Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
                 if (storage is not null && !storage.Flush(Identifier))
@@ -310,7 +312,7 @@ public sealed class World : IDisposable {
     public void Dispose() {
         foreach (Dimension dimension in Dimensions.Values) {
             if (!dimension.FlushStorage())
-                Logger.Scoped("Storage").Error($"World {Identifier} closed with unsaved piston changes.");
+                Logger.Scoped("Storage").Error($"World {Identifier} closed with unsaved world changes.");
         }
         if (storage is { SupportsWorldData: true } && !GameRules.Save())
             Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");

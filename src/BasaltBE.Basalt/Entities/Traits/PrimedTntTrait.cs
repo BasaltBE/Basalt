@@ -1,3 +1,4 @@
+using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Enums;
@@ -11,6 +12,12 @@ public sealed class PrimedTntTrait(Entity entity) : EntityTrait(entity) {
     const int FuseUpdateInterval = 5;
 
     public int FuseTicks = 80;
+
+    public override void Read(CompoundTag tag) => FuseTicks = Math.Max(1, (int)(tag.Get<ShortTag>("Fuse")?.Value ?? 80));
+
+    public override void Write(CompoundTag tag) {
+        tag.Add("Fuse", new ShortTag { Value = checked((short)Math.Clamp(FuseTicks, 1, short.MaxValue)) });
+    }
 
     public override void OnAdd() {
         Entity.MovementUpdateInterval = 10;

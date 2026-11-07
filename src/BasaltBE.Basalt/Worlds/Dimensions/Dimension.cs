@@ -236,6 +236,18 @@ public sealed partial class Dimension : IDisposable {
         ArgumentNullException.ThrowIfNull(entity);
         if (entity is Player)
             throw new ArgumentException("Add players through World.AddPlayer.", nameof(entity));
+        if (entity.SpawnedDimension is not null)
+            throw new InvalidOperationException("Entity already belongs to a dimension.");
+        if (World?.Storage is { SupportsEntities: true } storage) {
+            if (entity.StorageOwner?.World != World)
+                entity.StorageId = null;
+            entity.StorageId ??= storage.AllocateEntityId();
+        }
+        else {
+            entity.StorageId = null;
+        }
+        if (entity.StorageId is { } id && entitySaves.TryGetValue(id, out EntitySave? existing) && !ReferenceEquals(existing.Entity, entity))
+            throw new InvalidOperationException("An actor with this persistent identity already exists.");
         lock (playersSync) {
             if (entity.SpawnedDimension is not null)
                 throw new InvalidOperationException("Entity already belongs to a dimension.");
@@ -247,6 +259,30 @@ public sealed partial class Dimension : IDisposable {
             EntityIndex.Update(entity);
             entity.SpawnedDimension = this;
         }
+        if (entity.StorageId is { } storageId && World?.Storage is { SupportsEntities: true }) {
+            EntitySave? state = null;
+            if (entity.StorageOwner is { } previous && previous != this && previous.World == World) {
+                previous.entitySaves.Remove(storageId, out state);
+                if (state is { InFlight: true }) {
+                    previous.inFlightEntities--;
+                    inFlightEntities++;
+                }
+            }
+            if (state is not null) {
+                state.Queued = false;
+                entitySaves.Add(storageId, state);
+            }
+            else if (!entitySaves.TryGetValue(storageId, out state)) {
+                state = new EntitySave(entity);
+                entitySaves.Add(storageId, state);
+            }
+            state.Pending |= state.StoredChunk is null;
+            if (state.Pending && !state.Queued && !state.InFlight) {
+                state.Queued = true;
+                entitySaveQueue.Enqueue(storageId);
+            }
+        }
+        entity.StorageOwner = this;
         entity.OnSpawn();
     }
 
@@ -261,6 +297,13 @@ public sealed partial class Dimension : IDisposable {
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Remove(entity);
             entity.SpawnedDimension = null;
+        }
+        if (entity.StorageId is { } storageId && entitySaves.TryGetValue(storageId, out EntitySave? state)) {
+            state.Pending = true;
+            if (!state.Queued && !state.InFlight) {
+                state.Queued = true;
+                entitySaveQueue.Enqueue(entity.StorageId.Value);
+            }
         }
         entity.OnDespawn();
         return true;
@@ -768,6 +811,7 @@ public sealed partial class Dimension : IDisposable {
 
         TickValue++;
         TickStorageCompletions();
+        LoadEntities();
         DrainGeneratedChunks();
 
         foreach ((Player player, var area) in playerAreas) {
@@ -985,6 +1029,7 @@ public sealed partial class Dimension : IDisposable {
         }
 
         TickStorageSaves();
+        SaveEntities();
 
         foreach (Player player in currentPlayers) {
             if (player.Disposed)

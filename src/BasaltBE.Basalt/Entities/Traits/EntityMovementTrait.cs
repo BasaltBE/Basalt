@@ -1,4 +1,5 @@
 using System.Numerics;
+using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Entities.Enums;
@@ -37,6 +38,18 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     public bool HorizontalCollision;
     public bool VerticalCollision;
     public ulong? InputTick;
+
+    public override void Read(CompoundTag tag) {
+        if (Entity is Player)
+            return;
+        Grounded = tag.Get<ByteTag>("OnGround") is { Value: not 0 };
+        VerticalCollision = Grounded;
+    }
+
+    public override void Write(CompoundTag tag) {
+        if (Entity is not Player)
+            tag.Add("OnGround", new ByteTag { Value = Grounded ? (byte)1 : (byte)0 });
+    }
 
     public override void OnSpawn() {
         if (Entity is not Player)

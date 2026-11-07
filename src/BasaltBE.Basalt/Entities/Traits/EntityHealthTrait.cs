@@ -286,7 +286,8 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         if (!float.IsFinite(amount) || amount <= 0 || Entity.Dead ||
             Entity.Attributes.Get(AttributeName) is not { } health)
             return false;
-        if ((Entity is Player invulnerablePlayer && invulnerablePlayer.Abilities.Get(PlayerAbility.Invulnerable) && cause != EntityDamageCause.Void) ||
+        if ((Entity.Invulnerable && cause != EntityDamageCause.Void && source is not Player { GameType: GameType.Creative }) ||
+            (Entity is Player invulnerablePlayer && invulnerablePlayer.Abilities.Get(PlayerAbility.Invulnerable) && cause != EntityDamageCause.Void) ||
             ((cause is EntityDamageCause.Fire or EntityDamageCause.FireTick or EntityDamageCause.Lava) && Entity.Flags.Get(ActorFlag.FireImmune)))
             return false;
 

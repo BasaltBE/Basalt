@@ -17,7 +17,7 @@ namespace BasaltBE.Basalt.Entities;
 
 public class Entity
 {
-    private static long nextUniqueId = 0;
+    private static long nextUniqueId;
     private static long nextRuntimeId = 0;
     EntityTrait[]? traits;
     public readonly EntityAttributes Attributes = new();
@@ -35,6 +35,7 @@ public class Entity
     internal int SpatialCellSlot = -1;
     internal bool SpatialDirty;
     public bool Dead;
+    public bool Invulnerable;
     public float CollisionWidth = 0.6f;
     public float CollisionHeight = 1.8f;
     Vector3 fluidPosition;
@@ -86,6 +87,10 @@ public class Entity
         return EntityPalette.Find(identifier)
             ?? throw new KeyNotFoundException($"Entity type '{identifier}' was not found.");
     }
+
+    internal CompoundTag? StorageTag;
+    internal Dimension? StorageOwner;
+    internal long? StorageId;
 
     public long UniqueId = Interlocked.Increment(ref nextUniqueId);
     public ulong RuntimeId = checked((ulong)Interlocked.Increment(ref nextRuntimeId));
@@ -334,7 +339,7 @@ public class Entity
         Flags.Set(flag, enabled);
     }
 
-    public void Read(CompoundTag entityTag)
+    public virtual void Read(CompoundTag entityTag)
     {
         ArgumentNullException.ThrowIfNull(entityTag);
         if (traits is null)
@@ -344,7 +349,7 @@ public class Entity
             trait.Read(entityTag);
     }
 
-    public void Write(CompoundTag entityTag)
+    public virtual void Write(CompoundTag entityTag)
     {
         ArgumentNullException.ThrowIfNull(entityTag);
         if (traits is null)

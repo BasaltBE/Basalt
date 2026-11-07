@@ -13,5 +13,7 @@ internal readonly record struct WorldStorageCompletion(
     Exception? Error,
     long GroupId = 0,
     ChunkStorageKey[]? GroupKeys = null,
-    long[]? GroupVersions = null
+    long[]? GroupVersions = null,
+    EntityStorageRecord[]? Entities = null,
+    EntityStorageChange[]? EntityChanges = null
 );

@@ -1,3 +1,4 @@
+using BasaltBE.Nbt.Types;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Enums;
@@ -22,6 +23,17 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
         Type = DataItemType.Int,
         Value = ExperienceValue
     };
+
+    public override void Read(CompoundTag tag) {
+        ExperienceValue = Math.Max(1, tag.Get<IntTag>("Value")?.Value ?? tag.Get<ShortTag>("Value")?.Value ?? 1);
+        if (tag.Get<LongTag>("SimulationAge") is null)
+            Entity.SimulationAge = (ulong)Math.Max(0, (int)(tag.Get<ShortTag>("Age")?.Value ?? 0));
+    }
+
+    public override void Write(CompoundTag tag) {
+        tag.Add("Value", new IntTag { Value = ExperienceValue });
+        tag.Add("Age", new ShortTag { Value = (short)Math.Min(Entity.SimulationAge, LifetimeTicks) });
+    }
 
     public override void OnAdd() {
         EntityMovementTrait movement = Entity.GetTrait<EntityMovementTrait>()

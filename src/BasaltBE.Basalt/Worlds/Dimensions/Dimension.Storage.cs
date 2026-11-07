@@ -73,6 +73,9 @@ public sealed partial class Dimension {
             processed++;
             long key = GetKey(completion.Key.X, completion.Key.Z);
             switch (completion.Operation) {
+                case WorldStorageOperation.WriteEntities:
+                    CompleteEntityWrite(completion);
+                    break;
                 case WorldStorageOperation.Write:
                     CompleteChunkWrite(key, completion);
                     break;
@@ -80,9 +83,8 @@ public sealed partial class Dimension {
                     CompleteSaveGroup(completion);
                     break;
                 case WorldStorageOperation.Read:
-                    if (completion.DataBytes > 0)
-                        World?.Storage?.ReleaseRead(completion.DataBytes);
-                    CompleteChunkRead(key, completion);
+                    int retainedBytes = CompleteChunkRead(key, completion);
+                    World?.Storage?.ReleaseRead(completion.DataBytes - retainedBytes);
                     break;
             }
         }
@@ -153,20 +155,27 @@ public sealed partial class Dimension {
         }
     }
 
-    void CompleteChunkRead(long key, WorldStorageCompletion completion) {
+    int CompleteChunkRead(long key, WorldStorageCompletion completion) {
         if (!storageRequests.TryGetValue(key, out long requestId) || requestId != completion.RequestId)
-            return;
+            return 0;
 
         storageRequests.Remove(key);
         if (!chunks.TryGetValue(key, out Chunk? current) || current is not null) {
             pendingRequestCount--;
-            return;
+            return 0;
         }
 
         if (completion.Error is not null) {
             chunks.Remove(key);
             pendingRequestCount--;
-            return;
+            return 0;
+        }
+
+        int retainedBytes = 0;
+        if (completion.Entities is { Length: > 0 } actors) {
+            foreach (EntityStorageRecord actor in actors)
+                retainedBytes = checked(retainedBytes + actor.Data.Length);
+            entityLoads.Enqueue(new EntityLoad(completion.Key, actors));
         }
 
         if (completion.Chunk is { } chunk) {
@@ -176,13 +185,14 @@ public sealed partial class Dimension {
             pendingRequestCount--;
             LoadScheduledTicks(chunk);
             Redstone.ChunkLoaded(this, chunk);
-            return;
+            return retainedBytes;
         }
 
         if (!generationService.Request(this, Generator, key, completion.Key.X, completion.Key.Z)) {
             chunks.Remove(key);
             pendingRequestCount--;
         }
+        return retainedBytes;
     }
 
     internal void MarkChunkDirty(Chunk chunk) {
@@ -329,11 +339,23 @@ public sealed partial class Dimension {
                 QueueSaveGroup(storage, group, long.MaxValue, force: true);
             Thread.Sleep(1);
             TickStorageCompletions();
+            LoadEntities(flush: true);
         }
 
-        bool saved = !saveGroups.Values.Any(static group => group.Failed);
+        LoadEntities(flush: true);
+        QueueEntitySaves();
+        while (entitySaveQueue.Count > 0 || inFlightEntities > 0) {
+            SaveEntities(flush: true);
+            Thread.Sleep(1);
+            foreach (Dimension dimension in World.Dimensions.Values) {
+                dimension.TickStorageCompletions();
+                dimension.LoadEntities(flush: true);
+            }
+        }
+        bool saved = !saveGroups.Values.Any(static group => group.Failed) &&
+            !entitySaves.Values.Any(static state => state.Pending);
 
-        foreach ((long key, long revision) in dirtyChunks) {
+        foreach ((long key, long revision) in dirtyChunks.ToArray()) {
             if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null ||
                 saveGroupsByChunk.ContainsKey(key) ||
                 savingChunks.TryGetValue(key, out long savingRevision) && savingRevision == revision)
@@ -347,8 +369,11 @@ public sealed partial class Dimension {
                 new ChunkStorageKey(Type, Identifier, PrimaryStorageDimension, chunk.X, chunk.Z),
                 revision,
                 entries
-            ))
+            )) {
                 Thread.Sleep(1);
+                TickStorageCompletions();
+                LoadEntities(flush: true);
+            }
 
             savingChunks[key] = revision;
         }

@@ -18,6 +18,8 @@ internal sealed class WorldProviderService : IDisposable {
     private readonly ChunkStorageRecord[] writeBatch = new ChunkStorageRecord[MaximumWriteBatch];
     private readonly StorageRequest[] batchRequests = new StorageRequest[MaximumWriteBatch];
     private readonly Thread worker;
+    private long nextEntityId;
+    private readonly long lastEntityId;
     private long pendingBytes;
     private int pendingOperations;
     private int disposed;
@@ -31,6 +33,14 @@ internal sealed class WorldProviderService : IDisposable {
     internal WorldProviderService(IWorldProvider provider) {
         this.provider = provider;
         worldDataProvider = provider as IWorldDataProvider;
+        if (provider is IEntityProvider actors) {
+            long count = 1L << 32;
+            long firstId = actors.ReserveEntityIds(count);
+            if (firstId <= 0 || firstId > long.MaxValue - (count - 1))
+                throw new InvalidDataException("Provider returned an invalid actor ID range.");
+            nextEntityId = firstId - 1;
+            lastEntityId = firstId + count - 1;
+        }
         worker = new Thread(Work) {
             IsBackground = true,
             Name = $"Basalt storage {provider.Identifier}"
@@ -38,7 +48,15 @@ internal sealed class WorldProviderService : IDisposable {
         worker.Start();
     }
 
+    internal long AllocateEntityId() {
+        long id = Interlocked.Increment(ref nextEntityId);
+        if (id <= 0 || id > lastEntityId)
+            throw new InvalidOperationException("The world's reserved actor ID range is exhausted.");
+        return id;
+    }
+
     internal int PendingOperations => Volatile.Read(ref pendingOperations);
+    internal bool SupportsEntities => provider is IEntityProvider;
     internal bool SupportsWorldData => worldDataProvider is not null;
     internal long PendingBytes => Interlocked.Read(ref pendingBytes);
     internal long ReadCount => Interlocked.Read(ref readCount);
@@ -142,6 +160,26 @@ internal sealed class WorldProviderService : IDisposable {
             return true;
 
         Interlocked.Add(ref pendingBytes, -dataBytes);
+        return false;
+    }
+
+    internal bool WriteEntities(Dimension dimension, EntityStorageChange[] changes) {
+        if (provider is not IEntityProvider)
+            return false;
+        int bytes = 0;
+        foreach (EntityStorageChange change in changes)
+            bytes = checked(bytes + (change.Data?.Length ?? 0));
+        if (bytes > MaximumChunkDataBytes)
+            return false;
+        if (Interlocked.Add(ref pendingBytes, bytes) > MaximumPendingBytes)
+        {
+            Interlocked.Add(ref pendingBytes, -bytes);
+            return false;
+        }
+
+        if (Add(new StorageRequest(dimension, WorldStorageOperation.WriteEntities, default, 0, 0, null, bytes, EntityChanges: changes)))
+            return true;
+        Interlocked.Add(ref pendingBytes, -bytes);
         return false;
     }
 
@@ -302,11 +340,15 @@ internal sealed class WorldProviderService : IDisposable {
 
     private void Process(StorageRequest request) {
         Chunk? chunk = null;
+        EntityStorageRecord[]? actors = null;
         int dataBytes = 0;
         bool deleted = false;
         Exception? error = null;
         try {
             switch (request.Operation) {
+                case WorldStorageOperation.WriteEntities:
+                    ((IEntityProvider)provider).WriteEntities(request.EntityChanges!);
+                    break;
                 case WorldStorageOperation.WriteGroup: {
                         long start = Stopwatch.GetTimestamp();
                         provider.WriteChunks(request.GroupChunks!);
@@ -318,7 +360,11 @@ internal sealed class WorldProviderService : IDisposable {
                     long readStart = Stopwatch.GetTimestamp();
                     ChunkStorageEntry[]? entries = provider.ReadChunk(request.Key);
                     Interlocked.Add(ref readTicks, Stopwatch.GetTimestamp() - readStart);
+                    actors = (provider as IEntityProvider)?.ReadEntities(request.Key);
                     int entryBytes = 0;
+                    if (actors is not null)
+                        foreach (EntityStorageRecord actor in actors)
+                            entryBytes = checked(entryBytes + actor.Data.Length);
                     if (entries is not null) {
                         foreach (ChunkStorageEntry entry in entries)
                             entryBytes = checked(entryBytes + entry.Data.Length);
@@ -327,17 +373,17 @@ internal sealed class WorldProviderService : IDisposable {
                         entries = null;
                         error = new InvalidDataException("Stored chunk exceeds the maximum size.");
                     }
-                    else if (entries is not null &&
-                        Interlocked.Add(ref pendingBytes, entryBytes) > MaximumPendingBytes) {
+                    else if (Interlocked.Add(ref pendingBytes, entryBytes) > MaximumPendingBytes) {
                         Interlocked.Add(ref pendingBytes, -entryBytes);
                         entries = null;
                         error = new InvalidDataException("Storage completion queue is full.");
                     }
-                    else if (entries is not null) {
+                    else {
                         dataBytes = entryBytes;
                         long decodeStart = Stopwatch.GetTimestamp();
                         try {
-                            chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries, request.Dimension!);
+                            if (entries is not null)
+                                chunk = Chunk.Deserialize(request.Key.X, request.Key.Z, entries, request.Dimension!);
                         }
                         catch (Exception exception) {
                             Interlocked.Add(ref pendingBytes, -dataBytes);
@@ -375,6 +421,8 @@ internal sealed class WorldProviderService : IDisposable {
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not write world data: {error.Message}"
                 );
+            else if (request.Operation == WorldStorageOperation.WriteEntities)
+                Logger.Scoped("Storage").Error($"Could not write actors: {error.Message}");
             else if (request.Operation == WorldStorageOperation.WriteGroup)
                 Logger.Scoped("Storage").Error(
                     $"Provider {provider.Identifier} could not write chunk group {request.GroupId} in {request.Key.DimensionIdentifier}: {error.Message}"
@@ -386,7 +434,7 @@ internal sealed class WorldProviderService : IDisposable {
                 );
         }
 
-        if (request.Operation is WorldStorageOperation.WriteWorldData or WorldStorageOperation.WriteGroup)
+        if (request.Operation is WorldStorageOperation.WriteWorldData or WorldStorageOperation.WriteGroup or WorldStorageOperation.WriteEntities)
             Interlocked.Add(ref pendingBytes, -request.DataBytes);
 
         if (request.Dimension is { } dimension) {
@@ -401,7 +449,9 @@ internal sealed class WorldProviderService : IDisposable {
                 error,
                 request.GroupId,
                 request.GroupChunks?.Select(static chunk => chunk.Key).ToArray(),
-                request.GroupVersions
+                request.GroupVersions,
+                actors,
+                request.EntityChanges
             ));
         }
         Interlocked.Decrement(ref pendingOperations);
@@ -431,6 +481,7 @@ internal sealed class WorldProviderService : IDisposable {
         byte[]? WorldData = null,
         long GroupId = 0,
         ChunkStorageRecord[]? GroupChunks = null,
-        long[]? GroupVersions = null
+        long[]? GroupVersions = null,
+        EntityStorageChange[]? EntityChanges = null
     );
 }
