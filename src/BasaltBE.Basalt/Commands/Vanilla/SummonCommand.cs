@@ -28,9 +28,9 @@ public sealed class SummonCommand : Command {
             y = position.Y;
             z = position.Z;
         } else if (context.Player is { } player) {
-            x = player.Position.X + MathF.Cos(player.Rotation.Y * (MathF.PI / 180)) * 2;
+            x = player.Position.X;
             y = player.Position.Y;
-            z = player.Position.Z + MathF.Sin(player.Rotation.Y * (MathF.PI / 180)) * 2;
+            z = player.Position.Z;
         } else {
             foreach (Dimension candidate in context.Server.GetWorld().Dimensions.Values) {
                 dimension = candidate;
