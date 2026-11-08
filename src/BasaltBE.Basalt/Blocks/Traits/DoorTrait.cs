@@ -30,8 +30,7 @@ public sealed class DoorTrait : BlockSupportTrait {
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "door_hinge_bit", hingeRight) ?? permutation;
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "upper_block_bit", false) ?? permutation;
         permutation = BlockPalette.Find(permutation.Identifier, permutation.State, "open_bit", false) ?? permutation;
-        if (BlockPalette.Find(permutation.Identifier, permutation.State, "upper_block_bit", true) is not { } upper)
-            return false;
+        if (BlockPalette.Find(permutation.Identifier, permutation.State, "upper_block_bit", true) is not { } upper) return false;
 
         dimension.SetPermutation(x, y + 1, z, upper);
         return true;
@@ -50,14 +49,17 @@ public sealed class DoorTrait : BlockSupportTrait {
         BlockPermutation top = dimension.GetPermutation(position.X, upperY, position.Z);
         if (lower.Identifier != clicked.Identifier || top.Identifier != clicked.Identifier ||
             lower.State.Values.GetValueOrDefault("upper_block_bit") is true ||
-            top.State.Values.GetValueOrDefault("upper_block_bit") is not true ||
-            lower.State.Values.GetValueOrDefault("open_bit") is not bool open ||
+            top.State.Values.GetValueOrDefault("upper_block_bit") is not true)
+            return true;
+
+        if (lower.State.Values.GetValueOrDefault("open_bit") is not bool open ||
             BlockPalette.Find(lower.Identifier, lower.State, "open_bit", !open) is not { } updatedLower ||
             BlockPalette.Find(top.Identifier, top.State, "open_bit", !open) is not { } updatedTop)
             return true;
 
         dimension.SetPermutation(position.X, lowerY, position.Z, updatedLower);
         dimension.SetPermutation(position.X, upperY, position.Z, updatedTop);
+
         dimension.Broadcast(new UpdateBlockPacket {
             Position = new BlockPos { X = position.X, Y = lowerY, Z = position.Z },
             BlockRuntimeId = unchecked((uint)updatedLower.Hash),
@@ -76,23 +78,21 @@ public sealed class DoorTrait : BlockSupportTrait {
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
         BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
-        if (current is null)
-            return null;
+        if (current is null) return null;
         if (!BlockPalette.IsDoor(current.Identifier) ||
             current.State.Values.GetValueOrDefault("upper_block_bit") is not bool upper)
             return false;
 
         if (upper) {
             BlockPermutation? lower = dimension.GetLoadedPermutation(x, y - 1, z);
-            if (lower is null)
-                return null;
+            if (lower is null) return null;
             return lower.Identifier == current.Identifier && lower.State.Values.GetValueOrDefault("upper_block_bit") is false;
         }
 
         BlockPermutation? top = dimension.GetLoadedPermutation(x, y + 1, z);
         BlockPermutation? support = dimension.GetLoadedPermutation(x, y - 1, z);
-        if (top is null || support is null)
-            return null;
+        if (top is null || support is null) return null;
+
         bool validTop = top.Identifier == current.Identifier && top.State.Values.GetValueOrDefault("upper_block_bit") is true;
         bool supported = BlockPalette.FindType(support.Identifier)?.Solid == true;
         return validTop && supported;

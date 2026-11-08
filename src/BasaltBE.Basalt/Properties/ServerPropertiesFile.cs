@@ -19,18 +19,15 @@ public static class ServerPropertiesFile {
 
     public static ServerProperties LoadFromPath(string path) {
         ServerProperties properties = new();
-        if (!File.Exists(path))
-            return properties;
+        if (!File.Exists(path)) return properties;
 
         object boxedProperties = properties;
         foreach (string line in File.ReadLines(path)) {
             ReadOnlySpan<char> entry = line.AsSpan().Trim();
-            if (entry.IsEmpty || entry[0] is '#' or '!')
-                continue;
+            if (entry.IsEmpty || entry[0] is '#' or '!') continue;
 
             int separator = entry.IndexOf('=');
-            if (separator <= 0)
-                continue;
+            if (separator <= 0) continue;
 
             string key = entry[..separator].Trim().ToString();
             ReadOnlySpan<char> value = entry[(separator + 1)..].Trim();
@@ -52,8 +49,8 @@ public static class ServerPropertiesFile {
         foreach (ServerPropertyDefinition definition in definitions) {
             ServerPropertyAttribute metadata = definition.Metadata;
             if (!string.Equals(category, metadata.Category, StringComparison.Ordinal)) {
-                if (text.Length > 0)
-                    text.AppendLine();
+                if (text.Length > 0) text.AppendLine();
+
                 text.Append("# ").AppendLine(metadata.Category);
                 category = metadata.Category;
             }

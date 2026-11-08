@@ -31,14 +31,12 @@ public sealed class CustomDimensionRegistry(Server server) {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultBiome);
         if (packId == Guid.Empty)
             throw new ArgumentException("Custom dimensions require the UUID of their registering pack.", nameof(packId));
-        if (server.Started)
-            throw new InvalidOperationException("Custom dimensions must be registered before the server starts.");
+        if (server.Started) throw new InvalidOperationException("Custom dimensions must be registered before the server starts.");
         if (minimumY is < -512 or > 512 || (minimumY & 15) != 0)
             throw new ArgumentOutOfRangeException(nameof(minimumY), "Custom dimension minimum Y must be within -512 to 512 and align to a 16-block section.");
         if (heightRange is < 16 or > 1024 || (heightRange & 15) != 0 || minimumY + heightRange > 512)
             throw new ArgumentOutOfRangeException(nameof(heightRange), "Custom dimension height must be from 16 to 1024, align to a 16-block section, and end at or below Y 512.");
-        if (!Enum.IsDefined(generatorType))
-            throw new ArgumentOutOfRangeException(nameof(generatorType));
+        if (!Enum.IsDefined(generatorType)) throw new ArgumentOutOfRangeException(nameof(generatorType));
         if (definitions.ContainsKey(identifier))
             throw new InvalidOperationException($"Custom dimension '{identifier}' is already registered.");
 
@@ -50,8 +48,7 @@ public sealed class CustomDimensionRegistry(Server server) {
                 defaultBiomeId = builtinBiome.Id;
             else if (defaultBiome != "minecraft:ocean")
                 throw new ArgumentException($"Unknown built-in biome '{defaultBiome}'.", nameof(defaultBiome));
-        }
-        else if (!biomes.TryGetValue(defaultBiome, out BiomeDefinitionData? customBiome)) {
+        } else if (!biomes.TryGetValue(defaultBiome, out BiomeDefinitionData? customBiome)) {
             int biomeId = checked(FirstCustomBiomeId + biomes.Count);
             if (biomeId > ushort.MaxValue || builtinBiomes.Strings.Length + biomes.Count > ushort.MaxValue)
                 throw new InvalidOperationException("The custom biome registry is full.");
@@ -65,8 +62,7 @@ public sealed class CustomDimensionRegistry(Server server) {
             };
             biomes.Add(defaultBiome, customBiome);
             defaultBiomeId = biomeId;
-        }
-        else {
+        } else {
             defaultBiomeId = customBiome.Id;
         }
 
@@ -140,8 +136,7 @@ public sealed class CustomDimensionRegistry(Server server) {
         BinaryReader reader = new(payload, ref offset);
         BiomeDefinitionListPacket packet = new();
         packet.Deserialize(ref reader);
-        if (reader.Remaining != 0)
-            throw new InvalidDataException("Vanilla biome definitions contain trailing data.");
+        if (reader.Remaining != 0) throw new InvalidDataException("Vanilla biome definitions contain trailing data.");
         return packet;
     }
 }

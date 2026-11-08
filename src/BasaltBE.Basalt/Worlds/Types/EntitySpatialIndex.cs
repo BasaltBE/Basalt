@@ -13,10 +13,8 @@ internal sealed class EntitySpatialIndex {
         Deferred = false;
         foreach (Entity entity in changed) {
             entity.SpatialDirty = false;
-            if (entity.SpawnedDimension is null)
-                Remove(entity);
-            else
-                Update(entity);
+            if (entity.SpawnedDimension is null) Remove(entity);
+            else Update(entity);
         }
         changed.Clear();
     }
@@ -29,15 +27,14 @@ internal sealed class EntitySpatialIndex {
             }
             return;
         }
-        if (entity.SpatialSlot < 0)
-            return;
+        if (entity.SpatialSlot < 0) return;
+
         List<Entity> bucket = chunks[entity.SpatialChunk];
         Entity last = bucket[^1];
         bucket[entity.SpatialSlot] = last;
         last.SpatialSlot = entity.SpatialSlot;
         bucket.RemoveAt(bucket.Count - 1);
-        if (bucket.Count == 0)
-            chunks.Remove(entity.SpatialChunk);
+        if (bucket.Count == 0) chunks.Remove(entity.SpatialChunk);
         entity.SpatialSlot = -1;
 
         List<Entity> cell = cells[entity.SpatialCell];
@@ -45,8 +42,7 @@ internal sealed class EntitySpatialIndex {
         cell[entity.SpatialCellSlot] = lastInCell;
         lastInCell.SpatialCellSlot = entity.SpatialCellSlot;
         cell.RemoveAt(cell.Count - 1);
-        if (cell.Count == 0)
-            cells.Remove(entity.SpatialCell);
+        if (cell.Count == 0) cells.Remove(entity.SpatialCell);
         entity.SpatialCellSlot = -1;
     }
 
@@ -68,8 +64,7 @@ internal sealed class EntitySpatialIndex {
         int cellX = (int)MathF.Floor(entity.Position.X) >> 3;
         int cellZ = (int)MathF.Floor(entity.Position.Z) >> 3;
         long cellKey = GetCellKey(cellX, cellZ);
-        if (entity.SpatialSlot >= 0 && entity.SpatialChunk == key && entity.SpatialCell == cellKey)
-            return;
+        if (entity.SpatialSlot >= 0 && entity.SpatialChunk == key && entity.SpatialCell == cellKey) return;
         Remove(entity);
         if (!chunks.TryGetValue(key, out List<Entity>? bucket)) {
             bucket = [];
@@ -88,15 +83,13 @@ internal sealed class EntitySpatialIndex {
     }
 
     internal void Update(ReadOnlySpan<Entity> entities) {
-        foreach (Entity entity in entities)
-            Update(entity);
+        foreach (Entity entity in entities) Update(entity);
     }
 
     internal void Collect(HashSet<long> loadedChunks, List<Entity> destination) {
         destination.Clear();
         foreach (long key in loadedChunks) {
-            if (chunks.TryGetValue(key, out List<Entity>? bucket))
-                destination.AddRange(bucket);
+            if (chunks.TryGetValue(key, out List<Entity>? bucket)) destination.AddRange(bucket);
         }
     }
 

@@ -15,4 +15,3 @@ public sealed record ServerAdvertisement {
     public string Nonce { get; init; } = "";
     public int ConnectionType { get; init; } = 4;
 }
-

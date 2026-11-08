@@ -11,10 +11,8 @@ internal sealed class TextHandler {
     private const int MaximumMessageLength = 512;
 
     public void Handle(NethernetPeer peer, Player? player, TextPacket packet) {
-        if (player is null)
-            return;
-        if (player.Disposed || !player.Spawned)
-            return;
+        if (player is null) return;
+        if (player.Disposed || !player.Spawned) return;
         if (packet.Type != TextMessageType.Chat || packet.Localize ||
             string.IsNullOrWhiteSpace(packet.Message) ||
             packet.Message.Length > MaximumMessageLength ||
@@ -23,14 +21,12 @@ internal sealed class TextHandler {
         }
 
         foreach (char character in packet.Message) {
-            if (char.IsControl(character))
-                return;
+            if (char.IsControl(character)) return;
         }
 
         PlayerChatEvent chat = new(player, packet.Message);
         player.Network.Server.Events.Emit(chat);
-        if (chat.IsCanceled() || player.Disposed)
-            return;
+        if (chat.IsCanceled() || player.Disposed) return;
 
         player.Network.Server.Broadcast(new TextPacket {
             Type = TextMessageType.Chat,

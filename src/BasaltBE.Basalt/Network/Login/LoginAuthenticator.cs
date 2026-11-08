@@ -103,8 +103,7 @@ internal sealed class LoginAuthenticator : IDisposable {
             using BinaryStream stream = BinaryStream.Rent(4 * 1024 * 1024);
             BinaryWriter writer = stream.GetWriter();
             client.CreateSkin().Write(ref writer);
-            if (stream.Offset > 2 * 1024 * 1024)
-                throw new InvalidDataException("Serialized skin exceeds the size limit.");
+            if (stream.Offset > 2 * 1024 * 1024) throw new InvalidDataException("Serialized skin exceeds the size limit.");
             skin = stream.Buffer.Span[..stream.Offset].ToArray();
         }
 
@@ -133,8 +132,7 @@ internal sealed class LoginAuthenticator : IDisposable {
             "ES384" when key.KeyType == "EC" => VerifyEc(token, key),
             _ => false
         };
-        if (!validSignature)
-            throw new CryptographicException("Xbox multiplayer token signature is invalid.");
+        if (!validSignature) throw new CryptographicException("Xbox multiplayer token signature is invalid.");
 
         bool validAudience = claims.Audience.ValueKind == JsonValueKind.String
             ? claims.Audience.GetString() == Audience
@@ -172,12 +170,10 @@ internal sealed class LoginAuthenticator : IDisposable {
                 OpenIdSigningKey[] keys;
                 using (Profiler.BeginZone("Login.RefreshSigningKeys"))
                     keys = fetchSigningKeys(refreshCancellation.Token);
-                if (keys.Length == 0)
-                    throw new CryptographicException("Minecraft authorization service returned no signing keys.");
+                if (keys.Length == 0) throw new CryptographicException("Minecraft authorization service returned no signing keys.");
                 DateTimeOffset expires = DateTimeOffset.UtcNow.Add(KeyLifetime);
                 Volatile.Write(ref signingKeyCache, new SigningKeyCache(keys, expires));
-            }
-            catch (Exception refreshError) {
+            } catch (Exception refreshError) {
                 error = refreshError;
                 if (firstRefresh) initialRefreshError = refreshError;
                 else Logger.Scoped("Network").Warn($"Could not refresh Minecraft authorization signing keys: {refreshError.Message}");
@@ -223,8 +219,7 @@ internal sealed class LoginAuthenticator : IDisposable {
 
     private static OpenIdSigningKey? FindSigningKey(OpenIdSigningKey[] keys, string keyId, string algorithm) {
         foreach (OpenIdSigningKey key in keys)
-            if (key.KeyId == keyId && (string.IsNullOrEmpty(key.Algorithm) || key.Algorithm == algorithm))
-                return key;
+            if (key.KeyId == keyId && (string.IsNullOrEmpty(key.Algorithm) || key.Algorithm == algorithm)) return key;
         return null;
     }
 
@@ -240,8 +235,7 @@ internal sealed class LoginAuthenticator : IDisposable {
     private static bool VerifyEc(TokenParts token, OpenIdSigningKey key) {
         byte[] x = Base64Url.Decode(key.X.AsSpan());
         byte[] y = Base64Url.Decode(key.Y.AsSpan());
-        if (x.Length != 48 || y.Length != 48)
-            throw new CryptographicException("Xbox multiplayer signing key is not P-384.");
+        if (x.Length != 48 || y.Length != 48) throw new CryptographicException("Xbox multiplayer signing key is not P-384.");
         using ECDsa ecdsa = ECDsa.Create(new ECParameters {
             Curve = ECCurve.NamedCurves.nistP384,
             Q = new ECPoint { X = x, Y = y }
@@ -251,8 +245,7 @@ internal sealed class LoginAuthenticator : IDisposable {
     }
 
     private static ECParameters ReadPublicKey(JsonElement key) {
-        if (key.ValueKind == JsonValueKind.String)
-            return ReadPublicKey(key.GetString()!);
+        if (key.ValueKind == JsonValueKind.String) return ReadPublicKey(key.GetString()!);
         if (key.ValueKind != JsonValueKind.Object || key.GetProperty("kty").GetString() != "EC" ||
             key.GetProperty("crv").GetString() != "P-384")
             throw new CryptographicException("Authenticated client public key is invalid.");

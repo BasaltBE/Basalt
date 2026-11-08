@@ -16,8 +16,7 @@ public sealed class SerializedPacketPalette(NetworkServer network) {
     }
 
     public ReadOnlyMemory<byte> Get<T>() where T : DataPacket {
-        if (packets.TryGetValue(typeof(T), out byte[]? packet))
-            return packet;
+        if (packets.TryGetValue(typeof(T), out byte[]? packet)) return packet;
 
         throw new KeyNotFoundException($"No serialized packet exists for {typeof(T).Name}.");
     }

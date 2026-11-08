@@ -9,6 +9,7 @@ namespace BasaltBE.Plugins;
 
 public sealed class PluginManager {
     public const int Api = 1;
+    public bool CompileSource;
 
     private static readonly ScopedLogger Log = Logger.Scoped("Plugins");
     private readonly Server server;
@@ -35,10 +36,8 @@ public sealed class PluginManager {
 
         foreach (string path in Directory.EnumerateFileSystemEntries(directory).Order(StringComparer.Ordinal)) {
             string name = Path.GetFileName(path);
-            if (name.StartsWith('.') || name.Equals("data", StringComparison.OrdinalIgnoreCase))
-                continue;
-            if (Directory.Exists(path) || path.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase))
-                Load(path, cancellation);
+            if (name.StartsWith('.') || name.Equals("data", StringComparison.OrdinalIgnoreCase)) continue;
+            if (Directory.Exists(path) || path.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase)) Load(path, cancellation);
         }
     }
 
@@ -54,8 +53,7 @@ public sealed class PluginManager {
             bool source = path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase);
             if (Directory.Exists(path)) {
                 string[] projects = Directory.GetFiles(path, "*.csproj");
-                if (projects.Length > 1)
-                    throw new InvalidDataException("Plugin folder contains more than one project.");
+                if (projects.Length > 1) throw new InvalidDataException("Plugin folder contains more than one project.");
                 if (projects.Length == 1) {
                     path = projects[0];
                     source = true;
@@ -67,8 +65,7 @@ public sealed class PluginManager {
             PluginManifest manifest;
             if (archive is not null) {
                 manifest = archive.Manifest;
-            }
-            else {
+            } else {
                 using FileStream input = File.OpenRead(Path.Combine(folder, "plugin.json"));
                 manifest = PluginManifest.Read(input);
             }
@@ -78,14 +75,20 @@ public sealed class PluginManager {
                 Log.Warn(mismatch);
                 return;
             }
-            if (identifiers.Contains(manifest.Id))
-                throw new InvalidDataException($"Plugin id is already loaded: {manifest.Id}.");
+            if (identifiers.Contains(manifest.Id)) throw new InvalidDataException($"Plugin id is already loaded: {manifest.Id}.");
 
             if (source) {
-                string archivePath = PluginBuilder.Build(path, Path.Combine(directory, ".cache", "source", manifest.Id), RuntimeInformation.RuntimeIdentifier, cancellation: cancellation);
+                string output = Path.Combine(directory, ".cache", "source", manifest.Id);
+                string archivePath = Path.Combine(output, $"{manifest.Name}-{manifest.Version}.plugin");
+                if (CompileSource) {
+                    archivePath = PluginBuilder.Build(path, output, RuntimeInformation.RuntimeIdentifier, cancellation: cancellation);
+                } else if (!File.Exists(archivePath)) {
+                    Log.Warn($"Skipped {manifest.Name}: no compiled plugin. Start with --roslyn to build it.");
+                    return;
+                }
                 archive = new PluginArchive(archivePath);
                 if (archive.Manifest.Id != manifest.Id || archive.Manifest.Api != manifest.Api || archive.Manifest.Name != manifest.Name)
-                    throw new InvalidDataException("Plugin identity changed during compilation.");
+                    throw new InvalidDataException("Compiled plugin identity does not match its source manifest.");
                 manifest = archive.Manifest;
             }
 
@@ -98,8 +101,7 @@ public sealed class PluginManager {
 
                 string cache = archive.Extract(Path.Combine(directory, ".cache"));
                 assembly = Path.Combine(cache, descriptor.EntryAssembly);
-            }
-            else {
+            } else {
                 assembly = Path.Combine(folder, manifest.Name + ".dll");
                 if (!Directory.Exists(path) && !string.Equals(assembly, path, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException($"Plugin assembly must be named {manifest.Name}.dll.");
@@ -122,19 +124,16 @@ public sealed class PluginManager {
             loaded.Add((instance, context));
             identifiers.Add(manifest.Id);
             Log.Info($"Loaded {manifest.Name} {manifest.Version}.");
-        }
-        catch (Exception error) {
+        } catch (Exception error) {
             if (instance is not null) {
                 try {
                     instance.OnDisable();
-                }
-                catch (Exception cleanup) {
+                } catch (Exception cleanup) {
                     Log.Error($"Could not disable {instance.Manifest.Name}: {cleanup.Message}");
                 }
             }
             context?.Unload();
-            if (error is OperationCanceledException && cancellation.IsCancellationRequested)
-                throw;
+            if (error is OperationCanceledException && cancellation.IsCancellationRequested) throw;
 
             Exception reason = error is TargetInvocationException invocation ? invocation.InnerException ?? error : error;
             Log.Error($"Could not load {Path.GetFileName(path)}: {reason.Message}");
@@ -150,13 +149,11 @@ public sealed class PluginManager {
             (Plugin plugin, PluginLoadContext context) = loaded[index];
             try {
                 plugin.OnEnable();
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 Log.Error($"Could not enable {plugin.Manifest.Name}: {error.Message}");
                 try {
                     plugin.OnDisable();
-                }
-                catch (Exception cleanup) {
+                } catch (Exception cleanup) {
                     Log.Error($"Could not disable {plugin.Manifest.Name}: {cleanup.Message}");
                 }
                 identifiers.Remove(plugin.Manifest.Id);
@@ -167,19 +164,16 @@ public sealed class PluginManager {
     }
 
     private void Disable() {
-        if (stopped)
-            return;
+        if (stopped) return;
 
         stopped = true;
         for (int index = loaded.Count - 1; index >= 0; index--) {
             (Plugin plugin, PluginLoadContext context) = loaded[index];
             try {
                 plugin.OnDisable();
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 Log.Error($"Could not disable {plugin.Manifest.Name}: {error.Message}");
-            }
-            finally {
+            } finally {
                 context.Unload();
             }
         }

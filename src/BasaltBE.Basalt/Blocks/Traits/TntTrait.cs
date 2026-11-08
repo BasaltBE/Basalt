@@ -21,18 +21,15 @@ public sealed class TntTrait : BlockTrait {
             return false;
 
         if (player.GameType != GameType.Creative) {
-            if (item.Type.Identifier == "minecraft:fire_charge")
-                inventory.Inventory.TakeItem(inventory.SelectedSlot);
-            else
-                item.DamageDurability();
+            if (item.Type.Identifier == "minecraft:fire_charge") inventory.Inventory.TakeItem(inventory.SelectedSlot);
+            else item.DamageDurability();
         }
 
         return true;
     }
 
     public override void OnPlaced(Dimension dimension, int x, int y, int z) {
-        if (dimension.Redstone.BlockPowered(dimension, x, y, z) == true)
-            Prime(dimension, x, y, z);
+        if (dimension.Redstone.BlockPowered(dimension, x, y, z) == true) Prime(dimension, x, y, z);
     }
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) =>
@@ -53,10 +50,8 @@ public sealed class TntTrait : BlockTrait {
             !dimension.SetPermutation(x, y, z, BlockStorage.Air))
             return false;
 
-        if (broadcast)
-            dimension.BroadcastBlockUpdate(x, y, z, BlockStorage.Air);
-        if (updateNeighbors)
-            dimension.UpdateNeighbors(x, y, z);
+        if (broadcast) dimension.BroadcastBlockUpdate(x, y, z, BlockStorage.Air);
+        if (updateNeighbors) dimension.UpdateNeighbors(x, y, z);
         Entity tnt = new("minecraft:tnt") {
             Position = { X = x + 0.5f, Y = y, Z = z + 0.5f }
         };

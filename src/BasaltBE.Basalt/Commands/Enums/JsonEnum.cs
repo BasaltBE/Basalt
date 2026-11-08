@@ -7,15 +7,16 @@ namespace BasaltBE.Basalt.Commands.Enums;
 public sealed class JsonEnum() : CommandEnum(CommandParameterType.Json) {
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
+
         string text = token.ToString();
+
         try {
             using JsonDocument document = JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 16 });
-        }
-        catch (JsonException) {
+        } catch (JsonException) {
             return false;
         }
+
         value = text;
         return true;
     }

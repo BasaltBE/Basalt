@@ -25,10 +25,8 @@ namespace BasaltBE.Basalt.Blocks.Traits;
 public sealed class FenceGateTrait : BlockTrait {
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
-        if (!current.State.Values.TryGetValue("minecraft:cardinal_direction", out object? directionValue) ||
-            directionValue is not string direction ||
-            !current.State.Values.TryGetValue("open_bit", out object? openValue) ||
-            openValue is not bool open)
+        if (current.State.Values.GetValueOrDefault("minecraft:cardinal_direction") is not string direction ||
+            current.State.Values.GetValueOrDefault("open_bit") is not bool open)
             return false;
 
         bool inWall = direction is "north" or "south"
@@ -37,8 +35,7 @@ public sealed class FenceGateTrait : BlockTrait {
             : BlockPalette.IsWall(dimension.GetPermutation(x, y, z - 1).Identifier) &&
                 BlockPalette.IsWall(dimension.GetPermutation(x, y, z + 1).Identifier);
         BlockPermutation? updated = BlockPalette.FindFenceGatePermutation(current.Identifier, direction, open, inWall);
-        if (updated is null || updated == current)
-            return false;
+        if (updated is null || updated == current) return false;
 
         dimension.SetPermutation(x, y, z, updated);
         return true;
@@ -47,12 +44,9 @@ public sealed class FenceGateTrait : BlockTrait {
     public override bool OnInteract(Player player, BlockPos position) {
         BlockPermutation current = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
         if (!BlockPalette.IsFenceGate(current.Identifier) ||
-            !current.State.Values.TryGetValue("minecraft:cardinal_direction", out object? directionValue) ||
-            directionValue is not string direction ||
-            !current.State.Values.TryGetValue("open_bit", out object? openValue) ||
-            openValue is not bool open ||
-            !current.State.Values.TryGetValue("in_wall_bit", out object? inWallValue) ||
-            inWallValue is not bool inWall ||
+            current.State.Values.GetValueOrDefault("minecraft:cardinal_direction") is not string direction ||
+            current.State.Values.GetValueOrDefault("open_bit") is not bool open ||
+            current.State.Values.GetValueOrDefault("in_wall_bit") is not bool inWall ||
             BlockPalette.FindFenceGatePermutation(current.Identifier, direction, !open, inWall) is not { } updated)
             return false;
 

@@ -1,5 +1,5 @@
 using BasaltBE.Basalt.Blocks;
-using BasaltBE.Basalt.Features;
+using BasaltBE.Basalt.Worlds.Features;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Enums;

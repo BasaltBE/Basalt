@@ -12,12 +12,13 @@ using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Events.Players;
 using BasaltBE.Basalt.Items;
-using BasaltBE.Basalt.Permissions;
+using BasaltBE.Basalt.Entities.Permissions;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Basalt.Properties;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.Basalt.Worlds.Types;
+using BasaltBE.Basalt.Worlds.Ticking;
 using BasaltBE.Logging;
 using BasaltBE.Plugins;
 using BasaltBE.Logging.Enums;
@@ -27,11 +28,11 @@ namespace BasaltBE.DedicatedServer;
 
 internal static class Program {
     private const int TickRate = 20;
-    private const int MinimumSleepMilliseconds = 10;
     private const double WarningTickRate = 18;
     private static readonly ScopedLogger Log = Logger.Scoped("DedicatedServer");
 
     private static void Main(string[] args) {
+        long startupStarted = Stopwatch.GetTimestamp();
         #region Startup
 
         Profiler.Enabled = args.Contains("--tracy", StringComparer.OrdinalIgnoreCase);
@@ -157,6 +158,8 @@ internal static class Program {
             server.Commands.Register(new GameModeCommand());
             server.Commands.Register(new GameRuleCommand());
             server.Commands.Register(new WorldsCommand());
+            server.Commands.Register(new TeleportCommand());
+            server.Commands.Register(new SetWorldSpawnCommand());
             server.Commands.Register(new FillCommand());
             server.Commands.Register(new FeatureCommand(server.Features));
             server.Commands.Register(new StructureCommand(server.Structures.Values));
@@ -187,7 +190,7 @@ internal static class Program {
             server.Generators.Register<VoidGenerator>("void");
             server.Generators.SetDefault("superflat");
 
-            PluginManager plugins = new(server);
+            PluginManager plugins = new(server) { CompileSource = args.Contains("--roslyn", StringComparer.OrdinalIgnoreCase) };
             plugins.LoadAll(startup.Token);
 
             World? world = server.Worlds.FirstOrDefault(world =>
@@ -206,28 +209,23 @@ internal static class Program {
             plugins.Enable();
 
             server.Start();
-            Log.Info($"NetherNet is listening on network {server.Network.NetworkId}.");
+            Log.Info(FormattableString.Invariant($"Server started in {Stopwatch.GetElapsedTime(startupStarted).TotalMilliseconds:F3} ms."));
 
             #region Console Input
 
             ServerCommandExecutor console = new(server);
             Action<CommandResult> commandCompleted = result => {
-                if (result.Success)
-                    Log.Info(result.Message);
-                else
-                    Log.Warn(result.Message);
+                if (result.Success) Log.Info(result.Message);
+                else Log.Warn(result.Message);
             };
 
             Thread input = new(() => {
                 try {
                     while (Console.ReadLine() is { } command) {
-                        if (string.IsNullOrWhiteSpace(command))
-                            continue;
-                        if (!server.Commands.Enqueue(command, console, commandCompleted))
-                            Log.Warn("Console command queue is full.");
+                        if (string.IsNullOrWhiteSpace(command)) continue;
+                        if (!server.Commands.Enqueue(command, console, commandCompleted)) Log.Warn("Console command queue is full.");
                     }
-                }
-                catch (IOException error) {
+                } catch (IOException error) {
                     Log.Warn($"Console input stopped: {error.Message}");
                 }
             }) {
@@ -241,12 +239,9 @@ internal static class Program {
             #region Tick Loop
 
             long tickDuration = Stopwatch.Frequency / TickRate;
-            long minimumSleepDuration = Stopwatch.Frequency * MinimumSleepMilliseconds / 1000;
-            long maximumSleepOvershoot = tickDuration - minimumSleepDuration;
             long nextTick = Stopwatch.GetTimestamp();
             long reportStart = 0;
-            long sleepOvershoot = Stopwatch.Frequency / 1000;
-            WaitHandle shutdownWaitHandle = shutdown.WaitHandle;
+            using TickTimer timer = new(shutdown, server.Poll);
             int ticks = 0;
             TimeSpan lastGcPauseDuration = GC.GetTotalPauseDuration();
             int lastGen0CollectionCount = GC.CollectionCount(0);
@@ -254,53 +249,17 @@ internal static class Program {
             int lastGen2CollectionCount = GC.CollectionCount(2);
 
             while (!shutdown.IsSet && !server.Stopping) {
-                long remaining = nextTick - Stopwatch.GetTimestamp();
-                long sleepTicks = remaining - sleepOvershoot;
-                if (sleepTicks > 0) {
-                    long sleepMilliseconds = sleepTicks * 1000 / Stopwatch.Frequency;
-                    if (sleepMilliseconds > 0) {
-                        long requestedSleepTicks = sleepMilliseconds * Stopwatch.Frequency / 1000;
-                        long beforeSleep = Stopwatch.GetTimestamp();
-                        bool shuttingDown = false;
-                        long sleepDeadline = beforeSleep + requestedSleepTicks;
-                        do {
-                            server.Poll();
-                            int wait = (int)Math.Clamp((sleepDeadline - Stopwatch.GetTimestamp()) * 1000 / Stopwatch.Frequency, 0, 5);
-                            if (shutdownWaitHandle.WaitOne(wait)) {
-                                shuttingDown = true;
-                                break;
-                            }
-                        } while (Stopwatch.GetTimestamp() < sleepDeadline);
-                        if (shuttingDown)
-                            break;
-
-                        long overshoot = Stopwatch.GetTimestamp() - beforeSleep - requestedSleepTicks;
-                        sleepOvershoot = Math.Clamp(
-                            (sleepOvershoot * 7 + Math.Max(overshoot, 0)) / 8,
-                            0,
-                            maximumSleepOvershoot
-                        );
-                    }
-                }
-
-                while (!shutdown.IsSet && Stopwatch.GetTimestamp() < nextTick)
-                    Thread.SpinWait(1);
-
-                if (shutdown.IsSet)
-                    break;
+                if (!timer.Wait(nextTick)) break;
 
                 long tickStart = Stopwatch.GetTimestamp();
-
-                if (server.Stopping)
-                    break;
+                if (server.Stopping) break;
 
                 server.Tick();
 
                 if (ticks == 0) {
                     reportStart = tickStart;
                     ticks = 1;
-                }
-                else {
+                } else {
                     ticks++;
                     long reportDuration = tickStart - reportStart;
                     if (reportDuration >= Stopwatch.Frequency) {
@@ -351,10 +310,8 @@ internal static class Program {
             }
 
             #endregion
-        }
-        catch (OperationCanceledException) when (shutdown.IsSet) {
-        }
-        finally {
+        } catch (OperationCanceledException) when (shutdown.IsSet) {
+        } finally {
             Console.CancelKeyPress -= cancel;
         }
     }

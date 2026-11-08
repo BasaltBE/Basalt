@@ -32,8 +32,7 @@ internal static class CraftingPalette {
         foreach (JsonElement recipe in recipes.EnumerateArray()) {
             int type = ReadInt(recipe, "type", -1);
             bool isShaped = type == 1;
-            if (!isShaped && type is not (0 or 5))
-                continue;
+            if (!isShaped && type is not (0 or 5)) continue;
 
             string identifier = ReadString(recipe, "id");
             if (identifier.Length == 0 || !recipe.TryGetProperty("output", out JsonElement outputs) ||
@@ -42,8 +41,7 @@ internal static class CraftingPalette {
 
             JsonElement output = outputs[0];
             ItemType? result = FindItem(ReadString(output, "id"));
-            if (result is null)
-                continue;
+            if (result is null) continue;
 
             ushort resultCount = checked((ushort)Math.Clamp(ReadInt(output, "count", 1), 1, ushort.MaxValue));
             uint resultMetadata = unchecked((uint)ReadInt(output, "auxValue", 0));
@@ -63,20 +61,19 @@ internal static class CraftingPalette {
                     continue;
 
                 string[] rows = shape.EnumerateArray().Select(value => value.GetString() ?? string.Empty).ToArray();
-                if (rows.Length == 0)
-                    continue;
+                if (rows.Length == 0) continue;
+
                 Dictionary<char, RecipeIngredient> key = [];
                 foreach (JsonProperty property in input.EnumerateObject()) {
-                    if (property.Name.Length != 1)
-                        continue;
+                    if (property.Name.Length != 1) continue;
+
                     RecipeIngredient? ingredient = CreateIngredient(property.Value);
-                    if (ingredient is not null)
-                        key[property.Name[0]] = ingredient;
+                    if (ingredient is not null) key[property.Name[0]] = ingredient;
                 }
 
-                List<RecipeIngredient> ingredients = new(rows.Length * rows.Max(row => row.Length));
-                bool valid = true;
                 int width = rows.Max(row => row.Length);
+                List<RecipeIngredient> ingredients = new(rows.Length * width);
+                bool valid = true;
                 for (int row = 0; row < rows.Length && valid; row++) {
                     for (int column = 0; column < width; column++) {
                         char symbol = column < rows[row].Length ? rows[row][column] : ' ';
@@ -88,11 +85,12 @@ internal static class CraftingPalette {
                             valid = false;
                             break;
                         }
+
                         ingredients.Add(ingredient);
                     }
                 }
-                if (!valid)
-                    continue;
+
+                if (!valid) continue;
 
                 recipeMap.Add(recipeNetId, new CraftingRecipe(
                     tag,
@@ -120,8 +118,8 @@ internal static class CraftingPalette {
                 continue;
             }
 
-            if (!recipe.TryGetProperty("input", out JsonElement inputs) || inputs.ValueKind != JsonValueKind.Array)
-                continue;
+            if (!recipe.TryGetProperty("input", out JsonElement inputs) || inputs.ValueKind != JsonValueKind.Array) continue;
+
             List<RecipeIngredient> shapelessIngredients = [];
             foreach (JsonElement input in inputs.EnumerateArray()) {
                 RecipeIngredient? ingredient = CreateIngredient(input);
@@ -129,10 +127,11 @@ internal static class CraftingPalette {
                     shapelessIngredients.Clear();
                     break;
                 }
+
                 shapelessIngredients.Add(ingredient);
             }
-            if (shapelessIngredients.Count == 0)
-                continue;
+
+            if (shapelessIngredients.Count == 0) continue;
 
             recipeMap.Add(recipeNetId, new CraftingRecipe(
                 tag,
@@ -186,9 +185,7 @@ internal static class CraftingPalette {
     }
 
     static string ResolveTag(string block, string identifier) => block switch {
-        "stonecutter" => "stonecutter",
-        "furnace" or "blast_furnace" or "smoker" or "campfire" => block,
-        "smithing_table" => "smithing_table",
+        "stonecutter" or "furnace" or "blast_furnace" or "smoker" or "campfire" or "smithing_table" => block,
         "deprecated" when identifier.StartsWith("minecraft:furnace_", StringComparison.Ordinal) => "furnace",
         _ => "crafting_table"
     };

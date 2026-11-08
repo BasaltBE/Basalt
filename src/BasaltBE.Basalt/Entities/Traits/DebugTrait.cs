@@ -20,8 +20,7 @@ public sealed class DebugTrait : EntityTrait {
     }
 
     public override void Tick() {
-        if (!player.Spawned || player.Dead || player.Dimension.TickValue - lastSentTick < SendIntervalTicks)
-            return;
+        if (!player.Spawned || player.Dead || player.Dimension.TickValue - lastSentTick < SendIntervalTicks) return;
 
         double tps = player.World.Ticks.Tps;
         double mspt = player.World.Ticks.LastMilliseconds;
@@ -41,8 +40,7 @@ public sealed class DebugTrait : EntityTrait {
         try {
             player.SendPacket(packet);
             lastSentTick = player.Dimension.TickValue;
-        }
-        catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+        } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             player.Network.RemovePlayer(player.Peer);
         }
     }

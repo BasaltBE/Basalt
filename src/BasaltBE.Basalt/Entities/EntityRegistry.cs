@@ -7,12 +7,10 @@ using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 namespace BasaltBE.Basalt.Entities;
 
-public sealed class EntityRegistry
-{
+public sealed class EntityRegistry {
     private readonly int ownerThread = Environment.CurrentManagedThreadId;
 
-    public CustomEntity Create(string identifier)
-    {
+    public CustomEntity Create(string identifier) {
         if (Environment.CurrentManagedThreadId != ownerThread)
             throw new InvalidOperationException("Configure entities on the server startup thread.");
         return EntityPalette.Create(identifier);
@@ -23,8 +21,7 @@ public sealed class EntityRegistry
     public EntityType Get(string identifier) => Find(identifier)
         ?? throw new KeyNotFoundException($"Entity '{identifier}' was not found.");
 
-    public CompoundTag Save(Entity entity)
-    {
+    public CompoundTag Save(Entity entity) {
         ArgumentNullException.ThrowIfNull(entity);
         if (entity is Player || entity.Type is null ||
             entity.GetType() != typeof(Entity) && entity is not ItemEntity and not FallingBlockEntity)
@@ -37,8 +34,7 @@ public sealed class EntityRegistry
 
         CompoundTag tag = new();
         if (entity.StorageTag is { } stored)
-            foreach ((string name, Tag value) in stored.Tags)
-                tag.Add(name, value);
+            foreach ((string name, Tag value) in stored.Tags) tag.Add(name, value);
 
         tag.Add("SimulationAge", new LongTag { Value = checked((long)entity.SimulationAge) });
         entity.Write(tag);
@@ -59,8 +55,7 @@ public sealed class EntityRegistry
         rotation.Value.Add(new FloatTag { Value = entity.Rotation.X });
         tag.Add("Rotation", rotation);
 
-        if (entity.GetTrait<EntityMovementTrait>() is { } movement)
-        {
+        if (entity.GetTrait<EntityMovementTrait>() is { } movement) {
             if (!float.IsFinite(movement.Motion.X) || !float.IsFinite(movement.Motion.Y) || !float.IsFinite(movement.Motion.Z))
                 throw new InvalidDataException("Entity motion is invalid.");
             ListTag motion = new() { ElementType = Nbt.Enums.TagType.Float };
@@ -74,15 +69,13 @@ public sealed class EntityRegistry
         return tag;
     }
 
-    public Entity Load(CompoundTag tag)
-    {
+    public Entity Load(CompoundTag tag) {
         ArgumentNullException.ThrowIfNull(tag);
 
         string identifier = tag.Get<StringTag>("identifier")?.Value
             ?? throw new InvalidDataException("Entity identifier is missing.");
 
-        if (identifier == "minecraft:player")
-            throw new InvalidDataException("Load players through the player data store.");
+        if (identifier == "minecraft:player") throw new InvalidDataException("Load players through the player data store.");
 
         if (tag.Get<ListTag>("Pos") is not { Value.Count: 3 } position ||
             tag.Get<ListTag>("Rotation") is not { Value.Count: 2 } rotation ||
@@ -105,24 +98,20 @@ public sealed class EntityRegistry
             ItemType itemType = ItemPalette.Find(item.Get<StringTag>("Name")?.Value ?? string.Empty)
                 ?? throw new InvalidDataException("Dropped item type is unavailable.");
             byte count = item.Get<ByteTag>("Count")?.Value ?? 0;
-            if (count == 0)
-                throw new InvalidDataException("Dropped item count is invalid.");
+            if (count == 0) throw new InvalidDataException("Dropped item count is invalid.");
 
             CompoundTag? itemNbt = item.Get<CompoundTag>("tag");
-            if (itemNbt is not null)
-                itemNbt.Name = string.Empty;
+            if (itemNbt is not null) itemNbt.Name = string.Empty;
             entity = new ItemEntity(new ItemStack(itemType, count,
                 unchecked((ushort)(item.Get<ShortTag>("Damage")?.Value ?? 0)), itemNbt));
-        }
-        else if (identifier == "minecraft:falling_block") {
+        } else if (identifier == "minecraft:falling_block") {
             var block = tag.Get<CompoundTag>("Block") is { } state ? BlockStorage.ReadPermutation(state) : null;
-            if (block is null)
-                throw new InvalidDataException("Falling block state is unavailable.");
+            if (block is null) throw new InvalidDataException("Falling block state is unavailable.");
             entity = new FallingBlockEntity(block, 0, 0, 0);
-        }
-        else {
+        } else {
             entity = new Entity(Get(identifier), tag.Get<FloatTag>("HeadOffset")?.Value ?? 0);
         }
+
         entity.StorageTag = tag;
         entity.SimulationAge = checked((ulong)(tag.Get<LongTag>("SimulationAge")?.Value ?? 0));
         entity.Position.X = ((FloatTag)position.Value[0]).Value;
@@ -132,18 +121,17 @@ public sealed class EntityRegistry
         entity.Rotation.Y = ((FloatTag)rotation.Value[0]).Value;
         entity.HeadRotation = tag.Get<FloatTag>("HeadRotation")?.Value ?? entity.Rotation.Y;
 
-        if (!float.IsFinite(entity.HeadRotation))
-            throw new InvalidDataException("Entity head rotation is invalid.");
+        if (!float.IsFinite(entity.HeadRotation)) throw new InvalidDataException("Entity head rotation is invalid.");
         entity.Invulnerable = tag.Get<ByteTag>("Invulnerable") is { Value: not 0 };
         entity.Flags.Read(tag);
         entity.Read(tag);
 
-        if (motion is not null && entity.GetTrait<EntityMovementTrait>() is { } movement)
-        {
+        if (motion is not null && entity.GetTrait<EntityMovementTrait>() is { } movement) {
             movement.Motion.X = ((FloatTag)motion.Value[0]).Value;
             movement.Motion.Y = ((FloatTag)motion.Value[1]).Value;
             movement.Motion.Z = ((FloatTag)motion.Value[2]).Value;
         }
+
         return entity;
     }
 }

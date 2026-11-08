@@ -18,8 +18,7 @@ public sealed class InMemoryProvider : IWorldProvider, IWorldDataProvider, IEnti
 
     public void WriteChunks(ReadOnlySpan<ChunkStorageRecord> records) {
         lock (chunksLock) {
-            foreach (ChunkStorageRecord record in records)
-                chunks[record.Key] = record.Entries.ToArray();
+            foreach (ChunkStorageRecord record in records) chunks[record.Key] = record.Entries.ToArray();
         }
     }
 
@@ -35,8 +34,7 @@ public sealed class InMemoryProvider : IWorldProvider, IWorldDataProvider, IEnti
         lock (chunksLock) {
             long lastId = reservedEntityId;
             foreach (var records in actors.Values)
-                foreach (long id in records.Keys)
-                    lastId = Math.Max(lastId, id);
+                foreach (long id in records.Keys) lastId = Math.Max(lastId, id);
             reservedEntityId = checked(lastId + count);
             return checked(lastId + 1);
         }
@@ -57,11 +55,9 @@ public sealed class InMemoryProvider : IWorldProvider, IWorldDataProvider, IEnti
             foreach (EntityStorageChange change in changes) {
                 if (change.Previous is { } previous && actors.TryGetValue(previous, out var old)) {
                     old.Remove(change.Id);
-                    if (old.Count == 0)
-                        actors.Remove(previous);
+                    if (old.Count == 0) actors.Remove(previous);
                 }
-                if (change.Current is not { } current || change.Data is null)
-                    continue;
+                if (change.Current is not { } current || change.Data is null) continue;
                 if (!actors.TryGetValue(current, out var records)) {
                     records = [];
                     actors.Add(current, records);

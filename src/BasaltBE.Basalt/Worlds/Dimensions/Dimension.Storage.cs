@@ -56,8 +56,7 @@ public sealed partial class Dimension {
                 storageRequests.Add(key, requestId);
                 return true;
             }
-        }
-        else if (generationService.Request(this, Generator, key, chunkX, chunkZ)) {
+        } else if (generationService.Request(this, Generator, key, chunkX, chunkZ)) {
             return true;
         }
 
@@ -91,21 +90,17 @@ public sealed partial class Dimension {
     }
 
     void CompleteChunkWrite(long key, WorldStorageCompletion completion) {
-        if (!savingChunks.Remove(key, out long revision) || revision != completion.Version)
-            return;
+        if (!savingChunks.Remove(key, out long revision) || revision != completion.Version) return;
 
         if (completion.Error is not null) {
             saveRetryTicks[key] = TickValue + 20;
-            if (queuedDirtyChunks.Add(key))
-                dirtyQueue.Enqueue(key);
+            if (queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
             return;
         }
 
         saveRetryTicks.Remove(key);
-        if (dirtyChunks.TryGetValue(key, out long dirtyRevision) && dirtyRevision == revision)
-            dirtyChunks.Remove(key);
-        else if (dirtyChunks.ContainsKey(key) && queuedDirtyChunks.Add(key))
-            dirtyQueue.Enqueue(key);
+        if (dirtyChunks.TryGetValue(key, out long dirtyRevision) && dirtyRevision == revision) dirtyChunks.Remove(key);
+        else if (dirtyChunks.ContainsKey(key) && queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
     }
 
     void CompleteSaveGroup(WorldStorageCompletion completion) {
@@ -119,8 +114,7 @@ public sealed partial class Dimension {
 
         for (int index = 0; index < keys.Length; index++) {
             long key = GetKey(keys[index].X, keys[index].Z);
-            if (savingChunks.TryGetValue(key, out long revision) && revision == versions[index])
-                savingChunks.Remove(key);
+            if (savingChunks.TryGetValue(key, out long revision) && revision == versions[index]) savingChunks.Remove(key);
         }
 
         group.InFlight = false;
@@ -149,15 +143,13 @@ public sealed partial class Dimension {
         group.SnapshotRevisions = null;
 
         foreach (ChunkSaveGroup pending in saveGroups.Values.ToArray()) {
-            if (pending.InFlight || pending.Keys.Any(dirtyChunks.ContainsKey))
-                continue;
+            if (pending.InFlight || pending.Keys.Any(dirtyChunks.ContainsKey)) continue;
             RemoveSaveGroup(pending);
         }
     }
 
     int CompleteChunkRead(long key, WorldStorageCompletion completion) {
-        if (!storageRequests.TryGetValue(key, out long requestId) || requestId != completion.RequestId)
-            return 0;
+        if (!storageRequests.TryGetValue(key, out long requestId) || requestId != completion.RequestId) return 0;
 
         storageRequests.Remove(key);
         if (!chunks.TryGetValue(key, out Chunk? current) || current is not null) {
@@ -173,8 +165,7 @@ public sealed partial class Dimension {
 
         int retainedBytes = 0;
         if (completion.Entities is { Length: > 0 } actors) {
-            foreach (EntityStorageRecord actor in actors)
-                retainedBytes = checked(retainedBytes + actor.Data.Length);
+            foreach (EntityStorageRecord actor in actors) retainedBytes = checked(retainedBytes + actor.Data.Length);
             entityLoads.Enqueue(new EntityLoad(completion.Key, actors));
         }
 
@@ -192,42 +183,35 @@ public sealed partial class Dimension {
             chunks.Remove(key);
             pendingRequestCount--;
         }
+
         return retainedBytes;
     }
 
     internal void MarkChunkDirty(Chunk chunk) {
-        if (World?.Storage is null)
-            return;
+        if (World?.Storage is null) return;
 
         long key = GetKey(chunk.X, chunk.Z);
         dirtyChunks[key] = chunk.Revision;
-        if (queuedDirtyChunks.Add(key))
-            dirtyQueue.Enqueue(key);
+        if (queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
     }
 
     internal bool GroupChunkSaves(ReadOnlySpan<long> keys) {
-        if (World?.Storage is null)
-            return true;
-        if (keys.IsEmpty || keys.Length > 16)
-            return false;
+        if (World?.Storage is null) return true;
+        if (keys.IsEmpty || keys.Length > 16) return false;
 
         HashSet<long> uniqueKeys = [];
         foreach (long key in keys) {
-            if (!uniqueKeys.Add(key))
-                continue;
-            if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null)
-                return false;
+            if (!uniqueKeys.Add(key)) continue;
+            if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null) return false;
         }
-        if (uniqueKeys.Count > 16)
-            return false;
+        if (uniqueKeys.Count > 16) return false;
 
         HashSet<long> groupIds = [];
         bool addedGroup;
         do {
             addedGroup = false;
             foreach (long key in uniqueKeys.ToArray()) {
-                if (!saveGroupsByChunk.TryGetValue(key, out HashSet<long>? overlappingGroups))
-                    continue;
+                if (!saveGroupsByChunk.TryGetValue(key, out HashSet<long>? overlappingGroups)) continue;
 
                 foreach (long groupId in overlappingGroups) {
                     if (groupIds.Contains(groupId) || !saveGroups.TryGetValue(groupId, out ChunkSaveGroup? overlapping) || overlapping.InFlight)
@@ -235,18 +219,15 @@ public sealed partial class Dimension {
                     groupIds.Add(groupId);
                     uniqueKeys.UnionWith(overlapping.Keys);
                     addedGroup = true;
-                    if (uniqueKeys.Count > 16)
-                        return false;
+                    if (uniqueKeys.Count > 16) return false;
                 }
             }
         } while (addedGroup);
 
-        if (saveGroups.Count - groupIds.Count >= SaveGroupLimit)
-            return false;
+        if (saveGroups.Count - groupIds.Count >= SaveGroupLimit) return false;
 
         foreach (long groupId in groupIds)
-            if (saveGroups.TryGetValue(groupId, out ChunkSaveGroup? overlapping))
-                RemoveSaveGroup(overlapping);
+            if (saveGroups.TryGetValue(groupId, out ChunkSaveGroup? overlapping)) RemoveSaveGroup(overlapping);
 
         ChunkSaveGroup group = new(++nextSaveGroupId, [.. uniqueKeys]);
         saveGroups.Add(group.Id, group);
@@ -257,12 +238,12 @@ public sealed partial class Dimension {
             }
             memberships.Add(group.Id);
         }
+
         return true;
     }
 
     void TickStorageSaves() {
-        if (World?.Storage is not { } storage)
-            return;
+        if (World?.Storage is not { } storage) return;
 
         long deadline = Stopwatch.GetTimestamp() + Stopwatch.Frequency * ChunkStorageSaveBudgetMilliseconds / 1000;
         if (snapshotGroupId != 0 && saveGroups.TryGetValue(snapshotGroupId, out ChunkSaveGroup? activeGroup)) {
@@ -270,53 +251,43 @@ public sealed partial class Dimension {
         }
         int eligibleGroups = 0;
         foreach (ChunkSaveGroup group in saveGroups.Values) {
-            if (eligibleGroups >= MaximumChunkSavesPerTick || Stopwatch.GetTimestamp() >= deadline)
-                break;
+            if (eligibleGroups >= MaximumChunkSavesPerTick || Stopwatch.GetTimestamp() >= deadline) break;
             if (group.Id == snapshotGroupId || group.InFlight || group.Failed ||
                 TickValue < group.RetryTick || group.Keys.Any(savingChunks.ContainsKey))
                 continue;
 
             QueueSaveGroup(storage, group, deadline);
             eligibleGroups++;
-            if (snapshotGroupId != 0)
-                break;
+            if (snapshotGroupId != 0) break;
         }
 
-        if (TickValue % ChunkStorageSaveIntervalTicks != 0)
-            return;
+        if (TickValue % ChunkStorageSaveIntervalTicks != 0) return;
 
         int remaining = Math.Min(dirtyQueue.Count, MaximumChunkSavesPerTick);
         while (remaining-- > 0 && Stopwatch.GetTimestamp() < deadline) {
             long key = dirtyQueue.Dequeue();
             queuedDirtyChunks.Remove(key);
-            if (saveGroupsByChunk.ContainsKey(key))
-                continue;
-            if (!dirtyChunks.TryGetValue(key, out long revision))
-                continue;
+            if (saveGroupsByChunk.ContainsKey(key)) continue;
+            if (!dirtyChunks.TryGetValue(key, out long revision)) continue;
             if (saveRetryTicks.TryGetValue(key, out ulong retryTick) && TickValue < retryTick) {
-                if (queuedDirtyChunks.Add(key))
-                    dirtyQueue.Enqueue(key);
+                if (queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
                 continue;
             }
             if (savingChunks.ContainsKey(key)) {
-                if (queuedDirtyChunks.Add(key))
-                    dirtyQueue.Enqueue(key);
+                if (queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
                 continue;
             }
-            if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null)
-                continue;
+            if (!chunks.TryGetValue(key, out Chunk? chunk) || chunk is null) continue;
 
             PrepareScheduledTicks(chunk);
-            if (SerializeChunk(chunk) is not { } entries)
-                continue;
+            if (SerializeChunk(chunk) is not { } entries) continue;
             if (!storage.Write(
                 this,
                 new ChunkStorageKey(Type, Identifier, PrimaryStorageDimension, chunk.X, chunk.Z),
                 revision,
                 entries
             )) {
-                if (queuedDirtyChunks.Add(key))
-                    dirtyQueue.Enqueue(key);
+                if (queuedDirtyChunks.Add(key)) dirtyQueue.Enqueue(key);
                 break;
             }
 
@@ -325,8 +296,7 @@ public sealed partial class Dimension {
     }
 
     internal bool FlushStorage() {
-        if (World?.Storage is not { } storage)
-            return true;
+        if (World?.Storage is not { } storage) return true;
 
         foreach ((long key, ScheduledChunk state) in scheduledChunks) {
             if ((state.Ticks.Count > 0 || state.HasUnindexedRecords) &&
@@ -335,8 +305,7 @@ public sealed partial class Dimension {
         }
 
         while (saveGroups.Values.Any(static group => !group.Failed)) {
-            foreach (ChunkSaveGroup group in saveGroups.Values)
-                QueueSaveGroup(storage, group, long.MaxValue, force: true);
+            foreach (ChunkSaveGroup group in saveGroups.Values) QueueSaveGroup(storage, group, long.MaxValue, force: true);
             Thread.Sleep(1);
             TickStorageCompletions();
             LoadEntities(flush: true);
@@ -361,8 +330,7 @@ public sealed partial class Dimension {
                 savingChunks.TryGetValue(key, out long savingRevision) && savingRevision == revision)
                 continue;
             PrepareScheduledTicks(chunk);
-            if (SerializeChunk(chunk) is not { } entries)
-                continue;
+            if (SerializeChunk(chunk) is not { } entries) continue;
 
             while (!storage.Write(
                 this,
@@ -407,8 +375,7 @@ public sealed partial class Dimension {
                 FailSaveGroup(group, $"Chunk {pendingKeys[index]} is not loaded.");
                 return;
             }
-            if (chunk.Revision == pendingRevisions[index])
-                continue;
+            if (chunk.Revision == pendingRevisions[index]) continue;
 
             group.PendingKeys = null;
             group.PendingRevisions = null;
@@ -433,8 +400,7 @@ public sealed partial class Dimension {
                 return;
             }
             int chunkBytes = 0;
-            foreach (ChunkStorageEntry entry in entries)
-                chunkBytes = checked(chunkBytes + entry.Data.Length);
+            foreach (ChunkStorageEntry entry in entries) chunkBytes = checked(chunkBytes + entry.Data.Length);
             group.PendingBytes = checked(group.PendingBytes + chunkBytes);
             if (chunkBytes > WorldProviderService.MaximumChunkDataBytes ||
                 group.PendingBytes > WorldProviderService.MaximumPendingBytes) {
@@ -450,11 +416,9 @@ public sealed partial class Dimension {
             group.PendingRecordCount++;
         }
 
-        if (group.PendingRecordCount != pendingKeys.Length)
-            return;
+        if (group.PendingRecordCount != pendingKeys.Length) return;
 
-        if (!storage.WriteGroup(this, group.Id, pendingRecords, pendingRevisions, group.PendingBytes))
-            return;
+        if (!storage.WriteGroup(this, group.Id, pendingRecords, pendingRevisions, group.PendingBytes)) return;
 
         group.SnapshotKeys = pendingKeys;
         group.SnapshotRevisions = pendingRevisions;
@@ -476,21 +440,17 @@ public sealed partial class Dimension {
         group.PendingRecords = null;
         group.PendingRecordCount = 0;
         group.PendingBytes = 0;
-        if (snapshotGroupId == group.Id)
-            snapshotGroupId = 0;
+        if (snapshotGroupId == group.Id) snapshotGroupId = 0;
         Logger.Scoped("Storage").Error($"Could not save piston chunk group {group.Id} in {Identifier}: {reason}");
     }
 
     void RemoveSaveGroup(ChunkSaveGroup group) {
         saveGroups.Remove(group.Id);
-        if (snapshotGroupId == group.Id)
-            snapshotGroupId = 0;
+        if (snapshotGroupId == group.Id) snapshotGroupId = 0;
         foreach (long key in group.Keys) {
-            if (!saveGroupsByChunk.TryGetValue(key, out HashSet<long>? groupIds))
-                continue;
+            if (!saveGroupsByChunk.TryGetValue(key, out HashSet<long>? groupIds)) continue;
             groupIds.Remove(group.Id);
-            if (groupIds.Count == 0)
-                saveGroupsByChunk.Remove(key);
+            if (groupIds.Count == 0) saveGroupsByChunk.Remove(key);
         }
     }
 
@@ -498,8 +458,7 @@ public sealed partial class Dimension {
         ChunkStorageEntry[] entries;
         try {
             entries = chunk.Serialize();
-        }
-        catch (Exception error) when (error is InvalidDataException or OverflowException) {
+        } catch (Exception error) when (error is InvalidDataException or OverflowException) {
             Logger.Scoped("Storage").Error(
                 $"Could not serialize chunk ({chunk.X}, {chunk.Z}) in {Identifier}: {error.Message}"
             );
@@ -507,8 +466,7 @@ public sealed partial class Dimension {
         }
 
         int dataLength = 0;
-        foreach (ChunkStorageEntry entry in entries)
-            dataLength = checked(dataLength + entry.Data.Length);
+        foreach (ChunkStorageEntry entry in entries) dataLength = checked(dataLength + entry.Data.Length);
 
         if (dataLength > WorldProviderService.MaximumChunkDataBytes) {
             Logger.Scoped("Storage").Error(

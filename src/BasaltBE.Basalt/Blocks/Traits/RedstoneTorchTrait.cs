@@ -11,8 +11,7 @@ public sealed class RedstoneTorchTrait : BlockSupportTrait {
     internal override bool HasScheduledUpdates => true;
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        if (face == 0 || face > 5)
-            return false;
+        if (face == 0 || face > 5) return false;
 
         string direction = BlockDirections.TorchFacingByFace[face];
         if (!BlockDirections.TorchSupportByDirection.TryGetValue(direction, out var support) ||
@@ -29,10 +28,8 @@ public sealed class RedstoneTorchTrait : BlockSupportTrait {
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         bool? hasSupport = HasSupport(dimension, x, y, z);
-        if (hasSupport is false)
-            return base.OnNeighborUpdate(dimension, x, y, z);
-        if (hasSupport is null)
-            return false;
+        if (hasSupport is false) return base.OnNeighborUpdate(dimension, x, y, z);
+        if (hasSupport is null) return false;
 
         dimension.ScheduleBlockUpdate(x, y, z, 2);
         return false;
@@ -45,8 +42,7 @@ public sealed class RedstoneTorchTrait : BlockSupportTrait {
             return;
 
         bool? hasSupport = HasSupport(dimension, x, y, z);
-        if (hasSupport is null)
-            return;
+        if (hasSupport is null) return;
         if (!hasSupport.Value) {
             base.OnNeighborUpdate(dimension, x, y, z);
             return;
@@ -59,12 +55,10 @@ public sealed class RedstoneTorchTrait : BlockSupportTrait {
             y + support.Y,
             z + support.Z
         );
-        if (powered is null || lit != powered.Value)
-            return;
+        if (powered is null || lit != powered.Value) return;
 
         string identifier = lit ? "minecraft:unlit_redstone_torch" : "minecraft:redstone_torch";
-        if (BlockPalette.Find(identifier, current.State) is not { } updated)
-            return;
+        if (BlockPalette.Find(identifier, current.State) is not { } updated) return;
 
         dimension.SetPermutation(x, y, z, updated);
         dimension.Redstone.QueueUpdate(x, y, z, updated);
@@ -72,10 +66,8 @@ public sealed class RedstoneTorchTrait : BlockSupportTrait {
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
         BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
-        if (current is null)
-            return null;
-        if (!current.State.Values.TryGetValue("torch_facing_direction", out object? directionValue) ||
-            directionValue is not string direction ||
+        if (current is null) return null;
+        if (current.State.Values.GetValueOrDefault("torch_facing_direction") is not string direction ||
             !BlockDirections.TorchSupportByDirection.TryGetValue(direction, out var support))
             return false;
 

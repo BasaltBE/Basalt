@@ -54,8 +54,10 @@ internal sealed class LanDiscovery : IAsyncDisposable {
         cancellation.Cancel();
         socket.Dispose();
         packets.Writer.TryComplete();
-        try { await Task.WhenAll(receiveTask, processTask).ConfigureAwait(false); }
-        catch (Exception error) when (error is SocketException or ObjectDisposedException or OperationCanceledException) { }
+        try {
+            await Task.WhenAll(receiveTask, processTask).ConfigureAwait(false);
+        } catch (Exception error) when (error is SocketException or ObjectDisposedException or OperationCanceledException) { }
+
         await Task.WhenAll(offerTasks.Values).ConfigureAwait(false);
         offerCapacity.Dispose();
         cancellation.Dispose();
@@ -68,15 +70,15 @@ internal sealed class LanDiscovery : IAsyncDisposable {
         while (!cancellationToken.IsCancellationRequested) {
             try {
                 SocketReceiveFromResult result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, sender, cancellationToken).ConfigureAwait(false);
-                if (result.RemoteEndPoint is not IPEndPoint address || !DiscoveryPacketCodec.TryDecode(buffer.AsSpan(0, result.ReceivedBytes), out DiscoveryPacket? packet, options.ApplicationId) || packet is null)
+                if (result.RemoteEndPoint is not IPEndPoint address ||
+                    !DiscoveryPacketCodec.TryDecode(buffer.AsSpan(0, result.ReceivedBytes), out DiscoveryPacket? packet, options.ApplicationId) ||
+                    packet is null)
                     continue;
                 if (packet.SenderId != 0) addresses[packet.SenderId] = address;
                 packets.Writer.TryWrite((packet, address));
-            }
-            catch (SocketException) when (!cancellationToken.IsCancellationRequested) {
+            } catch (SocketException) when (!cancellationToken.IsCancellationRequested) {
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
-            }
-            catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested) { return; }
+            } catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested) { return; }
         }
     }
 
@@ -86,9 +88,8 @@ internal sealed class LanDiscovery : IAsyncDisposable {
             if (packet.Type == DiscoveryPacketType.Request) {
                 byte[] data = ServerAdvertisementCodec.Encode(options.Advertisement);
                 await SendPacketAsync(new DiscoveryPacket(DiscoveryPacketType.Response, NetworkId, 0, data), address, cancellationToken).ConfigureAwait(false);
-            }
-            else if (packet.Type == DiscoveryPacketType.Message && packet.RecipientId == NetworkId &&
-                     packet.Data.Length > 0 && !packet.Data.AsSpan().SequenceEqual("Ping"u8)) {
+            } else if (packet.Type == DiscoveryPacketType.Message && packet.RecipientId == NetworkId &&
+                       packet.Data.Length > 0 && !packet.Data.AsSpan().SequenceEqual("Ping"u8)) {
                 if (NethernetSignal.TryDecode(packet.Data, packet.SenderId.ToString(CultureInfo.InvariantCulture), out NethernetSignal signal)) {
                     if (signal.Type == "CONNECTREQUEST") {
                         if (!offerCapacity.Wait(0)) {
@@ -101,8 +102,7 @@ internal sealed class LanDiscovery : IAsyncDisposable {
                         offerTasks[id] = task;
                         _ = task.ContinueWith(completedTask => offerTasks.TryRemove(id, out Task? removed), CancellationToken.None,
                             TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-                    }
-                    else if (signal.Type == "CANDIDATEADD" && peers.TryGetValue((packet.SenderId, signal.ConnectionId), out RTCPeerConnection? peer))
+                    } else if (signal.Type == "CANDIDATEADD" && peers.TryGetValue((packet.SenderId, signal.ConnectionId), out RTCPeerConnection? peer))
                         peer.addIceCandidate(new RTCIceCandidateInit { candidate = signal.Data });
                     else if (signal.Type == "CONNECTERROR" && peers.TryRemove((packet.SenderId, signal.ConnectionId), out RTCPeerConnection? failedPeer))
                         failedPeer.close();
@@ -114,12 +114,10 @@ internal sealed class LanDiscovery : IAsyncDisposable {
     private async Task AcceptOfferWithinCapacityAsync(NethernetSignal signal, ulong remoteId, IPEndPoint address, CancellationToken cancellationToken) {
         try {
             await AcceptOfferAsync(signal, remoteId, address, cancellationToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
-        catch (Exception error) {
+        } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+        } catch (Exception error) {
             Log.Error($"LAN offer from {remoteId} failed: {error.Message}");
-        }
-        finally {
+        } finally {
             offerCapacity.Release();
         }
     }
@@ -155,13 +153,13 @@ internal sealed class LanDiscovery : IAsyncDisposable {
             await SendSignalAsync("CONNECTRESPONSE", signal.ConnectionId, answer, remoteId, address, cancellationToken).ConfigureAwait(false);
             _ = connection.Completion.ContinueWith(completed => { peers.TryRemove(key, out RTCPeerConnection? removed); }, CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        }
-        catch {
+        } catch {
             peers.TryRemove(key, out _);
             await connection.DisposeAsync().ConfigureAwait(false);
             if (!cancellationToken.IsCancellationRequested) {
-                try { await SendSignalAsync("CONNECTERROR", signal.ConnectionId, "1", remoteId, address, cancellationToken).ConfigureAwait(false); }
-                catch (OperationCanceledException) { }
+                try {
+                    await SendSignalAsync("CONNECTERROR", signal.ConnectionId, "1", remoteId, address, cancellationToken).ConfigureAwait(false);
+                } catch (OperationCanceledException) { }
             }
         }
     }
@@ -185,4 +183,3 @@ internal sealed class LanDiscovery : IAsyncDisposable {
     }
 
 }
-

@@ -15,20 +15,19 @@ public abstract class IdentifierEnum<T> : CustomEnum where T : class {
         foreach (T value in values) {
             string name = identifier(value);
             index.Add(name, value);
-            if (name.StartsWith("minecraft:", StringComparison.Ordinal))
-                index.TryAdd(name[10..], value);
+            if (name.StartsWith("minecraft:", StringComparison.Ordinal)) index.TryAdd(name[10..], value);
         }
+
         return index.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
-        if (token.Length >= 2 && token[0] == '"' && token[^1] == '"')
-            token = token[1..^1];
-        if (!values.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(token, out T? found))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
+
+        if (token.Length >= 2 && token[0] == '"' && token[^1] == '"') token = token[1..^1];
+        if (!values.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(token, out T? found)) return false;
+
         value = found;
         return true;
     }

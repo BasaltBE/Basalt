@@ -47,8 +47,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void OnSpawn() {
-        if (!restored)
-            Reset();
+        if (!restored) Reset();
         restored = false;
         RememberPosition();
     }
@@ -61,8 +60,10 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     public override void Read(CompoundTag entityTag) {
         if (entityTag.Get<FloatTag>("Hunger") is not { } hunger ||
             entityTag.Get<FloatTag>("Saturation") is not { } savedSaturation ||
-            entityTag.Get<FloatTag>("Exhaustion") is not { } savedExhaustion ||
-            !float.IsFinite(hunger.Value) || !float.IsFinite(savedSaturation.Value) || !float.IsFinite(savedExhaustion.Value))
+            entityTag.Get<FloatTag>("Exhaustion") is not { } savedExhaustion)
+            return;
+
+        if (!float.IsFinite(hunger.Value) || !float.IsFinite(savedSaturation.Value) || !float.IsFinite(savedExhaustion.Value))
             return;
 
         Entity.Attributes.SetCurrent(HungerAttribute, Math.Clamp(hunger.Value, 0, Maximum));
@@ -80,8 +81,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void OnMove() {
-        if (Entity is not Player player || player.Dead)
-            return;
+        if (Entity is not Player player || player.Dead) return;
 
         float deltaX = Entity.Position.X - previousX;
         float deltaY = Entity.Position.Y - previousY;
@@ -90,8 +90,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
         if (player.GameType is GameType.Survival or GameType.Adventure) {
             if (Entity.Flags.Get(ActorFlag.Swimming))
                 AddExhaustion(MathF.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * ExhaustionPerBlockSwum);
-            else if (Entity.Flags.Get(ActorFlag.Sprinting))
-                AddExhaustion(horizontalDistance * ExhaustionPerBlockSprinted);
+            else if (Entity.Flags.Get(ActorFlag.Sprinting)) AddExhaustion(horizontalDistance * ExhaustionPerBlockSprinted);
 
             if (Entity.GetTrait<EntityMovementTrait>() is { Jumping: true } && !jumping)
                 AddExhaustion(ExhaustionPerJump + (Entity.Flags.Get(ActorFlag.Sprinting) ? ExhaustionForSprintJump : 0));
@@ -102,28 +101,23 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void Tick() {
-        if (Entity is not Player player || !player.Spawned || player.Disposed || player.Dead)
-            return;
+        if (Entity is not Player player || !player.Spawned || player.Disposed || player.Dead) return;
 
         TickEating(player);
-        if (player.GameType is not (GameType.Survival or GameType.Adventure))
-            return;
+        if (player.GameType is not (GameType.Survival or GameType.Adventure)) return;
 
         bool peaceful = player.Dimension.Difficulty == Difficulty.Peaceful;
         if (!peaceful) {
             while (exhaustion >= ExhaustionThreshold) {
                 exhaustion -= ExhaustionThreshold;
-                if (saturation > 0)
-                    saturation = Math.Max(0, saturation - 1);
-                else
-                    Entity.Attributes.SetCurrent(HungerAttribute, Math.Max(0, Hunger - 1));
+                if (saturation > 0) saturation = Math.Max(0, saturation - 1);
+                else Entity.Attributes.SetCurrent(HungerAttribute, Math.Max(0, Hunger - 1));
             }
         }
         Entity.Attributes.SetCurrent(ExhaustionAttribute, exhaustion);
         Entity.Attributes.SetCurrent(SaturationAttribute, saturation);
 
-        if (Entity.SimulationAge % (peaceful ? 20 : EffectInterval) != 0)
-            return;
+        if (Entity.SimulationAge % (peaceful ? 20 : EffectInterval) != 0) return;
 
         if (peaceful) {
             Entity.GetTrait<EntityHealthTrait>()?.Heal(1);
@@ -133,8 +127,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
         if (Hunger >= 18 && Entity.GetTrait<EntityHealthTrait>() is { } health && health.Current < health.Maximum) {
             health.Heal(1);
             AddExhaustion(NaturalHealingExhaustion);
-        }
-        else if (Hunger <= 0 && Entity.GetTrait<EntityHealthTrait>() is { } starvingHealth) {
+        } else if (Hunger <= 0 && Entity.GetTrait<EntityHealthTrait>() is { } starvingHealth) {
             float minimum = player.Dimension.Difficulty switch {
                 Difficulty.Easy => 10,
                 Difficulty.Normal => 1,
@@ -156,15 +149,13 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
 
         PlayerEatEvent eat = new(player, item, item.Type.FoodNutrition,
             item.Type.FoodNutrition * item.Type.FoodSaturationModifier * 2);
-        if (player.Network.Server.Events.HasSubscribers<PlayerEatEvent>())
-            player.Network.Server.Events.Emit(eat);
+        if (player.Network.Server.Events.HasSubscribers<PlayerEatEvent>()) player.Network.Server.Events.Emit(eat);
         if (eat.IsCanceled() || player.Dead ||
             !ReferenceEquals(inventory.Inventory.GetItem(inventory.SelectedSlot), item))
             return false;
 
         ItemStack? consumed = inventory.Inventory.TakeItem(inventory.SelectedSlot);
-        if (consumed is null)
-            return false;
+        if (consumed is null) return false;
 
         if (item.Type.FoodConvertsTo is { } conversion && ItemPalette.Find(conversion) is { } result) {
             ItemStack container = new(result);
@@ -192,8 +183,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
             return;
         }
 
-        if (pendingFoodSlot == slot && pendingFoodNetId == item.NetId)
-            return;
+        if (pendingFoodSlot == slot && pendingFoodNetId == item.NetId) return;
 
         pendingFoodSlot = slot;
         pendingFoodNetId = item.NetId;
@@ -207,8 +197,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
         pendingFoodNetId = 0;
         pendingFoodFinishAge = 0;
         pendingFoodSoundAge = 0;
-        if (Entity is Player player)
-            player.SetFlag(ActorFlag.UsingItem, false);
+        if (Entity is Player player) player.SetFlag(ActorFlag.UsingItem, false);
     }
 
     internal void AddExhaustion(float amount) {
@@ -236,8 +225,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
     }
 
     private void TickEating(Player player) {
-        if (pendingFoodSlot < 0)
-            return;
+        if (pendingFoodSlot < 0) return;
 
         PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
         ItemStack? item = inventory?.Inventory.GetItem(pendingFoodSlot);
@@ -257,8 +245,7 @@ public sealed class PlayerHungerTrait(Entity entity) : EntityTrait(entity) {
             pendingFoodSoundAge += 4;
         }
 
-        if (Entity.SimulationAge < pendingFoodFinishAge)
-            return;
+        if (Entity.SimulationAge < pendingFoodFinishAge) return;
 
         CancelEating();
         if (Eat(item)) {

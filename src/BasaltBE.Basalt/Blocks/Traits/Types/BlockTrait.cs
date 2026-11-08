@@ -63,7 +63,6 @@ public abstract class BlockTrait {
         BlockPermutation current,
         BlockPermutation scheduled
     ) {
-        if (current.Identifier == scheduled.Identifier)
-            OnScheduledUpdate(dimension, x, y, z, current);
+        if (current.Identifier == scheduled.Identifier) OnScheduledUpdate(dimension, x, y, z, current);
     }
 }

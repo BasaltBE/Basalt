@@ -16,8 +16,7 @@ public sealed class DaylightDetectorTrait : BlockSupportTrait {
         string identifier = current.Identifier == "minecraft:daylight_detector"
             ? "minecraft:daylight_detector_inverted"
             : "minecraft:daylight_detector";
-        if (BlockPalette.Find(identifier, current.State) is not { } updated)
-            return false;
+        if (BlockPalette.Find(identifier, current.State) is not { } updated) return false;
 
         dimension.SetPermutation(position.X, position.Y, position.Z, updated);
         dimension.BroadcastBlockUpdate(position.X, position.Y, position.Z, updated);
@@ -27,10 +26,7 @@ public sealed class DaylightDetectorTrait : BlockSupportTrait {
     }
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        if (face != 1 || HasSupport(player.Dimension, x, y, z) is not true)
-            return false;
-
-        return true;
+        return face == 1 && HasSupport(player.Dimension, x, y, z) is true;
     }
 
     public override void OnPlaced(Dimension dimension, int x, int y, int z) =>
@@ -40,14 +36,12 @@ public sealed class DaylightDetectorTrait : BlockSupportTrait {
         long time = dimension.World is { } world
             ? world.GameTime % 24000
             : (long)(dimension.TickValue % 24000);
-        if (time < 0)
-            time += 24000;
+        if (time < 0) time += 24000;
         double daylight = time <= 12000
             ? Math.Sin(Math.PI * time / 12000)
             : 0;
         int signal = (int)Math.Round(daylight * 15);
-        if (current.Identifier == "minecraft:daylight_detector_inverted")
-            signal = 15 - signal;
+        if (current.Identifier == "minecraft:daylight_detector_inverted") signal = 15 - signal;
 
         if (current.State.Values.GetValueOrDefault("redstone_signal") is not int currentSignal || currentSignal != signal) {
             if (BlockPalette.Find(current.Identifier, current.State, "redstone_signal", signal) is { } updated) {

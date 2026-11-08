@@ -20,10 +20,8 @@ internal sealed class ItemStackRequestHandler {
     private static RequestState? cachedState;
 
     public void Handle(NethernetPeer peer, Player? player, ItemStackRequestPacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Item stack request arrived before player login.");
-        if (player.Disposed)
-            return;
+        if (player is null) throw new InvalidDataException("Item stack request arrived before player login.");
+        if (player.Disposed) return;
 
         ItemStackResponseInfo[] responses = new ItemStackResponseInfo[packet.Requests.Length];
         for (int i = 0; i < packet.Requests.Length; i++) {
@@ -81,6 +79,7 @@ internal sealed class ItemStackRequestHandler {
                     inventory.Inventory.Update();
                     inventory.Cursor.Update();
                 }
+
                 return enchantingResponse;
             }
 
@@ -88,14 +87,10 @@ internal sealed class ItemStackRequestHandler {
             if (response.Result != ItemStackNetResult.Success) {
                 inventory.Inventory.Update();
                 inventory.Cursor.Update();
-                if (player.OpenedContainer is EnchantingTableContainer openedEnchantingTable)
-                    openedEnchantingTable.Update();
-                if (player.OpenedContainer is GrindstoneContainer openedGrindstone)
-                    openedGrindstone.Update();
-                if (player.OpenedContainer is AnvilContainer openedAnvil)
-                    openedAnvil.Update();
-                if (TouchesArmor(request))
-                    inventory.Entity.GetTrait<EntityArmorTrait>()?.Armor.Update();
+                if (player.OpenedContainer is EnchantingTableContainer openedEnchantingTable) openedEnchantingTable.Update();
+                if (player.OpenedContainer is GrindstoneContainer openedGrindstone) openedGrindstone.Update();
+                if (player.OpenedContainer is AnvilContainer openedAnvil) openedAnvil.Update();
+                if (TouchesArmor(request)) inventory.Entity.GetTrait<EntityArmorTrait>()?.Armor.Update();
             }
 
             return response;
@@ -182,8 +177,7 @@ internal sealed class ItemStackRequestHandler {
                 }
                 for (int slot = 0; slot < 2; slot++) {
                     SlotKey key = new(state.Grindstone!, slot);
-                    if (state.Staged.GetValueOrDefault(key, key.Container.GetItem(slot)) is null)
-                        continue;
+                    if (state.Staged.GetValueOrDefault(key, key.Container.GetItem(slot)) is null) continue;
                     SetItem(
                         state,
                         key,
@@ -209,8 +203,7 @@ internal sealed class ItemStackRequestHandler {
                 }
                 for (int slot = 0; slot < 2; slot++) {
                     SlotKey key = new(state.Anvil!, slot);
-                    if (state.Staged.GetValueOrDefault(key, key.Container.GetItem(slot)) is null)
-                        continue;
+                    if (state.Staged.GetValueOrDefault(key, key.Container.GetItem(slot)) is null) continue;
                     SetItem(
                         state,
                         key,
@@ -228,8 +221,7 @@ internal sealed class ItemStackRequestHandler {
 
             EntityArmorTrait? armor = inventoryTrait?.Entity.GetTrait<EntityArmorTrait>();
             foreach (SlotKey key in state.ChangedSlots) {
-                if (!ReferenceEquals(key.Container, armor?.Armor) || state.Staged[key] is not { } item)
-                    continue;
+                if (!ReferenceEquals(key.Container, armor?.Armor) || state.Staged[key] is not { } item) continue;
                 if (item.Type.ArmorSlot != (ArmorSlot)key.Slot) {
                     failureReason = "item does not fit armor slot";
                     return ErrorResponse(request.ClientRequestId);
@@ -238,25 +230,21 @@ internal sealed class ItemStackRequestHandler {
 
             if (inventoryTrait?.Entity is Player actor && actor.Network.Server.Events.HasSubscribers<ContainerTransactionEvent>()) {
                 int changeCount = state.ChangedSlots.Count;
-                if (state.CreatedOutput is { } output && state.ChangedSlotSet.Contains(new SlotKey(output, 0)))
-                    changeCount--;
+                if (state.CreatedOutput is { } output && state.ChangedSlotSet.Contains(new SlotKey(output, 0))) changeCount--;
                 ContainerSlotChange[] changes = new ContainerSlotChange[changeCount];
                 int changeIndex = 0;
                 foreach (SlotKey key in state.ChangedSlots) {
-                    if (ReferenceEquals(key.Container, state.CreatedOutput))
-                        continue;
+                    if (ReferenceEquals(key.Container, state.CreatedOutput)) continue;
                     changes[changeIndex++] = new(key.Container, key.Slot, key.Container.GetItem(key.Slot), state.Staged[key]);
                 }
                 ContainerTransactionEvent transaction = new(actor, request.ClientRequestId, changes);
                 actor.Network.Server.Events.Emit(transaction);
-                if (transaction.IsCanceled() || actor.Disposed)
-                    return ErrorResponse(request.ClientRequestId);
+                if (transaction.IsCanceled() || actor.Disposed) return ErrorResponse(request.ClientRequestId);
             }
 
             bool armorChanged = false;
             foreach (SlotKey key in state.ChangedSlots) {
-                if (ReferenceEquals(key.Container, state.CreatedOutput))
-                    continue;
+                if (ReferenceEquals(key.Container, state.CreatedOutput)) continue;
                 key.Container.SetItem(key.Slot, state.Staged[key]);
                 armorChanged |= ReferenceEquals(key.Container, armor?.Armor);
                 inventoryTrait?.RememberClientRequestNetId(
@@ -267,16 +255,14 @@ internal sealed class ItemStackRequestHandler {
                 );
             }
 
-            if (armorChanged)
-                armor?.SyncEquipment();
+            if (armorChanged) armor?.SyncEquipment();
 
             if (state.GrindstoneExperience > 0 && inventoryTrait?.Entity is Player grinder)
                 grinder.GetTrait<PlayerExperienceTrait>()?.AddPoints(state.GrindstoneExperience);
             if (state.AnvilLevelCost > 0 && inventoryTrait?.Entity is Player anvilPlayer &&
                 anvilPlayer.GameType != GameType.Creative)
                 anvilPlayer.GetTrait<PlayerExperienceTrait>()?.SpendLevels(state.AnvilLevelCost);
-            if (state.AnvilCrafted)
-                state.Anvil?.Use();
+            if (state.AnvilCrafted) state.Anvil?.Use();
 
             if (inventoryTrait?.Entity is Player player) {
                 foreach (PendingDrop drop in state.DroppedItems)
@@ -322,14 +308,11 @@ internal sealed class ItemStackRequestHandler {
                 ClientRequestId = request.ClientRequestId,
                 Containers = containers
             };
-        }
-        finally {
+        } finally {
             GrindstoneContainer? grindstone = state.Grindstone;
-            if (grindstone is not null)
-                grindstone.Crafting = false;
+            if (grindstone is not null) grindstone.Crafting = false;
             AnvilContainer? anvil = state.Anvil;
-            if (anvil is not null)
-                anvil.Crafting = false;
+            if (anvil is not null) anvil.Crafting = false;
             state.Inventory = null!;
             state.Cursor = null!;
             state.OpenedContainer = null;
@@ -440,8 +423,7 @@ internal sealed class ItemStackRequestHandler {
             state.FailureReason = "anvil result was reported more than once";
             return false;
         }
-        if (state.AnvilCrafted)
-            return ValidateAnvilResults(state, results);
+        if (state.AnvilCrafted) return ValidateAnvilResults(state, results);
 
         state.PendingAnvilResults = results;
         return true;
@@ -495,8 +477,7 @@ internal sealed class ItemStackRequestHandler {
             state.FailureReason = "grindstone result was reported more than once";
             return false;
         }
-        if (state.GrindstoneCrafted)
-            return ValidateGrindstoneResults(state, results);
+        if (state.GrindstoneCrafted) return ValidateGrindstoneResults(state, results);
 
         state.PendingGrindstoneResults = results;
         return true;
@@ -553,8 +534,7 @@ internal sealed class ItemStackRequestHandler {
 
         state.Staged[key] = item?.Clone();
         ResponseSlotKey responseKey = new(key, ContainerEnumName.Hotbar, null);
-        if (state.ResponseSlotSet.Add(responseKey))
-            state.ResponseSlots.Add(responseKey);
+        if (state.ResponseSlotSet.Add(responseKey)) state.ResponseSlots.Add(responseKey);
         return true;
     }
 
@@ -585,12 +565,9 @@ internal sealed class ItemStackRequestHandler {
                 : null;
             if (workbench is not null && state.InventoryTrait is { } inventoryTrait)
                 sources = [workbench, inventoryTrait.CraftingGrid, state.Inventory];
-            else if (workbench is not null)
-                sources = [workbench, state.Inventory];
-            else if (state.InventoryTrait is { } playerInventory)
-                sources = [playerInventory.CraftingGrid, state.Inventory];
-            else
-                sources = [state.Inventory];
+            else if (workbench is not null) sources = [workbench, state.Inventory];
+            else if (state.InventoryTrait is { } playerInventory) sources = [playerInventory.CraftingGrid, state.Inventory];
+            else sources = [state.Inventory];
 
             items = new ItemStack?[sources.Sum(static source => source.ContainerSize)];
             int itemIndex = 0;
@@ -606,8 +583,7 @@ internal sealed class ItemStackRequestHandler {
                 state.FailureReason = $"recipe {netId} does not match available crafting ingredients";
                 return false;
             }
-        }
-        else {
+        } else {
             Container? grid = state.OpenedContainer is { Type: ContainerType.Workbench, ContainerName: ContainerEnumName.CraftingInput } table
                 ? table
                 : state.OpenedContainer is null || ReferenceEquals(state.OpenedContainer, state.Inventory)
@@ -650,8 +626,7 @@ internal sealed class ItemStackRequestHandler {
     }
 
     private static bool CreateCraftResult(RequestState state, byte resultsIndex) {
-        if (state.Recipe is not { } recipe || state.CreatedOutput is not null || resultsIndex != 0)
-            return false;
+        if (state.Recipe is not { } recipe || state.CreatedOutput is not null || resultsIndex != 0) return false;
 
         Container output = new(
             1,
@@ -664,8 +639,7 @@ internal sealed class ItemStackRequestHandler {
         if (recipe.Result.Identifier.EndsWith("_shulker_box", StringComparison.Ordinal) &&
             state.CraftSources is not null && state.CraftConsumption is { } consumption) {
             for (int index = 0; index < consumption.Length; index++) {
-                if (consumption[index] == 0)
-                    continue;
+                if (consumption[index] == 0) continue;
 
                 SlotKey ingredientKey = GetCraftSourceKey(state, index);
                 if (ingredientKey.Container.GetItem(ingredientKey.Slot) is not { } ingredient ||
@@ -724,14 +698,11 @@ internal sealed class ItemStackRequestHandler {
         state.CraftConsumption = consumption;
         state.CraftConsumed = new int[consumption.Length];
         if (state.CreatedOutput is null) {
-            if (!CreateCraftResult(state, 0))
-                return false;
-        }
-        else {
+            if (!CreateCraftResult(state, 0)) return false;
+        } else {
             SlotKey outputKey = new(state.CreatedOutput, 0);
             ItemStack output = new(recipe.Result, (ushort)resultSize, recipe.ResultMetadata);
-            if (state.Staged.GetValueOrDefault(outputKey) is { } previousOutput)
-                output.Nbt = previousOutput.Nbt;
+            if (state.Staged.GetValueOrDefault(outputKey) is { } previousOutput) output.Nbt = previousOutput.Nbt;
             SetItem(
                 state,
                 outputKey,
@@ -754,18 +725,16 @@ internal sealed class ItemStackRequestHandler {
             for (int slot = 0; slot < source.ContainerSize; slot++, index++) {
                 SlotKey key = new(source, slot);
                 bool isAutoCraftOutput = state.AutoCraftOutputSlot == key;
-                if (state.CraftConsumed![index] != consumption[index] || isAutoCraftOutput && consumption[index] != 0)
-                    return false;
+                if (state.CraftConsumed![index] != consumption[index] || isAutoCraftOutput && consumption[index] != 0) return false;
+
                 ItemStack? original = state.CraftInputItems![index];
-                if (isAutoCraftOutput)
-                    continue;
+                if (isAutoCraftOutput) continue;
+
                 ItemStack? current = state.Staged.TryGetValue(key, out ItemStack? staged) ? staged : original;
                 int consumed = consumption[index];
                 if (consumed == 0) {
-                    if (!SameStack(original, current))
-                        return false;
-                }
-                else if (original is null || current is null && original.StackSize != consumed ||
+                    if (!SameStack(original, current)) return false;
+                } else if (original is null || current is null && original.StackSize != consumed ||
                     current is not null && (current.Type != original.Type || current.StackSize != original.StackSize - consumed)) {
                     return false;
                 }
@@ -776,8 +745,7 @@ internal sealed class ItemStackRequestHandler {
             state.Staged.GetValueOrDefault(new SlotKey(output, 0)) is not null)
             return false;
 
-        if (state.CraftResults is not { } reported)
-            return true;
+        if (state.CraftResults is not { } reported) return true;
 
         NetworkItemInstanceDescriptorData result = reported.CraftResults[0];
         return result.ItemDescriptor is ItemNameDescriptorData descriptor &&
@@ -831,8 +799,7 @@ internal sealed class ItemStackRequestHandler {
             state.FailureReason = "recipe transfer touches the crafting input";
             return false;
         }
-        if (sourceKey == destinationKey)
-            return true;
+        if (sourceKey == destinationKey) return true;
         if (sourceItem is null || amount > sourceItem.StackSize) {
             state.FailureReason = "source stack is empty or smaller than the transfer";
             return false;
@@ -855,8 +822,7 @@ internal sealed class ItemStackRequestHandler {
                 : sourceItem.Clone((ushort)(sourceItem.StackSize - amount)),
                 sourceInfo.ContainerName.ContainerName,
                 sourceInfo.ContainerName.DynamicId);
-            if (autoCraftOutput)
-                state.AutoCraftOutputSlot = destinationKey;
+            if (autoCraftOutput) state.AutoCraftOutputSlot = destinationKey;
             return true;
         }
 
@@ -887,8 +853,7 @@ internal sealed class ItemStackRequestHandler {
             sourceInfo.ContainerName.ContainerName,
             sourceInfo.ContainerName.DynamicId
         );
-        if (autoCraftOutput)
-            state.AutoCraftOutputSlot = destinationKey;
+        if (autoCraftOutput) state.AutoCraftOutputSlot = destinationKey;
         return true;
     }
 
@@ -902,8 +867,7 @@ internal sealed class ItemStackRequestHandler {
             return false;
         }
 
-        if (sourceKey == destinationKey)
-            return true;
+        if (sourceKey == destinationKey) return true;
 
         if (sourceKey.Container is GrindstoneContainer && sourceKey.Slot == 2 ||
             destinationKey.Container is GrindstoneContainer && destinationKey.Slot == 2 ||
@@ -966,19 +930,16 @@ internal sealed class ItemStackRequestHandler {
             if (amount > expected && state.AutoCraft) {
                 int needed = amount - expected;
                 for (int slot = 0; slot < state.CraftConsumption.Length && needed > 0; slot++) {
-                    if (slot == sourceIndex)
-                        continue;
+                    if (slot == sourceIndex) continue;
 
                     int available = state.CraftConsumption[slot] - state.CraftConsumed[slot];
-                    if (available <= 0)
-                        continue;
+                    if (available <= 0) continue;
 
                     SlotKey candidateKey = GetCraftSourceKey(state, slot);
                     ItemStack? candidate = state.Staged.TryGetValue(candidateKey, out ItemStack? staged)
                         ? staged
                         : candidateKey.Container.GetItem(candidateKey.Slot);
-                    if (candidate is null || !candidate.CanStackWith(sourceItem))
-                        continue;
+                    if (candidate is null || !candidate.CanStackWith(sourceItem)) continue;
 
                     int shifted = Math.Min(available, needed);
                     state.CraftConsumption[slot] -= shifted;
@@ -1011,8 +972,7 @@ internal sealed class ItemStackRequestHandler {
             !TryGetItem(state, action.Source, out SlotKey sourceKey, out ItemStack? sourceItem) ||
             sourceItem is null || action.Amount > sourceItem.StackSize)
             return false;
-        if (state.Recipe is not null && IsCraftSource(state, sourceKey.Container))
-            return false;
+        if (state.Recipe is not null && IsCraftSource(state, sourceKey.Container)) return false;
 
         ItemStack dropped = sourceItem.Clone(action.Amount, cloneNbt: action.Amount != sourceItem.StackSize);
         ushort remaining = (ushort)(sourceItem.StackSize - action.Amount);
@@ -1179,8 +1139,7 @@ internal sealed class ItemStackRequestHandler {
             return true;
         }
 
-        if (name.DynamicId is uint dynamicId && dynamicId != 0)
-            return false;
+        if (name.DynamicId is uint dynamicId && dynamicId != 0) return false;
 
         if (name.ContainerName == ContainerEnumName.CraftingInput &&
             (state.OpenedContainer is null || ReferenceEquals(state.OpenedContainer, state.Inventory)) &&
@@ -1199,17 +1158,14 @@ internal sealed class ItemStackRequestHandler {
     }
 
     private static void SetItem(RequestState state, SlotKey key, ItemStack? item, ContainerEnumName name, uint? dynamicId) {
-        if (name == ContainerEnumName.Cursor)
-            dynamicId = state.Cursor.DynamicId;
+        if (name == ContainerEnumName.Cursor) dynamicId = state.Cursor.DynamicId;
 
         state.Staged[key] = item;
         state.StagedClientRequestNetIds[key] = state.ClientRequestNetId;
-        if (state.ChangedSlotSet.Add(key))
-            state.ChangedSlots.Add(key);
+        if (state.ChangedSlotSet.Add(key)) state.ChangedSlots.Add(key);
 
         ResponseSlotKey responseKey = new(key, name, dynamicId);
-        if (state.ResponseSlotSet.Add(responseKey))
-            state.ResponseSlots.Add(responseKey);
+        if (state.ResponseSlotSet.Add(responseKey)) state.ResponseSlots.Add(responseKey);
     }
 
     private static ItemStackResponseInfo ErrorResponse(int requestId) => new() {
@@ -1228,8 +1184,7 @@ internal sealed class ItemStackRequestHandler {
                 ConsumeActionData consume => IsArmorSlot(consume.Source),
                 _ => false
             };
-            if (touchesArmor)
-                return true;
+            if (touchesArmor) return true;
         }
 
         return false;
@@ -1239,29 +1194,27 @@ internal sealed class ItemStackRequestHandler {
         slot.ContainerName.ContainerName == ContainerEnumName.Armor;
 
     private static bool IsCraftSource(RequestState state, Container container) {
-        if (state.CraftSources is null)
-            return false;
+        if (state.CraftSources is null) return false;
         foreach (Container source in state.CraftSources) {
-            if (ReferenceEquals(source, container))
-                return true;
+            if (ReferenceEquals(source, container)) return true;
         }
+
         return false;
     }
 
     private static int GetCraftSourceIndex(RequestState state, SlotKey key) {
         int index = 0;
         foreach (Container source in state.CraftSources!) {
-            if (ReferenceEquals(source, key.Container))
-                return index + key.Slot;
+            if (ReferenceEquals(source, key.Container)) return index + key.Slot;
             index += source.ContainerSize;
         }
+
         return -1;
     }
 
     private static SlotKey GetCraftSourceKey(RequestState state, int index) {
         foreach (Container source in state.CraftSources!) {
-            if (index < source.ContainerSize)
-                return new SlotKey(source, index);
+            if (index < source.ContainerSize) return new SlotKey(source, index);
             index -= source.ContainerSize;
         }
         throw new ArgumentOutOfRangeException(nameof(index));

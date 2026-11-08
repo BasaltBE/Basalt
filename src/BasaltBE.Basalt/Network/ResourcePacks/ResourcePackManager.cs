@@ -16,8 +16,7 @@ internal sealed class ResourcePackManager {
         Packs = packs;
         Required = required;
         packsById = new Dictionary<Guid, ResourcePack>(packs.Length);
-        foreach (ResourcePack pack in packs)
-            packsById.Add(pack.Id, pack);
+        foreach (ResourcePack pack in packs) packsById.Add(pack.Id, pack);
     }
 
     public readonly ResourcePack[] Packs;
@@ -31,8 +30,7 @@ internal sealed class ResourcePackManager {
         foreach (string packDirectory in Directory.EnumerateDirectories(directory).Order(StringComparer.Ordinal)) {
             if (!File.Exists(Path.Combine(packDirectory, "manifest.json"))) continue;
             ResourcePack pack = ResourcePack.Load(packDirectory);
-            if (!ids.Add(pack.Id))
-                throw new InvalidDataException($"Resource pack UUID '{pack.Id}' is duplicated.");
+            if (!ids.Add(pack.Id)) throw new InvalidDataException($"Resource pack UUID '{pack.Id}' is duplicated.");
             packs.Add(pack);
         }
 
@@ -42,8 +40,7 @@ internal sealed class ResourcePackManager {
             using FileStream configurationStream = File.OpenRead(configurationPath);
             configuration = JsonSerializer.Deserialize<ResourcePackConfiguration>(configurationStream, ConfigurationJsonOptions)
                 ?? throw new InvalidDataException($"Resource pack configuration is empty: {configurationPath}.");
-        }
-        else {
+        } else {
             configuration = new ResourcePackConfiguration {
                 EnabledPacks = new string[packs.Count]
             };
@@ -52,8 +49,7 @@ internal sealed class ResourcePackManager {
             File.WriteAllText(configurationPath, JsonSerializer.Serialize(configuration, ConfigurationJsonOptions));
         }
 
-        if (configuration.EnabledPacks is null)
-            return new ResourcePackManager([.. packs], configuration.Required);
+        if (configuration.EnabledPacks is null) return new ResourcePackManager([.. packs], configuration.Required);
 
         HashSet<Guid> enabledIds = [];
         foreach (string packId in configuration.EnabledPacks) {
@@ -64,8 +60,7 @@ internal sealed class ResourcePackManager {
 
         ResourcePack[] enabledPacks = new ResourcePack[enabledIds.Count];
         int enabledCount = 0;
-        foreach (ResourcePack pack in packs)
-            if (enabledIds.Contains(pack.Id)) enabledPacks[enabledCount++] = pack;
+        foreach (ResourcePack pack in packs) if (enabledIds.Contains(pack.Id)) enabledPacks[enabledCount++] = pack;
         Array.Resize(ref enabledPacks, enabledCount);
         return new ResourcePackManager(enabledPacks, configuration.Required);
     }

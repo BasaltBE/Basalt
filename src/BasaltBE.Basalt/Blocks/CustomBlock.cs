@@ -194,14 +194,15 @@ public sealed class CustomBlock
 
         if (States.ContainsKey(identifier))
             throw new InvalidOperationException($"State '{identifier}' is already defined.");
-        int count = values.Distinct().Count();
+        object[] uniqueValues = values.Distinct().ToArray();
+        int count = uniqueValues.Length;
 
         foreach (object[] existing in States.Values)
             count = checked(count * existing.Length);
         if (count > 65536)
             throw new ArgumentException("A block can have at most 65536 permutations.", nameof(values));
 
-        States.Add(identifier, values.Distinct().ToArray());
+        States.Add(identifier, uniqueValues);
         Type.States = States.Keys.ToArray();
         return this;
     }

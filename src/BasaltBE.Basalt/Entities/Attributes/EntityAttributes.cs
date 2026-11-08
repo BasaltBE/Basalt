@@ -20,6 +20,7 @@ public sealed class EntityAttributes {
                 Current = attribute.Current
             };
         }
+
         return attributes;
     }
 
@@ -46,8 +47,7 @@ public sealed class EntityAttributes {
             Math.Clamp(@default, defaultMinimum, defaultMaximum),
             modifiers
         );
-        if (values.TryGetValue(name, out EntityAttribute existing) && Same(existing, attribute))
-            return false;
+        if (values.TryGetValue(name, out EntityAttribute existing) && Same(existing, attribute)) return false;
 
         values[name] = attribute;
         (dirty ??= new HashSet<string>(StringComparer.Ordinal)).Add(name);
@@ -55,11 +55,10 @@ public sealed class EntityAttributes {
     }
 
     public bool SetCurrent(string name, float current) {
-        if (!values.TryGetValue(name, out EntityAttribute existing))
-            return false;
+        if (!values.TryGetValue(name, out EntityAttribute existing)) return false;
+
         float value = Math.Clamp(current, existing.Minimum, existing.Maximum);
-        if (existing.Current == value)
-            return false;
+        if (existing.Current == value) return false;
 
         values[name] = new EntityAttribute(
             existing.Name,
@@ -80,17 +79,13 @@ public sealed class EntityAttributes {
         ArgumentException.ThrowIfNullOrWhiteSpace(modifier.Id);
         ArgumentOutOfRangeException.ThrowIfNegative(modifier.Operation);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(modifier.Operation, 2);
-        if (!values.TryGetValue(name, out EntityAttribute existing))
-            return false;
+        if (!values.TryGetValue(name, out EntityAttribute existing)) return false;
 
         AttributeModifier[] modifiers = [.. existing.Modifiers];
         int index = Array.FindIndex(modifiers, item => item.Id == modifier.Id);
-        if (index >= 0)
-            modifiers[index] = modifier;
-        else
-            Array.Resize(ref modifiers, modifiers.Length + 1);
-        if (index < 0)
-            modifiers[^1] = modifier;
+        if (index >= 0) modifiers[index] = modifier;
+        else Array.Resize(ref modifiers, modifiers.Length + 1);
+        if (index < 0) modifiers[^1] = modifier;
 
         float current = Calculate(existing.Default, modifiers, existing.Minimum, existing.Maximum);
         values[name] = new EntityAttribute(
@@ -108,12 +103,10 @@ public sealed class EntityAttributes {
     }
 
     public bool RemoveModifier(string name, string id) {
-        if (!values.TryGetValue(name, out EntityAttribute existing))
-            return false;
+        if (!values.TryGetValue(name, out EntityAttribute existing)) return false;
 
         int index = Array.FindIndex(existing.Modifiers, modifier => modifier.Id == id);
-        if (index < 0)
-            return false;
+        if (index < 0) return false;
 
         AttributeModifier[] modifiers = new AttributeModifier[existing.Modifiers.Length - 1];
         Array.Copy(existing.Modifiers, 0, modifiers, 0, index);
@@ -133,19 +126,15 @@ public sealed class EntityAttributes {
     }
 
     public UpdateAttributesPacket? CreateUpdate(ulong runtimeId, bool all = false, ulong tick = 0) {
-        if (values.Count == 0 || (!all && dirty is null))
-            return null;
+        if (values.Count == 0 || (!all && dirty is null)) return null;
 
         int count = all ? values.Count : dirty!.Count;
         AttributeData[] attributes = new AttributeData[count];
         int index = 0;
         if (all) {
-            foreach (EntityAttribute attribute in values.Values)
-                attributes[index++] = attribute.ToProtocolData();
-        }
-        else {
-            foreach (string name in dirty!)
-                attributes[index++] = values[name].ToProtocolData();
+            foreach (EntityAttribute attribute in values.Values) attributes[index++] = attribute.ToProtocolData();
+        } else {
+            foreach (string name in dirty!) attributes[index++] = values[name].ToProtocolData();
         }
 
         dirty = null;
@@ -166,8 +155,7 @@ public sealed class EntityAttributes {
         for (int operation = 0; operation <= 2; operation++) {
             for (int i = 0; i < modifiers.Length; i++) {
                 AttributeModifier modifier = modifiers[i];
-                if (modifier.Operation != operation)
-                    continue;
+                if (modifier.Operation != operation) continue;
 
                 value = operation switch {
                     0 => value + modifier.Amount,
@@ -177,6 +165,7 @@ public sealed class EntityAttributes {
                 };
             }
         }
+
         return Math.Clamp(value, minimum, maximum);
     }
 }

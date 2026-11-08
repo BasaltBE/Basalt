@@ -23,8 +23,7 @@ public sealed class CustomItem {
         Type.PropertiesPayload.Stackable = Type.Stackable;
         Type.PropertiesPayload.ItemTags = Type.Tags;
 
-        if (properties.Get<IntTag>("max_stack_size") is null)
-            properties.Add("max_stack_size", new IntTag { Value = Type.MaxAmount });
+        if (properties.Get<IntTag>("max_stack_size") is null) properties.Add("max_stack_size", new IntTag { Value = Type.MaxAmount });
 
         if (properties.Get<ByteTag>("can_destroy_in_creative") is null)
             properties.Add("can_destroy_in_creative", new ByteTag { Value = Type.CanDestroyInCreative ? (byte)1 : (byte)0 });
@@ -47,8 +46,7 @@ public sealed class CustomItem {
     }
 
     public CustomItem SetMaxStackSize(int size) {
-        if (size is < 1 or > 255)
-            throw new ArgumentOutOfRangeException(nameof(size), "Stack size must be from 1 to 255.");
+        if (size is < 1 or > 255) throw new ArgumentOutOfRangeException(nameof(size), "Stack size must be from 1 to 255.");
         Mutable();
         Type.MaxAmount = size;
         Type.Stackable = size > 1;
@@ -60,14 +58,12 @@ public sealed class CustomItem {
 
     public CustomItem SetTags(params string[] tags) {
         ArgumentNullException.ThrowIfNull(tags);
-        if (tags.Any(string.IsNullOrWhiteSpace))
-            throw new ArgumentException("Item tags must be non-empty identifiers.", nameof(tags));
+        if (tags.Any(string.IsNullOrWhiteSpace)) throw new ArgumentException("Item tags must be non-empty identifiers.", nameof(tags));
         Mutable();
         Type.Tags = tags.Distinct(StringComparer.Ordinal).ToArray();
         Type.PropertiesPayload.ItemTags = Type.Tags;
         ListTag list = new() { ElementType = TagType.String };
-        foreach (string tag in Type.Tags)
-            list.Value.Add(new StringTag { Value = tag });
+        foreach (string tag in Type.Tags) list.Value.Add(new StringTag { Value = tag });
         return SetComponent("minecraft:tags", new CompoundTag().Add("tags", list));
     }
 
@@ -140,8 +136,7 @@ public sealed class CustomItem {
     }
 
     public CustomItem SetDigger(float speed, params string[] blockTags) {
-        if (!float.IsFinite(speed) || speed <= 0 || (double)speed > int.MaxValue)
-            throw new ArgumentOutOfRangeException(nameof(speed));
+        if (!float.IsFinite(speed) || speed <= 0 || (double)speed > int.MaxValue) throw new ArgumentOutOfRangeException(nameof(speed));
         ArgumentNullException.ThrowIfNull(blockTags);
         if (blockTags.Any(tag => string.IsNullOrWhiteSpace(tag) || tag.Any(character =>
             !char.IsAsciiLetterOrDigit(character) && character is not (':' or '_' or '-' or '.' or '/'))))
@@ -192,8 +187,7 @@ public sealed class CustomItem {
     }
 
     public CustomItem SetArmor(ArmorSlot slot, int protection, int toughness = 0) {
-        if (!Enum.IsDefined(slot) || protection is < 0 or > 20 || toughness < 0)
-            throw new ArgumentOutOfRangeException(nameof(slot));
+        if (!Enum.IsDefined(slot) || protection is < 0 or > 20 || toughness < 0) throw new ArgumentOutOfRangeException(nameof(slot));
         Mutable();
         SetMaxStackSize(1);
         Type.ArmorSlot = slot;
@@ -210,8 +204,7 @@ public sealed class CustomItem {
     }
 
     public CustomItem SetEnchantability(int value, string slot = "all") {
-        if (value is < 0 or > byte.MaxValue)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        if (value is < 0 or > byte.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
         ArgumentException.ThrowIfNullOrWhiteSpace(slot);
         Mutable();
         Type.Enchantability = value;
@@ -239,8 +232,7 @@ public sealed class CustomItem {
         if (category is < CreativeItemCategory.Construction or > CreativeItemCategory.ItemCommandOnly)
             throw new ArgumentOutOfRangeException(nameof(category));
         Mutable();
-        if (category == CreativeItemCategory.ItemCommandOnly)
-        {
+        if (category == CreativeItemCategory.ItemCommandOnly) {
             Type.Catalog = null;
             return this;
         }
@@ -256,8 +248,7 @@ public sealed class CustomItem {
     public CustomItem SetComponent(string identifier, Tag data) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(data);
-        if (data.Type == TagType.End)
-            throw new ArgumentException("A component cannot be an End tag.", nameof(data));
+        if (data.Type == TagType.End) throw new ArgumentException("A component cannot be an End tag.", nameof(data));
         if (identifier is "item_properties" or "item_tags")
             throw new ArgumentException("Use item setters for properties and tags.", nameof(identifier));
         Mutable();

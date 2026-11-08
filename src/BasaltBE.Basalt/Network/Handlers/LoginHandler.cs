@@ -40,8 +40,7 @@ internal sealed class LoginHandler(NetworkServer network) {
     }
 
     private void QueueLoginAuthentication(NethernetPeer peer, ReadOnlyMemory<byte> connectionRequest) {
-        if (Volatile.Read(ref disposed) != 0)
-            return;
+        if (Volatile.Read(ref disposed) != 0) return;
         if (Interlocked.Increment(ref activeAuthentications) > MaximumConcurrentAuthentications) {
             Interlocked.Decrement(ref activeAuthentications);
             network.Disconnect(peer);
@@ -62,18 +61,15 @@ internal sealed class LoginHandler(NetworkServer network) {
             Exception? error = null;
             try {
                 login = handler.authenticator.Authenticate(request.ConnectionRequest);
-            }
-            catch (Exception authenticationError) {
+            } catch (Exception authenticationError) {
                 error = authenticationError;
-            }
-            finally {
+            } finally {
                 CryptographicOperations.ZeroMemory(request.ConnectionRequest);
                 Interlocked.Decrement(ref handler.activeAuthentications);
             }
 
             if (Volatile.Read(ref handler.disposed) != 0) {
-                if (login is { } authenticated)
-                    CryptographicOperations.ZeroMemory(authenticated.Skin);
+                if (login is { } authenticated) CryptographicOperations.ZeroMemory(authenticated.Skin);
                 return;
             }
 
@@ -88,15 +84,13 @@ internal sealed class LoginHandler(NetworkServer network) {
     }
 
     internal void ProcessCompletions(World world) {
-        if (!ReferenceEquals(world, network.Server.GetWorld()))
-            return;
+        if (!ReferenceEquals(world, network.Server.GetWorld())) return;
 
         for (int processed = 0;
              processed < MaximumConcurrentAuthentications && completed.TryDequeue(out LoginCompletion completion);
              processed++) {
             if (!pending.TryRemove(completion.Peer, out _) || !network.PeerConnected(completion.Peer)) {
-                if (completion.Login is { } abandoned)
-                    CryptographicOperations.ZeroMemory(abandoned.Skin);
+                if (completion.Login is { } abandoned) CryptographicOperations.ZeroMemory(abandoned.Skin);
                 continue;
             }
 
@@ -110,8 +104,7 @@ internal sealed class LoginHandler(NetworkServer network) {
 
             try {
                 Complete(completion.Peer, completion.Login!.Value);
-            }
-            catch (Exception error) when (
+            } catch (Exception error) when (
                 error is InvalidDataException or InvalidOperationException or ArgumentException or ObjectDisposedException) {
                 Logger.Scoped("Network").Warn(
                     $"Login failed for {completion.Peer.ConnectionId}: {error.Message}"
@@ -154,16 +147,14 @@ internal sealed class LoginHandler(NetworkServer network) {
             login.DeviceName,
             login.Skin
         );
-        if (playerData is not null)
-            player.LoadData(playerData, restoredLocation);
+        if (playerData is not null) player.LoadData(playerData, restoredLocation);
 
         try {
             network.AddPlayer(player);
             player.SendPacket(new PlayStatusPacket { Status = PlayStatus.LoginSuccess });
             network.Server.Events.Emit(new PlayerJoinEvent(player));
             Logger.Scoped("Network").Info($"Player {player.Username} Logged in.");
-        }
-        catch {
+        } catch {
             network.RemovePlayer(peer);
             player.Dispose();
             throw;
@@ -171,8 +162,7 @@ internal sealed class LoginHandler(NetworkServer network) {
     }
 
     internal void Dispose() {
-        if (Interlocked.Exchange(ref disposed, 1) != 0)
-            return;
+        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
         authenticator.Dispose();
         pending.Clear();
         completed.Clear();

@@ -18,14 +18,12 @@ public sealed class PlayerBucketTrait(Entity entity) : EntityTrait(entity) {
         BlockPos position,
         byte face
     ) {
-        if (item is null || face > 5)
-            return false;
+        if (item is null || face > 5) return false;
 
         bool collecting = item.Type.Identifier == "minecraft:bucket";
         bool water = item.Type.Identifier == "minecraft:water_bucket";
         bool lava = item.Type.Identifier == "minecraft:lava_bucket";
-        if (!collecting && !water && !lava)
-            return false;
+        if (!collecting && !water && !lava) return false;
 
         Player player = (Player)Entity;
         if (collecting) {
@@ -38,18 +36,15 @@ public sealed class PlayerBucketTrait(Entity entity) : EntityTrait(entity) {
                 : "minecraft:lava_bucket";
             BlockPermutation air = BlockPalette.FindDefaultPermutation("minecraft:air")!;
             bool creative = player.Abilities.Get(PlayerAbility.InstantBuild);
-            if (!creative && !player.Dimension.SetPermutation(position.X, position.Y, position.Z, air))
-                return false;
+            if (!creative && !player.Dimension.SetPermutation(position.X, position.Y, position.Z, air)) return false;
 
             inventory.Inventory.SetItem(inventory.SelectedSlot, new ItemStack(filledBucket));
-            if (!creative)
-                UpdateFluid(player.Dimension, position.X, position.Y, position.Z, air);
+            if (!creative) UpdateFluid(player.Dimension, position.X, position.Y, position.Z, air);
             PlaySound(player, position, clicked.Identifier == "minecraft:water" ? "bucket_fill_water" : "bucket_fill_lava");
             return true;
         }
 
-        if (!player.Abilities.Get(PlayerAbility.Build))
-            return false;
+        if (!player.Abilities.Get(PlayerAbility.Build)) return false;
 
         int x = position.X;
         int y = position.Y;
@@ -69,12 +64,10 @@ public sealed class PlayerBucketTrait(Entity entity) : EntityTrait(entity) {
             "minecraft:lava" or "minecraft:flowing_lava") {
             bool targetWater = target.Identifier is "minecraft:water" or "minecraft:flowing_water";
             if (water == targetWater) {
-                if (target.Identifier is "minecraft:water" or "minecraft:lava")
-                    return false;
+                if (target.Identifier is "minecraft:water" or "minecraft:lava") return false;
 
                 BlockPermutation source = BlockPalette.FindDefaultPermutation(water ? "minecraft:water" : "minecraft:lava")!;
-                if (!player.Dimension.SetPermutation(x, y, z, source))
-                    return false;
+                if (!player.Dimension.SetPermutation(x, y, z, source)) return false;
                 if (!player.Abilities.Get(PlayerAbility.InstantBuild))
                     inventory.Inventory.SetItem(inventory.SelectedSlot, new ItemStack("minecraft:bucket"));
                 UpdateFluid(player.Dimension, x, y, z, source);
@@ -86,8 +79,7 @@ public sealed class PlayerBucketTrait(Entity entity) : EntityTrait(entity) {
                 ? "minecraft:obsidian"
                 : "minecraft:cobblestone";
             BlockPermutation solid = BlockPalette.FindDefaultPermutation(solidIdentifier)!;
-            if (!player.Dimension.SetPermutation(x, y, z, solid))
-                return false;
+            if (!player.Dimension.SetPermutation(x, y, z, solid)) return false;
             if (!player.Abilities.Get(PlayerAbility.InstantBuild))
                 inventory.Inventory.SetItem(inventory.SelectedSlot, new ItemStack("minecraft:bucket"));
             UpdateFluid(player.Dimension, x, y, z, solid);
@@ -97,8 +89,7 @@ public sealed class PlayerBucketTrait(Entity entity) : EntityTrait(entity) {
 
         string fluidIdentifier = water ? "minecraft:water" : "minecraft:lava";
         BlockPermutation fluid = BlockPalette.FindDefaultPermutation(fluidIdentifier)!;
-        if (!player.Dimension.SetPermutation(x, y, z, fluid))
-            return false;
+        if (!player.Dimension.SetPermutation(x, y, z, fluid)) return false;
 
         if (!player.Abilities.Get(PlayerAbility.InstantBuild))
             inventory.Inventory.SetItem(inventory.SelectedSlot, new ItemStack("minecraft:bucket"));

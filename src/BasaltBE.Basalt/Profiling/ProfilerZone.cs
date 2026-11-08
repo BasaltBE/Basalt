@@ -10,7 +10,6 @@ public readonly struct ProfilerZone : IDisposable {
     }
 
     public void Dispose() {
-        if (Profiler.Enabled)
-            TracyEmitZoneEnd(Context);
+        if (Profiler.Enabled) TracyEmitZoneEnd(Context);
     }
 }

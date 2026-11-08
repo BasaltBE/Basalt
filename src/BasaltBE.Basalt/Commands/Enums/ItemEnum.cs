@@ -11,13 +11,12 @@ public sealed class ItemEnum() : CustomEnum("Item", []) {
 
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
+
         string identifier = CommandReader.Text(token);
-        if (!identifier.Contains(':'))
-            identifier = "minecraft:" + identifier;
-        if (identifier is "minecraft:log" or "minecraft:log2")
-            return false;
+        if (!identifier.Contains(':')) identifier = "minecraft:" + identifier;
+        if (identifier is "minecraft:log" or "minecraft:log2") return false;
+
         value = ItemPalette.Find(identifier);
         return value is not null;
     }

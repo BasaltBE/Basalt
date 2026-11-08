@@ -42,8 +42,7 @@ internal sealed class RedstoneController {
             return;
 
         waiting.Remove(piston);
-        if (waiting.Count == 0)
-            pistonsWaitingByChunk.Remove(missingChunk);
+        if (waiting.Count == 0) pistonsWaitingByChunk.Remove(missingChunk);
     }
 
     internal void WaitForPiston(int pistonX, int pistonY, int pistonZ, int chunkX, int chunkZ) {
@@ -64,12 +63,11 @@ internal sealed class RedstoneController {
         for (int subChunkY = minimumSubChunkY; subChunkY < minimumSubChunkY + subChunkCount; subChunkY++) {
             foreach ((int X, int Z) offset in HorizontalOffsets) {
                 Chunk? neighborChunk = dimension.GetChunk(chunk.X + offset.X, chunk.Z + offset.Z);
-                if (neighborChunk is null)
-                    continue;
+                if (neighborChunk is null) continue;
+
                 bool neighborHasRedstone = neighborChunk.GetSubChunk(subChunkY) is { HasRedstone: true };
                 bool loadedHasRedstone = chunk.GetSubChunk(subChunkY) is { HasRedstone: true };
-                if (!neighborHasRedstone && !loadedHasRedstone)
-                    continue;
+                if (!neighborHasRedstone && !loadedHasRedstone) continue;
 
                 int outside = offset.X != 0
                     ? chunk.X * 16 + (offset.X < 0 ? -1 : 16)
@@ -86,8 +84,7 @@ internal sealed class RedstoneController {
                             connectionDirty.Add(wire);
                             if (components.TryGetValue(wire, out WireNode cached)) {
                                 invalidComponents.Add(cached.Component);
-                                foreach (Position member in cached.Component.Wires)
-                                    chunkLoadRebuild.Add(member);
+                                foreach (Position member in cached.Component.Wires) chunkLoadRebuild.Add(member);
                             }
                         }
 
@@ -104,8 +101,7 @@ internal sealed class RedstoneController {
                             if (IsNeighborDependentDevice(loadedBlock.Identifier)) {
                                 if (loadedBlock.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
                                     ScheduleRepeaterUpdate(dimension, edgeX, y, edgeZ, loadedBlock);
-                                else
-                                    dimension.ScheduleBlockUpdate(edgeX, y, edgeZ, DeviceDelay(loadedBlock));
+                                else dimension.ScheduleBlockUpdate(edgeX, y, edgeZ, DeviceDelay(loadedBlock));
                             }
                         }
                         if (neighborHasRedstone && IsBoundaryReactive(neighborBlock)) {
@@ -117,15 +113,13 @@ internal sealed class RedstoneController {
                         if (neighborHasRedstone && IsNeighborDependentDevice(neighborBlock.Identifier)) {
                             if (neighborBlock.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
                                 ScheduleRepeaterUpdate(dimension, x, y, z, neighborBlock);
-                            else
-                                dimension.ScheduleBlockUpdate(x, y, z, DeviceDelay(neighborBlock));
+                            else dimension.ScheduleBlockUpdate(x, y, z, DeviceDelay(neighborBlock));
                         }
                     }
                 }
             }
 
-            if (chunk.GetSubChunk(subChunkY) is not { HasRedstone: true })
-                continue;
+            if (chunk.GetSubChunk(subChunkY) is not { HasRedstone: true }) continue;
 
             int minimumY = subChunkY << 4;
             for (int x = 0; x < 16; x++) {
@@ -144,8 +138,7 @@ internal sealed class RedstoneController {
                                 for (int neighborY = y - 1; neighborY <= y + 1; neighborY++) {
                                     for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
                                         Position neighbor = new(wireX + offsetX, neighborY, wireZ + offsetZ);
-                                        if (!components.TryGetValue(neighbor, out WireNode wire))
-                                            continue;
+                                        if (!components.TryGetValue(neighbor, out WireNode wire)) continue;
 
                                         Component component = wire.Component;
                                         bool pending = dirtyComponents.Remove(component) | invalidComponents.Remove(component);
@@ -153,8 +146,7 @@ internal sealed class RedstoneController {
                                             components.Remove(cached);
                                             sourcePowers.Remove(cached);
                                             chunkLoadRebuild.Add(cached);
-                                            if (pending)
-                                                dirty.Add(cached);
+                                            if (pending) dirty.Add(cached);
                                         }
                                     }
                                 }
@@ -176,8 +168,7 @@ internal sealed class RedstoneController {
                 Chunk? actorChunk = (offsetX, offsetZ) == (0, 0)
                     ? chunk
                     : dimension.GetChunk(chunk.X + offsetX, chunk.Z + offsetZ);
-                if (actorChunk?.blockActors is not { } actors)
-                    continue;
+                if (actorChunk?.blockActors is not { } actors) continue;
 
                 foreach (((int X, int Y, int Z) position, CompoundTag actor) in actors) {
                     if (actor.Get<StringTag>("id")?.Value == "PistonArm")
@@ -186,8 +177,7 @@ internal sealed class RedstoneController {
             }
         }
 
-        if (!pistonsWaitingByChunk.Remove((chunk.X, chunk.Z), out HashSet<Position>? waitingPistons))
-            return;
+        if (!pistonsWaitingByChunk.Remove((chunk.X, chunk.Z), out HashSet<Position>? waitingPistons)) return;
 
         foreach (Position piston in waitingPistons) {
             pistonWaitChunks.Remove(piston);
@@ -226,8 +216,7 @@ internal sealed class RedstoneController {
             }
         }
 
-        if (chunkLoadRebuild.Contains(new Position(x, y, z)))
-            return;
+        if (chunkLoadRebuild.Contains(new Position(x, y, z))) return;
 
         foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
             int observerX = x + offsetX;
@@ -251,8 +240,7 @@ internal sealed class RedstoneController {
             for (int offsetY = -1; offsetY <= 1; offsetY++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
                     Position position = new(x + offsetX, y + offsetY, z + offsetZ);
-                    if (!components.TryGetValue(position, out WireNode wire))
-                        continue;
+                    if (!components.TryGetValue(position, out WireNode wire)) continue;
 
                     invalidComponents.Add(wire.Component);
                 }
@@ -280,8 +268,7 @@ internal sealed class RedstoneController {
             return previous.Identifier != current.Identifier ||
                 previous.State.Values.GetValueOrDefault("button_pressed_bit") != current.State.Values.GetValueOrDefault("button_pressed_bit");
 
-        if (IsTorch(previous.Identifier) || IsTorch(current.Identifier))
-            return previous.Identifier != current.Identifier;
+        if (IsTorch(previous.Identifier) || IsTorch(current.Identifier)) return previous.Identifier != current.Identifier;
 
         if (previous.Identifier == "minecraft:observer" || current.Identifier == "minecraft:observer")
             return previous.Identifier != current.Identifier ||
@@ -302,21 +289,18 @@ internal sealed class RedstoneController {
 
     internal void MarkPowerChanged(Dimension dimension, int x, int y, int z) {
         BlockPermutation source = dimension.GetPermutation(x, y, z);
-        if (!IsComparator(source.Identifier))
-            comparatorPowers.Remove(new Position(x, y, z));
+        if (!IsComparator(source.Identifier)) comparatorPowers.Remove(new Position(x, y, z));
 
         foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
             int neighborX = x + offsetX;
             int neighborY = y + offsetY;
             int neighborZ = z + offsetZ;
             BlockPermutation neighbor = dimension.GetPermutation(neighborX, neighborY, neighborZ);
-            if (IsWire(neighbor))
-                dirty.Add(new Position(neighborX, neighborY, neighborZ));
+            if (IsWire(neighbor)) dirty.Add(new Position(neighborX, neighborY, neighborZ));
             if (IsPowerDevice(neighbor.Identifier)) {
                 if (neighbor.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
                     ScheduleRepeaterUpdate(dimension, neighborX, neighborY, neighborZ, neighbor);
-                else
-                    dimension.ScheduleBlockUpdate(neighborX, neighborY, neighborZ, DeviceDelay(neighbor));
+                else dimension.ScheduleBlockUpdate(neighborX, neighborY, neighborZ, DeviceDelay(neighbor));
             }
         }
 
@@ -324,17 +308,14 @@ internal sealed class RedstoneController {
             source.State.Values.GetValueOrDefault("torch_facing_direction") is string direction &&
             BlockDirections.TorchSupportByDirection.TryGetValue(direction, out var torchSupport)) {
             foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
-                if ((offsetX, offsetY, offsetZ) == torchSupport)
-                    continue;
+                if ((offsetX, offsetY, offsetZ) == torchSupport) continue;
 
                 int neighborX = x + offsetX;
                 int neighborY = y + offsetY;
                 int neighborZ = z + offsetZ;
                 BlockPermutation neighbor = dimension.GetPermutation(neighborX, neighborY, neighborZ);
-                if (IsWire(neighbor))
-                    dirty.Add(new Position(neighborX, neighborY, neighborZ));
-                if (IsSolid(neighbor))
-                    ScheduleAttachedTorches(dimension, x, y, z, neighborX, neighborY, neighborZ, 2);
+                if (IsWire(neighbor)) dirty.Add(new Position(neighborX, neighborY, neighborZ));
+                if (IsSolid(neighbor)) ScheduleAttachedTorches(dimension, x, y, z, neighborX, neighborY, neighborZ, 2);
             }
             return;
         }
@@ -343,8 +324,7 @@ internal sealed class RedstoneController {
             int supportX = x + supportOffset.X;
             int supportY = y + supportOffset.Y;
             int supportZ = z + supportOffset.Z;
-            if (BlockPalette.FindType(dimension.GetPermutation(supportX, supportY, supportZ).Identifier)?.Solid != true)
-                continue;
+            if (BlockPalette.FindType(dimension.GetPermutation(supportX, supportY, supportZ).Identifier)?.Solid != true) continue;
 
             ScheduleAttachedTorches(dimension, x, y, z, supportX, supportY, supportZ, 2);
         }
@@ -365,12 +345,10 @@ internal sealed class RedstoneController {
             if (IsPowerDevice(neighbor.Identifier)) {
                 if (neighbor.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
                     ScheduleRepeaterUpdate(dimension, supportX, supportY, supportZ, neighbor);
-                else
-                    dimension.ScheduleBlockUpdate(supportX, supportY, supportZ, DeviceDelay(neighbor));
+                else dimension.ScheduleBlockUpdate(supportX, supportY, supportZ, DeviceDelay(neighbor));
             }
 
-            if (!IsSolid(neighbor))
-                continue;
+            if (!IsSolid(neighbor)) continue;
 
             ScheduleAttachedTorches(dimension, x, y, z, supportX, supportY, supportZ, 1);
         }
@@ -380,8 +358,7 @@ internal sealed class RedstoneController {
         bool unknown = false;
         foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
             int? power = OutputPower(dimension, x + offsetX, y + offsetY, z + offsetZ, x, y, z);
-            if (power > 0)
-                return true;
+            if (power > 0) return true;
             unknown |= power is null;
         }
 
@@ -390,14 +367,11 @@ internal sealed class RedstoneController {
 
     internal int? InputPower(Dimension dimension, int x, int y, int z, int targetX, int targetY, int targetZ) {
         BlockPermutation? input = dimension.GetLoadedPermutation(x, y, z);
-        if (input is null)
-            return null;
-        if (IsWire(input) && input.State.Values.GetValueOrDefault("redstone_signal") is int signal)
-            return signal;
+        if (input is null) return null;
+        if (IsWire(input) && input.State.Values.GetValueOrDefault("redstone_signal") is int signal) return signal;
 
         int? directPower = OutputPower(dimension, x, y, z, targetX, targetY, targetZ);
-        if (directPower is null || directPower > 0)
-            return directPower;
+        if (directPower is null || directPower > 0) return directPower;
 
         int power = 0;
         bool unknown = false;
@@ -411,8 +385,7 @@ internal sealed class RedstoneController {
                 continue;
             }
             power = Math.Max(power, sourcePower.Value);
-            if (power == 15)
-                return power;
+            if (power == 15) return power;
         }
 
         return unknown ? null : power;
@@ -429,9 +402,9 @@ internal sealed class RedstoneController {
                 continue;
             }
             power = Math.Max(power, sidePower.Value);
-            if (power == 15)
-                return 15;
+            if (power == 15) return 15;
         }
+
         return unknown ? null : power;
     }
 
@@ -447,8 +420,7 @@ internal sealed class RedstoneController {
                 unknown = true;
                 continue;
             }
-            if (power > 0 && side.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
-                return true;
+            if (power > 0 && side.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater") return true;
         }
 
         return unknown ? null : false;
@@ -463,8 +435,7 @@ internal sealed class RedstoneController {
             actor ??= dimension.PlaceBlockActor(x, y, z, dimension.GetPermutation(x, y, z).Identifier, null, 0) as ComparatorBlockActor;
             actor?.SetOutputSignal(updated);
         }
-        if (comparatorPowers.GetValueOrDefault(position) == updated)
-            return;
+        if (comparatorPowers.GetValueOrDefault(position) == updated) return;
 
         comparatorPowers[position] = updated;
         MarkPowerChanged(dimension, x, y, z);
@@ -487,8 +458,7 @@ internal sealed class RedstoneController {
 
         foreach (Position position in connectionDirty) {
             BlockPermutation current = dimension.GetPermutation(position.X, position.Y, position.Z);
-            if (!IsWire(current))
-                continue;
+            if (!IsWire(current)) continue;
 
             connectionChanges.Values.Clear();
             if (GetConnection(dimension, position.X, position.Y, position.Z, 1, 0) is { } east)
@@ -499,8 +469,7 @@ internal sealed class RedstoneController {
                 connectionChanges.Values["redstone_south"] = south;
             if (GetConnection(dimension, position.X, position.Y, position.Z, -1, 0) is { } west)
                 connectionChanges.Values["redstone_west"] = west;
-            if (connectionChanges.Values.Count == 0)
-                continue;
+            if (connectionChanges.Values.Count == 0) continue;
             if (BlockPalette.Find(current.Identifier, current.State, connectionChanges) is not { } connected || connected == current)
                 continue;
 
@@ -513,27 +482,23 @@ internal sealed class RedstoneController {
             if (components.TryGetValue(root, out WireNode wire)) {
                 dirtyComponents.Add(wire.Component);
                 wire.Component.DirtySources.Add(wire.Index);
-            }
-            else {
+            } else {
                 foreach ((int offsetX, int offsetY, int offsetZ) in NeighborOffsets) {
                     Position neighbor = new(root.X + offsetX, root.Y + offsetY, root.Z + offsetZ);
-                    if (!components.TryGetValue(neighbor, out wire))
-                        continue;
+                    if (!components.TryGetValue(neighbor, out wire)) continue;
 
                     dirtyComponents.Add(wire.Component);
                     wire.Component.DirtySources.Add(wire.Index);
                 }
             }
-            if (components.ContainsKey(root) || !IsWire(dimension.GetPermutation(root.X, root.Y, root.Z)))
-                continue;
+            if (components.ContainsKey(root) || !IsWire(dimension.GetPermutation(root.X, root.Y, root.Z))) continue;
 
             visited.Clear();
             wires.Clear();
             unknownBoundaryWires.Clear();
             wiresToVisit.Enqueue(root);
             while (wiresToVisit.TryDequeue(out Position position)) {
-                if (!visited.Add(position) || !IsWire(dimension.GetPermutation(position.X, position.Y, position.Z)))
-                    continue;
+                if (!visited.Add(position) || !IsWire(dimension.GetPermutation(position.X, position.Y, position.Z))) continue;
 
                 wires.Add(position);
                 bool boundary = false;
@@ -547,8 +512,7 @@ internal sealed class RedstoneController {
 
                     BlockPermutation neighbor = dimension.GetPermutation(neighborX, position.Y, neighborZ);
                     bool solid = IsSolid(neighbor);
-                    if (IsWire(neighbor))
-                        wiresToVisit.Enqueue(new Position(neighborX, position.Y, neighborZ));
+                    if (IsWire(neighbor)) wiresToVisit.Enqueue(new Position(neighborX, position.Y, neighborZ));
 
                     if (solid && IsWire(dimension.GetPermutation(neighborX, position.Y + 1, neighborZ)))
                         wiresToVisit.Enqueue(new Position(neighborX, position.Y + 1, neighborZ));
@@ -557,8 +521,7 @@ internal sealed class RedstoneController {
                         wiresToVisit.Enqueue(new Position(neighborX, position.Y - 1, neighborZ));
                 }
 
-                if (boundary)
-                    unknownBoundaryWires.Add(position);
+                if (boundary) unknownBoundaryWires.Add(position);
             }
 
             Position[] positions = wires.ToArray();
@@ -569,8 +532,7 @@ internal sealed class RedstoneController {
                 rebuildingAfterLoad |= chunkLoadRebuild.Contains(positions[index]);
             }
             if (rebuildingAfterLoad) {
-                foreach (Position position in positions)
-                    chunkLoadRebuild.Add(position);
+                foreach (Position position in positions) chunkLoadRebuild.Add(position);
             }
 
             int[] neighbors = new int[positions.Length * 8];
@@ -587,15 +549,13 @@ internal sealed class RedstoneController {
 
                     bool solid = IsSolid(dimension.GetPermutation(neighborX, position.Y, neighborZ));
                     Position stepped = new(neighborX, position.Y + (solid ? 1 : -1), neighborZ);
-                    if (wireIndices.TryGetValue(stepped, out int stepLevel))
-                        neighbors[neighborIndex + direction * 2 + 1] = stepLevel;
+                    if (wireIndices.TryGetValue(stepped, out int stepLevel)) neighbors[neighborIndex + direction * 2 + 1] = stepLevel;
                 }
             }
 
             List<(int Index, byte Power)> boundaryPower = [];
             foreach (Position position in unknownBoundaryWires) {
-                if (!wireIndices.TryGetValue(position, out int index))
-                    continue;
+                if (!wireIndices.TryGetValue(position, out int index)) continue;
 
                 BlockPermutation boundaryWire = dimension.GetPermutation(position.X, position.Y, position.Z);
                 if (boundaryWire.State.Values.GetValueOrDefault("redstone_signal") is int signal && signal > 0)
@@ -609,8 +569,7 @@ internal sealed class RedstoneController {
                     sourcePowers.Add(positions[index], sourcePower);
                 }
                 component.SourcePower[index] = sourcePower;
-                if (component.SourcePower[index] > 0)
-                    component.Sources.Add(index);
+                if (component.SourcePower[index] > 0) component.Sources.Add(index);
 
                 BlockPermutation permutation = dimension.GetPermutation(positions[index].X, positions[index].Y, positions[index].Z);
                 if (permutation.State.Values.GetValueOrDefault("redstone_signal") is int signal && signal > 0) {
@@ -637,21 +596,16 @@ internal sealed class RedstoneController {
                 byte current = (byte)GetSourcePower(dimension, wires[index]);
                 component.SourcePower[index] = current;
                 sourcePowers[wires[index]] = current;
-                if (previous == current)
-                    continue;
+                if (previous == current) continue;
 
-                if (previous > 0)
-                    component.Sources.Remove(index);
-                if (current > 0)
-                    component.Sources.Add(index);
+                if (previous > 0) component.Sources.Remove(index);
+                if (current > 0) component.Sources.Add(index);
             }
             component.DirtySources.Clear();
-            foreach (Queue<int> bucket in powerBuckets)
-                bucket.Clear();
+            foreach (Queue<int> bucket in powerBuckets) bucket.Clear();
             foreach (int index in component.Sources) {
                 int power = component.SourcePower[index];
-                if (levels[index] >= power)
-                    continue;
+                if (levels[index] >= power) continue;
 
                 levels[index] = (byte)power;
                 AddCandidate(index);
@@ -660,38 +614,32 @@ internal sealed class RedstoneController {
             }
             foreach ((int index, byte boundaryPower) in component.BoundaryPower) {
                 int power = boundaryPower;
-                if (levels[index] >= power)
-                    continue;
+                if (levels[index] >= power) continue;
 
                 bool wasUnpowered = levels[index] == 0;
                 levels[index] = (byte)power;
                 AddCandidate(index);
-                if (wasUnpowered)
-                    component.NextActive.Add(index);
+                if (wasUnpowered) component.NextActive.Add(index);
                 powerBuckets[power].Enqueue(index);
             }
 
             for (int power = 15; power > 1; power--) {
                 Queue<int> bucket = powerBuckets[power];
                 while (bucket.TryDequeue(out int index)) {
-                    if (levels[index] != power)
-                        continue;
+                    if (levels[index] != power) continue;
 
                     int nextPower = power - 1;
                     int neighborStart = index * 8;
                     for (int neighborOffset = 0; neighborOffset < 8; neighborOffset++) {
                         int neighbor = component.Neighbors[neighborStart + neighborOffset];
-                        if (neighbor < 0)
-                            continue;
+                        if (neighbor < 0) continue;
 
-                        if (levels[neighbor] >= nextPower)
-                            continue;
+                        if (levels[neighbor] >= nextPower) continue;
 
                         bool wasUnpowered = levels[neighbor] == 0;
                         levels[neighbor] = (byte)nextPower;
                         AddCandidate(neighbor);
-                        if (wasUnpowered)
-                            component.NextActive.Add(neighbor);
+                        if (wasUnpowered) component.NextActive.Add(neighbor);
                         powerBuckets[nextPower].Enqueue(neighbor);
                     }
                 }
@@ -720,8 +668,7 @@ internal sealed class RedstoneController {
             component.Candidates.Clear();
 
             void AddCandidate(int index) {
-                if (component.CandidateFlags[index])
-                    return;
+                if (component.CandidateFlags[index]) return;
 
                 component.CandidateFlags[index] = true;
                 component.Candidates.Add(index);
@@ -738,8 +685,7 @@ internal sealed class RedstoneController {
             if (packet.BlocksChanged.Standards.Length != batch.Count)
                 packet.BlocksChanged.Standards = new UpdateSubChunkNetworkBlockInfo[batch.Count];
             int index = 0;
-            foreach (UpdateSubChunkNetworkBlockInfo block in batch.Pending.Values)
-                packet.BlocksChanged.Standards[index++] = block;
+            foreach (UpdateSubChunkNetworkBlockInfo block in batch.Pending.Values) packet.BlocksChanged.Standards[index++] = block;
 
             dimension.Broadcast(packet, position.X, position.Z);
             batch.Pending.Clear();
@@ -764,8 +710,7 @@ internal sealed class RedstoneController {
             return;
         }
 
-        if (batch.Count == batch.Blocks.Count)
-            batch.Blocks.Add(new UpdateSubChunkNetworkBlockInfo());
+        if (batch.Count == batch.Blocks.Count) batch.Blocks.Add(new UpdateSubChunkNetworkBlockInfo());
         UpdateSubChunkNetworkBlockInfo update = batch.Blocks[batch.Count];
         update.Position.X = x;
         update.Position.Y = y;
@@ -782,14 +727,11 @@ internal sealed class RedstoneController {
             int sourceX = position.X + offset.X;
             int sourceY = position.Y + offset.Y;
             int sourceZ = position.Z + offset.Z;
-            if (IsWire(dimension.GetPermutation(sourceX, sourceY, sourceZ)))
-                continue;
+            if (IsWire(dimension.GetPermutation(sourceX, sourceY, sourceZ))) continue;
 
             int componentPower = OutputPower(dimension, sourceX, sourceY, sourceZ, position.X, position.Y, position.Z) ?? 0;
-            if (componentPower > power)
-                power = componentPower;
-            if (power >= 15)
-                return 15;
+            if (componentPower > power) power = componentPower;
+            if (power >= 15) return 15;
         }
 
         return Math.Clamp(power, 0, 15);
@@ -809,8 +751,7 @@ internal sealed class RedstoneController {
             int torchX = supportX + offset.X;
             int torchY = supportY + offset.Y;
             int torchZ = supportZ + offset.Z;
-            if (torchX == sourceX && torchY == sourceY && torchZ == sourceZ)
-                continue;
+            if (torchX == sourceX && torchY == sourceY && torchZ == sourceZ) continue;
 
             BlockPermutation torch = dimension.GetPermutation(torchX, torchY, torchZ);
             if (!IsTorch(torch.Identifier) ||
@@ -860,28 +801,22 @@ internal sealed class RedstoneController {
             z
         );
         bool? locked = RepeaterLocked(dimension, x, y, z, input);
-        if (inputPower is null || locked is null)
-            return;
+        if (inputPower is null || locked is null) return;
 
         string target = inputPower > 0 && !locked.Value
             ? "minecraft:powered_repeater"
             : "minecraft:unpowered_repeater";
-        if (BlockPalette.Find(target, repeater.State) is not { } scheduled)
-            return;
+        if (BlockPalette.Find(target, repeater.State) is not { } scheduled) return;
 
         dimension.ScheduleBlockUpdate(x, y, z, DeviceDelay(repeater), scheduled);
     }
 
     int? OutputPower(Dimension dimension, int x, int y, int z, int targetX, int targetY, int targetZ) {
         BlockPermutation? source = dimension.GetLoadedPermutation(x, y, z);
-        if (source is null)
-            return null;
-        if (source.Identifier == "minecraft:lever")
-            return source.State.Values.GetValueOrDefault("open_bit") is true ? 15 : 0;
-        if (source.State.Values.GetValueOrDefault("button_pressed_bit") is true)
-            return 15;
-        if (IsWire(source))
-            return source.State.Values.GetValueOrDefault("redstone_signal") is int wirePower ? wirePower : 0;
+        if (source is null) return null;
+        if (source.Identifier == "minecraft:lever") return source.State.Values.GetValueOrDefault("open_bit") is true ? 15 : 0;
+        if (source.State.Values.GetValueOrDefault("button_pressed_bit") is true) return 15;
+        if (IsWire(source)) return source.State.Values.GetValueOrDefault("redstone_signal") is int wirePower ? wirePower : 0;
         if (source.Identifier is "minecraft:daylight_detector" or "minecraft:daylight_detector_inverted")
             return source.State.Values.GetValueOrDefault("redstone_signal") is int detectorPower ? detectorPower : 0;
         if (source.Identifier == "minecraft:redstone_torch") {
@@ -925,12 +860,10 @@ internal sealed class RedstoneController {
     static string? GetConnection(Dimension dimension, int x, int y, int z, int offsetX, int offsetZ) {
         int neighborX = x + offsetX;
         int neighborZ = z + offsetZ;
-        if (dimension.GetChunk(neighborX >> 4, neighborZ >> 4) is null)
-            return null;
+        if (dimension.GetChunk(neighborX >> 4, neighborZ >> 4) is null) return null;
 
         BlockPermutation neighbor = dimension.GetPermutation(neighborX, y, neighborZ);
-        if (IsWire(neighbor))
-            return "side";
+        if (IsWire(neighbor)) return "side";
         if (neighbor.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater" or
             "minecraft:powered_comparator" or "minecraft:unpowered_comparator") {
             if (neighbor.State.Values.GetValueOrDefault("minecraft:cardinal_direction") is string direction &&
@@ -944,8 +877,7 @@ internal sealed class RedstoneController {
             (observerFacing.X, observerFacing.Y, observerFacing.Z) == (offsetX, 0, offsetZ))
             return "side";
 
-        if (IsSolid(neighbor))
-            return IsWire(dimension.GetPermutation(neighborX, y + 1, neighborZ)) ? "up" : "none";
+        if (IsSolid(neighbor)) return IsWire(dimension.GetPermutation(neighborX, y + 1, neighborZ)) ? "up" : "none";
 
         return IsWire(dimension.GetPermutation(neighborX, y - 1, neighborZ)) ? "side" : "none";
     }

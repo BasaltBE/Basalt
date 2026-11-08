@@ -20,27 +20,26 @@ public sealed class GiveCommand : Command {
         Entity[] targets = context.Get<Entity[]>("player");
         ItemType item = context.Get<ItemType>("item");
         int amount = context.Get("amount", 1);
-        if (targets.Length == 0 || targets.Length > 128)
-            return new(false, "Select between 1 and 128 players.");
-        if (item.NetworkId == 0 || item.MaxAmount == 0)
-            return new(false, "This item cannot be given.");
+        if (targets.Length == 0 || targets.Length > 128) return new(false, "Select between 1 and 128 players.");
+        if (item.NetworkId == 0 || item.MaxAmount == 0) return new(false, "This item cannot be given.");
 
         int given = 0;
         List<string> recipients = [];
         foreach (Entity target in targets) {
-            if (target is not Player { Disposed: false, Spawned: true } player)
-                continue;
+            if (target is not Player { Disposed: false, Spawned: true } player) continue;
+
             using Lock.Scope tickSync = player.TickSync.EnterScope();
             using Lock.Scope sync = player.Sync.EnterScope();
-            if (player.Disposed || player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
-                continue;
+
+            if (player.Disposed || player.GetTrait<PlayerInventoryTrait>() is not { } inventory) continue;
+
             ItemStack? leftover = inventory.Inventory.AddItem(new ItemStack(item, (ushort)amount));
             int inserted = amount - (leftover?.StackSize ?? 0);
             given += inserted;
             recipients.Add(player.Username);
         }
-        if (recipients.Count == 0)
-            return new(false, "No selected players are online and spawned.");
+
+        if (recipients.Count == 0) return new(false, "No selected players are online and spawned.");
 
         return new(true, FormattableString.Invariant(
             $"Gave {given} {item.Identifier} to {string.Join(", ", recipients)}."

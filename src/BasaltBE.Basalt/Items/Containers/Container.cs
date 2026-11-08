@@ -73,10 +73,10 @@ public class Container {
         ArgumentNullException.ThrowIfNull(identifier);
         lock (sync) {
             for (int i = 0; i < items.Length; i++) {
-                if (items[i]?.Type.Identifier == identifier)
-                    return items[i];
+                if (items[i]?.Type.Identifier == identifier) return items[i];
             }
         }
+
         return null;
     }
 
@@ -94,8 +94,7 @@ public class Container {
                 throw new ArgumentOutOfRangeException(nameof(item), "The item stack size is invalid for this slot.");
 
             ItemStack? previous = items[slot];
-            if (ReferenceEquals(previous, item))
-                return;
+            if (ReferenceEquals(previous, item)) return;
 
             previous?.Detach();
             items[slot] = item;
@@ -119,25 +118,24 @@ public class Container {
 
     public bool CanAddItem(ItemStack item) {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Type.MaxAmount <= 0 || !CanContain(item))
-            return false;
+        if (item.Type.MaxAmount <= 0 || !CanContain(item)) return false;
+
         int remaining = item.StackSize;
         lock (sync) {
             for (int i = 0; i < items.Length && remaining > 0; i++) {
                 ItemStack? existing = items[i];
-                if (existing is null && CanContain(i, item))
-                    remaining -= item.Type.MaxAmount;
+                if (existing is null && CanContain(i, item)) remaining -= item.Type.MaxAmount;
                 else if (existing is not null && existing.CanStackWith(item))
                     remaining -= Math.Max(0, item.Type.MaxAmount - existing.StackSize);
             }
         }
+
         return remaining <= 0;
     }
 
     public ItemStack? AddItem(ItemStack item) {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Type.MaxAmount <= 0 || !CanContain(item))
-            return item;
+        if (item.Type.MaxAmount <= 0 || !CanContain(item)) return item;
         if (item.Container is not null)
             throw new InvalidOperationException("Remove an item stack from its current slot before adding it.");
 
@@ -156,8 +154,7 @@ public class Container {
             }
 
             for (int i = 0; i < items.Length && remaining > 0; i++) {
-                if (items[i] is not null || !CanContain(i, item))
-                    continue;
+                if (items[i] is not null || !CanContain(i, item)) continue;
 
                 int moved = Math.Min(remaining, item.Type.MaxAmount);
                 ItemStack added = item.Clone((ushort)moved);
@@ -169,8 +166,7 @@ public class Container {
         }
 
         item.SetStackSizeRaw((ushort)remaining);
-        foreach (int slot in changedSlots)
-            UpdateSlot(slot);
+        foreach (int slot in changedSlots) UpdateSlot(slot);
 
         return remaining == 0 ? null : item;
     }
@@ -178,22 +174,19 @@ public class Container {
     public ItemStack? TakeItem(int slot, ushort amount = 1) {
         ArgumentOutOfRangeException.ThrowIfNegative(slot);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, items.Length);
-        if (amount == 0)
-            return null;
+        if (amount == 0) return null;
 
         ItemStack? removed;
         lock (sync) {
             ItemStack? existing = items[slot];
-            if (existing is null)
-                return null;
+            if (existing is null) return null;
 
             ushort taken = Math.Min(amount, existing.StackSize);
             removed = existing.Clone(taken);
             if (taken == existing.StackSize) {
                 items[slot] = null;
                 existing.Detach();
-            }
-            else {
+            } else {
                 existing.SetStackSizeRaw((ushort)(existing.StackSize - taken));
             }
         }
@@ -207,14 +200,12 @@ public class Container {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(firstSlot, items.Length);
         ArgumentOutOfRangeException.ThrowIfNegative(secondSlot);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(secondSlot, items.Length);
-        if (firstSlot == secondSlot)
-            return;
+        if (firstSlot == secondSlot) return;
 
         lock (sync) {
             ItemStack? first = items[firstSlot];
             ItemStack? second = items[secondSlot];
-            if (ReferenceEquals(first, second))
-                return;
+            if (ReferenceEquals(first, second)) return;
             first?.Detach();
             second?.Detach();
             (items[firstSlot], items[secondSlot]) = (second, first);
@@ -230,16 +221,14 @@ public class Container {
         bool changed = false;
         lock (sync) {
             for (int i = 0; i < items.Length; i++) {
-                if (items[i] is not ItemStack item)
-                    continue;
+                if (items[i] is not ItemStack item) continue;
                 item.Detach();
                 items[i] = null;
                 changed = true;
             }
         }
 
-        if (changed)
-            Update();
+        if (changed) Update();
     }
 
     public void Update() {
@@ -263,8 +252,7 @@ public class Container {
             StorageItem = new NetworkItemStackDescriptor()
         };
 
-        foreach (Player player in recipients)
-            player.SendPacket(packet);
+        foreach (Player player in recipients) player.SendPacket(packet);
     }
 
     public void UpdateSlot(int slot) {
@@ -301,20 +289,18 @@ public class Container {
             FullContainerName = GetFullContainerName(slot),
             Item = descriptor
         };
-        foreach (Player player in recipients)
-            player.SendPacket(packet);
+        foreach (Player player in recipients) player.SendPacket(packet);
     }
 
     public bool Open(Player player) {
         ArgumentNullException.ThrowIfNull(player);
         PlayerOpenContainerEvent opening = new(player, this);
         player.Network.Server.Events.Emit(opening);
-        if (opening.IsCanceled() || player.Disposed)
-            return false;
+        if (opening.IsCanceled() || player.Disposed) return false;
+
         bool firstViewer;
         lock (player.Sync) {
-            if (player.OpenedContainer is Container opened && !ReferenceEquals(opened, this))
-                opened.Close(player);
+            if (player.OpenedContainer is Container opened && !ReferenceEquals(opened, this)) opened.Close(player);
 
             lock (sync) {
                 firstViewer = viewers.Count == 0;
@@ -323,16 +309,14 @@ public class Container {
             player.OpenedContainer = this;
         }
 
-        if (firstViewer)
-            FirstViewerOpened?.Invoke();
+        if (firstViewer) FirstViewerOpened?.Invoke();
         player.SendPacket(new ContainerOpenPacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
             Position = GetPosition(),
             TargetActorId = GetTargetActorId()
         });
-        if (Type != ContainerType.Enchantment)
-            Update(player);
+        if (Type != ContainerType.Enchantment) Update(player);
         return true;
     }
 
@@ -342,18 +326,14 @@ public class Container {
         lock (player.Sync) {
             bool opened = ReferenceEquals(player.OpenedContainer, this);
             lock (sync) {
-                if (!viewers.Contains(player) && !opened)
-                    return false;
-                if (!persistentViewers.Contains(player) && viewers.Remove(player))
-                    lastViewer = viewers.Count == 0;
+                if (!viewers.Contains(player) && !opened) return false;
+                if (!persistentViewers.Contains(player) && viewers.Remove(player)) lastViewer = viewers.Count == 0;
             }
 
-            if (opened)
-                player.OpenedContainer = null;
+            if (opened) player.OpenedContainer = null;
         }
 
-        if (lastViewer)
-            LastViewerClosed?.Invoke();
+        if (lastViewer) LastViewerClosed?.Invoke();
         player.SendPacket(new ContainerClosePacket {
             ContainerId = unchecked((byte)(sbyte)ContainerId),
             ContainerType = unchecked((byte)(sbyte)Type),
@@ -372,8 +352,7 @@ public class Container {
             persistentViewers.Add(player);
             viewers.Add(player);
         }
-        if (firstViewer)
-            FirstViewerOpened?.Invoke();
+        if (firstViewer) FirstViewerOpened?.Invoke();
         Update(player);
     }
 
@@ -381,13 +360,11 @@ public class Container {
         ArgumentNullException.ThrowIfNull(player);
         bool lastViewer;
         lock (sync) {
-            if (!persistentViewers.Remove(player))
-                return false;
+            if (!persistentViewers.Remove(player)) return false;
             viewers.Remove(player);
             lastViewer = viewers.Count == 0;
         }
-        if (lastViewer)
-            LastViewerClosed?.Invoke();
+        if (lastViewer) LastViewerClosed?.Invoke();
         return true;
     }
 
@@ -395,8 +372,7 @@ public class Container {
         Player[] current;
         lock (sync)
             current = [.. viewers];
-        foreach (Player player in current)
-            Close(player);
+        foreach (Player player in current) Close(player);
     }
 
     public FullContainerName GetFullContainerName() => new() {

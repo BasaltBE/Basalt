@@ -9,8 +9,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class MobEquipmentHandler {
     public void Handle(NethernetPeer peer, Player? player, MobEquipmentPacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Equipment arrived before player login.");
+        if (player is null) throw new InvalidDataException("Equipment arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
         lock (player.Sync) {
             if (player.Disposed || !player.Spawned ||
@@ -19,8 +18,7 @@ internal sealed class MobEquipmentHandler {
                 return;
 
             PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
-            if (inventory is null || !inventory.MatchesItem(packet.SelectedSlot, packet.Item, out var item))
-                return;
+            if (inventory is null || !inventory.MatchesItem(packet.SelectedSlot, packet.Item, out var item)) return;
 
             inventory.SelectedSlot = packet.SelectedSlot;
             player.Dimension.Broadcast(new MobEquipmentPacket {

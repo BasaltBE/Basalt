@@ -10,8 +10,7 @@ using BasaltBE.Protocol.Types;
 
 namespace BasaltBE.Basalt.Blocks;
 
-public static class BlockPalette
-{
+public static class BlockPalette {
     public static BlockPermutation[] Permutations = LoadPermutations();
     public static BlockType[] Types = LoadBlockTypes();
     static readonly Dictionary<string, string> StateTypes = LoadStateTypes();
@@ -21,20 +20,12 @@ public static class BlockPalette
     static readonly Dictionary<(string Identifier, int StateHash), BlockPermutation[]> ByState = BuildStateIndex();
     static readonly Dictionary<(string Identifier, string Half), BlockPermutation> DoubleSlabs = BuildDoubleSlabs();
     static readonly Dictionary<string, string> StrippedBlocks = BuildStrippedBlocks();
-    static readonly string[] ConnectionStates = [
-        "minecraft:connection_east",
-        "minecraft:connection_north",
-        "minecraft:connection_south",
-        "minecraft:connection_west"
-    ];
+    static readonly string[] ConnectionStates = BlockDirections.Connections.Select(direction => direction.State).ToArray();
     static readonly HashSet<string> PaneIdentifiers = BuildIdentifiers(ConnectionStates, "_pane");
     static readonly HashSet<string> BarIdentifiers = BuildIdentifiers(ConnectionStates, "_bars");
     static readonly HashSet<string> GlassIdentifiers = BuildIdentifiers([], "glass");
     static readonly HashSet<string> PaneAndBarIdentifiers = [.. PaneIdentifiers, .. BarIdentifiers];
-    static readonly HashSet<string> FenceIdentifiers = BuildIdentifiers(
-        ConnectionStates,
-        "fence"
-    );
+    static readonly HashSet<string> FenceIdentifiers = BuildIdentifiers(ConnectionStates, "fence");
     static readonly HashSet<string> FenceGateIdentifiers = BuildIdentifiers(
         ["in_wall_bit", "minecraft:cardinal_direction", "open_bit"],
         "fence_gate"
@@ -52,13 +43,12 @@ public static class BlockPalette
     static readonly Dictionary<string, BlockTrait[]> TraitsByIdentifier = new(StringComparer.Ordinal);
     static readonly HashSet<string> ScheduledUpdateIdentifiers = new(StringComparer.Ordinal);
     static readonly HashSet<string> RandomTickIdentifiers = new(StringComparer.Ordinal);
-    static readonly HashSet<Type> RegisteredTraits = [];
+    static readonly Dictionary<Type, BlockTrait> TraitsByType = [];
     static readonly Dictionary<string, CustomBlock> CustomBlocks = new(StringComparer.Ordinal);
     internal static ServerBlockProperty[] Properties = [];
     internal static bool Frozen;
 
-    internal static CustomBlock Create(string identifier)
-    {
+    internal static CustomBlock Create(string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         string[] parts = identifier.Split(':');
         if (parts.Length != 2 || parts.Any(part => part.Length == 0 || part.Any(character =>
@@ -66,18 +56,15 @@ public static class BlockPalette
             parts[0].Contains('/'))
             throw new ArgumentException("Use a namespaced block identifier.", nameof(identifier));
 
-        if (Frozen)
-            throw new InvalidOperationException("Configure blocks before starting the server.");
+        if (Frozen) throw new InvalidOperationException("Configure blocks before starting the server.");
 
-        if (CustomBlocks.TryGetValue(identifier, out CustomBlock? definition))
-            return definition;
+        if (CustomBlocks.TryGetValue(identifier, out CustomBlock? definition)) return definition;
         if (ByIdentifier.ContainsKey(identifier))
             throw new InvalidOperationException($"Block '{identifier}' is already registered as a vanilla block.");
         if (ItemPalette.Find(identifier) is { ComponentBased: false })
             throw new InvalidOperationException($"Block '{identifier}' conflicts with a native item.");
 
-        BlockType type = new()
-        {
+        BlockType type = new() {
             Identifier = identifier,
             Solid = true,
             Hardness = 1,
@@ -97,33 +84,32 @@ public static class BlockPalette
         return definition;
     }
 
-    internal static void Freeze()
-    {
-        if (Frozen)
-            return;
+    internal static void Freeze() {
+        if (Frozen) return;
+
         List<BlockPermutation> added = [];
         List<ServerBlockProperty> properties = [];
-        foreach (CustomBlock definition in CustomBlocks.Values.OrderBy(block => block.Type.Identifier, StringComparer.Ordinal))
-        {
+        foreach (CustomBlock definition in CustomBlocks.Values.OrderBy(block => block.Type.Identifier, StringComparer.Ordinal)) {
             BlockPermutation[] permutations = definition.Prepare(10000 + properties.Count, out ServerBlockProperty property);
             ItemPalette.RegisterBlockItem(definition.Item.Type, 10000 + properties.Count);
-            foreach ((string name, object[] values) in definition.States)
-            {
+            foreach ((string name, object[] values) in definition.States) {
                 string stateType = values[0] is bool ? "bool" : values[0] is int ? "int" : "string";
                 if (StateTypes.TryGetValue(name, out string? existing) && existing != stateType)
                     throw new InvalidOperationException($"Block state '{name}' has conflicting types.");
                 StateTypes[name] = stateType;
             }
-            foreach (BlockPermutation permutation in permutations)
-            {
+
+            foreach (BlockPermutation permutation in permutations) {
                 if (!ByNetworkId.TryAdd(permutation.NetworkId, permutation))
                     throw new InvalidOperationException($"Block hash collision for '{permutation.Identifier}'.");
                 var key = (permutation.Identifier, StateHash(permutation.State));
                 ByState[key] = ByState.TryGetValue(key, out BlockPermutation[]? bucket) ? [.. bucket, permutation] : [permutation];
                 added.Add(permutation);
             }
+
             properties.Add(property);
         }
+
         Permutations = [.. Permutations, .. added];
         Properties = properties.ToArray();
         Frozen = true;
@@ -163,10 +149,8 @@ public static class BlockPalette
 
     internal static bool IsWall(string identifier) => WallIdentifiers.Contains(identifier);
 
-    internal static bool PaneConnects(string neighborIdentifier)
-    {
-        if (PaneAndBarIdentifiers.Contains(neighborIdentifier) || GlassIdentifiers.Contains(neighborIdentifier))
-            return true;
+    internal static bool PaneConnects(string neighborIdentifier) {
+        if (PaneAndBarIdentifiers.Contains(neighborIdentifier) || GlassIdentifiers.Contains(neighborIdentifier)) return true;
 
         return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 1;
     }
@@ -185,35 +169,29 @@ public static class BlockPalette
     internal static BlockPermutation? FindFenceGatePermutation(string identifier, string direction, bool open, bool inWall) =>
         FenceGatePermutations.GetValueOrDefault((identifier, direction, open, inWall));
 
-    internal static bool FenceConnects(string fenceIdentifier, string neighborIdentifier)
-    {
-        if (IsFence(neighborIdentifier))
-        {
+    internal static bool FenceConnects(string fenceIdentifier, string neighborIdentifier) {
+        if (IsFence(neighborIdentifier)) {
             bool fenceIsWood = Array.IndexOf(ByIdentifier[fenceIdentifier].Tags, "wood") >= 0;
             bool neighborIsWood = Array.IndexOf(ByIdentifier[neighborIdentifier].Tags, "wood") >= 0;
             return fenceIsWood == neighborIsWood;
         }
 
-        if (IsFenceGate(neighborIdentifier))
-            return Array.IndexOf(ByIdentifier[fenceIdentifier].Tags, "wood") >= 0;
+        if (IsFenceGate(neighborIdentifier)) return Array.IndexOf(ByIdentifier[fenceIdentifier].Tags, "wood") >= 0;
 
-        if (IsWall(neighborIdentifier))
-            return true;
+        if (IsWall(neighborIdentifier)) return true;
 
         return ByIdentifier.TryGetValue(neighborIdentifier, out BlockType? neighbor) && neighbor.Solid && neighbor.Opacity >= 1;
     }
 
     /// <summary>Registers one shared trait instance for each block identifier declared by the trait.</summary>
-    public static void RegisterTrait<TTrait>() where TTrait : BlockTrait, new()
-    {
+    public static void RegisterTrait<TTrait>() where TTrait : BlockTrait, new() {
         Type traitType = typeof(TTrait);
         BlockTraitAppliesToAttribute targets = traitType.GetCustomAttribute<BlockTraitAppliesToAttribute>()
             ?? throw new InvalidOperationException($"Block trait '{traitType}' has no BlockTraitAppliesTo attribute.");
         RegisterTrait<TTrait>(targets.Identifiers);
     }
 
-    public static void RegisterTrait<TTrait>(string blockTag) where TTrait : BlockTrait, new()
-    {
+    public static void RegisterTrait<TTrait>(string blockTag) where TTrait : BlockTrait, new() {
         string[] identifiers = Types
             .Where(type => Array.IndexOf(type.Tags, blockTag) >= 0)
             .Select(type => type.Identifier)
@@ -221,68 +199,55 @@ public static class BlockPalette
         RegisterTrait<TTrait>(identifiers);
     }
 
-    public static void RegisterTrait<TTrait>(string[] identifiers) where TTrait : BlockTrait, new()
-    {
-        if (Frozen)
-            throw new InvalidOperationException("Register block traits before starting the server.");
+    public static void RegisterTrait<TTrait>(string[] identifiers) where TTrait : BlockTrait, new() {
+        if (Frozen) throw new InvalidOperationException("Register block traits before starting the server.");
         Type traitType = typeof(TTrait);
-        if (RegisteredTraits.Contains(traitType))
-            throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
-        if (identifiers.Length == 0)
-            throw new InvalidOperationException($"Block trait '{traitType}' has no block targets.");
 
-        foreach (string identifier in identifiers)
-        {
+        if (TraitsByType.ContainsKey(traitType))
+            throw new InvalidOperationException($"Block trait '{traitType}' is already registered.");
+        if (identifiers.Length == 0) throw new InvalidOperationException($"Block trait '{traitType}' has no block targets.");
+
+        foreach (string identifier in identifiers) {
             if (!ByIdentifier.ContainsKey(identifier))
                 throw new InvalidOperationException($"Block trait '{traitType}' targets unknown block '{identifier}'.");
         }
 
         TTrait trait = new();
-        RegisteredTraits.Add(traitType);
-        foreach (string identifier in identifiers)
-        {
+        TraitsByType.Add(traitType, trait);
+
+        foreach (string identifier in identifiers) {
             BlockTrait[] current = TraitsByIdentifier.GetValueOrDefault(identifier) ?? [];
-            BlockTrait[] updated = new BlockTrait[current.Length + 1];
-            current.CopyTo(updated, 0);
-            updated[^1] = trait;
-            TraitsByIdentifier[identifier] = updated;
-            if (trait.HasScheduledUpdates)
-                ScheduledUpdateIdentifiers.Add(identifier);
-            if (trait.HasRandomTicks)
-                RandomTickIdentifiers.Add(identifier);
+            TraitsByIdentifier[identifier] = [.. current, trait];
+            if (trait.HasScheduledUpdates) ScheduledUpdateIdentifiers.Add(identifier);
+            if (trait.HasRandomTicks) RandomTickIdentifiers.Add(identifier);
         }
     }
 
-    internal static void RegisterCustomTrait<TTrait>(string identifier) where TTrait : BlockTrait, new()
-    {
-        if (Frozen)
-            throw new InvalidOperationException("Register block traits before starting the server.");
+    internal static void RegisterCustomTrait<TTrait>(string identifier) where TTrait : BlockTrait, new() {
+        if (Frozen) throw new InvalidOperationException("Register block traits before starting the server.");
 
         Type type = typeof(TTrait);
         BlockTrait[] current = TraitsByIdentifier.GetValueOrDefault(identifier) ?? [];
         if (current.Any(trait => trait.GetType() == type))
             throw new InvalidOperationException($"Block '{identifier}' already has trait '{type}'.");
 
-        BlockTrait shared = TraitsByIdentifier.Values.SelectMany(traits => traits).FirstOrDefault(trait => trait.GetType() == type) ?? new TTrait();
-        RegisteredTraits.Add(type);
+        if (!TraitsByType.TryGetValue(type, out BlockTrait? shared)) {
+            shared = new TTrait();
+            TraitsByType.Add(type, shared);
+        }
 
         TraitsByIdentifier[identifier] = [.. current, shared];
-        if (shared.HasScheduledUpdates)
-            ScheduledUpdateIdentifiers.Add(identifier);
-        if (shared.HasRandomTicks)
-            RandomTickIdentifiers.Add(identifier);
+        if (shared.HasScheduledUpdates) ScheduledUpdateIdentifiers.Add(identifier);
+        if (shared.HasRandomTicks) RandomTickIdentifiers.Add(identifier);
     }
 
-    internal static bool OnInteract(string identifier, Player player, BlockPos position)
-    {
-        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
-            return false;
+    internal static bool OnInteract(string identifier, Player player, BlockPos position) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits)) return false;
 
-        foreach (BlockTrait trait in traits)
-        {
-            if (trait.OnInteract(player, position))
-                return true;
+        foreach (BlockTrait trait in traits) {
+            if (trait.OnInteract(player, position)) return true;
         }
+
         return false;
     }
 
@@ -294,16 +259,13 @@ public static class BlockPalette
         BlockPos position,
         byte face,
         Vec3 clickPosition
-    )
-    {
-        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
-            return false;
+    ) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits)) return false;
 
-        foreach (BlockTrait trait in traits)
-        {
-            if (trait.OnUseItemOnBlock(player, item, block, position, face, clickPosition))
-                return true;
+        foreach (BlockTrait trait in traits) {
+            if (trait.OnUseItemOnBlock(player, item, block, position, face, clickPosition)) return true;
         }
+
         return false;
     }
 
@@ -316,53 +278,39 @@ public static class BlockPalette
         byte face,
         Vec3 clickPosition,
         ref BlockPermutation permutation
-    )
-    {
-        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
-            return true;
+    ) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits)) return true;
 
         bool accepted = true;
-        foreach (BlockTrait trait in traits)
-        {
-            accepted &= trait.OnPlace(player, x, y, z, face, clickPosition, ref permutation);
-        }
+        foreach (BlockTrait trait in traits) accepted &= trait.OnPlace(player, x, y, z, face, clickPosition, ref permutation);
+
         return accepted;
     }
 
-    internal static void OnPlaced(string identifier, Dimension dimension, int x, int y, int z)
-    {
-        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits))
-            return;
+    internal static void OnPlaced(string identifier, Dimension dimension, int x, int y, int z) {
+        if (!TraitsByIdentifier.TryGetValue(identifier, out BlockTrait[]? traits)) return;
 
-        foreach (BlockTrait trait in traits)
-            trait.OnPlaced(dimension, x, y, z);
+        foreach (BlockTrait trait in traits) trait.OnPlaced(dimension, x, y, z);
     }
 
     internal static bool HasScheduledUpdates(string identifier) => ScheduledUpdateIdentifiers.Contains(identifier);
 
     internal static bool HasRandomTicks(string identifier) => RandomTickIdentifiers.Contains(identifier);
 
-    internal static void OnRandomTick(Dimension dimension, int x, int y, int z)
-    {
+    internal static void OnRandomTick(Dimension dimension, int x, int y, int z) {
         BlockPermutation block = dimension.GetPermutation(x, y, z);
-        if (!TraitsByIdentifier.TryGetValue(block.Identifier, out BlockTrait[]? traits))
-            return;
+        if (!TraitsByIdentifier.TryGetValue(block.Identifier, out BlockTrait[]? traits)) return;
 
-        foreach (BlockTrait trait in traits)
-            trait.OnRandomTick(dimension, block, x, y, z);
+        foreach (BlockTrait trait in traits) trait.OnRandomTick(dimension, block, x, y, z);
     }
 
-    internal static void OnScheduledUpdate(Dimension dimension, int x, int y, int z, BlockPermutation scheduled)
-    {
+    internal static void OnScheduledUpdate(Dimension dimension, int x, int y, int z, BlockPermutation scheduled) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
-        if (!TraitsByIdentifier.TryGetValue(scheduled.Identifier, out BlockTrait[]? traits))
-            return;
+        if (!TraitsByIdentifier.TryGetValue(scheduled.Identifier, out BlockTrait[]? traits)) return;
 
-        for (int index = 0; index < traits.Length; index++)
-        {
+        for (int index = 0; index < traits.Length; index++) {
             traits[index].OnScheduledUpdate(dimension, x, y, z, current, scheduled);
-            if (index + 1 < traits.Length)
-                current = dimension.GetPermutation(x, y, z);
+            if (index + 1 < traits.Length) current = dimension.GetPermutation(x, y, z);
         }
     }
 
@@ -373,112 +321,77 @@ public static class BlockPalette
         int z,
         BlockPermutation? neighbor = null,
         BlockPermutation? previous = null
-    )
-    {
-        if (y < dimension.MinimumY || y > dimension.MaximumY)
-            return false;
+    ) {
+        if (y < dimension.MinimumY || y > dimension.MaximumY) return false;
 
         BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
-        if (current is null)
-            return false;
-        if (!TraitsByIdentifier.TryGetValue(current.Identifier, out BlockTrait[]? traits))
-            return false;
+        if (current is null) return false;
+        if (!TraitsByIdentifier.TryGetValue(current.Identifier, out BlockTrait[]? traits)) return false;
 
         bool updated = false;
-        foreach (BlockTrait trait in traits)
-        {
-            if (neighbor is null)
-                updated |= trait.OnNeighborUpdate(dimension, x, y, z);
-            else if (previous is null)
-                updated |= trait.OnNeighborUpdate(dimension, x, y, z, neighbor);
-            else
-                updated |= trait.OnNeighborUpdate(dimension, x, y, z, previous, neighbor);
+        foreach (BlockTrait trait in traits) {
+            if (neighbor is null) updated |= trait.OnNeighborUpdate(dimension, x, y, z);
+            else if (previous is null) updated |= trait.OnNeighborUpdate(dimension, x, y, z, neighbor);
+            else updated |= trait.OnNeighborUpdate(dimension, x, y, z, previous, neighbor);
         }
+
         return updated;
     }
 
-    public static BlockPermutation? Find(string identifier, BlockState state)
-    {
-        if (!ByState.TryGetValue((identifier, StateHash(state)), out BlockPermutation[]? permutations))
-        {
-            return null;
+    public static BlockPermutation? Find(string identifier, BlockState state) {
+        if (!ByState.TryGetValue((identifier, StateHash(state)), out BlockPermutation[]? permutations)) return null;
+
+        foreach (BlockPermutation permutation in permutations) {
+            if (StateMatches(permutation.State, state)) return permutation;
         }
 
-        foreach (BlockPermutation permutation in permutations)
-        {
-            if (StateMatches(permutation.State, state))
-            {
-                return permutation;
-            }
-        }
         return null;
     }
 
-    internal static BlockPermutation? FindStored(string identifier, BlockState state)
-    {
+    internal static BlockPermutation? FindStored(string identifier, BlockState state) {
         BlockPermutation? permutation = Find(identifier, state);
         if (permutation is not null || !DefaultPermutations.TryGetValue(identifier, out BlockPermutation? defaults))
             return permutation;
 
-        BlockState completeState = new()
-        {
+        BlockState completeState = new() {
             Values = new(defaults.State.Values, StringComparer.Ordinal)
         };
-        foreach ((string name, object value) in state.Values)
-            completeState.Values[name] = value;
+        foreach ((string name, object value) in state.Values) completeState.Values[name] = value;
 
         return Find(identifier, completeState);
     }
 
-    public static BlockPermutation? Find(string identifier, BlockState state, string name, object value)
-    {
-        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations))
-        {
-            return null;
+    public static BlockPermutation? Find(string identifier, BlockState state, string name, object value) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations)) return null;
+
+        foreach (BlockPermutation permutation in permutations) {
+            if (StateMatches(permutation.State, state, name, value)) return permutation;
         }
 
-        foreach (BlockPermutation permutation in permutations)
-        {
-            if (StateMatches(permutation.State, state, name, value))
-            {
-                return permutation;
-            }
-        }
         return null;
     }
 
-    public static BlockPermutation? Find(string identifier, BlockState state, string name, int value)
-    {
-        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations))
-            return null;
+    public static BlockPermutation? Find(string identifier, BlockState state, string name, int value) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, name, value)), out BlockPermutation[]? permutations)) return null;
 
-        foreach (BlockPermutation permutation in permutations)
-        {
-            if (StateMatches(permutation.State, state, name, value))
-                return permutation;
+        foreach (BlockPermutation permutation in permutations) {
+            if (StateMatches(permutation.State, state, name, value)) return permutation;
         }
+
         return null;
     }
 
-    public static BlockPermutation? Find(string identifier, BlockState state, BlockState changes)
-    {
-        if (!ByState.TryGetValue((identifier, StateHash(state, changes)), out BlockPermutation[]? permutations))
-        {
-            return null;
+    public static BlockPermutation? Find(string identifier, BlockState state, BlockState changes) {
+        if (!ByState.TryGetValue((identifier, StateHash(state, changes)), out BlockPermutation[]? permutations)) return null;
+
+        foreach (BlockPermutation permutation in permutations) {
+            if (StateMatches(permutation.State, state, changes)) return permutation;
         }
 
-        foreach (BlockPermutation permutation in permutations)
-        {
-            if (StateMatches(permutation.State, state, changes))
-            {
-                return permutation;
-            }
-        }
         return null;
     }
 
-    static T Load<T>(string fileName) where T : class
-    {
+    static T Load<T>(string fileName) where T : class {
         Assembly dataAssembly = Assembly.Load("BasaltBE.Data");
         using Stream stream = dataAssembly.GetManifestResourceStream($"BasaltBE.Data.Data.{fileName}")
             ?? throw new InvalidOperationException($"Block data file '{fileName}' is missing.");
@@ -487,30 +400,23 @@ public static class BlockPalette
             ?? throw new JsonException($"Block data file '{fileName}' is empty.");
     }
 
-    static Dictionary<string, string> LoadStateTypes()
-    {
+    static Dictionary<string, string> LoadStateTypes() {
         using Stream stream = Assembly.Load("BasaltBE.Data").GetManifestResourceStream("BasaltBE.Data.Data.block_states.json")
             ?? throw new InvalidOperationException("Block state data is missing.");
         using JsonDocument document = JsonDocument.Parse(stream);
         Dictionary<string, string> stateTypes = new(StringComparer.Ordinal);
         foreach (JsonElement state in document.RootElement.EnumerateArray())
-        {
             stateTypes.Add(state.GetProperty("identifier").GetString()!, state.GetProperty("type").GetString()!);
-        }
         return stateTypes;
     }
 
-    static BlockType[] LoadBlockTypes()
-    {
+    static BlockType[] LoadBlockTypes() {
         BlockType[] types = Load<BlockType[]>("block-types.json");
-        foreach (BlockType type in types)
-        {
+        foreach (BlockType type in types) {
             if (Array.IndexOf(type.States, "persistent_bit") >= 0 && Array.IndexOf(type.States, "update_bit") >= 0 &&
                 Array.IndexOf(type.Tags, "minecraft:leaves") < 0) type.Tags = [.. type.Tags, "minecraft:leaves"];
-            foreach (string tag in type.Tags)
-            {
-                type.ToolTypes |= tag switch
-                {
+            foreach (string tag in type.Tags) {
+                type.ToolTypes |= tag switch {
                     "minecraft:is_pickaxe_item_destructible" => ToolType.Pickaxe,
                     "minecraft:is_axe_item_destructible" => ToolType.Axe,
                     "minecraft:is_shovel_item_destructible" => ToolType.Shovel,
@@ -519,100 +425,76 @@ public static class BlockPalette
                 };
             }
         }
+
         return types;
     }
 
-    static Dictionary<string, string> BuildStrippedBlocks()
-    {
+    static Dictionary<string, string> BuildStrippedBlocks() {
         Dictionary<string, string> stripped = new(StringComparer.Ordinal);
-        foreach (BlockType type in Types)
-        {
+        foreach (BlockType type in Types) {
             int separator = type.Identifier.IndexOf(':');
             string strippedName = type.Identifier[(separator + 1)..];
-            if (!strippedName.StartsWith("stripped_", StringComparison.Ordinal))
-                continue;
+            if (!strippedName.StartsWith("stripped_", StringComparison.Ordinal)) continue;
 
             string originalIdentifier = type.Identifier[..(separator + 1)] + strippedName["stripped_".Length..];
-            if (ByIdentifier.ContainsKey(originalIdentifier))
-                stripped.TryAdd(originalIdentifier, type.Identifier);
+            if (ByIdentifier.ContainsKey(originalIdentifier)) stripped.TryAdd(originalIdentifier, type.Identifier);
         }
+
         return stripped;
     }
 
-    static BlockPermutation[] LoadPermutations()
-    {
+    static BlockPermutation[] LoadPermutations() {
         BlockPermutation[] permutations = Load<BlockPermutation[]>("block_permutations.json");
-        foreach (BlockPermutation permutation in permutations)
-        {
-            permutation.NetworkId = permutation.Hash;
-        }
+        foreach (BlockPermutation permutation in permutations) permutation.NetworkId = permutation.Hash;
 
         return permutations;
     }
 
-    static Dictionary<string, BlockPermutation> BuildDefaultPermutations()
-    {
+    static Dictionary<string, BlockPermutation> BuildDefaultPermutations() {
         Dictionary<string, BlockPermutation> defaults = [];
-        foreach (BlockPermutation permutation in Permutations)
-        {
-            defaults.TryAdd(permutation.Identifier, permutation);
-        }
+        foreach (BlockPermutation permutation in Permutations) defaults.TryAdd(permutation.Identifier, permutation);
         return defaults;
     }
 
-    static HashSet<string> BuildIdentifiers(string[] states, string? identifierSuffix = null)
-    {
+    static HashSet<string> BuildIdentifiers(string[] states, string? identifierSuffix = null) {
         HashSet<string> identifiers = new(StringComparer.Ordinal);
-        foreach (BlockType type in Types)
-        {
-            if (identifierSuffix is not null && !type.Identifier.EndsWith(identifierSuffix, StringComparison.Ordinal))
-                continue;
+        foreach (BlockType type in Types) {
+            if (identifierSuffix is not null && !type.Identifier.EndsWith(identifierSuffix, StringComparison.Ordinal)) continue;
 
             bool matches = true;
-            foreach (string state in states)
-            {
-                if (Array.IndexOf(type.States, state) >= 0)
-                    continue;
+            foreach (string state in states) {
+                if (Array.IndexOf(type.States, state) >= 0) continue;
 
                 matches = false;
                 break;
             }
 
-            if (matches)
-                identifiers.Add(type.Identifier);
+            if (matches) identifiers.Add(type.Identifier);
         }
 
         return identifiers;
     }
 
-    static Dictionary<(string Identifier, byte Connections), BlockPermutation> BuildConnectionPermutations(HashSet<string> identifiers)
-    {
+    static Dictionary<(string Identifier, byte Connections), BlockPermutation> BuildConnectionPermutations(HashSet<string> identifiers) {
         Dictionary<(string Identifier, byte Connections), BlockPermutation> permutations = [];
-        foreach (BlockPermutation permutation in Permutations)
-        {
-            if (!identifiers.Contains(permutation.Identifier))
-                continue;
+        foreach (BlockPermutation permutation in Permutations) {
+            if (!identifiers.Contains(permutation.Identifier)) continue;
 
             byte connections = 0;
-            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_east") is true)
-                connections |= 1;
-            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_north") is true)
-                connections |= 2;
-            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_south") is true)
-                connections |= 4;
-            if (permutation.State.Values.GetValueOrDefault("minecraft:connection_west") is true)
-                connections |= 8;
+            for (int index = 0; index < ConnectionStates.Length; index++) {
+                if (permutation.State.Values.GetValueOrDefault(ConnectionStates[index]) is true)
+                    connections |= (byte)(1 << index);
+            }
+
             permutations.TryAdd((permutation.Identifier, connections), permutation);
         }
 
         return permutations;
     }
 
-    static Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> BuildFenceGatePermutations()
-    {
+    static Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> BuildFenceGatePermutations() {
         Dictionary<(string Identifier, string Direction, bool Open, bool InWall), BlockPermutation> permutations = [];
-        foreach (BlockPermutation permutation in Permutations)
-        {
+        foreach (BlockPermutation permutation in Permutations) {
             if (!FenceGateIdentifiers.Contains(permutation.Identifier) ||
                 permutation.State.Values.GetValueOrDefault("minecraft:cardinal_direction") is not string direction ||
                 permutation.State.Values.GetValueOrDefault("open_bit") is not bool open ||
@@ -625,209 +507,144 @@ public static class BlockPalette
         return permutations;
     }
 
-    static Dictionary<(string Identifier, string Half), BlockPermutation> BuildDoubleSlabs()
-    {
+    static Dictionary<(string Identifier, string Half), BlockPermutation> BuildDoubleSlabs() {
         Dictionary<(string Identifier, string Half), BlockPermutation> slabs = [];
-        foreach (BlockPermutation permutation in Permutations)
-        {
+        foreach (BlockPermutation permutation in Permutations) {
             int namespaceEnd = permutation.Identifier.IndexOf(':') + 1;
             int doubleToken = permutation.Identifier.IndexOf("double_", namespaceEnd, StringComparison.Ordinal);
             if (doubleToken < 0 ||
-                !permutation.State.Values.TryGetValue("minecraft:vertical_half", out object? half) ||
-                half is not string halfName)
+                permutation.State.Values.GetValueOrDefault("minecraft:vertical_half") is not string halfName)
                 continue;
 
             string slabIdentifier = permutation.Identifier.Remove(doubleToken, "double_".Length);
-            if (ByIdentifier.ContainsKey(slabIdentifier))
-                slabs.TryAdd((slabIdentifier, halfName), permutation);
+            if (ByIdentifier.ContainsKey(slabIdentifier)) slabs.TryAdd((slabIdentifier, halfName), permutation);
         }
 
         return slabs;
     }
 
-    static Dictionary<(string Identifier, int StateHash), BlockPermutation[]> BuildStateIndex()
-    {
+    static Dictionary<(string Identifier, int StateHash), BlockPermutation[]> BuildStateIndex() {
         Dictionary<(string Identifier, int StateHash), BlockPermutation[]> index = new(Permutations.Length);
-        foreach (BlockPermutation permutation in Permutations)
-        {
+        foreach (BlockPermutation permutation in Permutations) {
             (string Identifier, int StateHash) key = (permutation.Identifier, StateHash(permutation.State));
-            if (index.TryGetValue(key, out BlockPermutation[]? permutations))
-            {
+            if (index.TryGetValue(key, out BlockPermutation[]? permutations)) {
                 Array.Resize(ref permutations, permutations.Length + 1);
                 permutations[^1] = permutation;
                 index[key] = permutations;
-            }
-            else
-            {
+            } else {
                 index.Add(key, [permutation]);
             }
         }
+
         return index;
     }
 
-    static int StateHash(BlockState state)
-    {
+    static int StateHash(BlockState state) {
         int hash = state.Values.Count;
         foreach ((string name, object value) in state.Values)
-        {
             hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value?.GetHashCode() ?? 0));
-        }
+
         return hash;
     }
 
-    static int StateHash(BlockState state, string name, object value)
-    {
+    static int StateHash(BlockState state, string name, object value) {
         bool containsName = state.Values.ContainsKey(name);
         int hash = containsName ? state.Values.Count : state.Values.Count + 1;
-        foreach ((string stateName, object stateValue) in state.Values)
-        {
+        foreach ((string stateName, object stateValue) in state.Values) {
             object valueToHash = stateName == name ? value : stateValue;
             hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(stateName), valueToHash?.GetHashCode() ?? 0));
         }
         if (!containsName)
-        {
             hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value?.GetHashCode() ?? 0));
-        }
+
         return hash;
     }
 
-    static int StateHash(BlockState state, string name, int value)
-    {
+    static int StateHash(BlockState state, string name, int value) {
         bool containsName = state.Values.ContainsKey(name);
         int hash = containsName ? state.Values.Count : state.Values.Count + 1;
-        foreach ((string stateName, object stateValue) in state.Values)
-        {
+        foreach ((string stateName, object stateValue) in state.Values) {
             int valueHash = stateName == name ? value : stateValue?.GetHashCode() ?? 0;
             hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(stateName), valueHash));
         }
-        if (!containsName)
-            hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value));
+        if (!containsName) hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value));
         return hash;
     }
 
-    static int StateHash(BlockState state, BlockState changes)
-    {
+    static int StateHash(BlockState state, BlockState changes) {
         int count = state.Values.Count;
-        foreach (string name in changes.Values.Keys)
-        {
-            if (!state.Values.ContainsKey(name))
-            {
-                count++;
-            }
+        foreach (string name in changes.Values.Keys) {
+            if (!state.Values.ContainsKey(name)) count++;
         }
 
         int hash = count;
-        foreach ((string name, object value) in state.Values)
-        {
+        foreach ((string name, object value) in state.Values) {
             object valueToHash = changes.Values.TryGetValue(name, out object? changedValue) ? changedValue : value;
             hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), valueToHash?.GetHashCode() ?? 0));
         }
-        foreach ((string name, object value) in changes.Values)
-        {
+        foreach ((string name, object value) in changes.Values) {
             if (!state.Values.ContainsKey(name))
-            {
                 hash = unchecked(hash + HashCode.Combine(StringComparer.Ordinal.GetHashCode(name), value?.GetHashCode() ?? 0));
-            }
         }
+
         return hash;
     }
 
-    static bool StateMatches(BlockState candidate, BlockState expected)
-    {
-        if (candidate.Values.Count != expected.Values.Count)
-        {
-            return false;
+    static bool StateMatches(BlockState candidate, BlockState expected) {
+        if (candidate.Values.Count != expected.Values.Count) return false;
+
+        foreach ((string name, object value) in expected.Values) {
+            if (!candidate.Values.TryGetValue(name, out object? candidateValue) || !Equals(candidateValue, value)) return false;
         }
 
-        foreach ((string name, object value) in expected.Values)
-        {
-            if (!candidate.Values.TryGetValue(name, out object? candidateValue) || !Equals(candidateValue, value))
-            {
-                return false;
-            }
-        }
         return true;
     }
 
-    static bool StateMatches(BlockState candidate, BlockState state, string name, object value)
-    {
+    static bool StateMatches(BlockState candidate, BlockState state, string name, object value) {
         int expectedCount = state.Values.Count + (state.Values.ContainsKey(name) ? 0 : 1);
-        if (candidate.Values.Count != expectedCount)
-        {
-            return false;
-        }
+        if (candidate.Values.Count != expectedCount) return false;
 
-        foreach ((string candidateName, object candidateValue) in candidate.Values)
-        {
+        foreach ((string candidateName, object candidateValue) in candidate.Values) {
             object? expectedValue;
-            if (candidateName == name)
-            {
-                expectedValue = value;
-            }
-            else if (!state.Values.TryGetValue(candidateName, out expectedValue))
-            {
-                return false;
-            }
-            if (!Equals(candidateValue, expectedValue))
-            {
-                return false;
-            }
+            if (candidateName == name) expectedValue = value;
+            else if (!state.Values.TryGetValue(candidateName, out expectedValue)) return false;
+
+            if (!Equals(candidateValue, expectedValue)) return false;
         }
+
         return true;
     }
 
-    static bool StateMatches(BlockState candidate, BlockState state, string name, int value)
-    {
+    static bool StateMatches(BlockState candidate, BlockState state, string name, int value) {
         int expectedCount = state.Values.Count + (state.Values.ContainsKey(name) ? 0 : 1);
-        if (candidate.Values.Count != expectedCount)
-            return false;
+        if (candidate.Values.Count != expectedCount) return false;
 
-        foreach ((string candidateName, object candidateValue) in candidate.Values)
-        {
-            if (candidateName == name)
-            {
-                if (candidateValue is not int candidateInteger || candidateInteger != value)
-                    return false;
-            }
-            else if (!state.Values.TryGetValue(candidateName, out object? expectedValue) || !Equals(candidateValue, expectedValue))
-            {
+        foreach ((string candidateName, object candidateValue) in candidate.Values) {
+            if (candidateName == name) {
+                if (candidateValue is not int candidateInteger || candidateInteger != value) return false;
+            } else if (!state.Values.TryGetValue(candidateName, out object? expectedValue) || !Equals(candidateValue, expectedValue)) {
                 return false;
             }
         }
+
         return true;
     }
 
-    static bool StateMatches(BlockState candidate, BlockState state, BlockState changes)
-    {
+    static bool StateMatches(BlockState candidate, BlockState state, BlockState changes) {
         int expectedCount = state.Values.Count;
-        foreach (string name in changes.Values.Keys)
-        {
-            if (!state.Values.ContainsKey(name))
-            {
-                expectedCount++;
-            }
+        foreach (string name in changes.Values.Keys) {
+            if (!state.Values.ContainsKey(name)) expectedCount++;
         }
-        if (candidate.Values.Count != expectedCount)
-        {
-            return false;
+        if (candidate.Values.Count != expectedCount) return false;
+
+        foreach ((string candidateName, object candidateValue) in candidate.Values) {
+            object? expectedValue;
+            if (changes.Values.TryGetValue(candidateName, out object? changedValue)) expectedValue = changedValue;
+            else if (!state.Values.TryGetValue(candidateName, out expectedValue)) return false;
+
+            if (!Equals(candidateValue, expectedValue)) return false;
         }
 
-        foreach ((string candidateName, object candidateValue) in candidate.Values)
-        {
-            object? expectedValue;
-            if (changes.Values.TryGetValue(candidateName, out object? changedValue))
-            {
-                expectedValue = changedValue;
-            }
-            else if (!state.Values.TryGetValue(candidateName, out expectedValue))
-            {
-                return false;
-            }
-            if (!Equals(candidateValue, expectedValue))
-            {
-                return false;
-            }
-        }
         return true;
     }
 }

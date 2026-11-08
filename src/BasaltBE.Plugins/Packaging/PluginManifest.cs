@@ -55,8 +55,7 @@ public sealed class PluginManifest {
     }
 
     public static int ApiMajor(string value) {
-        if (string.IsNullOrEmpty(value))
-            throw new InvalidDataException("Plugin api is required.");
+        if (string.IsNullOrEmpty(value)) throw new InvalidDataException("Plugin api is required.");
 
         string[] parts = value.Split('.');
         if (parts.Length is not (1 or 3))
@@ -69,16 +68,15 @@ public sealed class PluginManifest {
                 !int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out int component))
                 throw new InvalidDataException("Plugin api must be a major version or a three-part version.");
 
-            if (index == 0)
-                major = component;
+            if (index == 0) major = component;
         }
+
         return major;
     }
 
     public string? ApiMismatch(int expected) {
         int got = ApiMajor(Api);
-        if (got == expected)
-            return null;
+        if (got == expected) return null;
 
         return FormattableString.Invariant($"Could not load {Name}: API version mismatch (got: {got}, expected: {expected}).");
     }

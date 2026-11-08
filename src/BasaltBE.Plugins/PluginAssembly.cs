@@ -18,12 +18,10 @@ internal static class PluginAssembly {
         foreach (string file in Directory.GetFiles(directory, "*.dll")) {
             using FileStream stream = File.OpenRead(file);
             using PEReader image = new(stream);
-            if (!image.HasMetadata)
-                continue;
+            if (!image.HasMetadata) continue;
 
             string identity = AssemblyName.GetAssemblyName(file).Name!;
-            if (!assemblies.TryAdd(identity, file))
-                throw new InvalidDataException($"Duplicate assembly identity: {identity}.");
+            if (!assemblies.TryAdd(identity, file)) throw new InvalidDataException($"Duplicate assembly identity: {identity}.");
         }
         string references = Path.Combine(directory, ".basalt", "references");
         if (Directory.Exists(references)) {
@@ -49,8 +47,7 @@ internal static class PluginAssembly {
 
         List<Type> entries = [];
         foreach (Type type in compiled.GetTypes()) {
-            if (!type.IsPublic || type.IsAbstract || type.ContainsGenericParameters)
-                continue;
+            if (!type.IsPublic || type.IsAbstract || type.ContainsGenericParameters) continue;
 
             for (Type? parent = type.BaseType; parent is not null; parent = parent.BaseType) {
                 if (parent.FullName != typeof(Plugin).FullName || parent.Assembly.GetName().Name != typeof(Plugin).Assembly.GetName().Name)

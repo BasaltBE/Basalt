@@ -5,7 +5,7 @@ using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
 
-namespace BasaltBE.Basalt.Experience;
+namespace BasaltBE.Basalt.Entities.Experience;
 
 public sealed class ExperienceDropManager {
     private static readonly int[] OrbValues = [2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3, 1];
@@ -45,19 +45,15 @@ public sealed class ExperienceDropManager {
 
     public float GetSmeltExperience(string identifier) {
         RegistrySnapshot current = Volatile.Read(ref registry);
-        if (current.CustomSmelt.TryGetValue(identifier, out float custom))
-            return custom;
-        if (current.RemovedSmelt.Contains(identifier))
-            return 0;
+        if (current.CustomSmelt.TryGetValue(identifier, out float custom)) return custom;
+        if (current.RemovedSmelt.Contains(identifier)) return 0;
         return current.Smelt.GetValueOrDefault(identifier);
     }
 
     public void Register(ExpDropType type, string identifier, int minimum, int maximum) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-        if (minimum < 0 || maximum < minimum || maximum == int.MaxValue)
-            throw new ArgumentOutOfRangeException(nameof(minimum));
-        if (type is not (ExpDropType.Block or ExpDropType.Entity))
-            throw new ArgumentOutOfRangeException(nameof(type));
+        if (minimum < 0 || maximum < minimum || maximum == int.MaxValue) throw new ArgumentOutOfRangeException(nameof(minimum));
+        if (type is not (ExpDropType.Block or ExpDropType.Entity)) throw new ArgumentOutOfRangeException(nameof(type));
 
         lock (registryLock) {
             RegistrySnapshot current = registry;
@@ -80,10 +76,8 @@ public sealed class ExperienceDropManager {
 
     public void Register(ExpDropType type, string identifier, float experience) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-        if (type != ExpDropType.Smelting)
-            throw new ArgumentOutOfRangeException(nameof(type));
-        if (!float.IsFinite(experience) || experience < 0)
-            throw new ArgumentOutOfRangeException(nameof(experience));
+        if (type != ExpDropType.Smelting) throw new ArgumentOutOfRangeException(nameof(type));
+        if (!float.IsFinite(experience) || experience < 0) throw new ArgumentOutOfRangeException(nameof(experience));
 
         lock (registryLock) {
             RegistrySnapshot current = registry;
@@ -97,56 +91,48 @@ public sealed class ExperienceDropManager {
 
     public bool Unregister(ExpDropType type, string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+
         lock (registryLock) {
             RegistrySnapshot current = registry;
-            switch (type) {
-                case ExpDropType.Block: {
-                        bool exists = current.CustomBlocks.ContainsKey(identifier) || current.Blocks.ContainsKey(identifier);
-                        if (!exists)
-                            return false;
-                        Dictionary<string, ExperienceRange> custom = new(current.CustomBlocks, StringComparer.Ordinal);
-                        custom.Remove(identifier);
-                        HashSet<string> removed = new(current.RemovedBlocks, StringComparer.Ordinal);
-                        if (current.Blocks.ContainsKey(identifier))
-                            removed.Add(identifier);
-                        Volatile.Write(ref registry, current with { CustomBlocks = custom, RemovedBlocks = removed });
-                        return true;
-                    }
-                case ExpDropType.Entity: {
-                        bool exists = current.CustomEntities.ContainsKey(identifier) || current.Entities.ContainsKey(identifier);
-                        if (!exists)
-                            return false;
-                        Dictionary<string, ExperienceRange> custom = new(current.CustomEntities, StringComparer.Ordinal);
-                        custom.Remove(identifier);
-                        HashSet<string> removed = new(current.RemovedEntities, StringComparer.Ordinal);
-                        if (current.Entities.ContainsKey(identifier))
-                            removed.Add(identifier);
-                        Volatile.Write(ref registry, current with { CustomEntities = custom, RemovedEntities = removed });
-                        return true;
-                    }
-                case ExpDropType.Smelting: {
-                        bool exists = current.CustomSmelt.ContainsKey(identifier) || current.Smelt.ContainsKey(identifier);
-                        if (!exists)
-                            return false;
-                        Dictionary<string, float> custom = new(current.CustomSmelt, StringComparer.Ordinal);
-                        custom.Remove(identifier);
-                        HashSet<string> removed = new(current.RemovedSmelt, StringComparer.Ordinal);
-                        if (current.Smelt.ContainsKey(identifier))
-                            removed.Add(identifier);
-                        Volatile.Write(ref registry, current with { CustomSmelt = custom, RemovedSmelt = removed });
-                        return true;
-                    }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type));
+            if (type == ExpDropType.Smelting) {
+                bool exists = current.CustomSmelt.ContainsKey(identifier) || current.Smelt.ContainsKey(identifier);
+                if (!exists) return false;
+
+                Dictionary<string, float> custom = new(current.CustomSmelt, StringComparer.Ordinal);
+                custom.Remove(identifier);
+                HashSet<string> removed = new(current.RemovedSmelt, StringComparer.Ordinal);
+                if (current.Smelt.ContainsKey(identifier)) removed.Add(identifier);
+
+                Volatile.Write(ref registry, current with { CustomSmelt = custom, RemovedSmelt = removed });
+                return true;
             }
+
+            if (type is not (ExpDropType.Block or ExpDropType.Entity)) throw new ArgumentOutOfRangeException(nameof(type));
+
+            bool block = type == ExpDropType.Block;
+            Dictionary<string, ExperienceRange> vanilla = block ? current.Blocks : current.Entities;
+            Dictionary<string, ExperienceRange> registered = block ? current.CustomBlocks : current.CustomEntities;
+            if (!registered.ContainsKey(identifier) && !vanilla.ContainsKey(identifier)) return false;
+
+            Dictionary<string, ExperienceRange> ranges = new(registered, StringComparer.Ordinal);
+            ranges.Remove(identifier);
+            HashSet<string> removedRanges = new(
+                block ? current.RemovedBlocks : current.RemovedEntities,
+                StringComparer.Ordinal
+            );
+            if (vanilla.ContainsKey(identifier)) removedRanges.Add(identifier);
+
+            Volatile.Write(ref registry, block
+                ? current with { CustomBlocks = ranges, RemovedBlocks = removedRanges }
+                : current with { CustomEntities = ranges, RemovedEntities = removedRanges });
+            return true;
         }
     }
 
     public void Drop(Dimension dimension, Vec3 position, int amount) {
         ArgumentNullException.ThrowIfNull(dimension);
         ArgumentNullException.ThrowIfNull(position);
-        if (amount <= 0)
-            return;
+        if (amount <= 0) return;
 
         foreach (int value in OrbValues) {
             while (amount >= value) {
@@ -154,6 +140,7 @@ public sealed class ExperienceDropManager {
                 orb.Position.X = position.X;
                 orb.Position.Y = position.Y;
                 orb.Position.Z = position.Z;
+
                 orb.GetTrait<ExperienceOrbTrait>()!.ExperienceValue = value;
                 orb.Spawn(dimension);
                 amount -= value;
@@ -168,6 +155,7 @@ public sealed class ExperienceDropManager {
                 entry.Maximum == int.MaxValue || !result.TryAdd(entry.Identifier, entry))
                 throw new InvalidDataException($"Experience drop data contains an invalid {kind} entry '{entry.Identifier}'.");
         }
+
         return result;
     }
 
@@ -177,10 +165,8 @@ public sealed class ExperienceDropManager {
         Dictionary<string, ExperienceRange> custom,
         HashSet<string> removed
     ) {
-        if (custom.TryGetValue(identifier, out ExperienceRange? entry))
-            return Random.Shared.Next(entry.Minimum, entry.Maximum + 1);
-        if (removed.Contains(identifier) || !vanilla.TryGetValue(identifier, out entry))
-            return 0;
+        if (custom.TryGetValue(identifier, out ExperienceRange? entry)) return Random.Shared.Next(entry.Minimum, entry.Maximum + 1);
+        if (removed.Contains(identifier) || !vanilla.TryGetValue(identifier, out entry)) return 0;
         return Random.Shared.Next(entry.Minimum, entry.Maximum + 1);
     }
 

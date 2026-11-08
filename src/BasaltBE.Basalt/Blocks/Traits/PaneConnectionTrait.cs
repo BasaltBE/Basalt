@@ -52,18 +52,14 @@ public sealed class PaneConnectionTrait : BlockTrait {
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
         byte connections = 0;
-        if (BlockPalette.PaneConnects(dimension.GetPermutation(x + 1, y, z).Identifier))
-            connections |= 1;
-        if (BlockPalette.PaneConnects(dimension.GetPermutation(x, y, z - 1).Identifier))
-            connections |= 2;
-        if (BlockPalette.PaneConnects(dimension.GetPermutation(x, y, z + 1).Identifier))
-            connections |= 4;
-        if (BlockPalette.PaneConnects(dimension.GetPermutation(x - 1, y, z).Identifier))
-            connections |= 8;
+        for (int index = 0; index < BlockDirections.Connections.Length; index++) {
+            var direction = BlockDirections.Connections[index];
+            BlockPermutation neighbor = dimension.GetPermutation(x + direction.X, y, z + direction.Z);
+            if (BlockPalette.PaneConnects(neighbor.Identifier)) connections |= (byte)(1 << index);
+        }
 
         BlockPermutation? updated = BlockPalette.FindPanePermutation(current.Identifier, connections);
-        if (updated is null || updated == current)
-            return false;
+        if (updated is null || updated == current) return false;
 
         dimension.SetPermutation(x, y, z, updated);
         return true;

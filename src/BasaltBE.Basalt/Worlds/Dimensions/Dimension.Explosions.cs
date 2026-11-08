@@ -33,8 +33,7 @@ public sealed partial class Dimension {
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
-                    if (x is not (0 or 15) && y is not (0 or 15) && z is not (0 or 15))
-                        continue;
+                    if (x is not (0 or 15) && y is not (0 or 15) && z is not (0 or 15)) continue;
 
                     float directionX = x / 15f * 2 - 1;
                     float directionY = y / 15f * 2 - 1;
@@ -49,8 +48,7 @@ public sealed partial class Dimension {
     }
 
     internal void Explode(Entity tnt) {
-        if (World?.GameRules.Get(GameRule.TntExplodes) == false)
-            return;
+        if (World?.GameRules.Get(GameRule.TntExplodes) == false) return;
 
         const float power = 4;
         const float radius = power * 2;
@@ -62,8 +60,7 @@ public sealed partial class Dimension {
         explosionNeighbors.Clear();
         explosionItemsToDespawn.Clear();
         explosionContainerDrops.Clear();
-        foreach ((int x, int y, int z) in explosionUpdateChunks)
-            explosionUpdates[(x, y, z)].Clear();
+        foreach ((int x, int y, int z) in explosionUpdateChunks) explosionUpdates[(x, y, z)].Clear();
         explosionUpdateChunks.Clear();
 
         foreach ((float directionX, float directionY, float directionZ) in ExplosionDirections) {
@@ -98,8 +95,7 @@ public sealed partial class Dimension {
                         currentSubChunkY = int.MinValue;
                     }
 
-                    if (blockY < MinimumY || blockY > MaximumY || currentChunk is null)
-                        break;
+                    if (blockY < MinimumY || blockY > MaximumY || currentChunk is null) break;
 
                     int subChunkY = blockY >> 4;
                     if (subChunkY != currentSubChunkY) {
@@ -112,12 +108,10 @@ public sealed partial class Dimension {
                     ) ?? BlockStorage.Air;
                     hasBlock = block.Identifier != "minecraft:air";
                     resistance = hasBlock ? BlockPalette.FindType(block.Identifier)?.BlastResistance ?? 0 : 0;
-                    if (hasBlock && energy - (resistance + 0.3f) * 0.3f > 0)
-                        affectedExplosionBlocks.Add((blockX, blockY, blockZ));
+                    if (hasBlock && energy - (resistance + 0.3f) * 0.3f > 0) affectedExplosionBlocks.Add((blockX, blockY, blockZ));
                 }
 
-                if (hasBlock)
-                    energy -= (resistance + 0.3f) * 0.3f;
+                if (hasBlock) energy -= (resistance + 0.3f) * 0.3f;
 
                 positionX += directionX * 0.3f;
                 positionY += directionY * 0.3f;
@@ -127,12 +121,10 @@ public sealed partial class Dimension {
         }
 
         foreach ((int x, int y, int z) in affectedExplosionBlocks) {
-            if (GetChunk(x >> 4, z >> 4) is not { } chunk)
-                continue;
+            if (GetChunk(x >> 4, z >> 4) is not { } chunk) continue;
 
             BlockPermutation block = chunk.GetPermutation(x & 15, y, z & 15);
-            if (block.Identifier == "minecraft:air")
-                continue;
+            if (block.Identifier == "minecraft:air") continue;
 
             Container? inventory = GetBlockActor(chunk, x & 15, y, z & 15)?.Inventory;
 
@@ -141,14 +133,12 @@ public sealed partial class Dimension {
                     this, x, y, z, Random.Shared.Next(10, 31), broadcast: false, updateNeighbors: false
                 ))
                     continue;
-            }
-            else if (!SetPermutation(x, y, z, BlockStorage.Air)) {
+            } else if (!SetPermutation(x, y, z, BlockStorage.Air)) {
                 continue;
             }
             if (inventory is not null) {
                 for (int slot = 0; slot < inventory.ContainerSize; slot++) {
-                    if (inventory.TakeItem(slot, ushort.MaxValue) is { } contents)
-                        explosionContainerDrops.Add((contents, x, y, z));
+                    if (inventory.TakeItem(slot, ushort.MaxValue) is { } contents) explosionContainerDrops.Add((contents, x, y, z));
                 }
             }
 
@@ -162,8 +152,7 @@ public sealed partial class Dimension {
                     int amount = drop.MinAmount == drop.MaxAmount
                         ? drop.MinAmount
                         : (int)Random.Shared.NextInt64(drop.MinAmount, (long)drop.MaxAmount + 1);
-                    if (amount > 0)
-                        explosionDrops[itemType] = explosionDrops.GetValueOrDefault(itemType) + amount;
+                    if (amount > 0) explosionDrops[itemType] = explosionDrops.GetValueOrDefault(itemType) + amount;
                 }
             }
 
@@ -172,8 +161,7 @@ public sealed partial class Dimension {
                 blocks = [];
                 explosionUpdates.Add(subChunk, blocks);
             }
-            if (blocks.Count == 0)
-                explosionUpdateChunks.Add(subChunk);
+            if (blocks.Count == 0) explosionUpdateChunks.Add(subChunk);
             blocks.Add(new UpdateSubChunkNetworkBlockInfo {
                 Position = new BlockPos { X = x, Y = y, Z = z },
                 RuntimeId = unchecked((uint)BlockStorage.Air.Hash),
@@ -201,8 +189,7 @@ public sealed partial class Dimension {
             }
         }
 
-        foreach ((int x, int y, int z) in explosionNeighbors)
-            UpdateNeighbor(x, y, z);
+        foreach ((int x, int y, int z) in explosionNeighbors) UpdateNeighbor(x, y, z);
 
         Broadcast(new LevelEventPacket {
             EventId = (int)LevelEvent.ParticlesHugeExplosion,
@@ -231,8 +218,7 @@ public sealed partial class Dimension {
                     float dy = entity.Position.Y + (primedTnt ? 0.49f : 0.9f) - centerY;
                     float dz = entity.Position.Z - centerZ;
                     float distanceSquared = dx * dx + dy * dy + dz * dz;
-                    if (distanceSquared > radius * radius)
-                        continue;
+                    if (distanceSquared > radius * radius) continue;
                     if (distanceSquared == 0 && primedTnt) {
                         float angle = Random.Shared.NextSingle() * (MathF.PI * 2);
                         dx = MathF.Cos(angle);
@@ -240,8 +226,8 @@ public sealed partial class Dimension {
                         dz = MathF.Sin(angle);
                         distanceSquared = dx * dx + dy * dy + dz * dz;
                     }
-                    if (distanceSquared == 0)
-                        continue;
+                    if (distanceSquared == 0) continue;
+
                     float distance = MathF.Sqrt(distanceSquared);
 
                     int sampleCount = (entity is ItemEntity || primedTnt) ||
@@ -291,29 +277,25 @@ public sealed partial class Dimension {
                                             solid = BlockPalette.FindType(
                                                 currentChunk.GetPermutation(blockX & 15, blockY, blockZ & 15).Identifier
                                             )?.Solid == true;
-                                        }
-                                        else {
+                                        } else {
                                             solid = false;
                                         }
                                     }
 
-                                    if (!solid)
-                                        continue;
+                                    if (!solid) continue;
 
                                     visible = false;
                                     break;
                                 }
 
-                                if (visible)
-                                    visibleSamples++;
+                                if (visible) visibleSamples++;
                             }
                         }
                     }
 
                     float exposure = visibleSamples / (sampleCount * sampleCount * sampleCount);
                     float impact = (1 - distance / radius) * exposure;
-                    if (impact <= 0)
-                        continue;
+                    if (impact <= 0) continue;
 
                     if (entity is ItemEntity item) {
                         explosionItemsToDespawn.Add(item);
@@ -321,8 +303,7 @@ public sealed partial class Dimension {
                     }
 
                     entity.GetTrait<EntityHealthTrait>()?.ApplyDamage((impact * impact + impact) * 0.5f * 7 * power + 1, EntityDamageCause.Explosion, tnt);
-                    if (entity.GetTrait<EntityMovementTrait>() is not { } movement)
-                        continue;
+                    if (entity.GetTrait<EntityMovementTrait>() is not { } movement) continue;
 
                     float inverseDistance = 1 / distance;
                     SetActorMotionPacket motion = new() {
@@ -339,8 +320,7 @@ public sealed partial class Dimension {
                     if (entity is Player player) {
                         Broadcast(motion, entity, exclude: player);
                         player.SendPacket(motion);
-                    }
-                    else {
+                    } else {
                         movement.Motion.X = motion.Motion.X;
                         movement.Motion.Y = motion.Motion.Y;
                         movement.Motion.Z = motion.Motion.Z;
@@ -355,8 +335,7 @@ public sealed partial class Dimension {
             RemoveEntity(item);
         }
 
-        foreach ((ItemStack item, int x, int y, int z) in explosionContainerDrops)
-            new ItemEntity(item, x, y, z).Spawn(this);
+        foreach ((ItemStack item, int x, int y, int z) in explosionContainerDrops) new ItemEntity(item, x, y, z).Spawn(this);
 
         foreach ((ItemType itemType, long amount) in explosionDrops) {
             long remaining = amount;

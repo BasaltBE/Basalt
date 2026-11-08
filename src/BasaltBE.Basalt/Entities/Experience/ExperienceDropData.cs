@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BasaltBE.Basalt.Experience;
+namespace BasaltBE.Basalt.Entities.Experience;
 
 internal sealed class ExperienceDropTableData {
     [JsonInclude, JsonPropertyName("block")]

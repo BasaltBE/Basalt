@@ -8,21 +8,19 @@ public sealed class BlockActorRegistry {
     bool frozen;
 
     public void Register(string blockIdentifier, Func<BlockActorContext, BlockActor> factory, bool tick = false) {
-        if (frozen)
-            throw new InvalidOperationException("Block actor registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Server is already running.");
+
         ArgumentException.ThrowIfNullOrWhiteSpace(blockIdentifier);
         ArgumentNullException.ThrowIfNull(factory);
+
         factories[blockIdentifier] = factory;
-        if (tick)
-            ticking.Add(blockIdentifier);
-        else
-            ticking.Remove(blockIdentifier);
+        if (tick) ticking.Add(blockIdentifier); else ticking.Remove(blockIdentifier);
     }
 
     public bool Unregister(string blockIdentifier) {
-        if (frozen)
-            throw new InvalidOperationException("Block actor registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Server is already running.");
         ArgumentException.ThrowIfNullOrWhiteSpace(blockIdentifier);
+
         ticking.Remove(blockIdentifier);
         return factories.Remove(blockIdentifier);
     }

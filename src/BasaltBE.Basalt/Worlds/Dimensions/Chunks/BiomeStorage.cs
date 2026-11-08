@@ -47,8 +47,7 @@ public sealed class BiomeStorage {
 
         if (oldBiome == 0 && biome != 0) {
             nonDefaultCount++;
-        }
-        else if (oldBiome != 0 && biome == 0) {
+        } else if (oldBiome != 0 && biome == 0) {
             nonDefaultCount--;
         }
 
@@ -71,10 +70,8 @@ public sealed class BiomeStorage {
         writer.WriteUInt8((byte)((bitsPerBiome << 1) | 1));
 
         if (bitsPerBiome == 0) {
-            if (mode == ChunkSerializationMode.Network)
-                writer.WriteZigZag(singletonBiome);
-            else
-                writer.WriteInt32(singletonBiome, true);
+            if (mode == ChunkSerializationMode.Network) writer.WriteZigZag(singletonBiome);
+            else writer.WriteInt32(singletonBiome, true);
             return;
         }
 
@@ -97,13 +94,10 @@ public sealed class BiomeStorage {
 
         if (mode == ChunkSerializationMode.Network) {
             writer.WriteZigZag(paletteCount);
-            foreach (int biome in palette!)
-                writer.WriteZigZag(biome);
-        }
-        else {
+            foreach (int biome in palette!) writer.WriteZigZag(biome);
+        } else {
             writer.WriteInt32(paletteCount, true);
-            foreach (int biome in palette!)
-                writer.WriteInt32(biome, true);
+            foreach (int biome in palette!) writer.WriteInt32(biome, true);
         }
     }
 
@@ -113,10 +107,8 @@ public sealed class BiomeStorage {
         ChunkSerializationMode mode = ChunkSerializationMode.Network
     ) {
         writer.WriteUInt8(1);
-        if (mode == ChunkSerializationMode.Network)
-            writer.WriteZigZag(biome);
-        else
-            writer.WriteInt32(biome, true);
+        if (mode == ChunkSerializationMode.Network) writer.WriteZigZag(biome);
+        else writer.WriteInt32(biome, true);
     }
 
     public static BiomeStorage Deserialize(ref BinaryReader reader) =>
@@ -147,6 +139,22 @@ public sealed class BiomeStorage {
 
         int valuesPerWord = 32 / bitsPerBiome;
         int wordCount = (CellCount + valuesPerWord - 1) / valuesPerWord;
+        int wordBytes = wordCount * sizeof(uint);
+        if (reader.Remaining < wordBytes) throw new InvalidDataException("The biome index array is incomplete.");
+
+        int wordsOffset = reader.Offset;
+        reader.Offset += wordBytes;
+        int paletteCount = mode == ChunkSerializationMode.Network ? reader.ReadZigZag() : reader.ReadInt32(true);
+        if (paletteCount is < 1 or > CellCount + 1 || paletteCount > 1 << bitsPerBiome)
+            throw new InvalidDataException("Invalid biome palette size.");
+
+        if (paletteCount == 1) {
+            int biome = mode == ChunkSerializationMode.Network ? reader.ReadZigZag() : reader.ReadInt32(true);
+            return biome == 0 && !retainEmpty ? null : new BiomeStorage(biome) { Initialized = true };
+        }
+
+        int paletteOffset = reader.Offset;
+        reader.Offset = wordsOffset;
         ushort[] indices = new ushort[CellCount];
         uint mask = (1u << bitsPerBiome) - 1;
         int cellIndex = 0;
@@ -158,11 +166,7 @@ public sealed class BiomeStorage {
             }
         }
 
-        int paletteCount = mode == ChunkSerializationMode.Network ? reader.ReadZigZag() : reader.ReadInt32(true);
-        if (paletteCount is < 2 or > CellCount + 1 || paletteCount > 1 << bitsPerBiome) {
-            throw new InvalidDataException("Invalid biome palette size.");
-        }
-
+        reader.Offset = paletteOffset;
         BiomeStorage storage = new();
         storage.palette = new List<int>(paletteCount);
         storage.paletteIndices = new Dictionary<int, ushort>(paletteCount);

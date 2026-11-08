@@ -57,8 +57,7 @@ internal sealed class FallingBlockEntity : Entity {
         int x = (int)MathF.Floor(Position.X);
         int y = (int)MathF.Floor(Position.Y);
         int z = (int)MathF.Floor(Position.Z);
-        if (dimension.GetChunk(x >> 4, z >> 4) is null)
-            return;
+        if (dimension.GetChunk(x >> 4, z >> 4) is null) return;
 
         if (BlockPalette.FindType(dimension.GetPermutation(x, y, z).Identifier)?.Solid == true) {
             new ItemEntity(new ItemStack("minecraft:anvil"), this).Spawn(dimension);
@@ -97,8 +96,7 @@ internal sealed class FallingBlockEntity : Entity {
 
     private sealed class LandingTrait(FallingBlockEntity entity) : EntityTrait(entity) {
         public override void Tick() {
-            if (entity.movement.Grounded && entity.SpawnedDimension is { } dimension)
-                entity.Land(dimension);
+            if (entity.movement.Grounded && entity.SpawnedDimension is { } dimension) entity.Land(dimension);
         }
     }
 

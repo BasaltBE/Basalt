@@ -50,8 +50,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
                     pending.LegacyRequestId,
                     pending.LegacySetItemSlots
                 );
-            }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 player.Network.RemovePlayer(player.Peer);
                 return;
             }
@@ -65,8 +64,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
 
     internal bool MatchesItem(int slot, NetworkItemStackDescriptor descriptor, out ItemStack? item) {
         item = null;
-        if ((uint)slot >= Inventory.ContainerSize)
-            return false;
+        if ((uint)slot >= Inventory.ContainerSize) return false;
 
         item = Inventory.GetItem(slot);
         if (item is null || item.StackSize == 0 || item.Type.NetworkId == 0) {
@@ -118,8 +116,7 @@ public sealed class PlayerInventoryTrait : EntityTrait {
 
     public override void Read(CompoundTag entityTag) {
         SelectedSlot = Math.Min((byte)8, entityTag.Get<ByteTag>("SelectedSlot")?.Value ?? 0);
-        if (entityTag.Get<ListTag>("Inventory") is not { } items)
-            return;
+        if (entityTag.Get<ListTag>("Inventory") is not { } items) return;
 
         foreach (Tag entry in items.Value) {
             if (entry is not CompoundTag item ||
@@ -142,16 +139,14 @@ public sealed class PlayerInventoryTrait : EntityTrait {
         entityTag.Add("SelectedSlot", new ByteTag { Value = SelectedSlot });
         ListTag items = new() { ElementType = TagType.Compound };
         for (int slot = 0; slot < Inventory.ContainerSize; slot++) {
-            if (Inventory.GetItem(slot) is not { } stack)
-                continue;
+            if (Inventory.GetItem(slot) is not { } stack) continue;
 
             CompoundTag item = new();
             item.Add("Name", new StringTag { Value = stack.Type.Identifier });
             item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
             item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
             item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
-            if (stack.Nbt is not null)
-                item.Add("tag", stack.Clone().Nbt!);
+            if (stack.Nbt is not null) item.Add("tag", stack.Clone().Nbt!);
             items.Value.Add(item);
         }
         entityTag.Add("Inventory", items);

@@ -1,7 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     private void BuildPine(
@@ -35,8 +35,7 @@ internal sealed partial class TreePlacement {
             if (radius >= 1 &&
                 offsetY == foliageOffset - foliageHeight + 1) {
                 radius--;
-            }
-            else if (radius < leafRadius) {
+            } else if (radius < leafRadius) {
                 radius++;
             }
         }
@@ -73,8 +72,7 @@ internal sealed partial class TreePlacement {
                 radius = minimumRadius;
                 minimumRadius = 1;
                 maximumRadius = Math.Min(maximumRadius + 1, leafRadius);
-            }
-            else {
+            } else {
                 radius++;
             }
         }

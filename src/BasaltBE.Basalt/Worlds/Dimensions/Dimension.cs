@@ -158,10 +158,8 @@ public sealed partial class Dimension : IDisposable {
     public ReadOnlySpan<Player> GetPlayers() => Volatile.Read(ref players);
 
     public ReadOnlySpan<Entity> GetEntities(bool playersOnly = false) {
-        if (playersOnly)
-            return Volatile.Read(ref players);
-        if (Volatile.Read(ref entitySnapshot) is { } snapshot)
-            return snapshot;
+        if (playersOnly) return Volatile.Read(ref players);
+        if (Volatile.Read(ref entitySnapshot) is { } snapshot) return snapshot;
         lock (playersSync) {
             entitySnapshot ??= [.. entities.Values];
             return entitySnapshot;
@@ -180,14 +178,11 @@ public sealed partial class Dimension : IDisposable {
 
     void Broadcast(DataPacket packet, ReadOnlySpan<Player> viewers, Player? exclude, DataPacket? additionalPacket) {
         foreach (Player player in viewers) {
-            if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
-                continue;
+            if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude)) continue;
             try {
                 player.SendPacket(packet);
-                if (additionalPacket is not null)
-                    player.SendPacket(additionalPacket);
-            }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                if (additionalPacket is not null) player.SendPacket(additionalPacket);
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }
         }
     }
@@ -196,8 +191,7 @@ public sealed partial class Dimension : IDisposable {
         lock (playersSync) {
             long key = GetKey(chunkX, chunkZ);
             Player[] current = chunkViewers.GetValueOrDefault(key) ?? [];
-            if (Array.IndexOf(current, player) >= 0)
-                return;
+            if (Array.IndexOf(current, player) >= 0) return;
 
             Player[] expanded = new Player[current.Length + 1];
             current.CopyTo(expanded, 0);
@@ -209,11 +203,10 @@ public sealed partial class Dimension : IDisposable {
     internal void RemoveChunkViewer(Player player, int chunkX, int chunkZ) {
         lock (playersSync) {
             long key = GetKey(chunkX, chunkZ);
-            if (!chunkViewers.TryGetValue(key, out Player[]? current))
-                return;
+            if (!chunkViewers.TryGetValue(key, out Player[]? current)) return;
+
             int index = Array.IndexOf(current, player);
-            if (index < 0)
-                return;
+            if (index < 0) return;
             if (current.Length == 1) {
                 chunkViewers.Remove(key);
                 return;
@@ -234,23 +227,18 @@ public sealed partial class Dimension : IDisposable {
     public void AddEntity(Entity entity) {
         World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(entity);
-        if (entity is Player)
-            throw new ArgumentException("Add players through World.AddPlayer.", nameof(entity));
-        if (entity.SpawnedDimension is not null)
-            throw new InvalidOperationException("Entity already belongs to a dimension.");
+        if (entity is Player) throw new ArgumentException("Add players through World.AddPlayer.", nameof(entity));
+        if (entity.SpawnedDimension is not null) throw new InvalidOperationException("Entity already belongs to a dimension.");
         if (World?.Storage is { SupportsEntities: true } storage) {
-            if (entity.StorageOwner?.World != World)
-                entity.StorageId = null;
+            if (entity.StorageOwner?.World != World) entity.StorageId = null;
             entity.StorageId ??= storage.AllocateEntityId();
-        }
-        else {
+        } else {
             entity.StorageId = null;
         }
         if (entity.StorageId is { } id && entitySaves.TryGetValue(id, out EntitySave? existing) && !ReferenceEquals(existing.Entity, entity))
             throw new InvalidOperationException("An actor with this persistent identity already exists.");
         lock (playersSync) {
-            if (entity.SpawnedDimension is not null)
-                throw new InvalidOperationException("Entity already belongs to a dimension.");
+            if (entity.SpawnedDimension is not null) throw new InvalidOperationException("Entity already belongs to a dimension.");
             if (entity.SpatialSlot >= 0)
                 throw new InvalidOperationException("Wait for the current simulation step to finish before respawning this entity.");
             if (!entities.TryAdd(entity.RuntimeId, entity))
@@ -271,8 +259,7 @@ public sealed partial class Dimension : IDisposable {
             if (state is not null) {
                 state.Queued = false;
                 entitySaves.Add(storageId, state);
-            }
-            else if (!entitySaves.TryGetValue(storageId, out state)) {
+            } else if (!entitySaves.TryGetValue(storageId, out state)) {
                 state = new EntitySave(entity);
                 entitySaves.Add(storageId, state);
             }
@@ -289,8 +276,7 @@ public sealed partial class Dimension : IDisposable {
     public bool RemoveEntity(Entity entity) {
         World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(entity);
-        if (entity is Player)
-            throw new ArgumentException("Remove players through World.RemovePlayer.", nameof(entity));
+        if (entity is Player) throw new ArgumentException("Remove players through World.RemovePlayer.", nameof(entity));
         lock (playersSync) {
             if (!ReferenceEquals(entities.GetValueOrDefault(entity.RuntimeId), entity) || !entities.Remove(entity.RuntimeId))
                 return false;
@@ -359,13 +345,11 @@ public sealed partial class Dimension : IDisposable {
     public void Broadcast(DataPacket packet, Vec3 position, Player? exclude = null, float radius = BroadcastRadius) {
         ArgumentNullException.ThrowIfNull(packet);
         ArgumentNullException.ThrowIfNull(position);
-        if (!float.IsFinite(radius) || radius < 0)
-            throw new ArgumentOutOfRangeException(nameof(radius));
+        if (!float.IsFinite(radius) || radius < 0) throw new ArgumentOutOfRangeException(nameof(radius));
 
         float radiusSquared = radius * radius;
         foreach (Player player in Volatile.Read(ref players)) {
-            if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude))
-                continue;
+            if (!player.Spawned || player.Disposed || ReferenceEquals(player, exclude)) continue;
 
             float x = player.Position.X - position.X;
             float y = player.Position.Y - position.Y;
@@ -373,8 +357,7 @@ public sealed partial class Dimension : IDisposable {
             if (x * x + y * y + z * z <= radiusSquared) {
                 try {
                     player.SendPacket(packet);
-                }
-                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 }
             }
         }
@@ -389,16 +372,14 @@ public sealed partial class Dimension : IDisposable {
                 continue;
             try {
                 viewer.SendPacket(packet);
-            }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }
         }
     }
 
     internal void Broadcast(DataPacket packet, Player? exclude) {
         foreach (Player player in Volatile.Read(ref players)) {
-            if (!player.Disposed && !ReferenceEquals(player, exclude))
-                player.SendPacket(packet);
+            if (!player.Disposed && !ReferenceEquals(player, exclude)) player.SendPacket(packet);
         }
     }
 
@@ -422,18 +403,15 @@ public sealed partial class Dimension : IDisposable {
         lock (playersSync) {
             Player[] current = players;
             int index = Array.IndexOf(current, player);
-            if (index < 0)
-                return;
+            if (index < 0) return;
             entities.Remove(player.RuntimeId);
             player.SpawnedDimension = null;
             Volatile.Write(ref entitySnapshot, null);
             EntityIndex.Remove(player);
 
             Player[] reduced = new Player[current.Length - 1];
-            if (index > 0)
-                Array.Copy(current, 0, reduced, 0, index);
-            if (index < reduced.Length)
-                Array.Copy(current, index + 1, reduced, index, reduced.Length - index);
+            if (index > 0) Array.Copy(current, 0, reduced, 0, index);
+            if (index < reduced.Length) Array.Copy(current, index + 1, reduced, index, reduced.Length - index);
             Volatile.Write(ref players, reduced);
         }
     }
@@ -449,8 +427,7 @@ public sealed partial class Dimension : IDisposable {
             if (chunks.TryGetValue(key, out Chunk? existing)) {
                 if (existing is null) {
                     alreadyPending++;
-                }
-                else {
+                } else {
                     alreadyLoaded++;
                 }
                 continue;
@@ -458,8 +435,7 @@ public sealed partial class Dimension : IDisposable {
 
             if (QueueChunk(position.X, position.Z, key)) {
                 queued++;
-            }
-            else {
+            } else {
                 queueFull++;
             }
         }
@@ -489,11 +465,9 @@ public sealed partial class Dimension : IDisposable {
                     chunkCount++;
                     LoadScheduledTicks(result.Chunk);
                     Redstone.ChunkLoaded(this, result.Chunk);
-                    if (World?.Storage is not null)
-                        result.Chunk.MarkDirty();
+                    if (World?.Storage is not null) result.Chunk.MarkDirty();
                     committed++;
-                }
-                else {
+                } else {
                     chunks.Remove(result.Key);
                 }
             }
@@ -522,8 +496,7 @@ public sealed partial class Dimension : IDisposable {
     }
 
     internal BlockPermutation? GetLoadedPermutation(int x, int y, int z, int layer = 0) {
-        if ((uint)layer > 1)
-            throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");
+        if ((uint)layer > 1) throw new ArgumentOutOfRangeException(nameof(layer), "A subchunk supports two block layers.");
 
         long key = GetKey(x >> 4, z >> 4);
         Chunk? chunk = lastLoadedChunk;
@@ -552,10 +525,8 @@ public sealed partial class Dimension : IDisposable {
         int chunkZ = z >> 4;
         long key = GetKey(chunkX, chunkZ);
         if (chunks.TryGetValue(key, out Chunk? chunk)) {
-            if (chunk is null)
-                throw new InvalidOperationException($"Chunk ({chunkX}, {chunkZ}) is still loading.");
-        }
-        else {
+            if (chunk is null) throw new InvalidOperationException($"Chunk ({chunkX}, {chunkZ}) is still loading.");
+        } else {
             if (permutation == BlockStorage.Air) {
                 return true;
             }
@@ -573,14 +544,11 @@ public sealed partial class Dimension : IDisposable {
                 (permutation.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater");
             if (!sameDevice && (removedActor = GetBlockActor(chunk, x & 15, y, z & 15)) is { } actor && !actor.CanRemove())
                 return false;
-            if (!sameDevice)
-                CancelScheduledBlockUpdate(x, y, z);
+            if (!sameDevice) CancelScheduledBlockUpdate(x, y, z);
         }
         chunk.SetPermutation(x & 15, y, z & 15, permutation, layer);
-        if (removedActor is not null)
-            RemoveBlockActor(x, y, z);
-        if (layer == 0 && previous != permutation)
-            Redstone.BlockChanged(this, x, y, z, previous, permutation);
+        if (removedActor is not null) RemoveBlockActor(x, y, z);
+        if (layer == 0 && previous != permutation) Redstone.BlockChanged(this, x, y, z, previous, permutation);
         return true;
     }
 
@@ -596,8 +564,7 @@ public sealed partial class Dimension : IDisposable {
     }
 
     internal void UpdateNeighbor(int x, int y, int z, BlockPermutation? neighbor = null, BlockPermutation? previous = null) {
-        if (!BlockPalette.OnNeighborUpdate(this, x, y, z, neighbor, previous))
-            return;
+        if (!BlockPalette.OnNeighborUpdate(this, x, y, z, neighbor, previous)) return;
 
         BlockPermutation permutation = GetPermutation(x, y, z);
         BroadcastBlockUpdate(x, y, z, permutation);
@@ -607,8 +574,7 @@ public sealed partial class Dimension : IDisposable {
     internal void BroadcastBlockUpdate(int x, int y, int z, BlockPermutation permutation) {
         using ProfilerZone zone = Profiler.BeginZone("Dimension.BroadcastBlockUpdate");
         ReadOnlySpan<Player> viewers = GetChunkViewers(x >> 4, z >> 4);
-        if (viewers.IsEmpty)
-            return;
+        if (viewers.IsEmpty) return;
 
         Broadcast(new UpdateBlockPacket {
             Position = new BlockPos { X = x, Y = y, Z = z },
@@ -619,15 +585,13 @@ public sealed partial class Dimension : IDisposable {
 
     internal void QueueFluidBlockUpdate(int x, int y, int z, BlockPermutation permutation) {
         long key = GetKey(x >> 4, z >> 4);
-        if (GetChunkViewers(x >> 4, z >> 4).IsEmpty)
-            return;
+        if (GetChunkViewers(x >> 4, z >> 4).IsEmpty) return;
 
         if (!fluidBlockUpdates.TryGetValue(key, out List<DataPacket>? packets)) {
             packets = [];
             fluidBlockUpdates.Add(key, packets);
         }
-        if (packets.Count == 0)
-            queuedFluidChunks.Add(key);
+        if (packets.Count == 0) queuedFluidChunks.Add(key);
         packets.Add(new UpdateBlockPacket {
             Position = new BlockPos { X = x, Y = y, Z = z },
             BlockRuntimeId = unchecked((uint)permutation.Hash),
@@ -646,8 +610,7 @@ public sealed partial class Dimension : IDisposable {
                 foreach (Player player in viewers) {
                     try {
                         player.SendPacket(batch);
-                    }
-                    catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                    } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                     }
                 }
             }
@@ -657,10 +620,8 @@ public sealed partial class Dimension : IDisposable {
     }
 
     internal BlockActor? GetBlockActor(Chunk chunk, int x, int y, int z) {
-        if (chunk.GetRuntimeActor(x, y, z) is { } actor)
-            return actor;
-        if (chunk.GetBlockNbt(x, y, z) is not { } nbt)
-            return null;
+        if (chunk.GetRuntimeActor(x, y, z) is { } actor) return actor;
+        if (chunk.GetBlockNbt(x, y, z) is not { } nbt) return null;
 
         BlockPermutation permutation = chunk.GetPermutation(x, y, z);
         BlockActor? loaded = World?.Server?.BlockActors.Create(
@@ -673,8 +634,7 @@ public sealed partial class Dimension : IDisposable {
                 nbt
             )
         );
-        if (loaded is null)
-            return null;
+        if (loaded is null) return null;
 
         loaded.OnRead(nbt);
         chunk.SetRuntimeActor(x, y, z, loaded);
@@ -691,8 +651,7 @@ public sealed partial class Dimension : IDisposable {
             new CompoundTag()
         );
         BlockActor? actor = World?.Server?.BlockActors.Create(blockIdentifier, context);
-        if (actor is null)
-            return null;
+        if (actor is null) return null;
 
         actor.Nbt.Add("id", new StringTag { Value = actor.ActorIdentifier });
         actor.Nbt.Add("x", new IntTag { Value = x });
@@ -717,8 +676,7 @@ public sealed partial class Dimension : IDisposable {
 
     internal void RemoveBlockActor(int x, int y, int z) {
         Chunk? chunk = GetChunk(x >> 4, z >> 4);
-        if (chunk is null)
-            return;
+        if (chunk is null) return;
 
         BlockActor? actor = GetBlockActor(chunk, x & 15, y, z & 15);
         actor?.OnRemove();
@@ -729,8 +687,7 @@ public sealed partial class Dimension : IDisposable {
         World?.CheckOwnership();
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
 
-        if (positions.Length > 4096)
-            throw new ArgumentOutOfRangeException(nameof(positions));
+        if (positions.Length > 4096) throw new ArgumentOutOfRangeException(nameof(positions));
 
         long[] keys = new long[positions.Length];
         for (int index = 0; index < positions.Length; index++)
@@ -738,18 +695,15 @@ public sealed partial class Dimension : IDisposable {
 
         tickingAreas.Add(identifier, keys);
 
-        foreach (long key in keys)
-            ChangeSimulation(key, 1);
+        foreach (long key in keys) ChangeSimulation(key, 1);
     }
 
     public bool RemoveTickingArea(string identifier) {
         World?.CheckOwnership();
 
-        if (!tickingAreas.Remove(identifier, out long[]? keys))
-            return false;
+        if (!tickingAreas.Remove(identifier, out long[]? keys)) return false;
 
-        foreach (long key in keys)
-            ChangeSimulation(key, -1);
+        foreach (long key in keys) ChangeSimulation(key, -1);
 
         return true;
     }
@@ -761,24 +715,19 @@ public sealed partial class Dimension : IDisposable {
         if (count == 0) {
             simulationReferences.Remove(key);
             simulatedChunks.Remove(key);
-            if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state))
-                DeactivateScheduledTicks(key, state);
-        }
-        else {
+            if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state)) DeactivateScheduledTicks(key, state);
+        } else {
             simulationReferences[key] = count;
             simulatedChunks.Add(key);
             if (previous == 0 && chunks.TryGetValue(key, out Chunk? chunk) && chunk is not null) {
-                if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state))
-                    ActivateScheduledTicks(key, state);
-                else
-                    LoadScheduledTicks(chunk);
+                if (scheduledChunks.TryGetValue(key, out ScheduledChunk? state)) ActivateScheduledTicks(key, state);
+                else LoadScheduledTicks(chunk);
             }
         }
     }
 
     void MoveSimulationArea((int X, int Z)? previous, (int X, int Z)? current) {
-        if (previous == current)
-            return;
+        if (previous == current) return;
 
         if (previous is { } old) {
             for (int x = old.X - SimulationRadius; x <= old.X + SimulationRadius; x++) {
@@ -806,8 +755,7 @@ public sealed partial class Dimension : IDisposable {
     public void Tick() {
         World?.CheckOwnership();
 
-        if (World is null)
-            ChunkSendBudgetRemaining = Stopwatch.Frequency * ChunkSendBudgetMilliseconds / 1000;
+        if (World is null) ChunkSendBudgetRemaining = Stopwatch.Frequency * ChunkSendBudgetMilliseconds / 1000;
 
         TickValue++;
         TickStorageCompletions();
@@ -815,8 +763,7 @@ public sealed partial class Dimension : IDisposable {
         DrainGeneratedChunks();
 
         foreach ((Player player, var area) in playerAreas) {
-            if (!player.Spawned || player.Disposed || player.SpawnedDimension != this)
-                expiredAreas.Add(player);
+            if (!player.Spawned || player.Disposed || player.SpawnedDimension != this) expiredAreas.Add(player);
         }
 
         foreach (Player player in expiredAreas) {
@@ -826,8 +773,7 @@ public sealed partial class Dimension : IDisposable {
         expiredAreas.Clear();
 
         foreach (Player player in GetPlayers()) {
-            if (!player.Spawned || player.Disposed)
-                continue;
+            if (!player.Spawned || player.Disposed) continue;
 
             var current = (
                 X: (int)MathF.Floor(player.Position.X) >> 4,
@@ -850,8 +796,7 @@ public sealed partial class Dimension : IDisposable {
 
             state.QueuedTick = null;
             long clock = ScheduledClock(state);
-            if (state.Ticks.Count == 0 || state.Ticks.Min!.Due > clock)
-                continue;
+            if (state.Ticks.Count == 0 || state.Ticks.Min!.Due > clock) continue;
 
             ScheduledTick scheduled = state.Ticks.Min!;
             state.Ticks.Remove(scheduled);
@@ -859,8 +804,7 @@ public sealed partial class Dimension : IDisposable {
             var position = (scheduled.X, scheduled.Y, scheduled.Z);
             List<ScheduledTick> positionTicks = state.TicksByPosition[position];
             positionTicks.RemoveAt(0);
-            if (positionTicks.Count == 0)
-                state.TicksByPosition.Remove(position);
+            if (positionTicks.Count == 0) state.TicksByPosition.Remove(position);
             (state.CanceledRecords ??= []).Add(scheduled.Record);
             if (!state.RecordChangesPending) {
                 state.RecordChangesPending = true;
@@ -870,15 +814,13 @@ public sealed partial class Dimension : IDisposable {
 
             try {
                 BlockPalette.OnScheduledUpdate(this, scheduled.X, scheduled.Y, scheduled.Z, scheduled.Permutation);
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 Logger.Scoped("World").Warn(
                     $"Scheduled block update failed in {Identifier} at ({scheduled.X}, {scheduled.Y}, {scheduled.Z}): {error.Message}"
                 );
             }
 
-            if (state.Ticks.Count > 0)
-                QueueScheduledChunk(head.Key, state);
+            if (state.Ticks.Count > 0) QueueScheduledChunk(head.Key, state);
         }
 
         FlushFluidBlockUpdates();
@@ -890,22 +832,19 @@ public sealed partial class Dimension : IDisposable {
                     pendingTicks.Value.RemoveAll(record =>
                         record is CompoundTag compound && consumedRecords.Contains(compound)
                     );
-                    if (pending.Tags.Count == 2 && pendingTicks.Value.Count == 0)
-                        chunk.PendingTicks = null;
+                    if (pending.Tags.Count == 2 && pendingTicks.Value.Count == 0) chunk.PendingTicks = null;
                 }
 
                 chunk.MarkDirty();
                 state.CanceledRecords = null;
                 state.RecordChangesPending = false;
-                if (state.Ticks.Count == 0 && !state.HasUnindexedRecords)
-                    scheduledChunks.Remove(key);
+                if (state.Ticks.Count == 0 && !state.HasUnindexedRecords) scheduledChunks.Remove(key);
             }
         }
 
         if (updatesProcessed == ScheduledUpdateLimit) {
             UpdateScheduledTickBacklog();
-        }
-        else {
+        } else {
             Volatile.Write(ref overdueScheduledChunks, 0);
             Volatile.Write(ref oldestScheduledTickOverdue, 0);
         }
@@ -940,8 +879,7 @@ public sealed partial class Dimension : IDisposable {
             int chunkX = (int)(key >> 32);
             int chunkZ = (int)key;
             for (int subChunkY = MinimumY >> 4; subChunkY <= MaximumY >> 4; subChunkY++) {
-                if (chunk.GetSubChunk(subChunkY) is not { RandomTicking: true })
-                    continue;
+                if (chunk.GetSubChunk(subChunkY) is not { RandomTicking: true }) continue;
 
                 for (int tick = 0; tick < 3; tick++) {
                     int x = (chunkX << 4) + Random.Shared.Next(16);
@@ -953,8 +891,7 @@ public sealed partial class Dimension : IDisposable {
         }
 
         foreach (Entity entity in simulation) {
-            if (entity is Player || entity.SpawnedDimension != this)
-                continue;
+            if (entity is Player || entity.SpawnedDimension != this) continue;
 
             if (GetChunk((int)(entity.SpatialChunk >> 32), (int)entity.SpatialChunk) is null) {
                 Request((int)(entity.SpatialChunk >> 32), (int)entity.SpatialChunk);
@@ -962,8 +899,7 @@ public sealed partial class Dimension : IDisposable {
             }
 
             if (entity.Dead) {
-                if (++entity.SimulationAge >= entity.DeathDespawnTick)
-                    RemoveEntity(entity);
+                if (++entity.SimulationAge >= entity.DeathDespawnTick) RemoveEntity(entity);
                 continue;
             }
 
@@ -971,13 +907,11 @@ public sealed partial class Dimension : IDisposable {
 
             try {
                 entity.Tick();
-            }
-            finally {
+            } finally {
                 EntityIndex.Flush();
             }
 
-            if (entity.SpawnedDimension == this)
-                EntityIndex.Update(entity);
+            if (entity.SpawnedDimension == this) EntityIndex.Update(entity);
         }
         simulation.Clear();
         World?.Server?.Network.Tick(this);
@@ -987,14 +921,12 @@ public sealed partial class Dimension : IDisposable {
         if (!currentPlayers.IsEmpty) {
             for (int offset = 0; offset < currentPlayers.Length; offset++) {
                 Player player = currentPlayers[(startPlayer + offset) % currentPlayers.Length];
-                if (player.Disposed)
-                    continue;
+                if (player.Disposed) continue;
 
                 try {
                     player.Tick();
                     EntityIndex.Update(player);
-                }
-                catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                     player.Network.RemovePlayer(player.Peer);
                 }
             }
@@ -1010,18 +942,14 @@ public sealed partial class Dimension : IDisposable {
                 sentChunk = false;
                 for (int offset = 0; offset < currentPlayers.Length; offset++) {
                     long budgetRemaining = World?.ChunkSendBudgetRemaining ?? ChunkSendBudgetRemaining;
-                    if (budgetRemaining <= 0)
-                        break;
+                    if (budgetRemaining <= 0) break;
 
                     Player player = currentPlayers[(startPlayer + offset) % currentPlayers.Length];
-                    if (player.Disposed)
-                        continue;
+                    if (player.Disposed) continue;
 
                     try {
-                        if (player.GetTrait<PlayerChunkRenderingTrait>()?.SendReadyChunk() == true)
-                            sentChunk = true;
-                    }
-                    catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+                        if (player.GetTrait<PlayerChunkRenderingTrait>()?.SendReadyChunk() == true) sentChunk = true;
+                    } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                         player.Network.RemovePlayer(player.Peer);
                     }
                 }
@@ -1032,13 +960,11 @@ public sealed partial class Dimension : IDisposable {
         SaveEntities();
 
         foreach (Player player in currentPlayers) {
-            if (player.Disposed)
-                continue;
+            if (player.Disposed) continue;
 
             try {
                 player.Network.FlushPackets(player);
-            }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 player.Network.RemovePlayer(player.Peer);
             }
         }

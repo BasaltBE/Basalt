@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public sealed class FeatureRule {
     public readonly string Identifier;
@@ -13,8 +13,7 @@ public sealed class FeatureRule {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(featureIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(placementPass);
-        if (!yExpression.Valid)
-            throw new ArgumentException("A valid Y expression is required.", nameof(yExpression));
+        if (!yExpression.Valid) throw new ArgumentException("A valid Y expression is required.", nameof(yExpression));
         if (data.ValueKind != JsonValueKind.Object)
             throw new ArgumentException("Feature rule data must be a JSON object.", nameof(data));
 

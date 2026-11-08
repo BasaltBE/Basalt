@@ -22,18 +22,14 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
             return false;
 
         permutation = faced;
-        if (HasSupport(player.Dimension, x, y, z) is not true)
-            return false;
-
-        return true;
+        return HasSupport(player.Dimension, x, y, z) is true;
     }
 
     public override void OnPlaced(Dimension dimension, int x, int y, int z) {
         BlockPermutation permutation = dimension.GetPermutation(x, y, z);
         if (permutation.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
             dimension.Redstone.ScheduleRepeaterUpdate(dimension, x, y, z, permutation);
-        else
-            dimension.ScheduleBlockUpdate(x, y, z, 2);
+        else dimension.ScheduleBlockUpdate(x, y, z, 2);
     }
 
     public override bool OnInteract(Player player, BlockPos position) {
@@ -43,14 +39,12 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
         if (current.Identifier is "minecraft:unpowered_repeater" or "minecraft:powered_repeater") {
             int delay = current.State.Values.GetValueOrDefault("repeater_delay") is int value ? (value + 1) & 3 : 0;
             updated = BlockPalette.Find(current.Identifier, current.State, "repeater_delay", delay);
-        }
-        else if ((current.Identifier is "minecraft:unpowered_comparator" or "minecraft:powered_comparator") &&
+        } else if ((current.Identifier is "minecraft:unpowered_comparator" or "minecraft:powered_comparator") &&
                    current.State.Values.GetValueOrDefault("output_subtract_bit") is bool subtract) {
             updated = BlockPalette.Find(current.Identifier, current.State, "output_subtract_bit", !subtract);
         }
 
-        if (updated is null)
-            return false;
+        if (updated is null) return false;
 
         dimension.SetPermutation(position.X, position.Y, position.Z, updated);
         dimension.BroadcastBlockUpdate(position.X, position.Y, position.Z, updated);
@@ -61,8 +55,7 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
         }, position.X >> 4, position.Z >> 4);
         if (updated.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")
             dimension.Redstone.ScheduleRepeaterUpdate(dimension, position.X, position.Y, position.Z, updated);
-        else
-            dimension.ScheduleBlockUpdate(position.X, position.Y, position.Z, 1);
+        else dimension.ScheduleBlockUpdate(position.X, position.Y, position.Z, 1);
         return true;
     }
 
@@ -76,11 +69,9 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
     ) {
         if ((current.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater") &&
             (scheduled.Identifier is "minecraft:powered_repeater" or "minecraft:unpowered_repeater")) {
-            if (current.Identifier == scheduled.Identifier)
-                return;
+            if (current.Identifier == scheduled.Identifier) return;
 
-            if (BlockPalette.Find(scheduled.Identifier, current.State) is not { } repeater)
-                return;
+            if (BlockPalette.Find(scheduled.Identifier, current.State) is not { } repeater) return;
 
             dimension.SetPermutation(x, y, z, repeater);
             dimension.BroadcastBlockUpdate(x, y, z, repeater);
@@ -106,23 +97,14 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
                 y,
                 z
             );
-            bool? locked = dimension.Redstone.RepeaterLocked(
-                dimension,
-                x,
-                y,
-                z,
-                inputOffset
-            );
-            if (inputPower is null || locked is null)
-                return;
+            bool? locked = dimension.Redstone.RepeaterLocked(dimension, x, y, z, inputOffset);
+            if (inputPower is null || locked is null) return;
 
             bool powered = inputPower > 0 && !locked.Value;
             string identifier = powered ? "minecraft:powered_repeater" : "minecraft:unpowered_repeater";
-            if (current.Identifier == identifier)
-                return;
+            if (current.Identifier == identifier) return;
 
-            if (BlockPalette.Find(identifier, current.State) is not { } repeater)
-                return;
+            if (BlockPalette.Find(identifier, current.State) is not { } repeater) return;
 
             dimension.SetPermutation(x, y, z, repeater);
             dimension.BroadcastBlockUpdate(x, y, z, repeater);
@@ -144,11 +126,12 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
             z
         );
         int? sideInput = dimension.Redstone.ComparatorSidePower(dimension, x, y, z, comparatorBack);
-        if (comparatorInput is null || sideInput is null)
-            return;
+        if (comparatorInput is null || sideInput is null) return;
 
         bool subtract = current.State.Values.GetValueOrDefault("output_subtract_bit") is true;
-        int output = comparatorInput.Value < sideInput.Value ? 0 : subtract ? comparatorInput.Value - sideInput.Value : comparatorInput.Value;
+        int output = comparatorInput.Value < sideInput.Value
+            ? 0
+            : subtract ? comparatorInput.Value - sideInput.Value : comparatorInput.Value;
         dimension.Redstone.SetComparatorPower(dimension, x, y, z, output);
 
         bool lit = output > 0;
@@ -157,8 +140,7 @@ public sealed class RedstoneDeviceTrait : BlockSupportTrait {
             current.State.Values.GetValueOrDefault("output_lit_bit") is bool currentLit && currentLit == lit)
             return;
 
-        if (BlockPalette.Find(comparatorIdentifier, current.State, "output_lit_bit", lit) is not { } comparator)
-            return;
+        if (BlockPalette.Find(comparatorIdentifier, current.State, "output_lit_bit", lit) is not { } comparator) return;
 
         dimension.SetPermutation(x, y, z, comparator);
         dimension.BroadcastBlockUpdate(x, y, z, comparator);

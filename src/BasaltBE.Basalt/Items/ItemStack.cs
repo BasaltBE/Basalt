@@ -48,32 +48,28 @@ public sealed class ItemStack {
 
     public void SetStackSize(ushort value) {
         value = (ushort)Math.Min(value, Type.MaxAmount);
-        if (StackSize == value)
-            return;
+        if (StackSize == value) return;
 
         SetStackSizeRaw(value);
         Container?.ItemChanged(this, Slot);
     }
 
     public void SetMetadata(uint value) {
-        if (Metadata == value)
-            return;
+        if (Metadata == value) return;
 
         SetMetadataRaw(value);
         Container?.ItemChanged(this, Slot);
     }
 
     public void SetDamage(int value) {
-        if (Type.MaxDurability <= 0)
-            throw new InvalidOperationException($"Item '{Type.Identifier}' does not have durability.");
+        if (Type.MaxDurability <= 0) throw new InvalidOperationException($"Item '{Type.Identifier}' does not have durability.");
         ArgumentOutOfRangeException.ThrowIfNegative(value);
         if (value >= Type.MaxDurability) {
             SetStackSize(0);
             return;
         }
 
-        if (Damage == value)
-            return;
+        if (Damage == value) return;
 
         Nbt ??= new CompoundTag();
         Nbt.Add("Damage", new IntTag { Value = value });
@@ -81,8 +77,7 @@ public sealed class ItemStack {
     }
 
     public bool DamageDurability(int amount = 1) {
-        if (amount <= 0 || Type.MaxDurability <= 0 || stackSize == 0)
-            return false;
+        if (amount <= 0 || Type.MaxDurability <= 0 || stackSize == 0) return false;
 
         int minimumChance = Type.DurabilityDamageChanceMinimum;
         int maximumChance = Type.DurabilityDamageChanceMaximum;
@@ -91,8 +86,7 @@ public sealed class ItemStack {
             int chance = minimumChance == maximumChance
                 ? minimumChance
                 : Random.Shared.Next(minimumChance, maximumChance + 1);
-            if (chance < 100 && Random.Shared.Next(100) >= chance)
-                return false;
+            if (chance < 100 && Random.Shared.Next(100) >= chance) return false;
         }
 
         int damage = Damage;
@@ -102,21 +96,18 @@ public sealed class ItemStack {
                 int chance = minimumChance == maximumChance
                     ? minimumChance
                     : Random.Shared.Next(minimumChance, maximumChance + 1);
-                if (chance < 100 && Random.Shared.Next(100) >= chance)
-                    continue;
+                if (chance < 100 && Random.Shared.Next(100) >= chance) continue;
 
                 bool wears = Type.ArmorSlot is not null
                     ? Random.Shared.Next(100) < 60 || Random.Shared.Next(unbreaking + 1) == 0
                     : Random.Shared.Next(unbreaking + 1) == 0;
-                if (!wears)
-                    continue;
+                if (!wears) continue;
             }
 
             applied++;
         }
 
-        if (applied == 0)
-            return false;
+        if (applied == 0) return false;
         if (applied >= Type.MaxDurability - damage) {
             SetStackSize(0);
             return true;
@@ -142,14 +133,12 @@ public sealed class ItemStack {
             if (GetEnchantmentLevel(incompatible) > 0)
                 throw new InvalidOperationException($"Enchantment '{enchantment.Identifier}' is incompatible with '{incompatible}'.");
 
-        if (GetEnchantmentLevel(enchantment) != level)
-            WriteEnchantment(enchantment, level);
+        if (GetEnchantmentLevel(enchantment) != level) WriteEnchantment(enchantment, level);
     }
 
     public bool RemoveEnchantment(Enchantment enchantment) {
         ArgumentNullException.ThrowIfNull(enchantment);
-        if (GetEnchantmentLevel(enchantment) == 0)
-            return false;
+        if (GetEnchantmentLevel(enchantment) == 0) return false;
 
         WriteEnchantment(enchantment, 0);
         return true;
@@ -160,8 +149,7 @@ public sealed class ItemStack {
 
     private int GetEnchantmentLevel(string identifier, short? bedrockId) {
         if (bedrockId is short nativeId) {
-            if (Nbt?.Get<ListTag>("ench") is not { } enchantments)
-                return 0;
+            if (Nbt?.Get<ListTag>("ench") is not { } enchantments) return 0;
 
             foreach (Tag entry in enchantments.Value)
                 if (entry is CompoundTag compound &&
@@ -170,8 +158,7 @@ public sealed class ItemStack {
             return 0;
         }
 
-        if (Nbt?.Get<ListTag>("basalt:enchantments") is not { } customEnchantments)
-            return 0;
+        if (Nbt?.Get<ListTag>("basalt:enchantments") is not { } customEnchantments) return 0;
         foreach (Tag entry in customEnchantments.Value)
             if (entry is CompoundTag compound &&
                 string.Equals(compound.Get<StringTag>("id")?.Value, identifier, StringComparison.Ordinal))
@@ -185,13 +172,10 @@ public sealed class ItemStack {
             int index = enchantments?.Value.FindIndex(entry =>
                 entry is CompoundTag compound && compound.Get<ShortTag>("id")?.Value == bedrockId) ?? -1;
             if (level == 0) {
-                if (index < 0)
-                    return;
+                if (index < 0) return;
                 enchantments!.Value.RemoveAt(index);
-                if (enchantments.Value.Count == 0)
-                    Nbt!.Remove("ench");
-            }
-            else {
+                if (enchantments.Value.Count == 0) Nbt!.Remove("ench");
+            } else {
                 CompoundTag entry = new();
                 entry.Add("id", new ShortTag { Value = bedrockId });
                 entry.Add("lvl", new ShortTag { Value = checked((short)level) });
@@ -200,25 +184,20 @@ public sealed class ItemStack {
                     enchantments.Value.Add(entry);
                     Nbt ??= new CompoundTag();
                     Nbt.Add("ench", enchantments);
-                }
-                else {
+                } else {
                     enchantments!.Value[index] = entry;
                 }
             }
-        }
-        else {
+        } else {
             ListTag? enchantments = Nbt?.Get<ListTag>("basalt:enchantments");
             int index = enchantments?.Value.FindIndex(entry =>
                 entry is CompoundTag compound &&
                 string.Equals(compound.Get<StringTag>("id")?.Value, enchantment.Identifier, StringComparison.Ordinal)) ?? -1;
             if (level == 0) {
-                if (index < 0)
-                    return;
+                if (index < 0) return;
                 enchantments!.Value.RemoveAt(index);
-                if (enchantments.Value.Count == 0)
-                    Nbt!.Remove("basalt:enchantments");
-            }
-            else {
+                if (enchantments.Value.Count == 0) Nbt!.Remove("basalt:enchantments");
+            } else {
                 CompoundTag entry = new();
                 entry.Add("id", new StringTag { Value = enchantment.Identifier });
                 entry.Add("lvl", new IntTag { Value = level });
@@ -227,8 +206,7 @@ public sealed class ItemStack {
                     enchantments.Value.Add(entry);
                     Nbt ??= new CompoundTag();
                     Nbt.Add("basalt:enchantments", enchantments);
-                }
-                else {
+                } else {
                     enchantments!.Value[index] = entry;
                 }
             }
@@ -243,8 +221,7 @@ public sealed class ItemStack {
     public void DecrementStack(ushort amount = 1) => SetStackSize(amount >= stackSize ? (ushort)0 : (ushort)(stackSize - amount));
 
     public ItemStack? Pop(ushort amount = 1) {
-        if (amount == 0 || stackSize == 0)
-            return null;
+        if (amount == 0 || stackSize == 0) return null;
 
         ushort removed = Math.Min(amount, stackSize);
         ItemStack result = Clone(removed);
@@ -256,8 +233,7 @@ public sealed class ItemStack {
         ReferenceEquals(Type, other.Type) && Metadata == other.Metadata && NbtEquals(Nbt, other.Nbt);
 
     public NetworkItemStackDescriptor ToNetworkStackDescriptor() {
-        if (Type.NetworkId == 0 || stackSize == 0)
-            return new NetworkItemStackDescriptor();
+        if (Type.NetworkId == 0 || stackSize == 0) return new NetworkItemStackDescriptor();
 
         int nbtSize = Nbt?.GetSize() ?? 0;
         using BinaryStream stream = BinaryStream.Rent(sizeof(short) + (nbtSize == 0 ? 0 : sizeof(byte) + nbtSize) + sizeof(uint) * 2);
@@ -281,15 +257,13 @@ public sealed class ItemStack {
     }
 
     internal void SetStackSizeRaw(ushort value) {
-        if (stackSize == value)
-            return;
+        if (stackSize == value) return;
         stackSize = value;
         netId = Interlocked.Increment(ref nextNetId);
     }
 
     internal void SetMetadataRaw(uint value) {
-        if (Metadata == value)
-            return;
+        if (Metadata == value) return;
         Metadata = value;
         netId = Interlocked.Increment(ref nextNetId);
     }
@@ -321,8 +295,7 @@ public sealed class ItemStack {
     }
 
     private static CompoundTag? CloneNbt(CompoundTag? tag) {
-        if (tag is null)
-            return null;
+        if (tag is null) return null;
 
         using BinaryStream stream = BinaryStream.Rent(tag.GetSize());
         BinaryWriter writer = stream.GetWriter();
@@ -332,10 +305,8 @@ public sealed class ItemStack {
     }
 
     private static bool NbtEquals(CompoundTag? left, CompoundTag? right) {
-        if (ReferenceEquals(left, right))
-            return true;
-        if (left is null || right is null)
-            return false;
+        if (ReferenceEquals(left, right)) return true;
+        if (left is null || right is null) return false;
 
         return CloneNbtBytes(left).AsSpan().SequenceEqual(CloneNbtBytes(right));
     }

@@ -62,15 +62,13 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             Entity.SetFlag(ActorFlag.FireImmune, true);
         if (Entity.Type?.PropertiesPayload?.Components.Breathable is { } breathable) {
             double supply = breathable.TotalSupplySnakeCase ?? breathable.TotalSupply ?? 15;
-            if (double.IsFinite(supply) && supply > 0)
-                maximumAirSupply = (int)Math.Clamp(supply * 20, 1, short.MaxValue);
+            if (double.IsFinite(supply) && supply > 0) maximumAirSupply = (int)Math.Clamp(supply * 20, 1, short.MaxValue);
             double inhale = breathable.InhaleTime ?? 0;
             airRecovery = double.IsFinite(inhale) && inhale > 0
                 ? (int)Math.Clamp(Math.Ceiling(maximumAirSupply / (inhale * 20)), 1, maximumAirSupply)
                 : maximumAirSupply;
             double interval = breathable.SuffocateTimeSnakeCase ?? breathable.SuffocateTime ?? 0;
-            if (double.IsFinite(interval) && interval > 0)
-                drowningInterval = (int)Math.Clamp(interval * 20, 20, int.MaxValue);
+            if (double.IsFinite(interval) && interval > 0) drowningInterval = (int)Math.Clamp(interval * 20, 20, int.MaxValue);
             breathesAir = breathable.BreathesAir ?? true;
             breathesWater = breathable.BreathesWater ?? false;
             breathesLava = breathable.BreathesLava ?? true;
@@ -152,8 +150,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                 protection = Math.Max(protection, armor.Armor.GetItem(slot)?.GetEnchantmentLevel(EnchantmentPalette.FireProtection) ?? 0);
         }
         ticks = (int)(Math.Min(ticks, short.MaxValue) * Math.Max(0, 1 - protection * 0.15));
-        if (ticks <= fireTicks)
-            return false;
+        if (ticks <= fireTicks) return false;
         fireTicks = ticks;
         fireSource = source is not null && ReferenceEquals(source.SpawnedDimension, Entity.SpawnedDimension) ? source.RuntimeId : null;
         Entity.SetFlag(ActorFlag.OnFire, true);
@@ -171,6 +168,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     public override void Tick() {
         if (Entity.Dead || (Entity is Player currentPlayer ? currentPlayer.Dimension : Entity.SpawnedDimension) is not { } dimension)
             return;
+
         FluidContact contact = Entity.GetFluidContact();
         bool invulnerable = Entity is Player protectedPlayer && protectedPlayer.Abilities.Get(PlayerAbility.Invulnerable);
         bool breathing = invulnerable || (contact.HeadInWater ? breathesWater : contact.HeadInLava ? breathesLava : breathesAir);
@@ -178,11 +176,9 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         if (breathing) {
             airSupply = Math.Min(maximumAirSupply, airSupply + airRecovery);
             drowningTicks = 0;
-        }
-        else if (airSupply > 0) {
+        } else if (airSupply > 0) {
             airSupply--;
-        }
-        else if (++drowningTicks >= drowningInterval) {
+        } else if (++drowningTicks >= drowningInterval) {
             drowningTicks = 0;
             ApplyDamage(2, EntityDamageCause.Drowning);
         }
@@ -191,21 +187,18 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             sentAirSupply = airSupply;
             Entity.Flags.SetAirSupply((short)airSupply, (short)maximumAirSupply);
         }
-        if (Entity.Dead)
-            return;
+        if (Entity.Dead) return;
+
         if (Entity.Flags.Get(ActorFlag.FireImmune) || invulnerable) {
-            if (Burning)
-                Extinguish();
-        }
-        else {
+            if (Burning) Extinguish();
+        } else {
             bool water = contact.WaterDepth > 0;
             bool lava = contact.LavaDepth > 0;
             bool fire = contact.Fire;
             bool soulFire = contact.SoulFire;
             if (water) {
                 Extinguish();
-            }
-            else {
+            } else {
                 if (lava || fire) {
                     Ignite(lava ? 300 : 160);
                     if (fireContactTicks == 0) {
@@ -213,14 +206,12 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                         fireContactTicks = 10;
                     }
                     fireContactTicks--;
-                }
-                else {
+                } else {
                     fireContactTicks = 0;
                 }
                 if (fireTicks > 0) {
                     fireTicks--;
-                    if (fireTicks == 0)
-                        Extinguish();
+                    if (fireTicks == 0) Extinguish();
                     else if (!lava && !fire && fireTicks % 20 == 0)
                         ApplyDamage(1, EntityDamageCause.FireTick, fireSource is ulong id ? dimension.GetEntity(id) : null);
                 }
@@ -235,8 +226,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         float headY = Entity.Position.Y + Entity.GetEyeHeight();
         int blockY = (int)MathF.Floor(headY);
         int blockZ = (int)MathF.Floor(Entity.Position.Z);
-        if (player.Dimension.GetChunk(blockX >> 4, blockZ >> 4) is null)
-            return;
+        if (player.Dimension.GetChunk(blockX >> 4, blockZ >> 4) is null) return;
 
         Span<BlockCollisionBox> boxes = stackalloc BlockCollisionBox[5];
         int count = player.Dimension.GetPermutation(blockX, blockY, blockZ).GetCollisionBoxes(boxes);
@@ -262,12 +252,10 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         float currentY = Entity.Position.Y;
         float deltaY = currentY - previousY;
         if (deltaY > PositionEpsilon) {
-            if (!falling || currentY > highestY)
-                highestY = currentY;
+            if (!falling || currentY > highestY) highestY = currentY;
             falling = false;
             FallDistance = 0;
-        }
-        else if (deltaY < -PositionEpsilon) {
+        } else if (deltaY < -PositionEpsilon) {
             if (!falling) {
                 highestY = previousY;
                 falling = true;
@@ -276,8 +264,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         }
 
         previousY = currentY;
-        if (falling && Entity.GetTrait<EntityMovementTrait>()?.VerticalCollision == true && deltaY <= 0)
-            Land(player);
+        if (falling && Entity.GetTrait<EntityMovementTrait>()?.VerticalCollision == true && deltaY <= 0) Land(player);
     }
 
     public bool ApplyDamage(float amount, EntityDamageCause cause, Entity? source = null, int ignitionTicks = 0) {
@@ -286,15 +273,20 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         if (!float.IsFinite(amount) || amount <= 0 || Entity.Dead ||
             Entity.Attributes.Get(AttributeName) is not { } health)
             return false;
-        if ((Entity.Invulnerable && cause != EntityDamageCause.Void && source is not Player { GameType: GameType.Creative }) ||
-            (Entity is Player invulnerablePlayer && invulnerablePlayer.Abilities.Get(PlayerAbility.Invulnerable) && cause != EntityDamageCause.Void) ||
-            ((cause is EntityDamageCause.Fire or EntityDamageCause.FireTick or EntityDamageCause.Lava) && Entity.Flags.Get(ActorFlag.FireImmune)))
+        if (Entity.Invulnerable && cause != EntityDamageCause.Void && source is not Player { GameType: GameType.Creative })
+            return false;
+
+        if (Entity is Player invulnerablePlayer && invulnerablePlayer.Abilities.Get(PlayerAbility.Invulnerable) &&
+            cause != EntityDamageCause.Void)
+            return false;
+
+        if (cause is EntityDamageCause.Fire or EntityDamageCause.FireTick or EntityDamageCause.Lava &&
+            Entity.Flags.Get(ActorFlag.FireImmune))
             return false;
 
         float damage = Entity.GetTrait<EntityArmorTrait>()?.ReduceDamage(amount, cause) ?? amount;
         damage = Math.Min(damage, health.Current - health.Minimum);
-        if (damage <= 0)
-            return false;
+        if (damage <= 0) return false;
 
         ulong? attackTick = null;
         if (cause == EntityDamageCause.Entity && Entity.SpawnedDimension?.World is not null) {
@@ -306,10 +298,8 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         }
 
         EntityHurtEvent hurt = new(Entity, source, damage, cause);
-        if (Entity.SpawnedDimension?.Events is { } events && events.HasSubscribers<EntityHurtEvent>())
-            events.Emit(hurt);
-        if (hurt.IsCanceled())
-            return false;
+        if (Entity.SpawnedDimension?.Events is { } events && events.HasSubscribers<EntityHurtEvent>()) events.Emit(hurt);
+        if (hurt.IsCanceled()) return false;
 
         float current = health.Current - damage;
         EntityDeathEvent? death = null;
@@ -317,17 +307,13 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             death = new EntityDeathEvent(Entity, source, cause);
             if (Entity.SpawnedDimension?.Events is { } deathEvents && deathEvents.HasSubscribers<EntityDeathEvent>())
                 deathEvents.Emit(death);
-            if (death.IsCanceled())
-                return false;
+            if (death.IsCanceled()) return false;
         }
 
-        if (ignitionTicks > 0)
-            Ignite(ignitionTicks, source);
+        if (ignitionTicks > 0) Ignite(ignitionTicks, source);
         Entity.Attributes.SetCurrent(AttributeName, current);
-        if (Entity is Player)
-            Entity.GetTrait<PlayerHungerTrait>()?.AddExhaustion(damage * 0.1f);
-        if (attackTick is ulong appliedAttackTick)
-            lastAttackTick = appliedAttackTick;
+        if (Entity is Player) Entity.GetTrait<PlayerHungerTrait>()?.AddExhaustion(damage * 0.1f);
+        if (attackTick is ulong appliedAttackTick) lastAttackTick = appliedAttackTick;
         Entity.OnHurt(hurt);
         if (Entity.SpawnedDimension is { } dimension) {
             dimension.Broadcast(new ActorEventPacket {
@@ -374,8 +360,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                     player.OpenedContainer?.Close(player);
                     if (player.GetTrait<PlayerInventoryTrait>() is { } inventory) {
                         Container[] containers = [inventory.Inventory, inventory.CraftingGrid, inventory.Cursor];
-                        if (player.GetTrait<EntityArmorTrait>() is { } armor)
-                            containers = [.. containers, armor.Armor];
+                        if (player.GetTrait<EntityArmorTrait>() is { } armor) containers = [.. containers, armor.Armor];
 
                         foreach (Container container in containers) {
                             for (int slot = 0; slot < container.ContainerSize; slot++) {
@@ -404,8 +389,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                 dropDimension.World is { } dropWorld && Entity.Type is { } entityType) {
                 foreach (EntityDrop drop in dropWorld.LootTables.GetEntityDrops(entityType.Identifier, fireAspectLevel: Burning ? 1 : 0)) {
                     ItemType? itemType = ItemPalette.Find(drop.Identifier);
-                    if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
-                        continue;
+                    if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue) continue;
 
                     int dropAmount = drop.MinAmount == drop.MaxAmount
                         ? drop.MinAmount
@@ -429,15 +413,13 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                     TargetRuntimeId = Entity.RuntimeId,
                     Event = ActorEvent.Death
                 }, Entity);
-                if (deadDimension.World is not null)
-                    Entity.DeathDespawnTick = Entity.SimulationAge + DeathAnimationTicks;
-                else
-                    deadDimension.RemoveEntity(Entity);
+                if (deadDimension.World is not null) Entity.DeathDespawnTick = Entity.SimulationAge + DeathAnimationTicks;
+                else deadDimension.RemoveEntity(Entity);
             }
-        }
-        else if (cause == EntityDamageCause.Entity && source is not null) {
+        } else if (cause == EntityDamageCause.Entity && source is not null) {
             ApplyKnockback(source);
         }
+
         return true;
     }
 
@@ -451,8 +433,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
     }
 
     internal bool Respawn() {
-        if (Entity is not Player || !Entity.Dead || Entity.Attributes.Get(AttributeName) is not { } health)
-            return false;
+        if (Entity is not Player || !Entity.Dead || Entity.Attributes.Get(AttributeName) is not { } health) return false;
 
         Entity.Dead = false;
         Entity.Attributes.SetCurrent(AttributeName, health.Maximum);
@@ -471,14 +452,12 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
                 ? movement.InputTick ?? 0
                 : 0
         };
-        if (!movement.CalculateKnockback(source, packet.Motion))
-            return;
+        if (!movement.CalculateKnockback(source, packet.Motion)) return;
 
         if (Entity is Player player) {
             dimension.Broadcast(packet, Entity, exclude: player);
             player.SendPacket(packet);
-        }
-        else {
+        } else {
             movement.Motion.X = packet.Motion.X;
             movement.Motion.Y = packet.Motion.Y;
             movement.Motion.Z = packet.Motion.Z;
@@ -496,8 +475,7 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
             !player.Flags.Get(ActorFlag.Swimming) &&
             damageMultiplier > 0 && FallDistance > SafeFallDistance) {
             float damage = MathF.Floor((FallDistance - SafeFallDistance) * damageMultiplier);
-            if (damage > 0)
-                ApplyDamage(damage, EntityDamageCause.Fall);
+            if (damage > 0) ApplyDamage(damage, EntityDamageCause.Fall);
         }
 
         FallDistance = 0;
@@ -509,22 +487,18 @@ public sealed class EntityHealthTrait(Entity entity) : EntityTrait(entity) {
         int x = (int)MathF.Floor(player.Position.X);
         int y = (int)MathF.Floor(player.Position.Y - PositionEpsilon);
         int z = (int)MathF.Floor(player.Position.Z);
-        if (player.Dimension.GetChunk(x >> 4, z >> 4) is null)
-            return 1;
+        if (player.Dimension.GetChunk(x >> 4, z >> 4) is null) return 1;
 
         BlockType? block = BlockPalette.FindType(player.Dimension.GetPermutation(x, y, z).Identifier);
-        if (block?.Liquid == true)
-            return 0;
+        if (block?.Liquid == true) return 0;
 
         string? identifier = block?.Identifier;
-        if (identifier is "minecraft:slime_block" or "minecraft:powder_snow")
-            return 0;
-        if (identifier == "minecraft:hay_block")
-            return 0.2f;
+        if (identifier is "minecraft:slime_block" or "minecraft:powder_snow") return 0;
+        if (identifier == "minecraft:hay_block") return 0.2f;
         return identifier?.EndsWith("_bed", StringComparison.Ordinal) == true ? 0.5f : 1;
     }
 
-    private void ResetFallDamage() {
+    internal void ResetFallDamage() {
         previousY = Entity.Position.Y;
         highestY = previousY;
         FallDistance = 0;

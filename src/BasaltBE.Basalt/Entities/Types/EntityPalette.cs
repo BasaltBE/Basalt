@@ -6,8 +6,7 @@ using BasaltBE.Basalt.Entities.Traits;
 
 namespace BasaltBE.Basalt.Entities.Types;
 
-public static class EntityPalette
-{
+public static class EntityPalette {
     public static EntityType[] Types = LoadTypes();
     static readonly Dictionary<string, EntityType> ByIdentifier = Types.ToDictionary(type => type.Identifier);
     static readonly Dictionary<int, EntityType> ByRuntimeId = Types
@@ -18,8 +17,7 @@ public static class EntityPalette
     static readonly Dictionary<string, CustomEntity> Definitions = new(StringComparer.Ordinal);
     internal static bool Frozen;
 
-    internal static CustomEntity Create(string identifier)
-    {
+    internal static CustomEntity Create(string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
 
         string[] parts = identifier.Split(':');
@@ -28,15 +26,12 @@ public static class EntityPalette
             parts[0].Contains('/'))
             throw new ArgumentException("Use a namespaced entity identifier.", nameof(identifier));
 
-        if (Frozen)
-            throw new InvalidOperationException("Configure entities before starting the server.");
+        if (Frozen) throw new InvalidOperationException("Configure entities before starting the server.");
 
-        if (Definitions.TryGetValue(identifier, out CustomEntity? definition))
-            return definition;
+        if (Definitions.TryGetValue(identifier, out CustomEntity? definition)) return definition;
 
         EntityType? type = Find(identifier);
-        if (type is null)
-        {
+        if (type is null) {
             type = new EntityType { Identifier = identifier, Summonable = true, PropertiesPayload = new() };
             ByIdentifier.Add(identifier, type);
             Types = [.. Types, type];
@@ -47,10 +42,8 @@ public static class EntityPalette
         return definition;
     }
 
-    internal static void Freeze()
-    {
-        foreach (EntityType type in Types)
-            CacheTraitFactories(type);
+    internal static void Freeze() {
+        foreach (EntityType type in Types) CacheTraitFactories(type);
         Frozen = true;
     }
 
@@ -60,10 +53,8 @@ public static class EntityPalette
 
     public static EntityType? FindByRuntimeId(int runtimeId) => ByRuntimeId.GetValueOrDefault(runtimeId);
 
-    public static void RegisterTrait<TTrait>(string? identifier = null) where TTrait : EntityTrait
-    {
-        if (Frozen)
-            throw new InvalidOperationException("Register entity traits before starting the server.");
+    public static void RegisterTrait<TTrait>(string? identifier = null) where TTrait : EntityTrait {
+        if (Frozen) throw new InvalidOperationException("Register entity traits before starting the server.");
         Type traitType = typeof(TTrait);
         EntityTraitAppliesToAttribute targets = identifier is not null
             ? new EntityTraitAppliesToAttribute { Identifiers = [identifier] }
@@ -86,36 +77,28 @@ public static class EntityPalette
         TraitRegistration registration = new(traitType, targets, factory);
         TraitRegistrations.Add(registration);
 
-        foreach (EntityType type in Types)
-            CacheTraitFactories(type);
+        foreach (EntityType type in Types) CacheTraitFactories(type);
     }
 
-    internal static EntityTrait[]? CreateTraits(Entity entity, EntityType? type)
-    {
-        if (type is null)
-            return null;
+    internal static EntityTrait[]? CreateTraits(Entity entity, EntityType? type) {
+        if (type is null) return null;
 
         EntityTraitFactory[] factories = TraitFactories.GetValueOrDefault(type) ?? CacheTraitFactories(type);
-        if (factories.Length == 0)
-            return null;
+        if (factories.Length == 0) return null;
 
         EntityTrait[] traits = new EntityTrait[factories.Length];
-        for (int i = 0; i < factories.Length; i++)
-        {
+        for (int i = 0; i < factories.Length; i++) {
             traits[i] = factories[i](entity);
         }
 
         return traits;
     }
 
-    static EntityTraitFactory[] CacheTraitFactories(EntityType type)
-    {
+    static EntityTraitFactory[] CacheTraitFactories(EntityType type) {
         List<EntityTraitFactory> factories = [];
         HashSet<Type> included = [];
-        foreach (TraitRegistration registration in TraitRegistrations)
-        {
-            if (registration.Matches(type) && included.Add(registration.TraitType))
-                factories.Add(registration.Factory);
+        foreach (TraitRegistration registration in TraitRegistrations) {
+            if (registration.Matches(type) && included.Add(registration.TraitType)) factories.Add(registration.Factory);
         }
 
         EntityTraitFactory[] result = factories.ToArray();
@@ -123,8 +106,7 @@ public static class EntityPalette
         return result;
     }
 
-    static EntityType[] LoadTypes()
-    {
+    static EntityType[] LoadTypes() {
         Assembly dataAssembly = Assembly.Load("BasaltBE.Data");
         using Stream stream = dataAssembly.GetManifestResourceStream("BasaltBE.Data.Data.entity-types.json")
             ?? throw new InvalidOperationException("Entity data file 'entity-types.json' is missing.");
@@ -135,8 +117,7 @@ public static class EntityPalette
 
     delegate EntityTrait EntityTraitFactory(Entity entity);
 
-    sealed class TraitRegistration(Type traitType, EntityTraitAppliesToAttribute targets, EntityTraitFactory factory)
-    {
+    sealed class TraitRegistration(Type traitType, EntityTraitAppliesToAttribute targets, EntityTraitFactory factory) {
         public readonly Type TraitType = traitType;
         public readonly EntityTraitFactory Factory = factory;
 

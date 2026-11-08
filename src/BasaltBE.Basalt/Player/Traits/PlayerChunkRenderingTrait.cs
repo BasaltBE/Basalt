@@ -6,7 +6,6 @@ using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.Basalt.Network;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Basalt.Worlds.Types;
-using BasaltBE.Logging;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.Protocol.Enums;
 using BasaltBE.Protocol.Types;
@@ -16,7 +15,6 @@ namespace BasaltBE.Basalt.Entities.Traits;
 
 [EntityTraitAppliesTo(Identifiers = ["minecraft:player"])]
 public sealed class PlayerChunkRenderingTrait : EntityTrait {
-    static readonly ScopedLogger Log = Logger.Scoped("Network");
     const int ChunksPerTick = 64;
     const int PendingChecksPerTick = ChunksPerTick * 4;
     const int MovementPacketsPerBatch = 2048;
@@ -59,7 +57,6 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     int publisherViewDistance = -1;
     bool started;
     ulong chunkSendBlockedTick;
-    long nextQueuePressureLog;
 
     public PlayerChunkRenderingTrait(Entity entity) : base(entity) {
         player = entity as Player ?? throw new ArgumentException("Player chunk rendering requires a Player entity.", nameof(entity));
@@ -73,8 +70,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     public bool Viewing(Entity entity) => Volatile.Read(ref visibleEntityIds).Contains(entity.RuntimeId);
 
     internal void RemoveEntity(Entity entity) {
-        if (!renderedEntities.Remove(entity.RuntimeId))
-            return;
+        if (!renderedEntities.Remove(entity.RuntimeId)) return;
         Volatile.Write(ref visibleEntityIds, new HashSet<ulong>(renderedEntities.Keys));
         sendEntityPacket(new RemoveActorPacket { ActorId = entity.UniqueId });
     }
@@ -95,6 +91,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             GetPosition(hash, out int x, out int z);
             player.Dimension.RemoveChunkViewer(player, x, z);
         }
+
         loadedChunks.Clear();
         requestedChunks.Clear();
         pendingChunks.Clear();
@@ -116,8 +113,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
     }
 
     public override void Tick() {
-        if (Volatile.Read(ref spawnReady) == 0 || player.Disposed)
-            return;
+        if (Volatile.Read(ref spawnReady) == 0 || player.Disposed) return;
 
         int nextChunkX = (int)MathF.Floor(player.Position.X) >> 4;
         int nextChunkZ = (int)MathF.Floor(player.Position.Z) >> 4;
@@ -138,24 +134,15 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
         RetryDeferredChunks();
         RequestChunks();
+
         ReadOnlySpan<Entity> entities;
         if (player.Dimension.EntityCount > loadedChunks.Count * 2) {
             player.Dimension.EntityIndex.Collect(loadedChunks, nearbyEntities);
             entities = CollectionsMarshal.AsSpan(nearbyEntities);
-        }
-        else {
+        } else {
             entities = player.Dimension.GetEntities();
         }
         UpdateEntities(entities, sendEntityPacket);
-
-        ulong outgoingBufferedBytes = player.Network.GetOutgoingBufferedBytes(player);
-        if (outgoingBufferedBytes >= MaximumOutgoingBufferedBytes) {
-            long now = Stopwatch.GetTimestamp();
-            if (now >= nextQueuePressureLog) {
-                Log.Info($"Outgoing transport queue for {player.Username}: {outgoingBufferedBytes} bytes.");
-                nextQueuePressureLog = now + Stopwatch.Frequency;
-            }
-        }
     }
 
     internal void UpdateEntities(ReadOnlySpan<Entity> entities, Action<DataPacket> send) {
@@ -187,16 +174,14 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         Abilities = abilities,
                         BuildPlatform = (BuildPlatform)other.DeviceOS
                     });
-                    if (other.GetTrait<EntityArmorTrait>() is { } armor)
-                        send(armor.CreateEquipmentPacket());
+                    if (other.GetTrait<EntityArmorTrait>() is { } armor) send(armor.CreateEquipmentPacket());
                     send(new UpdateAbilitiesPacket { Data = abilities });
                     send(new SetActorDataPacket {
                         ActorRuntimeId = other.RuntimeId,
                         ActorData = flags,
                         Tick = other.GetTrait<EntityMovementTrait>()?.InputTick ?? 0
                     });
-                }
-                else if (entity is ItemEntity item) {
+                } else if (entity is ItemEntity item) {
                     send(new AddItemActorPacket {
                         ActorId = item.UniqueId,
                         RuntimeId = item.RuntimeId,
@@ -205,8 +190,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                         Velocity = item.GetTrait<EntityMovementTrait>()?.Motion ?? new Vec3(),
                         ActorData = item.Flags.CreateSnapshot()
                     });
-                }
-                else {
+                } else {
                     PrimedTntTrait? primedTnt = entity.GetTrait<PrimedTntTrait>();
                     Vec3 position = entity.Position;
                     if (primedTnt is not null)
@@ -235,12 +219,10 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                 state = new EntityRenderState(entity);
                 renderedEntities.Add(entity.RuntimeId, state);
                 membershipChanged = true;
-            }
-            else if (entity is not Player) {
+            } else if (entity is not Player) {
                 bool isTnt = entity.Type?.Identifier == "minecraft:tnt";
                 int movementUpdateInterval = Math.Max(entity.MovementUpdateInterval, 1);
-                if (state.TicksSinceMovementUpdate < movementUpdateInterval)
-                    state.TicksSinceMovementUpdate++;
+                if (state.TicksSinceMovementUpdate < movementUpdateInterval) state.TicksSinceMovementUpdate++;
 
                 EntityMovementTrait? movement = entity.GetTrait<EntityMovementTrait>();
                 float positionDeltaX = entity.Position.X - state.X;
@@ -325,8 +307,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                 }
             }
             state.Seen = renderPass;
-            if (movementPackets.Count >= MovementPacketsPerBatch)
-                FlushMovementPackets();
+            if (movementPackets.Count >= MovementPacketsPerBatch) FlushMovementPackets();
         }
 
         FlushMovementPackets();
@@ -338,31 +319,24 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                 removedEntities.Add(runtimeId);
             }
         }
-        foreach (ulong runtimeId in removedEntities)
-            renderedEntities.Remove(runtimeId);
+        foreach (ulong runtimeId in removedEntities) renderedEntities.Remove(runtimeId);
         if (removedEntities.Count > 0) {
-            if (renderedEntities.Count == 0)
-                renderedEntities.Clear();
-            else if (removedEntities.Count > renderedEntities.Count)
-                renderedEntities.TrimExcess();
+            if (renderedEntities.Count == 0) renderedEntities.Clear();
+            else if (removedEntities.Count > renderedEntities.Count) renderedEntities.TrimExcess();
         }
         if (membershipChanged || removedEntities.Count != 0)
             Volatile.Write(ref visibleEntityIds, new HashSet<ulong>(renderedEntities.Keys));
     }
 
     void FlushMovementPackets() {
-        if (movementPackets.Count == 0)
-            return;
+        if (movementPackets.Count == 0) return;
 
         try {
             player.SendPacket(CollectionsMarshal.AsSpan(movementPackets), reliable: false);
-        }
-        finally {
+        } finally {
             foreach (DataPacket packet in movementPackets) {
-                if (packet is MoveActorDeltaPacket movement)
-                    movementPacketPool.Push(movement);
-                else if (packet is SetActorMotionPacket motion)
-                    motionPacketPool.Push(motion);
+                if (packet is MoveActorDeltaPacket movement) movementPacketPool.Push(movement);
+                else if (packet is SetActorMotionPacket motion) motionPacketPool.Push(motion);
             }
             movementPackets.Clear();
         }
@@ -374,7 +348,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             long hash = deferredChunks[i];
             GetPosition(hash, out int x, out int z);
             if (!ChunkInRange(x, z)) {
-                RemoveAt(deferredChunks, i);
+                deferredChunks.RemoveAt(i);
                 requestedChunks.Remove(hash);
                 continue;
             }
@@ -386,7 +360,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                 continue;
             }
 
-            RemoveAt(deferredChunks, i);
+            deferredChunks.RemoveAt(i);
             pendingChunks.Add(hash);
         }
     }
@@ -395,14 +369,12 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         int requests = 0;
         while (requests < ChunksPerTick && NextPosition(out int x, out int z)) {
             long hash = HashChunk(x, z);
-            if (loadedChunks.Contains(hash) || !requestedChunks.Add(hash))
-                continue;
+            if (loadedChunks.Contains(hash) || !requestedChunks.Add(hash)) continue;
 
             requests++;
             if (player.Dimension.Request(x, z) == ChunkRequestStatus.QueueFull) {
                 deferredChunks.Add(hash);
-            }
-            else {
+            } else {
                 pendingChunks.Add(hash);
             }
         }
@@ -419,10 +391,10 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             return false;
         }
 
+        pendingIndex = 0;
         int checks = Math.Min(pendingChunks.Count, PendingChecksPerTick);
         while (checks > 0 && pendingChunks.Count > 0) {
-            if (pendingIndex >= pendingChunks.Count)
-                pendingIndex = 0;
+            if (pendingIndex >= pendingChunks.Count) pendingIndex = 0;
 
             long hash = pendingChunks[pendingIndex];
             GetPosition(hash, out int x, out int z);
@@ -444,13 +416,10 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             long sendStart = Stopwatch.GetTimestamp();
             try {
                 SendChunk(chunk);
-            }
-            finally {
+            } finally {
                 long elapsed = Stopwatch.GetTimestamp() - sendStart;
-                if (player.Dimension.World is { } world)
-                    world.ChunkSendBudgetRemaining -= elapsed;
-                else
-                    player.Dimension.ChunkSendBudgetRemaining -= elapsed;
+                if (player.Dimension.World is { } world) world.ChunkSendBudgetRemaining -= elapsed;
+                else player.Dimension.ChunkSendBudgetRemaining -= elapsed;
             }
             loadedChunks.Add(hash);
             player.Dimension.AddChunkViewer(player, x, z);
@@ -482,8 +451,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         removedChunks.Clear();
         foreach (long hash in loadedChunks) {
             GetPosition(hash, out int x, out int z);
-            if (!ChunkInRange(x, z))
-                removedChunks.Add(hash);
+            if (!ChunkInRange(x, z)) removedChunks.Add(hash);
         }
 
         foreach (long hash in removedChunks) {
@@ -495,8 +463,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
         for (int i = pendingChunks.Count - 1; i >= 0; i--) {
             GetPosition(pendingChunks[i], out int x, out int z);
-            if (ChunkInRange(x, z))
-                continue;
+            if (ChunkInRange(x, z)) continue;
 
             requestedChunks.Remove(pendingChunks[i]);
             RemovePending(i, pendingChunks[i]);
@@ -504,11 +471,10 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
 
         for (int i = deferredChunks.Count - 1; i >= 0; i--) {
             GetPosition(deferredChunks[i], out int x, out int z);
-            if (ChunkInRange(x, z))
-                continue;
+            if (ChunkInRange(x, z)) continue;
 
             requestedChunks.Remove(deferredChunks[i]);
-            RemoveAt(deferredChunks, i);
+            deferredChunks.RemoveAt(i);
         }
     }
 
@@ -544,8 +510,7 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
                     player.Dimension.CustomDefinition?.DefaultBiomeId ?? 0
                 );
                 break;
-            }
-            catch (ArgumentOutOfRangeException) {
+            } catch (ArgumentOutOfRangeException) {
                 int capacity = resources.Stream.Buffer.Length;
                 if (capacity >= MaximumChunkDataCapacity) {
                     throw new InvalidDataException("Chunk payload exceeds the maximum Bedrock packet size.");
@@ -568,30 +533,21 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
         resources.Packet.IsClientBiomeUpdate = false;
         try {
             player.SendPacket(resources.Packet);
-        }
-        finally {
+        } finally {
             resources.Packet.SerializedChunkData = ReadOnlyMemory<byte>.Empty;
         }
     }
 
     void RemovePending(int index, long hash) {
         requestedChunks.Remove(hash);
-        RemoveAt(pendingChunks, index);
+        pendingChunks.RemoveAt(index);
         if (pendingChunks.Count == 0) {
             pendingIndex = 0;
-        }
-        else if (index < pendingIndex) {
+        } else if (index < pendingIndex) {
             pendingIndex--;
-        }
-        else if (pendingIndex >= pendingChunks.Count) {
+        } else if (pendingIndex >= pendingChunks.Count) {
             pendingIndex = 0;
         }
-    }
-
-    static void RemoveAt(List<long> chunks, int index) {
-        int last = chunks.Count - 1;
-        chunks[index] = chunks[last];
-        chunks.RemoveAt(last);
     }
 
     bool NextPosition(out int x, out int z) {
@@ -617,16 +573,13 @@ public sealed class PlayerChunkRenderingTrait : EntityTrait {
             if (index < sideLength) {
                 x = chunkX - radius + index;
                 z = chunkZ - radius;
-            }
-            else if (index < sideLength * 2) {
+            } else if (index < sideLength * 2) {
                 x = chunkX + radius;
                 z = chunkZ - radius + index - sideLength;
-            }
-            else if (index < sideLength * 3) {
+            } else if (index < sideLength * 3) {
                 x = chunkX + radius - (index - sideLength * 2);
                 z = chunkZ + radius;
-            }
-            else {
+            } else {
                 x = chunkX - radius;
                 z = chunkZ + radius - (index - sideLength * 3);
             }

@@ -11,8 +11,7 @@ namespace BasaltBE.Basalt.Blocks.Traits;
 [BlockTraitAppliesTo("minecraft:crafting_table")]
 public sealed class CraftingTableTrait : BlockTrait {
     public override bool OnInteract(Player player, BlockPos position) {
-        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
-            return false;
+        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory) return false;
 
         BlockPos tablePosition = new() { X = position.X, Y = position.Y, Z = position.Z };
         BlockContainer table = new(
@@ -25,8 +24,7 @@ public sealed class CraftingTableTrait : BlockTrait {
         );
         table.LastViewerClosed += () => {
             for (int slot = 0; slot < table.ContainerSize; slot++) {
-                if (table.TakeItem(slot, ushort.MaxValue) is not { } ingredient)
-                    continue;
+                if (table.TakeItem(slot, ushort.MaxValue) is not { } ingredient) continue;
                 if (inventory.Inventory.AddItem(ingredient) is { } remaining)
                     new ItemEntity(remaining, player, tablePosition.X, tablePosition.Y, tablePosition.Z).Spawn(player.Dimension);
             }

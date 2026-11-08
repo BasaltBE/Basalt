@@ -44,92 +44,103 @@ public sealed class WorldsCommand : Command {
     );
 
     public override CommandResult Execute(CommandContext context) {
-        if (context.Parameters.Length == 0)
-            return ListWorlds(context.Server.Worlds);
+        if (context.Parameters.Length == 0) return ListWorlds(context.Server);
 
-        if (context.Parameters[0].Name == "action") {
-            if (context.Get<string>("action") == "create" && context.Parameters.Length == 2) {
-                string name = context.Get<string>("name");
-                try {
-                    context.Server.CreateWorld(
-                        name,
-                        static world => world.CreateDimension("minecraft:overworld", DimensionType.Overworld),
-                        providerName: context.Server.Properties.WorldProvider
-                    );
-                }
-                catch (Exception error) when (
-                    error is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException
-                ) {
-                    return new(false, error.Message);
-                }
-                return new(true, $"Created world {name}.");
+        if (context.Parameters[0].Name != "action") return new(false, GetUsage());
+
+        if (context.Get<string>("action") == "create" && context.Parameters.Length == 2) {
+            string name = context.Get<string>("name");
+
+            try {
+                context.Server.CreateWorld(
+                    name,
+                    static world => world.CreateDimension("minecraft:overworld", DimensionType.Overworld),
+                    providerName: context.Server.Properties.WorldProvider
+                );
+            } catch (Exception error) when (
+                error is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException
+            ) {
+                return new(false, error.Message);
             }
 
-            if (context.Get<string>("action") == "dimension" && context.Parameters.Length == 6) {
-                World targetWorld;
-                try {
-                    targetWorld = context.Server.GetWorld(context.Get<string>("world"));
-                }
-                catch (KeyNotFoundException) {
-                    return new(false, "That world is not loaded.");
-                }
+            return new(true, $"Created world {name}.");
+        }
 
-                DimensionType type = Enum.Parse<DimensionType>(context.Get<string>("type"), ignoreCase: true);
-                string dimensionIdentifier = context.Get<string>("id");
-                try {
-                    targetWorld.CreateDimension(dimensionIdentifier, type, context.Get<string>("generator"));
-                }
-                catch (Exception error) when (
-                    error is ArgumentException or InvalidOperationException or KeyNotFoundException
-                ) {
-                    return new(false, error.Message);
-                }
-                return new(true, $"Added dimension {dimensionIdentifier} ({context.Get<string>("type")}) to {targetWorld.Identifier}.");
+        if (context.Get<string>("action") == "dimension" && context.Parameters.Length == 6) {
+            World targetWorld;
+            try {
+                targetWorld = context.Server.GetWorld(context.Get<string>("world"));
+            } catch (KeyNotFoundException) {
+                return new(false, "That world is not loaded.");
             }
 
-            if (context.Get<string>("action") == "tp" && context.Parameters.Length == 3) {
-                if (context.Player is not { Spawned: true, Disposed: false } player)
-                    return new(false, "Only a spawned player can switch worlds.");
+            DimensionType type = Enum.Parse<DimensionType>(context.Get<string>("type"), ignoreCase: true);
+            string dimensionIdentifier = context.Get<string>("id");
 
-                World world;
-                try {
-                    world = context.Server.GetWorld(context.Get<string>("world"));
-                }
-                catch (KeyNotFoundException) {
-                    return new(false, "That world is not loaded.");
-                }
-
-                Dimension? dimension = context.Arguments[2] is string identifier
-                    ? world.GetDimension(identifier)
-                    : world.GetDimension(DimensionType.Overworld);
-                if (dimension is null && context.Arguments[2] is null)
-                    foreach (Dimension candidate in world.Dimensions.Values) {
-                        dimension = candidate;
-                        break;
-                    }
-                if (dimension is null)
-                    return new(false, "That dimension is not configured in the world.");
-
-                if (ReferenceEquals(player.Dimension, dimension))
-                    return new(true, $"You are already in {world.Identifier}/{dimension.Identifier}.");
-
-                player.TransferTo(dimension);
-                return new(true, $"Moved to {world.Identifier}/{dimension.Identifier}.");
+            try {
+                targetWorld.CreateDimension(dimensionIdentifier, type, context.Get<string>("generator"));
+            } catch (Exception error) when (
+                error is ArgumentException or InvalidOperationException or KeyNotFoundException
+            ) {
+                return new(false, error.Message);
             }
 
-            return new(false, GetUsage());
+            return new(true, $"Added dimension {dimensionIdentifier} ({context.Get<string>("type")}) to {targetWorld.Identifier}.");
+        }
+
+        if (context.Get<string>("action") == "tp" && context.Parameters.Length == 3) {
+            if (context.Player is not { Spawned: true, Disposed: false } player)
+                return new(false, "Only a spawned player can switch worlds.");
+
+            World world;
+            try {
+                world = context.Server.LoadWorld(context.Get<string>("world"),
+                    static loaded => loaded.CreateDimension("minecraft:overworld", DimensionType.Overworld));
+            } catch (Exception error) when (
+                error is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException
+            ) {
+                return new(false, error.Message);
+            }
+
+            Dimension? dimension = context.Arguments[2] is string identifier
+                ? world.GetDimension(identifier)
+                : world.GetDimension(DimensionType.Overworld);
+            if (dimension is null && context.Arguments[2] is null)
+                foreach (Dimension candidate in world.Dimensions.Values) {
+                    dimension = candidate;
+                    break;
+                }
+
+            if (dimension is null) return new(false, "That dimension is not configured in the world.");
+
+            if (ReferenceEquals(player.Dimension, dimension))
+                return new(true, $"You are already in {world.Identifier}/{dimension.Identifier}.");
+
+            player.TransferTo(dimension);
+            return new(true, $"Moved to {world.Identifier}/{dimension.Identifier}.");
         }
 
         return new(false, GetUsage());
     }
 
-    private static CommandResult ListWorlds(IReadOnlyList<World> worlds) {
+    private static CommandResult ListWorlds(Server server) {
+        IReadOnlyList<World> worlds = server.Worlds;
+        HashSet<string> loadedNames = new(worlds.Select(world => world.Identifier), StringComparer.OrdinalIgnoreCase);
+        string[] unloaded;
+        try {
+            unloaded = Directory.Exists("worlds")
+                ? Directory.EnumerateDirectories("worlds").Select(Path.GetFileName).OfType<string>()
+                    .Where(name => !loadedNames.Contains(name)).Order(StringComparer.OrdinalIgnoreCase).ToArray()
+                : [];
+        } catch (Exception error) when (error is IOException or UnauthorizedAccessException) {
+            return new(false, $"Could not list saved worlds: {error.Message}");
+        }
+
         StringBuilder output = new();
-        output.Append("§7Worlds (§w").Append(worlds.Count).Append("§7)§r");
+        output.Append("§7Worlds (§w").Append(worlds.Count + unloaded.Length).Append("§7)§r");
         foreach (World world in worlds) {
             int chunks = 0;
-            foreach (Dimension dimension in world.Dimensions.Values)
-                chunks += dimension.ChunkCount;
+            foreach (Dimension dimension in world.Dimensions.Values) chunks += dimension.ChunkCount;
 
             output.Append("\n§8` §a").Append(world.Identifier)
                 .Append(" (§w").Append(world.Dimensions.Count).Append("§7 dimensions, §w")
@@ -140,6 +151,10 @@ public sealed class WorldsCommand : Command {
                     .Append("§7, §w").Append(dimension.ChunkCount).Append("§7 chunks)§r");
             }
         }
+
+        foreach (string name in unloaded)
+            output.Append("\n§8` §a").Append(name).Append(" §7(unloaded)§r");
+
         return new(true, output.ToString());
     }
 }

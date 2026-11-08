@@ -20,8 +20,7 @@ public sealed class LeverTrait : BlockSupportTrait {
     };
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        if (face > 5)
-            return false;
+        if (face > 5) return false;
 
         int facing = (int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3;
         string direction = face < 2
@@ -58,8 +57,7 @@ public sealed class LeverTrait : BlockSupportTrait {
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
         BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
-        if (current is null)
-            return null;
+        if (current is null) return null;
         if (current.State.Values.GetValueOrDefault("lever_direction") is not string direction ||
             !SupportOffsets.TryGetValue(direction, out var offset))
             return false;

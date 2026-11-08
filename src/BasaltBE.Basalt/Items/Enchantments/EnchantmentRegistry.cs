@@ -9,8 +9,7 @@ public sealed class EnchantmentRegistry {
     public IReadOnlyCollection<Enchantment> Values => Volatile.Read(ref enchantments).Values;
 
     public EnchantmentRegistry() {
-        foreach (Enchantment enchantment in EnchantmentPalette.Enchantments)
-            Register(enchantment);
+        foreach (Enchantment enchantment in EnchantmentPalette.Enchantments) Register(enchantment);
     }
 
     public Enchantment? Find(string identifier) {
@@ -35,18 +34,17 @@ public sealed class EnchantmentRegistry {
             };
             Volatile.Write(ref enchantments, updated.ToFrozenDictionary(StringComparer.Ordinal));
         }
+
         return enchantment;
     }
 
     public bool Unregister(string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-        if (EnchantmentPalette.Find(identifier) is not null)
-            return false;
+        if (EnchantmentPalette.Find(identifier) is not null) return false;
 
         lock (registryLock) {
             FrozenDictionary<string, Enchantment> current = Volatile.Read(ref enchantments);
-            if (!current.ContainsKey(identifier))
-                return false;
+            if (!current.ContainsKey(identifier)) return false;
 
             Dictionary<string, Enchantment> updated = new(current, StringComparer.Ordinal);
             updated.Remove(identifier);

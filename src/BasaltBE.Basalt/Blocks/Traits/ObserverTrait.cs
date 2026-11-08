@@ -20,12 +20,10 @@ public sealed class ObserverTrait : BlockTrait {
 
     internal override void OnScheduledUpdate(Dimension dimension, int x, int y, int z, BlockPermutation current) {
         bool powered = current.State.Values.GetValueOrDefault("powered_bit") is true;
-        if (BlockPalette.Find(current.Identifier, current.State, "powered_bit", !powered) is not { } updated)
-            return;
+        if (BlockPalette.Find(current.Identifier, current.State, "powered_bit", !powered) is not { } updated) return;
 
         dimension.SetPermutation(x, y, z, updated);
         dimension.BroadcastBlockUpdate(x, y, z, updated);
-        if (!powered)
-            dimension.ScheduleBlockUpdate(x, y, z, 2);
+        if (!powered) dimension.ScheduleBlockUpdate(x, y, z, 2);
     }
 }

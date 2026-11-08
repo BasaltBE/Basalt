@@ -1,4 +1,4 @@
-namespace BasaltBE.Basalt.Experience;
+namespace BasaltBE.Basalt.Entities.Experience;
 
 public enum ExpDropType {
     Block,

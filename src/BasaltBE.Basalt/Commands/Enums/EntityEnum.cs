@@ -10,12 +10,10 @@ public sealed class EntityEnum() : CustomEnum("EntityType", []) {
 
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
 
         string identifier = CommandReader.Text(token);
-        if (!identifier.Contains(':'))
-            identifier = "minecraft:" + identifier;
+        if (!identifier.Contains(':')) identifier = "minecraft:" + identifier;
 
         value = EntityPalette.Find(identifier);
         return value is not null;

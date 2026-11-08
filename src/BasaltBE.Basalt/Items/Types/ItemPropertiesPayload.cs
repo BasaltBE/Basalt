@@ -14,23 +14,19 @@ public sealed class ItemPropertiesPayload {
     public Dictionary<string, Tag> Values = new(StringComparer.Ordinal);
 
     public CompoundTag ToComponentData() {
-        if (Components.Length == 0 && ItemTags.Length == 0 && Values.Count == 0)
-            return new CompoundTag();
+        if (Components.Length == 0 && ItemTags.Length == 0 && Values.Count == 0) return new CompoundTag();
 
         CompoundTag components = new();
-        if (Values.TryGetValue("item_properties", out Tag? itemProperties))
-            components.Add("item_properties", itemProperties);
+        if (Values.TryGetValue("item_properties", out Tag? itemProperties)) components.Add("item_properties", itemProperties);
 
         foreach (string identifier in Components) {
-            if (identifier == "item_properties")
-                continue;
+            if (identifier == "item_properties") continue;
 
             components.Add(identifier, Values.GetValueOrDefault(identifier) ?? new CompoundTag());
         }
 
         ListTag itemTags = new() { ElementType = TagType.String };
-        foreach (string itemTag in ItemTags)
-            itemTags.Value.Add(new StringTag { Value = itemTag });
+        foreach (string itemTag in ItemTags) itemTags.Value.Add(new StringTag { Value = itemTag });
 
         components.Add("item_tags", itemTags);
 

@@ -17,8 +17,7 @@ public sealed class SummonCommand : Command {
 
     public override CommandResult Execute(CommandContext context) {
         EntityType type = context.Get<EntityType>("entity");
-        if (type.Summonable == false)
-            return new(false, "Unable to summon object.");
+        if (type.Summonable == false) return new(false, "Unable to summon object.");
 
         Dimension? dimension = context.Player?.Dimension;
         float x = 0.5f;
@@ -28,21 +27,18 @@ public sealed class SummonCommand : Command {
             x = position.X;
             y = position.Y;
             z = position.Z;
-        }
-        else if (context.Player is { } player) {
+        } else if (context.Player is { } player) {
             x = player.Position.X + MathF.Cos(player.Rotation.Y * (MathF.PI / 180)) * 2;
             y = player.Position.Y;
             z = player.Position.Z + MathF.Sin(player.Rotation.Y * (MathF.PI / 180)) * 2;
-        }
-        else {
+        } else {
             foreach (Dimension candidate in context.Server.GetWorld().Dimensions.Values) {
                 dimension = candidate;
                 break;
             }
         }
 
-        if (dimension is null)
-            return new(false, "Unable to summon object.");
+        if (dimension is null) return new(false, "Unable to summon object.");
 
         Entity entity = new(type);
         entity.Position.X = x;

@@ -12,8 +12,7 @@ public sealed class CommandContext {
 
     public CommandContext(Server server, Player? player = null)
         : this(player is null ? new ServerCommandExecutor(server) : new PlayerCommandExecutor(player)) {
-        if (!ReferenceEquals(Server, server))
-            throw new ArgumentException("The player belongs to another server.", nameof(player));
+        if (!ReferenceEquals(Server, server)) throw new ArgumentException("The player belongs to another server.", nameof(player));
     }
 
     public CommandContext(CommandExecutor executor) {
@@ -25,13 +24,13 @@ public sealed class CommandContext {
 
     public T Get<T>(string name, T fallback = default!) {
         for (int index = 0; index < Parameters.Length; index++) {
-            if (Parameters[index].Name == name) {
-                if (Arguments[index] is null)
-                    return fallback;
-                return Arguments[index] is T value ? value :
-                    throw new InvalidCastException($"Command parameter '{name}' is not {typeof(T).Name}.");
-            }
+            if (Parameters[index].Name != name) continue;
+            if (Arguments[index] is null) return fallback;
+
+            return Arguments[index] is T value ? value :
+                throw new InvalidCastException($"Command parameter '{name}' is not {typeof(T).Name}.");
         }
+
         throw new KeyNotFoundException($"Command parameter '{name}' does not exist.");
     }
 }

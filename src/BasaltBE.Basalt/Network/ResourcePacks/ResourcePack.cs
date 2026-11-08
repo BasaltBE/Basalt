@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text;
 using BasaltBE.Basalt.Profiling;
 
 namespace BasaltBE.Basalt.Network.ResourcePacks;
@@ -44,17 +45,63 @@ internal sealed class ResourcePack {
             header.Version.Any(version => version < 0))
             throw new InvalidDataException($"Resource pack manifest has an invalid name or version: {manifestPath}.");
 
-        using MemoryStream archiveStream = new();
-        using (Profiler.BeginZone("ResourcePacks.Archive"))
-            ZipFile.CreateFromDirectory(directory, archiveStream, CompressionLevel.Fastest, includeBaseDirectory: false);
+        FileInfo[] files = new DirectoryInfo(directory).GetFiles("*", SearchOption.AllDirectories);
+        Array.Sort(files, static (left, right) => StringComparer.Ordinal.Compare(left.FullName, right.FullName));
+        using IncrementalHash fingerprint = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (FileInfo file in files) {
+            fingerprint.AppendData(Encoding.UTF8.GetBytes(file.FullName));
+            fingerprint.AppendData(BitConverter.GetBytes(file.Length));
+            fingerprint.AppendData(BitConverter.GetBytes(file.LastWriteTimeUtc.Ticks));
+        }
+        string signature = Convert.ToHexString(fingerprint.GetHashAndReset());
+        string cache = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(directory))!, ".cache");
+        string archivePath = Path.Combine(cache, id + ".zip");
+        string signaturePath = Path.Combine(cache, id + ".stamp");
+        byte[]? archive = null;
+        byte[]? hash = null;
+        try {
+            if (File.Exists(signaturePath) && File.Exists(archivePath)) {
+                string[] saved = File.ReadAllLines(signaturePath);
+                if (saved.Length == 2 && saved[0] == signature) {
+                    byte[] cached = File.ReadAllBytes(archivePath);
+                    byte[] cachedHash = SHA256.HashData(cached);
+                    if (Convert.ToHexString(cachedHash) == saved[1]) {
+                        archive = cached;
+                        hash = cachedHash;
+                    }
+                }
+            }
+        } catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
 
-        if (!archiveStream.TryGetBuffer(out ArraySegment<byte> archiveBuffer) || archiveBuffer.Array is null)
-            throw new InvalidOperationException("Resource pack archive buffer is unavailable.");
-        int archiveLength = checked((int)archiveStream.Length);
-        byte[] archive = archiveBuffer.Array;
-        byte[] hash;
-        using (Profiler.BeginZone("ResourcePacks.Hash"))
-            hash = SHA256.HashData(archive.AsSpan(archiveBuffer.Offset, archiveLength));
+        int archiveLength;
+        if (archive is null) {
+            using MemoryStream archiveStream = new();
+            using (Profiler.BeginZone("ResourcePacks.Archive")) {
+                using ZipArchive zip = new(archiveStream, ZipArchiveMode.Create, leaveOpen: true);
+                foreach (FileInfo file in files) {
+                    string name = Path.GetRelativePath(directory, file.FullName).Replace('\\', '/');
+                    zip.CreateEntryFromFile(file.FullName, name, CompressionLevel.Fastest);
+                }
+            }
+            if (!archiveStream.TryGetBuffer(out ArraySegment<byte> archiveBuffer) || archiveBuffer.Array is null)
+                throw new InvalidOperationException("Resource pack archive buffer is unavailable.");
+            archiveLength = checked((int)archiveStream.Length);
+            archive = archiveBuffer.Array;
+            hash = SHA256.HashData(archive.AsSpan(0, archiveLength));
+
+            string temporary = archivePath + "." + Guid.NewGuid().ToString("N");
+            try {
+                Directory.CreateDirectory(cache);
+                using (FileStream output = File.Create(temporary)) output.Write(archive.AsSpan(0, archiveLength));
+                File.Move(temporary, archivePath, overwrite: true);
+                File.WriteAllLines(signaturePath, [signature, Convert.ToHexString(hash)]);
+            } catch (Exception error) when (error is IOException or UnauthorizedAccessException) {
+            } finally {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
+        } else {
+            archiveLength = archive.Length;
+        }
 
         return new ResourcePack {
             Id = id,
@@ -64,7 +111,7 @@ internal sealed class ResourcePack {
             ResourceName = id.ToString(),
             Archive = archive,
             ArchiveLength = archiveLength,
-            Hash = hash
+            Hash = hash!
         };
     }
 

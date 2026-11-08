@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public class Feature {
     public readonly string Identifier;
@@ -21,8 +21,7 @@ public class Feature {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         ArgumentNullException.ThrowIfNull(children);
-        if (data.ValueKind != JsonValueKind.Object)
-            throw new ArgumentException("Feature data must be a JSON object.", nameof(data));
+        if (data.ValueKind != JsonValueKind.Object) throw new ArgumentException("Feature data must be a JSON object.", nameof(data));
 
         Identifier = identifier;
         Type = type;

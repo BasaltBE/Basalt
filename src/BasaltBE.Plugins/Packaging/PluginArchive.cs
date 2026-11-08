@@ -41,8 +41,7 @@ public sealed class PluginArchive {
         using FileStream input = File.OpenRead(path);
         string hash = Convert.ToHexStringLower(SHA256.HashData(input));
         string cache = Path.Combine(Path.GetFullPath(cacheDirectory), hash);
-        if (Directory.Exists(cache))
-            return cache;
+        if (Directory.Exists(cache)) return cache;
 
         string staging = cache + "." + Guid.NewGuid().ToString("N");
         Directory.CreateDirectory(staging);
@@ -62,10 +61,8 @@ public sealed class PluginArchive {
             }
             Directory.Move(staging, cache);
             return cache;
-        }
-        finally {
-            if (Directory.Exists(staging))
-                Directory.Delete(staging, true);
+        } finally {
+            if (Directory.Exists(staging)) Directory.Delete(staging, true);
         }
     }
 
@@ -89,16 +86,13 @@ public sealed class PluginArchive {
 
             _ = new PluginArchive(temporary);
             File.Move(temporary, destination, true);
-        }
-        finally {
-            if (File.Exists(temporary))
-                File.Delete(temporary);
+        } finally {
+            if (File.Exists(temporary)) File.Delete(temporary);
         }
     }
 
     private static void ValidateEntries(ZipArchive archive) {
-        if (archive.Entries.Count > 10000)
-            throw new InvalidDataException("Plugin archive has too many entries.");
+        if (archive.Entries.Count > 10000) throw new InvalidDataException("Plugin archive has too many entries.");
 
         HashSet<string> files = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> directories = new(StringComparer.OrdinalIgnoreCase);
@@ -115,21 +109,17 @@ public sealed class PluginArchive {
                     throw new InvalidDataException($"Invalid archive path: {name}.");
             }
 
-            if (!files.Add(name))
-                throw new InvalidDataException($"Duplicate archive path: {name}.");
-            if (directories.Contains(name))
-                throw new InvalidDataException($"Archive file conflicts with directory: {name}.");
+            if (!files.Add(name)) throw new InvalidDataException($"Duplicate archive path: {name}.");
+            if (directories.Contains(name)) throw new InvalidDataException($"Archive file conflicts with directory: {name}.");
 
             for (int slash = name.IndexOf('/'); slash >= 0; slash = name.IndexOf('/', slash + 1)) {
                 string parent = name[..slash];
-                if (files.Contains(parent))
-                    throw new InvalidDataException($"Archive file conflicts with directory: {parent}.");
+                if (files.Contains(parent)) throw new InvalidDataException($"Archive file conflicts with directory: {parent}.");
 
                 directories.Add(parent);
             }
 
-            if (entry.Length > 512L * 1024 * 1024 - totalSize)
-                throw new InvalidDataException("Plugin archive exceeds 512 MiB.");
+            if (entry.Length > 512L * 1024 * 1024 - totalSize) throw new InvalidDataException("Plugin archive exceeds 512 MiB.");
 
             totalSize += entry.Length;
         }

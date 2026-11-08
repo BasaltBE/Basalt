@@ -20,6 +20,7 @@ public sealed class PlayerAbilities {
         | (1U << (int)PlayerAbility.Invulnerable)
         | (1U << (int)PlayerAbility.Flying)
         | (1U << (int)PlayerAbility.NoClip);
+
     uint enabled = BaseAbilities;
     uint controlled = BaseAbilities | SpeedAbilities | SurvivalAbilities;
 
@@ -34,17 +35,14 @@ public sealed class PlayerAbilities {
         uint mask = 1U << (int)ability;
         bool changed = (controlled & mask) == 0 || Get(ability) != value;
         controlled |= mask;
-        if (value)
-            enabled |= mask;
-        else
-            enabled &= ~mask;
+        if (value) enabled |= mask;
+        else enabled &= ~mask;
         Dirty |= changed;
         return changed;
     }
 
     public bool SetSpeeds(float fly, float verticalFly, float walk) {
-        if (FlySpeed == fly && VerticalFlySpeed == verticalFly && WalkSpeed == walk)
-            return false;
+        if (FlySpeed == fly && VerticalFlySpeed == verticalFly && WalkSpeed == walk) return false;
 
         FlySpeed = fly;
         VerticalFlySpeed = verticalFly;
@@ -66,8 +64,7 @@ public sealed class PlayerAbilities {
             CommandPermissions = administrator ? CommandPermissionLevel.GameDirectors : CommandPermissionLevel.Any,
             Layers =
             [
-                new SerializedAbilitiesLayer
-                {
+                new SerializedAbilitiesLayer {
                     Layer = 1,
                     AbilitiesSet = controlled,
                     AbilityValues = enabled,

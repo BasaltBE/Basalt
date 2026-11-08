@@ -5,7 +5,6 @@ using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Items.Containers;
 using BasaltBE.Basalt.Items.Types;
-using BasaltBE.Logging;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 using BasaltBE.Nbt.Types;
 using BasaltBE.NetherNet.Types;
@@ -17,8 +16,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class BlockPickRequestHandler {
     public void Handle(NethernetPeer peer, Player? player, BlockPickRequestPacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Block pick request arrived before player login.");
+        if (player is null) throw new InvalidDataException("Block pick request arrived before player login.");
         if (!player.Spawned || player.Disposed ||
             packet.Position.Y < player.Dimension.MinimumY || packet.Position.Y > player.Dimension.MaximumY ||
             player.Dimension.GetChunk(packet.Position.X >> 4, packet.Position.Z >> 4) is not { } chunk ||
@@ -28,12 +26,10 @@ internal sealed class BlockPickRequestHandler {
         float dx = player.Position.X - packet.Position.X - 0.5f;
         float dy = player.Position.Y + player.HeadOffset - packet.Position.Y - 0.5f;
         float dz = player.Position.Z - packet.Position.Z - 0.5f;
-        if (dx * dx + dy * dy + dz * dz > 32 * 32)
-            return;
+        if (dx * dx + dy * dy + dz * dz > 32 * 32) return;
 
         BlockPermutation block = chunk.GetPermutation(packet.Position.X & 15, packet.Position.Y, packet.Position.Z & 15);
-        if (block.Identifier == "minecraft:air")
-            return;
+        if (block.Identifier == "minecraft:air") return;
 
         ItemType? type = ItemPalette.Find(block.Identifier);
         if (type?.Catalog is null) {
@@ -41,8 +37,7 @@ internal sealed class BlockPickRequestHandler {
             if (player.Dimension.World is { } world) {
                 foreach (var drop in world.LootTables.Get(block.Identifier)) {
                     ItemType? dropType = ItemPalette.Find(drop.Identifier);
-                    if (dropType?.Catalog is null)
-                        continue;
+                    if (dropType?.Catalog is null) continue;
 
                     type = dropType;
                     break;
@@ -50,27 +45,16 @@ internal sealed class BlockPickRequestHandler {
             }
         }
 
-        if (type is null || type.NetworkId == 0 || type.MaxAmount is <= 0 or > ushort.MaxValue)
-            return;
+        if (type is null || type.NetworkId == 0 || type.MaxAmount is <= 0 or > ushort.MaxValue) return;
 
         ItemStack item = new(type, checked((ushort)type.MaxAmount));
         BlockActor? actor = player.Dimension.GetBlockActor(chunk, packet.Position.X & 15, packet.Position.Y, packet.Position.Z & 15);
-        if (packet.WithData && actor is not null) {
-            item.Nbt = actor.CreateItemData();
-            Logger.Scoped("Network").Info(
-                $"Block pick from {player.Username}: block {block.Identifier}, with data, actor tags ({string.Join(", ", item.Nbt.Tags.Keys)})."
-            );
-        }
-        else if (actor is not null) {
-            Logger.Scoped("Network").Info($"Block pick from {player.Username}: block {block.Identifier}, no actor data requested.");
-        }
+        if (packet.WithData && actor is not null) item.Nbt = actor.CreateItemData();
 
-        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
-            return;
+        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory) return;
 
         lock (player.Sync) {
-            if (!player.Spawned || player.Disposed)
-                return;
+            if (!player.Spawned || player.Disposed) return;
 
             int matchingSlot = -1;
             for (int slot = 0; slot < inventory.Inventory.ContainerSize; slot++) {
@@ -80,16 +64,12 @@ internal sealed class BlockPickRequestHandler {
                 }
             }
 
-            if (matchingSlot < 0 && player.GameType != GameType.Creative)
-                return;
+            if (matchingSlot < 0 && player.GameType != GameType.Creative) return;
 
             if (matchingSlot >= 0) {
-                if (matchingSlot < 9)
-                    inventory.SelectedSlot = (byte)matchingSlot;
-                else
-                    inventory.Inventory.Swap(matchingSlot, inventory.SelectedSlot);
-            }
-            else {
+                if (matchingSlot < 9) inventory.SelectedSlot = (byte)matchingSlot;
+                else inventory.Inventory.Swap(matchingSlot, inventory.SelectedSlot);
+            } else {
                 int emptyHotbar = -1;
                 for (int slot = 0; slot < 9; slot++) {
                     if (inventory.Inventory.GetItem(slot) is null) {
@@ -101,8 +81,7 @@ internal sealed class BlockPickRequestHandler {
                 if (emptyHotbar >= 0) {
                     inventory.SelectedSlot = (byte)emptyHotbar;
                     inventory.Inventory.SetItem(emptyHotbar, item);
-                }
-                else {
+                } else {
                     int emptyInventory = -1;
                     for (int slot = 9; slot < inventory.Inventory.ContainerSize; slot++) {
                         if (inventory.Inventory.GetItem(slot) is null) {
@@ -111,8 +90,7 @@ internal sealed class BlockPickRequestHandler {
                         }
                     }
 
-                    if (emptyInventory >= 0)
-                        inventory.Inventory.Swap(emptyInventory, inventory.SelectedSlot);
+                    if (emptyInventory >= 0) inventory.Inventory.Swap(emptyInventory, inventory.SelectedSlot);
                     inventory.Inventory.SetItem(inventory.SelectedSlot, item);
                 }
             }

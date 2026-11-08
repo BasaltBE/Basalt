@@ -1,7 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     private void BuildMegaJungle(
@@ -138,8 +138,7 @@ internal sealed partial class TreePlacement {
                         2,
                         0);
                 }
-            }
-            else {
+            } else {
                 AddDarkOakLeafRow(attachment,
                     -1,
                     2);
@@ -308,8 +307,7 @@ internal sealed partial class TreePlacement {
 
             if ((BlockPalette.FindType(dimension.GetPermutation(blockX, startY - 1, blockZ).Identifier)?.Solid == true)) {
                 gapInGround = 0;
-            }
-            else if (++gapInGround > 2) {
+            } else if (++gapInGround > 2) {
                 return;
             }
         }

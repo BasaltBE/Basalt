@@ -50,8 +50,10 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
         cancellation.Cancel();
         listener.Stop();
         clients.Writer.TryComplete();
-        try { await Task.WhenAll(workers.Append(acceptTask)).ConfigureAwait(false); }
-        catch (Exception error) when (error is OperationCanceledException or SocketException or ObjectDisposedException) { }
+        try {
+            await Task.WhenAll(workers.Append(acceptTask)).ConfigureAwait(false);
+        } catch (Exception error) when (error is OperationCanceledException or SocketException or ObjectDisposedException) { }
+
         while (clients.Reader.TryRead(out TcpClient? client)) {
             client.Dispose();
             capacity.Release();
@@ -63,30 +65,42 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
     private async Task AcceptAsync(CancellationToken cancellationToken) {
         while (!cancellationToken.IsCancellationRequested) {
             TcpClient client;
-            try { client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
-            catch (SocketException) when (cancellationToken.IsCancellationRequested) { break; }
+            try {
+                client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
+            } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                break;
+            } catch (SocketException) when (cancellationToken.IsCancellationRequested) {
+                break;
+            }
+
             if (!capacity.Wait(0, cancellationToken)) {
                 client.Dispose();
                 continue;
             }
             client.NoDelay = true;
-            try { await clients.Writer.WriteAsync(client, cancellationToken).ConfigureAwait(false); }
-            catch { client.Dispose(); capacity.Release(); throw; }
+            try {
+                await clients.Writer.WriteAsync(client, cancellationToken).ConfigureAwait(false);
+            } catch {
+                client.Dispose();
+                capacity.Release();
+                throw;
+            }
         }
     }
 
     private async Task ProcessAsync(CancellationToken cancellationToken) {
         await foreach (TcpClient client in clients.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
             using (client) {
-                try { await HandleAsync(client, cancellationToken).ConfigureAwait(false); }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
-                catch (OperationCanceledException) { }
-                catch (IOException) { }
-                catch (SocketException) { }
-                catch (InvalidDataException) { }
-                catch (Exception error) { Log.Error($"NetherNet signaling request failed: {error.Message}"); }
-                finally { capacity.Release(); }
+                try {
+                    await HandleAsync(client, cancellationToken).ConfigureAwait(false);
+                } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                    return;
+                } catch (Exception error) when (error is OperationCanceledException or IOException or SocketException or InvalidDataException) {
+                } catch (Exception error) {
+                    Log.Error($"NetherNet signaling request failed: {error.Message}");
+                } finally {
+                    capacity.Release();
+                }
             }
         }
     }
@@ -176,14 +190,11 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
             byte[] body = Encoding.UTF8.GetBytes(answer);
             await RespondAsync(stream, 200, "application/sdp", body, requestToken).ConfigureAwait(false);
             connection = null;
-        }
-        catch (OperationCanceledException) when (!requestToken.IsCancellationRequested) {
+        } catch (OperationCanceledException) when (!requestToken.IsCancellationRequested) {
             await RespondAsync(stream, 502, "text/plain", "Timed out during peer negotiation", requestToken).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is InvalidDataException or InvalidOperationException or CryptographicException) {
+        } catch (Exception error) when (error is InvalidDataException or InvalidOperationException or CryptographicException) {
             await RespondAsync(stream, 400, "text/plain", "Could not process SDP offer", cancellationToken).ConfigureAwait(false);
-        }
-        finally {
+        } finally {
             if (connection is not null) await connection.DisposeAsync().ConfigureAwait(false);
         }
     }
@@ -207,8 +218,7 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
             string sdp = peer.localDescription?.sdp?.ToString() ?? answer.sdp;
             string signed = identity.AddAssertion(sdp);
             return (connection, signed);
-        }
-        catch {
+        } catch {
             await connection.DisposeAsync().ConfigureAwait(false);
             throw;
         }
@@ -224,8 +234,7 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
         try {
             if (peer.iceGatheringState == RTCIceGatheringState.complete) return;
             await gathered.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-        }
-        finally { peer.onicegatheringstatechange -= StateChanged; }
+        } finally { peer.onicegatheringstatechange -= StateChanged; }
     }
 
     private static async ValueTask<(int HeaderLength, int BufferedLength)> ReadHeadersAsync(Stream stream, byte[] buffer, CancellationToken cancellationToken) {
@@ -260,4 +269,3 @@ internal sealed class HttpSignalingListener : IAsyncDisposable {
         return System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
     }
 }
-

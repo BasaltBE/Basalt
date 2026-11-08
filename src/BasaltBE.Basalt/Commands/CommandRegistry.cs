@@ -14,6 +14,7 @@ namespace BasaltBE.Basalt.Commands;
 public sealed class CommandRegistry(Server server) {
     public const int MaximumCommandLength = 2048;
     private const int MaximumPendingCommands = 1024;
+
     private readonly Dictionary<string, Command> byName = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Command> definitions = [];
     private readonly ConcurrentQueue<QueuedCommand> pending = new();
@@ -23,31 +24,35 @@ public sealed class CommandRegistry(Server server) {
 
     public void Register(Command definition) {
         ArgumentNullException.ThrowIfNull(definition);
-        if (Catalog is not null)
-            throw new InvalidOperationException("Register commands before starting the server.");
+        if (Catalog is not null) throw new InvalidOperationException("Register commands before starting the server.");
+
         HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
         foreach (string name in new[] { definition.Name }.Concat(definition.Aliases)) {
-            if (name.Length == 0 || name.Length > 64 || name.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not ('_' or ':' or '-')) ||
+            if (name.Length == 0 || name.Length > 64 ||
+                name.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not ('_' or ':' or '-')) ||
                 !names.Add(name) || byName.ContainsKey(name))
                 throw new ArgumentException($"Invalid or duplicate command name '{name}'.", nameof(definition));
         }
-        if (definition.Overloads.Count == 0)
-            throw new ArgumentException("A command needs at least one overload.", nameof(definition));
+
+        if (definition.Overloads.Count == 0) throw new ArgumentException("A command needs at least one overload.", nameof(definition));
+
         foreach (CommandOverload overload in definition.Overloads) {
             if (overload.Parameters.Length > 32)
                 throw new ArgumentException("A command overload supports up to 32 parameters.", nameof(definition));
+
             bool optional = false;
             HashSet<string> parameterNames = new(StringComparer.Ordinal);
             foreach (CommandParameter parameter in overload.Parameters) {
                 ArgumentNullException.ThrowIfNull(parameter.Parser);
                 if (string.IsNullOrWhiteSpace(parameter.Name) || !parameterNames.Add(parameter.Name) || optional && !parameter.Optional)
                     throw new ArgumentException("Parameter names must be unique. Optional parameters must be last.", nameof(definition));
+
                 optional |= parameter.Optional;
             }
         }
+
         definitions.Add(definition);
-        foreach (string name in names)
-            byName.Add(name, definition);
+        foreach (string name in names) byName.Add(name, definition);
     }
 
     public CommandResult Execute(string input, Player? player = null) {
@@ -62,28 +67,22 @@ public sealed class CommandRegistry(Server server) {
         if (input.Length > MaximumCommandLength || Encoding.UTF8.GetByteCount(input) > MaximumCommandLength)
             return new(false, "Command is too long.");
         foreach (char character in input) {
-            if (char.IsControl(character))
-                return new(false, "Command contains a control character.");
+            if (char.IsControl(character)) return new(false, "Command contains a control character.");
         }
         ReadOnlySpan<char> text = input.AsSpan().Trim();
-        if (!text.IsEmpty && text[0] == '/')
-            text = text[1..];
+        if (!text.IsEmpty && text[0] == '/') text = text[1..];
 
         CommandReader reader = new(text);
         Command? definition = ReadCommand(ref reader);
-        if (definition is null)
-            return new(false, "Unknown command.");
+        if (definition is null) return new(false, "Unknown command.");
 
-        if (!executor.Allows(definition.Permission))
-            return new(false, "You do not have permission to use this command.");
+        if (!executor.Allows(definition.Permission)) return new(false, "You do not have permission to use this command.");
 
         bool exclusive = server.Started && server.Properties.Ticking == "world" &&
             !definition.Concurrent && !server.Gameplay.IsWriteLockHeld;
 
-        if (exclusive && server.Gameplay.IsReadLockHeld)
-            return new(false, "Queue gameplay commands from tick listeners.");
-        if (exclusive && !server.Gameplay.TryEnterWriteLock(0))
-            return new(false, "Gameplay is busy. Please try the command again.");
+        if (exclusive && server.Gameplay.IsReadLockHeld) return new(false, "Queue gameplay commands from tick listeners.");
+        if (exclusive && !server.Gameplay.TryEnterWriteLock(0)) return new(false, "Gameplay is busy. Please try the command again.");
 
         try {
             CommandContext context = new(executor);
@@ -96,30 +95,25 @@ public sealed class CommandRegistry(Server server) {
 
                 for (int index = 0; index < overload.Parameters.Length; index++) {
                     CommandParameter parameter = overload.Parameters[index];
-                    if (arguments.Complete && parameter.Optional)
-                        break;
+                    if (arguments.Complete && parameter.Optional) break;
 
                     try {
                         if (!parameter.Parser.Parse(context, ref arguments, out context.Arguments[index])) {
                             valid = false;
                             break;
                         }
-                    }
-                    catch (JsonException) {
+                    } catch (JsonException) {
                         valid = false;
                         break;
                     }
                 }
 
-                if (valid && arguments.Complete)
-                    return definition.Execute(context);
+                if (valid && arguments.Complete) return definition.Execute(context);
             }
 
             return new(false, $"Usage: {definition.GetUsage()}");
-        }
-        finally {
-            if (exclusive)
-                server.Gameplay.ExitWriteLock();
+        } finally {
+            if (exclusive) server.Gameplay.ExitWriteLock();
         }
     }
 
@@ -129,18 +123,14 @@ public sealed class CommandRegistry(Server server) {
     }
 
     internal CommandCatalog GetCatalog(PlayerPermissions permissions) {
-        if (permissions.Contains("basalt.operator"))
-            return Catalog;
+        if (permissions.Contains("basalt.operator")) return Catalog;
 
         List<Command> visible = [];
         foreach (Command command in definitions) {
-            if (permissions.Allows(command.Permission))
-                visible.Add(command);
+            if (permissions.Allows(command.Permission)) visible.Add(command);
         }
-        if (visible.Count == definitions.Count)
-            return Catalog;
-        if (visible.Count == publicCatalog.Packet.Commands.Length)
-            return publicCatalog;
+        if (visible.Count == definitions.Count) return Catalog;
+        if (visible.Count == publicCatalog.Packet.Commands.Length) return publicCatalog;
         return new CommandCatalog(visible);
     }
 
@@ -168,8 +158,7 @@ public sealed class CommandRegistry(Server server) {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(completed);
-        if (!ReferenceEquals(executor.Server, server) || command.Length > MaximumCommandLength)
-            return false;
+        if (!ReferenceEquals(executor.Server, server) || command.Length > MaximumCommandLength) return false;
 
         if (Interlocked.Increment(ref pendingCount) > MaximumPendingCommands) {
             Interlocked.Decrement(ref pendingCount);
@@ -185,8 +174,7 @@ public sealed class CommandRegistry(Server server) {
 
         for (int index = 0; index < count && !server.Stopping && pending.TryDequeue(out QueuedCommand request); index++) {
             ReadOnlySpan<char> text = request.Command.AsSpan().Trim();
-            if (!text.IsEmpty && text[0] == '/')
-                text = text[1..];
+            if (!text.IsEmpty && text[0] == '/') text = text[1..];
 
             CommandReader reader = new(text);
             Command? command = ReadCommand(ref reader);
@@ -212,17 +200,13 @@ public sealed class CommandRegistry(Server server) {
                 result = admitted
                     ? Execute(request.Command, request.Executor)
                     : new(false, "Gameplay is busy. The command was not run.");
-            }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
                 result = new(false, "A player disconnected while the command was running. Some changes may have been applied.");
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 Logger.Scoped("Commands").Error($"Command execution failed (command: {request.Command}): {error}");
                 result = new(false, "Command execution failed.");
-            }
-            finally {
-                if (exclusive && admitted)
-                    server.Gameplay.ExitWriteLock();
+            } finally {
+                if (exclusive && admitted) server.Gameplay.ExitWriteLock();
             }
 
             SendOutput(request, result);
@@ -257,8 +241,7 @@ public sealed class CommandRegistry(Server server) {
                     }]
                 }
             });
-        }
-        catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
+        } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
         }
     }
 }

@@ -6,21 +6,18 @@ namespace BasaltBE.Basalt.Blocks.Traits;
 public sealed class StairShapeTrait : BlockTrait {
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
-        if (!current.State.Values.TryGetValue("weirdo_direction", out object? directionValue) ||
-            directionValue is not int direction ||
-            (uint)direction >= (uint)BlockDirections.StairFacingByDirection.Length ||
-            !current.State.Values.TryGetValue("upside_down_bit", out object? upsideDownValue) ||
-            upsideDownValue is not bool upsideDown)
+        if (current.State.Values.GetValueOrDefault("weirdo_direction") is not int direction ||
+            (uint)direction >= (uint)BlockDirections.StairFacingByDirection.Length)
             return false;
+
+        if (current.State.Values.GetValueOrDefault("upside_down_bit") is not bool upsideDown) return false;
+
 
         string corner = FindCorner(dimension, x, y, z, direction, upsideDown);
-        if (current.State.Values.TryGetValue("minecraft:corner", out object? cornerValue) &&
-            cornerValue is string currentCorner && currentCorner == corner)
-            return false;
+        if (current.State.Values.GetValueOrDefault("minecraft:corner") is string currentCorner && currentCorner == corner) return false;
 
         BlockPermutation? updated = BlockPalette.Find(current.Identifier, current.State, "minecraft:corner", corner);
-        if (updated is null)
-            return false;
+        if (updated is null) return false;
 
         dimension.SetPermutation(x, y, z, updated);
         return true;
@@ -51,34 +48,27 @@ public sealed class StairShapeTrait : BlockTrait {
         int checkDirection = outer ? BlockDirections.StairOppositeByDirection[neighborDirection] : neighborDirection;
         int checkX = x + BlockDirections.StairOffsetXByDirection[checkDirection];
         int checkZ = z + BlockDirections.StairOffsetZByDirection[checkDirection];
-        if (dimension.GetChunk(checkX >> 4, checkZ >> 4) is null)
-            return false;
+        if (dimension.GetChunk(checkX >> 4, checkZ >> 4) is null) return false;
 
         BlockPermutation block = dimension.GetPermutation(checkX, y, checkZ);
         return BlockPalette.IsCornerableStairs(block.Identifier) &&
-            block.State.Values.TryGetValue("weirdo_direction", out object? foundDirection) &&
-            foundDirection is int value && value == direction &&
-            block.State.Values.TryGetValue("upside_down_bit", out object? foundHalf) &&
-            foundHalf is bool valueHalf && valueHalf == upsideDown;
+            block.State.Values.GetValueOrDefault("weirdo_direction") is int value && value == direction &&
+            block.State.Values.GetValueOrDefault("upside_down_bit") is bool valueHalf && valueHalf == upsideDown;
     }
 
     static bool StairTurn(Dimension dimension, int x, int y, int z, bool upsideDown, int direction, out int neighborDirection) {
         neighborDirection = 0;
-        if (dimension.GetChunk(x >> 4, z >> 4) is null)
-            return false;
+        if (dimension.GetChunk(x >> 4, z >> 4) is null) return false;
 
         BlockPermutation neighbor = dimension.GetPermutation(x, y, z);
         if (!BlockPalette.IsCornerableStairs(neighbor.Identifier) ||
-            !neighbor.State.Values.TryGetValue("weirdo_direction", out object? directionValue) ||
-            directionValue is not int foundDirection ||
+            neighbor.State.Values.GetValueOrDefault("weirdo_direction") is not int foundDirection ||
             (uint)foundDirection >= (uint)BlockDirections.StairFacingByDirection.Length ||
-            !neighbor.State.Values.TryGetValue("upside_down_bit", out object? upsideDownValue) ||
-            upsideDownValue is not bool foundUpsideDown || foundUpsideDown != upsideDown)
+            neighbor.State.Values.GetValueOrDefault("upside_down_bit") is not bool foundUpsideDown || foundUpsideDown != upsideDown)
             return false;
 
         int turn = (BlockDirections.StairFacingByDirection[foundDirection] - BlockDirections.StairFacingByDirection[direction] + 4) & 3;
-        if (turn is not (1 or 3))
-            return false;
+        if (turn is not (1 or 3)) return false;
 
         neighborDirection = foundDirection;
         return true;

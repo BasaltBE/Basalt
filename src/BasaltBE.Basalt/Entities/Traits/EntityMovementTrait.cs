@@ -40,20 +40,17 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     public ulong? InputTick;
 
     public override void Read(CompoundTag tag) {
-        if (Entity is Player)
-            return;
+        if (Entity is Player) return;
         Grounded = tag.Get<ByteTag>("OnGround") is { Value: not 0 };
         VerticalCollision = Grounded;
     }
 
     public override void Write(CompoundTag tag) {
-        if (Entity is not Player)
-            tag.Add("OnGround", new ByteTag { Value = Grounded ? (byte)1 : (byte)0 });
+        if (Entity is not Player) tag.Add("OnGround", new ByteTag { Value = Grounded ? (byte)1 : (byte)0 });
     }
 
     public override void OnSpawn() {
-        if (Entity is not Player)
-            Entity.SetFlag(ActorFlag.HasGravity, true);
+        if (Entity is not Player) Entity.SetFlag(ActorFlag.HasGravity, true);
         BroadcastPosition = new Vector3(Entity.Position.X, Entity.Position.Y, Entity.Position.Z);
         BroadcastRotation = new Vector2(Entity.Rotation.X, Entity.Rotation.Y);
         BroadcastHeadRotation = Entity.HeadRotation;
@@ -100,15 +97,13 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void Tick() {
-        if (Entity is Player || Entity.Dead || Entity.SpawnedDimension is not Dimension dimension)
-            return;
+        if (Entity is Player || Entity.Dead || Entity.SpawnedDimension is not Dimension dimension) return;
 
         FluidContact fluid = Entity.GetFluidContact();
         bool water = fluid.WaterDepth > 0;
         bool lava = !water && fluid.LavaDepth > 0;
         bool gravity = Entity.Flags.Get(ActorFlag.HasGravity);
-        if (!gravity && Motion.X == 0 && Motion.Y == 0 && Motion.Z == 0 && !water && !lava)
-            return;
+        if (!gravity && Motion.X == 0 && Motion.Y == 0 && Motion.Z == 0 && !water && !lava) return;
 
         float width = Entity.CollisionWidth;
         float height = Entity.GetCollisionHeight();
@@ -130,8 +125,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         Vector3 velocity = new(Motion.X, Motion.Y, Motion.Z);
         if (water || lava) {
             Vector3 current = water ? fluid.WaterFlow : fluid.LavaFlow;
-            if (!smallEntity && current.LengthSquared() > 0)
-                current = Vector3.Normalize(current);
+            if (!smallEntity && current.LengthSquared() > 0) current = Vector3.Normalize(current);
             float acceleration = water ? 0.014f : dimension.Type == DimensionType.Nether ? 0.007f : 0.0023333334f;
             float depth = water ? fluid.WaterDepth : fluid.LavaDepth;
             velocity += current * (acceleration * Math.Min(1, depth / 0.4f));
@@ -141,22 +135,16 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             velocity.X *= fluidDrag;
             velocity.Z *= fluidDrag;
             if (gravity) {
-                if ((water ? fluid.WaterDepth : fluid.LavaDepth) <= 0.1f)
-                    velocity.Y = -0.02f;
-                else if (velocity.Y < 0.06f)
-                    velocity.Y += 0.0005f;
+                if ((water ? fluid.WaterDepth : fluid.LavaDepth) <= 0.1f) velocity.Y = -0.02f;
+                else if (velocity.Y < 0.06f) velocity.Y += 0.0005f;
             }
             velocity.Y *= verticalDrag;
-        }
-        else if ((water || lava) && living) {
+        } else if ((water || lava) && living) {
             float slowdown = water ? 0.8f : 0.5f;
             velocity *= slowdown;
-            if (gravity)
-                velocity.Y -= 0.02f;
-            if (Jumping)
-                velocity.Y += 0.04f;
-        }
-        else {
+            if (gravity) velocity.Y -= 0.02f;
+            if (Jumping) velocity.Y += 0.04f;
+        } else {
             velocity.X *= horizontalDrag;
             velocity.Z *= horizontalDrag;
             if (gravity) {
@@ -164,8 +152,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
                     ? velocity.Y * verticalDrag - Math.Max(0, Gravity)
                     : (velocity.Y - Math.Max(0, Gravity)) * verticalDrag;
                 velocity.Y = Math.Max(velocity.Y, TerminalVelocity);
-            }
-            else if (VerticalDragBeforeGravity) {
+            } else if (VerticalDragBeforeGravity) {
                 velocity.Y *= verticalDrag;
             }
         }
@@ -177,15 +164,16 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             Vector3 up = ClipMotion(dimension, position, new Vector3(0, 0.6f, 0), width, height);
             Vector3 across = ClipMotion(dimension, position + up, new Vector3(velocity.X, 0, velocity.Z), width, height);
             Vector3 down = ClipMotion(dimension, position + up + across, new Vector3(0, velocity.Y - up.Y, 0), width, height);
-            if (across.X * across.X + across.Z * across.Z > moved.X * moved.X + moved.Z * moved.Z)
-                moved = up + across + down;
+            if (across.X * across.X + across.Z * across.Z > moved.X * moved.X + moved.Z * moved.Z) moved = up + across + down;
         }
+
         HorizontalCollision = moved.X != velocity.X || moved.Z != velocity.Z;
         VerticalCollision = moved.Y != velocity.Y;
         Grounded = VerticalCollision && velocity.Y < 0;
         Motion.X = moved.X != velocity.X || MathF.Abs(velocity.X) < 0.003f && !water && !lava ? 0 : velocity.X;
         Motion.Y = VerticalCollision ? 0 : velocity.Y;
         Motion.Z = moved.Z != velocity.Z || MathF.Abs(velocity.Z) < 0.003f && !water && !lava ? 0 : velocity.Z;
+
         if (moved != Vector3.Zero) {
             Entity.Position.X += moved.X;
             Entity.Position.Y += moved.Y;
@@ -201,8 +189,8 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         for (int pass = 0; pass < 3; pass++) {
             int axis = pass == 0 ? 1 : pass == 1 ? 0 : 2;
             float delta = motion[axis];
-            if (delta == 0)
-                continue;
+            if (delta == 0) continue;
+
             Vector3 sweptMinimum = minimum;
             Vector3 sweptMaximum = maximum;
             sweptMinimum[axis] += Math.Min(0, delta);
@@ -220,8 +208,7 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
                         int count;
                         if (loaded) {
                             count = dimension.GetPermutation(x, y, z).GetCollisionBoxes(boxes);
-                        }
-                        else {
+                        } else {
                             boxes[0] = new(0, 0, 0, 1, 1, 1);
                             count = 1;
                         }
@@ -246,14 +233,14 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
             maximum[axis] += delta;
             motion[axis] = delta;
         }
+
         return motion;
     }
 
     internal bool CalculateKnockback(Entity source, Vec3 velocity) {
         float resistance = Math.Clamp(Entity.Attributes.Get("minecraft:knockback_resistance")?.Current ?? 0, 0, 1);
         float strength = 1 - resistance;
-        if (strength == 0)
-            return false;
+        if (strength == 0) return false;
 
         float x = Entity.Position.X - source.Position.X;
         float z = Entity.Position.Z - source.Position.Z;
@@ -271,5 +258,4 @@ public sealed class EntityMovementTrait(Entity entity) : EntityTrait(entity) {
         velocity.Z = Motion.Z * 0.5f + z * inverseLength * KnockbackHorizontal * strength;
         return true;
     }
-
 }

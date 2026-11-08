@@ -17,8 +17,7 @@ public sealed class BambooTrait : BlockSupportTrait {
     internal override bool HasRandomTicks => true;
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
-        if (y <= dimension.MinimumY)
-            return false;
+        if (y <= dimension.MinimumY) return false;
 
         BlockPermutation below = dimension.GetPermutation(x, y - 1, z);
         return below.Identifier is "minecraft:bamboo" or "minecraft:bamboo_sapling" ||
@@ -26,8 +25,7 @@ public sealed class BambooTrait : BlockSupportTrait {
     }
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        if (HasSupport(player.Dimension, x, y, z) != true)
-            return false;
+        if (HasSupport(player.Dimension, x, y, z) != true) return false;
 
         BlockPermutation below = player.Dimension.GetPermutation(x, y - 1, z);
         if (below.Identifier is not ("minecraft:bamboo" or "minecraft:bamboo_sapling")) {
@@ -67,23 +65,24 @@ public sealed class BambooTrait : BlockSupportTrait {
             height++;
         }
 
-        if (height >= 16 || topY >= player.Dimension.MaximumY ||
-            player.Dimension.GetPermutation(position.X, topY + 1, position.Z).Identifier is not (
+        if (height >= 16 || topY >= player.Dimension.MaximumY) return false;
+
+        if (player.Dimension.GetPermutation(position.X, topY + 1, position.Z).Identifier is not (
                 "minecraft:air" or "minecraft:cave_air" or "minecraft:void_air"))
             return false;
 
         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnBlock, 0);
             player.Network.Server.Events.Emit(itemUse);
-            if (itemUse.IsCanceled())
-                return true;
+            if (itemUse.IsCanceled()) return true;
         }
 
         if (block.Identifier == "minecraft:bamboo_sapling" && topY == position.Y) {
             if (FindBamboo(false, "no_leaves") is not { } stem ||
-                FindBamboo(false, "small_leaves") is not { } leaves ||
-                !player.Dimension.SetPermutation(position.X, position.Y, position.Z, stem))
+                FindBamboo(false, "small_leaves") is not { } leaves)
                 return false;
+
+            if (!player.Dimension.SetPermutation(position.X, position.Y, position.Z, stem)) return false;
 
             if (!player.Dimension.SetPermutation(position.X, position.Y + 1, position.Z, leaves)) {
                 player.Dimension.SetPermutation(position.X, position.Y, position.Z, block);
@@ -100,13 +99,11 @@ public sealed class BambooTrait : BlockSupportTrait {
 
         int growth = Math.Min(Random.Shared.Next(1, 3), 16 - height);
         for (int index = 0; index < growth; index++) {
-            if (!Grow(player.Dimension, position.X, topY, position.Z))
-                break;
+            if (!Grow(player.Dimension, position.X, topY, position.Z)) break;
             topY++;
         }
 
-        if (topY == position.Y)
-            return false;
+        if (topY == position.Y) return false;
 
         Vec3 center = new() { X = position.X + 0.5f, Y = position.Y + 0.5f, Z = position.Z + 0.5f };
         player.Dimension.Broadcast(new LevelEventPacket {
@@ -120,8 +117,7 @@ public sealed class BambooTrait : BlockSupportTrait {
             ActorUniqueId = -1
         }, center);
 
-        if (!player.Abilities.Get(PlayerAbility.InstantBuild))
-            item.DecrementStack();
+        if (!player.Abilities.Get(PlayerAbility.InstantBuild)) item.DecrementStack();
         return true;
     }
 
@@ -138,6 +134,7 @@ public sealed class BambooTrait : BlockSupportTrait {
             bottomY--;
             height++;
         }
+
         int topY = bottomY + height - 1;
         while (topY < dimension.MaximumY &&
             dimension.GetPermutation(x, topY + 1, z).Identifier == "minecraft:bamboo") {
@@ -145,15 +142,12 @@ public sealed class BambooTrait : BlockSupportTrait {
             height++;
         }
 
-        if (height < 16) {
-            Grow(dimension, x, topY, z);
-        }
+        if (height < 16) Grow(dimension, x, topY, z);
     }
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation block = dimension.GetPermutation(x, y, z);
-        if (HasSupport(dimension, x, y, z) is false)
-            return base.OnNeighborUpdate(dimension, x, y, z);
+        if (HasSupport(dimension, x, y, z) is false) return base.OnNeighborUpdate(dimension, x, y, z);
 
         if (block.Identifier == "minecraft:bamboo_sapling" && y < dimension.MaximumY &&
             dimension.GetPermutation(x, y + 1, z).Identifier == "minecraft:bamboo" &&
@@ -181,10 +175,8 @@ public sealed class BambooTrait : BlockSupportTrait {
                 return false;
 
             newTop = leaves;
-            if (!dimension.SetPermutation(x, y, z, baseBamboo))
-                return false;
-        }
-        else {
+            if (!dimension.SetPermutation(x, y, z, baseBamboo)) return false;
+        } else {
             string leaves = top.State.Values.GetValueOrDefault("bamboo_leaf_size") as string ?? "no_leaves";
             bool thick = top.State.Values.GetValueOrDefault("age_bit") is true ||
                 y - 2 > dimension.MinimumY && dimension.GetPermutation(x, y - 2, z).Identifier == "minecraft:bamboo";
@@ -197,13 +189,13 @@ public sealed class BambooTrait : BlockSupportTrait {
                 dimension.SetPermutation(x, y - 1, z, bareStem);
         }
 
-        if (newTop is null || !dimension.SetPermutation(x, y + 1, z, newTop))
-            return false;
+        if (newTop is null || !dimension.SetPermutation(x, y + 1, z, newTop)) return false;
 
         dimension.BroadcastBlockUpdate(x, y + 1, z, newTop);
         dimension.BroadcastBlockUpdate(x, y, z, dimension.GetPermutation(x, y, z));
         if (y - 1 > dimension.MinimumY && dimension.GetPermutation(x, y - 1, z).Identifier == "minecraft:bamboo")
             dimension.BroadcastBlockUpdate(x, y - 1, z, dimension.GetPermutation(x, y - 1, z));
+
         dimension.UpdateNeighbors(x, y, z);
         dimension.UpdateNeighbors(x, y + 1, z);
         return true;

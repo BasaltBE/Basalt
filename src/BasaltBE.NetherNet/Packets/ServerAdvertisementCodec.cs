@@ -34,4 +34,3 @@ public static class ServerAdvertisementCodec {
         return stream.GetProcessedBytes().ToArray();
     }
 }
-

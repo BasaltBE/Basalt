@@ -24,28 +24,22 @@ internal sealed class PluginLoadContext : AssemblyLoadContext {
     }
 
     protected override Assembly? Load(AssemblyName name) {
-        if (name.Name is null)
-            return null;
-        if (shared.Contains(name.Name))
-            return Default.LoadFromAssemblyName(name);
+        if (name.Name is null) return null;
+        if (shared.Contains(name.Name)) return Default.LoadFromAssemblyName(name);
 
-        if (FrameworkAssemblies.Contains(name.Name))
-            return null;
+        if (FrameworkAssemblies.Contains(name.Name)) return null;
 
         string? path = resolver.ResolveAssemblyToPath(name);
-        if (path is not null)
-            return LoadFromAssemblyPath(path);
+        if (path is not null) return LoadFromAssemblyPath(path);
 
         string sibling = Path.Combine(directory, name.Name + ".dll");
-        if (File.Exists(sibling))
-            return LoadFromAssemblyPath(sibling);
+        if (File.Exists(sibling)) return LoadFromAssemblyPath(sibling);
         throw new FileNotFoundException($"Plugin dependency is missing: {name.Name}.");
     }
 
     protected override nint LoadUnmanagedDll(string name) {
         string? path = resolver.ResolveUnmanagedDllToPath(name);
-        if (path is not null)
-            return LoadUnmanagedDllFromPath(path);
+        if (path is not null) return LoadUnmanagedDllFromPath(path);
 
         string extension = OperatingSystem.IsWindows() ? ".dll" : OperatingSystem.IsMacOS() ? ".dylib" : ".so";
         string[] candidates = OperatingSystem.IsWindows()
@@ -53,9 +47,9 @@ internal sealed class PluginLoadContext : AssemblyLoadContext {
             : [name, name + extension, "lib" + name, "lib" + name + extension];
         foreach (string candidate in candidates) {
             string sibling = Path.Combine(directory, candidate);
-            if (File.Exists(sibling))
-                return LoadUnmanagedDllFromPath(sibling);
+            if (File.Exists(sibling)) return LoadUnmanagedDllFromPath(sibling);
         }
+
         return 0;
     }
 }

@@ -48,8 +48,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void Tick() {
-        if (Entity.Dead || Entity.SpawnedDimension is not { } dimension)
-            return;
+        if (Entity.Dead || Entity.SpawnedDimension is not { } dimension) return;
         if (Entity.SimulationAge >= LifetimeTicks) {
             dimension.Broadcast(new RemoveActorPacket { ActorId = Entity.UniqueId }, Entity);
             Entity.Despawn();
@@ -59,8 +58,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
         Player? nearest = null;
         float nearestDistance = AttractionRadiusSquared;
         foreach (Player player in dimension.GetPlayers()) {
-            if (player.Disposed || !player.Spawned || player.Dead || player.SpawnedDimension != dimension)
-                continue;
+            if (player.Disposed || !player.Spawned || player.Dead || player.SpawnedDimension != dimension) continue;
 
             float dx = player.Position.X - Entity.Position.X;
             float dy = player.Position.Y + 1 - Entity.Position.Y;
@@ -104,8 +102,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
             }
         }
 
-        if (Entity.SimulationAge % MergeIntervalTicks != 0)
-            return;
+        if (Entity.SimulationAge % MergeIntervalTicks != 0) return;
 
         int chunkX = (int)MathF.Floor(Entity.Position.X) >> 4;
         int chunkZ = (int)MathF.Floor(Entity.Position.Z) >> 4;
@@ -120,8 +117,7 @@ public sealed class ExperienceOrbTrait(Entity entity) : EntityTrait(entity) {
                     float dx = other.Position.X - Entity.Position.X;
                     float dy = other.Position.Y - Entity.Position.Y;
                     float dz = other.Position.Z - Entity.Position.Z;
-                    if (dx * dx + dy * dy + dz * dz > MergeRadiusSquared)
-                        continue;
+                    if (dx * dx + dy * dy + dz * dz > MergeRadiusSquared) continue;
 
                     ExperienceValue = (int)Math.Min(int.MaxValue, (long)ExperienceValue + otherOrb.ExperienceValue);
                     dimension.Broadcast(new SetActorDataPacket {

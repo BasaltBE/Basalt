@@ -1,7 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     private void AddBase(

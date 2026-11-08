@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using BasaltBE.Basalt.Worlds.Dimensions;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public sealed class FeatureRegistry {
     readonly Dictionary<string, Feature> features = new(StringComparer.Ordinal);
@@ -20,8 +20,7 @@ public sealed class FeatureRegistry {
             throw new InvalidDataException("The built-in feature definitions must be an array.");
 
         foreach (JsonElement entry in document.RootElement.EnumerateArray()) {
-            if (entry.ValueKind != JsonValueKind.Object)
-                throw new InvalidDataException("A built-in feature must be an object.");
+            if (entry.ValueKind != JsonValueKind.Object) throw new InvalidDataException("A built-in feature must be an object.");
             JsonProperty[] types = entry.EnumerateObject()
                 .Where(property => property.Name.StartsWith("minecraft:", StringComparison.Ordinal))
                 .ToArray();
@@ -43,16 +42,13 @@ public sealed class FeatureRegistry {
                             ?? throw new InvalidDataException($"Feature '{identifier.GetString()}' has an invalid child identifier."),
                         _ => throw new InvalidDataException($"Feature '{identifier.GetString()}' has an invalid child identifier.")
                     }).ToArray();
-                }
-                else if (featureList.ValueKind == JsonValueKind.String) {
+                } else if (featureList.ValueKind == JsonValueKind.String) {
                     children = [featureList.GetString()
                         ?? throw new InvalidDataException($"Feature '{identifier.GetString()}' has an invalid child identifier.")];
-                }
-                else {
+                } else {
                     throw new InvalidDataException($"Feature '{identifier.GetString()}' has an invalid child list.");
                 }
-            }
-            else if (definition.TryGetProperty("places_feature", out JsonElement placesFeature)) {
+            } else if (definition.TryGetProperty("places_feature", out JsonElement placesFeature)) {
                 if (placesFeature.ValueKind != JsonValueKind.String)
                     throw new InvalidDataException($"Feature '{identifier.GetString()}' has an invalid child identifier.");
                 children = [placesFeature.GetString()!];
@@ -70,8 +66,7 @@ public sealed class FeatureRegistry {
     public int Place(string identifier, Dimension dimension, int x, int y, int z, int? variant = null) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(dimension);
-        if (variant is { } value)
-            ArgumentOutOfRangeException.ThrowIfNegative(value, nameof(variant));
+        if (variant is { } value) ArgumentOutOfRangeException.ThrowIfNegative(value, nameof(variant));
         if (!features.TryGetValue(identifier, out Feature? feature))
             throw new KeyNotFoundException($"Feature '{identifier}' was not found.");
         Random random = variant is { } seed ? new Random(seed) : Random.Shared;
@@ -79,16 +74,14 @@ public sealed class FeatureRegistry {
     }
 
     public void Register(Feature feature) {
-        if (frozen)
-            throw new InvalidOperationException("Feature registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Feature registrations are closed after the server starts.");
         ArgumentNullException.ThrowIfNull(feature);
         if (!features.TryAdd(feature.Identifier, feature))
             throw new InvalidOperationException($"Feature '{feature.Identifier}' is already registered.");
     }
 
     public bool Unregister(string identifier) {
-        if (frozen)
-            throw new InvalidOperationException("Feature registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Feature registrations are closed after the server starts.");
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         return features.Remove(identifier);
     }

@@ -2,7 +2,7 @@ using System.Text.Json;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     private void BuildStraightBlob(
@@ -163,8 +163,7 @@ internal sealed partial class TreePlacement {
         int endZ,
         bool place) {
         if (startX == endX && startY == endY && startZ == endZ) {
-            if (place)
-                AddTrunk(startX, startY, startZ, "y");
+            if (place) AddTrunk(startX, startY, startZ, "y");
             return true;
         }
 

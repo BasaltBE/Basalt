@@ -29,4 +29,3 @@ public readonly record struct NethernetSignal(string Type, ulong ConnectionId, s
         return true;
     }
 }
-

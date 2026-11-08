@@ -33,8 +33,7 @@ public abstract class BlockSupportTrait : BlockTrait {
             ReadOnlySpan<BlockDrop> drops = world.LootTables.Get(block.Identifier);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);
-                if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
-                    continue;
+                if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue) continue;
 
                 int amount = drop.MinAmount == drop.MaxAmount
                     ? drop.MinAmount
@@ -49,8 +48,7 @@ public abstract class BlockSupportTrait : BlockTrait {
     }
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
-        if (HasSupport(dimension, x, y, z) is not false)
-            return false;
+        if (HasSupport(dimension, x, y, z) is not false) return false;
 
         OnSupportLost(dimension, x, y, z, dropItem: true);
         return true;

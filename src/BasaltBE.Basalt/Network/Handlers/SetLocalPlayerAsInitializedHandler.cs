@@ -10,14 +10,12 @@ namespace BasaltBE.Basalt.Network.Handlers;
 internal sealed class SetLocalPlayerAsInitializedHandler {
     public void Handle(NethernetPeer peer, Player? player, SetLocalPlayerAsInitializedPacket packet) {
         using ProfilerZone zone = Profiler.BeginZone("Network.SetLocalPlayerAsInitialized");
-        if (player is null)
-            throw new InvalidDataException("Player initialization arrived before player login.");
+        if (player is null) throw new InvalidDataException("Player initialization arrived before player login.");
         if (packet.RuntimeId != player.RuntimeId)
             throw new InvalidDataException("Player initialization runtime ID does not match the logged in player.");
 
         using Lock.Scope tickSync = player.TickSync.EnterScope();
-        if (player.Spawned || player.Disposed)
-            return;
+        if (player.Spawned || player.Disposed) return;
         player.Spawned = true;
         player.OnSpawn();
         PlayerSpawnEvent spawned = new(player);

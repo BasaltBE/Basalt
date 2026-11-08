@@ -15,8 +15,7 @@ namespace BasaltBE.Basalt.Entities.Traits;
 [EntityTraitAppliesTo(Identifiers = ["minecraft:player"])]
 public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
     public override void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition) {
-        if (item is null || Entity is not PlayerEntity player)
-            return;
+        if (item is null || Entity is not PlayerEntity player) return;
 
         BlockPermutation? updated;
         switch (item.Type.ToolType) {
@@ -39,8 +38,7 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             (position.Y >= player.Dimension.MaximumY || player.Dimension.GetPermutation(position.X, position.Y + 1, position.Z).Identifier is not (
                 "minecraft:air" or "minecraft:cave_air" or "minecraft:void_air")))
             return;
-        if (updated is null || updated == block)
-            return;
+        if (updated is null || updated == block) return;
 
         int durabilityDamage = 1;
         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
@@ -48,8 +46,7 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             player.Network.Server.Events.Emit(itemUse);
             durabilityDamage = itemUse.DurabilityDamage;
             if (itemUse.IsCanceled()) {
-                if (!player.Abilities.Get(PlayerAbility.InstantBuild))
-                    item.DamageDurability(durabilityDamage);
+                if (!player.Abilities.Get(PlayerAbility.InstantBuild)) item.DamageDurability(durabilityDamage);
                 return;
             }
         }
@@ -66,8 +63,7 @@ public sealed class PlayerToolTrait(Entity entity) : EntityTrait(entity) {
             ActorUniqueId = -1
         });
         player.Dimension.UpdateNeighbors(position.X, position.Y, position.Z);
-        if (!player.Abilities.Get(PlayerAbility.InstantBuild))
-            item.DamageDurability(durabilityDamage);
+        if (!player.Abilities.Get(PlayerAbility.InstantBuild)) item.DamageDurability(durabilityDamage);
     }
 
 }

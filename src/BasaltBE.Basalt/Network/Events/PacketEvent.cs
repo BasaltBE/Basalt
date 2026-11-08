@@ -13,8 +13,7 @@ public sealed class PacketEvent<TPacket> where TPacket : DataPacket, new() {
 
     private static uint GetPacketId() {
         PacketIdAttribute? attribute = typeof(TPacket).GetCustomAttribute<PacketIdAttribute>();
-        if (attribute is null)
-            throw new InvalidOperationException($"{typeof(TPacket).Name} has no packet ID attribute.");
+        if (attribute is null) throw new InvalidOperationException($"{typeof(TPacket).Name} has no packet ID attribute.");
         return checked((uint)attribute.Id);
     }
 }

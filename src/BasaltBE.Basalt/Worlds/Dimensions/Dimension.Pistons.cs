@@ -22,8 +22,7 @@ public sealed partial class Dimension {
     ) {
         World?.CheckOwnership();
         ArgumentNullException.ThrowIfNull(actor);
-        if (positions.Length > 12 || broken.Length > 64 || changes.Length > 2)
-            return PistonTransitionResult.Rejected;
+        if (positions.Length > 12 || broken.Length > 64 || changes.Length > 2) return PistonTransitionResult.Rejected;
 
         PistonMove[] moves = new PistonMove[positions.Length];
         HashSet<(int X, int Y, int Z)> sources = [];
@@ -43,8 +42,7 @@ public sealed partial class Dimension {
                 return PistonTransitionResult.Rejected;
 
             BlockPermutation permutation = sourceChunk.GetPermutation(source.X & 15, source.Y, source.Z & 15);
-            if (BlockPalette.Replaceable(permutation))
-                return PistonTransitionResult.Rejected;
+            if (BlockPalette.Replaceable(permutation)) return PistonTransitionResult.Rejected;
 
             moves[index] = new PistonMove(source, destination, permutation, sourceChunk, destinationChunk);
             previous.TryAdd(source, permutation);
@@ -63,8 +61,7 @@ public sealed partial class Dimension {
         }
 
         foreach (PistonMove move in moves) {
-            if (sources.Contains(move.Destination) || breakSet.Contains(move.Destination))
-                continue;
+            if (sources.Contains(move.Destination) || breakSet.Contains(move.Destination)) continue;
 
             BlockPermutation destination = move.DestinationChunk.GetPermutation(
                 move.Destination.X & 15,
@@ -109,8 +106,7 @@ public sealed partial class Dimension {
             actorChunk.GetRuntimeActor(actor.Position.X & 15, actor.Position.Y, actor.Position.Z & 15) != actor)
             return PistonTransitionResult.Rejected;
 
-        foreach ((int x, int y, int z) in previous.Keys)
-            saveKeys.Add(GetKey(x >> 4, z >> 4));
+        foreach ((int x, int y, int z) in previous.Keys) saveKeys.Add(GetKey(x >> 4, z >> 4));
         saveKeys.Add(GetKey(actor.Position.X >> 4, actor.Position.Z >> 4));
         if (actor.Permutation.State.Values.GetValueOrDefault("facing_direction") is not int actorFacing ||
             (uint)actorFacing >= BlockDirections.PistonOffsetByFacing.Length)
@@ -119,22 +115,18 @@ public sealed partial class Dimension {
         int actorHeadX = actor.Position.X + actorDirection.X;
         int actorHeadZ = actor.Position.Z + actorDirection.Z;
         saveKeys.Add(GetKey(actorHeadX >> 4, actorHeadZ >> 4));
-        if (saveKeys.Count > 16)
-            return PistonTransitionResult.Rejected;
+        if (saveKeys.Count > 16) return PistonTransitionResult.Rejected;
         foreach (long key in saveKeys) {
             if ((scheduledChunks.TryGetValue(key, out ScheduledChunk? state) && state.HasUnindexedRecords) ||
                 (chunks.TryGetValue(key, out Chunk? chunk) && chunk is { PendingTicksInvalid: true }))
                 return PistonTransitionResult.Rejected;
         }
-        if (!GroupChunkSaves([.. saveKeys]))
-            return PistonTransitionResult.Retry;
+        if (!GroupChunkSaves([.. saveKeys])) return PistonTransitionResult.Retry;
 
-        foreach ((int x, int y, int z) in breakSet)
-            CancelScheduledBlockUpdate(x, y, z);
+        foreach ((int x, int y, int z) in breakSet) CancelScheduledBlockUpdate(x, y, z);
         foreach (PistonMove move in moves)
             move.SourceChunk.SetPermutation(move.Source.X & 15, move.Source.Y, move.Source.Z & 15, BlockStorage.Air);
-        foreach ((int x, int y, int z) in breakSet)
-            GetChunk(x >> 4, z >> 4)!.SetPermutation(x & 15, y, z & 15, BlockStorage.Air);
+        foreach ((int x, int y, int z) in breakSet) GetChunk(x >> 4, z >> 4)!.SetPermutation(x & 15, y, z & 15, BlockStorage.Air);
         if (!extended) {
             foreach (var change in changes)
                 GetChunk(change.X >> 4, change.Z >> 4)!.SetPermutation(
@@ -183,8 +175,7 @@ public sealed partial class Dimension {
         }
 
         foreach ((int x, int y, int z) in neighbors) {
-            if (!BlockPalette.OnNeighborUpdate(this, x, y, z))
-                continue;
+            if (!BlockPalette.OnNeighborUpdate(this, x, y, z)) continue;
 
             BroadcastBlockUpdate(x, y, z, GetPermutation(x, y, z));
             Redstone.MarkDirty(x, y, z);
@@ -203,12 +194,10 @@ public sealed partial class Dimension {
         int headX = actor.Position.X + direction.X;
         int headY = actor.Position.Y + direction.Y;
         int headZ = actor.Position.Z + direction.Z;
-        if (headY < MinimumY || headY > MaximumY || GetChunk(headX >> 4, headZ >> 4) is not { } headChunk)
-            return !actor.Extended;
+        if (headY < MinimumY || headY > MaximumY || GetChunk(headX >> 4, headZ >> 4) is not { } headChunk) return !actor.Extended;
 
         BlockPermutation head = headChunk.GetPermutation(headX & 15, headY, headZ & 15);
-        if (head.Identifier is not ("minecraft:sticky_piston_arm_collision" or "minecraft:piston_arm_collision"))
-            return true;
+        if (head.Identifier is not ("minecraft:sticky_piston_arm_collision" or "minecraft:piston_arm_collision")) return true;
 
         return GroupChunkSaves([
             GetKey(actor.Position.X >> 4, actor.Position.Z >> 4),

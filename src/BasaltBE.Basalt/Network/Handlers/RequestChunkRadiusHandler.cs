@@ -8,8 +8,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 internal sealed class RequestChunkRadiusHandler(NetworkServer network) {
     public void Handle(NethernetPeer peer, Player? player, RequestChunkRadiusPacket packet) {
         using ProfilerZone zone = Profiler.BeginZone("Network.RequestChunkRadius");
-        if (player is null)
-            throw new InvalidDataException("Chunk radius request arrived before player login.");
+        if (player is null) throw new InvalidDataException("Chunk radius request arrived before player login.");
 
         int clientMaxCircle = packet.MaxChunkRadius > 0
             ? packet.MaxChunkRadius

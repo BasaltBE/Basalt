@@ -56,9 +56,10 @@ internal static class CookingPalette {
         foreach (JsonElement recipe in document.RootElement.GetProperty("recipes").EnumerateArray()) {
             if (!recipe.TryGetProperty("type", out JsonElement typeValue) ||
                 typeValue.ValueKind != JsonValueKind.Number || !typeValue.TryGetInt32(out int type) || type != 0 ||
-                !recipe.TryGetProperty("block", out JsonElement blockValue) ||
-                blockValue.ValueKind != JsonValueKind.String ||
-                !recipe.TryGetProperty("input", out JsonElement inputs) ||
+                !recipe.TryGetProperty("block", out JsonElement blockValue) || blockValue.ValueKind != JsonValueKind.String)
+                continue;
+
+            if (!recipe.TryGetProperty("input", out JsonElement inputs) ||
                 inputs.ValueKind != JsonValueKind.Array || inputs.GetArrayLength() == 0 ||
                 !recipe.TryGetProperty("output", out JsonElement outputs) ||
                 outputs.ValueKind != JsonValueKind.Array || outputs.GetArrayLength() == 0)
@@ -70,10 +71,11 @@ internal static class CookingPalette {
                     idValue.ValueKind != JsonValueKind.String ||
                     !(idValue.GetString() ?? string.Empty).StartsWith("minecraft:furnace_", StringComparison.Ordinal))
                     continue;
+
                 furnace = "furnace";
             }
-            if (furnace is not ("furnace" or "blast_furnace" or "smoker"))
-                continue;
+
+            if (furnace is not ("furnace" or "blast_furnace" or "smoker")) continue;
 
             JsonElement input = inputs[0];
             JsonElement output = outputs[0];
@@ -83,8 +85,7 @@ internal static class CookingPalette {
 
             string inputIdentifier = inputId.GetString() ?? string.Empty;
             ItemType? result = ItemPalette.Find(outputId.GetString() ?? string.Empty);
-            if (inputIdentifier.Length == 0 || result is null)
-                continue;
+            if (inputIdentifier.Length == 0 || result is null) continue;
 
             int count = output.TryGetProperty("count", out JsonElement countValue) &&
                 countValue.ValueKind == JsonValueKind.Number && countValue.TryGetInt32(out int parsedCount)
@@ -94,6 +95,7 @@ internal static class CookingPalette {
                 metadataValue.ValueKind == JsonValueKind.Number && metadataValue.TryGetInt32(out int parsedMetadata)
                 ? parsedMetadata
                 : 0;
+
             recipes.TryAdd(
                 (inputIdentifier, furnace),
                 new CookingRecipe(result, checked((ushort)Math.Clamp(count, 1, ushort.MaxValue)), unchecked((uint)metadata))
@@ -114,16 +116,13 @@ internal static class CookingPalette {
                 identifier.EndsWith("_hyphae", StringComparison.Ordinal) ||
                 identifier.EndsWith("_boat", StringComparison.Ordinal)) {
                 fuelTimes.TryAdd(identifier, 300);
-            }
-            else if (Array.IndexOf(item.Tags, "minecraft:wooden_slabs") >= 0) {
+            } else if (Array.IndexOf(item.Tags, "minecraft:wooden_slabs") >= 0) {
                 fuelTimes.TryAdd(identifier, 150);
-            }
-            else if (Array.IndexOf(item.Tags, "minecraft:wool") >= 0 ||
+            } else if (Array.IndexOf(item.Tags, "minecraft:wool") >= 0 ||
                 identifier.EndsWith("_sapling", StringComparison.Ordinal) ||
                 identifier.EndsWith("_sign", StringComparison.Ordinal)) {
                 fuelTimes.TryAdd(identifier, 100);
-            }
-            else if (identifier.EndsWith("_carpet", StringComparison.Ordinal)) {
+            } else if (identifier.EndsWith("_carpet", StringComparison.Ordinal)) {
                 fuelTimes.TryAdd(identifier, 67);
             }
         }

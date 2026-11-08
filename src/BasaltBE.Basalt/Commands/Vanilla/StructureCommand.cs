@@ -1,8 +1,8 @@
 using System.Collections.Frozen;
 using BasaltBE.Basalt.Commands.Enums;
 using BasaltBE.Basalt.Commands.Types;
-using BasaltBE.Basalt.Features;
-using BasaltBE.Basalt.Structures;
+using BasaltBE.Basalt.Worlds.Features;
+using BasaltBE.Basalt.Worlds.Structures;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Protocol.Types;
 
@@ -33,8 +33,8 @@ public sealed class StructureCommand : Command {
                 break;
             }
         }
-        if (dimension is null)
-            return new(false, "No dimension is available.");
+
+        if (dimension is null) return new(false, "No dimension is available.");
 
         string identifier = context.Get<string>("name");
         BlockPos position = context.Get<BlockPos>("position");

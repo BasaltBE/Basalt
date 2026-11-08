@@ -59,11 +59,9 @@ internal sealed class ChunkGenerationService : IDisposable {
         }
 
         requests.CompleteAdding();
-        while (requests.TryTake(out _))
-            Interlocked.Decrement(ref outstanding);
+        while (requests.TryTake(out _)) Interlocked.Decrement(ref outstanding);
 
-        foreach (Thread worker in workers)
-            worker.Join();
+        foreach (Thread worker in workers) worker.Join();
         requests.Dispose();
     }
 
@@ -76,8 +74,7 @@ internal sealed class ChunkGenerationService : IDisposable {
                 }
 
                 request.Dimension.CompleteGeneration(request.Key, chunk, null);
-            }
-            catch (Exception exception) {
+            } catch (Exception exception) {
                 request.Dimension.CompleteGeneration(request.Key, null, exception);
             }
         }

@@ -17,8 +17,7 @@ public sealed class TrapdoorTrait : BlockTrait {
             BlockPalette.FindType(dimension.GetPermutation(x, y, z - 1).Identifier)?.Solid == true ||
             BlockPalette.FindType(dimension.GetPermutation(x, y + 1, z).Identifier)?.Solid == true ||
             BlockPalette.FindType(dimension.GetPermutation(x, y - 1, z).Identifier)?.Solid == true;
-        if (!supported)
-            return false;
+        if (!supported) return false;
 
         int facing = (int)MathF.Floor((player.Rotation.Y + 45) / 90) & 3;
         int direction = BlockDirections.TrapdoorDirectionByYaw[facing];
@@ -31,10 +30,8 @@ public sealed class TrapdoorTrait : BlockTrait {
 
     public override bool OnInteract(Player player, BlockPos position) {
         BlockPermutation current = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
-        if (!BlockPalette.IsTrapdoor(current.Identifier))
-            return false;
-        if (current.Identifier == "minecraft:iron_trapdoor")
-            return true;
+        if (!BlockPalette.IsTrapdoor(current.Identifier)) return false;
+        if (current.Identifier == "minecraft:iron_trapdoor") return true;
         if (current.State.Values.GetValueOrDefault("open_bit") is not bool open ||
             BlockPalette.Find(current.Identifier, current.State, "open_bit", !open) is not { } updated)
             return true;
@@ -54,8 +51,7 @@ public sealed class TrapdoorTrait : BlockTrait {
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation current = dimension.GetPermutation(x, y, z);
-        if (!BlockPalette.IsTrapdoor(current.Identifier))
-            return false;
+        if (!BlockPalette.IsTrapdoor(current.Identifier)) return false;
 
         if (BlockPalette.FindType(dimension.GetPermutation(x + 1, y, z).Identifier)?.Solid == true ||
             BlockPalette.FindType(dimension.GetPermutation(x - 1, y, z).Identifier)?.Solid == true ||

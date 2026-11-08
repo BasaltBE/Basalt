@@ -1,11 +1,11 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Types;
-using BasaltBE.Basalt.Structures;
+using BasaltBE.Basalt.Worlds.Structures;
 using BasaltBE.Nbt;
 using BasaltBE.Nbt.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public sealed class StructureFeature : Feature {
     readonly (int X, int Y, int Z, BlockPermutation Block)[] blocks;
@@ -20,20 +20,18 @@ public sealed class StructureFeature : Feature {
                 return false;
         }
         foreach (StructureBlockActor actor in structure.BlockActors) {
-            if (actor.Data.Get<StringTag>("id") is null)
-                return false;
+            if (actor.Data.Get<StringTag>("id") is null) return false;
         }
 
         for (int z = 0; z < structure.SizeZ; z++) {
             for (int y = 0; y < structure.SizeY; y++) {
                 for (int x = 0; x < structure.SizeX; x++) {
-                    if (structure.GetBlock(x, y, z) is not { } entry)
-                        continue;
-                    if (entry.Permutation is null)
-                        return false;
+                    if (structure.GetBlock(x, y, z) is not { } entry) continue;
+                    if (entry.Permutation is null) return false;
                 }
             }
         }
+
         return true;
     }
 
@@ -50,12 +48,10 @@ public sealed class StructureFeature : Feature {
         for (int z = 0; z < structure.SizeZ; z++) {
             for (int y = 0; y < structure.SizeY; y++) {
                 for (int x = 0; x < structure.SizeX; x++) {
-                    if (structure.GetBlock(x, y, z) is not { } entry)
-                        continue;
+                    if (structure.GetBlock(x, y, z) is not { } entry) continue;
                     if (entry.Permutation is not { } block)
                         throw new ArgumentException($"Structure '{structure.Identifier}' contains an unsupported block.", nameof(structure));
-                    if (block.Identifier == "minecraft:structure_void")
-                        continue;
+                    if (block.Identifier == "minecraft:structure_void") continue;
                     entries.Add((checked(x + structure.OffsetX), checked(y + structure.OffsetY), checked(z + structure.OffsetZ), block));
                 }
             }
@@ -120,6 +116,7 @@ public sealed class StructureFeature : Feature {
             entity.Rotation.X = pitch;
             context.AddEntity(entity);
         }
+
         return true;
     }
 }

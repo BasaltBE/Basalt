@@ -1,7 +1,7 @@
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Nbt.Types;
 
-namespace BasaltBE.Basalt.Structures;
+namespace BasaltBE.Basalt.Worlds.Structures;
 
 public readonly record struct StructureBlockActor(int Index, CompoundTag Data);
 public readonly record struct StructurePaletteEntry(BlockPermutation? Permutation, CompoundTag? SourceData);
@@ -42,12 +42,9 @@ public sealed class Structure {
         ArgumentNullException.ThrowIfNull(indices);
         ArgumentNullException.ThrowIfNull(blockActors);
         ArgumentNullException.ThrowIfNull(entities);
-        if (sizeX <= 0)
-            throw new ArgumentOutOfRangeException(nameof(sizeX), "Structure dimensions must be positive.");
-        if (sizeY <= 0)
-            throw new ArgumentOutOfRangeException(nameof(sizeY), "Structure dimensions must be positive.");
-        if (sizeZ <= 0)
-            throw new ArgumentOutOfRangeException(nameof(sizeZ), "Structure dimensions must be positive.");
+        if (sizeX <= 0) throw new ArgumentOutOfRangeException(nameof(sizeX), "Structure dimensions must be positive.");
+        if (sizeY <= 0) throw new ArgumentOutOfRangeException(nameof(sizeY), "Structure dimensions must be positive.");
+        if (sizeZ <= 0) throw new ArgumentOutOfRangeException(nameof(sizeZ), "Structure dimensions must be positive.");
         if (indexWidth is not (1 or 2 or 4))
             throw new ArgumentOutOfRangeException(nameof(indexWidth), "Structure index width must be 1, 2, or 4 bytes.");
 
@@ -104,8 +101,7 @@ public sealed class Structure {
             2 => (uint)(Indices[offset] | Indices[offset + 1] << 8),
             _ => (uint)(Indices[offset] | Indices[offset + 1] << 8 | Indices[offset + 2] << 16 | Indices[offset + 3] << 24)
         };
-        if (index == VoidIndex)
-            return null;
+        if (index == VoidIndex) return null;
         if (index >= Palette.Length)
             throw new InvalidDataException($"Structure '{Identifier}' has a block index outside its palette.");
 

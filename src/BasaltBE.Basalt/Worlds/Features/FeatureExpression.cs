@@ -1,7 +1,7 @@
 using System;
 using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public readonly struct FeatureExpression {
     enum Kind : byte {
@@ -24,8 +24,7 @@ public readonly struct FeatureExpression {
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
         ReadOnlySpan<char> expression = source.AsSpan().Trim();
         int open = expression.IndexOf('(');
-        if (open < 0 || expression[^1] != ')')
-            throw new FormatException($"Unsupported feature expression '{source}'.");
+        if (open < 0 || expression[^1] != ')') throw new FormatException($"Unsupported feature expression '{source}'.");
 
         ReadOnlySpan<char> name = expression[..open].Trim();
         ReadOnlySpan<char> arguments = expression[(open + 1)..^1].Trim();
@@ -49,13 +48,11 @@ public readonly struct FeatureExpression {
     }
 
     public int EvaluateHeightmap(Chunk chunk, int minimumY, int maximumY, int worldX, int worldZ) {
-        if (kind != Kind.Heightmap)
-            throw new InvalidOperationException("This feature expression does not return a heightmap value.");
+        if (kind != Kind.Heightmap) throw new InvalidOperationException("This feature expression does not return a heightmap value.");
         ArgumentNullException.ThrowIfNull(chunk);
         if (worldX >> 4 != chunk.X || worldZ >> 4 != chunk.Z)
             throw new ArgumentOutOfRangeException(nameof(worldX), "Heightmap coordinates must belong to the supplied chunk.");
-        if (minimumY > maximumY)
-            throw new ArgumentOutOfRangeException(nameof(minimumY));
+        if (minimumY > maximumY) throw new ArgumentOutOfRangeException(nameof(minimumY));
 
         int localX = worldX & 15;
         int localZ = worldZ & 15;
@@ -68,12 +65,11 @@ public readonly struct FeatureExpression {
     }
 
     public bool MatchesTags(ReadOnlySpan<string> tags) {
-        if (kind != Kind.AnyTag)
-            throw new InvalidOperationException("This feature expression does not match block tags.");
+        if (kind != Kind.AnyTag) throw new InvalidOperationException("This feature expression does not match block tags.");
         foreach (string candidate in tags) {
-            if (string.Equals(candidate, tag, StringComparison.Ordinal))
-                return true;
+            if (string.Equals(candidate, tag, StringComparison.Ordinal)) return true;
         }
+
         return false;
     }
 }

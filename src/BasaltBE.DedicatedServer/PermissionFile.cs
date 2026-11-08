@@ -1,4 +1,4 @@
-using BasaltBE.Basalt.Permissions;
+using BasaltBE.Basalt.Entities.Permissions;
 using BasaltBE.Logging;
 
 namespace BasaltBE.DedicatedServer;
@@ -15,8 +15,7 @@ internal sealed class PermissionFile : IDisposable {
         autosave = new Timer(_ => {
             try {
                 permissions.Save(this.path);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException) {
+            } catch (Exception error) when (error is IOException or UnauthorizedAccessException) {
                 Logger.Scoped("Permissions").Error($"Could not save permissions: {error.Message}");
             }
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));

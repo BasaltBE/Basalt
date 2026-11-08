@@ -8,8 +8,7 @@ public sealed class IntEnum : CommandEnum {
     public readonly int Maximum;
 
     public IntEnum(int minimum = int.MinValue, int maximum = int.MaxValue) : base(CommandParameterType.Int) {
-        if (minimum > maximum)
-            throw new ArgumentOutOfRangeException(nameof(minimum));
+        if (minimum > maximum) throw new ArgumentOutOfRangeException(nameof(minimum));
         Minimum = minimum;
         Maximum = maximum;
     }
@@ -17,9 +16,10 @@ public sealed class IntEnum : CommandEnum {
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token) ||
-            !int.TryParse(token, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int number) ||
-            number < Minimum || number > Maximum)
+            !int.TryParse(token, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int number))
             return false;
+
+        if (number < Minimum || number > Maximum) return false;
         value = number;
         return true;
     }

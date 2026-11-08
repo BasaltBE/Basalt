@@ -12,8 +12,7 @@ public sealed class CactusTrait : BlockSupportTrait {
     internal override bool HasRandomTicks => true;
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
-        if (y <= dimension.MinimumY || y >= dimension.MaximumY)
-            return false;
+        if (y <= dimension.MinimumY || y >= dimension.MaximumY) return false;
 
         if (dimension.GetPermutation(x, y + 1, z) is { Identifier: "minecraft:water" or "minecraft:flowing_water" or "minecraft:lava" or "minecraft:flowing_lava" })
             return false;

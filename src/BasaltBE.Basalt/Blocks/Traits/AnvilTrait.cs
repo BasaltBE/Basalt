@@ -15,8 +15,7 @@ public sealed class AnvilTrait : BlockTrait {
         AnvilContainer container = new(player, position);
         container.Changed += container.Refresh;
         container.LastViewerClosed += container.ReturnItems;
-        if (!container.Open(player))
-            return false;
+        if (!container.Open(player)) return false;
         container.Refresh();
         return true;
     }

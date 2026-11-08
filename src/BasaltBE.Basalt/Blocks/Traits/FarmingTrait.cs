@@ -46,8 +46,7 @@ public sealed class FarmingTrait : BlockTrait {
         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnBlock, 0);
             player.Network.Server.Events.Emit(itemUse);
-            if (itemUse.IsCanceled())
-                return true;
+            if (itemUse.IsCanceled()) return true;
         }
 
         player.Dimension.SetPermutation(position.X, position.Y, position.Z, grown);
@@ -63,8 +62,7 @@ public sealed class FarmingTrait : BlockTrait {
             ActorUniqueId = -1
         }, new Vec3 { X = position.X + 0.5f, Y = position.Y + 0.5f, Z = position.Z + 0.5f });
 
-        if (!player.Abilities.Get(PlayerAbility.InstantBuild))
-            item.DecrementStack();
+        if (!player.Abilities.Get(PlayerAbility.InstantBuild)) item.DecrementStack();
         return true;
     }
 
@@ -75,22 +73,19 @@ public sealed class FarmingTrait : BlockTrait {
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         BlockPermutation block = dimension.GetPermutation(x, y, z);
         if (Crop(block.Identifier)) {
-            if (y > dimension.MinimumY && dimension.GetPermutation(x, y - 1, z).Identifier == "minecraft:farmland")
-                return false;
+            if (y > dimension.MinimumY && dimension.GetPermutation(x, y - 1, z).Identifier == "minecraft:farmland") return false;
 
             return dimension.SetPermutation(x, y, z, Air);
         }
 
-        if (block.Identifier != "minecraft:farmland")
-            return false;
+        if (block.Identifier != "minecraft:farmland") return false;
 
         BlockType? below = y > dimension.MinimumY
             ? BlockPalette.FindType(dimension.GetPermutation(x, y - 1, z).Identifier)
             : null;
         BlockPermutation above = y < dimension.MaximumY ? dimension.GetPermutation(x, y + 1, z) : Air;
         bool aboveCanMaintain = !BlockPalette.FindType(above.Identifier)?.Solid ?? true;
-        if (below?.Solid == true && (aboveCanMaintain || Crop(above.Identifier)))
-            return false;
+        if (below?.Solid == true && (aboveCanMaintain || Crop(above.Identifier))) return false;
 
         return dimension.SetPermutation(x, y, z, Dirt);
     }
@@ -124,8 +119,7 @@ public sealed class FarmingTrait : BlockTrait {
                     dimension.SetPermutation(x, y, z, dry)) {
                     dimension.BroadcastBlockUpdate(x, y, z, dry);
                 }
-            }
-            else {
+            } else {
                 BlockPermutation above = y < dimension.MaximumY ? dimension.GetPermutation(x, y + 1, z) : Air;
                 if (!Crop(above.Identifier) && dimension.SetPermutation(x, y, z, Dirt)) {
                     dimension.BroadcastBlockUpdate(x, y, z, Dirt);
@@ -145,12 +139,10 @@ public sealed class FarmingTrait : BlockTrait {
         int growth = block.State.Values.GetValueOrDefault("growth") is int age ? age : 0;
         int maximum = block.Identifier == "minecraft:beetroot" ? 3 : 7;
         bool stem = Stem(block.Identifier);
-        if (!stem && growth >= maximum)
-            return;
+        if (!stem && growth >= maximum) return;
 
         float speed = GrowthSpeed(dimension, block, x, y, z);
-        if (Random.Shared.Next((int)(25 / speed) + 1) != 0)
-            return;
+        if (Random.Shared.Next((int)(25 / speed) + 1) != 0) return;
 
         if (growth < maximum) {
             if (BlockPalette.Find(block.Identifier, block.State, "growth", growth + 1) is { } grown &&
@@ -160,8 +152,8 @@ public sealed class FarmingTrait : BlockTrait {
             return;
         }
 
-        if (!stem)
-            return;
+        if (!stem) return;
+
 
         int face = Random.Shared.Next(2, 6);
         (int offsetX, int offsetY, int offsetZ) = BlockDirections.OffsetByFace[face];
@@ -174,8 +166,10 @@ public sealed class FarmingTrait : BlockTrait {
 
         string fruitIdentifier = block.Identifier == "minecraft:melon_stem" ? "minecraft:melon_block" : "minecraft:pumpkin";
         if (BlockPalette.FindDefaultPermutation(fruitIdentifier) is not { } fruit ||
-            BlockPalette.Find(block.Identifier, block.State, "facing_direction", face) is not { } attachedStem ||
-            !dimension.SetPermutation(fruitX, fruitY, fruitZ, fruit) ||
+            BlockPalette.Find(block.Identifier, block.State, "facing_direction", face) is not { } attachedStem)
+            return;
+
+        if (!dimension.SetPermutation(fruitX, fruitY, fruitZ, fruit) ||
             !dimension.SetPermutation(x, y, z, attachedStem))
             return;
 
@@ -199,8 +193,7 @@ public sealed class FarmingTrait : BlockTrait {
 
         bool horizontal = SameCrop(dimension, crop.Identifier, x - 1, y, z) || SameCrop(dimension, crop.Identifier, x + 1, y, z);
         bool vertical = SameCrop(dimension, crop.Identifier, x, y, z - 1) || SameCrop(dimension, crop.Identifier, x, y, z + 1);
-        if (horizontal && vertical)
-            return speed / 2;
+        if (horizontal && vertical) return speed / 2;
         if (SameCrop(dimension, crop.Identifier, x - 1, y, z - 1) ||
             SameCrop(dimension, crop.Identifier, x + 1, y, z - 1) ||
             SameCrop(dimension, crop.Identifier, x - 1, y, z + 1) ||
@@ -215,14 +208,12 @@ public sealed class FarmingTrait : BlockTrait {
         if (!Stem(block.Identifier) || block.State.Values.GetValueOrDefault("facing_direction") is not int face || face < 2)
             return OnNeighborUpdate(dimension, x, y, z);
 
-        if ((uint)face >= BlockDirections.OffsetByFace.Length)
-            return false;
+        if ((uint)face >= BlockDirections.OffsetByFace.Length) return false;
 
         (int offsetX, int offsetY, int offsetZ) = BlockDirections.OffsetByFace[face];
         BlockPermutation fruit = dimension.GetPermutation(x + offsetX, y + offsetY, z + offsetZ);
         string fruitIdentifier = block.Identifier == "minecraft:melon_stem" ? "minecraft:melon_block" : "minecraft:pumpkin";
-        if (fruit.Identifier == fruitIdentifier)
-            return false;
+        if (fruit.Identifier == fruitIdentifier) return false;
 
         if (BlockPalette.Find(block.Identifier, block.State, "facing_direction", 0) is not { } stem ||
             !dimension.SetPermutation(x, y, z, stem))

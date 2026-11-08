@@ -17,20 +17,16 @@ public sealed class SugarCaneTrait : BlockSupportTrait {
     internal override bool HasRandomTicks => true;
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
-        if (y <= dimension.MinimumY)
-            return false;
+        if (y <= dimension.MinimumY) return false;
 
         BlockPermutation below = dimension.GetPermutation(x, y - 1, z);
-        if (below.Identifier == "minecraft:reeds")
-            return true;
-        if (BlockPalette.FindType(below.Identifier)?.Tags.Any(static tag => tag is "dirt" or "sand") != true)
-            return false;
+        if (below.Identifier == "minecraft:reeds") return true;
+        if (BlockPalette.FindType(below.Identifier)?.Tags.Any(static tag => tag is "dirt" or "sand") != true) return false;
 
         for (byte face = 2; face < 6; face++) {
             (int offsetX, int offsetY, int offsetZ) = BlockDirections.OffsetByFace[face];
             string neighbor = dimension.GetPermutation(x + offsetX, y - 1, z + offsetZ).Identifier;
-            if (neighbor is "minecraft:water" or "minecraft:flowing_water")
-                return true;
+            if (neighbor is "minecraft:water" or "minecraft:flowing_water") return true;
         }
 
         return false;
@@ -47,8 +43,7 @@ public sealed class SugarCaneTrait : BlockSupportTrait {
         byte face,
         Vec3 clickPosition
     ) {
-        if (item?.Type.Identifier != "minecraft:bone_meal" || block.Identifier != "minecraft:reeds")
-            return false;
+        if (item?.Type.Identifier != "minecraft:bone_meal" || block.Identifier != "minecraft:reeds") return false;
 
         int topY = position.Y;
         while (topY < player.Dimension.MaximumY &&
@@ -71,22 +66,19 @@ public sealed class SugarCaneTrait : BlockSupportTrait {
         if (player.Network.Server.Events.HasSubscribers<PlayerItemUseEvent>()) {
             PlayerItemUseEvent itemUse = new(player, item, PlayerItemUseAction.UseOnBlock, 0);
             player.Network.Server.Events.Emit(itemUse);
-            if (itemUse.IsCanceled())
-                return true;
+            if (itemUse.IsCanceled()) return true;
         }
 
         int growth = Math.Min(Random.Shared.Next(1, 4), 3 - height);
         for (int index = 0; index < growth; index++) {
-            if (!player.Dimension.SetPermutation(position.X, topY + 1, position.Z, Reeds))
-                break;
+            if (!player.Dimension.SetPermutation(position.X, topY + 1, position.Z, Reeds)) break;
 
             topY++;
             player.Dimension.BroadcastBlockUpdate(position.X, topY, position.Z, Reeds);
             player.Dimension.UpdateNeighbors(position.X, topY, position.Z);
         }
 
-        if (topY == position.Y)
-            return false;
+        if (topY == position.Y) return false;
 
         Vec3 center = new() { X = position.X + 0.5f, Y = position.Y + 0.5f, Z = position.Z + 0.5f };
         player.Dimension.Broadcast(new LevelEventPacket {
@@ -100,8 +92,7 @@ public sealed class SugarCaneTrait : BlockSupportTrait {
             ActorUniqueId = -1
         }, center);
 
-        if (!player.Abilities.Get(PlayerAbility.InstantBuild))
-            item.DecrementStack();
+        if (!player.Abilities.Get(PlayerAbility.InstantBuild)) item.DecrementStack();
         return true;
     }
 
@@ -113,8 +104,7 @@ public sealed class SugarCaneTrait : BlockSupportTrait {
         int height = 1;
         while (y - height > dimension.MinimumY && dimension.GetPermutation(x, y - height, z).Identifier == block.Identifier)
             height++;
-        if (height >= 3)
-            return;
+        if (height >= 3) return;
 
         int age = block.State.Values.GetValueOrDefault("age") is int value ? value : 0;
         if (age < 15) {

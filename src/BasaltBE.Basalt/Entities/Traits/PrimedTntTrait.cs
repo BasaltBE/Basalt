@@ -25,8 +25,7 @@ public sealed class PrimedTntTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public override void Tick() {
-        if (Entity.SpawnedDimension is not { } dimension || Entity.Dead)
-            return;
+        if (Entity.SpawnedDimension is not { } dimension || Entity.Dead) return;
 
         FuseTicks--;
         if (FuseTicks <= 0) {

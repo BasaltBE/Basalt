@@ -103,13 +103,11 @@ public sealed class LootTableManager {
         int handIndex = ToolIndices["hand"];
         foreach (BlockDropBlockData block in table.Blocks) {
             int handDropSet = block.DropSetIds[handIndex * Variants.Length];
-            if (handDropSet >= 0 && DropSets[handDropSet].Length > 0)
-                continue;
+            if (handDropSet >= 0 && DropSets[handDropSet].Length > 0) continue;
 
             bool hasToolDrops = false;
             for (int toolIndex = 0; toolIndex < table.Tools.Length; toolIndex++) {
-                if (toolIndex == handIndex)
-                    continue;
+                if (toolIndex == handIndex) continue;
 
                 int dropSetId = block.DropSetIds[toolIndex * Variants.Length];
                 if (dropSetId >= 0 && DropSets[dropSetId].Length > 0) {
@@ -117,8 +115,7 @@ public sealed class LootTableManager {
                     break;
                 }
             }
-            if (hasToolDrops)
-                RequiresToolDrops.Add(block.Identifier);
+            if (hasToolDrops) RequiresToolDrops.Add(block.Identifier);
         }
 
         using Stream entityStream = dataAssembly.GetManifestResourceStream("BasaltBE.Data.Data.entity-drops.json")
@@ -164,14 +161,11 @@ public sealed class LootTableManager {
     ) {
         ArgumentNullException.ThrowIfNull(blockIdentifier);
         ArgumentNullException.ThrowIfNull(toolIdentifier);
-        if (fortuneLevel is < 0 or > 3)
-            throw new ArgumentOutOfRangeException(nameof(fortuneLevel));
+        if (fortuneLevel is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(fortuneLevel));
 
         RegistrySnapshot current = Volatile.Read(ref registry);
-        if (current.CustomDrops.TryGetValue(blockIdentifier, out BlockDrop[]? customDrops))
-            return customDrops;
-        if (current.RemovedVanillaDrops.Contains(blockIdentifier))
-            return [];
+        if (current.CustomDrops.TryGetValue(blockIdentifier, out BlockDrop[]? customDrops)) return customDrops;
+        if (current.RemovedVanillaDrops.Contains(blockIdentifier)) return [];
 
         if (!ToolIndices.TryGetValue(toolIdentifier, out int toolIndex) ||
             !BlockDropSetIds.TryGetValue(blockIdentifier, out int[]? dropSetIds))
@@ -192,8 +186,7 @@ public sealed class LootTableManager {
         if (!ToolIndices.ContainsKey(toolIdentifier) &&
             itemStack?.Type.ToolType == ToolType.Pickaxe && itemStack.Type.ToolTier == 1)
             toolIdentifier = "stone_pickaxe";
-        if (!ToolIndices.ContainsKey(toolIdentifier))
-            toolIdentifier = "hand";
+        if (!ToolIndices.ContainsKey(toolIdentifier)) toolIdentifier = "hand";
 
         return GetBlockDrops(blockIdentifier, toolIdentifier, fortuneLevel, silkTouch);
     }
@@ -237,14 +230,11 @@ public sealed class LootTableManager {
         int fireAspectLevel = 0
     ) {
         ArgumentNullException.ThrowIfNull(entityIdentifier);
-        if (lootingLevel is < 0 or > 3)
-            throw new ArgumentOutOfRangeException(nameof(lootingLevel));
-        if (fireAspectLevel is < 0 or > 2)
-            throw new ArgumentOutOfRangeException(nameof(fireAspectLevel));
+        if (lootingLevel is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(lootingLevel));
+        if (fireAspectLevel is < 0 or > 2) throw new ArgumentOutOfRangeException(nameof(fireAspectLevel));
 
         RegistrySnapshot current = Volatile.Read(ref registry);
-        if (current.CustomEntityDrops.TryGetValue(entityIdentifier, out EntityDrop[]? customDrops))
-            return customDrops;
+        if (current.CustomEntityDrops.TryGetValue(entityIdentifier, out EntityDrop[]? customDrops)) return customDrops;
         if (current.RemovedVanillaEntityDrops.Contains(entityIdentifier) ||
             !EntityDropSetIds.TryGetValue(entityIdentifier, out int[]? dropSetIds))
             return [];
@@ -292,14 +282,12 @@ public sealed class LootTableManager {
             bool hadCustomDrops = current.CustomDrops.ContainsKey(blockIdentifier);
             bool hadVanillaDrops = BlockDropSetIds.ContainsKey(blockIdentifier)
                 && !current.RemovedVanillaDrops.Contains(blockIdentifier);
-            if (!hadCustomDrops && !hadVanillaDrops)
-                return false;
+            if (!hadCustomDrops && !hadVanillaDrops) return false;
 
             Dictionary<string, BlockDrop[]> customDrops = new(current.CustomDrops, StringComparer.Ordinal);
             customDrops.Remove(blockIdentifier);
             HashSet<string> removedVanillaDrops = new(current.RemovedVanillaDrops, StringComparer.Ordinal);
-            if (BlockDropSetIds.ContainsKey(blockIdentifier))
-                removedVanillaDrops.Add(blockIdentifier);
+            if (BlockDropSetIds.ContainsKey(blockIdentifier)) removedVanillaDrops.Add(blockIdentifier);
             Volatile.Write(ref registry, new RegistrySnapshot(
                 customDrops,
                 removedVanillaDrops,
@@ -313,15 +301,13 @@ public sealed class LootTableManager {
     /// <summary>Removes custom drops and restores the embedded vanilla table for this block.</summary>
     public bool RestoreVanilla(string blockIdentifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(blockIdentifier);
-        if (!BlockDropSetIds.ContainsKey(blockIdentifier))
-            return false;
+        if (!BlockDropSetIds.ContainsKey(blockIdentifier)) return false;
 
         lock (registryLock) {
             RegistrySnapshot current = Volatile.Read(ref registry);
             bool changed = current.CustomDrops.ContainsKey(blockIdentifier)
                 || current.RemovedVanillaDrops.Contains(blockIdentifier);
-            if (!changed)
-                return false;
+            if (!changed) return false;
 
             Dictionary<string, BlockDrop[]> customDrops = new(current.CustomDrops, StringComparer.Ordinal);
             customDrops.Remove(blockIdentifier);
@@ -374,14 +360,12 @@ public sealed class LootTableManager {
             bool hadCustomDrops = current.CustomEntityDrops.ContainsKey(entityIdentifier);
             bool hadVanillaDrops = EntityDropSetIds.ContainsKey(entityIdentifier)
                 && !current.RemovedVanillaEntityDrops.Contains(entityIdentifier);
-            if (!hadCustomDrops && !hadVanillaDrops)
-                return false;
+            if (!hadCustomDrops && !hadVanillaDrops) return false;
 
             Dictionary<string, EntityDrop[]> customEntityDrops = new(current.CustomEntityDrops, StringComparer.Ordinal);
             customEntityDrops.Remove(entityIdentifier);
             HashSet<string> removedVanillaEntityDrops = new(current.RemovedVanillaEntityDrops, StringComparer.Ordinal);
-            if (EntityDropSetIds.ContainsKey(entityIdentifier))
-                removedVanillaEntityDrops.Add(entityIdentifier);
+            if (EntityDropSetIds.ContainsKey(entityIdentifier)) removedVanillaEntityDrops.Add(entityIdentifier);
             Volatile.Write(ref registry, new RegistrySnapshot(
                 current.CustomDrops,
                 current.RemovedVanillaDrops,
@@ -395,15 +379,13 @@ public sealed class LootTableManager {
     /// <summary>Removes custom drops and restores the embedded vanilla table for this entity.</summary>
     public bool RestoreVanillaEntity(string entityIdentifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(entityIdentifier);
-        if (!EntityDropSetIds.ContainsKey(entityIdentifier))
-            return false;
+        if (!EntityDropSetIds.ContainsKey(entityIdentifier)) return false;
 
         lock (registryLock) {
             RegistrySnapshot current = Volatile.Read(ref registry);
             bool changed = current.CustomEntityDrops.ContainsKey(entityIdentifier)
                 || current.RemovedVanillaEntityDrops.Contains(entityIdentifier);
-            if (!changed)
-                return false;
+            if (!changed) return false;
 
             Dictionary<string, EntityDrop[]> customEntityDrops = new(current.CustomEntityDrops, StringComparer.Ordinal);
             customEntityDrops.Remove(entityIdentifier);

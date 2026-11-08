@@ -43,8 +43,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
     public ChunkStorageEntry[]? ReadChunk(ChunkStorageKey key) {
         byte[] versionKey = CreateKey(key, ChunkStorageType.Version);
         Status status = database.Get(readOptions, new Slice(versionKey), out Slice versionData);
-        if (status.IsNotFound)
-            return null;
+        if (status.IsNotFound) return null;
         status.ThrowIfNotOk();
         byte[] versionBytes = versionData.ToArray();
         if (versionBytes.Length != 1 || versionBytes[0] != BedrockChunkVersion)
@@ -61,22 +60,18 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
 
         for (int subChunkY = MinimumSubChunkY; subChunkY < MinimumSubChunkY + SubChunkCount; subChunkY++) {
             byte[]? data = ReadRecord(key, ChunkStorageType.SubChunk, checked((sbyte)subChunkY));
-            if (data is not null)
-                entries.Add(new ChunkStorageEntry(ChunkStorageType.SubChunk, checked((sbyte)subChunkY), data));
+            if (data is not null) entries.Add(new ChunkStorageEntry(ChunkStorageType.SubChunk, checked((sbyte)subChunkY), data));
         }
 
         byte[]? actors = ReadRecord(key, ChunkStorageType.BlockActor);
-        if (actors is not null)
-            entries.Add(new ChunkStorageEntry(ChunkStorageType.BlockActor, 0, actors));
+        if (actors is not null) entries.Add(new ChunkStorageEntry(ChunkStorageType.BlockActor, 0, actors));
         byte[]? pendingTicks = ReadRecord(key, ChunkStorageType.PendingTicks);
-        if (pendingTicks is not null)
-            entries.Add(new ChunkStorageEntry(ChunkStorageType.PendingTicks, 0, pendingTicks));
+        if (pendingTicks is not null) entries.Add(new ChunkStorageEntry(ChunkStorageType.PendingTicks, 0, pendingTicks));
         return entries.ToArray();
     }
 
     public void WriteChunks(ReadOnlySpan<ChunkStorageRecord> chunks) {
-        if (chunks.IsEmpty)
-            return;
+        if (chunks.IsEmpty) return;
 
         WriteBatch batch = new();
         foreach (ChunkStorageRecord chunk in chunks) {
@@ -136,12 +131,10 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         if (!status.IsNotFound) {
             status.ThrowIfNotOk();
             byte[] bytes = counter.ToArray();
-            if (bytes.Length != sizeof(long))
-                throw new InvalidDataException("Actor ID counter length is invalid.");
+            if (bytes.Length != sizeof(long)) throw new InvalidDataException("Actor ID counter length is invalid.");
 
             long id = BinaryPrimitives.ReadInt64LittleEndian(bytes);
-            if (id < 0)
-                throw new InvalidDataException("Actor ID counter is invalid.");
+            if (id < 0) throw new InvalidDataException("Actor ID counter is invalid.");
             return id;
         }
 
@@ -151,10 +144,8 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         iterator.Seek(new Slice(prefix));
         while (iterator.Valid) {
             byte[] key = iterator.Key.ToArray();
-            if (!key.AsSpan().StartsWith(prefix))
-                break;
-            if (key.Length != prefix.Length + sizeof(long))
-                throw new InvalidDataException("Actor storage key length is invalid.");
+            if (!key.AsSpan().StartsWith(prefix)) break;
+            if (key.Length != prefix.Length + sizeof(long)) throw new InvalidDataException("Actor storage key length is invalid.");
 
             long id = BinaryPrimitives.ReadInt64LittleEndian(key.AsSpan(prefix.Length));
             lastId = Math.Max(lastId, id);
@@ -171,8 +162,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         for (int offset = 0; offset < ids.Length; offset += sizeof(long)) {
             long id = BinaryPrimitives.ReadInt64LittleEndian(ids.AsSpan(offset));
             Status status = database.Get(readOptions, new Slice(CreateActorKey(id)), out Slice data);
-            if (status.IsNotFound)
-                continue;
+            if (status.IsNotFound) continue;
             status.ThrowIfNotOk();
 
             byte[] bytes = data.ToArray();
@@ -181,12 +171,12 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
                 throw new InvalidDataException("Stored actors exceed the chunk read limit.");
             records.Add(new EntityStorageRecord(id, bytes));
         }
+
         return records.ToArray();
     }
 
     public void WriteEntities(ReadOnlySpan<EntityStorageChange> changes) {
-        if (changes.IsEmpty)
-            return;
+        if (changes.IsEmpty) return;
 
         WriteBatch batch = new();
         Dictionary<ChunkStorageKey, HashSet<long>> digests = [];
@@ -204,14 +194,12 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
                 }
             }
 
-            if (change.Previous is { } previous)
-                Digest(previous).Remove(change.Id);
+            if (change.Previous is { } previous) Digest(previous).Remove(change.Id);
 
             if (change.Current is { } current && change.Data is { } data) {
                 Digest(current).Add(change.Id);
                 batch.Put(new Slice(actorKey), new Slice(data));
-            }
-            else {
+            } else {
                 batch.Delete(new Slice(actorKey));
             }
         }
@@ -235,8 +223,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         database.Write(writeOptions, batch).ThrowIfNotOk();
 
         HashSet<long> Digest(ChunkStorageKey key) {
-            if (digests.TryGetValue(key, out HashSet<long>? ids))
-                return ids;
+            if (digests.TryGetValue(key, out HashSet<long>? ids)) return ids;
 
             byte[] bytes = ReadActorDigest(key, WorldProviderService.MaximumChunkDataBytes);
             ids = new HashSet<long>(bytes.Length / sizeof(long));
@@ -249,8 +236,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
 
     private byte[] ReadActorDigest(ChunkStorageKey key, int maximumBytes = int.MaxValue) {
         Status status = database.Get(readOptions, new Slice(CreateDigestKey(key)), out Slice digest);
-        if (status.IsNotFound)
-            return [];
+        if (status.IsNotFound) return [];
 
         status.ThrowIfNotOk();
         byte[] bytes = digest.ToArray();
@@ -280,16 +266,14 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         string path = File.Exists(levelDatPath) ? levelDatPath : levelDatPath + "_old";
         if (!File.Exists(path)) {
             Status status = database.Get(readOptions, new Slice(LegacyWorldDataKey), out Slice legacyData);
-            if (status.IsNotFound)
-                return null;
+            if (status.IsNotFound) return null;
 
             status.ThrowIfNotOk();
             return legacyData.ToArray();
         }
 
         byte[] file = File.ReadAllBytes(path);
-        if (file.Length < 8)
-            throw new InvalidDataException("The level.dat header is incomplete.");
+        if (file.Length < 8) throw new InvalidDataException("The level.dat header is incomplete.");
 
         levelDatVersion = BinaryPrimitives.ReadInt32LittleEndian(file);
         int dataLength = BinaryPrimitives.ReadInt32LittleEndian(file.AsSpan(sizeof(int)));
@@ -308,10 +292,8 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
         string temporaryPath = levelDatPath + "_new";
         string oldPath = levelDatPath + "_old";
         File.WriteAllBytes(temporaryPath, file);
-        if (File.Exists(oldPath))
-            File.Delete(oldPath);
-        if (File.Exists(levelDatPath))
-            File.Move(levelDatPath, oldPath);
+        if (File.Exists(oldPath)) File.Delete(oldPath);
+        if (File.Exists(levelDatPath)) File.Move(levelDatPath, oldPath);
         File.Move(temporaryPath, levelDatPath);
 
         WriteBatch batch = new();
@@ -325,8 +307,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
 
     private byte[]? ReadRecord(ChunkStorageKey key, ChunkStorageType type, sbyte subChunkY = 0) {
         Status status = database.Get(readOptions, new Slice(CreateKey(key, type, subChunkY)), out Slice value);
-        if (status.IsNotFound)
-            return null;
+        if (status.IsNotFound) return null;
 
         status.ThrowIfNotOk();
         return value.ToArray();
@@ -339,8 +320,7 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
                 throw new InvalidDataException("Dimension identifiers cannot exceed 65535 UTF-8 bytes.");
 
             int keyLength = DimensionKeyPrefix.Length + sizeof(int) + sizeof(ushort) + identifier.Length + 2 * sizeof(int) + (type.HasValue ? 1 : 0);
-            if (type == ChunkStorageType.SubChunk)
-                keyLength++;
+            if (type == ChunkStorageType.SubChunk) keyLength++;
 
             byte[] customKey = new byte[keyLength];
             DimensionKeyPrefix.CopyTo(customKey, 0);
@@ -355,21 +335,16 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
             customOffset += sizeof(int);
             BinaryPrimitives.WriteInt32LittleEndian(customKey.AsSpan(customOffset), key.Z);
             customOffset += sizeof(int);
-            if (type.HasValue)
-                customKey[customOffset++] = (byte)type.Value;
-            if (type == ChunkStorageType.SubChunk)
-                customKey[customOffset] = unchecked((byte)subChunkY);
+            if (type.HasValue) customKey[customOffset++] = (byte)type.Value;
+            if (type == ChunkStorageType.SubChunk) customKey[customOffset] = unchecked((byte)subChunkY);
             return customKey;
         }
 
         int dimension = (int)key.DimensionType;
         int length = 2 * sizeof(int);
-        if (dimension != 0)
-            length += sizeof(int);
-        if (type.HasValue)
-            length++;
-        if (type == ChunkStorageType.SubChunk)
-            length++;
+        if (dimension != 0) length += sizeof(int);
+        if (type.HasValue) length++;
+        if (type == ChunkStorageType.SubChunk) length++;
         byte[] databaseKey = new byte[length];
         BinaryPrimitives.WriteInt32LittleEndian(databaseKey, key.X);
         BinaryPrimitives.WriteInt32LittleEndian(databaseKey.AsSpan(sizeof(int)), key.Z);
@@ -378,10 +353,8 @@ public sealed class LevelDbProvider : IWorldProvider, IWorldDataProvider, IEntit
             BinaryPrimitives.WriteInt32LittleEndian(databaseKey.AsSpan(offset), dimension);
             offset += sizeof(int);
         }
-        if (type.HasValue)
-            databaseKey[offset++] = (byte)type.Value;
-        if (type == ChunkStorageType.SubChunk)
-            databaseKey[offset] = unchecked((byte)subChunkY);
+        if (type.HasValue) databaseKey[offset++] = (byte)type.Value;
+        if (type == ChunkStorageType.SubChunk) databaseKey[offset] = unchecked((byte)subChunkY);
         return databaseKey;
     }
 }

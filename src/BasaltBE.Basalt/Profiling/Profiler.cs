@@ -26,6 +26,7 @@ public static class Profiler {
             CString file = GetCachedCString(location.FilePath, out ulong fileLength);
             CString member = GetCachedCString(location.MemberName, out ulong memberLength);
             CString name = GetCachedCString(location.Name, out ulong nameLength);
+
             return TracyAllocSrclocName(
                 location.LineNumber,
                 file,
@@ -37,6 +38,7 @@ public static class Profiler {
                 location.Color
             );
         });
+
         TracyCZoneCtx context = TracyEmitZoneBeginAlloc(sourceLocationId, 1);
         return new ProfilerZone(context);
     }
@@ -44,12 +46,14 @@ public static class Profiler {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void FrameMark() {
         if (!Enabled) return;
+
         TracyEmitFrameMark(default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetThreadName(string name) {
         if (!Enabled) return;
+
         TracySetThreadName(GetOrCreateCString(name));
     }
 

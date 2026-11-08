@@ -11,6 +11,9 @@ namespace BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 public sealed class BlockStorage {
     public const int Size = 16;
     public const int CellCount = Size * Size * Size;
+
+    static readonly byte[] SingletonIndices = new byte[CellCount / 8];
+    [ThreadStatic] static (BlockPermutation Permutation, byte[] Nbt)[]? nativePermutations;
     public static readonly BlockPermutation Air = BlockPalette.FindDefaultPermutation("minecraft:air")
         ?? throw new InvalidOperationException("The air block permutation is missing.");
 
@@ -27,12 +30,10 @@ public sealed class BlockStorage {
 
     internal bool HasRedstone {
         get {
-            if (palette is null)
-                return IsRedstone(implicitPermutation);
+            if (palette is null) return IsRedstone(implicitPermutation);
 
             foreach (BlockPermutation permutation in palette) {
-                if (IsRedstone(permutation))
-                    return true;
+                if (IsRedstone(permutation)) return true;
             }
 
             return false;
@@ -57,8 +58,7 @@ public sealed class BlockStorage {
             indices = new ushort[CellCount];
             palette = [implicitPermutation];
             paletteIndices = new Dictionary<BlockPermutation, ushort> { [implicitPermutation] = 0 };
-            if (nativeImplicitNbt is not null)
-                nativePaletteNbt = [nativeImplicitNbt];
+            if (nativeImplicitNbt is not null) nativePaletteNbt = [nativeImplicitNbt];
         }
 
         ushort oldIndex = indices[index];
@@ -67,17 +67,14 @@ public sealed class BlockStorage {
             return;
         }
 
-        if (BlockPalette.HasRandomTicks(previous.Identifier))
-            RandomTickCount--;
-        if (BlockPalette.HasRandomTicks(permutation.Identifier))
-            RandomTickCount++;
+        if (BlockPalette.HasRandomTicks(previous.Identifier)) RandomTickCount--;
+        if (BlockPalette.HasRandomTicks(permutation.Identifier)) RandomTickCount++;
 
         bool wasAir = previous == Air;
         bool isAir = permutation == Air;
         if (wasAir && !isAir) {
             nonAirCount++;
-        }
-        else if (!wasAir && isAir) {
+        } else if (!wasAir && isAir) {
             nonAirCount--;
         }
 
@@ -100,7 +97,9 @@ public sealed class BlockStorage {
         int bitsPerBlock = Math.Max(1, PaletteEncoding.GetBitsPerEntry(paletteCount));
         writer.WriteUInt8((byte)((bitsPerBlock << 1) | (mode == ChunkSerializationMode.Network ? 1 : 0)));
 
-        if (bitsPerBlock > 0) {
+        if (indices is null) {
+            writer.WriteBytes(SingletonIndices);
+        } else {
             int valuesPerWord = 32 / bitsPerBlock;
             int wordCount = (CellCount + valuesPerWord - 1) / valuesPerWord;
             uint mask = (1u << bitsPerBlock) - 1;
@@ -112,7 +111,7 @@ public sealed class BlockStorage {
                         break;
                     }
 
-                    uint paletteIndex = indices is null ? 0u : indices[cellIndex];
+                    uint paletteIndex = indices[cellIndex];
                     word |= (paletteIndex & mask) << (valueIndex * bitsPerBlock);
                 }
 
@@ -124,113 +123,102 @@ public sealed class BlockStorage {
             writer.WriteZigZag(paletteCount);
             if (palette is null) {
                 writer.WriteZigZag(implicitPermutation.NetworkId);
-            }
-            else {
-                foreach (BlockPermutation permutation in palette)
-                    writer.WriteZigZag(permutation.NetworkId);
+            } else {
+                foreach (BlockPermutation permutation in palette) writer.WriteZigZag(permutation.NetworkId);
             }
             return;
         }
 
         writer.WriteInt32(paletteCount, true);
         if (palette is null) {
-            if (nativeImplicitNbt is { } nativeNbt)
-                writer.WriteBytes(nativeNbt);
-            else
-                WritePermutation(ref writer, implicitPermutation);
-        }
-        else {
+            if (nativeImplicitNbt is { } nativeNbt) writer.WriteBytes(nativeNbt);
+            else WritePermutation(ref writer, implicitPermutation);
+        } else {
             for (int i = 0; i < palette.Count; i++) {
-                if (nativePaletteNbt is not null && nativePaletteNbt[i] is { } nativeNbt)
-                    writer.WriteBytes(nativeNbt);
-                else
-                    WritePermutation(ref writer, palette[i]);
+                if (nativePaletteNbt is not null && nativePaletteNbt[i] is { } nativeNbt) writer.WriteBytes(nativeNbt);
+                else WritePermutation(ref writer, palette[i]);
             }
         }
     }
 
     public static BlockStorage Deserialize(ref BinaryReader reader, ChunkSerializationMode mode = ChunkSerializationMode.Network) {
         byte format = reader.ReadUInt8();
-        if (((format & 1) != 0) != (mode == ChunkSerializationMode.Network)) {
+        if (((format & 1) != 0) != (mode == ChunkSerializationMode.Network))
             throw new InvalidDataException("The block palette encoding does not match its chunk format.");
-        }
 
         int bitsPerBlock = format >> 1;
-        if (bitsPerBlock is not (0 or 1 or 2 or 3 or 4 or 5 or 6 or 8 or 16)) {
+        if (bitsPerBlock is not (0 or 1 or 2 or 3 or 4 or 5 or 6 or 8 or 16))
             throw new InvalidDataException($"Invalid bits per block: {bitsPerBlock}.");
-        }
 
-        ushort[]? indices = null;
-        if (bitsPerBlock > 0) {
-            int valuesPerWord = 32 / bitsPerBlock;
-            int wordCount = (CellCount + valuesPerWord - 1) / valuesPerWord;
-            indices = new ushort[CellCount];
-            uint mask = (1u << bitsPerBlock) - 1;
-            int cellIndex = 0;
-            for (int wordIndex = 0; wordIndex < wordCount; wordIndex++) {
-                uint word = reader.ReadUInt32(true);
-                int count = Math.Min(valuesPerWord, CellCount - cellIndex);
-                for (int valueIndex = 0; valueIndex < count; valueIndex++, cellIndex++)
-                    indices[cellIndex] = (ushort)((word >> (valueIndex * bitsPerBlock)) & mask);
-            }
-        }
+        int valuesPerWord = bitsPerBlock == 0 ? 0 : 32 / bitsPerBlock;
+        int wordCount = valuesPerWord == 0 ? 0 : (CellCount + valuesPerWord - 1) / valuesPerWord;
+        int wordBytes = wordCount * sizeof(uint);
+        if (reader.Remaining < wordBytes) throw new InvalidDataException("The block index array is incomplete.");
 
+        int wordsOffset = reader.Offset;
+        reader.Offset += wordBytes;
         int paletteCount = mode == ChunkSerializationMode.Network ? reader.ReadZigZag() : reader.ReadInt32(true);
         if (paletteCount is < 1 or > CellCount + 1 || (bitsPerBlock == 0 && paletteCount != 1) ||
-            (bitsPerBlock > 0 && paletteCount > 1 << bitsPerBlock)) {
+            (bitsPerBlock > 0 && paletteCount > 1 << bitsPerBlock))
             throw new InvalidDataException("Invalid block palette size.");
-        }
 
         BlockStorage storage = new();
+        if (paletteCount > 1) {
+            storage.palette = new List<BlockPermutation>(paletteCount);
+            storage.paletteIndices = new Dictionary<BlockPermutation, ushort>(paletteCount);
+            if (mode == ChunkSerializationMode.LevelDb) storage.nativePaletteNbt = new List<byte[]?>(paletteCount);
+        }
+
         bool hasRandomTickingBlocks = false;
+        Span<bool> randomTicking = stackalloc bool[paletteCount];
         for (int i = 0; i < paletteCount; i++) {
             BlockPermutation permutation;
+            byte[]? nativeNbt = null;
             if (mode == ChunkSerializationMode.Network) {
                 permutation = BlockPalette.FindByNetworkId(reader.ReadZigZag())
                     ?? throw new InvalidDataException("Unknown block network ID in palette.");
-            }
-            else {
-                permutation = ReadPermutation(ref reader, out byte[] nativeNbt);
-                storage.nativePaletteNbt ??= new List<byte[]?>(paletteCount);
-                storage.nativePaletteNbt.Add(nativeNbt);
+            } else {
+                permutation = ReadPermutation(ref reader, out byte[] encoded);
+                nativeNbt = encoded;
             }
 
-            if (bitsPerBlock == 0) {
+            randomTicking[i] = BlockPalette.HasRandomTicks(permutation.Identifier);
+            hasRandomTickingBlocks |= randomTicking[i];
+            if (paletteCount == 1) {
                 storage.implicitPermutation = permutation;
-                hasRandomTickingBlocks = BlockPalette.HasRandomTicks(permutation.Identifier);
-                if (mode == ChunkSerializationMode.LevelDb)
-                    storage.nativeImplicitNbt = storage.nativePaletteNbt![^1];
-                continue;
+                storage.nativeImplicitNbt = nativeNbt;
+            } else {
+                storage.palette!.Add(permutation);
+                storage.paletteIndices!.TryAdd(permutation, checked((ushort)i));
+                storage.nativePaletteNbt?.Add(nativeNbt);
             }
-
-            hasRandomTickingBlocks |= BlockPalette.HasRandomTicks(permutation.Identifier);
-
-            storage.palette ??= new List<BlockPermutation>(paletteCount);
-            storage.paletteIndices ??= new Dictionary<BlockPermutation, ushort>(paletteCount);
-            storage.palette.Add(permutation);
-            storage.paletteIndices.TryAdd(permutation, checked((ushort)i));
         }
 
-        if (bitsPerBlock == 0) {
+        if (paletteCount == 1) {
             storage.nonAirCount = storage.implicitPermutation == Air ? 0 : CellCount;
-            if (BlockPalette.HasRandomTicks(storage.implicitPermutation.Identifier))
-                storage.RandomTickCount = CellCount;
+            if (hasRandomTickingBlocks) storage.RandomTickCount = CellCount;
+            return storage;
         }
-        else {
-            storage.indices = indices;
-            for (int cellIndex = 0; cellIndex < CellCount; cellIndex++) {
-                ushort paletteIndex = indices![cellIndex];
-                if (paletteIndex >= paletteCount) {
-                    throw new InvalidDataException("Block palette index is out of range.");
-                }
 
-                if (storage.palette![paletteIndex] != Air) {
-                    storage.nonAirCount++;
-                }
-                if (hasRandomTickingBlocks && BlockPalette.HasRandomTicks(storage.palette[paletteIndex].Identifier))
-                    storage.RandomTickCount++;
+        int paletteEnd = reader.Offset;
+        reader.Offset = wordsOffset;
+        storage.indices = new ushort[CellCount];
+        uint mask = (1u << bitsPerBlock) - 1;
+        int cellIndex = 0;
+        for (int wordIndex = 0; wordIndex < wordCount; wordIndex++) {
+            uint word = reader.ReadUInt32(true);
+            int count = Math.Min(valuesPerWord, CellCount - cellIndex);
+            for (int valueIndex = 0; valueIndex < count; valueIndex++, cellIndex++) {
+                ushort paletteIndex = (ushort)((word >> (valueIndex * bitsPerBlock)) & mask);
+                if (paletteIndex >= paletteCount) throw new InvalidDataException("Block palette index is out of range.");
+
+                storage.indices[cellIndex] = paletteIndex;
+                BlockPermutation permutation = storage.palette![paletteIndex];
+                if (permutation != Air) storage.nonAirCount++;
+                if (hasRandomTickingBlocks && randomTicking[paletteIndex]) storage.RandomTickCount++;
             }
         }
+        reader.Offset = paletteEnd;
 
         return storage;
     }
@@ -263,14 +251,30 @@ public sealed class BlockStorage {
     }
 
     static BlockPermutation ReadPermutation(ref BinaryReader reader, out byte[] nativeNbt) {
+        int cacheIndex = -1;
+        ReadOnlySpan<byte> unread = reader.Buffer[reader.Offset..];
+        if (BlockPalette.Frozen && unread.Length >= 32) {
+            nativePermutations ??= new (BlockPermutation Permutation, byte[] Nbt)[1024];
+            HashCode hash = new();
+            hash.AddBytes(unread[..32]);
+            cacheIndex = hash.ToHashCode() & (nativePermutations.Length - 1);
+            var cached = nativePermutations[cacheIndex];
+            if (cached.Nbt is not null && unread.StartsWith(cached.Nbt)) {
+                reader.Offset += cached.Nbt.Length;
+                nativeNbt = cached.Nbt;
+                return cached.Permutation;
+            }
+        }
+
         int start = reader.Offset;
         if (NbtCodec.Read(ref reader, Options.LittleEndian) is not CompoundTag state)
             throw new InvalidDataException("A stored block palette entry has invalid NBT.");
 
         nativeNbt = reader.Buffer[start..reader.Offset].ToArray();
         BlockPermutation? permutation = ReadPermutation(state);
-        if (permutation is null)
-            throw new InvalidDataException("A stored block palette entry has an unknown block state.");
+        if (permutation is null) throw new InvalidDataException("A stored block palette entry has an unknown block state.");
+        if (cacheIndex >= 0 && nativeNbt.Length is >= 32 and <= 1024)
+            nativePermutations![cacheIndex] = (permutation, nativeNbt);
 
         return permutation;
     }
@@ -281,13 +285,11 @@ public sealed class BlockStorage {
             return null;
 
         BlockType? type = BlockPalette.FindType(identifier.Value);
-        if (type is null)
-            return null;
+        if (type is null) return null;
 
         BlockState blockState = new();
         foreach ((string name, Tag tag) in blockStates.Tags) {
-            if (Array.IndexOf(type.States, name) < 0)
-                continue;
+            if (Array.IndexOf(type.States, name) < 0) continue;
 
             object? stateValue = tag switch {
                 ByteTag byteTag => BlockPalette.GetStateType(name) switch {
@@ -303,8 +305,7 @@ public sealed class BlockStorage {
                 StringTag stringTag => stringTag.Value,
                 _ => null
             };
-            if (stateValue is null)
-                return null;
+            if (stateValue is null) return null;
             blockState.Values.Add(name, stateValue);
         }
 

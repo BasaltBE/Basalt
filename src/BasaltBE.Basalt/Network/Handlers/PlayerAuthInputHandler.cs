@@ -35,14 +35,11 @@ internal sealed class PlayerAuthInputHandler {
     private static CorrectPlayerMovePredictionPacket? movementCorrection;
 
     public void Handle(NethernetPeer peer, Player? player, PlayerAuthInputPacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Player auth input arrived before player login.");
+        if (player is null) throw new InvalidDataException("Player auth input arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
-        if (player.Disposed || !player.Spawned || player.Dead)
-            return;
+        if (player.Disposed || !player.Spawned || player.Dead) return;
         EntityMovementTrait? movement = player.GetTrait<EntityMovementTrait>();
-        if (movement is null)
-            return;
+        if (movement is null) return;
 
         if (!float.IsFinite(packet.Position.X) || !float.IsFinite(packet.Position.Y) ||
             !float.IsFinite(packet.Position.Z) || !float.IsFinite(packet.Rotation.X) ||
@@ -52,20 +49,17 @@ internal sealed class PlayerAuthInputHandler {
             MathF.Abs(packet.Position.Z) > MaximumCoordinate) {
             return;
         }
-        if (movement.InputTick is ulong previousTick && packet.ClientTick.Tick <= previousTick)
-            return;
+        if (movement.InputTick is ulong previousTick && packet.ClientTick.Tick <= previousTick) return;
 
         Span<bool> inputs = stackalloc bool[(int)PlayerAuthInputData.InternalUpdate + 1];
         inputs.Clear();
         foreach (PlayerAuthInputData input in packet.InputData) {
-            if ((uint)input >= (uint)inputs.Length)
-                return;
+            if ((uint)input >= (uint)inputs.Length) return;
             inputs[(int)input] = true;
         }
 
         movement.InputTick = packet.ClientTick.Tick;
-        if (packet.InputMode is >= InputMode.Mouse and < InputMode.Count)
-            player.InputMode = packet.InputMode;
+        if (packet.InputMode is >= InputMode.Mouse and < InputMode.Count) player.InputMode = packet.InputMode;
 
         PlayerInventoryTrait? playerInventory = player.GetTrait<PlayerInventoryTrait>();
         if (inputs[(int)PlayerAuthInputData.StartUsingItem] &&
@@ -100,8 +94,7 @@ internal sealed class PlayerAuthInputHandler {
             player.Network.Server.Events.Emit(jump);
             canceled = jump.IsCanceled();
         }
-        if (player.Disposed)
-            return;
+        if (player.Disposed) return;
         if (canceled) {
             CorrectPlayerMovePredictionPacket correction = movementCorrection ?? new();
             movementCorrection = null;
@@ -114,8 +107,7 @@ internal sealed class PlayerAuthInputHandler {
                 correction.Tick = packet.ClientTick.Tick;
                 correction.OnGround = movement.VerticalCollision && movement.Motion.Y <= 0;
                 player.SendPacket(correction);
-            }
-            finally {
+            } finally {
                 movementCorrection ??= correction;
             }
             return;
@@ -127,15 +119,13 @@ internal sealed class PlayerAuthInputHandler {
         if (sneaking != player.Flags.Get(ActorFlag.Sneaking) && player.Network.Server.Events.HasSubscribers<PlayerSneakEvent>()) {
             PlayerSneakEvent sneak = new(player, sneaking);
             player.Network.Server.Events.Emit(sneak);
-            if (player.Disposed)
-                return;
+            if (player.Disposed) return;
             if (sneak.IsCanceled()) {
                 sneaking = player.Flags.Get(ActorFlag.Sneaking);
                 bool dirty = player.Flags.Dirty;
                 try {
                     player.SendPacket(player.Flags.CreateUpdate(player.RuntimeId, packet.ClientTick.Tick));
-                }
-                finally {
+                } finally {
                     player.Flags.Dirty |= dirty;
                 }
             }
@@ -152,8 +142,7 @@ internal sealed class PlayerAuthInputHandler {
         player.SetFlag(ActorFlag.Emoting, inputs[(int)PlayerAuthInputData.Emoting]);
         if (!player.Abilities.Get(PlayerAbility.MayFly) || inputs[(int)PlayerAuthInputData.StopFlying])
             player.Abilities.Set(PlayerAbility.Flying, false);
-        else if (inputs[(int)PlayerAuthInputData.StartFlying])
-            player.Abilities.Set(PlayerAbility.Flying, true);
+        else if (inputs[(int)PlayerAuthInputData.StartFlying]) player.Abilities.Set(PlayerAbility.Flying, true);
 
         movement.Jumping = jumping;
         movement.HorizontalCollision = inputs[(int)PlayerAuthInputData.HorizontalCollision];
@@ -198,13 +187,11 @@ internal sealed class PlayerAuthInputHandler {
                 movement.BroadcastRotation = new Vector2(pitch, yaw);
                 movement.BroadcastHeadRotation = headYaw;
                 movement.BroadcastOnGround = onGround;
-            }
-            finally {
+            } finally {
                 movementUpdate ??= update;
             }
         }
-        if (moved)
-            player.OnMove();
+        if (moved) player.OnMove();
 
         int? mineBlockNetId = null;
         if (packet.ItemStackRequest is { } itemStackRequest &&
@@ -261,8 +248,7 @@ internal sealed class PlayerAuthInputHandler {
                         crack.EventId = (int)LevelEvent.UpdateBlockCracking;
                         crack.Data = (int)Math.Max(1U, ushort.MaxValue / player.BlockBreakDurationTicks);
                         player.Dimension.Broadcast(crack, crack.Position);
-                    }
-                    finally {
+                    } finally {
                         blockBreakEvent ??= crack;
                     }
                 }
@@ -291,14 +277,12 @@ internal sealed class PlayerAuthInputHandler {
             return;
         }
 
-        if (player.BreakingBlock is { } current && SameBlock(current, position))
-            return;
+        if (player.BreakingBlock is { } current && SameBlock(current, position)) return;
         StopBlockBreak(player);
 
         BlockPermutation block = player.Dimension.GetPermutation(position.X, position.Y, position.Z);
         BlockType? type = BlockPalette.FindType(block.Identifier);
-        if (type is null || type.Hardness < 0)
-            return;
+        if (type is null || type.Hardness < 0) return;
 
         ItemStack? tool = player.GetTrait<PlayerInventoryTrait>() is { } inventory
             ? inventory.Inventory.GetItem(inventory.SelectedSlot)
@@ -315,14 +299,12 @@ internal sealed class PlayerAuthInputHandler {
             miningSpeed += efficiency * efficiency + 1;
         }
         uint duration = BreakDurationTicks(type.Hardness, miningSpeed, canHarvest);
-        if (duration == 0)
-            return;
+        if (duration == 0) return;
 
         player.BreakingBlock = new BlockPos { X = position.X, Y = position.Y, Z = position.Z };
         player.BlockBreakStartTick = tick;
         player.BlockBreakDurationTicks = duration;
-        if (duration <= 1)
-            return;
+        if (duration <= 1) return;
 
         LevelEventPacket crack = blockBreakEvent ?? new();
         blockBreakEvent = null;
@@ -337,8 +319,7 @@ internal sealed class PlayerAuthInputHandler {
             crack.EventId = (int)LevelEvent.UpdateBlockCracking;
             crack.Data = (int)Math.Max(1U, ushort.MaxValue / player.BlockBreakDurationTicks);
             player.Dimension.Broadcast(crack, crack.Position);
-        }
-        finally {
+        } finally {
             blockBreakEvent ??= crack;
         }
     }
@@ -373,8 +354,7 @@ internal sealed class PlayerAuthInputHandler {
         if (valid) {
             StopBlockBreak(player);
             blockDestroyed |= DestroyBlock(player, target);
-        }
-        else {
+        } else {
             StopBlockBreak(player);
             SendBlockUpdate(player, target.X, target.Y, target.Z);
         }
@@ -426,8 +406,7 @@ internal sealed class PlayerAuthInputHandler {
                 return false;
             }
             actor.OnBreak(player);
-            if (dropItems || actor.DropsInCreative)
-                actorDrop = actor.CreateDrop();
+            if (dropItems || actor.DropsInCreative) actorDrop = actor.CreateDrop();
         }
         player.Dimension.SetPermutation(x, y, z, BlockStorage.Air);
 
@@ -440,8 +419,7 @@ internal sealed class PlayerAuthInputHandler {
             particles.Position.Z = z + 0.5f;
             particles.Data = block.Hash;
             player.Dimension.Broadcast(particles, particles.Position);
-        }
-        finally {
+        } finally {
             blockBreakEvent ??= particles;
         }
 
@@ -465,12 +443,10 @@ internal sealed class PlayerAuthInputHandler {
                 sound.Data = block.NetworkId;
                 sound.ActorUniqueId = -1;
                 player.Dimension.Broadcast(update, x >> 4, z >> 4, additionalPacket: sound);
-            }
-            finally {
+            } finally {
                 blockBreakSound ??= sound;
             }
-        }
-        finally {
+        } finally {
             blockUpdate ??= update;
         }
 
@@ -479,15 +455,13 @@ internal sealed class PlayerAuthInputHandler {
         if (actorDrop is not null) {
             ItemEntity item = new(actorDrop, player, x, y, z);
             item.Spawn(player.Dimension);
-        }
-        else if (dropItems && !upperDoor) {
+        } else if (dropItems && !upperDoor) {
             int fortune = tool?.GetEnchantmentLevel(EnchantmentPalette.Fortune) ?? 0;
             bool silkTouch = tool?.GetEnchantmentLevel(EnchantmentPalette.SilkTouch) > 0;
             ReadOnlySpan<BlockDrop> drops = player.Network.Server.LootTables.Get(block, tool, fortune, silkTouch);
             foreach (BlockDrop drop in drops) {
                 ItemType? itemType = ItemPalette.Find(drop.Identifier);
-                if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
-                    continue;
+                if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue) continue;
 
                 int amount = drop.MinAmount == drop.MaxAmount
                     ? drop.MinAmount
@@ -516,8 +490,7 @@ internal sealed class PlayerAuthInputHandler {
     }
 
     private static void StopBlockBreak(Player player) {
-        if (player.BreakingBlock is not { } position)
-            return;
+        if (player.BreakingBlock is not { } position) return;
 
         if (player.BlockBreakDurationTicks > 1) {
             LevelEventPacket stop = blockBreakEvent ?? new();
@@ -529,8 +502,7 @@ internal sealed class PlayerAuthInputHandler {
                 stop.Position.Z = position.Z + 0.5f;
                 stop.Data = unchecked((int)player.RuntimeId);
                 player.Dimension.Broadcast(stop, stop.Position);
-            }
-            finally {
+            } finally {
                 blockBreakEvent ??= stop;
             }
         }
@@ -555,15 +527,11 @@ internal sealed class PlayerAuthInputHandler {
         left.X == right.X && left.Y == right.Y && left.Z == right.Z;
 
     internal static uint BreakDurationTicks(float hardness, float miningSpeed, bool canHarvest) {
-        if (!float.IsFinite(hardness) || hardness < 0)
-            return 0;
-        if (hardness == 0)
-            return 1;
-        if (!float.IsFinite(miningSpeed) || miningSpeed <= 0)
-            miningSpeed = 1;
+        if (!float.IsFinite(hardness) || hardness < 0) return 0;
+        if (hardness == 0) return 1;
+        if (!float.IsFinite(miningSpeed) || miningSpeed <= 0) miningSpeed = 1;
         float divisor = canHarvest ? 30f : 100f;
-        if (hardness >= MaximumBreakDurationTicks * miningSpeed / divisor)
-            return MaximumBreakDurationTicks;
+        if (hardness >= MaximumBreakDurationTicks * miningSpeed / divisor) return MaximumBreakDurationTicks;
         return Math.Max(1U, (uint)MathF.Ceiling(hardness * divisor / miningSpeed));
     }
 
@@ -583,11 +551,9 @@ internal sealed class PlayerAuthInputHandler {
             update.Layer = 0;
             try {
                 player.SendPacket(update);
+            } catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
             }
-            catch (Exception error) when (error is PeerDisconnectedException or ObjectDisposedException) {
-            }
-        }
-        finally {
+        } finally {
             blockUpdate ??= update;
         }
     }

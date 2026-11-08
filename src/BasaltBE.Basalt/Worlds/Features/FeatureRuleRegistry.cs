@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public sealed class FeatureRuleRegistry {
     readonly Dictionary<string, FeatureRule> rules = new(StringComparer.Ordinal);
@@ -50,16 +50,14 @@ public sealed class FeatureRuleRegistry {
     public FeatureRule? Find(string identifier) => rules.GetValueOrDefault(identifier);
 
     public void Register(FeatureRule rule) {
-        if (frozen)
-            throw new InvalidOperationException("Feature rule registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Feature rule registrations are closed after the server starts.");
         ArgumentNullException.ThrowIfNull(rule);
         if (!rules.TryAdd(rule.Identifier, rule))
             throw new InvalidOperationException($"Feature rule '{rule.Identifier}' is already registered.");
     }
 
     public bool Unregister(string identifier) {
-        if (frozen)
-            throw new InvalidOperationException("Feature rule registrations are closed after the server starts.");
+        if (frozen) throw new InvalidOperationException("Feature rule registrations are closed after the server starts.");
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         return rules.Remove(identifier);
     }

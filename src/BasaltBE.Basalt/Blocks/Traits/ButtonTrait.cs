@@ -14,8 +14,7 @@ public sealed class ButtonTrait : BlockSupportTrait {
     ];
 
     public override bool OnPlace(Player player, int x, int y, int z, byte face, Vec3 clickPosition, ref BlockPermutation permutation) {
-        if (face > 5)
-            return false;
+        if (face > 5) return false;
 
         if (BlockPalette.Find(permutation.Identifier, permutation.State, "facing_direction", (int)face) is not { } faced ||
             BlockPalette.Find(faced.Identifier, faced.State, "button_pressed_bit", false) is not { } released)
@@ -30,12 +29,9 @@ public sealed class ButtonTrait : BlockSupportTrait {
     public override bool OnInteract(Player player, BlockPos position) {
         Dimension dimension = player.Dimension;
         BlockPermutation current = dimension.GetPermutation(position.X, position.Y, position.Z);
-        if (!current.State.Values.ContainsKey("button_pressed_bit"))
-            return false;
-        if (current.State.Values.GetValueOrDefault("button_pressed_bit") is true)
-            return true;
-        if (BlockPalette.Find(current.Identifier, current.State, "button_pressed_bit", true) is not { } pressed)
-            return true;
+        if (!current.State.Values.ContainsKey("button_pressed_bit")) return false;
+        if (current.State.Values.GetValueOrDefault("button_pressed_bit") is true) return true;
+        if (BlockPalette.Find(current.Identifier, current.State, "button_pressed_bit", true) is not { } pressed) return true;
 
         dimension.SetPermutation(position.X, position.Y, position.Z, pressed);
         dimension.BroadcastBlockUpdate(position.X, position.Y, position.Z, pressed);
@@ -67,8 +63,7 @@ public sealed class ButtonTrait : BlockSupportTrait {
 
     protected override bool? HasSupport(Dimension dimension, int x, int y, int z) {
         BlockPermutation? current = dimension.GetLoadedPermutation(x, y, z);
-        if (current is null)
-            return null;
+        if (current is null) return null;
         if (current.State.Values.GetValueOrDefault("facing_direction") is not int facing || (uint)facing >= SupportOffsets.Length)
             return false;
 

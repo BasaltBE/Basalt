@@ -12,8 +12,7 @@ internal static class LoginTokenParser {
         int offset = 0;
         ReadOnlyMemory<byte> identityBytes = ReadToken(connectionRequest, ref offset);
         ReadOnlyMemory<byte> clientToken = ReadToken(connectionRequest, ref offset);
-        if (offset != connectionRequest.Length)
-            throw new InvalidDataException("Login connection request has trailing token data.");
+        if (offset != connectionRequest.Length) throw new InvalidDataException("Login connection request has trailing token data.");
         LoginIdentity identity = JsonSerializer.Deserialize<LoginIdentity>(identityBytes.Span, LoginJson.Options);
         return new LoginTokenData(identity, ParseClientToken(clientToken));
     }
@@ -51,15 +50,13 @@ internal static class LoginTokenParser {
                 clientDataJson.AsSpan(0, clientDataLength), LoginJson.Options)
                 ?? throw new InvalidDataException("Client data is missing.");
             return new ClientTokenData(client, clientKey.ExportParameters(false));
-        }
-        finally {
+        } finally {
             ArrayPool<byte>.Shared.Return(clientDataJson, clearArray: true);
         }
     }
 
     private static ReadOnlyMemory<byte> ReadToken(ReadOnlyMemory<byte> request, ref int offset) {
-        if (request.Length - offset < sizeof(int))
-            throw new InvalidDataException("Login token length is incomplete.");
+        if (request.Length - offset < sizeof(int)) throw new InvalidDataException("Login token length is incomplete.");
         int length = System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(request.Span[offset..]);
         offset += sizeof(int);
         if (length <= 0 || length > 4 * 1024 * 1024 || length > request.Length - offset)

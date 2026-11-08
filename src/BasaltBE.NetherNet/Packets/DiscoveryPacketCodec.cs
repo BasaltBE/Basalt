@@ -37,8 +37,7 @@ public static class DiscoveryPacketCodec {
             byte[] encodedHex = Encoding.ASCII.GetBytes(hex);
             writer.WriteUInt32((uint)encodedHex.Length, littleEndian: true);
             writer.WriteBytes(encodedHex);
-        }
-        else if (packet.Type == DiscoveryPacketType.Message) {
+        } else if (packet.Type == DiscoveryPacketType.Message) {
             writer.WriteUInt64(packet.RecipientId, littleEndian: true);
             writer.WriteUInt32((uint)packet.Data.Length, littleEndian: true);
             writer.WriteBytes(packet.Data);
@@ -75,8 +74,7 @@ public static class DiscoveryPacketCodec {
         ReadOnlySpan<byte> body = plaintext.AsSpan(0, plainLength);
         Span<byte> expectedMac = stackalloc byte[MacLength];
         HMACSHA256.HashData(key, body, expectedMac);
-        if (!CryptographicOperations.FixedTimeEquals(expectedMac, datagram[..MacLength]) || body.Length < sizeof(ushort) + HeaderLength)
-            return false;
+        if (!CryptographicOperations.FixedTimeEquals(expectedMac, datagram[..MacLength]) || body.Length < sizeof(ushort) + HeaderLength) return false;
 
         try {
             int offset = 0;
@@ -98,8 +96,7 @@ public static class DiscoveryPacketCodec {
                 uint hexLength = contentReader.ReadUInt32(littleEndian: true);
                 if (hexLength != contentReader.Remaining || (hexLength & 1) != 0) return false;
                 data = Convert.FromHexString(Encoding.ASCII.GetString(contentReader.ReadBytes((int)hexLength)));
-            }
-            else if (type == DiscoveryPacketType.Message) {
+            } else if (type == DiscoveryPacketType.Message) {
                 if (content.Length < sizeof(ulong) + sizeof(uint)) return false;
                 offset = 0;
                 Basalt.Binary.BinaryReader contentReader = new(content, ref offset);
@@ -107,18 +104,15 @@ public static class DiscoveryPacketCodec {
                 uint length = contentReader.ReadUInt32(littleEndian: true);
                 if (length != contentReader.Remaining) return false;
                 data = contentReader.ReadBytes((int)length).ToArray();
-            }
-            else if (!content.IsEmpty) {
+            } else if (!content.IsEmpty) {
                 return false;
             }
 
             packet = new DiscoveryPacket(type, senderId, recipientId, data);
             return true;
-        }
-        catch (ArgumentOutOfRangeException) {
+        } catch (ArgumentOutOfRangeException) {
             return false;
-        }
-        catch (FormatException) {
+        } catch (FormatException) {
             return false;
         }
     }
@@ -137,4 +131,3 @@ public static class DiscoveryPacketCodec {
         return true;
     }
 }
-

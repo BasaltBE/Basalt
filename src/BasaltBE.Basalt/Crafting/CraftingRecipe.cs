@@ -36,19 +36,16 @@ internal sealed class CraftingRecipe(
     }
 
     internal bool TryMatchInventory(ItemStack?[] inventory, int crafts, Span<int> consumption) {
-        if (crafts <= 0 || consumption.Length < inventory.Length)
-            return false;
+        if (crafts <= 0 || consumption.Length < inventory.Length) return false;
 
         consumption[..inventory.Length].Clear();
         foreach (RecipeIngredient ingredient in Ingredients) {
-            if (ingredient.Descriptor.Length == 0)
-                continue;
+            if (ingredient.Descriptor.Length == 0) continue;
 
             int remaining = ingredient.StackSize * crafts;
             for (int slot = 0; slot < inventory.Length && remaining > 0; slot++) {
                 ItemStack? item = inventory[slot];
-                if (item is null || !Matches(ingredient, item))
-                    continue;
+                if (item is null || !Matches(ingredient, item)) continue;
 
                 int available = item.StackSize - consumption[slot];
                 int consumed = Math.Min(available, remaining);
@@ -56,8 +53,7 @@ internal sealed class CraftingRecipe(
                 remaining -= consumed;
             }
 
-            if (remaining > 0)
-                return false;
+            if (remaining > 0) return false;
         }
 
         return true;
@@ -66,12 +62,11 @@ internal sealed class CraftingRecipe(
     private bool MatchShaped(ItemStack?[] grid, int gridWidth, int crafts, Span<int> consumption) {
         for (int top = 0; top <= gridWidth - Height; top++) {
             for (int left = 0; left <= gridWidth - Width; left++) {
-                if (MatchShapedAt(grid, gridWidth, top, left, crafts, consumption, mirror: false))
-                    return true;
-                if (AssumeSymmetry && MatchShapedAt(grid, gridWidth, top, left, crafts, consumption, mirror: true))
-                    return true;
+                if (MatchShapedAt(grid, gridWidth, top, left, crafts, consumption, mirror: false)) return true;
+                if (AssumeSymmetry && MatchShapedAt(grid, gridWidth, top, left, crafts, consumption, mirror: true)) return true;
             }
         }
+
         return false;
     }
 
@@ -91,38 +86,34 @@ internal sealed class CraftingRecipe(
                 int recipeX = x - left;
                 int recipeY = y - top;
                 if ((uint)recipeX >= Width || (uint)recipeY >= Height) {
-                    if (grid[gridIndex] is not null)
-                        return false;
+                    if (grid[gridIndex] is not null) return false;
                     continue;
                 }
 
-                if (mirror)
-                    recipeX = Width - recipeX - 1;
+                if (mirror) recipeX = Width - recipeX - 1;
                 RecipeIngredient ingredient = Ingredients[recipeY * Width + recipeX];
                 ItemStack? item = grid[gridIndex];
                 if (ingredient.Descriptor.Length == 0) {
-                    if (item is not null)
-                        return false;
+                    if (item is not null) return false;
                     continue;
                 }
 
                 int amount = ingredient.StackSize * crafts;
-                if (item is null || !Matches(ingredient, item) || item.StackSize < amount)
-                    return false;
+                if (item is null || !Matches(ingredient, item) || item.StackSize < amount) return false;
+
                 consumption[gridIndex] = amount;
             }
         }
+
         return true;
     }
 
     private bool MatchShapeless(ItemStack?[] grid, int crafts, Span<int> consumption) {
-        if (Ingredients.Length > grid.Length)
-            return false;
+        if (Ingredients.Length > grid.Length) return false;
 
         int occupied = 0;
         for (int slot = 0; slot < grid.Length; slot++) {
-            if (grid[slot] is not null)
-                occupied |= 1 << slot;
+            if (grid[slot] is not null) occupied |= 1 << slot;
         }
 
         Span<byte> memo = stackalloc byte[(Ingredients.Length + 1) * 512];
@@ -139,12 +130,10 @@ internal sealed class CraftingRecipe(
         Span<byte> memo
     ) {
         int memoIndex = ingredientIndex * 512 + usedSlots;
-        if (memo[memoIndex] == 2)
-            return false;
+        if (memo[memoIndex] == 2) return false;
         if (ingredientIndex == Ingredients.Length) {
             bool complete = usedSlots == occupiedSlots;
-            if (!complete)
-                memo[memoIndex] = 2;
+            if (!complete) memo[memoIndex] = 2;
             return complete;
         }
 
@@ -158,8 +147,8 @@ internal sealed class CraftingRecipe(
                 continue;
 
             consumption[slot] = amount;
-            if (MatchShapelessAt(grid, crafts, consumption, ingredientIndex + 1, usedSlots | bit, occupiedSlots, memo))
-                return true;
+            if (MatchShapelessAt(grid, crafts, consumption, ingredientIndex + 1, usedSlots | bit, occupiedSlots, memo)) return true;
+
             consumption[slot] = 0;
         }
 
@@ -186,17 +175,15 @@ internal sealed class CraftingRecipe(
                 (ingredient.AuxValue is 0x7FFF or -1 ||
                     (legacyLog ? ingredient.AuxValue == 0 : stack.Metadata == unchecked((uint)ingredient.AuxValue)));
         }
-        if (ingredient.Descriptor != "item_tag")
-            return false;
+        if (ingredient.Descriptor != "item_tag") return false;
 
         foreach (string tag in item.Tags) {
-            if (tag == ingredient.DescriptorValue)
-                return true;
+            if (tag == ingredient.DescriptorValue) return true;
         }
         foreach (string tag in item.PropertiesPayload.ItemTags) {
-            if (tag == ingredient.DescriptorValue)
-                return true;
+            if (tag == ingredient.DescriptorValue) return true;
         }
+
         return false;
     }
 }

@@ -38,12 +38,10 @@ public sealed class SubChunk {
 
     internal bool HasRedstone {
         get {
-            if (layers is null)
-                return false;
+            if (layers is null) return false;
 
             foreach (BlockStorage layer in layers) {
-                if (layer.HasRedstone)
-                    return true;
+                if (layer.HasRedstone) return true;
             }
 
             return false;
@@ -77,8 +75,7 @@ public sealed class SubChunk {
             return;
         }
 
-        if (GetPermutationAt(index, layer) == permutation)
-            return;
+        if (GetPermutationAt(index, layer) == permutation) return;
 
         layers ??= [];
         while (layers.Count <= layer) {
@@ -94,8 +91,7 @@ public sealed class SubChunk {
         : Chunk?.Dimension?.CustomDefinition?.DefaultBiomeId ?? Biomes.GetBiome(x, y, z);
 
     public void SetBiome(int x, int y, int z, int biome) {
-        if (GetBiome(x, y, z) == biome)
-            return;
+        if (GetBiome(x, y, z) == biome) return;
         if (!Biomes.Initialized && Chunk?.Dimension?.CustomDefinition is { } definition)
             Biomes = new BiomeStorage(definition.DefaultBiomeId);
         Biomes.SetBiome(x, y, z, biome);

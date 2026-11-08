@@ -3,7 +3,7 @@ using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Worlds.Dimensions;
 using BasaltBE.Nbt.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 public sealed class FeatureContext {
     public readonly Dimension Dimension;
@@ -37,8 +37,7 @@ public sealed class FeatureContext {
 
     public void SetBlockNbt(int x, int y, int z, CompoundTag data) {
         ArgumentNullException.ThrowIfNull(data);
-        if (!Blocks.ContainsKey((x, y, z)))
-            throw new InvalidOperationException("Add the block before its block actor data.");
+        if (!Blocks.ContainsKey((x, y, z))) throw new InvalidOperationException("Add the block before its block actor data.");
         BlockActors ??= [];
         BlockActors[(x, y, z)] = data;
     }

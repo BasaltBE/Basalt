@@ -12,6 +12,7 @@ internal sealed class PlayerDataStore : IDisposable {
     private const int DataVersion = 1;
     private const int MaximumPendingSaves = 4096;
     private const long MaximumPendingBytes = 256L * 1024 * 1024;
+
     private readonly string directory;
     private readonly Lock sync = new();
     private readonly BlockingCollection<PlayerDataWrite> writes = new(new ConcurrentQueue<PlayerDataWrite>(), MaximumPendingSaves);
@@ -35,8 +36,7 @@ internal sealed class PlayerDataStore : IDisposable {
         byte[]? pendingData;
         lock (sync)
             pendingData = pending.TryGetValue(xuid, out PlayerDataWrite? save) && save is not null ? save.Data : null;
-        if (pendingData is null && !File.Exists(path))
-            return null;
+        if (pendingData is null && !File.Exists(path)) return null;
 
         try {
             byte[] data = pendingData ?? File.ReadAllBytes(path);
@@ -47,8 +47,7 @@ internal sealed class PlayerDataStore : IDisposable {
                 throw new InvalidDataException("Player data has an invalid format or identity.");
 
             return playerData;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException) {
+        } catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException) {
             Logger.Scoped("PlayerData").Warn($"Could not load player data for {xuid}: {error.Message}");
             return null;
         }
@@ -88,11 +87,9 @@ internal sealed class PlayerDataStore : IDisposable {
                     string temporaryPath = save.Path + ".tmp";
                     File.WriteAllBytes(temporaryPath, save.Data);
                     File.Move(temporaryPath, save.Path, overwrite: true);
-                }
-                catch (Exception error) {
+                } catch (Exception error) {
                     Logger.Scoped("PlayerData").Warn($"Could not save player data for {save.Xuid}: {error.Message}");
-                }
-                finally {
+                } finally {
                     if (save.Autosave) {
                         double milliseconds = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
                         Logger.Scoped("PlayerData").Debug(
@@ -113,8 +110,7 @@ internal sealed class PlayerDataStore : IDisposable {
     private string GetPath(string xuid) {
         ArgumentException.ThrowIfNullOrWhiteSpace(xuid);
         foreach (char character in xuid) {
-            if (!char.IsAsciiDigit(character))
-                throw new ArgumentException("Player XUID must contain only digits.", nameof(xuid));
+            if (!char.IsAsciiDigit(character)) throw new ArgumentException("Player XUID must contain only digits.", nameof(xuid));
         }
 
         return Path.Combine(directory, xuid + ".dat");
@@ -122,8 +118,7 @@ internal sealed class PlayerDataStore : IDisposable {
 
     public void Dispose() {
         lock (sync) {
-            if (disposed)
-                return;
+            if (disposed) return;
             disposed = true;
         }
 

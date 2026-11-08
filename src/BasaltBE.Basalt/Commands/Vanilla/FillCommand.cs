@@ -64,8 +64,7 @@ public sealed class FillCommand : Command {
             }
         }
 
-        if (dimension is null)
-            return new(false, "No dimension is available.");
+        if (dimension is null) return new(false, "No dimension is available.");
 
         BlockPos from = context.Get<BlockPos>("from");
         BlockPos to = context.Get<BlockPos>("to");
@@ -90,14 +89,12 @@ public sealed class FillCommand : Command {
 
         BlockType blockType = context.Get<BlockType>("tileName");
         BlockPermutation? target = BlockPalette.FindDefaultPermutation(blockType.Identifier);
-        if (target is null)
-            return new(false, $"Cannot fill with block '{blockType.Identifier}'.");
+        if (target is null) return new(false, $"Cannot fill with block '{blockType.Identifier}'.");
 
         bool hasBlockStates = Array.Exists(context.Parameters, static parameter => parameter.Name == "blockStates");
         if (hasBlockStates && context.Get<BlockState>("blockStates") is { } blockStates) {
             target = BlockPalette.Find(blockType.Identifier, target.State, blockStates);
-            if (target is null)
-                return new(false, $"Invalid block states for '{blockType.Identifier}'.");
+            if (target is null) return new(false, $"Invalid block states for '{blockType.Identifier}'.");
         }
 
         string mode = Array.Exists(context.Parameters, static parameter => parameter.Name == "oldBlockHandling")
@@ -115,8 +112,7 @@ public sealed class FillCommand : Command {
         if (filterStates is not null && filterType is null)
             return new(false, "A replacement block is required when block states are specified.");
         BlockPermutation? filterDefault = filterType is null ? null : BlockPalette.FindDefaultPermutation(filterType.Identifier);
-        if (filterType is not null && filterDefault is null)
-            return new(false, $"Cannot filter by block '{filterType.Identifier}'.");
+        if (filterType is not null && filterDefault is null) return new(false, $"Cannot filter by block '{filterType.Identifier}'.");
         if (filterType is not null && filterStates is not null &&
             BlockPalette.Find(filterType.Identifier, filterDefault!.State, filterStates) is null)
             return new(false, $"Invalid replacement block states for '{filterType.Identifier}'.");
@@ -139,29 +135,24 @@ public sealed class FillCommand : Command {
                         continue;
 
                     bool boundary = x == minimumX || x == maximumX || y == minimumY || y == maximumY || z == minimumZ || z == maximumZ;
-                    if (mode == "outline" && !boundary)
-                        continue;
+                    if (mode == "outline" && !boundary) continue;
 
                     BlockPermutation replacement = mode == "hollow" && !boundary ? BlockStorage.Air : target;
-                    if (current == replacement)
-                        continue;
+                    if (current == replacement) continue;
 
                     Chunk? chunk = dimension.GetChunk(blockX >> 4, blockZ >> 4);
                     BlockActor? actor = chunk is null
                         ? null
                         : dimension.GetBlockActor(chunk, blockX & 15, blockY, blockZ & 15);
-                    if (actor is not null && !actor.CanRemove())
-                        continue;
+                    if (actor is not null && !actor.CanRemove()) continue;
 
                     ItemStack? actorDrop = null;
                     if (mode == "destroy" && actor is not null) {
-                        if (context.Player is { } player)
-                            actor.OnBreak(player);
+                        if (context.Player is { } player) actor.OnBreak(player);
                         actorDrop = actor.CreateDrop();
                     }
 
-                    if (!dimension.SetPermutation(blockX, blockY, blockZ, replacement))
-                        continue;
+                    if (!dimension.SetPermutation(blockX, blockY, blockZ, replacement)) continue;
 
                     if (mode == "destroy") {
                         if (actor is not null) {
@@ -172,8 +163,7 @@ public sealed class FillCommand : Command {
                                 }
                             }
 
-                            if (actorDrop is not null)
-                                new ItemEntity(actorDrop, blockX, blockY, blockZ).Spawn(dimension);
+                            if (actorDrop is not null) new ItemEntity(actorDrop, blockX, blockY, blockZ).Spawn(dimension);
                         }
 
                         if (current.State.Values.GetValueOrDefault("upper_block_bit") is not true) {
@@ -222,8 +212,7 @@ public sealed class FillCommand : Command {
             }, chunkX, chunkZ);
         }
 
-        foreach ((int x, int y, int z) in neighbors)
-            dimension.UpdateNeighbor(x, y, z);
+        foreach ((int x, int y, int z) in neighbors) dimension.UpdateNeighbor(x, y, z);
 
         return filled == 0
             ? new(false, "No blocks filled")

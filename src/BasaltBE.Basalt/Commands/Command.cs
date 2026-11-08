@@ -28,19 +28,18 @@ public abstract class Command {
     }
 
     public virtual string GetUsage() {
-        if (Overloads.Count == 0)
-            return "/" + Name;
+        if (Overloads.Count == 0) return "/" + Name;
 
         StringBuilder usage = new();
         foreach (CommandOverload overload in Overloads) {
-            if (usage.Length > 0)
-                usage.Append('\n');
+            if (usage.Length > 0) usage.Append('\n');
             usage.Append('/').Append(Name);
             foreach (CommandParameter parameter in overload.Parameters) {
                 usage.Append(' ').Append(parameter.Optional ? '[' : '<')
                     .Append(parameter.Name).Append(parameter.Optional ? ']' : '>');
             }
         }
+
         return usage.ToString();
     }
 

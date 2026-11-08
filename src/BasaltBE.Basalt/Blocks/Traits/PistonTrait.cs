@@ -32,14 +32,15 @@ public sealed class PistonTrait : BlockTrait {
     static bool Update(Dimension dimension, int x, int y, int z) {
         BlockPermutation piston = dimension.GetPermutation(x, y, z);
         if (piston.State.Values.GetValueOrDefault("facing_direction") is not int facing ||
-            (uint)facing >= BlockDirections.PistonOffsetByFacing.Length ||
-            dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
+            (uint)facing >= BlockDirections.PistonOffsetByFacing.Length)
+            return false;
+
+        if (dimension.GetChunk(x >> 4, z >> 4) is not { } chunk ||
             dimension.GetBlockActor(chunk, x & 15, y, z & 15) is not PistonArmBlockActor actor)
             return false;
 
         dimension.Redstone.ClearPistonWait(x, y, z);
-        if (dimension.Redstone.BlockPowered(dimension, x, y, z) is not bool powered)
-            return false;
+        if (dimension.Redstone.BlockPowered(dimension, x, y, z) is not bool powered) return false;
 
         actor.Sticky = piston.Identifier == "minecraft:sticky_piston";
         (int X, int Y, int Z) direction = BlockDirections.PistonOffsetByFacing[facing];
@@ -53,12 +54,9 @@ public sealed class PistonTrait : BlockTrait {
         if (actor.Extended != hasHead) {
             if (actor.Extended && !hasHead) {
                 PistonTransitionResult transition = dimension.MovePistonBlocks([], default, [], [], actor, false);
-                if (transition == PistonTransitionResult.Retry)
-                    dimension.ScheduleBlockUpdate(x, y, z, 20);
-                if (transition != PistonTransitionResult.Committed)
-                    return false;
-                if (powered)
-                    dimension.ScheduleBlockUpdate(x, y, z, 1);
+                if (transition == PistonTransitionResult.Retry) dimension.ScheduleBlockUpdate(x, y, z, 20);
+                if (transition != PistonTransitionResult.Committed) return false;
+                if (powered) dimension.ScheduleBlockUpdate(x, y, z, 1);
                 return true;
             }
 
@@ -71,30 +69,23 @@ public sealed class PistonTrait : BlockTrait {
                     actor,
                     false
                 );
-                if (transition == PistonTransitionResult.Retry)
-                    dimension.ScheduleBlockUpdate(x, y, z, 20);
-                if (transition != PistonTransitionResult.Committed)
-                    return false;
+                if (transition == PistonTransitionResult.Retry) dimension.ScheduleBlockUpdate(x, y, z, 20);
+                if (transition != PistonTransitionResult.Committed) return false;
                 return true;
             }
 
             PistonTransitionResult reconciliation = dimension.MovePistonBlocks([], default, [], [], actor, hasHead);
-            if (reconciliation == PistonTransitionResult.Retry)
-                dimension.ScheduleBlockUpdate(x, y, z, 20);
-            if (reconciliation != PistonTransitionResult.Committed)
-                return false;
-            if (hasHead)
-                return true;
+            if (reconciliation == PistonTransitionResult.Retry) dimension.ScheduleBlockUpdate(x, y, z, 20);
+            if (reconciliation != PistonTransitionResult.Committed) return false;
+            if (hasHead) return true;
         }
 
-        if (powered == actor.Extended)
-            return false;
+        if (powered == actor.Extended) return false;
 
         PistonTransitionResult result = powered
             ? Extend(dimension, x, y, z, direction, facing, actor)
             : Retract(dimension, x, y, z, direction, actor);
-        if (result == PistonTransitionResult.Retry)
-            dimension.ScheduleBlockUpdate(x, y, z, 20);
+        if (result == PistonTransitionResult.Retry) dimension.ScheduleBlockUpdate(x, y, z, 20);
         return result == PistonTransitionResult.Committed;
     }
 
@@ -115,8 +106,7 @@ public sealed class PistonTrait : BlockTrait {
         pending.Enqueue((x + direction.X, y + direction.Y, z + direction.Z));
 
         while (pending.TryDequeue(out var position)) {
-            if (position == (x, y, z) || !visited.Add(position))
-                continue;
+            if (position == (x, y, z) || !visited.Add(position)) continue;
             if (visited.Count > MaximumVisitedPositions || position.Y < dimension.MinimumY || position.Y > dimension.MaximumY)
                 return PistonTransitionResult.Rejected;
             if (dimension.GetLoadedPermutation(position.X, position.Y, position.Z) is not { } block) {
@@ -132,31 +122,25 @@ public sealed class PistonTrait : BlockTrait {
                 pending.Enqueue((position.X + direction.X, position.Y + direction.Y, position.Z + direction.Z));
                 continue;
             }
-            if (BlockPalette.Replaceable(block))
-                continue;
-            if (moving.Count == MaximumMovedBlocks || movement is not ("PushPull" or "Push"))
-                return PistonTransitionResult.Rejected;
+            if (BlockPalette.Replaceable(block)) continue;
+            if (moving.Count == MaximumMovedBlocks || movement is not ("PushPull" or "Push")) return PistonTransitionResult.Rejected;
 
             moving.Add(position);
             pending.Enqueue((position.X + direction.X, position.Y + direction.Y, position.Z + direction.Z));
 
-            if (BlockPalette.FindType(block.Identifier)?.Components.Movable?.StickyType is not ("Same" or "All"))
-                continue;
+            if (BlockPalette.FindType(block.Identifier)?.Components.Movable?.StickyType is not ("Same" or "All")) continue;
 
             foreach ((int X, int Y, int Z) offset in BlockDirections.OffsetByDirection.Values) {
                 var attached = (position.X + offset.X, position.Y + offset.Y, position.Z + offset.Z);
-                if (attached == (x, y, z))
-                    continue;
-                if (attached.Item2 < dimension.MinimumY || attached.Item2 > dimension.MaximumY)
-                    return PistonTransitionResult.Rejected;
+                if (attached == (x, y, z)) continue;
+                if (attached.Item2 < dimension.MinimumY || attached.Item2 > dimension.MaximumY) return PistonTransitionResult.Rejected;
                 if (dimension.GetLoadedPermutation(attached.Item1, attached.Item2, attached.Item3) is not { } attachedBlock) {
                     if (dimension.GetChunk(attached.Item1 >> 4, attached.Item3 >> 4) is null)
                         dimension.Redstone.WaitForPiston(x, y, z, attached.Item1 >> 4, attached.Item3 >> 4);
                     return PistonTransitionResult.Rejected;
                 }
                 string? attachedMovement = BlockPalette.FindType(attachedBlock.Identifier)?.Components.Movable?.MovementType;
-                if (BlockPalette.Replaceable(attachedBlock) && attachedMovement != "Popped")
-                    continue;
+                if (BlockPalette.Replaceable(attachedBlock) && attachedMovement != "Popped") continue;
                 if ((block.Identifier == "minecraft:slime" && attachedBlock.Identifier == "minecraft:honey_block") ||
                     (block.Identifier == "minecraft:honey_block" && attachedBlock.Identifier == "minecraft:slime"))
                     continue;
@@ -180,8 +164,7 @@ public sealed class PistonTrait : BlockTrait {
             actor,
             true
         );
-        if (result != PistonTransitionResult.Committed)
-            return result;
+        if (result != PistonTransitionResult.Committed) return result;
 
         foreach (var drop in drops)
             Drop(dimension, drop.Block, drop.X, drop.Y, drop.Z);
@@ -224,8 +207,7 @@ public sealed class PistonTrait : BlockTrait {
                 bool canPull = true;
 
                 while (pending.TryDequeue(out var position)) {
-                    if (!visited.Add(position))
-                        continue;
+                    if (!visited.Add(position)) continue;
                     if (visited.Count > MaximumVisitedPositions || position.Y < dimension.MinimumY ||
                         position.Y > dimension.MaximumY ||
                         dimension.GetLoadedPermutation(position.X, position.Y, position.Z) is not { } movedBlock ||
@@ -248,29 +230,25 @@ public sealed class PistonTrait : BlockTrait {
                     }
 
                     moving.Add(position);
-                    if (moving.Count > MaximumMovedBlocks)
-                        canPull = false;
+                    if (moving.Count > MaximumMovedBlocks) canPull = false;
                     if (!canPull || BlockPalette.FindType(movedBlock.Identifier)?.Components.Movable?.StickyType is not ("Same" or "All"))
                         continue;
 
                     foreach ((int X, int Y, int Z) offset in BlockDirections.OffsetByDirection.Values) {
                         var attached = (position.X + offset.X, position.Y + offset.Y, position.Z + offset.Z);
-                        if (attached == (x, y, z) || attached == (headX, headY, headZ))
-                            continue;
+                        if (attached == (x, y, z) || attached == (headX, headY, headZ)) continue;
                         if (dimension.GetLoadedPermutation(attached.Item1, attached.Item2, attached.Item3) is not { } attachedBlock) {
                             canPull = false;
                             break;
                         }
                         string? attachedMovement = BlockPalette.FindType(attachedBlock.Identifier)?.Components.Movable?.MovementType;
-                        if (BlockPalette.Replaceable(attachedBlock) && attachedMovement != "Popped")
-                            continue;
+                        if (BlockPalette.Replaceable(attachedBlock) && attachedMovement != "Popped") continue;
                         if ((movedBlock.Identifier == "minecraft:slime" && attachedBlock.Identifier == "minecraft:honey_block") ||
                             (movedBlock.Identifier == "minecraft:honey_block" && attachedBlock.Identifier == "minecraft:slime"))
                             continue;
                         pending.Enqueue(attached);
                     }
-                    if (!canPull)
-                        break;
+                    if (!canPull) break;
                 }
 
                 if (!canPull) {
@@ -319,8 +297,7 @@ public sealed class PistonTrait : BlockTrait {
             actor,
             false
         );
-        if (result != PistonTransitionResult.Committed)
-            return result;
+        if (result != PistonTransitionResult.Committed) return result;
 
         foreach (var drop in drops)
             Drop(dimension, drop.Block, drop.X, drop.Y, drop.Z);
@@ -336,13 +313,11 @@ public sealed class PistonTrait : BlockTrait {
         }, x >> 4, z >> 4);
 
     static void Drop(Dimension dimension, BlockPermutation block, int x, int y, int z) {
-        if (dimension.World is not { } world)
-            return;
+        if (dimension.World is not { } world) return;
 
         foreach (BlockDrop drop in world.LootTables.Get(block.Identifier)) {
             ItemType? itemType = ItemPalette.Find(drop.Identifier);
-            if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue)
-                continue;
+            if (itemType is null || itemType.NetworkId == 0 || itemType.MaxAmount is <= 0 or > ushort.MaxValue) continue;
 
             int amount = drop.MinAmount == drop.MaxAmount
                 ? drop.MinAmount

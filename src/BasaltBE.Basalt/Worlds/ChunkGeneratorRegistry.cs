@@ -21,8 +21,7 @@ public sealed class ChunkGeneratorRegistry {
 
     public void SetDefault(string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-        if (!generators.ContainsKey(identifier))
-            throw new KeyNotFoundException($"Chunk generator '{identifier}' is not registered.");
+        if (!generators.ContainsKey(identifier)) throw new KeyNotFoundException($"Chunk generator '{identifier}' is not registered.");
 
         defaultGenerator = identifier;
     }
@@ -36,8 +35,7 @@ public sealed class ChunkGeneratorRegistry {
     }
 
     internal IChunkGenerator CreateDefault() {
-        if (defaultGenerator is null)
-            throw new InvalidOperationException("No default chunk generator has been selected.");
+        if (defaultGenerator is null) throw new InvalidOperationException("No default chunk generator has been selected.");
 
         return Create(defaultGenerator);
     }

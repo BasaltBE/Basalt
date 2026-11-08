@@ -45,7 +45,7 @@ internal struct NbtReadContext(NbtReadLimits? limits) {
     internal void CheckListLength(int count) {
         if (Limits is { } limits) {
             if (count > limits.MaximumListLength)
-                throw new InvalidDataException("NBT list length exceeds the read limit.");
+                throw new InvalidDataException($"NBT list length exceeds the read limit (length: {count}, limit: {limits.MaximumListLength}).");
             if (count > limits.MaximumTags - Tags)
                 throw new InvalidDataException("NBT list exceeds the remaining tag budget.");
         }

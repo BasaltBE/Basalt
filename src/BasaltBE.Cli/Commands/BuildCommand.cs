@@ -14,8 +14,7 @@ internal static class BuildCommand {
                 restore = false;
                 continue;
             }
-            if (++index == args.Length)
-                throw new ArgumentException($"Missing value for {option}.");
+            if (++index == args.Length) throw new ArgumentException($"Missing value for {option}.");
 
             switch (option) {
                 case "--project":
@@ -41,8 +40,7 @@ internal static class BuildCommand {
         try {
             string archive = PluginBuilder.Build(project, output, runtime, restore, cancellation.Token);
             Console.WriteLine($"Package: {archive}");
-        }
-        finally {
+        } finally {
             Console.CancelKeyPress -= cancel;
         }
     }

@@ -3,7 +3,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 using BasaltBE.Basalt.Worlds.Dimensions;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement(JsonElement definition, Dimension dimension, Random random) {
     static readonly string[] TrunkTypes = ["trunk", "fancy_trunk", "cherry_trunk", "mega_trunk", "acacia_trunk", "mangrove_trunk", "poplar_trunk", "fallen_trunk"];
@@ -31,8 +31,7 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                 break;
             }
         }
-        if (trunkType is null || Resolve(trunkData.GetProperty("trunk_block")) is not { } log)
-            return null;
+        if (trunkType is null || Resolve(trunkData.GetProperty("trunk_block")) is not { } log) return null;
 
         trunk = log;
         trunkX = BlockPalette.Find(log.Identifier, log.State, "pillar_axis", "x") ?? log;
@@ -40,8 +39,7 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
         replaceRules = ReadRules(definition, "may_replace");
         growThroughRules = ReadRules(definition, "may_grow_through");
         groundRules = ReadRules(definition, "may_grow_on");
-        if (definition.TryGetProperty("mangrove_roots", out JsonElement roots))
-            rootRules = ReadRules(roots, "roots_may_grow_through");
+        if (definition.TryGetProperty("mangrove_roots", out JsonElement roots)) rootRules = ReadRules(roots, "roots_may_grow_through");
         string? canopyType = null;
         foreach (string type in CanopyTypes) {
             if (definition.TryGetProperty(type, out canopyData)) {
@@ -56,21 +54,17 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                 leafBlocks = new (BlockPermutation, int)[leaves.GetArrayLength()];
                 for (int index = 0; index < leafBlocks.Length; index++) {
                     int weight = leaves[index][1].GetInt32();
-                    if (weight <= 0 || Resolve(leaves[index][0]) is not { } resolved)
-                        return null;
+                    if (weight <= 0 || Resolve(leaves[index][0]) is not { } resolved) return null;
                     leafBlocks[index] = (resolved, weight);
                     leafWeight = checked(leafWeight + weight);
                 }
-                if (leafBlocks.Length == 0)
-                    return null;
+                if (leafBlocks.Length == 0) return null;
                 leaf = SelectLeaf();
-            }
-            else if (Resolve(leaves) is { } resolved) {
+            } else if (Resolve(leaves) is { } resolved) {
                 leaf = resolved;
                 leafBlocks = [(resolved, 1)];
                 leafWeight = 1;
-            }
-            else {
+            } else {
                 return null;
             }
         }
@@ -80,24 +74,19 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                 ? bases.EnumerateArray().Select(Resolve).OfType<BlockPermutation>().ToArray()
                 : Resolve(bases) is { } baseBlock ? [baseBlock] : [];
         }
-        if (baseBlocks.Length == 0)
-            baseBlocks = [BlockPalette.FindDefaultPermutation("minecraft:dirt")!];
+        if (baseBlocks.Length == 0) baseBlocks = [BlockPalette.FindDefaultPermutation("minecraft:dirt")!];
 
-        if (y <= dimension.MinimumY || !CanGrowOn(dimension.GetPermutation(x, y - 1, z)))
-            return null;
+        if (y <= dimension.MinimumY || !CanGrowOn(dimension.GetPermutation(x, y - 1, z))) return null;
 
         int height = trunkType == "fallen_trunk"
             ? Sample(trunkData.GetProperty("log_length"), 4)
             : Sample(trunkData.GetProperty("trunk_height"), 5);
-        if (trunkData.TryGetProperty("height_modifier", out JsonElement modifier))
-            height += Sample(modifier, 0);
-        if (height is < 1 or > 64)
-            return null;
+        if (trunkData.TryGetProperty("height_modifier", out JsonElement modifier)) height += Sample(modifier, 0);
+        if (height is < 1 or > 64) return null;
 
         if (trunkType == "fallen_trunk") {
             BuildFallen(x, y, z, height);
-        }
-        else {
+        } else {
             switch (canopyType) {
                 case "fancy_canopy":
                     BuildFancy(x, y, z, Math.Max(3, height - 2));
@@ -133,10 +122,8 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                     BuildPoplar(x, y, z, height);
                     break;
                 case "canopy":
-                    if (height == 1)
-                        BuildBush(x, y, z);
-                    else
-                        BuildStraightBlob(x, y, z, height, Math.Max(2, Number(canopyData, "min_width", 1) + 1));
+                    if (height == 1) BuildBush(x, y, z);
+                    else BuildStraightBlob(x, y, z, height, Math.Max(2, Number(canopyData, "min_width", 1) + 1));
                     break;
                 default:
                     return null;
@@ -145,19 +132,18 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
 
         if (trunkData.TryGetProperty("trunk_decoration", out _) || canopyData.ValueKind == JsonValueKind.Object && canopyData.TryGetProperty("canopy_decoration", out _))
             AddVines();
-        if (leaf?.Identifier == "minecraft:pale_oak_leaves")
-            AddPaleMoss();
+        if (leaf?.Identifier == "minecraft:pale_oak_leaves") AddPaleMoss();
 
         foreach (((int blockX, int blockY, int blockZ), BlockPlacement block) in placements) {
-            if (blockY < dimension.MinimumY || blockY > dimension.MaximumY)
-                return null;
+            if (blockY < dimension.MinimumY || blockY > dimension.MaximumY) return null;
+
             BlockPermutation current = dimension.GetPermutation(blockX, blockY, blockZ);
             bool allowed = block.Kind == BlockKind.Base ? CanGrowOn(current)
                 : block.Kind == BlockKind.Root ? CanRootThrough(current)
                 : CanReplace(current) || block.Kind == BlockKind.Trunk && CanGrowThrough(current);
-            if (!allowed)
-                return null;
+            if (!allowed) return null;
         }
+
         return placements;
     }
 
@@ -175,27 +161,25 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
 
     static bool Matches(BlockRule[] rules, BlockPermutation block) {
         foreach (BlockRule rule in rules) {
-            if (rule.Matches(block))
-                return true;
+            if (rule.Matches(block)) return true;
         }
+
         return false;
     }
 
     BlockPermutation SelectLeaf() {
-        if (leafBlocks.Length == 1)
-            return leafBlocks[0].Block;
+        if (leafBlocks.Length == 1) return leafBlocks[0].Block;
+
         int selected = random.Next(leafWeight);
         foreach ((BlockPermutation block, int weight) in leafBlocks) {
             selected -= weight;
-            if (selected < 0)
-                return block;
+            if (selected < 0) return block;
         }
         throw new InvalidDataException("The tree leaf weights are invalid.");
     }
 
     static BlockRule[]? ReadRules(JsonElement source, string name) {
-        if (!source.TryGetProperty(name, out JsonElement entries))
-            return null;
+        if (!source.TryGetProperty(name, out JsonElement entries)) return null;
         BlockRule[] rules = new BlockRule[entries.GetArrayLength()];
         for (int index = 0; index < rules.Length; index++) {
             JsonElement entry = entries[index];
@@ -210,6 +194,7 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                 : [];
             rules[index] = new BlockRule(identifier, expression, states);
         }
+
         return rules;
     }
 
@@ -219,12 +204,11 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
                 BlockType? type = BlockPalette.FindType(block.Identifier);
                 return Tags.Valid && type is not null && Tags.MatchesTags(type.Tags);
             }
-            if (block.Identifier != Identifier)
-                return false;
+            if (block.Identifier != Identifier) return false;
             foreach ((string name, object expected) in States) {
-                if (!block.State.Values.TryGetValue(name, out object? actual) || !Equals(expected, actual))
-                    return false;
+                if (!block.State.Values.TryGetValue(name, out object? actual) || !Equals(expected, actual)) return false;
             }
+
             return true;
         }
     }
@@ -232,35 +216,29 @@ internal sealed partial class TreePlacement(JsonElement definition, Dimension di
     static BlockPermutation? Resolve(JsonElement value) {
         string? identifier = value.ValueKind == JsonValueKind.String ? value.GetString()
             : value.ValueKind == JsonValueKind.Object && value.TryGetProperty("name", out JsonElement name) ? name.GetString() : null;
-        if (identifier is null || BlockPalette.FindDefaultPermutation(identifier) is not { } permutation)
-            return null;
-        if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty("states", out JsonElement states))
-            return permutation;
+        if (identifier is null || BlockPalette.FindDefaultPermutation(identifier) is not { } permutation) return null;
+        if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty("states", out JsonElement states)) return permutation;
 
         BlockState state = new() { Values = new(permutation.State.Values, StringComparer.Ordinal) };
         foreach (JsonProperty property in states.EnumerateObject()) {
             state.Values[property.Name] = StateValue(property.Value);
         }
+
         return BlockPalette.Find(identifier, state);
     }
 
     int Sample(JsonElement value, int fallback) {
-        if (value.ValueKind == JsonValueKind.Number)
-            return value.GetInt32();
-        if (value.ValueKind != JsonValueKind.Object)
-            return fallback;
+        if (value.ValueKind == JsonValueKind.Number) return value.GetInt32();
+        if (value.ValueKind != JsonValueKind.Object) return fallback;
         if (value.TryGetProperty("range_min", out JsonElement minimum) && value.TryGetProperty("range_max", out JsonElement maximum))
             return random.Next(minimum.GetInt32(), checked(maximum.GetInt32() + 1));
 
         int result = Number(value, "base", fallback);
         if (value.TryGetProperty("intervals", out JsonElement intervals)) {
-            foreach (JsonElement interval in intervals.EnumerateArray())
-                result = checked(result + random.Next(interval.GetInt32()));
+            foreach (JsonElement interval in intervals.EnumerateArray()) result = checked(result + random.Next(interval.GetInt32()));
         }
-        if (value.TryGetProperty("variance", out JsonElement variance))
-            result = checked(result + random.Next(variance.GetInt32()));
-        if (value.TryGetProperty("height_rand_a", out JsonElement first))
-            result = checked(result + random.Next(first.GetInt32() + 1));
+        if (value.TryGetProperty("variance", out JsonElement variance)) result = checked(result + random.Next(variance.GetInt32()));
+        if (value.TryGetProperty("height_rand_a", out JsonElement first)) result = checked(result + random.Next(first.GetInt32() + 1));
         if (value.TryGetProperty("height_rand_b", out JsonElement second))
             result = checked(result + random.Next(second.GetInt32() + 1));
         return result;

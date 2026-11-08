@@ -19,8 +19,9 @@ public sealed class EnchantingTableTrait : BlockTrait {
         EnchantingTableContainer container = new(player, position);
         container.Changed += container.Refresh;
         container.LastViewerClosed += container.ReturnItems;
-        if (!container.Open(player))
-            return false;
+
+        if (!container.Open(player)) return false;
+
         container.Refresh();
         return true;
     }
@@ -49,37 +50,33 @@ internal sealed class EnchantingTableContainer : BlockContainer {
     }
 
     public override bool CanContain(int slot, ItemStack item) {
-        if (slot == 1)
-            return item.Type.Identifier == "minecraft:lapis_lazuli";
-        if (slot != 0 || item.StackSize != 1)
-            return false;
-        if (item.Type.Identifier is "minecraft:book" or "minecraft:enchanted_book")
-            return true;
+        if (slot == 1) return item.Type.Identifier == "minecraft:lapis_lazuli";
+        if (slot != 0 || item.StackSize != 1) return false;
+        if (item.Type.Identifier is "minecraft:book" or "minecraft:enchanted_book") return true;
 
         foreach (var enchantment in player.Network.Server.Enchantments.Values) {
             if (enchantment.BedrockId is short && enchantment.AppliesTo(item.Type) &&
                 item.Type.PropertiesPayload.Components.Contains("minecraft:enchantable"))
                 return true;
         }
+
         return false;
     }
 
     public void Refresh() {
-        if (!ReferenceEquals(player.OpenedContainer, this))
-            return;
+        if (!ReferenceEquals(player.OpenedContainer, this)) return;
 
         ItemStack? item = GetItem(0);
         if (item is null) {
-            if (offeredItem is null && optionsSent)
-                return;
+            if (offeredItem is null && optionsSent) return;
+
             offers = [];
             offeredItem = null;
             optionsSent = true;
             player.SendPacket(new PlayerEnchantOptionsPacket());
             return;
         }
-        if (offeredItem?.CanStackWith(item) == true && optionsSent)
-            return;
+        if (offeredItem?.CanStackWith(item) == true && optionsSent) return;
 
         offeredItem = item.Clone();
         if (item.Enchanted) {
@@ -92,14 +89,12 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         bool isBook = item.Type.Identifier == "minecraft:book";
         List<Enchantment> eligible = [];
         foreach (Enchantment enchantment in player.Network.Server.Enchantments.Values) {
-            if (enchantment.BedrockId is not short || (!isBook && !enchantment.AppliesTo(item.Type)))
-                continue;
+            if (enchantment.BedrockId is not short || (!isBook && !enchantment.AppliesTo(item.Type))) continue;
 
             bool conflict = false;
             foreach (string identifier in enchantment.IncompatibleWith.Span)
                 conflict |= item.GetEnchantmentLevel(identifier) > 0;
-            if (!conflict)
-                eligible.Add(enchantment);
+            if (!conflict) eligible.Add(enchantment);
         }
 
         if (eligible.Count == 0 || !isBook && !item.Type.PropertiesPayload.Components.Contains("minecraft:enchantable")) {
@@ -118,8 +113,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
                 1 => power * 2 / 3 + 1,
                 _ => Math.Max(power, bookshelfCount * 2)
             };
-            if (cost < index + 1)
-                continue;
+            if (cost < index + 1) continue;
 
             power += 1 + random.Next(item.Type.Enchantability / 4 + 1) + random.Next(item.Type.Enchantability / 4 + 1);
             float randomSpan = (random.NextSingle() + random.NextSingle() - 1) * 0.15f;
@@ -151,6 +145,7 @@ internal sealed class EnchantingTableContainer : BlockContainer {
                 EnchantNetId = recipeId
             });
         }
+
         offers = [.. currentOffers];
         optionsSent = true;
         player.SendPacket(new PlayerEnchantOptionsPacket { Options = [.. options] });
@@ -175,9 +170,9 @@ internal sealed class EnchantingTableContainer : BlockContainer {
                     failureReason = $"requested crafts: {craft.NumberOfRequestedCrafts}";
                     return Error(request.ClientRequestId);
                 }
+
                 selected = craft;
-            }
-            else if (action is PlaceActionData place) {
+            } else if (action is PlaceActionData place) {
                 if (resultPlaced || place.Amount != 1 ||
                     place.Source.ContainerName.ContainerName != ContainerEnumName.CreatedOutput || place.Source.Slot != 50 ||
                     place.Source.ContainerName.DynamicId is not null and not 0 ||
@@ -187,13 +182,14 @@ internal sealed class EnchantingTableContainer : BlockContainer {
                     failureReason = "invalid enchanted result transfer";
                     return Error(request.ClientRequestId);
                 }
+
                 resultPlaced = true;
-            }
-            else if (action is not (ConsumeActionData or CreateActionData or CraftResultsActionData)) {
+            } else if (action is not (ConsumeActionData or CreateActionData or CraftResultsActionData)) {
                 failureReason = $"unsupported action: {action.ActionType}";
                 return Error(request.ClientRequestId);
             }
         }
+
         if (selected is null) {
             failureReason = "request has no recipe action";
             return Error(request.ClientRequestId);
@@ -206,12 +202,13 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         EnchantingOffer offer = default;
         bool found = false;
         foreach (EnchantingOffer candidate in offers) {
-            if (candidate.Id != unchecked((uint)selected.RecipeNetId))
-                continue;
+            if (candidate.Id != unchecked((uint)selected.RecipeNetId)) continue;
+
             offer = candidate;
             found = true;
             break;
         }
+
         ItemStack? item = GetItem(0);
         ItemStack? lapis = GetItem(1);
         PlayerExperienceTrait? experience = player.GetTrait<PlayerExperienceTrait>();
@@ -260,16 +257,14 @@ internal sealed class EnchantingTableContainer : BlockContainer {
             ItemType enchantedBook = ItemPalette.Find("minecraft:enchanted_book")
                 ?? throw new InvalidDataException("Enchanted book item type is missing.");
             enchanted = new ItemStack(enchantedBook, 1, item.Metadata, item.Clone().Nbt);
-        }
-        else {
+        } else {
             enchanted = item.Clone();
         }
+
         enchanted.AddEnchantment(offer.Enchantment, offer.Level);
-        if (!creative && !experience.SpendLevels(offer.SpendLevels))
-            return Error(request.ClientRequestId);
+        if (!creative && !experience.SpendLevels(offer.SpendLevels)) return Error(request.ClientRequestId);
         SetItem(0, enchanted);
-        if (!creative)
-            TakeItem(1, offer.SpendLevels);
+        if (!creative) TakeItem(1, offer.SpendLevels);
         failureReason = null;
         return new ItemStackResponseInfo {
             Result = ItemStackNetResult.Success,
@@ -293,12 +288,10 @@ internal sealed class EnchantingTableContainer : BlockContainer {
 
     public void ReturnItems() {
         offers = [];
-        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
-            return;
+        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory) return;
 
         for (int slot = 0; slot < ContainerSize; slot++) {
-            if (TakeItem(slot, ushort.MaxValue) is not { } item)
-                continue;
+            if (TakeItem(slot, ushort.MaxValue) is not { } item) continue;
             if (inventory.Inventory.AddItem(item) is { } remaining)
                 new ItemEntity(remaining, player, Position.X, Position.Y, Position.Z).Spawn(player.Dimension);
         }
@@ -320,19 +313,19 @@ internal sealed class EnchantingTableContainer : BlockContainer {
         int count = 0;
         for (int xOffset = -2; xOffset <= 2; xOffset++) {
             for (int zOffset = -2; zOffset <= 2; zOffset++) {
-                if (Math.Max(Math.Abs(xOffset), Math.Abs(zOffset)) != 2)
-                    continue;
+                if (Math.Max(Math.Abs(xOffset), Math.Abs(zOffset)) != 2) continue;
+
                 int gapX = position.X + Math.Sign(xOffset);
                 int gapZ = position.Z + Math.Sign(zOffset);
-                if (player.Dimension.GetPermutation(gapX, position.Y + 1, gapZ).Identifier != "minecraft:air")
-                    continue;
+                if (player.Dimension.GetPermutation(gapX, position.Y + 1, gapZ).Identifier != "minecraft:air") continue;
+
                 int x = position.X + xOffset;
                 int z = position.Z + zOffset;
                 for (int yOffset = 0; yOffset <= 1; yOffset++)
-                    if (player.Dimension.GetPermutation(x, position.Y + yOffset, z).Identifier == "minecraft:bookshelf")
-                        count++;
+                    if (player.Dimension.GetPermutation(x, position.Y + yOffset, z).Identifier == "minecraft:bookshelf") count++;
             }
         }
+
         return Math.Min(count, 15);
     }
 

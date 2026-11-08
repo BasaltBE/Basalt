@@ -16,16 +16,13 @@ public sealed class ServerIdentity : IServerIdentity {
         key = ECDsa.Create(ECCurve.NamedCurves.nistP384);
         if (File.Exists(path)) {
             key.ImportFromPem(File.ReadAllText(path));
-            if (key.KeySize != 384)
-                throw new InvalidDataException("NetherNet identity key must use P-384.");
-        }
-        else {
+            if (key.KeySize != 384) throw new InvalidDataException("NetherNet identity key must use P-384.");
+        } else {
             try {
                 using FileStream file = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
                 using StreamWriter writer = new(file);
                 writer.Write(key.ExportPkcs8PrivateKeyPem());
-            }
-            catch (IOException) when (File.Exists(path)) {
+            } catch (IOException) when (File.Exists(path)) {
                 key.ImportFromPem(File.ReadAllText(path));
             }
         }
@@ -40,8 +37,7 @@ public sealed class ServerIdentity : IServerIdentity {
                 if (!line.StartsWith("a=fingerprint:", StringComparison.Ordinal)) continue;
                 ReadOnlySpan<char> value = line.AsSpan("a=fingerprint:".Length);
                 int separator = value.IndexOf(' ');
-                if (separator <= 0 || separator == value.Length - 1)
-                    throw new InvalidDataException("SDP has an invalid fingerprint.");
+                if (separator <= 0 || separator == value.Length - 1) throw new InvalidDataException("SDP has an invalid fingerprint.");
                 fingerprints.Add((value[..separator].ToString(), value[(separator + 1)..].Trim().ToString()));
             }
             if (fingerprints.Count == 0) throw new InvalidDataException("SDP has no fingerprints.");
@@ -113,4 +109,3 @@ public sealed class ServerIdentity : IServerIdentity {
         return $"{header}..{Base64Url.Encode(signature)}";
     }
 }
-

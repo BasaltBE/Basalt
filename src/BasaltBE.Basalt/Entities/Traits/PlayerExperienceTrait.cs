@@ -38,8 +38,7 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public void AddPoints(int amount) {
-        if (amount == 0)
-            return;
+        if (amount == 0) return;
 
         TotalExperience = (int)Math.Clamp((long)TotalExperience + amount, 0, int.MaxValue);
         Progress += (float)amount / PointsToNextLevel;
@@ -48,26 +47,25 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
             if (Level > 0) {
                 Level--;
                 Progress = 1 + remaining / PointsToNextLevel;
-            }
-            else {
+            } else {
                 Progress = 0;
                 break;
             }
         }
+
         while (Progress >= 1 && Level < MaximumLevel) {
             Progress = (Progress - 1) * PointsToNextLevel;
             Level++;
             Progress /= PointsToNextLevel;
         }
-        if (Level == MaximumLevel)
-            Progress = Math.Clamp(Progress, 0, MathF.BitDecrement(1));
+        if (Level == MaximumLevel) Progress = Math.Clamp(Progress, 0, MathF.BitDecrement(1));
+
         Sync();
     }
 
     internal void Collect(int amount) {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        if (amount == 0)
-            return;
+        if (amount == 0) return;
 
         if (Entity is Player player) {
             PlayerInventoryTrait? inventory = player.GetTrait<PlayerInventoryTrait>();
@@ -83,8 +81,7 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
                         if (item is null || item.Damage == 0 ||
                             item.GetEnchantmentLevel(EnchantmentPalette.Mending) == 0)
                             continue;
-                        if (Random.Shared.Next(++candidates) == 0)
-                            selected = item;
+                        if (Random.Shared.Next(++candidates) == 0) selected = item;
                     }
                 }
 
@@ -94,13 +91,11 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
                         if (item is null || item.Damage == 0 ||
                             item.GetEnchantmentLevel(EnchantmentPalette.Mending) == 0)
                             continue;
-                        if (Random.Shared.Next(++candidates) == 0)
-                            selected = item;
+                        if (Random.Shared.Next(++candidates) == 0) selected = item;
                     }
                 }
 
-                if (selected is null)
-                    break;
+                if (selected is null) break;
 
                 long repairCapacity = (long)amount * 2;
                 int repair = (int)Math.Min(repairCapacity, selected.Damage);
@@ -113,24 +108,22 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public void AddLevels(int amount) {
-        if (amount == 0)
-            return;
+        if (amount == 0) return;
 
         long level = (long)Level + amount;
         if (level < 0) {
             Level = 0;
             Progress = 0;
             TotalExperience = 0;
-        }
-        else {
+        } else {
             Level = (int)Math.Min(level, MaximumLevel);
         }
         Sync();
     }
 
     public bool SetPoints(int amount) {
-        if ((uint)amount >= PointsToNextLevel)
-            return false;
+        if ((uint)amount >= PointsToNextLevel) return false;
+
         Progress = (float)amount / PointsToNextLevel;
         Sync();
         return true;
@@ -142,10 +135,9 @@ public sealed class PlayerExperienceTrait(Entity entity) : EntityTrait(entity) {
     }
 
     public bool SpendLevels(int amount) {
-        if (amount < 0 || Level < amount)
-            return false;
-        if (amount == 0)
-            return true;
+        if (amount < 0 || Level < amount) return false;
+        if (amount == 0) return true;
+
         Level -= amount;
         Sync();
         return true;

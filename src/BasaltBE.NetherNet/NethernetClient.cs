@@ -45,8 +45,7 @@ public sealed class NethernetClient : IAsyncDisposable {
 
     public async Task ConnectAsync(CancellationToken cancellationToken = default, Func<string, string>? addIdentityAssertion = null) {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
-        if (Interlocked.CompareExchange(ref connected, -1, 0) != 0)
-            throw new InvalidOperationException("NetherNet client has already connected.");
+        if (Interlocked.CompareExchange(ref connected, -1, 0) != 0) throw new InvalidOperationException("NetherNet client has already connected.");
 
         using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
         linked.CancelAfter(options.NegotiationTimeout);
@@ -112,8 +111,7 @@ public sealed class NethernetClient : IAsyncDisposable {
             request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/sdp");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/sdp"));
             using HttpResponseMessage response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, requestTimeout.Token).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"NetherNet signaling failed with HTTP {(int)response.StatusCode}.");
+            if (!response.IsSuccessStatusCode) throw new HttpRequestException($"NetherNet signaling failed with HTTP {(int)response.StatusCode}.");
             byte[] answerBytes = await ReadBoundedAsync(response.Content, options.MaximumSdpLength, requestTimeout.Token).ConfigureAwait(false);
             if (answerBytes.Length == 0 || answerBytes.Length > options.MaximumSdpLength)
                 throw new InvalidDataException("NetherNet SDP answer length is invalid.");
@@ -132,12 +130,10 @@ public sealed class NethernetClient : IAsyncDisposable {
                 throw new InvalidDataException("NetherNet SDP answer was rejected.");
 
             await dataConnection.ChannelsReady.WaitAsync(linked.Token).ConfigureAwait(false);
-            if (Volatile.Read(ref disposed) != 0)
-                throw new ObjectDisposedException(nameof(NethernetClient));
+            if (Volatile.Read(ref disposed) != 0) throw new ObjectDisposedException(nameof(NethernetClient));
             Volatile.Write(ref connected, 1);
             monitor = MonitorConnectionAsync(dataConnection);
-        }
-        catch {
+        } catch {
             Volatile.Write(ref connected, 0);
             if (dataConnection is not null)
                 await dataConnection.DisposeAsync().ConfigureAwait(false);
@@ -156,8 +152,7 @@ public sealed class NethernetClient : IAsyncDisposable {
         CancellationToken cancellationToken = default
     ) {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
-        if (!Connected || connection is null)
-            throw new InvalidOperationException("NetherNet client is not connected.");
+        if (!Connected || connection is null) throw new InvalidOperationException("NetherNet client is not connected.");
         return connection.SendAsync(payload, reliability, cancellationToken);
     }
 
@@ -167,8 +162,7 @@ public sealed class NethernetClient : IAsyncDisposable {
         lifetime.Cancel();
         if (connection is not null) await connection.DisposeAsync().ConfigureAwait(false);
         if (monitor is not null) {
-            try { await monitor.ConfigureAwait(false); }
-            catch (Exception error) when (error is IOException or ObjectDisposedException) { }
+            try { await monitor.ConfigureAwait(false); } catch (Exception error) when (error is IOException or ObjectDisposedException) { }
         }
         incoming.Writer.TryComplete();
         lifetime.Dispose();
@@ -194,14 +188,12 @@ public sealed class NethernetClient : IAsyncDisposable {
         try {
             if (peer.iceGatheringState == RTCIceGatheringState.complete) return;
             await gathered.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-        }
-        finally { peer.onicegatheringstatechange -= StateChanged; }
+        } finally { peer.onicegatheringstatechange -= StateChanged; }
     }
 
     private static async ValueTask<IPAddress?> ResolveAddressAsync(string host, CancellationToken cancellationToken) {
         if (IPAddress.TryParse(host, out IPAddress? address)) return address;
-        try { return (await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false)).FirstOrDefault(); }
-        catch (SocketException) { return null; }
+        try { return (await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false)).FirstOrDefault(); } catch (SocketException) { return null; }
     }
 
     private static ulong RandomNetworkId() {
@@ -217,8 +209,7 @@ public sealed class NethernetClient : IAsyncDisposable {
         while (true) {
             int read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
             if (read == 0) return output.ToArray();
-            if (output.Length + read > maximumLength)
-                throw new InvalidDataException("NetherNet SDP answer exceeds the configured size limit.");
+            if (output.Length + read > maximumLength) throw new InvalidDataException("NetherNet SDP answer exceeds the configured size limit.");
             output.Write(buffer, 0, read);
         }
     }

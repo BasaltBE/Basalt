@@ -30,6 +30,7 @@ public sealed class HopperBlockActor : BlockActor {
 
     public override void OnRead(CompoundTag nbt) {
         TransferCooldown = Math.Max(0, nbt.Get<IntTag>("TransferCooldown")?.Value ?? 0);
+
         ReadItems(nbt, Container);
     }
 
@@ -41,16 +42,14 @@ public sealed class HopperBlockActor : BlockActor {
 
     public override void OnPlace(ItemStack? item, byte face) {
         CompoundTag? blockEntity = item?.Nbt?.Get<CompoundTag>("BlockEntityTag") ?? item?.Nbt;
-        if (blockEntity is not null)
-            OnRead(blockEntity);
+        if (blockEntity is not null) OnRead(blockEntity);
     }
 
     public override void OnInteract(Player player) => Container.Open(player);
 
     public override void OnBreak(Player player) {
         for (int slot = 0; slot < Container.ContainerSize; slot++) {
-            if (Container.TakeItem(slot, ushort.MaxValue) is not { } item)
-                continue;
+            if (Container.TakeItem(slot, ushort.MaxValue) is not { } item) continue;
 
             new ItemEntity(item, player, Position.X, Position.Y, Position.Z).Spawn(Dimension);
         }
@@ -61,13 +60,12 @@ public sealed class HopperBlockActor : BlockActor {
     public override void Tick() {
         if (TransferCooldown > 0) {
             TransferCooldown--;
-            if (TransferCooldown == 0)
-                MarkDirty();
+            if (TransferCooldown == 0) MarkDirty();
         }
 
         bool? powered = Dimension.Redstone.BlockPowered(Dimension, Position.X, Position.Y, Position.Z);
-        if (!powered.HasValue)
-            return;
+        if (!powered.HasValue) return;
+
         bool isPowered = powered.Value;
 
         BlockPermutation current = Dimension.GetPermutation(Position.X, Position.Y, Position.Z);
@@ -77,13 +75,12 @@ public sealed class HopperBlockActor : BlockActor {
             Dimension.BroadcastBlockUpdate(Position.X, Position.Y, Position.Z, updated);
         }
 
-        if (isPowered || TransferCooldown > 0)
-            return;
+        if (isPowered || TransferCooldown > 0) return;
 
         TransferCooldown = TransferDelay;
         MarkDirty();
-        if (PullFromAbove() || CollectItemsAbove() || PushForward())
-            return;
+
+        if (PullFromAbove() || CollectItemsAbove() || PushForward()) return;
     }
 
     bool PullFromAbove() {
@@ -100,6 +97,7 @@ public sealed class HopperBlockActor : BlockActor {
             source.TakeItem(slot);
             return true;
         }
+
         return false;
     }
 
@@ -108,10 +106,10 @@ public sealed class HopperBlockActor : BlockActor {
         int lastChunkX = (Position.X + 1) >> 4;
         int firstChunkZ = Position.Z >> 4;
         int lastChunkZ = (Position.Z + 1) >> 4;
+
         for (int chunkZ = firstChunkZ; chunkZ <= lastChunkZ; chunkZ++) {
             for (int chunkX = firstChunkX; chunkX <= lastChunkX; chunkX++) {
-                if (Dimension.GetChunk(chunkX, chunkZ) is null)
-                    continue;
+                if (Dimension.GetChunk(chunkX, chunkZ) is null) continue;
 
                 ReadOnlySpan<Entity> entities = Dimension.EntityIndex.GetChunkEntities(chunkX, chunkZ);
                 foreach (Entity entity in entities) {
@@ -127,6 +125,7 @@ public sealed class HopperBlockActor : BlockActor {
                 }
             }
         }
+
         return false;
     }
 
@@ -139,21 +138,21 @@ public sealed class HopperBlockActor : BlockActor {
         int targetX = Position.X + offset.X;
         int targetY = Position.Y + offset.Y;
         int targetZ = Position.Z + offset.Z;
+
         if (Dimension.GetChunk(targetX >> 4, targetZ >> 4) is not { } chunk ||
             Dimension.GetBlockActor(chunk, targetX & 15, targetY, targetZ & 15) is not { Inventory: not null } target)
             return false;
 
         byte targetFace = BlockDirections.OppositeByFace[face];
-        if (ReferenceEquals(target.Inventory, Container))
-            return false;
+        if (ReferenceEquals(target.Inventory, Container)) return false;
+
         for (int slot = 0; slot < Container.ContainerSize; slot++) {
-            if (Container.GetItem(slot) is not { } item || target.InsertItem(item.Clone(1), targetFace) is not null)
-                continue;
+            if (Container.GetItem(slot) is not { } item || target.InsertItem(item.Clone(1), targetFace) is not null) continue;
 
             Container.TakeItem(slot);
             return true;
         }
+
         return false;
     }
-
 }

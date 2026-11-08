@@ -32,10 +32,10 @@ public abstract class BlockActor(BlockActorContext context) {
 
     internal ItemStack? InsertItem(ItemStack item, byte face) {
         ArgumentNullException.ThrowIfNull(item);
-        if (Inventory is not { } inventory)
-            return item;
+        if (Inventory is not { } inventory) return item;
 
         for (int slot = 0; slot < inventory.ContainerSize && item.StackSize > 0; slot++) {
+            // Can not add the item or the slow have that item
             if (!CanInsert(slot, item, face) || inventory.GetItem(slot) is not { } existing ||
                 !existing.CanStackWith(item) || existing.StackSize >= existing.Type.MaxAmount)
                 continue;
@@ -46,6 +46,7 @@ public abstract class BlockActor(BlockActorContext context) {
         }
 
         for (int slot = 0; slot < inventory.ContainerSize && item.StackSize > 0; slot++) {
+            // Can not add the item or the slow have that item
             if (!CanInsert(slot, item, face) || inventory.GetItem(slot) is not null)
                 continue;
 
@@ -71,6 +72,7 @@ public abstract class BlockActor(BlockActorContext context) {
     public virtual CompoundTag CreateItemData() {
         CompoundTag itemData = new();
         OnWrite(itemData);
+
         itemData.Remove("id");
         itemData.Remove("x");
         itemData.Remove("y");
@@ -84,17 +86,17 @@ public abstract class BlockActor(BlockActorContext context) {
 
         foreach (Tag entry in items.Value) {
             if (entry is not CompoundTag item ||
-                !item.TryGet("Slot", out ByteTag? slot) ||
-                !item.TryGet("Name", out StringTag? name) ||
-                !item.TryGet("Count", out ByteTag? count) ||
-                slot!.Value >= container.ContainerSize ||
-                ItemPalette.Find(name!.Value) is not { } type ||
-                count!.Value == 0)
+                item.Get<ByteTag>("Slot") is not { } slot ||
+                item.Get<StringTag>("Name") is not { } name ||
+                item.Get<ByteTag>("Count") is not { } count)
                 continue;
 
-            uint metadata = item.Get<ShortTag>("Damage") is { } damage
-                ? unchecked((ushort)damage.Value)
-                : 0U;
+            if (slot.Value >= container.ContainerSize ||
+                count.Value == 0 ||
+                ItemPalette.Find(name.Value) is not { } type)
+                continue;
+
+            uint metadata = item.Get<ShortTag>("Damage") is { Value: var damage } ? unchecked((ushort)damage) : 0U;
             container.LoadItem(slot.Value, new ItemStack(type, count.Value, metadata, item.Get<CompoundTag>("tag")));
         }
     }
@@ -102,20 +104,20 @@ public abstract class BlockActor(BlockActorContext context) {
     protected static ListTag WriteItems(Container container, bool includePickupState = false) {
         ListTag items = new() { ElementType = TagType.Compound };
         for (int slot = 0; slot < container.ContainerSize; slot++) {
-            if (container.GetItem(slot) is not { } stack)
-                continue;
+            if (container.GetItem(slot) is not { } stack) continue;
 
             CompoundTag item = new();
             item.Add("Name", new StringTag { Value = stack.Type.Identifier });
             item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
             item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
             item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
-            if (includePickupState)
-                item.Add("WasPickedUp", new ByteTag { Value = 0 });
-            if (stack.Nbt is { } itemNbt)
-                item.Add("tag", itemNbt);
+
+            if (includePickupState) item.Add("WasPickedUp", new ByteTag { Value = 0 });
+            if (stack.Nbt is { } itemNbt) item.Add("tag", itemNbt);
+
             items.Value.Add(item);
         }
+
         return items;
     }
 
@@ -125,9 +127,10 @@ public abstract class BlockActor(BlockActorContext context) {
         update.Add("x", new IntTag { Value = Position.X });
         update.Add("y", new IntTag { Value = Position.Y });
         update.Add("z", new IntTag { Value = Position.Z });
+
         OnWrite(update);
-        foreach ((string name, Tag tag) in update.Tags)
-            Nbt.Add(name, tag);
+
+        foreach ((string name, Tag tag) in update.Tags) Nbt.Add(name, tag);
         MarkDirty();
 
         Dimension.Broadcast(new BlockActorDataPacket {

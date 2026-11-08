@@ -8,20 +8,20 @@ internal sealed class EventChannel<TEvent> where TEvent : Event {
 
     internal IDisposable Subscribe(Action<TEvent> handler) {
         EventSubscription<TEvent> subscription = new(this, handler);
-        lock (sync)
-            Volatile.Write(ref subscribers, [.. subscribers, subscription]);
+        lock (sync) Volatile.Write(ref subscribers, [.. subscribers, subscription]);
+
         return subscription;
     }
 
     internal void Remove(EventSubscription<TEvent> subscription) {
         lock (sync) {
             int index = Array.IndexOf(subscribers, subscription);
-            if (index < 0)
-                return;
+            if (index < 0) return;
             if (subscribers.Length == 1) {
                 Volatile.Write(ref subscribers, []);
                 return;
             }
+
             EventSubscription<TEvent>[] reduced = new EventSubscription<TEvent>[subscribers.Length - 1];
             subscribers.AsSpan(0, index).CopyTo(reduced);
             subscribers.AsSpan(index + 1).CopyTo(reduced.AsSpan(index));
@@ -30,7 +30,6 @@ internal sealed class EventChannel<TEvent> where TEvent : Event {
     }
 
     internal void Emit(TEvent value) {
-        foreach (EventSubscription<TEvent> subscriber in Volatile.Read(ref subscribers))
-            subscriber.Handler(value);
+        foreach (EventSubscription<TEvent> subscriber in Volatile.Read(ref subscribers)) subscriber.Handler(value);
     }
 }

@@ -10,7 +10,7 @@ using BasaltBE.Basalt.Entities.Enums;
 using BasaltBE.Basalt.Entities.Traits;
 using BasaltBE.Basalt.Items;
 using BasaltBE.Basalt.Network.Events;
-using BasaltBE.Basalt.Ticking;
+using BasaltBE.Basalt.Worlds.Ticking;
 using BasaltBE.Basalt.Worlds;
 using BasaltBE.Protocol.Packets;
 using BasaltBE.NetherNet.Types;

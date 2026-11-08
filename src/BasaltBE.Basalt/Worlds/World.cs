@@ -14,6 +14,8 @@ using BasaltBE.Basalt.Worlds.Providers;
 using BasaltBE.Basalt.Worlds.Providers.Types;
 using BasaltBE.Logging;
 using BasaltBE.Protocol.Enums;
+using BasaltBE.Protocol.Types;
+using BasaltBE.Protocol.Packets;
 
 namespace BasaltBE.Basalt.Worlds;
 
@@ -36,13 +38,15 @@ public sealed class World : IDisposable {
     int queuedMessages;
     Player[] autosavePlayers = [];
     int autosavePlayerIndex;
-    long autosaveStarted;
-    int autosavePlayerCount;
+    int autosaveRequest;
+    internal int AutosaveRequested;
+    internal int AutosaveCompleted;
+    internal long AutosaveFinished;
 
     int initialization;
     internal ulong TickValue;
-    ulong nextAutosaveTick;
 
+    public readonly Vec3 SpawnPosition = new() { X = 0.5f, Y = -57, Z = 0.5f };
     public readonly string Identifier;
     public readonly GameRules GameRules;
     public readonly LootTableManager LootTables;
@@ -91,22 +95,17 @@ public sealed class World : IDisposable {
 
         this.events = events;
         configure(this);
-        if (Dimensions.Count == 0)
-            throw new InvalidOperationException($"World '{Identifier}' requires at least one dimension.");
+        if (Dimensions.Count == 0) throw new InvalidOperationException($"World '{Identifier}' requires at least one dimension.");
 
-        int autosaveInterval = Server?.Properties.AutosaveIntervalSeconds ?? 0;
-        nextAutosaveTick = autosaveInterval > 0 ? (ulong)autosaveInterval * 20 : ulong.MaxValue;
         Volatile.Write(ref initialization, 2);
-        if (events.HasSubscribers<WorldInitializeEvent>())
-            events.Emit(new WorldInitializeEvent(this));
+        if (events.HasSubscribers<WorldInitializeEvent>()) events.Emit(new WorldInitializeEvent(this));
     }
 
     public Dimension? GetDimension(string identifier) => Dimensions.GetValueOrDefault(identifier);
 
     public Dimension? GetDimension(DimensionType type) {
         foreach (Dimension dimension in Dimensions.Values) {
-            if (dimension.Type == type)
-                return dimension;
+            if (dimension.Type == type) return dimension;
         }
 
         return null;
@@ -141,8 +140,7 @@ public sealed class World : IDisposable {
             throw new ArgumentOutOfRangeException(nameof(type));
         if (customDefinition is not null && Server?.CustomDimensions.Contains(customDefinition) != true)
             throw new ArgumentException("Custom dimension definition is not registered with this server.", nameof(customDefinition));
-        if (Started)
-            CheckOwnership();
+        if (Started) CheckOwnership();
 
         if (Dimensions.ContainsKey(identifier)) {
             throw new InvalidOperationException($"Dimension '{identifier}' already exists in world '{Identifier}'.");
@@ -152,6 +150,11 @@ public sealed class World : IDisposable {
             ? new Dimension(identifier, type, generator, generationService)
             : new Dimension(identifier, customDefinition, generator, generationService);
         dimension.PrimaryStorageDimension = !dimensions.Values.Any(existing => existing.Type == type);
+        if (dimension.PrimaryStorageDimension && type == DimensionType.Overworld) {
+            dimension.SpawnPosition.X = SpawnPosition.X;
+            dimension.SpawnPosition.Y = SpawnPosition.Y;
+            dimension.SpawnPosition.Z = SpawnPosition.Z;
+        }
         dimension.Events = events;
         dimension.World = this;
         dimension.SimulationRadius = Server?.Properties.TickDistance ?? 4;
@@ -159,6 +162,28 @@ public sealed class World : IDisposable {
         Volatile.Write(ref dimensionSnapshot,
             new ReadOnlyDictionary<string, Dimension>(new Dictionary<string, Dimension>(dimensions, StringComparer.OrdinalIgnoreCase)));
         return dimension;
+    }
+
+    public void SetSpawn(BlockPos position) {
+        ArgumentNullException.ThrowIfNull(position);
+        CheckOwnership();
+        Dimension dimension = GetDimension(DimensionType.Overworld)
+            ?? throw new InvalidOperationException("The world has no overworld dimension.");
+        if (Math.Abs((long)position.X) > 30_000_000 || Math.Abs((long)position.Z) > 30_000_000 ||
+            position.Y < dimension.MinimumY || position.Y > dimension.MaximumY)
+            throw new ArgumentOutOfRangeException(nameof(position));
+
+        SpawnPosition.X = dimension.SpawnPosition.X = position.X + 0.5f;
+        SpawnPosition.Y = dimension.SpawnPosition.Y = position.Y;
+        SpawnPosition.Z = dimension.SpawnPosition.Z = position.Z + 0.5f;
+
+        SetSpawnPositionPacket packet = new() {
+            SpawnType = SpawnPositionType.World,
+            Position = new BlockPos { X = position.X, Y = position.Y, Z = position.Z },
+            DimensionId = dimension.RuntimeId
+        };
+        foreach (Dimension current in Dimensions.Values)
+            foreach (Player player in current.GetPlayers()) player.SendPacket(packet);
     }
 
     public void AddPlayer(Player player) {
@@ -227,8 +252,7 @@ public sealed class World : IDisposable {
         long start = Stopwatch.GetTimestamp();
         using ProfilerZone zone = Profiler.BeginZone("World.Tick");
         TickValue++;
-        if (GameTime < long.MaxValue)
-            GameTime++;
+        if (GameTime < long.MaxValue) GameTime++;
         Server?.Network.Login.ProcessCompletions(this);
 
         long ingressDeadline = start + Stopwatch.Frequency / 250;
@@ -237,8 +261,7 @@ public sealed class World : IDisposable {
              count++) {
             try {
                 Server!.Network.ProcessMessage(entry.Message, this);
-            }
-            finally {
+            } finally {
                 if (entry.Buffer is not null) {
                     Server!.Network.ReleaseInbound(entry.Message);
                     Interlocked.Add(ref queuedBytes, -entry.Message.Payload.Length);
@@ -248,62 +271,39 @@ public sealed class World : IDisposable {
             }
         }
         ChunkSendBudgetRemaining = Stopwatch.Frequency * Dimension.ChunkSendBudgetMilliseconds / 1000;
-        foreach (Dimension dimension in Dimensions.Values)
-            dimension.Tick();
+        foreach (Dimension dimension in Dimensions.Values) dimension.Tick();
 
-        if (Server is { } server && server.Properties.AutosaveIntervalSeconds > 0) {
-            if (TickValue >= nextAutosaveTick) {
-                ulong intervalTicks = (ulong)server.Properties.AutosaveIntervalSeconds * 20;
-                nextAutosaveTick = TickValue + intervalTicks;
-                foreach (Dimension dimension in Dimensions.Values)
-                    dimension.QueueEntitySaves();
+        if (Server is { } server) {
+            int requested = Volatile.Read(ref AutosaveRequested);
+            if (requested != autosaveRequest) {
+                autosaveRequest = requested;
+                foreach (Dimension dimension in Dimensions.Values) dimension.QueueEntitySaves();
                 if (storage is { SupportsWorldData: true } && !GameRules.Save())
                     Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
                 if (storage is not null && !storage.Flush(Identifier))
                     Logger.Scoped("Storage").Warn($"Could not queue autosave flush for world {Identifier}; provider queue is full.");
 
-                if (autosavePlayerIndex >= autosavePlayers.Length) {
-                    autosaveStarted = Stopwatch.GetTimestamp();
-                    Logger.Scoped("Storage").Info($"Starting autosave for world {Identifier}.");
-                    List<Player> snapshot = [];
-                    foreach (Dimension dimension in Dimensions.Values) {
-                        foreach (Player player in dimension.GetPlayers())
-                            snapshot.Add(player);
-                    }
-                    autosavePlayers = snapshot.ToArray();
-                    autosavePlayerIndex = 0;
-                    autosavePlayerCount = autosavePlayers.Length;
-                    if (autosavePlayerCount == 0) {
-                        double milliseconds = (Stopwatch.GetTimestamp() - autosaveStarted) * 1000.0 / Stopwatch.Frequency;
-                        Logger.Scoped("Storage").Info(
-                            FormattableString.Invariant($"Autosave for world {Identifier} completed in {milliseconds:F3} ms.")
-                        );
-                        autosaveStarted = 0;
-                    }
-                }
+                List<Player> snapshot = [];
+                foreach (Dimension dimension in Dimensions.Values)
+                    foreach (Player player in dimension.GetPlayers()) snapshot.Add(player);
+                autosavePlayers = snapshot.ToArray();
+                autosavePlayerIndex = 0;
             }
 
             if (autosavePlayerIndex < autosavePlayers.Length) {
                 long deadline = Stopwatch.GetTimestamp() + Stopwatch.Frequency / 1000;
                 do {
                     Player player = autosavePlayers[autosavePlayerIndex++];
-                    if (!player.Disposed)
-                        server.PlayerData.Save(player, autosave: true);
+                    if (!player.Disposed) server.PlayerData.Save(player, autosave: true);
                 } while (autosavePlayerIndex < autosavePlayers.Length && Stopwatch.GetTimestamp() < deadline);
-
-                if (autosavePlayerIndex == autosavePlayers.Length) {
-                    double milliseconds = (Stopwatch.GetTimestamp() - autosaveStarted) * 1000.0 / Stopwatch.Frequency;
-                    Logger.Scoped("Storage").Info(
-                        FormattableString.Invariant(
-                            $"Autosave for world {Identifier} completed in {milliseconds:F3} ms."
-                        )
-                    );
-                    autosavePlayers = [];
-                    autosavePlayerIndex = 0;
-                    autosaveStarted = 0;
-                }
             }
 
+            if (autosaveRequest != Volatile.Read(ref AutosaveCompleted) && autosavePlayerIndex == autosavePlayers.Length) {
+                autosavePlayers = [];
+                autosavePlayerIndex = 0;
+                AutosaveFinished = Stopwatch.GetTimestamp();
+                Volatile.Write(ref AutosaveCompleted, autosaveRequest);
+            }
         }
 
         Ticks.Record(start);
@@ -311,17 +311,14 @@ public sealed class World : IDisposable {
 
     public void Dispose() {
         foreach (Dimension dimension in Dimensions.Values) {
-            if (!dimension.FlushStorage())
-                Logger.Scoped("Storage").Error($"World {Identifier} closed with unsaved world changes.");
+            if (!dimension.FlushStorage()) Logger.Scoped("Storage").Error($"World {Identifier} closed with unsaved world changes.");
         }
         if (storage is { SupportsWorldData: true } && !GameRules.Save())
             Logger.Scoped("Storage").Warn($"Could not queue world data save for {Identifier}; provider queue is full.");
         storage?.Dispose();
-        if (ownsGenerationService)
-            generationService.Dispose();
+        if (ownsGenerationService) generationService.Dispose();
         while (inbound.TryDequeue(out var entry)) {
-            if (entry.Buffer is not null)
-                ArrayPool<byte>.Shared.Return(entry.Buffer, clearArray: true);
+            if (entry.Buffer is not null) ArrayPool<byte>.Shared.Return(entry.Buffer, clearArray: true);
         }
     }
 }

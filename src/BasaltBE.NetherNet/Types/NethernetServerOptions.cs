@@ -20,4 +20,3 @@ public sealed record NethernetServerOptions {
     public ulong ApplicationId { get; init; } = 0xDEADBEEF;
     public ulong NetworkId { get; init; }
 }
-

@@ -20,8 +20,7 @@ public sealed class StatusCommand : Command {
             foreach (Dimension dimension in world.Dimensions.Values) {
                 entities += dimension.EntityCount;
                 foreach (Player player in dimension.GetPlayers()) {
-                    if (player.Spawned && !player.Disposed)
-                        players++;
+                    if (player.Spawned && !player.Disposed) players++;
                 }
             }
         }
@@ -52,10 +51,12 @@ public sealed class StatusCommand : Command {
                 chunks += dimension.ChunkCount;
                 pending += dimension.PendingRequestCount;
             }
+
             string worldMsptColor = world.Ticks.AverageMilliseconds < 40 ? "§a" : "§c";
             response.Append(CultureInfo.InvariantCulture,
                 $"\n§8  ` §7{world.Identifier} (§w{chunks}§7 chunks, §w{pending}§7 pending, {worldMsptColor}{world.Ticks.AverageMilliseconds:F3}§7 ms, {world.Ticks.Tps:F2} TPS)§r");
         }
+
         return new(true, response.ToString());
     }
 }

@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Security.Cryptography;
 using BasaltBE.NetherNet.Enums;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Logging;
@@ -52,17 +53,19 @@ public sealed class NethernetConnection : IAsyncDisposable {
 
     internal Task ChannelsReady => channelsReady.Task;
     internal Task<Exception?> Completion => completion.Task;
+
+    // Both data channels report the same SCTP association queue.
     internal ulong OutgoingBufferedBytes => (ulong)Math.Max(0, Volatile.Read(ref queuedSendBytes)) +
-        (reliable?.bufferedAmount ?? 0) + (unreliable?.bufferedAmount ?? 0);
+        ((reliable ?? unreliable)?.bufferedAmount ?? 0);
 
     internal bool ReserveQueuedSendBytes(int length) {
         long current = Volatile.Read(ref queuedSendBytes);
         while (current + length <= maximumQueuedSendBytes) {
             long reserved = Interlocked.CompareExchange(ref queuedSendBytes, current + length, current);
-            if (reserved == current)
-                return true;
+            if (reserved == current) return true;
             current = reserved;
         }
+
         return false;
     }
 
@@ -81,26 +84,25 @@ public sealed class NethernetConnection : IAsyncDisposable {
             throw new ArgumentOutOfRangeException(nameof(payload), "The message exceeds the NetherNet framing limit.");
 
         await sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        byte[]? frame = null;
+        int frameLength = Math.Min(fragmentLength, payload.Length) + 1;
         try {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref closed) != 0, this);
+            frame = ArrayPool<byte>.Shared.Rent(frameLength);
             int offset = 0;
             do {
                 int length = Math.Min(fragmentLength, payload.Length - offset);
-                int frameLength = length + 1;
-                byte[] frame = ArrayPool<byte>.Shared.Rent(frameLength);
-                try {
-                    frame[0] = checked((byte)(fragmentCount - 1 - offset / fragmentLength));
-                    payload.Span.Slice(offset, length).CopyTo(frame.AsSpan(1));
-                    if (channel.readyState != RTCDataChannelState.open) throw new PeerDisconnectedException(Peer);
-                    channel.send(frame, 0, frameLength);
-                    Log.Debug($"Data-channel frame to {Peer.NetworkId}/{Peer.ConnectionId}: {channel.label}, {frameLength} bytes");
-                }
-                finally {
-                    ArrayPool<byte>.Shared.Return(frame, clearArray: true);
-                }
+                frame[0] = checked((byte)(fragmentCount - 1 - offset / fragmentLength));
+                payload.Span.Slice(offset, length).CopyTo(frame.AsSpan(1));
+                if (channel.readyState != RTCDataChannelState.open) throw new PeerDisconnectedException(Peer);
+                channel.send(frame, 0, length + 1);
                 offset += length;
             } while (offset < payload.Length);
-        }
-        finally {
+        } finally {
+            if (frame is not null) {
+                CryptographicOperations.ZeroMemory(frame.AsSpan(0, frameLength));
+                ArrayPool<byte>.Shared.Return(frame);
+            }
             sendLock.Release();
         }
     }
@@ -119,7 +121,8 @@ public sealed class NethernetConnection : IAsyncDisposable {
             return;
         }
         bool isReliable = channel.label == ReliableChannelLabel;
-        if (isReliable ? Interlocked.CompareExchange(ref reliable, channel, null) is not null : Interlocked.CompareExchange(ref unreliable, channel, null) is not null) {
+        ref RTCDataChannel? target = ref (isReliable ? ref reliable : ref unreliable);
+        if (Interlocked.CompareExchange(ref target, channel, null) is not null) {
             channel.close();
             End(new InvalidDataException("Duplicate NetherNet data channel."));
             return;
@@ -136,8 +139,7 @@ public sealed class NethernetConnection : IAsyncDisposable {
             Log.Debug($"Data-channel frame from {Peer.NetworkId}/{Peer.ConnectionId}: {dataChannel.label}, {protocol}, {data.Length} bytes");
             try {
                 ReceiveFrame(data, isReliable);
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 Log.Error($"Frame processing failed for {Peer.NetworkId}/{Peer.ConnectionId}: {error.Message}");
                 End(error);
             }
@@ -209,4 +211,3 @@ public sealed class NethernetConnection : IAsyncDisposable {
         completion.TrySetResult(error);
     }
 }
-

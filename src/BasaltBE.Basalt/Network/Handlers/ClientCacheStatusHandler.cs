@@ -11,8 +11,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 internal sealed class ClientCacheStatusHandler(NetworkServer network) {
     public void Handle(NethernetPeer peer, Player? player, ClientCacheStatusPacket packet) {
         using ProfilerZone zone = Profiler.BeginZone("Network.ClientCacheStatus");
-        if (player is null)
-            throw new InvalidDataException("Client cache status arrived before player login.");
+        if (player is null) throw new InvalidDataException("Client cache status arrived before player login.");
 
         ResourcePack[] resourcePacks = network.ResourcePacks.Packs;
         PackInfoData[] packs = new PackInfoData[resourcePacks.Length];

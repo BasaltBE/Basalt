@@ -40,6 +40,7 @@ public sealed class ShulkerBoxBlockActor : BlockActor {
         Facing = nbt.Get<ByteTag>("facing")?.Value ?? 1;
         Findable = nbt.Get<ByteTag>("Findable")?.Value == 1;
         CustomName = nbt.Get<StringTag>("CustomName")?.Value ?? string.Empty;
+
         ReadItems(nbt, Container);
     }
 
@@ -48,17 +49,15 @@ public sealed class ShulkerBoxBlockActor : BlockActor {
         nbt.Add("facing", new ByteTag { Value = Facing });
         nbt.Add("Findable", new ByteTag { Value = Findable ? (byte)1 : (byte)0 });
         nbt.Add("Items", WriteItems(Container));
-        if (CustomName.Length > 0)
-            nbt.Add("CustomName", new StringTag { Value = CustomName });
-        else
-            nbt.Remove("CustomName");
+
+        if (CustomName.Length > 0) nbt.Add("CustomName", new StringTag { Value = CustomName });
+        else nbt.Remove("CustomName");
     }
 
     public override void OnPlace(ItemStack? item, byte face) {
         Facing = face;
         CompoundTag? blockEntity = item?.Nbt?.Get<CompoundTag>("BlockEntityTag") ?? item?.Nbt;
-        if (blockEntity is null)
-            return;
+        if (blockEntity is null) return;
 
         CustomName = blockEntity.Get<StringTag>("CustomName")?.Value ?? string.Empty;
         ReadItems(blockEntity, Container);
@@ -70,8 +69,7 @@ public sealed class ShulkerBoxBlockActor : BlockActor {
 
     public override ItemStack? CreateDrop() {
         ItemType? type = ItemPalette.Find(Identifier);
-        if (type is null || type.NetworkId == 0)
-            return null;
+        if (type is null || type.NetworkId == 0) return null;
 
         ItemStack item = new(type);
         if (Container.GetItem(0) is null && CustomName.Length == 0) {
@@ -82,14 +80,14 @@ public sealed class ShulkerBoxBlockActor : BlockActor {
                     break;
                 }
             }
-            if (empty)
-                return item;
+
+            if (empty) return item;
         }
 
         CompoundTag blockEntity = new();
         blockEntity.Add("Items", WriteItems(Container));
-        if (CustomName.Length > 0)
-            blockEntity.Add("CustomName", new StringTag { Value = CustomName });
+        if (CustomName.Length > 0) blockEntity.Add("CustomName", new StringTag { Value = CustomName });
+
         item.Nbt = new CompoundTag();
         item.Nbt.Add("BlockEntityTag", blockEntity);
         return item;

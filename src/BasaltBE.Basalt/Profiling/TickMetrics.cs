@@ -3,8 +3,9 @@ using System.Diagnostics;
 namespace BasaltBE.Basalt.Profiling;
 
 public sealed class TickMetrics {
-    private readonly Lock sync = new();
     private const int Capacity = 100;
+
+    private readonly Lock sync = new();
     private readonly long[] starts = new long[Capacity];
     private readonly long[] durations = new long[Capacity];
     private long total;
@@ -28,8 +29,8 @@ public sealed class TickMetrics {
     public double Tps {
         get {
             lock (sync) {
-                if (count < 2)
-                    return 0;
+                if (count < 2) return 0;
+
                 long elapsed = starts[(next + Capacity - 1) % Capacity] - starts[count == Capacity ? next : 0];
                 return elapsed > 0 ? (count - 1) * (double)Stopwatch.Frequency / elapsed : 0;
             }
@@ -40,8 +41,7 @@ public sealed class TickMetrics {
         get {
             lock (sync) {
                 long maximum = 0;
-                for (int index = 0; index < count; index++)
-                    maximum = Math.Max(maximum, durations[index]);
+                for (int index = 0; index < count; index++) maximum = Math.Max(maximum, durations[index]);
                 return maximum * 1000.0 / Stopwatch.Frequency;
             }
         }
@@ -54,8 +54,7 @@ public sealed class TickMetrics {
             starts[next] = start;
             durations[next] = duration;
             count = Math.Min(count + 1, Capacity);
-            if (++next == Capacity)
-                next = 0;
+            if (++next == Capacity) next = 0;
         }
     }
 }

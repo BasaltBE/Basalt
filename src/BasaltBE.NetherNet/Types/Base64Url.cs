@@ -14,8 +14,7 @@ public static class Base64Url {
         int unpaddedLength = value.Length - padding;
         int remainder = unpaddedLength & 3;
         int requiredPadding = (4 - remainder) & 3;
-        if (remainder == 1 || padding != 0 && padding != requiredPadding)
-            throw new InvalidDataException("Base64Url data is invalid.");
+        if (remainder == 1 || padding != 0 && padding != requiredPadding) throw new InvalidDataException("Base64Url data is invalid.");
 
         int paddedLength = checked((value.Length + requiredPadding - padding + 3) & ~3);
         int outputLength = paddedLength / 4 * 3 - (padding == 0 ? requiredPadding : padding);
@@ -35,8 +34,7 @@ public static class Base64Url {
             if (!Convert.TryFromBase64Chars(encoded, output, out int written) || written != outputLength)
                 throw new InvalidDataException("Base64Url data is invalid.");
             return output;
-        }
-        finally {
+        } finally {
             ArrayPool<char>.Shared.Return(characters, clearArray: true);
         }
     }
@@ -50,8 +48,7 @@ public static class Base64Url {
 
     public static int Decode(ReadOnlySpan<byte> value, Span<byte> output) {
         int outputLength = GetDecodedLength(value, out int paddedLength, out int padding, out int requiredPadding);
-        if (output.Length < outputLength)
-            throw new ArgumentException("Output buffer is too small.", nameof(output));
+        if (output.Length < outputLength) throw new ArgumentException("Output buffer is too small.", nameof(output));
 
         byte[] characters = ArrayPool<byte>.Shared.Rent(paddedLength);
         try {
@@ -69,8 +66,7 @@ public static class Base64Url {
             if (status != OperationStatus.Done || consumed != paddedLength || written != outputLength)
                 throw new InvalidDataException("Base64Url data is invalid.");
             return written;
-        }
-        finally {
+        } finally {
             ArrayPool<byte>.Shared.Return(characters, clearArray: true);
         }
     }
@@ -87,8 +83,7 @@ public static class Base64Url {
         int unpaddedLength = value.Length - padding;
         int remainder = unpaddedLength & 3;
         requiredPadding = (4 - remainder) & 3;
-        if (remainder == 1 || padding != 0 && padding != requiredPadding)
-            throw new InvalidDataException("Base64Url data is invalid.");
+        if (remainder == 1 || padding != 0 && padding != requiredPadding) throw new InvalidDataException("Base64Url data is invalid.");
 
         paddedLength = checked((value.Length + requiredPadding - padding + 3) & ~3);
         return paddedLength / 4 * 3 - (padding == 0 ? requiredPadding : padding);

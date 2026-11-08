@@ -6,20 +6,16 @@ namespace BasaltBE.Cli.Commands;
 
 internal static class NewCommand {
     internal static void Execute(string[] args) {
-        if (args.Length == 0 || args[0].StartsWith('-'))
-            throw new ArgumentException("Use basalt plugin new <name>.");
+        if (args.Length == 0 || args[0].StartsWith('-')) throw new ArgumentException("Use basalt plugin new <name>.");
         string name = args[0];
         string output = name;
         string apiPackage = "1.0.0";
         List<string> authors = [];
         List<string> contributors = [];
-        for (int index = 1; index < args.Length; index++)
-        {
+        for (int index = 1; index < args.Length; index++) {
             string option = args[index];
-            if (++index == args.Length)
-                throw new ArgumentException($"Missing value for {option}.");
-            switch (option)
-            {
+            if (++index == args.Length) throw new ArgumentException($"Missing value for {option}.");
+            switch (option) {
                 case "--output":
                     output = args[index];
                     break;
@@ -53,7 +49,6 @@ internal static class NewCommand {
         if (File.Exists(directory) || Directory.Exists(directory) && Directory.EnumerateFileSystemEntries(directory).Any())
             throw new IOException($"Output directory is not empty: {directory}.");
         Directory.CreateDirectory(directory);
-
 
         string project = $$"""
             <Project Sdk="Microsoft.NET.Sdk">

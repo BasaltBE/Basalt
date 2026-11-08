@@ -7,19 +7,15 @@ namespace BasaltBE.Basalt.Items.Types;
 
 internal sealed class ItemPropertiesPayloadJsonConverter : JsonConverter<ItemPropertiesPayload> {
     public override ItemPropertiesPayload Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-        if (reader.TokenType != JsonTokenType.StartObject)
-            throw new JsonException("Item properties payload must be an object.");
+        if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Item properties payload must be an object.");
 
         ItemPropertiesPayload payload = new();
         while (reader.Read()) {
-            if (reader.TokenType == JsonTokenType.EndObject)
-                return payload;
-            if (reader.TokenType != JsonTokenType.PropertyName)
-                throw new JsonException("Expected an item properties payload field.");
+            if (reader.TokenType == JsonTokenType.EndObject) return payload;
+            if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected an item properties payload field.");
 
             string name = reader.GetString() ?? throw new JsonException("Item properties payload field name cannot be null.");
-            if (!reader.Read())
-                throw new JsonException("Item properties payload ended before a field value.");
+            if (!reader.Read()) throw new JsonException("Item properties payload ended before a field value.");
 
             switch (name) {
                 case "components":
@@ -51,15 +47,12 @@ internal sealed class ItemPropertiesPayloadJsonConverter : JsonConverter<ItemPro
         throw new NotSupportedException("Item properties payload JSON is read-only.");
 
     static string[] ReadStrings(ref Utf8JsonReader reader) {
-        if (reader.TokenType != JsonTokenType.StartArray)
-            throw new JsonException("Item component names and tags must be arrays.");
+        if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Item component names and tags must be arrays.");
 
         List<string> values = [];
         while (reader.Read()) {
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return values.ToArray();
-            if (reader.TokenType != JsonTokenType.String)
-                throw new JsonException("Item component names and tags must be strings.");
+            if (reader.TokenType == JsonTokenType.EndArray) return values.ToArray();
+            if (reader.TokenType != JsonTokenType.String) throw new JsonException("Item component names and tags must be strings.");
 
             values.Add(reader.GetString() ?? string.Empty);
         }
@@ -70,14 +63,11 @@ internal sealed class ItemPropertiesPayloadJsonConverter : JsonConverter<ItemPro
     static CompoundTag ReadCompound(ref Utf8JsonReader reader) {
         CompoundTag compound = new();
         while (reader.Read()) {
-            if (reader.TokenType == JsonTokenType.EndObject)
-                return compound;
-            if (reader.TokenType != JsonTokenType.PropertyName)
-                throw new JsonException("Expected an item component field.");
+            if (reader.TokenType == JsonTokenType.EndObject) return compound;
+            if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected an item component field.");
 
             string name = reader.GetString() ?? throw new JsonException("Item component field name cannot be null.");
-            if (!reader.Read())
-                throw new JsonException("Item component data ended before a field value.");
+            if (!reader.Read()) throw new JsonException("Item component data ended before a field value.");
 
             compound.Add(name, ReadTag(ref reader));
         }
@@ -99,14 +89,11 @@ internal sealed class ItemPropertiesPayloadJsonConverter : JsonConverter<ItemPro
     static ListTag ReadList(ref Utf8JsonReader reader) {
         ListTag list = new();
         while (reader.Read()) {
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return list;
+            if (reader.TokenType == JsonTokenType.EndArray) return list;
 
             Tag item = ReadTag(ref reader);
-            if (list.Value.Count == 0)
-                list.ElementType = item.Type;
-            else if (item.Type != list.ElementType)
-                throw new JsonException("Item component lists must contain one tag type.");
+            if (list.Value.Count == 0) list.ElementType = item.Type;
+            else if (item.Type != list.ElementType) throw new JsonException("Item component lists must contain one tag type.");
 
             list.Value.Add(item);
         }
@@ -115,14 +102,10 @@ internal sealed class ItemPropertiesPayloadJsonConverter : JsonConverter<ItemPro
     }
 
     static Tag ReadNumber(ref Utf8JsonReader reader) {
-        if (reader.TryGetInt32(out int intValue))
-            return new IntTag { Value = intValue };
-        if (reader.TryGetInt64(out long longValue))
-            return new LongTag { Value = longValue };
-        if (reader.TryGetSingle(out float floatValue))
-            return new FloatTag { Value = floatValue };
-        if (reader.TryGetDouble(out double doubleValue))
-            return new DoubleTag { Value = doubleValue };
+        if (reader.TryGetInt32(out int intValue)) return new IntTag { Value = intValue };
+        if (reader.TryGetInt64(out long longValue)) return new LongTag { Value = longValue };
+        if (reader.TryGetSingle(out float floatValue)) return new FloatTag { Value = floatValue };
+        if (reader.TryGetDouble(out double doubleValue)) return new DoubleTag { Value = doubleValue };
 
         throw new JsonException("Item component number is outside the supported NBT range.");
     }

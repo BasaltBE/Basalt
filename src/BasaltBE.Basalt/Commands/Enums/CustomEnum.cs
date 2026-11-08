@@ -19,11 +19,11 @@ public class CustomEnum : CommandEnum {
 
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
+
         string text = CommandReader.Text(token);
-        if (!Soft && !options.Contains(text))
-            return false;
+        if (!Soft && !options.Contains(text)) return false;
+
         value = text;
         return true;
     }

@@ -33,27 +33,24 @@ public sealed class EntityArmorTrait : EntityTrait {
     }
 
     public override void OnDespawn() {
-        if (Entity is Player player)
-            Armor.RemovePersistence(player);
+        if (Entity is Player player) Armor.RemovePersistence(player);
     }
 
     public override void Read(CompoundTag entityTag) {
-        if (entityTag.Get<ListTag>("Armor") is not { } items)
-            return;
+        if (entityTag.Get<ListTag>("Armor") is not { } items) return;
 
         foreach (Tag entry in items.Value) {
             if (entry is not CompoundTag item ||
-                !item.TryGet("Slot", out ByteTag? slot) ||
-                !item.TryGet("Name", out StringTag? name) ||
-                !item.TryGet("Count", out ByteTag? count) ||
-                slot!.Value >= Armor.ContainerSize ||
-                ItemPalette.Find(name!.Value) is not { } type ||
-                count!.Value == 0)
+                item.Get<ByteTag>("Slot") is not { } slot ||
+                item.Get<StringTag>("Name") is not { } name ||
+                item.Get<ByteTag>("Count") is not { } count)
                 continue;
 
-            uint metadata = item.Get<ShortTag>("Damage") is { } damage
-                ? unchecked((ushort)damage.Value)
-                : 0U;
+            if (slot.Value >= Armor.ContainerSize ||
+                ItemPalette.Find(name.Value) is not { } type || count.Value == 0)
+                continue;
+
+            uint metadata = item.Get<ShortTag>("Damage") is { Value: var damage } ? unchecked((ushort)damage) : 0U;
             Armor.LoadItem(slot.Value, new ItemStack(type, count.Value, metadata, item.Get<CompoundTag>("tag")));
         }
     }
@@ -61,18 +58,19 @@ public sealed class EntityArmorTrait : EntityTrait {
     public override void Write(CompoundTag entityTag) {
         ListTag items = new() { ElementType = TagType.Compound };
         for (int slot = 0; slot < Armor.ContainerSize; slot++) {
-            if (Armor.GetItem(slot) is not { } stack)
-                continue;
+            if (Armor.GetItem(slot) is not { } stack) continue;
 
             CompoundTag item = new();
             item.Add("Name", new StringTag { Value = stack.Type.Identifier });
             item.Add("Count", new ByteTag { Value = checked((byte)stack.StackSize) });
             item.Add("Damage", new ShortTag { Value = unchecked((short)stack.Metadata) });
             item.Add("Slot", new ByteTag { Value = checked((byte)slot) });
-            if (stack.Nbt is not null)
-                item.Add("tag", stack.Clone().Nbt!);
+
+            if (stack.Nbt is not null) item.Add("tag", stack.Clone().Nbt!);
+
             items.Value.Add(item);
         }
+
         entityTag.Add("Armor", items);
     }
 
@@ -91,13 +89,11 @@ public sealed class EntityArmorTrait : EntityTrait {
             return false;
 
         ItemStack? equipped = inventory.Inventory.TakeItem(inventorySlot, 1);
-        if (equipped is null)
-            return false;
+        if (equipped is null) return false;
 
         ItemStack? previous = Armor.GetItem((int)slot);
         Armor.SetItem((int)slot, equipped);
-        if (previous is not null)
-            inventory.Inventory.SetItem(inventorySlot, previous);
+        if (previous is not null) inventory.Inventory.SetItem(inventorySlot, previous);
         SyncEquipment();
         return true;
     }
@@ -111,28 +107,24 @@ public sealed class EntityArmorTrait : EntityTrait {
         bool changed = false;
         for (int slot = 0; slot < Armor.ContainerSize; slot++) {
             ItemStack? item = Armor.GetItem(slot);
-            if (item is null || item.Type.MaxDurability <= 0)
-                continue;
+            if (item is null || item.Type.MaxDurability <= 0) continue;
 
             int previousDamage = item.Damage;
             item.DamageDurability(durabilityDamage);
             changed |= item.Damage != previousDamage || !ReferenceEquals(Armor.GetItem(slot), item);
         }
 
-        if (changed)
-            SyncEquipment();
+        if (changed) SyncEquipment();
     }
 
     public float ReduceDamage(float damage, EntityDamageCause cause) {
-        if (cause is EntityDamageCause.Drowning or EntityDamageCause.Void)
-            return damage;
+        if (cause is EntityDamageCause.Drowning or EntityDamageCause.Void) return damage;
 
         int armorProtection = 0;
         int enchantmentProtection = 0;
         for (int slot = 0; slot < Armor.ContainerSize; slot++) {
             ItemStack? item = Armor.GetItem(slot);
-            if (item is null)
-                continue;
+            if (item is null) continue;
 
             armorProtection += item.Type.ArmorProtection;
             enchantmentProtection += item.GetEnchantmentLevel(EnchantmentPalette.Protection);
@@ -140,8 +132,7 @@ public sealed class EntityArmorTrait : EntityTrait {
                 enchantmentProtection += item.GetEnchantmentLevel(EnchantmentPalette.FireProtection) * 2;
         }
 
-        if (cause != EntityDamageCause.FireTick)
-            damage *= 1 - Math.Clamp(armorProtection, 0, 20) * 0.04f;
+        if (cause != EntityDamageCause.FireTick) damage *= 1 - Math.Clamp(armorProtection, 0, 20) * 0.04f;
         return damage * (1 - Math.Clamp(enchantmentProtection, 0, 20) * 0.04f);
     }
 
@@ -155,12 +146,10 @@ public sealed class EntityArmorTrait : EntityTrait {
     };
 
     public void SyncEquipment() {
-        if (Entity.SpawnedDimension is not { } dimension)
-            return;
+        if (Entity.SpawnedDimension is not { } dimension) return;
 
         MobArmorEquipmentPacket packet = CreateEquipmentPacket();
-        if (Entity is Player player)
-            player.SendPacket(packet);
+        if (Entity is Player player) player.SendPacket(packet);
         dimension.Broadcast(packet, Entity);
     }
 }

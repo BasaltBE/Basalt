@@ -17,9 +17,10 @@ public sealed class FloatEnum : CommandEnum {
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
         if (!reader.Read(out ReadOnlySpan<char> token) ||
-            !float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out float number) ||
-            !float.IsFinite(number) || number < Minimum || number > Maximum)
+            !float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out float number))
             return false;
+
+        if (!float.IsFinite(number) || number < Minimum || number > Maximum) return false;
         value = number;
         return true;
     }

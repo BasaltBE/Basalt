@@ -3,7 +3,7 @@ using BasaltBE.Basalt.Worlds;
 using BasaltBE.Basalt.Profiling;
 using BasaltBE.Logging;
 
-namespace BasaltBE.Basalt.Ticking;
+namespace BasaltBE.Basalt.Worlds.Ticking;
 
 internal sealed class WorldTickWorker : IDisposable {
     private int disposed;
@@ -39,41 +39,39 @@ internal sealed class WorldTickWorker : IDisposable {
     private void Run() {
         Profiler.SetThreadName(thread.Name!);
         ownerThread = Environment.CurrentManagedThreadId;
-        foreach (World world in worlds)
-            world.OwnerThread = ownerThread;
+        foreach (World world in worlds) world.OwnerThread = ownerThread;
+        using TickTimer timer = new(stop);
         ready.Set();
+
         long interval = Stopwatch.Frequency / 20;
         long deadline = Stopwatch.GetTimestamp();
+
         while (!stop.IsSet && !server.Stopping) {
             server.Gameplay.EnterReadLock();
             try {
-                foreach (World world in worlds)
-                    world.Tick();
-            }
-            catch (Exception error) {
+                foreach (World world in worlds) world.Tick();
+            } catch (Exception error) {
                 Logger.Scoped("Ticking").Error($"{thread.Name} failed: {error}");
                 server.Stop();
                 break;
-            }
-            finally {
+            } finally {
                 server.Gameplay.ExitReadLock();
             }
+
             deadline += interval;
             long now = Stopwatch.GetTimestamp();
-            if (now >= deadline)
-                deadline = now + interval;
-            int wait = (int)Math.Ceiling((deadline - now) * 1000.0 / Stopwatch.Frequency);
-            if (stop.Wait(wait))
-                break;
+            if (now >= deadline) deadline = now + interval;
+
+            if (!timer.Wait(deadline)) break;
         }
     }
 
     public void Dispose() {
-        if (Interlocked.Exchange(ref disposed, 1) != 0)
-            return;
+        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+
         stop.Set();
-        if (thread.IsAlive)
-            thread.Join();
+        if (thread.IsAlive) thread.Join();
+
         stop.Dispose();
         ready.Dispose();
     }

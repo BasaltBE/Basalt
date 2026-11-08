@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BasaltBE.Basalt.Entities;
 
-namespace BasaltBE.Basalt.Permissions;
+namespace BasaltBE.Basalt.Entities.Permissions;
 
 public sealed class PermissionStore {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -18,21 +18,22 @@ public sealed class PermissionStore {
     public PlayerPermissions Get(string xuid, string? username = null) {
         if (!ulong.TryParse(xuid, NumberStyles.None, CultureInfo.InvariantCulture, out ulong value) || value == 0)
             throw new ArgumentException("A valid XUID is required.", nameof(xuid));
+
         lock (sync) {
             if (username is not null && (!playerNames.TryGetValue(xuid, out string? previous) || previous != username)) {
                 ArgumentException.ThrowIfNullOrWhiteSpace(username);
-                if (previous is not null && playerXuids.GetValueOrDefault(previous) == xuid)
-                    playerXuids.Remove(previous);
-                if (playerXuids.TryGetValue(username, out string? formerXuid) && formerXuid != xuid)
-                    playerNames.Remove(formerXuid);
+                if (previous is not null && playerXuids.GetValueOrDefault(previous) == xuid) playerXuids.Remove(previous);
+                if (playerXuids.TryGetValue(username, out string? formerXuid) && formerXuid != xuid) playerNames.Remove(formerXuid);
                 playerNames[xuid] = username;
                 playerXuids[username] = xuid;
                 Interlocked.Increment(ref Revision);
             }
+
             if (!entries.TryGetValue(xuid, out PlayerPermissions? permissions)) {
                 permissions = new PlayerPermissions(this);
                 entries.Add(xuid, permissions);
             }
+
             return permissions;
         }
     }
@@ -60,10 +61,10 @@ public sealed class PermissionStore {
                 values is null || values.Any(string.IsNullOrWhiteSpace))
                 throw new InvalidDataException($"Invalid permission entry for XUID '{xuid}'.");
             PlayerPermissions permissions = new(this);
-            foreach (string permission in values)
-                permissions.Add(permission);
+            foreach (string permission in values) permissions.Add(permission);
             loaded.Add(xuid, permissions);
         }
+
         string namesPath = Path.ChangeExtension(fullPath, ".players.json");
         Dictionary<string, string> names = new(StringComparer.Ordinal);
         Dictionary<string, string> xuids = new(StringComparer.OrdinalIgnoreCase);
@@ -77,6 +78,7 @@ public sealed class PermissionStore {
                     throw new InvalidDataException($"Invalid player name entry for XUID '{xuid}'.");
             }
         }
+
         lock (sync) {
             entries = loaded;
             playerNames = names;
@@ -90,8 +92,7 @@ public sealed class PermissionStore {
         string fullPath = Path.GetFullPath(path);
         using Lock.Scope fileLock = fileSync.EnterScope();
         long revision = Volatile.Read(ref Revision);
-        if (savedRevision == revision && savedPath == fullPath && File.Exists(fullPath))
-            return;
+        if (savedRevision == revision && savedPath == fullPath && File.Exists(fullPath)) return;
 
         Dictionary<string, string[]> snapshot = new(StringComparer.Ordinal);
         Dictionary<string, string> names;
@@ -99,10 +100,10 @@ public sealed class PermissionStore {
             names = new(playerNames, StringComparer.Ordinal);
             foreach ((string xuid, PlayerPermissions permissions) in entries) {
                 string[] values = permissions.Snapshot;
-                if (values.Length > 0)
-                    snapshot.Add(xuid, values);
+                if (values.Length > 0) snapshot.Add(xuid, values);
             }
         }
+
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         string temporaryPath = fullPath + ".tmp";
         using (FileStream stream = new(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None)) {
@@ -110,6 +111,7 @@ public sealed class PermissionStore {
             stream.Flush(flushToDisk: true);
         }
         File.Move(temporaryPath, fullPath, overwrite: true);
+
         string namesPath = Path.ChangeExtension(fullPath, ".players.json");
         string temporaryNamesPath = namesPath + ".tmp";
         using (FileStream stream = new(temporaryNamesPath, FileMode.Create, FileAccess.Write, FileShare.None)) {

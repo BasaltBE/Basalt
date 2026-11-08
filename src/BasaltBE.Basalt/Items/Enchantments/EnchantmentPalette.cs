@@ -159,8 +159,7 @@ internal static class EnchantmentPalette {
 
     public static Enchantment? Find(string identifier) {
         foreach (Enchantment enchantment in enchantments)
-            if (string.Equals(enchantment.Identifier, identifier, StringComparison.Ordinal))
-                return enchantment;
+            if (string.Equals(enchantment.Identifier, identifier, StringComparison.Ordinal)) return enchantment;
         return null;
     }
 

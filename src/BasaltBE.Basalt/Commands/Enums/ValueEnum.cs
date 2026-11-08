@@ -7,8 +7,8 @@ namespace BasaltBE.Basalt.Commands.Enums;
 public sealed class ValueEnum() : CommandEnum(CommandParameterType.Value) {
     public override bool Parse(CommandContext context, ref CommandReader reader, out object? value) {
         value = null;
-        if (!reader.Read(out ReadOnlySpan<char> token))
-            return false;
+        if (!reader.Read(out ReadOnlySpan<char> token)) return false;
+
         bool relative = token[0] == '~';
         if (relative) token = token[1..];
         float number = 0;

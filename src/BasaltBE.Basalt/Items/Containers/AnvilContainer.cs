@@ -27,8 +27,7 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
     internal bool Crafting;
 
     internal void Use() {
-        if (Random.Shared.NextSingle() >= 0.12f)
-            return;
+        if (Random.Shared.NextSingle() >= 0.12f) return;
 
         BlockPermutation current = player.Dimension.GetPermutation(Position.X, Position.Y, Position.Z);
         BlockPermutation? damaged = AdvanceDamage(current);
@@ -43,8 +42,7 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
             Position = new Vec3 { X = Position.X + 0.5f, Y = Position.Y + 0.5f, Z = Position.Z + 0.5f },
             ActorUniqueId = -1
         });
-        if (damaged is null)
-            player.Dimension.UpdateNeighbors(Position.X, Position.Y, Position.Z);
+        if (damaged is null) player.Dimension.UpdateNeighbors(Position.X, Position.Y, Position.Z);
     }
 
     internal static BlockPermutation? AdvanceDamage(BlockPermutation block) {
@@ -54,16 +52,13 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
             "minecraft:damaged_anvil" => string.Empty,
             _ => block.Identifier
         };
-        if (identifier.Length == 0)
-            return null;
+        if (identifier.Length == 0) return null;
         return BlockPalette.Find(identifier, block.State) ?? BlockPalette.FindDefaultPermutation(identifier);
     }
 
     public override bool CanContain(int slot, ItemStack item) {
-        if (slot == 2)
-            return true;
-        if (item.StackSize != 1)
-            return false;
+        if (slot == 2) return true;
+        if (item.StackSize != 1) return false;
         if (slot == 0)
             return item.Type.MaxDurability > 0 || item.Type.Identifier is "minecraft:book" or "minecraft:enchanted_book" ||
                 item.Type.PropertiesPayload.Components.Contains("minecraft:enchantable", StringComparer.Ordinal);
@@ -71,8 +66,7 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
     }
 
     public void Refresh() {
-        if (Crafting || !ReferenceEquals(player.OpenedContainer, this))
-            return;
+        if (Crafting || !ReferenceEquals(player.OpenedContainer, this)) return;
 
         ItemStack? result = CreateResult(
             GetItem(0),
@@ -82,8 +76,7 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
             out _
         );
         ItemStack? current = GetItem(2);
-        if (result is not null && current is not null && result.CanStackWith(current))
-            return;
+        if (result is not null && current is not null && result.CanStackWith(current)) return;
         SetItem(2, result);
     }
 
@@ -95,14 +88,12 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
         out int levelCost
     ) {
         levelCost = 0;
-        if (target is null || material is null || target.StackSize != 1 || material.StackSize != 1)
-            return null;
+        if (target is null || material is null || target.StackSize != 1 || material.StackSize != 1) return null;
 
         bool targetBook = target.Type.Identifier is "minecraft:book" or "minecraft:enchanted_book";
         bool materialBook = material.Type.Identifier == "minecraft:enchanted_book";
         bool sameDurableItem = !targetBook && target.Type == material.Type && target.Type.MaxDurability > 0;
-        if (targetBook ? !materialBook : !materialBook && !sameDurableItem)
-            return null;
+        if (targetBook ? !materialBook : !materialBook && !sameDurableItem) return null;
 
         ItemStack result = targetBook && target.Type.Identifier == "minecraft:book"
             ? new ItemStack("minecraft:enchanted_book", 1, target.Metadata, target.Clone().Nbt)
@@ -122,15 +113,13 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
         }
 
         foreach ((Enchantment enchantment, int sourceLevel) in ReadEnchantments(material, enchantments)) {
-            if (!targetBook && !enchantment.AppliesTo(result.Type))
-                continue;
+            if (!targetBook && !enchantment.AppliesTo(result.Type)) continue;
 
             int targetLevel = result.GetEnchantmentLevel(enchantment);
             int mergedLevel = targetLevel == sourceLevel
                 ? Math.Min(targetLevel + 1, enchantment.MaximumLevel)
                 : Math.Min(Math.Max(targetLevel, sourceLevel), enchantment.MaximumLevel);
-            if (mergedLevel <= targetLevel || Conflicts(result, enchantment, enchantments))
-                continue;
+            if (mergedLevel <= targetLevel || Conflicts(result, enchantment, enchantments)) continue;
 
             result.AddEnchantment(enchantment, mergedLevel);
             int enchantmentCost = materialBook
@@ -140,14 +129,12 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
             changed = true;
         }
 
-        if (!changed)
-            return null;
+        if (!changed) return null;
 
         int targetRepairCost = RepairCost(target);
         int materialRepairCost = RepairCost(material);
         levelCost = checked(targetRepairCost + materialRepairCost + operationCost);
-        if (levelCost >= 40 && !creative)
-            return null;
+        if (levelCost >= 40 && !creative) return null;
 
         result.Nbt ??= new CompoundTag();
         result.Nbt.Remove("RepairCost");
@@ -157,12 +144,10 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
     }
 
     internal void ReturnItems() {
-        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
-            return;
+        if (player.GetTrait<PlayerInventoryTrait>() is not { } inventory) return;
 
         for (int slot = 0; slot < 2; slot++) {
-            if (TakeItem(slot, ushort.MaxValue) is not { } item)
-                continue;
+            if (TakeItem(slot, ushort.MaxValue) is not { } item) continue;
             if (inventory.Inventory.AddItem(item) is { } remaining)
                 new ItemEntity(remaining, player, Position.X, Position.Y, Position.Z).Spawn(player.Dimension);
         }
@@ -175,23 +160,20 @@ internal sealed class AnvilContainer(Player player, BlockPos position) : BlockCo
         List<(Enchantment, int)> result = [];
         if (item.Nbt?.Get<ListTag>("ench") is { } native) {
             foreach (Tag entry in native.Value) {
-                if (entry is not CompoundTag compound)
-                    continue;
+                if (entry is not CompoundTag compound) continue;
                 short id = compound.Get<ShortTag>("id")?.Value ?? -1;
                 int level = compound.Get<ShortTag>("lvl")?.Value ?? 0;
-                if (EnchantmentPalette.Find(id) is { } enchantment && level > 0)
-                    result.Add((enchantment, level));
+                if (EnchantmentPalette.Find(id) is { } enchantment && level > 0) result.Add((enchantment, level));
             }
         }
 
         if (item.Nbt?.Get<ListTag>("basalt:enchantments") is { } custom) {
             foreach (Tag entry in custom.Value) {
-                if (entry is not CompoundTag compound)
-                    continue;
+                if (entry is not CompoundTag compound) continue;
+
                 string identifier = compound.Get<StringTag>("id")?.Value ?? string.Empty;
                 int level = compound.Get<IntTag>("lvl")?.Value ?? 0;
-                if (enchantments.Find(identifier) is { } enchantment && level > 0)
-                    result.Add((enchantment, level));
+                if (enchantments.Find(identifier) is { } enchantment && level > 0) result.Add((enchantment, level));
             }
         }
 

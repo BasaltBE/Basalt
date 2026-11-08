@@ -17,8 +17,7 @@ internal static class Program {
                 Console.WriteLine("basalt plugin inspect <package>");
                 return 0;
             }
-            if (args.Length < 2 || args[0] != "plugin")
-                throw new ArgumentException("Unknown command. Use basalt --help.");
+            if (args.Length < 2 || args[0] != "plugin") throw new ArgumentException("Unknown command. Use basalt --help.");
             string[] tail = args[2..];
             switch (args[1]) {
                 case "new":
@@ -33,13 +32,12 @@ internal static class Program {
                 default:
                     throw new ArgumentException("Unknown command or invalid arguments. Use basalt --help.");
             }
+
             return 0;
-        }
-        catch (OperationCanceledException) {
+        } catch (OperationCanceledException) {
             Console.Error.WriteLine("Build canceled.");
             return 130;
-        }
-        catch (Exception exception) when (exception is ArgumentException or IOException or InvalidOperationException or
+        } catch (Exception exception) when (exception is ArgumentException or IOException or InvalidOperationException or
             JsonException or ReflectionTypeLoadException or BadImageFormatException or System.ComponentModel.Win32Exception or TypeLoadException) {
             Console.Error.WriteLine(exception.Message);
             return 1;

@@ -9,6 +9,7 @@ public sealed class EventEmitter {
     public IDisposable Subscribe<TEvent>(Action<TEvent> handler) where TEvent : Event {
         ArgumentNullException.ThrowIfNull(handler);
         int id = EventType<TEvent>.Id;
+
         lock (sync) {
             object?[] current = channels;
             if (id >= current.Length) {
@@ -24,6 +25,7 @@ public sealed class EventEmitter {
                 channel = new();
                 Volatile.Write(ref current[id], channel);
             }
+
             return channel.Subscribe(handler);
         }
     }
@@ -38,12 +40,10 @@ public sealed class EventEmitter {
         ArgumentNullException.ThrowIfNull(value);
         object?[] current = Volatile.Read(ref channels);
         int id = EventType<TEvent>.Id;
-        if (id < current.Length && Volatile.Read(ref current[id]) is EventChannel<TEvent> channel)
-            channel.Emit(value);
+        if (id < current.Length && Volatile.Read(ref current[id]) is EventChannel<TEvent> channel) channel.Emit(value);
     }
 
     public void Clear() {
-        lock (sync)
-            Volatile.Write(ref channels, []);
+        lock (sync) Volatile.Write(ref channels, []);
     }
 }

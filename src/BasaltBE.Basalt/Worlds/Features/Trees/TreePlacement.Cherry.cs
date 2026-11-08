@@ -2,7 +2,7 @@ using System.Text.Json;
 using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Types;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     private void BuildCherry(
@@ -108,8 +108,7 @@ internal sealed partial class TreePlacement {
             if (random.NextSingle() < verticalChance) {
                 branchY += Math.Sign(endY - branchY);
                 AddTrunk(branchX, branchY, branchZ, "y");
-            }
-            else {
+            } else {
                 branchX += directionX;
                 branchZ += directionZ;
                 AddTrunk(branchX,
@@ -138,8 +137,7 @@ internal sealed partial class TreePlacement {
         for (int offset = top; offset >= bottom; offset--) {
             int layerRadius = offset == top ? radius - 3 : offset == top - 1 || offset == bottom ? radius - 2 : radius - 1;
             AddCherryLeafRow(attachment, offset, Math.Max(1, layerRadius));
-            if (offset < 0)
-                AddCherryHangingLeaves(attachment, offset, Math.Max(1, layerRadius), hanging, extension);
+            if (offset < 0) AddCherryHangingLeaves(attachment, offset, Math.Max(1, layerRadius), hanging, extension);
         }
     }
 

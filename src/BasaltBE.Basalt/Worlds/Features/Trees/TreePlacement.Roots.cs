@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BasaltBE.Basalt.Blocks;
 
-namespace BasaltBE.Basalt.Features;
+namespace BasaltBE.Basalt.Worlds.Features;
 
 internal sealed partial class TreePlacement {
     void BuildAzalea(int x, int y, int z, int height) {
@@ -30,8 +30,7 @@ internal sealed partial class TreePlacement {
             var position = (x + random.Next(radius) - random.Next(radius),
                 y + random.Next(height) - random.Next(height),
                 z + random.Next(radius) - random.Next(radius));
-            if (!placements.ContainsKey(position))
-                placements[position] = new BlockPlacement(SelectLeaf(), BlockKind.Leaf);
+            if (!placements.ContainsKey(position)) placements[position] = new BlockPlacement(SelectLeaf(), BlockKind.Leaf);
         }
     }
 
@@ -53,8 +52,7 @@ internal sealed partial class TreePlacement {
         }
         foreach ((int rootX, int rootY, int rootZ) in rootPositions) {
             BlockPermutation current = dimension.GetPermutation(rootX, rootY, rootZ);
-            if (!CanRootThrough(current))
-                continue;
+            if (!CanRootThrough(current)) continue;
             placements[(rootX, rootY, rootZ)] = new BlockPlacement(
                 current.Identifier is "minecraft:mud" or "minecraft:muddy_mangrove_roots" ? muddyRoot : root,
                 BlockKind.Root);
@@ -70,8 +68,7 @@ internal sealed partial class TreePlacement {
                 foliage.Add((x, trunkY + height, z));
                 continue;
             }
-            if (random.Next(2) != 0)
-                continue;
+            if (random.Next(2) != 0) continue;
             (int dx, int dz) = HorizontalDirection();
             int steps = Sample(branches.GetProperty("branch_steps"), 3);
             int start = Sample(branches.GetProperty("branch_length"), 1);
@@ -85,8 +82,7 @@ internal sealed partial class TreePlacement {
                 foliage.Add((branchX, branchY + 1, branchZ));
             }
         }
-        foreach ((int leafX, int leafY, int leafZ) in foliage)
-            SpreadLeaves(leafX, leafY, leafZ);
+        foreach ((int leafX, int leafY, int leafZ) in foliage) SpreadLeaves(leafX, leafY, leafZ);
 
         if (canopyData.TryGetProperty("hanging_block", out JsonElement hanging) && Resolve(hanging) is { } propagule) {
             foreach (var entry in placements.ToArray()) {
@@ -102,15 +98,14 @@ internal sealed partial class TreePlacement {
     void GrowRoots((int X, int Y, int Z) position, int dx, int dz, int originX, int originY, int originZ,
         JsonElement roots, HashSet<(int X, int Y, int Z)> positions, int depth) {
         int maximumLength = Math.Clamp(Number(roots, "max_root_length", 15), 1, 32);
-        if (depth >= maximumLength || position.Y <= dimension.MinimumY)
-            return;
+        if (depth >= maximumLength || position.Y <= dimension.MinimumY) return;
+
         int width = Math.Abs(position.X - originX) + Math.Abs(position.Y - originY) + Math.Abs(position.Z - originZ);
         int maximumWidth = Math.Clamp(Number(roots, "max_root_width", 8), 1, 16);
         var next = width > maximumWidth || random.NextSingle() < 0.2f || random.Next(2) == 0
             ? (position.X, position.Y - 1, position.Z)
             : (position.X + dx, position.Y, position.Z + dz);
-        if (!CanRootThrough(dimension.GetPermutation(next.Item1, next.Item2, next.Item3)) || !positions.Add(next))
-            return;
+        if (!CanRootThrough(dimension.GetPermutation(next.Item1, next.Item2, next.Item3)) || !positions.Add(next)) return;
         GrowRoots(next, dx, dz, originX, originY, originZ, roots, positions, depth + 1);
     }
 }

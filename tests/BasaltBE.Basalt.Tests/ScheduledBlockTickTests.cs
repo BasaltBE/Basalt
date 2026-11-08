@@ -1906,12 +1906,105 @@ public sealed class ScheduledBlockTickTests(ITestOutputHelper output) {
         Assert.Equal("minecraft:unpowered_repeater", dimension.GetPermutation(8, 20, 8).Identifier);
     }
 
+    [Fact]
+    public void PausedRepeaterDoesNotAccumulateRepeatedTransitions() {
+        if (Interlocked.Exchange(ref redstoneDevicesRegistered, 1) == 0) {
+            BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
+            BlockPalette.RegisterTrait<RedstoneTorchTrait>();
+        }
+
+        using Dimension dimension = new("test:paused-repeater", new VoidGenerator());
+        Chunk chunk = dimension.GetOrCreateChunk(0, 0);
+        BlockPermutation off = BlockPalette.FindDefaultPermutation("minecraft:unpowered_repeater")!;
+        BlockPermutation on = BlockPalette.Find("minecraft:powered_repeater", off.State)!;
+        chunk.SetPermutation(1, 20, 1, off);
+
+        for (int index = 0; index < 100_000; index++)
+            dimension.ScheduleBlockUpdate(1, 20, 1, 2, (index & 1) == 0 ? on : off);
+
+        Assert.Equal(2, chunk.PendingTicks!.Get<ListTag>("tickList")!.Value.Count);
+        dimension.ScheduleBlockUpdate(1, 20, 1, 2, on);
+        CompoundTag latest = (CompoundTag)chunk.PendingTicks.Get<ListTag>("tickList")!.Value[^1];
+        Assert.Equal(on.Identifier, latest.Get<CompoundTag>("blockState")!.Get<StringTag>("name")!.Value);
+        dimension.ScheduleBlockUpdate(1, 20, 1, 8, off);
+        Assert.Equal(3, chunk.PendingTicks.Get<ListTag>("tickList")!.Value.Count);
+    }
+
+    [Fact]
+    public void MaximumDelayRepeaterPreservesOneTickInputPulse() {
+        if (Interlocked.Exchange(ref redstoneDevicesRegistered, 1) == 0) {
+            BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
+            BlockPalette.RegisterTrait<RedstoneTorchTrait>();
+        }
+
+        using Dimension dimension = new("test:short-repeater-pulse", new VoidGenerator());
+        dimension.GetOrCreateChunk(0, 0);
+        BlockPermutation lever = BlockPalette.FindDefaultPermutation("minecraft:lever")!;
+        BlockPermutation powered = BlockPalette.Find(lever.Identifier, lever.State, "open_bit", true)!;
+        BlockPermutation repeater = BlockPalette.FindDefaultPermutation("minecraft:unpowered_repeater")!;
+        repeater = BlockPalette.Find(repeater.Identifier, repeater.State, "repeater_delay", 3)!;
+        repeater = BlockPalette.Find(repeater.Identifier, repeater.State, "minecraft:cardinal_direction", "west")!;
+        dimension.SetPermutation(8, 20, 8, lever);
+        dimension.SetPermutation(9, 20, 8, repeater);
+        dimension.AddTickingArea("test", [new ChunkPos { X = 0, Z = 0 }]);
+
+        dimension.SetPermutation(8, 20, 8, powered);
+        dimension.Tick();
+        dimension.SetPermutation(8, 20, 8, lever);
+        for (int tick = 1; tick < 8; tick++) dimension.Tick();
+
+        Assert.Equal("minecraft:powered_repeater", dimension.GetPermutation(9, 20, 8).Identifier);
+        dimension.Tick();
+        Assert.Equal("minecraft:unpowered_repeater", dimension.GetPermutation(9, 20, 8).Identifier);
+    }
+
+    [Fact]
+    public void LoadingRepeaterTicksRemovesExactDuplicatesAndPreservesExtensions() {
+        if (Interlocked.Exchange(ref redstoneDevicesRegistered, 1) == 0) {
+            BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
+            BlockPalette.RegisterTrait<RedstoneTorchTrait>();
+        }
+
+        using Dimension dimension = new("test:duplicate-repeater", new VoidGenerator());
+        Chunk chunk = dimension.GetOrCreateChunk(0, 0);
+        BlockPermutation repeater = BlockPalette.FindDefaultPermutation("minecraft:unpowered_repeater")!;
+        ListTag records = new() { ElementType = BasaltBE.Nbt.Enums.TagType.Compound };
+        for (int index = 0; index < 70_000; index++) {
+            CompoundTag record = new();
+            record.Add("blockState", BlockStorage.CreatePermutationTag(repeater));
+            record.Add("time", new LongTag { Value = index == 69_998 ? 8 : 2 });
+            record.Add("x", new IntTag { Value = 1 });
+            record.Add("y", new IntTag { Value = 20 });
+            record.Add("z", new IntTag { Value = 1 });
+            if (index == 69_999) record.Add("extension", new StringTag { Value = "preserve" });
+            records.Value.Add(record);
+        }
+        chunk.PendingTicks = new CompoundTag();
+        chunk.PendingTicks.Add("currentTick", new IntTag { Value = 0 });
+        chunk.PendingTicks.Add("tickList", records);
+
+        Chunk restored = Chunk.Deserialize(0, 0, chunk.Serialize(), dimension);
+        Assert.True(restored.PendingTicksRecovered);
+        Assert.Equal(3, restored.PendingTicks!.Get<ListTag>("tickList")!.Value.Count);
+        chunk.PendingTicks = restored.PendingTicks;
+        chunk.PendingTicksRecovered = restored.PendingTicksRecovered;
+        dimension.AddTickingArea("test", [new ChunkPos { X = 0, Z = 0 }]);
+        Assert.False(chunk.PendingTicksRecovered);
+
+        ListTag recovered = chunk.PendingTicks!.Get<ListTag>("tickList")!;
+        Assert.Equal(3, recovered.Value.Count);
+        Assert.Contains(recovered.Value, tag => ((CompoundTag)tag).Get<LongTag>("time")!.Value == 8);
+        Assert.Contains(recovered.Value, tag => ((CompoundTag)tag).Get<StringTag>("extension")?.Value == "preserve");
+    }
+
     [Theory]
     [InlineData(0, 2)]
     [InlineData(3, 8)]
     public void RepeaterRespondsAfterConfiguredDelay(int repeaterDelay, int expectedTicks) {
-        if (Interlocked.Exchange(ref redstoneDevicesRegistered, 1) == 0)
+        if (Interlocked.Exchange(ref redstoneDevicesRegistered, 1) == 0) {
             BlockPalette.RegisterTrait<RedstoneDeviceTrait>();
+            BlockPalette.RegisterTrait<RedstoneTorchTrait>();
+        }
         if (Interlocked.Exchange(ref redstoneWireRegistered, 1) == 0)
             BlockPalette.RegisterTrait<RedstoneWireTrait>();
 

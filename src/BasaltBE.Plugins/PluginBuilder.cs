@@ -29,6 +29,10 @@ public static class PluginBuilder {
                 WorkingDirectory = directory,
                 ArgumentList = {
                     "publish", project,
+                    "--verbosity", "quiet",
+                    "--nologo",
+                    "--tl:off",
+                    "-clp:NoSummary",
                     "--configuration", "Release",
                     "--output", staging,
                     "--self-contained", "false",
@@ -55,8 +59,7 @@ public static class PluginBuilder {
                     string? package = Directory.Exists(source)
                         ? Directory.EnumerateFiles(source, "BasaltBE.Plugins.*.nupkg").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
                         : null;
-                    if (package is null)
-                        continue;
+                    if (package is null) continue;
 
                     string escaped = source.Replace("%", "%25").Replace(";", "%3B").Replace(",", "%2C");
                     start.ArgumentList.Add($"-p:RestoreAdditionalProjectSources={escaped}");
@@ -67,8 +70,7 @@ public static class PluginBuilder {
                     start.ArgumentList.Add($"-p:RestorePackagesPath={escapedCache}");
                     break;
                 }
-            }
-            else {
+            } else {
                 start.ArgumentList.Add("--no-restore");
             }
             if (runtime is not null) {
@@ -79,15 +81,12 @@ public static class PluginBuilder {
             using Process process = Process.Start(start) ?? throw new IOException("Could not start the .NET SDK.");
             using CancellationTokenRegistration registration = cancellation.Register(() => {
                 try {
-                    if (!process.HasExited)
-                        process.Kill(true);
-                }
-                catch (InvalidOperationException) { }
+                    if (!process.HasExited) process.Kill(true);
+                } catch (InvalidOperationException) { }
             });
             process.WaitForExit();
             cancellation.ThrowIfCancellationRequested();
-            if (process.ExitCode != 0)
-                throw new InvalidOperationException("Plugin build failed.");
+            if (process.ExitCode != 0) throw new InvalidOperationException("Plugin build failed.");
 
             if (!File.Exists(Path.Combine(staging, "host.json")))
                 throw new InvalidDataException("The project must reference BasaltBE.Plugins.");
@@ -109,13 +108,11 @@ public static class PluginBuilder {
             }
             foreach (string host in hostAssemblies) {
                 string file = Path.Combine(staging, host);
-                if (File.Exists(file))
-                    File.Delete(file);
+                if (File.Exists(file)) File.Delete(file);
             }
             File.Delete(contract);
             string references = Path.Combine(staging, ".basalt", "references");
-            if (Directory.Exists(references))
-                Directory.Delete(references, true);
+            if (Directory.Exists(references)) Directory.Delete(references, true);
             string metadataDirectory = Path.Combine(staging, ".basalt");
             if (Directory.Exists(metadataDirectory) && !Directory.EnumerateFileSystemEntries(metadataDirectory).Any())
                 Directory.Delete(metadataDirectory);
@@ -124,8 +121,7 @@ public static class PluginBuilder {
             cancellation.ThrowIfCancellationRequested();
             PluginArchive.Write(staging, destination);
             return destination;
-        }
-        finally {
+        } finally {
             Directory.Delete(staging, true);
         }
     }

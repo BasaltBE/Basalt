@@ -62,8 +62,7 @@ internal sealed class ClientData {
             AnimatedImageData = new AnimatedImageData[AnimatedImageData.Length],
             PersonaPieces = new SerializedPersonaPieceHandle[PersonaPieces.Length]
         };
-        if (skin.ImageData.ImageBytes.Length == 0)
-            throw new InvalidDataException("Player skin image is empty.");
+        if (skin.ImageData.ImageBytes.Length == 0) throw new InvalidDataException("Player skin image is empty.");
         if (skin.ResourcePatch.Length != 0) {
             using JsonDocument patch = JsonDocument.Parse(skin.ResourcePatch);
         }
@@ -86,8 +85,7 @@ internal sealed class ClientData {
         for (int index = 0; index < PersonaPieces.Length; index++) {
             ClientPersonaPiece piece = PersonaPieces[index];
             ReadOnlySpan<char> name = piece.PieceType.AsSpan();
-            if (name.StartsWith("persona_"))
-                name = name[8..];
+            if (name.StartsWith("persona_")) name = name[8..];
             Enum.TryParse(name, true, out PersonaPieceType pieceType);
             Uuid pack = new();
             if (Guid.TryParse(piece.PackId, out Guid packId)) {
@@ -104,16 +102,15 @@ internal sealed class ClientData {
             };
         }
         foreach (ClientPieceTint tint in PieceTintColors) {
-            if (tint.Colors is null || tint.Colors.Length != 4)
-                throw new InvalidDataException("Persona tint requires four colors.");
+            if (tint.Colors is null || tint.Colors.Length != 4) throw new InvalidDataException("Persona tint requires four colors.");
             string name = tint.PieceType.StartsWith("persona_") ? tint.PieceType[8..] : tint.PieceType;
-            if (name == "hand")
-                name = "hands";
+            if (name == "hand") name = "hands";
             TintMapColor colors = new();
             for (int index = 0; index < 4; index++)
                 colors.Colors[index] = ParseColor(tint.Colors[index]);
             skin.PieceTintColors.Add(name, colors);
         }
+
         return skin;
     }
 
@@ -139,11 +136,10 @@ internal sealed class ClientData {
     }
 
     private static int ParseColor(string text) {
-        if (string.IsNullOrEmpty(text))
-            return 0;
+        if (string.IsNullOrEmpty(text)) return 0;
+
         ReadOnlySpan<char> hex = text.AsSpan();
-        if (hex[0] == '#')
-            hex = hex[1..];
+        if (hex[0] == '#') hex = hex[1..];
         return unchecked((int)uint.Parse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
     }
 }

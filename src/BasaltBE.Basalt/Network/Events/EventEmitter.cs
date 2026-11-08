@@ -53,11 +53,9 @@ public sealed class EventEmitter {
                     int offset = 0;
                     BinaryReader reader = new(payload.Span, ref offset);
                     packet.Deserialize(ref reader);
-                    if (offset != payload.Length)
-                        throw new InvalidDataException($"Bedrock packet 0x{packetId:X} has trailing data.");
+                    if (offset != payload.Length) throw new InvalidDataException($"Bedrock packet 0x{packetId:X} has trailing data.");
                 }
-            }
-            catch (Exception error) when (
+            } catch (Exception error) when (
                 packetId == PacketEvents.ItemStackRequest.PacketId &&
                 error is IndexOutOfRangeException or InvalidDataException or ArgumentOutOfRangeException or OverflowException or FormatException) {
                 int length = Math.Min(payload.Length, 256);
@@ -75,8 +73,7 @@ public sealed class EventEmitter {
                     foreach (Action<NethernetPeer, Player?, TPacket> subscriber in Volatile.Read(ref subscribers))
                         subscriber(peer, player, packet);
                 }
-            }
-            finally {
+            } finally {
                 if (packet is LoginPacket login && MemoryMarshal.TryGetArray(login.ConnectionRequest, out ArraySegment<byte> request))
                     CryptographicOperations.ZeroMemory(request.AsSpan());
             }

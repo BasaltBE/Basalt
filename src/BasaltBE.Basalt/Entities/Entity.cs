@@ -15,8 +15,7 @@ using BasaltBE.Basalt.Worlds.Dimensions.Chunks;
 
 namespace BasaltBE.Basalt.Entities;
 
-public class Entity
-{
+public class Entity {
     private static long nextUniqueId;
     private static long nextRuntimeId = 0;
     EntityTrait[]? traits;
@@ -47,42 +46,33 @@ public class Entity
     Chunk? fluidChunk;
     long fluidRevision;
 
-    public Entity(EntityType? type = null, float headOffset = 0)
-    {
-        if (!float.IsFinite(headOffset) || headOffset < 0)
-            throw new ArgumentOutOfRangeException(nameof(headOffset));
+    public Entity(EntityType? type = null, float headOffset = 0) {
+        if (!float.IsFinite(headOffset) || headOffset < 0) throw new ArgumentOutOfRangeException(nameof(headOffset));
 
         HeadOffset = headOffset;
         Type = type;
-        if (type?.PropertiesPayload?.Components.CollisionBox is { } collision)
-        {
-            if (collision.Width is double width && double.IsFinite(width) && width > 0 && width <= 64)
-                CollisionWidth = (float)width;
+        if (type?.PropertiesPayload?.Components.CollisionBox is { } collision) {
+            if (collision.Width is double width && double.IsFinite(width) && width > 0 && width <= 64) CollisionWidth = (float)width;
             if (collision.Height is double height && double.IsFinite(height) && height > 0 && height <= 64)
                 CollisionHeight = (float)height;
         }
-        if (this is ItemEntity || type?.Identifier == "minecraft:xp_orb")
-            CollisionWidth = CollisionHeight = 0.25f;
-        if (this is not Player)
-        {
+        if (this is ItemEntity || type?.Identifier == "minecraft:xp_orb") CollisionWidth = CollisionHeight = 0.25f;
+        if (this is not Player) {
             Flags.CollisionWidth = CollisionWidth;
             Flags.CollisionHeight = CollisionHeight;
         }
+
         traits = EntityPalette.CreateTraits(this, type);
-        if (traits is not null)
-        {
-            foreach (EntityTrait trait in traits)
-                trait.OnAdd();
+        if (traits is not null) {
+            foreach (EntityTrait trait in traits) trait.OnAdd();
         }
     }
 
     public Entity(string identifier, float headOffset = 0)
-        : this(Resolve(identifier), headOffset)
-    {
+        : this(Resolve(identifier), headOffset) {
     }
 
-    private static EntityType Resolve(string identifier)
-    {
+    private static EntityType Resolve(string identifier) {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         return EntityPalette.Find(identifier)
             ?? throw new KeyNotFoundException($"Entity type '{identifier}' was not found.");
@@ -108,32 +98,25 @@ public class Entity
     /// </summary>
     public Vec3 GetHeadPosition() => new() { X = Position.X, Y = Position.Y + HeadOffset, Z = Position.Z };
 
-    public float GetCollisionHeight()
-    {
-        if (this is Player)
-        {
-            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
-                return 0.6f;
-            if (Flags.Get(ActorFlag.Sneaking))
-                return 1.5f;
+    public float GetCollisionHeight() {
+        if (this is Player) {
+            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling)) return 0.6f;
+            if (Flags.Get(ActorFlag.Sneaking)) return 1.5f;
         }
+
         return CollisionHeight;
     }
 
-    public float GetEyeHeight()
-    {
-        if (this is Player)
-        {
-            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling))
-                return 0.4f;
-            if (Flags.Get(ActorFlag.Sneaking))
-                return 1.27f;
+    public float GetEyeHeight() {
+        if (this is Player) {
+            if (Flags.Get(ActorFlag.Swimming) || Flags.Get(ActorFlag.Crawling)) return 0.4f;
+            if (Flags.Get(ActorFlag.Sneaking)) return 1.27f;
         }
+
         return HeadOffset > 0 ? HeadOffset : CollisionHeight * 0.85f;
     }
 
-    public FluidContact GetFluidContact()
-    {
+    public FluidContact GetFluidContact() {
         float height = GetCollisionHeight();
         float eyeHeight = GetEyeHeight();
         Vector3 position = new(Position.X, Position.Y, Position.Z);
@@ -142,8 +125,7 @@ public class Entity
             fluidWidth == CollisionWidth && ReferenceEquals(fluidDimension, dimension);
         bool unchanged = sameBounds && fluidChunk is not null && fluidRevision == fluidChunk.Revision &&
             ReferenceEquals(fluidChunk, dimension?.GetChunk((int)MathF.Floor(position.X) >> 4, (int)MathF.Floor(position.Z) >> 4));
-        if (!unchanged)
-        {
+        if (!unchanged) {
             fluidContact = dimension is not null
                 ? FluidTrait.GetContact(dimension, position, CollisionWidth, height, eyeHeight, this is not Player)
                 : default;
@@ -152,6 +134,7 @@ public class Entity
             fluidWidth = CollisionWidth;
             fluidEyeHeight = eyeHeight;
             fluidDimension = dimension;
+
             int minX = (int)MathF.Floor(position.X - CollisionWidth * 0.5f) - 1;
             int maxX = (int)MathF.Floor(position.X + CollisionWidth * 0.5f) + 1;
             int minZ = (int)MathF.Floor(position.Z - CollisionWidth * 0.5f) - 1;
@@ -160,71 +143,46 @@ public class Entity
                 ? dimension?.GetChunk(minX >> 4, minZ >> 4) : null;
             fluidRevision = fluidChunk?.Revision ?? 0;
         }
+
         return fluidContact;
     }
 
-    public void Spawn(Dimension dimension)
-    {
+    public void Spawn(Dimension dimension) {
         ArgumentNullException.ThrowIfNull(dimension);
-        if (Type is null)
-            throw new InvalidOperationException("An entity requires a type before it can spawn.");
-        if (this is Player)
-            throw new InvalidOperationException("Players are spawned through the network login flow.");
+        if (Type is null) throw new InvalidOperationException("An entity requires a type before it can spawn.");
+        if (this is Player) throw new InvalidOperationException("Players are spawned through the network login flow.");
         dimension.AddEntity(this);
     }
 
-    public void Despawn()
-    {
-        if (this is Player)
-            throw new InvalidOperationException("Players are removed through the network connection.");
+    public void Despawn() {
+        if (this is Player) throw new InvalidOperationException("Players are removed through the network connection.");
         SpawnedDimension?.RemoveEntity(this);
     }
 
-    public void AddTrait(EntityTrait trait)
-    {
+    public void AddTrait(EntityTrait trait) {
         ArgumentNullException.ThrowIfNull(trait);
-        if (!ReferenceEquals(trait.Entity, this))
-            throw new ArgumentException("Trait belongs to a different entity.", nameof(trait));
+        if (!ReferenceEquals(trait.Entity, this)) throw new ArgumentException("Trait belongs to a different entity.", nameof(trait));
         if (GetTrait(trait.GetType()) is not null)
             throw new InvalidOperationException($"Entity already has trait '{trait.GetType()}'.");
 
-        if (traits is null)
-        {
-            traits = [trait];
-        }
-        else
-        {
-            EntityTrait[] expanded = new EntityTrait[traits.Length + 1];
-            traits.CopyTo(expanded, 0);
-            expanded[^1] = trait;
-            traits = expanded;
-        }
+        traits = traits is null ? [trait] : [.. traits, trait];
 
         trait.OnAdd();
     }
 
-    public bool RemoveTrait<TTrait>() where TTrait : EntityTrait
-    {
-        if (traits is null)
-            return false;
+    public bool RemoveTrait<TTrait>() where TTrait : EntityTrait {
+        if (traits is null) return false;
 
-        for (int i = 0; i < traits.Length; i++)
-        {
-            if (traits[i] is not TTrait)
-                continue;
+        for (int i = 0; i < traits.Length; i++) {
+            if (traits[i] is not TTrait) continue;
 
             EntityTrait removed = traits[i];
-            if (traits.Length == 1)
-            {
+            if (traits.Length == 1) {
                 traits = null;
-            }
-            else
-            {
+            } else {
                 EntityTrait[] reduced = new EntityTrait[traits.Length - 1];
-                if (i > 0)
-                    Array.Copy(traits, 0, reduced, 0, i);
-                if (i < reduced.Length)
-                    Array.Copy(traits, i + 1, reduced, i, reduced.Length - i);
+                if (i > 0) Array.Copy(traits, 0, reduced, 0, i);
+                if (i < reduced.Length) Array.Copy(traits, i + 1, reduced, i, reduced.Length - i);
                 traits = reduced;
             }
 
@@ -235,15 +193,11 @@ public class Entity
         return false;
     }
 
-    public TTrait? GetTrait<TTrait>() where TTrait : EntityTrait
-    {
-        if (traits is null)
-            return null;
+    public TTrait? GetTrait<TTrait>() where TTrait : EntityTrait {
+        if (traits is null) return null;
 
-        foreach (EntityTrait trait in traits)
-        {
-            if (trait is TTrait match)
-                return match;
+        foreach (EntityTrait trait in traits) {
+            if (trait is TTrait match) return match;
         }
 
         return null;
@@ -256,127 +210,91 @@ public class Entity
     public void OnHurt() => Dispatch(static trait => trait.OnHurt());
     public void OnDeath(EntityDeathEvent death) => Dispatch(trait => trait.OnDeath(death));
     public void OnHurt(EntityHurtEvent hurt) => Dispatch(trait => trait.OnHurt(hurt));
-    public void OnMove()
-    {
+    public void OnMove() {
         SpawnedDimension?.World?.CheckOwnership();
         SpawnedDimension?.EntityIndex.Update(this);
         Dispatch(static trait => trait.OnMove());
     }
+
     public void OnAttack() => Dispatch(static trait => trait.OnAttack());
 
-    public void OnAttack(Entity target, ItemStack? item)
-    {
-        if (traits is null)
-            return;
-        foreach (EntityTrait trait in traits)
-            trait.OnAttack(target, item);
+    public void OnAttack(Entity target, ItemStack? item) {
+        if (traits is null) return;
+        foreach (EntityTrait trait in traits) trait.OnAttack(target, item);
     }
 
-    public void OnUseItem(ItemStack? item)
-    {
-        if (traits is null)
-            return;
-        foreach (EntityTrait trait in traits)
-            trait.OnUseItem(item);
+    public void OnUseItem(ItemStack? item) {
+        if (traits is null) return;
+        foreach (EntityTrait trait in traits) trait.OnUseItem(item);
     }
 
-    public void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition)
-    {
-        if (traits is null)
-            return;
-        foreach (EntityTrait trait in traits)
-            trait.OnUseItemOnBlock(item, block, position, face, clickPosition);
+    public void OnUseItemOnBlock(ItemStack? item, BlockPermutation block, BlockPos position, byte face, Vec3 clickPosition) {
+        if (traits is null) return;
+        foreach (EntityTrait trait in traits) trait.OnUseItemOnBlock(item, block, position, face, clickPosition);
     }
 
-    public void OnUseItemOnEntity(ItemStack? item, Entity target, Vec3 hitPosition)
-    {
-        if (traits is null)
-            return;
-        foreach (EntityTrait trait in traits)
-            trait.OnUseItemOnEntity(item, target, hitPosition);
+    public void OnUseItemOnEntity(ItemStack? item, Entity target, Vec3 hitPosition) {
+        if (traits is null) return;
+        foreach (EntityTrait trait in traits) trait.OnUseItemOnEntity(item, target, hitPosition);
     }
 
-    public virtual void Tick()
-    {
+    public virtual void Tick() {
         SimulationAge++;
         Dispatch(static trait => trait.Tick());
-        if (this is ItemEntity item)
-            item.TickItem();
+        if (this is ItemEntity item) item.TickItem();
 
-        if (this is Player player)
-        {
-            if (!player.Spawned || player.Disposed)
-                return;
+        if (this is Player player) {
+            if (!player.Spawned || player.Disposed) return;
 
             ulong tick = player.GetTrait<EntityMovementTrait>()?.InputTick ?? 0;
             if (Attributes.CreateUpdate(RuntimeId, tick: tick) is { } playerAttributes)
                 player.Dimension.Broadcast(playerAttributes, entity: player);
-            if (Flags.Dirty)
-                player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), entity: player);
+            if (Flags.Dirty) player.Dimension.Broadcast(Flags.CreateUpdate(RuntimeId, tick), entity: player);
             bool permissionsChanged = Volatile.Read(ref player.Permissions.Dirty);
-            if (permissionsChanged)
-                Volatile.Write(ref player.Permissions.Dirty, false);
+            if (permissionsChanged) Volatile.Write(ref player.Permissions.Dirty, false);
             if (player.Abilities.Dirty || permissionsChanged)
                 player.Dimension.Broadcast(player.Abilities.CreateUpdate(UniqueId, player.Permissions), entity: player);
-            if (permissionsChanged)
-            {
+            if (permissionsChanged) {
                 var commands = player.Network.Server.Commands.GetCatalog(player.Permissions);
                 player.Network.SendSerializedPacket(player, commands.Packet, commands.Payload);
             }
             return;
         }
 
-        if (SpawnedDimension is not { } dimension)
-            return;
-        if (Attributes.CreateUpdate(RuntimeId) is { } attributes)
-            dimension.Broadcast(attributes, this);
-        if (Flags.Dirty)
-            dimension.Broadcast(Flags.CreateUpdate(RuntimeId), this);
+        if (SpawnedDimension is not { } dimension) return;
+        if (Attributes.CreateUpdate(RuntimeId) is { } attributes) dimension.Broadcast(attributes, this);
+        if (Flags.Dirty) dimension.Broadcast(Flags.CreateUpdate(RuntimeId), this);
     }
 
-    public void SetFlag(ActorFlag flag, bool enabled)
-    {
+    public void SetFlag(ActorFlag flag, bool enabled) {
         Flags.Set(flag, enabled);
     }
 
-    public virtual void Read(CompoundTag entityTag)
-    {
+    public virtual void Read(CompoundTag entityTag) {
         ArgumentNullException.ThrowIfNull(entityTag);
-        if (traits is null)
-            return;
+        if (traits is null) return;
 
-        foreach (EntityTrait trait in traits)
-            trait.Read(entityTag);
+        foreach (EntityTrait trait in traits) trait.Read(entityTag);
     }
 
-    public virtual void Write(CompoundTag entityTag)
-    {
+    public virtual void Write(CompoundTag entityTag) {
         ArgumentNullException.ThrowIfNull(entityTag);
-        if (traits is null)
-            return;
+        if (traits is null) return;
 
-        foreach (EntityTrait trait in traits)
-            trait.Write(entityTag);
+        foreach (EntityTrait trait in traits) trait.Write(entityTag);
     }
 
-    void Dispatch(Action<EntityTrait> callback)
-    {
-        if (traits is null)
-            return;
+    void Dispatch(Action<EntityTrait> callback) {
+        if (traits is null) return;
 
-        foreach (EntityTrait trait in traits)
-            callback(trait);
+        foreach (EntityTrait trait in traits) callback(trait);
     }
 
-    EntityTrait? GetTrait(Type traitType)
-    {
-        if (traits is null)
-            return null;
+    EntityTrait? GetTrait(Type traitType) {
+        if (traits is null) return null;
 
-        foreach (EntityTrait trait in traits)
-        {
-            if (trait.GetType() == traitType)
-                return trait;
+        foreach (EntityTrait trait in traits) {
+            if (trait.GetType() == traitType) return trait;
         }
 
         return null;

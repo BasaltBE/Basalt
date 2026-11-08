@@ -6,4 +6,3 @@ public readonly record struct NethernetMessage(
     ReadOnlyMemory<byte> Payload,
     bool Connected = false,
     bool Disconnected = false);
-

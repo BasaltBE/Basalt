@@ -63,7 +63,6 @@ public sealed class Player : Entity, IDisposable {
 
     public bool Disposed;
 
-
     public void SendPacket(DataPacket packet, bool reliable = true, bool immediate = false) =>
         Network.SendPacket(this, packet, reliable, immediate);
 
@@ -116,6 +115,7 @@ public sealed class Player : Entity, IDisposable {
         Attributes.Set("minecraft:movement", 0, float.MaxValue, 0.1f, 0, float.MaxValue, 0.1f);
         Attributes.Set("minecraft:underwater_movement", 0, float.MaxValue, 0.02f, 0, float.MaxValue, 0.02f);
         Attributes.Set("minecraft:lava_movement", 0, float.MaxValue, 0.02f, 0, float.MaxValue, 0.02f);
+
         SetFlag(ActorFlag.HasGravity, true);
         SetFlag(ActorFlag.Breathing, true);
         SetFlag(ActorFlag.CanShowName, true);
@@ -127,8 +127,7 @@ public sealed class Player : Entity, IDisposable {
     public bool SetGameType(GameType gameType) {
         if (gameType is not (GameType.Survival or GameType.Creative or GameType.Adventure or GameType.Spectator))
             throw new ArgumentOutOfRangeException(nameof(gameType));
-        if (GameType == gameType)
-            return false;
+        if (GameType == gameType) return false;
 
         GameType = gameType;
         bool canBuild = gameType is GameType.Survival or GameType.Creative;
@@ -150,6 +149,7 @@ public sealed class Player : Entity, IDisposable {
                 Tick = GetTrait<EntityMovementTrait>()?.InputTick ?? 0
             }, this);
         }
+
         return true;
     }
 
@@ -157,8 +157,7 @@ public sealed class Player : Entity, IDisposable {
         Read(data);
         if (data.Get<IntTag>("GameType") is { } gameType && Enum.IsDefined((GameType)gameType.Value))
             SetGameType((GameType)gameType.Value);
-        if (!restoredLocation)
-            return;
+        if (!restoredLocation) return;
 
         Position.X = data.Get<FloatTag>("PosX")?.Value ?? Position.X;
         Position.Y = data.Get<FloatTag>("PosY")?.Value ?? Position.Y;
@@ -189,14 +188,54 @@ public sealed class Player : Entity, IDisposable {
         data.Add("HeadRotation", new FloatTag { Value = HeadRotation });
         data.Add("GameType", new IntTag { Value = (int)GameType });
         Write(data);
+
         return data;
     }
 
-    public void TransferTo(Dimension dimension) {
+    public void Teleport(Vec3 position) {
+        ArgumentNullException.ThrowIfNull(position);
+        using Lock.Scope tickSync = TickSync.EnterScope();
+        World.CheckOwnership();
+        if (Disposed || !Spawned) throw new InvalidOperationException("Only a spawned player can teleport.");
+        if (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z) ||
+            MathF.Abs(position.X) > 30_000_000 || MathF.Abs(position.Y) > 30_000_000 || MathF.Abs(position.Z) > 30_000_000)
+            throw new ArgumentOutOfRangeException(nameof(position));
+
+        OpenedContainer?.Close(this);
+        Position.X = position.X;
+        Position.Y = position.Y;
+        Position.Z = position.Z;
+
+        if (GetTrait<EntityMovementTrait>() is { } movement) {
+            movement.Motion.X = 0;
+            movement.Motion.Y = 0;
+            movement.Motion.Z = 0;
+            movement.Jumping = false;
+            movement.HorizontalCollision = false;
+            movement.VerticalCollision = false;
+            movement.Grounded = false;
+        }
+        GetTrait<EntityHealthTrait>()?.ResetFallDamage();
+        OnMove();
+
+        MovePlayerPacket update = new() {
+            PlayerRuntimeId = RuntimeId,
+            Position = GetHeadPosition(),
+            Rotation = Rotation,
+            HeadRotation = HeadRotation,
+            PositionMode = 1,
+            Tick = GetTrait<EntityMovementTrait>()?.InputTick ?? 0
+        };
+        SendPacket(update);
+        Dimension.Broadcast(update, this, exclude: this);
+    }
+
+    public void TransferTo(Dimension dimension) => TransferTo(dimension, null);
+
+    public void TransferTo(Dimension dimension, Vec3? position) {
         ArgumentNullException.ThrowIfNull(dimension);
         using Lock.Scope tickSync = TickSync.EnterScope();
-        if (Disposed || !Spawned)
-            throw new InvalidOperationException("Only a spawned player can transfer dimensions.");
+        if (Disposed || !Spawned) throw new InvalidOperationException("Only a spawned player can transfer dimensions.");
 
         World sourceWorld = World;
         Dimension sourceDimension = Dimension;
@@ -206,8 +245,13 @@ public sealed class Player : Entity, IDisposable {
             throw new ArgumentException("The target dimension belongs to another server.", nameof(dimension));
         if (dimension.Type == DimensionType.Undefined && dimension.CustomDefinition is null)
             throw new ArgumentException("The target dimension has no supported Bedrock dimension type.", nameof(dimension));
-        if (ReferenceEquals(sourceDimension, dimension))
+        if (position is not null && (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z) ||
+            MathF.Abs(position.X) > 30_000_000 || MathF.Abs(position.Y) > 30_000_000 || MathF.Abs(position.Z) > 30_000_000))
+            throw new ArgumentOutOfRangeException(nameof(position));
+        if (ReferenceEquals(sourceDimension, dimension)) {
+            if (position is not null) Teleport(position);
             return;
+        }
 
         sourceWorld.CheckOwnership();
         targetWorld.CheckOwnership();
@@ -222,9 +266,9 @@ public sealed class Player : Entity, IDisposable {
 
         World = targetWorld;
         Dimension = dimension;
-        Position.X = dimension.SpawnPosition.X;
-        Position.Y = dimension.SpawnPosition.Y;
-        Position.Z = dimension.SpawnPosition.Z;
+        Position.X = position?.X ?? dimension.SpawnPosition.X;
+        Position.Y = position?.Y ?? dimension.SpawnPosition.Y;
+        Position.Z = position?.Z ?? dimension.SpawnPosition.Z;
         Rotation.X = 0;
         Rotation.Y = 0;
         HeadRotation = 0;
@@ -234,6 +278,7 @@ public sealed class Player : Entity, IDisposable {
         SetFlag(ActorFlag.Swimming, false);
         SetFlag(ActorFlag.Gliding, false);
         SetFlag(ActorFlag.Crawling, false);
+
         if (GetTrait<EntityMovementTrait>() is { } movement) {
             movement.Motion.X = 0;
             movement.Motion.Y = 0;
@@ -248,14 +293,17 @@ public sealed class Player : Entity, IDisposable {
         OnSpawn();
         OnMove();
 
-        if (sourceDimension.RuntimeId != dimension.RuntimeId) {
-            SendPacket(new ChangeDimensionPacket {
+        if (sourceDimension.RuntimeId != dimension.RuntimeId)
+        {
+            SendPacket(new ChangeDimensionPacket
+            {
                 DimensionId = dimension.RuntimeId,
                 Position = GetHeadPosition(),
                 Respawn = true,
                 LoadingScreenId = 0
             });
         }
+
         ulong inputTick = GetTrait<EntityMovementTrait>()?.InputTick ?? 0;
         SendPacket(new MovePlayerPacket {
             PlayerRuntimeId = RuntimeId,

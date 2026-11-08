@@ -18,13 +18,13 @@ public sealed class ListCommand : Command {
         foreach (World world in context.Server.Worlds) {
             foreach (Dimension dimension in world.Dimensions.Values) {
                 foreach (Player player in dimension.GetPlayers()) {
-                    if (!player.Spawned || player.Disposed)
-                        continue;
+                    if (!player.Spawned || player.Disposed) continue;
                     if (count++ > 0) names.Append(", ");
                     names.Append(player.Username);
                 }
             }
         }
+
         return new(true, FormattableString.Invariant(
             $"There are {count}/{context.Server.Properties.MaxPlayers} players online{(count == 0 ? "." : $": {names}.")}"
         ));

@@ -7,10 +7,8 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class ContainerCloseHandler {
     public void Handle(NethernetPeer peer, Player? player, ContainerClosePacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Container close arrived before player login.");
-        if (player.Disposed)
-            return;
+        if (player is null) throw new InvalidDataException("Container close arrived before player login.");
+        if (player.Disposed) return;
 
         Container? opened;
         lock (player.Sync)

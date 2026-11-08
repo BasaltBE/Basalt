@@ -5,4 +5,3 @@ public enum DiscoveryPacketType : ushort {
     Response,
     Message
 }
-

@@ -18,8 +18,7 @@ public sealed class DispenserTrait : BlockTrait {
 
     public override bool OnNeighborUpdate(Dimension dimension, int x, int y, int z) {
         bool? powered = dimension.Redstone.BlockPowered(dimension, x, y, z);
-        if (powered is not bool isPowered)
-            return false;
+        if (powered is not bool isPowered) return false;
 
         BlockPermutation current = dimension.GetPermutation(x, y, z);
         if (current.State.Values.GetValueOrDefault("triggered_bit") is not bool triggered || triggered == isPowered ||
@@ -28,8 +27,7 @@ public sealed class DispenserTrait : BlockTrait {
 
         dimension.SetPermutation(x, y, z, updated);
         dimension.BroadcastBlockUpdate(x, y, z, updated);
-        if (isPowered)
-            dimension.ScheduleBlockUpdate(x, y, z, 4);
+        if (isPowered) dimension.ScheduleBlockUpdate(x, y, z, 4);
         return true;
     }
 

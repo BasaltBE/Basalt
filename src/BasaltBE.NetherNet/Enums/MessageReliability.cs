@@ -4,4 +4,3 @@ public enum MessageReliability {
     Reliable,
     Unreliable
 }
-

@@ -9,8 +9,7 @@ namespace BasaltBE.Basalt.Network.Handlers;
 
 internal sealed class RespawnHandler {
     public void Handle(NethernetPeer peer, Player? player, RespawnPacket packet) {
-        if (player is null)
-            throw new InvalidDataException("Respawn arrived before player login.");
+        if (player is null) throw new InvalidDataException("Respawn arrived before player login.");
         using Lock.Scope tickSync = player.TickSync.EnterScope();
         if (player.Disposed || !player.Spawned || !player.Dead ||
             packet.State != PlayerRespawnState.ClientReadyToSpawn ||
