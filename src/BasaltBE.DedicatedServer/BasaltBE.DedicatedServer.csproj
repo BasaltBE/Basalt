@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <None Include="../../LICENSE" Link="LICENSE" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../LICENSE" Link="LICENSE" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <ProjectReference Include="../BasaltBE.Plugins/BasaltBE.Plugins.csproj" />
     <ProjectReference Include="..\BasaltBE.Basalt\BasaltBE.Basalt.csproj" />
     <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
@@ -11,6 +11,7 @@
 
   <PropertyGroup>
     <RootNamespace>BasaltBE.DedicatedServer</RootNamespace>
+    <AssemblyName>DedicatedServer</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Version>1.0.0</Version>
@@ -18,7 +19,11 @@
     <Nullable>enable</Nullable>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <PublishAot>false</PublishAot>
-    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
 </Project>

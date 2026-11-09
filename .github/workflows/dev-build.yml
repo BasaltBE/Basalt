@@ -131,8 +131,8 @@ jobs:
           cd artifacts
           for dir in */; do
             name="${dir%/}"
-            if [ -f "$dir/BasaltBE.DedicatedServer" ]; then
-              chmod +x "$dir/BasaltBE.DedicatedServer"
+            if [ -f "$dir/DedicatedServer" ]; then
+              chmod +x "$dir/DedicatedServer"
             fi
             zip -r "../${name}-${RELEASE_TAG}.zip" "$dir"
           done
