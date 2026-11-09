@@ -1,0 +1,108 @@
+name: Publish Packages
+
+on:
+  workflow_run:
+    workflows: [Release, Dev Build]
+    types: [completed]
+    branches: [main, development]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuget-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish NuGet Packages
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      ((github.event.workflow_run.name == 'Release' && github.event.workflow_run.head_branch == 'main') ||
+       (github.event.workflow_run.name == 'Dev Build' && github.event.workflow_run.head_branch == 'development'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Verify GitHub release
+        id: release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+        run: |
+          [xml]$project = Get-Content src/BasaltBE.DedicatedServer/BasaltBE.DedicatedServer.csproj -Raw
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw 'DedicatedServer must declare a stable major.minor.patch Version.'
+          }
+
+          $development = $env:SOURCE_BRANCH -eq 'development'
+          if ($development) {
+            $commit = $env:SOURCE_SHA.Substring(0, 12)
+            $version = "$version-dev.$env:SOURCE_RUN_NUMBER.$commit"
+          }
+
+          $tag = "v$version"
+          $json = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw "GitHub release $tag was not found." }
+          $release = $json | ConvertFrom-Json
+          if ($release.draft -or $release.prerelease -ne $development -or $release.assets.Count -ne 3) {
+            throw "GitHub release $tag is incomplete or has the wrong channel."
+          }
+
+          git fetch --no-tags origin "refs/tags/${tag}:refs/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw "Could not fetch release tag $tag." }
+          $commit = git rev-parse "$tag^{commit}"
+          if ($LASTEXITCODE -ne 0 -or $commit -ne $env:SOURCE_SHA) {
+            throw "Release tag $tag does not match the successful build."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack public packages
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          foreach ($name in 'BasaltBE.Plugins', 'BasaltBE.Cli') {
+            dotnet pack "src/$name/$name.csproj" --configuration Release --output packages `
+              "-p:Version=$env:PACKAGE_VERSION" "-p:PackageVersion=$env:PACKAGE_VERSION" `
+              -p:ContinuousIntegrationBuild=true
+            if ($LASTEXITCODE -ne 0) { throw "Could not pack $name." }
+          }
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuGet-${{ steps.release.outputs.version }}
+          path: packages/*.nupkg
+          if-no-files-found: error
+
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: BasaltBE
+
+      - name: Publish missing package versions
+        run: >-
+          dotnet nuget push "packages/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --skip-duplicate
