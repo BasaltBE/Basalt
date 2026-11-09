@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
+    <ProjectReference Include="..\BasaltBE.Protocol\BasaltBE.Protocol.csproj" />
+    <ProjectReference Include="..\BasaltBE.Logger\BasaltBE.Logger.csproj" />
+    <ProjectReference Include="..\BasaltBE.Data\BasaltBE.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LevelDB.Net.MCPE" Version="1.1.7" />
+    <PackageReference Include="LevelDB.Net.Platform" Version="1.1.7" />
+    <PackageReference Include="Tracy-CSharp" Version="0.13.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RootNamespace>BasaltBE.Basalt</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

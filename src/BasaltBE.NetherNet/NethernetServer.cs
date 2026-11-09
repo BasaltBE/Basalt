@@ -1,0 +1,311 @@
+using System.Buffers;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Security.Cryptography;
+using System.Threading.Channels;
+using BasaltBE.NetherNet.Connections;
+using BasaltBE.NetherNet.Discovery;
+using BasaltBE.NetherNet.Enums;
+using BasaltBE.NetherNet.Signaling;
+using BasaltBE.NetherNet.Types;
+using BasaltBE.Logging;
+
+namespace BasaltBE.NetherNet;
+
+public sealed class NethernetServer : IDisposable, IAsyncDisposable {
+    private static readonly ScopedLogger Log = Logger.Scoped("NetherNet");
+
+    private const int MaximumOutgoingMessages = 8192;
+    private const long MaximumTotalQueuedSendBytes = 64L * 1024 * 1024;
+
+    private readonly NethernetServerOptions options;
+    private readonly IServerIdentity identity;
+    private readonly bool ownsIdentity;
+    private readonly Channel<NethernetMessage> incoming;
+    private readonly Channel<OutgoingMessage> outgoing;
+    private readonly ConcurrentDictionary<NethernetPeer, NethernetConnection> connections = new();
+    private readonly ConcurrentDictionary<NethernetPeer, Task> monitors = new();
+    private readonly CancellationTokenSource cancellation = new();
+    private readonly SemaphoreSlim peerCapacity;
+    private readonly Lock disposeSync = new();
+    private CancellationTokenRegistration startupCancellation;
+    private Task? disposeTask;
+    private Task? messageTask;
+    private Thread? sendThread;
+    private LanDiscovery? discovery;
+    private HttpSignalingListener? http;
+    private int started;
+    private int disposed;
+    private long queuedSendBytes;
+
+    private readonly record struct OutgoingMessage(
+        NethernetConnection Connection,
+        byte[] Buffer,
+        int Length,
+        MessageReliability Reliability
+    );
+
+    public NethernetServer(NethernetServerOptions options, IServerIdentity? identity = null) {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(options.Advertisement);
+        if (options.MaximumPeers < 1 || options.MaximumQueuedMessages < 1 || options.MaximumQueuedSendBytes < 1 || options.MaximumSdpLength < 1 ||
+            options.MaximumPacketLength < 1 || options.ReliableFragmentLength is < 1 or > 262_143 ||
+            options.UnreliableFragmentLength is < 1 or > 262_143 || options.NegotiationTimeout <= TimeSpan.Zero ||
+            options.RequestTimeout <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(options));
+        this.options = options;
+        this.identity = identity ?? new ServerIdentity(options.IdentityKeyPath);
+        ownsIdentity = identity is null;
+        peerCapacity = new SemaphoreSlim(options.MaximumPeers, options.MaximumPeers);
+        incoming = Channel.CreateBounded<NethernetMessage>(new BoundedChannelOptions(options.MaximumQueuedMessages) {
+            FullMode = BoundedChannelFullMode.Wait,
+            SingleReader = true,
+            SingleWriter = false
+        });
+        outgoing = Channel.CreateBounded<OutgoingMessage>(new BoundedChannelOptions(MaximumOutgoingMessages) {
+            FullMode = BoundedChannelFullMode.Wait,
+            SingleReader = true,
+            SingleWriter = false
+        });
+    }
+
+    public ulong NetworkId { get; private set; }
+
+    public async ValueTask StartAsync(CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
+        if (Interlocked.Exchange(ref started, 1) != 0) throw new InvalidOperationException("NetherNet server has already started.");
+        try {
+            NetworkId = options.NetworkId == 0 ? RandomNetworkId() : options.NetworkId;
+            sendThread = new Thread(SendLoop) { IsBackground = true, Name = "NetherNet Send" };
+            sendThread.Start();
+            discovery = new LanDiscovery(options, identity, NetworkId, AcceptAsync);
+            http = new HttpSignalingListener(options, identity, AcceptAsync);
+            startupCancellation = cancellationToken.Register(static state => ((NethernetServer)state!).StopOnCancellation(), this);
+            if (cancellationToken.IsCancellationRequested) {
+                startupCancellation.Dispose();
+                await DisposeAsync().ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+        } catch {
+            await DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    public void Start(Action<NethernetMessage> handler) {
+        ArgumentNullException.ThrowIfNull(handler);
+        StartAsync().AsTask().GetAwaiter().GetResult();
+        messageTask = DispatchMessagesAsync(handler);
+    }
+
+    public ValueTask<NethernetMessage> ReceiveAsync(CancellationToken cancellationToken = default) => incoming.Reader.ReadAsync(cancellationToken);
+
+    public ValueTask SendAsync(
+        NethernetPeer peer,
+        ReadOnlyMemory<byte> payload,
+        MessageReliability reliability = MessageReliability.Reliable,
+        CancellationToken cancellationToken = default
+    ) {
+        cancellationToken.ThrowIfCancellationRequested();
+        Send(peer, payload, reliability);
+        return ValueTask.CompletedTask;
+    }
+
+    public ulong GetOutgoingBufferedBytes(NethernetPeer peer) =>
+        connections.TryGetValue(peer, out NethernetConnection? connection) ? connection.OutgoingBufferedBytes : 0;
+
+    public void Send(NethernetPeer peer, ReadOnlyMemory<byte> payload, MessageReliability reliability = MessageReliability.Reliable) {
+        if (!connections.TryGetValue(peer, out NethernetConnection? connection)) throw new PeerDisconnectedException(peer);
+
+        int fragmentLength = reliability == MessageReliability.Reliable
+            ? options.ReliableFragmentLength
+            : options.UnreliableFragmentLength;
+        int fragmentCount = Math.Max(1, 1 + (payload.Length - 1) / fragmentLength);
+        if (payload.Length > options.MaximumPacketLength || fragmentCount > 256 ||
+            (reliability == MessageReliability.Unreliable && fragmentCount != 1))
+            throw new ArgumentOutOfRangeException(nameof(payload), "The message exceeds the NetherNet framing limit.");
+        if (!connection.ReserveQueuedSendBytes(payload.Length)) {
+            Log.Warn($"Closing peer {peer.ConnectionId}: outgoing queue limit reached.");
+            connection.Close(new IOException("NetherNet outgoing queue is full."));
+            return;
+        }
+        if (!ReserveQueuedSendBytes(payload.Length)) {
+            connection.ReleaseQueuedSendBytes(payload.Length);
+            Log.Warn($"Closing peer {peer.ConnectionId}: server outgoing queue limit reached.");
+            connection.Close(new IOException("NetherNet server outgoing queue is full."));
+            return;
+        }
+
+        byte[]? buffer = null;
+        try {
+            buffer = ArrayPool<byte>.Shared.Rent(Math.Max(payload.Length, 1));
+            payload.Span.CopyTo(buffer);
+            if (outgoing.Writer.TryWrite(new OutgoingMessage(connection, buffer, payload.Length, reliability))) return;
+        } catch {
+            connection.ReleaseQueuedSendBytes(payload.Length);
+            Interlocked.Add(ref queuedSendBytes, -payload.Length);
+            if (buffer is not null) {
+                CryptographicOperations.ZeroMemory(buffer.AsSpan(0, payload.Length));
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+            throw;
+        }
+
+        connection.ReleaseQueuedSendBytes(payload.Length);
+        Interlocked.Add(ref queuedSendBytes, -payload.Length);
+        CryptographicOperations.ZeroMemory(buffer!.AsSpan(0, payload.Length));
+        ArrayPool<byte>.Shared.Return(buffer);
+        Log.Warn($"Closing peer {peer.ConnectionId}: outgoing queue is full.");
+        connection.Close(new IOException("NetherNet outgoing queue is full."));
+    }
+
+    public void Disconnect(NethernetPeer peer) {
+        if (connections.TryGetValue(peer, out NethernetConnection? connection))
+            connection.Close(new IOException("The server closed the connection."));
+    }
+
+    public ValueTask DisposeAsync() {
+        lock (disposeSync)
+            return new ValueTask(disposeTask ??= DisposeCoreAsync());
+    }
+
+    public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();
+
+    private async Task DisposeCoreAsync() {
+        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+        cancellation.Cancel();
+        startupCancellation.Dispose();
+        incoming.Writer.TryComplete();
+        outgoing.Writer.TryComplete();
+        if (sendThread is not null && sendThread != Thread.CurrentThread)
+            sendThread.Join();
+        if (messageTask is not null) await messageTask.ConfigureAwait(false);
+        if (http is not null) await http.DisposeAsync().ConfigureAwait(false);
+        if (discovery is not null) await discovery.DisposeAsync().ConfigureAwait(false);
+        await Task.WhenAll(connections.Values.Select(connection => connection.DisposeAsync().AsTask())).ConfigureAwait(false);
+        await Task.WhenAll(monitors.Values).ConfigureAwait(false);
+        if (ownsIdentity) identity.Dispose();
+        peerCapacity.Dispose();
+        cancellation.Dispose();
+    }
+
+    private void SendLoop() {
+        try {
+            while (outgoing.Reader.WaitToReadAsync().AsTask().GetAwaiter().GetResult()) {
+                while (outgoing.Reader.TryRead(out OutgoingMessage message)) {
+                    try {
+                        if (!message.Connection.Completion.IsCompleted)
+                            message.Connection.SendAsync(message.Buffer.AsMemory(0, message.Length), message.Reliability)
+                                .AsTask().GetAwaiter().GetResult();
+                    } catch (Exception error) {
+                        Log.Warn($"Send to peer {message.Connection.Peer.ConnectionId} failed: {error.Message}");
+                        message.Connection.Close(error);
+                    } finally {
+                        message.Connection.ReleaseQueuedSendBytes(message.Length);
+                        Interlocked.Add(ref queuedSendBytes, -message.Length);
+                        CryptographicOperations.ZeroMemory(message.Buffer.AsSpan(0, message.Length));
+                        ArrayPool<byte>.Shared.Return(message.Buffer);
+                    }
+                }
+            }
+        } catch (ChannelClosedException) { }
+    }
+
+    private bool ReserveQueuedSendBytes(int length) {
+        long current = Volatile.Read(ref queuedSendBytes);
+        while (current + length <= MaximumTotalQueuedSendBytes) {
+            long reserved = Interlocked.CompareExchange(ref queuedSendBytes, current + length, current);
+            if (reserved == current) return true;
+            current = reserved;
+        }
+
+        return false;
+    }
+
+    private async Task DispatchMessagesAsync(Action<NethernetMessage> handler) {
+        try {
+            await foreach (NethernetMessage message in incoming.Reader.ReadAllAsync(cancellation.Token).ConfigureAwait(false)) {
+                try {
+                    handler(message);
+                } catch (Exception error) {
+                    Log.Error($"NetherNet message handler failed: {error.Message}");
+                }
+            }
+        } catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+    }
+
+    private void StopOnCancellation() {
+        _ = DisposeAsync().AsTask().ContinueWith(task =>
+            Log.Error($"NetherNet shutdown failed: {task.Exception?.GetBaseException().Message}"),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private ValueTask AcceptAsync(NethernetPeer peer, NethernetConnection connection) {
+        if (!peerCapacity.Wait(0)) throw new InvalidOperationException("NetherNet server is at capacity.");
+        if (!connections.TryAdd(peer, connection)) {
+            peerCapacity.Release();
+            throw new InvalidOperationException("Duplicate NetherNet peer.");
+        }
+        Lock eventSync = new();
+        int connectionState = 0;
+        bool PublishConnected() {
+            lock (eventSync) {
+                if (connectionState == 1) return true;
+                if (connectionState == -1) return false;
+                if (!incoming.Writer.TryWrite(new NethernetMessage(peer, MessageReliability.Reliable, ReadOnlyMemory<byte>.Empty, Connected: true))) {
+                    connectionState = -1;
+                    return false;
+                }
+                connectionState = 1;
+                return true;
+            }
+        }
+
+        connection.MessageHandler = message => {
+            lock (eventSync) {
+                if (!PublishConnected() || !incoming.Writer.TryWrite(message))
+                    connection.Close(new IOException("NetherNet receive queue is full."));
+            }
+        };
+        Task monitor = ObserveConnectionAsync(peer, connection, PublishConnected, eventSync, () => connectionState == 1);
+        monitors[peer] = monitor;
+        _ = monitor.ContinueWith(completed => {
+            if (monitors.TryGetValue(peer, out Task? current) && ReferenceEquals(current, completed))
+                monitors.TryRemove(peer, out _);
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task ObserveConnectionAsync(NethernetPeer peer, NethernetConnection connection, Func<bool> publishConnected, Lock eventSync, Func<bool> wasConnected) {
+        try {
+            await connection.ChannelsReady.WaitAsync(options.NegotiationTimeout, cancellation.Token).ConfigureAwait(false);
+            if (!publishConnected()) throw new IOException("NetherNet event queue is full.");
+            Exception? failure = await connection.Completion.ConfigureAwait(false);
+            if (failure is not null and not ObjectDisposedException) Log.Warn($"Peer {peer.NetworkId}/{peer.ConnectionId} closed: {failure.Message}");
+        } catch (Exception error) when (error is OperationCanceledException or TimeoutException or ChannelClosedException or IOException) {
+            if (error is not OperationCanceledException || !cancellation.IsCancellationRequested)
+                Log.Error($"Peer {peer.NetworkId}/{peer.ConnectionId} failed: {error.Message}");
+        } finally {
+            connections.TryRemove(peer, out _);
+            bool connected;
+            lock (eventSync) connected = wasConnected();
+            try {
+                if (connected)
+                    await incoming.Writer.WriteAsync(new NethernetMessage(peer, MessageReliability.Unreliable, ReadOnlyMemory<byte>.Empty, Disconnected: true), cancellation.Token).ConfigureAwait(false);
+            } catch (Exception error) when (error is ChannelClosedException or OperationCanceledException) {
+            } finally {
+                peerCapacity.Release();
+            }
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private static ulong RandomNetworkId() {
+        Span<byte> bytes = stackalloc byte[sizeof(ulong)];
+        RandomNumberGenerator.Fill(bytes);
+        return System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
+    }
+}

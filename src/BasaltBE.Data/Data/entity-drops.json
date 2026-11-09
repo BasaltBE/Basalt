@@ -1,0 +1,1566 @@
+{
+  "variants": [
+    "default",
+    "looting1",
+    "looting2",
+    "looting3",
+    "fireAspect1",
+    "looting1_fireAspect1",
+    "looting2_fireAspect1",
+    "looting3_fireAspect1",
+    "fireAspect2",
+    "looting1_fireAspect2",
+    "looting2_fireAspect2",
+    "looting3_fireAspect2"
+  ],
+  "dropSets": [
+    [],
+    [{ "identifier": "minecraft:string", "minAmount": 0, "maxAmount": 2 }],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [{ "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 }],
+    [
+      { "identifier": "minecraft:ice_ball", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:ice_ball", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:ice_ball", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:ice_ball", "minAmount": 0, "maxAmount": 6 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:ice_ball", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [{ "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 1 }],
+    [{ "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 1 }],
+    [{ "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:seagrass", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:seagrass", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:seagrass", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:seagrass", "minAmount": 0, "maxAmount": 5 }],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 6 }
+    ],
+    [{ "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 5 }],
+    [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:shulker_shell",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      { "identifier": "minecraft:mutton", "minAmount": 1, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      { "identifier": "minecraft:mutton", "minAmount": 1, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      { "identifier": "minecraft:mutton", "minAmount": 1, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      { "identifier": "minecraft:mutton", "minAmount": 1, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 2
+      }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    [
+      { "identifier": "minecraft:brown_wool", "minAmount": 1, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:cooked_mutton",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    [
+      { "identifier": "minecraft:rabbit", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:rabbit", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:rabbit", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:rabbit", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 1 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_rabbit",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      { "identifier": "minecraft:rabbit_hide", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [{ "identifier": "minecraft:nether_star", "minAmount": 1, "maxAmount": 1 }],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 2 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 4 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 4 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:coal", "minAmount": 0, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:coal", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:coal", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:coal", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:coal", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [{ "identifier": "minecraft:string", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:string", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:string", "minAmount": 0, "maxAmount": 5 }],
+    [{ "identifier": "minecraft:snowball", "minAmount": 0, "maxAmount": 15 }],
+    [{ "identifier": "minecraft:snowball", "minAmount": 0, "maxAmount": 14 }],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:salmon", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:salmon", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:salmon", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:salmon", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 2 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 2
+      }
+    ],
+    [
+      { "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 3
+      }
+    ],
+    [
+      { "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 4 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 4
+      }
+    ],
+    [
+      { "identifier": "minecraft:cooked_cod", "minAmount": 0, "maxAmount": 5 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 0,
+        "maxAmount": 5
+      }
+    ],
+    [
+      { "identifier": "minecraft:chicken", "minAmount": 1, "maxAmount": 1 },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:chicken", "minAmount": 1, "maxAmount": 2 },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:chicken", "minAmount": 1, "maxAmount": 3 },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:chicken", "minAmount": 1, "maxAmount": 4 },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 2
+      },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_chicken",
+        "minAmount": 1,
+        "maxAmount": 4
+      },
+      { "identifier": "minecraft:feather", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [{ "identifier": "minecraft:porkchop", "minAmount": 1, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:porkchop", "minAmount": 1, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:porkchop", "minAmount": 1, "maxAmount": 5 }],
+    [{ "identifier": "minecraft:porkchop", "minAmount": 1, "maxAmount": 6 }],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 3
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 4
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 5
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 1,
+        "maxAmount": 6
+      }
+    ],
+    [{ "identifier": "minecraft:bamboo", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:bamboo", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:bamboo", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:bamboo", "minAmount": 0, "maxAmount": 5 }],
+    [{ "identifier": "minecraft:ender_pearl", "minAmount": 0, "maxAmount": 1 }],
+    [{ "identifier": "minecraft:ender_pearl", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:ender_pearl", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:ender_pearl", "minAmount": 0, "maxAmount": 4 }],
+    [
+      { "identifier": "minecraft:glow_ink_sac", "minAmount": 1, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:glow_ink_sac", "minAmount": 1, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:glow_ink_sac", "minAmount": 1, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:glow_ink_sac", "minAmount": 2, "maxAmount": 6 }
+    ],
+    [
+      { "identifier": "minecraft:glow_ink_sac", "minAmount": 1, "maxAmount": 6 }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 1
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 2 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:cod", "minAmount": 0, "maxAmount": 4 },
+      {
+        "identifier": "minecraft:prismarine_crystals",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:prismarine_shard",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:tide_armor_trim_smithing_template",
+        "minAmount": 0,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 2, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 2, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 2, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 2, "maxAmount": 6 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:copper_ingot", "minAmount": 1, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:gold_nugget", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:gold_nugget", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:gold_nugget", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:gold_nugget", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 1, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 1, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 1, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:rotten_flesh", "minAmount": 1, "maxAmount": 6 }
+    ],
+    [{ "identifier": "minecraft:ink_sac", "minAmount": 1, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:ink_sac", "minAmount": 1, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:ink_sac", "minAmount": 1, "maxAmount": 5 }],
+    [{ "identifier": "minecraft:ink_sac", "minAmount": 1, "maxAmount": 6 }],
+    [
+      { "identifier": "minecraft:iron_ingot", "minAmount": 3, "maxAmount": 5 },
+      { "identifier": "minecraft:poppy", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:porkchop", "minAmount": 2, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:porkchop", "minAmount": 2, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:porkchop", "minAmount": 2, "maxAmount": 6 }
+    ],
+    [
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:porkchop", "minAmount": 2, "maxAmount": 7 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 4
+      },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 1 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 5
+      },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 6
+      },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:cooked_porkchop",
+        "minAmount": 2,
+        "maxAmount": 7
+      },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:beef", "minAmount": 1, "maxAmount": 3 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:beef", "minAmount": 1, "maxAmount": 4 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:beef", "minAmount": 1, "maxAmount": 5 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:beef", "minAmount": 1, "maxAmount": 6 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_beef", "minAmount": 1, "maxAmount": 3 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_beef", "minAmount": 1, "maxAmount": 4 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_beef", "minAmount": 1, "maxAmount": 5 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_beef", "minAmount": 1, "maxAmount": 5 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:cooked_beef", "minAmount": 1, "maxAmount": 6 },
+      { "identifier": "minecraft:leather", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [{ "identifier": "minecraft:feather", "minAmount": 1, "maxAmount": 2 }],
+    [
+      { "identifier": "minecraft:ghast_tear", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      { "identifier": "minecraft:ghast_tear", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      { "identifier": "minecraft:ghast_tear", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      { "identifier": "minecraft:ghast_tear", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 6 },
+      {
+        "identifier": "minecraft:tropical_fish",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:salmon", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:salmon", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:salmon", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:salmon", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 6 },
+      {
+        "identifier": "minecraft:cooked_salmon",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [{ "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 4 }],
+    [{ "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 5 }],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:pufferfish", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:pufferfish", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:pufferfish", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:pufferfish", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 1 },
+      { "identifier": "minecraft:cooked_cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:cooked_cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:cooked_cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [
+      { "identifier": "minecraft:bone", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:cooked_cod", "minAmount": 1, "maxAmount": 1 }
+    ],
+    [{ "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 2 }],
+    [{ "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 3 }],
+    [{ "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 5 }],
+    [{ "identifier": "minecraft:arrow", "minAmount": 0, "maxAmount": 4 }],
+    [
+      { "identifier": "minecraft:emerald", "minAmount": 0, "maxAmount": 1 },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:emerald", "minAmount": 0, "maxAmount": 2 },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:emerald", "minAmount": 0, "maxAmount": 3 },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      { "identifier": "minecraft:emerald", "minAmount": 0, "maxAmount": 4 },
+      {
+        "identifier": "minecraft:totem_of_undying",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 8 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 9 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 6 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 6 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 10 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 8
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 11 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 4 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 8 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 9 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 3 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 10 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 5
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 8 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 11 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 7 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 2
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 8 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 2 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 2 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 9 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 3
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 4
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 3 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 10 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 4 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 6 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:glass_bottle",
+        "minAmount": 0,
+        "maxAmount": 6
+      },
+      {
+        "identifier": "minecraft:glowstone_dust",
+        "minAmount": 0,
+        "maxAmount": 7
+      },
+      { "identifier": "minecraft:gunpowder", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:redstone", "minAmount": 4, "maxAmount": 11 },
+      { "identifier": "minecraft:spider_eye", "minAmount": 0, "maxAmount": 5 },
+      { "identifier": "minecraft:stick", "minAmount": 0, "maxAmount": 7 },
+      { "identifier": "minecraft:sugar", "minAmount": 0, "maxAmount": 5 }
+    ],
+    [
+      {
+        "identifier": "minecraft:sculk_catalyst",
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    ]
+  ],
+  "entities": [
+    {
+      "identifier": "minecraft:magma_cube",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "editor:ruler_idle",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:cat",
+      "dropSetIds": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "identifier": "editor:ruler_pointer_selected",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:zombie",
+      "dropSetIds": [2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5]
+    },
+    {
+      "identifier": "minecraft:ice_ball",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:egg",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:husk",
+      "dropSetIds": [2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5]
+    },
+    {
+      "identifier": "minecraft:skeleton_horse",
+      "dropSetIds": [6, 7, 8, 9, 6, 7, 8, 9, 6, 7, 8, 9]
+    },
+    {
+      "identifier": "minecraft:frostbite",
+      "dropSetIds": [10, 11, 12, 13, 10, 11, 14, 13, 10, 11, 12, 13]
+    },
+    {
+      "identifier": "minecraft:dolphin",
+      "dropSetIds": [15, 16, 17, 18, 19, 20, 21, 22, 19, 20, 21, 22]
+    },
+    {
+      "identifier": "editor:map_marker",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:fox",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:xp_bottle",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "editor:location_pointer_selected",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:fireworks_rocket",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "editor:location_pointer_idle",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:turtle",
+      "dropSetIds": [23, 24, 25, 26, 23, 24, 25, 26, 23, 24, 25, 26]
+    },
+    {
+      "identifier": "minecraft:zombie_nautilus",
+      "dropSetIds": [3, 4, 5, 27, 3, 4, 5, 5, 3, 4, 5, 27]
+    },
+    {
+      "identifier": "minecraft:trader_llama",
+      "dropSetIds": [28, 29, 30, 31, 28, 29, 30, 31, 28, 29, 30, 31]
+    },
+    {
+      "identifier": "minecraft:strider",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:shulker",
+      "dropSetIds": [32, 33, 34, 35, 32, 33, 34, 35, 32, 33, 34, 35]
+    },
+    {
+      "identifier": "minecraft:sheep",
+      "dropSetIds": [36, 37, 38, 39, 40, 41, 42, 43, 40, 41, 42, 43]
+    },
+    {
+      "identifier": "minecraft:wind_charge_projectile",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:endermite",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:blaze",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:ocelot",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:arrow",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:llama",
+      "dropSetIds": [28, 29, 30, 31, 28, 29, 30, 31, 28, 29, 30, 31]
+    },
+    {
+      "identifier": "minecraft:horse",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:cushion",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:wolf",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:rabbit",
+      "dropSetIds": [44, 45, 46, 47, 48, 49, 50, 51, 48, 49, 50, 51]
+    },
+    {
+      "identifier": "minecraft:agent",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:stray",
+      "dropSetIds": [52, 53, 54, 55, 52, 53, 54, 55, 52, 53, 54, 55]
+    },
+    {
+      "identifier": "minecraft:wither",
+      "dropSetIds": [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56]
+    },
+    {
+      "identifier": "minecraft:guardian",
+      "dropSetIds": [57, 58, 59, 60, 57, 58, 59, 60, 57, 58, 59, 61]
+    },
+    {
+      "identifier": "minecraft:wither_skeleton",
+      "dropSetIds": [62, 63, 64, 65, 62, 63, 64, 65, 62, 63, 64, 66]
+    },
+    {
+      "identifier": "minecraft:sulfur_cube",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:splash_potion",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:spider",
+      "dropSetIds": [1, 67, 68, 69, 1, 67, 68, 69, 1, 67, 68, 69]
+    },
+    {
+      "identifier": "minecraft:snowball",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:snow_golem",
+      "dropSetIds": [70, 71, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70]
+    },
+    {
+      "identifier": "minecraft:skeleton",
+      "dropSetIds": [52, 53, 54, 55, 52, 53, 54, 55, 52, 53, 54, 72]
+    },
+    {
+      "identifier": "minecraft:ender_crystal",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:silverfish",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:polar_bear",
+      "dropSetIds": [73, 74, 75, 76, 77, 78, 79, 80, 77, 78, 79, 80]
+    },
+    {
+      "identifier": "minecraft:chicken",
+      "dropSetIds": [81, 82, 83, 84, 85, 86, 87, 88, 85, 86, 87, 88]
+    },
+    {
+      "identifier": "minecraft:pig",
+      "dropSetIds": [89, 90, 91, 92, 93, 94, 95, 96, 93, 94, 95, 96]
+    },
+    {
+      "identifier": "minecraft:panda",
+      "dropSetIds": [97, 98, 99, 100, 97, 98, 99, 100, 97, 98, 99, 100]
+    },
+    {
+      "identifier": "minecraft:creaking",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:nautilus",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:frog",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:enderman",
+      "dropSetIds": [101, 102, 103, 104, 101, 102, 103, 104, 101, 102, 103, 104]
+    },
+    {
+      "identifier": "minecraft:ender_dragon",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:glow_squid",
+      "dropSetIds": [105, 106, 107, 108, 105, 106, 107, 109, 105, 106, 107, 109]
+    },
+    {
+      "identifier": "minecraft:elder_guardian",
+      "dropSetIds": [110, 111, 112, 113, 110, 111, 112, 113, 110, 111, 112, 113]
+    },
+    {
+      "identifier": "minecraft:drowned",
+      "dropSetIds": [2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5]
+    },
+    {
+      "identifier": "minecraft:cave_spider",
+      "dropSetIds": [1, 67, 68, 69, 1, 67, 68, 69, 1, 67, 68, 69]
+    },
+    {
+      "identifier": "minecraft:breeze",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:axolotl",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:armor_stand",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:lightning_bolt",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:zombie_horse",
+      "dropSetIds": [114, 115, 116, 117, 114, 115, 116, 117, 114, 115, 116, 117]
+    },
+    {
+      "identifier": "minecraft:tnt_minecart",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:parched",
+      "dropSetIds": [52, 53, 118, 55, 52, 53, 54, 55, 52, 53, 54, 119]
+    },
+    {
+      "identifier": "minecraft:mule",
+      "dropSetIds": [28, 29, 30, 31, 28, 29, 30, 31, 28, 29, 30, 31]
+    },
+    {
+      "identifier": "minecraft:minecart",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:hopper_minecart",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:happy_ghast",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:donkey",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:command_block_minecart",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:chest_minecart",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:chest_boat",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:camel_husk",
+      "dropSetIds": [114, 115, 116, 117, 114, 115, 116, 117, 114, 115, 116, 117]
+    },
+    {
+      "identifier": "minecraft:camel",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:bogged",
+      "dropSetIds": [52, 53, 54, 55, 52, 53, 54, 55, 52, 53, 54, 55]
+    },
+    {
+      "identifier": "minecraft:boat",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:copper_golem",
+      "dropSetIds": [120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120]
+    },
+    {
+      "identifier": "minecraft:bee",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:zombie_villager_v2",
+      "dropSetIds": [2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5]
+    },
+    {
+      "identifier": "minecraft:zombie_pigman",
+      "dropSetIds": [121, 122, 123, 124, 121, 122, 123, 124, 121, 122, 123, 124]
+    },
+    {
+      "identifier": "minecraft:zoglin",
+      "dropSetIds": [125, 126, 127, 128, 125, 126, 127, 128, 125, 126, 127, 128]
+    },
+    {
+      "identifier": "minecraft:villager_v2",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:squid",
+      "dropSetIds": [129, 130, 131, 132, 129, 130, 131, 132, 129, 130, 131, 132]
+    },
+    {
+      "identifier": "minecraft:piglin",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:iron_golem",
+      "dropSetIds": [133, 133, 133, 133, 133, 133, 133, 133, 133, 133, 133, 133]
+    },
+    {
+      "identifier": "minecraft:hoglin",
+      "dropSetIds": [134, 135, 136, 137, 138, 139, 140, 141, 138, 139, 140, 141]
+    },
+    {
+      "identifier": "minecraft:tadpole",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:sniffer",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:mooshroom",
+      "dropSetIds": [142, 143, 144, 145, 146, 147, 148, 149, 146, 147, 148, 150]
+    },
+    {
+      "identifier": "minecraft:goat",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:cow",
+      "dropSetIds": [142, 143, 144, 145, 146, 147, 148, 150, 146, 147, 148, 150]
+    },
+    {
+      "identifier": "minecraft:armadillo",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:allay",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:phantom",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:ravager",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:parrot",
+      "dropSetIds": [151, 151, 151, 151, 151, 151, 151, 151, 151, 151, 151, 151]
+    },
+    {
+      "identifier": "minecraft:ghast",
+      "dropSetIds": [152, 153, 154, 155, 152, 153, 154, 155, 152, 153, 154, 155]
+    },
+    {
+      "identifier": "minecraft:tropicalfish",
+      "dropSetIds": [156, 157, 158, 159, 156, 157, 158, 160, 156, 157, 158, 159]
+    },
+    {
+      "identifier": "minecraft:salmon",
+      "dropSetIds": [161, 162, 163, 164, 165, 166, 167, 168, 165, 166, 167, 169]
+    },
+    {
+      "identifier": "minecraft:creeper",
+      "dropSetIds": [170, 171, 172, 173, 170, 171, 172, 173, 170, 171, 172, 173]
+    },
+    {
+      "identifier": "minecraft:pufferfish",
+      "dropSetIds": [174, 175, 176, 177, 174, 175, 176, 177, 174, 175, 176, 177]
+    },
+    {
+      "identifier": "minecraft:cod",
+      "dropSetIds": [178, 179, 180, 181, 182, 183, 184, 185, 182, 183, 184, 185]
+    },
+    {
+      "identifier": "minecraft:vindicator",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:vex",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:pillager",
+      "dropSetIds": [186, 187, 187, 188, 186, 187, 189, 188, 186, 187, 189, 188]
+    },
+    {
+      "identifier": "minecraft:slime",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:evocation_illager",
+      "dropSetIds": [190, 191, 192, 193, 190, 191, 192, 193, 190, 191, 192, 193]
+    },
+    {
+      "identifier": "minecraft:wandering_trader",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:villager",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:zombie_villager",
+      "dropSetIds": [2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5]
+    },
+    {
+      "identifier": "minecraft:witch",
+      "dropSetIds": [194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205]
+    },
+    {
+      "identifier": "minecraft:warden",
+      "dropSetIds": [206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206]
+    },
+    {
+      "identifier": "minecraft:piglin_brute",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:npc",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:bat",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:xp_orb",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "identifier": "minecraft:tnt",
+      "dropSetIds": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  ]
+}

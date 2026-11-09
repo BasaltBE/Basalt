@@ -1,0 +1,2796 @@
+[
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:azalea_tree_feature"
+      },
+      "acacia_trunk": {
+        "trunk_width": 1,
+        "trunk_height": {
+          "base": 4,
+          "intervals": [
+            2
+          ],
+          "min_height_for_canopy": 3
+        },
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        },
+        "trunk_lean": {
+          "allow_diagonal_growth": true,
+          "lean_height": {
+            "range_min": 2,
+            "range_max": 3
+          },
+          "lean_steps": {
+            "range_min": 3,
+            "range_max": 4
+          },
+          "lean_length": {
+            "range_min": 1,
+            "range_max": 2
+          }
+        }
+      },
+      "random_spread_canopy": {
+        "canopy_height": 2,
+        "canopy_radius": 3,
+        "leaf_placement_attempts": 50,
+        "leaf_blocks": [
+          [
+            "minecraft:azalea_leaves",
+            3
+          ],
+          [
+            "minecraft:azalea_leaves_flowered",
+            1
+          ]
+        ]
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:dirt_with_roots"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:azalea",
+        "minecraft:flowering_azalea",
+        "minecraft:moss_carpet",
+        "minecraft:short_grass",
+        "minecraft:fern",
+        "minecraft:grass_block",
+        "minecraft:sunflower",
+        "minecraft:lilac",
+        "minecraft:tall_grass",
+        "minecraft:large_fern",
+        "minecraft:rose_bush",
+        "minecraft:peony",
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:birch_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 5,
+          "range_max": 8
+        },
+        "trunk_block": {
+          "name": "minecraft:birch_log"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:birch_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:cherry_tree_feature"
+      },
+      "cherry_trunk": {
+        "trunk_block": "minecraft:cherry_log",
+        "trunk_height": {
+          "base": 7,
+          "intervals": [
+            1
+          ]
+        },
+        "branches": {
+          "tree_type_weights": {
+            "one_branch": 10,
+            "two_branches": 10,
+            "two_branches_and_trunk": 10
+          },
+          "branch_horizontal_length": {
+            "range_min": 2,
+            "range_max": 4
+          },
+          "branch_start_offset_from_top": {
+            "range_min": -4,
+            "range_max": -3
+          },
+          "branch_end_offset_from_top": {
+            "range_min": -1,
+            "range_max": 0
+          },
+          "branch_canopy": {
+            "cherry_canopy": {
+              "leaf_block": "minecraft:cherry_leaves",
+              "height": 5,
+              "radius": 4,
+              "wide_bottom_layer_hole_chance": 25,
+              "corner_hole_chance": 50,
+              "hanging_leaves_chance": 16.6666,
+              "hanging_leaves_extension_chance": 33.3333
+            }
+          }
+        }
+      },
+      "cherry_canopy": {
+        "leaf_block": "minecraft:cherry_leaves",
+        "height": 5,
+        "radius": 4,
+        "wide_bottom_layer_hole_chance": 25,
+        "corner_hole_chance": 50,
+        "hanging_leaves_chance": 16.6666,
+        "hanging_leaves_extension_chance": 33.3333
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_birch_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 5,
+          "range_max": 8
+        },
+        "trunk_block": {
+          "name": "minecraft:birch_log"
+        },
+        "log_decoration_feature": "minecraft:optional_log_mushrooms_feature"
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_jungle_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 4,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        },
+        "log_decoration_feature": "minecraft:optional_log_mushrooms_feature",
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": 75.0
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_oak_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 4,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        },
+        "log_decoration_feature": "minecraft:optional_log_mushrooms_feature",
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": 75.0
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_poplar_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 4,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:poplar_log"
+        },
+        "log_decoration_feature": "minecraft:select_dappled_forest_fallen_tree_decoration"
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter",
+        "minecraft:brown_mushroom",
+        "minecraft:red_shrub"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_spruce_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 6,
+          "range_max": 10
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        },
+        "log_decoration_feature": "minecraft:optional_log_mushrooms_feature"
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fallen_super_birch_tree_feature"
+      },
+      "fallen_trunk": {
+        "log_length": {
+          "range_min": 5,
+          "range_max": 8
+        },
+        "height_modifier": {
+          "range_min": 0,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:birch_log"
+        },
+        "log_decoration_feature": "minecraft:optional_log_mushrooms_feature"
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:fancy_oak_tree_feature"
+      },
+      "fancy_trunk": {
+        "trunk_height": {
+          "base": 5,
+          "variance": 12,
+          "scale": 0.618
+        },
+        "trunk_width": 1,
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        },
+        "branches": {
+          "slope": 0.381,
+          "density": 1.0,
+          "min_altitude_factor": 0.2
+        },
+        "width_scale": 1.0,
+        "foliage_altitude_factor": 0.3
+      },
+      "fancy_canopy": {
+        "height": 4,
+        "radius": 3,
+        "leaf_block": {
+          "name": "minecraft:oak_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:jungle_bush_feature"
+      },
+      "trunk": {
+        "trunk_height": 1,
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -1,
+          "max": 1
+        },
+        "leaf_block": {
+          "name": "minecraft:oak_leaves"
+        },
+        "min_width": 0,
+        "canopy_slope": {
+          "rise": 1,
+          "run": 1
+        },
+        "variation_chance": {
+          "numerator": 1,
+          "denominator": 2
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:jungle_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 4,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        },
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": 33.33
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:jungle_leaves"
+        },
+        "canopy_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 1,
+            "denominator": 4
+          },
+          "num_steps": 4,
+          "step_direction": "down"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mangrove_tree_feature"
+      },
+      "mangrove_roots": {
+        "max_root_width": 8,
+        "max_root_length": 15,
+        "y_offset": {
+          "range_min": 1,
+          "range_max": 4
+        },
+        "root_block": {
+          "name": "minecraft:mangrove_roots"
+        },
+        "muddy_root_block": {
+          "name": "minecraft:muddy_mangrove_roots"
+        },
+        "mud_block": {
+          "name": "minecraft:mud"
+        },
+        "above_root": {
+          "above_root_block": "minecraft:moss_carpet",
+          "above_root_chance": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        "roots_may_grow_through": [
+          "minecraft:air",
+          "minecraft:snow_layer",
+          "minecraft:mud",
+          "minecraft:mangrove_roots",
+          "minecraft:muddy_mangrove_roots",
+          "minecraft:water",
+          "minecraft:flowing_water",
+          "minecraft:vine",
+          "minecraft:moss_carpet",
+          "minecraft:mangrove_propagule"
+        ]
+      },
+      "mangrove_trunk": {
+        "trunk_width": 1,
+        "trunk_height": {
+          "base": 2,
+          "height_rand_a": 1,
+          "height_rand_b": 4
+        },
+        "trunk_block": {
+          "name": "minecraft:mangrove_log"
+        },
+        "branches": {
+          "branch_chance": 100.0,
+          "branch_length": {
+            "range_min": 0,
+            "range_max": 1
+          },
+          "branch_steps": {
+            "range_min": 1,
+            "range_max": 4
+          }
+        }
+      },
+      "mangrove_canopy": {
+        "canopy_height": 2,
+        "canopy_radius": 3,
+        "leaf_placement_attempts": 70,
+        "leaf_blocks": [
+          [
+            "minecraft:mangrove_leaves",
+            1
+          ]
+        ],
+        "canopy_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 1,
+            "denominator": 4
+          },
+          "num_steps": 4,
+          "step_direction": "down"
+        },
+        "hanging_block": {
+          "name": "minecraft:mangrove_propagule",
+          "states": {
+            "hanging": true
+          }
+        },
+        "hanging_block_placement_chance": {
+          "numerator": 1,
+          "denominator": 4
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:mud"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:vine",
+        "minecraft:moss_carpet",
+        "minecraft:mangrove_propagule",
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mega_jungle_tree_feature"
+      },
+      "mega_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 10,
+          "intervals": [
+            3,
+            20
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        },
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 1,
+            "denominator": 3
+          }
+        },
+        "branches": {
+          "branch_length": 5,
+          "branch_slope": 0.5,
+          "branch_interval": {
+            "range_min": 2,
+            "range_max": 6
+          },
+          "branch_altitude_factor": {
+            "min": 0.5,
+            "max": 1.0
+          },
+          "branch_canopy": {
+            "mega_canopy": {
+              "canopy_height": {
+                "range_min": 2,
+                "range_max": 4
+              },
+              "base_radius": 1,
+              "simplify_canopy": true,
+              "leaf_block": {
+                "name": "minecraft:jungle_leaves"
+              }
+            }
+          }
+        }
+      },
+      "mega_canopy": {
+        "canopy_height": 3,
+        "base_radius": 2,
+        "core_width": 2,
+        "leaf_block": {
+          "name": "minecraft:jungle_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mega_pine_tree_feature"
+      },
+      "mega_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 13,
+          "intervals": [
+            3,
+            15
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "mega_pine_canopy": {
+        "canopy_height": {
+          "range_min": 3,
+          "range_max": 8
+        },
+        "base_radius": 0,
+        "radius_step_modifier": 3.5,
+        "core_width": 2,
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:podzol"
+      ],
+      "base_cluster": {
+        "may_replace": [
+          {
+            "tags": "query.any_tag(\u0027dirt\u0027)"
+          }
+        ],
+        "num_clusters": 5,
+        "cluster_radius": 2
+      },
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mega_spruce_tree_feature"
+      },
+      "mega_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 13,
+          "intervals": [
+            3,
+            15
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "mega_pine_canopy": {
+        "canopy_height": {
+          "range_min": 13,
+          "range_max": 18
+        },
+        "base_radius": 0,
+        "radius_step_modifier": 3.5,
+        "core_width": 2,
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:podzol"
+      ],
+      "base_cluster": {
+        "may_replace": [
+          {
+            "tags": "query.any_tag(\u0027dirt\u0027)"
+          }
+        ],
+        "num_clusters": 5,
+        "cluster_radius": 2
+      },
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mountain_pine_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 7,
+          "range_max": 12
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "pine_canopy": {
+        "base_radius": 1,
+        "canopy_height": {
+          "range_min": 3,
+          "range_max": 5
+        },
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:snow"
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:snow"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:mountain_spruce_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 6,
+          "range_max": 10
+        },
+        "height_modifier": {
+          "range_min": -2,
+          "range_max": 1
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "spruce_canopy": {
+        "lower_offset": {
+          "range_min": 1,
+          "range_max": 3
+        },
+        "upper_offset": {
+          "range_min": 0,
+          "range_max": 3
+        },
+        "max_radius": {
+          "range_min": 2,
+          "range_max": 4
+        },
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:snow"
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:snow"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:oak_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 4,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:oak_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:oak_tree_with_vines_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 4,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        },
+        "trunk_decoration": {
+          "decoration_chance": 100.0,
+          "decoration_block": "minecraft:vine"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:oak_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:scatter_feature": {
+      "description": {
+        "identifier": "minecraft:optional_shelf_mushroom_feature"
+      },
+      "iterations": 1,
+      "scatter_chance": {
+        "numerator": 1,
+        "denominator": 4
+      },
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "places_feature": "minecraft:shelf_mushroom_feature"
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:orange_poplar_tree_feature"
+      },
+      "poplar_trunk": {
+        "trunk_height": {
+          "range_min": 7,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:poplar_log"
+        },
+        "remaining_trunk_height_above_branches": {
+          "range_min": 4,
+          "range_max": 4
+        },
+        "amount_of_foliage_support_branches": {
+          "range_min": 1,
+          "range_max": 4
+        },
+        "log_decoration_feature": "minecraft:optional_shelf_mushroom_feature"
+      },
+      "poplar_canopy": {
+        "radius": [
+          {
+            "value": 5,
+            "weight": 5
+          },
+          {
+            "value": 6,
+            "weight": 5
+          },
+          {
+            "value": 7,
+            "weight": 1
+          },
+          {
+            "value": 8,
+            "weight": 1
+          }
+        ],
+        "height": {
+          "range_min": 5,
+          "range_max": 6
+        },
+        "side_hole_chance": 0.15,
+        "leaf_block": {
+          "name": "minecraft:orange_poplar_leaves"
+        },
+        "branch_block": {
+          "name": "minecraft:poplar_log"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter",
+        "minecraft:brown_mushroom",
+        "minecraft:red_shrub",
+        "minecraft:shelf_mushroom"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:aggregate_feature": {
+      "description": {
+        "identifier": "minecraft:orange_poplar_tree_with_leaf_litter_feature"
+      },
+      "early_out": "first_failure",
+      "features": [
+        "minecraft:orange_poplar_tree_feature",
+        "minecraft:scatter_leaf_litter_feature"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:pale_oak_tree_feature"
+      },
+      "acacia_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 6,
+          "intervals": [
+            3,
+            2
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:pale_oak_log"
+        },
+        "trunk_lean": {
+          "allow_diagonal_growth": false,
+          "lean_height": {
+            "range_min": 0,
+            "range_max": 4
+          },
+          "lean_steps": {
+            "range_min": 0,
+            "range_max": 3
+          }
+        },
+        "branches": {
+          "branch_chance": {
+            "numerator": 1,
+            "denominator": 3
+          },
+          "branch_length": {
+            "range_min": 2,
+            "range_max": 5
+          },
+          "branch_position": 1,
+          "branch_canopy": {
+            "acacia_canopy": {
+              "canopy_size": 2,
+              "leaf_block": "minecraft:pale_oak_leaves",
+              "simplify_canopy": true
+            }
+          }
+        }
+      },
+      "roofed_canopy": {
+        "canopy_height": 4,
+        "core_width": 2,
+        "outer_radius": 2,
+        "inner_radius": 3,
+        "leaf_block": "minecraft:pale_oak_leaves"
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:closed_eyeblossom",
+        "minecraft:open_eyeblossom",
+        "minecraft:pale_moss_carpet",
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:pine_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 7,
+          "range_max": 12
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "pine_canopy": {
+        "base_radius": 1,
+        "canopy_height": {
+          "range_min": 3,
+          "range_max": 5
+        },
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:red_poplar_tree_feature"
+      },
+      "poplar_trunk": {
+        "trunk_height": {
+          "range_min": 7,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:poplar_log"
+        },
+        "remaining_trunk_height_above_branches": {
+          "range_min": 4,
+          "range_max": 4
+        },
+        "amount_of_foliage_support_branches": {
+          "range_min": 1,
+          "range_max": 4
+        },
+        "log_decoration_feature": "minecraft:optional_shelf_mushroom_feature"
+      },
+      "poplar_canopy": {
+        "radius": [
+          {
+            "value": 5,
+            "weight": 5
+          },
+          {
+            "value": 6,
+            "weight": 5
+          },
+          {
+            "value": 7,
+            "weight": 1
+          },
+          {
+            "value": 8,
+            "weight": 1
+          }
+        ],
+        "height": {
+          "range_min": 5,
+          "range_max": 6
+        },
+        "side_hole_chance": 0.15,
+        "leaf_block": {
+          "name": "minecraft:red_poplar_leaves"
+        },
+        "branch_block": {
+          "name": "minecraft:poplar_log"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter",
+        "minecraft:brown_mushroom",
+        "minecraft:red_shrub",
+        "minecraft:shelf_mushroom"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:aggregate_feature": {
+      "description": {
+        "identifier": "minecraft:red_poplar_tree_with_leaf_litter_feature"
+      },
+      "early_out": "first_failure",
+      "features": [
+        "minecraft:red_poplar_tree_feature",
+        "minecraft:scatter_leaf_litter_feature"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:single_block_feature": {
+      "description": {
+        "identifier": "minecraft:red_shrub_single_block_feature"
+      },
+      "places_block": [
+        {
+          "block": "minecraft:red_shrub",
+          "weight": 1
+        }
+      ],
+      "randomize_rotation": false,
+      "enforce_survivability_rules": true,
+      "enforce_placement_rules": true
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:roofed_tree_feature"
+      },
+      "acacia_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 6,
+          "intervals": [
+            3,
+            2
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:dark_oak_log"
+        },
+        "trunk_lean": {
+          "allow_diagonal_growth": false,
+          "lean_height": {
+            "range_min": 0,
+            "range_max": 4
+          },
+          "lean_steps": {
+            "range_min": 0,
+            "range_max": 3
+          }
+        },
+        "branches": {
+          "branch_chance": {
+            "numerator": 1,
+            "denominator": 3
+          },
+          "branch_length": {
+            "range_min": 2,
+            "range_max": 5
+          },
+          "branch_position": 1,
+          "branch_canopy": {
+            "acacia_canopy": {
+              "canopy_size": 2,
+              "leaf_block": {
+                "name": "minecraft:dark_oak_leaves"
+              },
+              "simplify_canopy": true
+            }
+          }
+        }
+      },
+      "roofed_canopy": {
+        "canopy_height": 4,
+        "core_width": 2,
+        "outer_radius": 2,
+        "inner_radius": 3,
+        "leaf_block": {
+          "name": "minecraft:dark_oak_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:roofed_tree_with_vines_feature"
+      },
+      "acacia_trunk": {
+        "trunk_width": 2,
+        "trunk_height": {
+          "base": 6,
+          "intervals": [
+            3,
+            2
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:dark_oak_log"
+        },
+        "trunk_lean": {
+          "allow_diagonal_growth": false,
+          "lean_height": {
+            "range_min": 0,
+            "range_max": 4
+          },
+          "lean_steps": {
+            "range_min": 0,
+            "range_max": 3
+          }
+        },
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 6,
+            "denominator": 7
+          }
+        },
+        "branches": {
+          "branch_chance": {
+            "numerator": 1,
+            "denominator": 3
+          },
+          "branch_length": {
+            "range_min": 2,
+            "range_max": 5
+          },
+          "branch_position": 1,
+          "branch_canopy": {
+            "acacia_canopy": {
+              "canopy_size": 2,
+              "leaf_block": {
+                "name": "minecraft:dark_oak_leaves"
+              },
+              "simplify_canopy": true
+            }
+          }
+        }
+      },
+      "roofed_canopy": {
+        "canopy_height": 4,
+        "core_width": 2,
+        "outer_radius": 2,
+        "inner_radius": 3,
+        "leaf_block": {
+          "name": "minecraft:dark_oak_leaves"
+        }
+      },
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_on": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:podzol",
+        "minecraft:dirt_with_roots",
+        "minecraft:moss_block",
+        "minecraft:mycelium",
+        "minecraft:mud",
+        "minecraft:muddy_mangrove_roots",
+        "minecraft:coarse_dirt",
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 0
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 1
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 2
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 3
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 4
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 5
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 6
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 7
+          }
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        }
+      ],
+      "may_grow_through": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:coarse_dirt"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:savanna_tree_feature"
+      },
+      "acacia_trunk": {
+        "trunk_width": 1,
+        "trunk_height": {
+          "base": 5,
+          "intervals": [
+            3,
+            3
+          ]
+        },
+        "trunk_block": {
+          "name": "minecraft:acacia_log"
+        },
+        "trunk_lean": {
+          "allow_diagonal_growth": true,
+          "lean_height": {
+            "range_min": 1,
+            "range_max": 5
+          },
+          "lean_steps": {
+            "range_min": 1,
+            "range_max": 4
+          }
+        },
+        "branches": {
+          "branch_chance": 100.0,
+          "branch_length": {
+            "range_min": 1,
+            "range_max": 4
+          },
+          "branch_position": {
+            "range_min": 1,
+            "range_max": 3
+          },
+          "branch_canopy": {
+            "acacia_canopy": {
+              "canopy_size": 2,
+              "leaf_block": {
+                "name": "minecraft:acacia_leaves"
+              },
+              "simplify_canopy": true
+            }
+          }
+        }
+      },
+      "acacia_canopy": {
+        "canopy_size": 3,
+        "leaf_block": {
+          "name": "minecraft:acacia_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:scatter_feature": {
+      "description": {
+        "identifier": "minecraft:scatter_red_shrub_bush_feature"
+      },
+      "places_feature": "minecraft:red_shrub_single_block_feature",
+      "distribution": {
+        "iterations": 8,
+        "x": {
+          "distribution": "triangle",
+          "extent": [
+            -7,
+            7
+          ]
+        },
+        "y": {
+          "distribution": "triangle",
+          "extent": [
+            -3,
+            3
+          ]
+        },
+        "z": {
+          "distribution": "triangle",
+          "extent": [
+            -7,
+            7
+          ]
+        }
+      }
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:weighted_random_feature": {
+      "description": {
+        "identifier": "minecraft:select_dappled_forest_fallen_tree_decoration"
+      },
+      "features": [
+        [
+          "minecraft:optional_shelf_mushroom_feature",
+          1
+        ],
+        [
+          "minecraft:optional_log_brown_mushroom_feature",
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:weighted_random_feature": {
+      "description": {
+        "identifier": "minecraft:select_poplar_tree_feature"
+      },
+      "features": [
+        [
+          "minecraft:orange_poplar_tree_feature",
+          1
+        ],
+        [
+          "minecraft:red_poplar_tree_feature",
+          1
+        ],
+        [
+          "minecraft:yellow_poplar_tree_feature",
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:weighted_random_feature": {
+      "description": {
+        "identifier": "minecraft:select_tree_dappled_forest_feature"
+      },
+      "features": [
+        [
+          "minecraft:red_poplar_tree_with_leaf_litter_feature",
+          200
+        ],
+        [
+          "minecraft:orange_poplar_tree_with_leaf_litter_feature",
+          240
+        ],
+        [
+          "minecraft:yellow_poplar_tree_with_leaf_litter_feature",
+          90
+        ],
+        [
+          "minecraft:select_standing_spruce_tree_feature",
+          27
+        ],
+        [
+          "minecraft:fallen_poplar_tree_feature",
+          120
+        ]
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:horizontal_tree_decoration_feature": {
+      "description": {
+        "identifier": "minecraft:shelf_mushroom_feature"
+      },
+      "places_block": "minecraft:shelf_mushroom",
+      "bark_side_only": true,
+      "allow_adjacent": false
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:spruce_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 6,
+          "range_max": 10
+        },
+        "height_modifier": {
+          "range_min": -2,
+          "range_max": 1
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        }
+      },
+      "spruce_canopy": {
+        "lower_offset": {
+          "range_min": 1,
+          "range_max": 3
+        },
+        "upper_offset": {
+          "range_min": 0,
+          "range_max": 3
+        },
+        "max_radius": {
+          "range_min": 2,
+          "range_max": 4
+        },
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:spruce_tree_with_vines_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 6,
+          "range_max": 10
+        },
+        "height_modifier": {
+          "range_min": -2,
+          "range_max": 1
+        },
+        "trunk_block": {
+          "name": "minecraft:spruce_log"
+        },
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": 100.0
+        }
+      },
+      "spruce_canopy": {
+        "lower_offset": {
+          "range_min": 1,
+          "range_max": 3
+        },
+        "upper_offset": {
+          "range_min": 0,
+          "range_max": 3
+        },
+        "max_radius": {
+          "range_min": 2,
+          "range_max": 4
+        },
+        "leaf_block": {
+          "name": "minecraft:spruce_leaves"
+        }
+      },
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_on": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:podzol",
+        "minecraft:dirt_with_roots",
+        "minecraft:moss_block",
+        "minecraft:mycelium",
+        "minecraft:mud",
+        "minecraft:muddy_mangrove_roots",
+        "minecraft:coarse_dirt",
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 0
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 1
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 2
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 3
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 4
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 5
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 6
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 7
+          }
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        }
+      ],
+      "may_grow_through": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:coarse_dirt"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:super_birch_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 5,
+          "range_max": 8
+        },
+        "height_modifier": {
+          "range_min": 0,
+          "range_max": 7
+        },
+        "trunk_block": {
+          "name": "minecraft:birch_log"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:birch_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:swamp_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 5,
+          "range_max": 9
+        },
+        "trunk_block": {
+          "name": "minecraft:oak_log"
+        },
+        "can_be_submerged": {
+          "max_depth": 2
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "min_width": 2,
+        "leaf_block": {
+          "name": "minecraft:oak_leaves"
+        },
+        "canopy_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 1,
+            "denominator": 4
+          },
+          "num_steps": 4,
+          "step_direction": "down"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:tall_mangrove_tree_feature"
+      },
+      "mangrove_roots": {
+        "max_root_width": 8,
+        "max_root_length": 15,
+        "y_offset": {
+          "range_min": 5,
+          "range_max": 8
+        },
+        "root_block": {
+          "name": "minecraft:mangrove_roots"
+        },
+        "muddy_root_block": {
+          "name": "minecraft:muddy_mangrove_roots"
+        },
+        "mud_block": {
+          "name": "minecraft:mud"
+        },
+        "above_root": {
+          "above_root_block": "minecraft:moss_carpet",
+          "above_root_chance": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        "roots_may_grow_through": [
+          "minecraft:air",
+          "minecraft:snow_layer",
+          "minecraft:mud",
+          "minecraft:mangrove_roots",
+          "minecraft:muddy_mangrove_roots",
+          "minecraft:water",
+          "minecraft:flowing_water",
+          "minecraft:vine",
+          "minecraft:moss_carpet",
+          "minecraft:mangrove_propagule"
+        ]
+      },
+      "mangrove_trunk": {
+        "trunk_width": 1,
+        "trunk_height": {
+          "base": 4,
+          "height_rand_a": 1,
+          "height_rand_b": 9
+        },
+        "trunk_block": {
+          "name": "minecraft:mangrove_log"
+        },
+        "branches": {
+          "branch_chance": 100.0,
+          "branch_length": {
+            "range_min": 0,
+            "range_max": 1
+          },
+          "branch_steps": {
+            "range_min": 1,
+            "range_max": 6
+          }
+        }
+      },
+      "mangrove_canopy": {
+        "canopy_height": 2,
+        "canopy_radius": 3,
+        "leaf_placement_attempts": 70,
+        "leaf_blocks": [
+          [
+            "minecraft:mangrove_leaves",
+            1
+          ]
+        ],
+        "canopy_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": {
+            "numerator": 1,
+            "denominator": 4
+          },
+          "num_steps": 4,
+          "step_direction": "down"
+        },
+        "hanging_block": {
+          "name": "minecraft:mangrove_propagule",
+          "states": {
+            "hanging": true
+          }
+        },
+        "hanging_block_placement_chance": {
+          "numerator": 1,
+          "denominator": 7
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "base_block": [
+        "minecraft:mud"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        },
+        "minecraft:clay"
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:vine",
+        "minecraft:moss_carpet",
+        "minecraft:mangrove_propagule",
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:undecorated_jungle_tree_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 4,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:jungle_leaves"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter"
+      ]
+    }
+  },
+  {
+    "format_version": "1.13.0",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:undecorated_jungle_tree_with_vines_feature"
+      },
+      "trunk": {
+        "trunk_height": {
+          "range_min": 4,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:jungle_log"
+        },
+        "trunk_decoration": {
+          "decoration_block": "minecraft:vine",
+          "decoration_chance": 100.0
+        }
+      },
+      "canopy": {
+        "canopy_offset": {
+          "min": -3,
+          "max": 0
+        },
+        "variation_chance": [
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 2
+          },
+          {
+            "numerator": 1,
+            "denominator": 1
+          }
+        ],
+        "leaf_block": {
+          "name": "minecraft:jungle_leaves"
+        }
+      },
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_on": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:podzol",
+        "minecraft:dirt_with_roots",
+        "minecraft:moss_block",
+        "minecraft:mycelium",
+        "minecraft:mud",
+        "minecraft:muddy_mangrove_roots",
+        "minecraft:coarse_dirt",
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 0
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 1
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 2
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 3
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 4
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 5
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 6
+          }
+        },
+        {
+          "name": "minecraft:farmland",
+          "states": {
+            "moisturized_amount": 7
+          }
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        }
+      ],
+      "may_grow_through": [
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:coarse_dirt"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:tree_feature": {
+      "description": {
+        "identifier": "minecraft:yellow_poplar_tree_feature"
+      },
+      "poplar_trunk": {
+        "trunk_height": {
+          "range_min": 7,
+          "range_max": 11
+        },
+        "trunk_block": {
+          "name": "minecraft:poplar_log"
+        },
+        "remaining_trunk_height_above_branches": {
+          "range_min": 4,
+          "range_max": 4
+        },
+        "amount_of_foliage_support_branches": {
+          "range_min": 1,
+          "range_max": 4
+        },
+        "log_decoration_feature": "minecraft:optional_shelf_mushroom_feature"
+      },
+      "poplar_canopy": {
+        "radius": [
+          {
+            "value": 5,
+            "weight": 5
+          },
+          {
+            "value": 6,
+            "weight": 5
+          },
+          {
+            "value": 7,
+            "weight": 1
+          },
+          {
+            "value": 8,
+            "weight": 1
+          }
+        ],
+        "height": {
+          "range_min": 5,
+          "range_max": 6
+        },
+        "side_hole_chance": 0.15,
+        "leaf_block": {
+          "name": "minecraft:yellow_poplar_leaves"
+        },
+        "branch_block": {
+          "name": "minecraft:poplar_log"
+        }
+      },
+      "may_grow_on": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "base_block": [
+        "minecraft:dirt",
+        "minecraft:coarse_dirt"
+      ],
+      "may_grow_through": [
+        {
+          "tags": "query.any_tag(\u0027dirt\u0027)"
+        }
+      ],
+      "may_replace": [
+        "minecraft:air",
+        "minecraft:snow_layer",
+        {
+          "tags": "query.any_tag(\u0027minecraft:leaves\u0027)"
+        },
+        "minecraft:wildflowers",
+        "minecraft:leaf_litter",
+        "minecraft:brown_mushroom",
+        "minecraft:red_shrub",
+        "minecraft:shelf_mushroom"
+      ]
+    }
+  },
+  {
+    "format_version": "1.26.50",
+    "minecraft:aggregate_feature": {
+      "description": {
+        "identifier": "minecraft:yellow_poplar_tree_with_leaf_litter_feature"
+      },
+      "early_out": "first_failure",
+      "features": [
+        "minecraft:yellow_poplar_tree_feature",
+        "minecraft:scatter_leaf_litter_feature"
+      ]
+    }
+  }
+]

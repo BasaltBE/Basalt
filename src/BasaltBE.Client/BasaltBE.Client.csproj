@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>BasaltBE.Client</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\skin.json" LogicalName="BasaltBE.Client.Data.skin.json" />
+    <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />
+    <ProjectReference Include="..\BasaltBE.Protocol\BasaltBE.Protocol.csproj" />
+  </ItemGroup>
+</Project>

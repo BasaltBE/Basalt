@@ -1,0 +1,167 @@
+name: Dev Build
+
+on:
+  push:
+    branches: [development]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJECT: src/BasaltBE.DedicatedServer/BasaltBE.DedicatedServer.csproj
+  DOTNET_VERSION: "10.0.x"
+
+jobs:
+  version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      build_version: ${{ steps.extract.outputs.build_version }}
+      minecraft_version: ${{ steps.extract.outputs.minecraft_version }}
+      protocol_version: ${{ steps.extract.outputs.protocol_version }}
+      minimum_protocol_version: ${{ steps.extract.outputs.minimum_protocol_version }}
+      tag: ${{ steps.extract.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read release metadata
+        id: extract
+        env:
+          BUILD_CHANNEL: development
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content $env:PROJECT -Raw
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw 'DedicatedServer must declare a stable major.minor.patch Version.'
+          }
+
+          $protocol = Get-Content src/BasaltBE.Protocol/BedrockProtocol.cs -Raw
+          $minecraft = [regex]::Match($protocol, '\bMinecraftVersion\s*=\s*"([^"\r\n]+)"\s*;')
+          $maximum = [regex]::Match($protocol, '\bProtocolVersion\s*=\s*([0-9]+)\s*;')
+          $minimum = [regex]::Match($protocol, '\bMinimumProtocolVersion\s*=\s*([0-9]+)\s*;')
+          if (!$minecraft.Success -or !$maximum.Success -or !$minimum.Success) {
+            throw 'Could not read version constants from BedrockProtocol.cs.'
+          }
+          if ([int]$minimum.Groups[1].Value -gt [int]$maximum.Groups[1].Value) {
+            throw 'MinimumProtocolVersion exceeds ProtocolVersion.'
+          }
+
+          $buildVersion = $version
+          if ($env:BUILD_CHANNEL -eq 'development') {
+            $commit = $env:GITHUB_SHA.Substring(0, 12)
+            $buildVersion = "$version-dev.$env:GITHUB_RUN_NUMBER.$commit"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "build_version=$buildVersion" >> $env:GITHUB_OUTPUT
+          "minecraft_version=$($minecraft.Groups[1].Value)" >> $env:GITHUB_OUTPUT
+          "protocol_version=$($maximum.Groups[1].Value)" >> $env:GITHUB_OUTPUT
+          "minimum_protocol_version=$($minimum.Groups[1].Value)" >> $env:GITHUB_OUTPUT
+          "tag=v$buildVersion" >> $env:GITHUB_OUTPUT
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            rid: win-x64
+            artifact: Basalt-dev-win-x64
+          - name: Linux x64
+            os: ubuntu-latest
+            rid: linux-x64
+            artifact: Basalt-dev-linux-x64
+          - name: macOS x64
+            os: macos-latest
+            rid: osx-x64
+            artifact: Basalt-dev-osx-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish
+        run: >
+          dotnet publish ${{ env.PROJECT }}
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          --output ./publish/${{ matrix.artifact }}
+          -p:Version=${{ needs.version.outputs.build_version }}
+
+      - name: Remove PDB files
+        shell: bash
+        run: find ./publish/${{ matrix.artifact }} -name "*.pdb" -delete
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ./publish/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    name: Create Dev Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          pattern: Basalt-dev-*
+
+      - name: Package artifacts
+        env:
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          cd artifacts
+          for dir in */; do
+            name="${dir%/}"
+            if [ -f "$dir/DedicatedServer" ]; then
+              chmod +x "$dir/DedicatedServer"
+            fi
+            zip -r "../${name}-${RELEASE_TAG}.zip" "$dir"
+          done
+
+      - name: Generate release metadata
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.build_version }}
+          MINECRAFT_VERSION: ${{ needs.version.outputs.minecraft_version }}
+          PROTOCOL_VERSION: ${{ needs.version.outputs.protocol_version }}
+          MINIMUM_PROTOCOL_VERSION: ${{ needs.version.outputs.minimum_protocol_version }}
+        run: |
+          cat > release-notes.md <<EOF
+          ## Basalt $RELEASE_VERSION
+
+          - Minecraft: $MINECRAFT_VERSION
+          - Minecraft protocols: $MINIMUM_PROTOCOL_VERSION through $PROTOCOL_VERSION
+          - Commit: $GITHUB_SHA
+
+          EOF
+
+      - name: Create GitHub Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Basalt ${{ needs.version.outputs.build_version }}
+          body_path: release-notes.md
+          prerelease: true
+          make_latest: "false"
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: "*.zip"

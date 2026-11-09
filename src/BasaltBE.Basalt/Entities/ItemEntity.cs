@@ -1,0 +1,246 @@
+using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Entities.Types;
+using BasaltBE.Basalt.Items;
+using BasaltBE.Basalt.Worlds.Dimensions;
+using BasaltBE.Protocol.Packets;
+using BasaltBE.Protocol.Types;
+using BasaltBE.Nbt.Types;
+
+namespace BasaltBE.Basalt.Entities;
+
+public sealed class ItemEntity : Entity {
+    private const ulong MergeDelayTicks = 40;
+    private const ulong PickupDelayTicks = 40;
+    private const ulong MergeCheckInterval = 15;
+    private const ulong DespawnDelayTicks = 6000;
+    private const float MergeRadiusSquared = 2.25f;
+    private const float PickupRadiusSquared = 6.25f;
+    private const float PickupVerticalTolerance = 2f;
+    private static readonly EntityType ItemType = new() { Identifier = "minecraft:item" };
+    private readonly EntityMovementTrait movement;
+    private ulong mergeUnlockTick = MergeDelayTicks;
+    private ulong pickupUnlockTick = PickupDelayTicks;
+    private ulong despawnTick = DespawnDelayTicks;
+    private ulong nextMergeTick = MergeDelayTicks;
+
+    public readonly ItemStack Item;
+
+    internal ItemEntity(ItemStack item) : base(ItemType) {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.StackSize == 0 || item.Type.NetworkId == 0 || item.Container is not null)
+            throw new ArgumentException("Dropped items require a detached non-empty stack.", nameof(item));
+        Item = item;
+        movement = new(this) { Gravity = 0.04f, Drag = 0.02f, VerticalDragBeforeGravity = true };
+        AddTrait(movement);
+    }
+
+    public override void Read(CompoundTag tag) {
+        base.Read(tag);
+        int age = Math.Clamp((int)(tag.Get<ShortTag>("Age")?.Value ?? 0), 0, (int)DespawnDelayTicks);
+        despawnTick = SimulationAge + DespawnDelayTicks - (ulong)age;
+        pickupUnlockTick = SimulationAge + (ulong)Math.Max(0, (int)(tag.Get<ShortTag>("PickupDelay")?.Value ?? 0));
+        mergeUnlockTick = SimulationAge + (ulong)Math.Max(0, tag.Get<IntTag>("MergeDelay")?.Value ?? 0);
+        nextMergeTick = mergeUnlockTick;
+    }
+
+    public override void Write(CompoundTag tag) {
+        base.Write(tag);
+
+        CompoundTag item = new();
+        item.Add("Name", new StringTag { Value = Item.Type.Identifier });
+        item.Add("Count", new ByteTag { Value = checked((byte)Item.StackSize) });
+        item.Add("Damage", new ShortTag { Value = unchecked((short)Item.Metadata) });
+
+        if (Item.Nbt is { } nbt) {
+            CompoundTag contents = new();
+            foreach ((string name, Tag value) in nbt.Tags) contents.Add(name, value);
+            item.Add("tag", contents);
+        }
+
+        tag.Add("Item", item);
+
+        ulong remaining = despawnTick - Math.Min(SimulationAge, despawnTick);
+        tag.Add("Age", new ShortTag { Value = (short)(DespawnDelayTicks - Math.Min(DespawnDelayTicks, remaining)) });
+        tag.Add("PickupDelay", new ShortTag { Value = (short)Math.Min((ulong)short.MaxValue, pickupUnlockTick - Math.Min(SimulationAge, pickupUnlockTick)) });
+        tag.Add("MergeDelay", new IntTag { Value = (int)Math.Min((ulong)int.MaxValue, mergeUnlockTick - Math.Min(SimulationAge, mergeUnlockTick)) });
+    }
+
+    public ItemEntity(ItemStack item, Player player, bool randomly)
+        : this(item, player, 0, 0, 0, blockDrop: false, randomly) {
+    }
+
+    public ItemEntity(ItemStack item, Player player, int blockX, int blockY, int blockZ)
+        : this(item, player, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
+    }
+
+    public ItemEntity(ItemStack item, int blockX, int blockY, int blockZ)
+        : this(item, null, blockX, blockY, blockZ, blockDrop: true, randomly: true) {
+    }
+
+    public ItemEntity(ItemStack item, Entity source)
+        : this(item, source, 0, 0, 0, blockDrop: false, randomly: true, entityDrop: true) {
+    }
+
+    private ItemEntity(
+        ItemStack item,
+        Entity? source,
+        int blockX,
+        int blockY,
+        int blockZ,
+        bool blockDrop,
+        bool randomly,
+        bool entityDrop = false
+    )
+        : this(item) {
+        if (!blockDrop && !entityDrop && source is not Player)
+            throw new ArgumentException("Player drops require a player source.", nameof(source));
+        if (entityDrop && source is null) throw new ArgumentNullException(nameof(source));
+        if (blockDrop) {
+            Position.X = blockX + 0.5f;
+            Position.Y = blockY + 0.25f;
+            Position.Z = blockZ + 0.5f;
+
+            movement.Motion.X = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
+            movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+        } else if (entityDrop) {
+            Entity entity = source ?? throw new ArgumentNullException(nameof(source));
+            Position.X = entity.Position.X;
+            Position.Y = entity.Position.Y + 0.3f;
+            Position.Z = entity.Position.Z;
+
+            movement.Motion.X = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            movement.Motion.Y = 0.2f + Random.Shared.NextSingle() * 0.1f;
+            movement.Motion.Z = (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+        } else {
+            Player player = (Player)source!;
+            float pitch = player.Rotation.X * (MathF.PI / 180);
+            float yaw = player.Rotation.Y * (MathF.PI / 180);
+            float pitchCosine = MathF.Cos(pitch);
+            float directionX = -MathF.Sin(yaw) * pitchCosine;
+            float directionY = -MathF.Sin(pitch);
+            float directionZ = MathF.Cos(yaw) * pitchCosine;
+            Position.X = player.Position.X + directionX * 0.3f;
+            Position.Y = player.Position.Y + 1.3f + directionY * 0.3f;
+            Position.Z = player.Position.Z + directionZ * 0.3f;
+
+            if (randomly) {
+                directionX += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+                directionY += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+                directionZ += (Random.Shared.NextSingle() - 0.5f) * 0.1f;
+            }
+
+            movement.Motion.X = directionX * 0.4f;
+            movement.Motion.Y = directionY * 0.4f;
+            movement.Motion.Z = directionZ * 0.4f;
+        }
+    }
+
+    internal void TickItem() {
+        if (Dead || SpawnedDimension is not { } dimension || Item.StackSize == 0) return;
+
+        ulong tick = SimulationAge;
+        if (tick >= despawnTick) {
+            dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
+            Despawn();
+            return;
+        }
+
+        if (tick >= pickupUnlockTick) {
+            foreach (Player player in dimension.GetPlayers()) {
+                if (player.SpawnedDimension != dimension || !player.Spawned || player.Disposed || player.Dead) continue;
+
+                float dx = player.Position.X - Position.X;
+                float dy = player.Position.Y - Position.Y;
+                float dz = player.Position.Z - Position.Z;
+                if (MathF.Abs(dy) > PickupVerticalTolerance || dx * dx + dz * dz > PickupRadiusSquared) continue;
+
+                using Lock.Scope sync = player.Sync.EnterScope();
+                if (player.SpawnedDimension != dimension || !player.Spawned || player.Disposed || player.Dead ||
+                    player.GetTrait<PlayerInventoryTrait>() is not { } inventory)
+                    continue;
+
+                ushort previousSize = Item.StackSize;
+                inventory.Inventory.AddItem(Item);
+                if (Item.StackSize == previousSize) continue;
+
+                dimension.Broadcast(new TakeItemActorPacket {
+                    ItemRuntimeId = RuntimeId,
+                    ActorRuntimeId = player.RuntimeId
+                }, this);
+                if (Item.StackSize == 0) {
+                    dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
+                    Despawn();
+                    return;
+                }
+
+                UpdateViewers(dimension);
+                return;
+            }
+        }
+
+        if (tick < mergeUnlockTick || tick < nextMergeTick || !movement.Grounded || Item.IsStackFull) return;
+
+        nextMergeTick = tick + MergeCheckInterval;
+        int itemChunkX = (int)MathF.Floor(Position.X) >> 4;
+        int itemChunkZ = (int)MathF.Floor(Position.Z) >> 4;
+        for (int z = itemChunkZ - 1; z <= itemChunkZ + 1; z++) {
+            for (int x = itemChunkX - 1; x <= itemChunkX + 1; x++) {
+                foreach (Entity entity in dimension.EntityIndex.GetChunkEntities(x, z)) {
+                    if (entity is not ItemEntity other || other.RuntimeId <= RuntimeId || other.Dead ||
+                        other.SpawnedDimension != dimension)
+                        continue;
+
+                    if (other.SimulationAge < other.mergeUnlockTick || !other.movement.Grounded ||
+                        other.Item.IsStackFull || !Item.CanStackWith(other.Item))
+                        continue;
+
+                    float dx = other.Position.X - Position.X;
+                    float dy = other.Position.Y - Position.Y;
+                    float dz = other.Position.Z - Position.Z;
+                    if (dx * dx + dy * dy + dz * dz > MergeRadiusSquared) continue;
+
+                    int space = Item.Type.MaxAmount - Item.StackSize;
+                    ushort moved = (ushort)Math.Min(space, other.Item.StackSize);
+                    Item.SetStackSize((ushort)(Item.StackSize + moved));
+                    other.Item.SetStackSize((ushort)(other.Item.StackSize - moved));
+                    despawnTick = tick + Math.Max(despawnTick - tick, other.despawnTick - Math.Min(other.SimulationAge, other.despawnTick));
+                    UpdateViewers(dimension);
+                    if (other.Item.StackSize == 0) {
+                        dimension.Broadcast(new RemoveActorPacket { ActorId = other.UniqueId }, other);
+                        other.Despawn();
+                    } else {
+                        other.UpdateViewers(dimension);
+                    }
+
+                    if (Item.IsStackFull) return;
+                }
+            }
+        }
+    }
+
+    internal void TakeItems(ushort amount) {
+        if (Dead || SpawnedDimension is not { } dimension || amount == 0 || amount > Item.StackSize) return;
+
+        Item.DecrementStack(amount);
+        if (Item.StackSize == 0) {
+            dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
+            Despawn();
+            return;
+        }
+
+        UpdateViewers(dimension);
+    }
+
+    private void UpdateViewers(Dimension dimension) {
+        dimension.Broadcast(new RemoveActorPacket { ActorId = UniqueId }, this);
+        dimension.Broadcast(new AddItemActorPacket {
+            ActorId = UniqueId,
+            RuntimeId = RuntimeId,
+            Item = Item.ToNetworkStackDescriptor(),
+            Position = Position,
+            Velocity = movement.Motion,
+            ActorData = Flags.CreateSnapshot()
+        }, this);
+    }
+}
