@@ -64,8 +64,22 @@ jobs:
           git fetch --no-tags origin "refs/tags/${tag}:refs/tags/$tag"
           if ($LASTEXITCODE -ne 0) { throw "Could not fetch release tag $tag." }
           $commit = git rev-parse "$tag^{commit}"
-          if ($LASTEXITCODE -ne 0 -or $commit -ne $env:SOURCE_SHA) {
-            throw "Release tag $tag does not match the successful build."
+          if ($LASTEXITCODE -ne 0) { throw "Could not resolve release tag $tag." }
+          if ($commit -ne $env:SOURCE_SHA) {
+            if ($development) { throw "Release tag $tag does not match the successful build." }
+
+            $json = gh api "repos/$env:GITHUB_REPOSITORY/actions/workflows/release.yml/runs?head_sha=$commit&status=success&event=push&branch=main&per_page=100"
+            if ($LASTEXITCODE -ne 0) { throw 'Could not verify the original release build.' }
+            $runs = $json | ConvertFrom-Json
+            if ($runs.total_count -eq 0) { throw "Release tag $tag has no successful release build." }
+
+            git checkout --detach $commit
+            if ($LASTEXITCODE -ne 0) { throw "Could not check out release tag $tag." }
+            [xml]$project = Get-Content src/BasaltBE.DedicatedServer/BasaltBE.DedicatedServer.csproj -Raw
+            if ([string]$project.Project.PropertyGroup.Version -ne $version) {
+              throw "Release tag $tag has a different package version."
+            }
+            Write-Host "Publishing existing release $tag from commit $commit."
           }
 
           "version=$version" >> $env:GITHUB_OUTPUT
