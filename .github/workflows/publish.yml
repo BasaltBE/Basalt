@@ -94,10 +94,15 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          foreach ($name in 'BasaltBE.Plugins', 'BasaltBE.Cli') {
+          $projects = @(
+            'BasaltBE.Logger', 'BasaltBE.Data', 'BasaltBE.Nbt', 'BasaltBE.Protocol',
+            'BasaltBE.NetherNet', 'BasaltBE.Basalt', 'BasaltBE.Client', 'BasaltBE.Plugins', 'BasaltBE.Cli'
+          )
+          foreach ($name in $projects) {
             dotnet pack "src/$name/$name.csproj" --configuration Release --output packages `
               "-p:Version=$env:PACKAGE_VERSION" "-p:PackageVersion=$env:PACKAGE_VERSION" `
-              -p:ContinuousIntegrationBuild=true
+              -p:ContinuousIntegrationBuild=true -p:Authors=BasaltBE -p:PackageLicenseExpression=MIT `
+              -p:RepositoryUrl=https://github.com/BasaltBE/Basalt -p:RepositoryType=git
             if ($LASTEXITCODE -ne 0) { throw "Could not pack $name." }
           }
 
