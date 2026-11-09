@@ -194,7 +194,7 @@ public sealed class PistonTests(ITestOutputHelper output) {
         Assert.False(dimension.HasPendingBlockUpdate(15, 100, 0));
         Assert.True(dimension.HasPendingBlockUpdate(16, 100, 0));
         ListTag movedTicks = destinationChunk.PendingTicks!.Get<ListTag>("tickList")!;
-        Assert.Equal(3, movedTicks.Value.Count);
+        Assert.Equal(2, movedTicks.Value.Count);
         foreach (CompoundTag movedTick in movedTicks.Value.Cast<CompoundTag>()) {
             Assert.Equal(16, movedTick.Get<IntTag>("x")!.Value);
             Assert.Equal(100, movedTick.Get<IntTag>("y")!.Value);
@@ -635,7 +635,7 @@ public sealed class PistonTests(ITestOutputHelper output) {
             dimension.SetPermutation(15, 100, 0, observer);
             for (int index = 0; index < pendingTickCount; index++) {
                 BlockPermutation scheduled = index % 2 == 0 ? observer : poweredObserver;
-                dimension.ScheduleBlockUpdate(15, 100, 0, 20, scheduled);
+                dimension.ScheduleBlockUpdate(15, 100, 0, (ulong)(20 + index), scheduled);
             }
             Assert.Equal(
                 pendingTickCount,

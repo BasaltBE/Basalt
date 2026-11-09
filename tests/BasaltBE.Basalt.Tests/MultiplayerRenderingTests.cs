@@ -73,7 +73,7 @@ public sealed class MultiplayerRenderingTests {
     }
 
     [Fact]
-    public void ActorsSpawnMoveAndDespawnWithoutIdlePackets() {
+    public void ActorsSpawnAndDespawnWithoutIdlePackets() {
         using MultiplayerFixture fixture = new();
         PlayerChunkRenderingTrait trait = new(fixture.CreatePlayer());
         MultiplayerFixture.LoadedChunks(trait).Add(0);
@@ -84,10 +84,6 @@ public sealed class MultiplayerRenderingTests {
         sent.Clear();
         trait.UpdateEntities([actor], sent.Add);
         Assert.Empty(sent);
-        actor.Position.X = 1;
-        trait.UpdateEntities([actor], sent.Add);
-        Assert.IsType<MoveActorAbsolutePacket>(Assert.Single(sent));
-        sent.Clear();
         trait.UpdateEntities([], sent.Add);
         Assert.Equal(actor.UniqueId, Assert.IsType<RemoveActorPacket>(Assert.Single(sent)).ActorId);
     }

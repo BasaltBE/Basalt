@@ -103,11 +103,11 @@ public sealed class PlayerSurvivalTests {
 
         Assert.Equal(10, hunger.Hunger);
         Assert.Equal((ushort)2, inventory.Inventory.GetItem(0)?.StackSize);
-        Assert.False(player.Flags.Get(ActorFlag.UsingItem));
+        Assert.True(player.Flags.Get(ActorFlag.UsingItem));
     }
 
     [Fact]
-    public void UseItemConsumesFoodWhenAlreadyUsingIt() {
+    public void UseItemWaitsForFoodDurationBeforeConsuming() {
         using MultiplayerFixture fixture = new();
         Player player = fixture.CreatePlayer();
         PlayerInventoryTrait inventory = new(player);
@@ -135,6 +135,16 @@ public sealed class PlayerSurvivalTests {
 
         InventoryTransactionHandler.ProcessTransaction(player, use, 0, null);
 
+        Assert.Equal(10, hunger.Hunger);
+        Assert.Equal((ushort)2, inventory.Inventory.GetItem(0)?.StackSize);
+        player.SimulationAge = 31;
+        hunger.Tick();
+        Assert.Equal(10, hunger.Hunger);
+        Assert.Equal((ushort)2, inventory.Inventory.GetItem(0)?.StackSize);
+        Assert.True(player.Flags.Get(ActorFlag.UsingItem));
+
+        player.SimulationAge = 32;
+        hunger.Tick();
         Assert.Equal(15, hunger.Hunger);
         Assert.Equal((ushort)1, inventory.Inventory.GetItem(0)?.StackSize);
         Assert.False(player.Flags.Get(ActorFlag.UsingItem));

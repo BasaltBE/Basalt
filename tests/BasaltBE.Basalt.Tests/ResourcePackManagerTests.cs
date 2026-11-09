@@ -59,12 +59,13 @@ public sealed class ResourcePackManagerTests {
             assetStream.CopyTo(unpackedAsset);
             Assert.Equal(asset, unpackedAsset.ToArray());
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10_000; i++)
                 pack.GetChunk((uint)(i % chunkCount), ResourcePackManager.ChunkSize);
             long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 10_000; i++)
                 pack.GetChunk((uint)(i % chunkCount), ResourcePackManager.ChunkSize);
-            Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - allocatedBefore);
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+            Assert.Equal(0, allocated);
 
             Assert.Throws<ArgumentOutOfRangeException>(() => pack.GetChunk(chunkCount, ResourcePackManager.ChunkSize));
         }

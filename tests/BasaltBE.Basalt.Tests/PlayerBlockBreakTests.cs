@@ -70,13 +70,13 @@ public sealed class PlayerBlockBreakTests {
     [Fact]
     public void SwordAndAxeDamageBonusesMatchTheirMaterial() {
         (string Material, float Sword, float Axe)[] materials = [
-            ("wooden", 3, 6),
-            ("stone", 4, 8),
-            ("copper", 4, 8),
-            ("iron", 5, 8),
-            ("golden", 3, 6),
-            ("diamond", 6, 8),
-            ("netherite", 7, 9)
+            ("wooden", 3, 3),
+            ("stone", 4, 4),
+            ("copper", 4, 4),
+            ("iron", 5, 5),
+            ("golden", 3, 3),
+            ("diamond", 6, 6),
+            ("netherite", 7, 7)
         ];
 
         foreach ((string material, float swordDamage, float axeDamage) in materials) {

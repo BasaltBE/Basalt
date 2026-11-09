@@ -9,6 +9,7 @@ using BasaltBE.Basalt.Blocks;
 using BasaltBE.Basalt.Blocks.Traits;
 using BasaltBE.Basalt.Entities;
 using BasaltBE.Basalt.Entities.Traits;
+using BasaltBE.Basalt.Entities.Types;
 using BasaltBE.NetherNet;
 using BasaltBE.NetherNet.Types;
 using BasaltBE.Protocol.Enums;
@@ -22,6 +23,8 @@ namespace BasaltBE.Basalt.Tests;
 
 [Collection("Block trait registrations")]
 public sealed class MultiplayerTransportTests {
+    readonly Dictionary<NethernetClient, Queue<(uint Id, byte[] Payload)>> receivedPackets = [];
+
     [Fact]
     public async Task ScheduledButtonUpdateAndSoundReachItsChunkViewer() {
         using TcpListener reservation = new(IPAddress.Loopback, 0);
@@ -90,7 +93,7 @@ public sealed class MultiplayerTransportTests {
     }
 
     [Fact]
-    public async Task ThreePeersReceiveBatchedRostersAndOrderedActorRemoval() {
+    public async Task ThreePeersReceiveBatchedRostersMovementAndOrderedRemoval() {
         using TcpListener reservation = new(IPAddress.Loopback, 0);
         reservation.Start();
         ushort port = (ushort)((IPEndPoint)reservation.LocalEndpoint).Port;
@@ -124,6 +127,7 @@ public sealed class MultiplayerTransportTests {
         one.Listed = false;
         network.AddPlayer(one);
         network.UpdatePlayerList(one);
+        foreach (Player recipient in fixture.Dimension.GetPlayers()) network.FlushPackets(recipient);
         Assert.Empty(DecodeList(await ReceivePacket(first, timeout.Token)).Entries);
 
         await second.ConnectAsync(timeout.Token);
@@ -131,6 +135,7 @@ public sealed class MultiplayerTransportTests {
         two.Listed = false;
         network.AddPlayer(two);
         network.UpdatePlayerList(two);
+        foreach (Player recipient in fixture.Dimension.GetPlayers()) network.FlushPackets(recipient);
         Assert.Equal(one.Username, Assert.Single(DecodeList(await ReceivePacket(second, timeout.Token)).Entries).AddEntry!.Name);
         Assert.Equal(two.Username, Assert.Single(DecodeList(await ReceivePacket(first, timeout.Token)).Entries).AddEntry!.Name);
 
@@ -139,6 +144,7 @@ public sealed class MultiplayerTransportTests {
         three.Listed = false;
         network.AddPlayer(three);
         network.UpdatePlayerList(three);
+        foreach (Player recipient in fixture.Dimension.GetPlayers()) network.FlushPackets(recipient);
         PlayerListPacket roster = DecodeList(await ReceivePacket(third, timeout.Token));
         Assert.Equal(2, roster.Entries.Length);
         Assert.All(roster.Entries, entry => Assert.Equal("transport-skin", entry.AddEntry!.Skin.Id));
@@ -150,12 +156,39 @@ public sealed class MultiplayerTransportTests {
         one.AddTrait(rendering);
         MultiplayerFixture.LoadedChunks(rendering).Add(0);
         rendering.UpdateEntities([two], packet => network.SendPacket(one, packet));
+        network.FlushPackets(one);
         Assert.Equal(12u, (await ReceivePacket(first, timeout.Token)).Id);
         Assert.Equal(187u, (await ReceivePacket(first, timeout.Token)).Id);
         Assert.Equal(39u, (await ReceivePacket(first, timeout.Token)).Id);
 
+        Entity actor = new(new EntityType { Identifier = "minecraft:pig" });
+        rendering.UpdateEntities([two, actor], packet => network.SendPacket(one, packet));
+        network.FlushPackets(one);
+        Assert.Equal(13u, (await ReceivePacket(first, timeout.Token)).Id);
+
+        actor.Position.X = 1;
+        for (int tick = 0; tick < 3; tick++)
+            rendering.UpdateEntities([two, actor], packet => network.SendPacket(one, packet));
+        network.FlushPackets(one);
+        (uint movementId, byte[] movementPayload) = await ReceivePacket(first, timeout.Token);
+        Assert.Equal(111u, movementId);
+        int movementOffset = 0;
+        BinaryReader movementReader = new(movementPayload, ref movementOffset);
+        MoveActorDeltaPacket movement = new();
+        movement.Deserialize(ref movementReader);
+        Assert.Equal(movementPayload.Length, movementOffset);
+        Assert.Equal(actor.RuntimeId, movement.MoveData.ActorRuntimeId);
+        Assert.Equal(1f, movement.MoveData.PositionX);
+        Assert.Null(movement.MoveData.PositionY);
+        Assert.Null(movement.MoveData.PositionZ);
+
+        rendering.UpdateEntities([two], packet => network.SendPacket(one, packet));
+        network.FlushPackets(one);
+        Assert.Equal(14u, (await ReceivePacket(first, timeout.Token)).Id);
+
         network.RemovePlayer(two.Peer);
         network.Tick();
+        network.FlushPackets(one);
         Assert.Equal(14u, (await ReceivePacket(first, timeout.Token)).Id);
         PlayerListPacket removal = DecodeList(await ReceivePacket(first, timeout.Token));
         Assert.Equal(PlayerListAction.Remove, Assert.Single(removal.Entries).Action);
@@ -173,7 +206,12 @@ public sealed class MultiplayerTransportTests {
         return list;
     }
 
-    private static async Task<(uint Id, byte[] Payload)> ReceivePacket(NethernetClient client, CancellationToken token) {
+    private async Task<(uint Id, byte[] Payload)> ReceivePacket(NethernetClient client, CancellationToken token) {
+        if (!receivedPackets.TryGetValue(client, out var packets)) {
+            packets = new();
+            receivedPackets.Add(client, packets);
+        }
+        if (packets.TryDequeue(out var queued)) return queued;
         NethernetMessage message = await client.ReceiveAsync(token);
         Assert.False(message.Disconnected);
         ReadOnlyMemory<byte> payload = message.Payload;
@@ -190,10 +228,15 @@ public sealed class MultiplayerTransportTests {
             batch = payload[1..].ToArray();
         }
         int offset = 0;
-        BinaryReader reader = new(batch, ref offset);
-        int length = (int)reader.ReadVarUInt();
-        int end = offset + length;
-        uint id = reader.ReadVarUInt();
-        return (id, reader.ReadBytes(end - offset).ToArray());
+        while (offset < batch.Length) {
+            BinaryReader reader = new(batch, ref offset);
+            int length = checked((int)reader.ReadVarUInt());
+            Assert.InRange(length, 1, reader.Remaining);
+            int end = offset + length;
+            uint id = reader.ReadVarUInt();
+            packets.Enqueue((id, reader.ReadBytes(end - offset).ToArray()));
+        }
+
+        return packets.Dequeue();
     }
 }

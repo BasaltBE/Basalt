@@ -192,31 +192,40 @@ public sealed class ThreadedTickingTests {
         World healthy = fixture.Server.CreateWorld("healthy", world => world.CreateDimension("minecraft:overworld"));
         fixture.Dimension.GetOrCreateChunk(0, 0);
         fixture.Dimension.AddTickingArea("slow", [new()]);
+        using ManualResetEventSlim blocked = new();
+        using ManualResetEventSlim release = new();
         Entity entity = new();
-        entity.AddTrait(new SlowTick(entity));
+        entity.AddTrait(new BlockingTick(entity, blocked, release));
         fixture.Dimension.AddEntity(entity);
         fixture.World.Started = true;
         healthy.Started = true;
         using WorldTickWorker slow = new(fixture.Server, 0, [fixture.World]);
         using WorldTickWorker fast = new(fixture.Server, 1, [healthy]);
-        slow.Start();
-        fast.Start();
-        Assert.Throws<InvalidOperationException>(() => fixture.Dimension.GetOrCreateChunk(2, 2));
-        Thread.Sleep(650);
-        slow.Stop();
-        fast.Stop();
-        slow.Dispose();
-        fast.Dispose();
-        fixture.World.Started = false;
-        healthy.Started = false;
-        Assert.True(healthy.TickValue >= 9, $"Healthy ticks: {healthy.TickValue}");
-        Assert.True(healthy.TickValue > fixture.World.TickValue);
+        try {
+            slow.Start();
+            fast.Start();
+            Assert.True(blocked.Wait(TimeSpan.FromSeconds(5)), "Slow worker did not enter its entity tick.");
+            Assert.Throws<InvalidOperationException>(() => fixture.Dimension.GetOrCreateChunk(2, 2));
+            ulong initial = Volatile.Read(ref healthy.TickValue);
+            Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref healthy.TickValue) >= initial + 5,
+                TimeSpan.FromSeconds(5)), "Healthy world did not progress while the other worker was blocked.");
+            Assert.Equal(1UL, Volatile.Read(ref fixture.World.TickValue));
+        } finally {
+            release.Set();
+            slow.Stop();
+            fast.Stop();
+            slow.Dispose();
+            fast.Dispose();
+            fixture.World.Started = false;
+            healthy.Started = false;
+        }
     }
 
     [Fact]
     public void IngressOwnsItsBytesAndRunsInOrderOnTheWorldThread() {
         using MultiplayerFixture fixture = new();
         Player player = fixture.CreatePlayer();
+        player.Spawned = false;
         fixture.Server.Network.AddPlayer(player);
         List<bool> received = [];
         fixture.Server.Network.Events.Subscribe(new PacketEvent<ClientCacheStatusPacket>(1000),
@@ -241,8 +250,11 @@ public sealed class ThreadedTickingTests {
         public override void Tick() => Entity.Despawn();
     }
 
-    private sealed class SlowTick(Entity entity) : EntityTrait(entity) {
-        public override void Tick() => Thread.Sleep(90);
+    private sealed class BlockingTick(Entity entity, ManualResetEventSlim entered, ManualResetEventSlim release) : EntityTrait(entity) {
+        public override void Tick() {
+            entered.Set();
+            release.Wait();
+        }
     }
 
     private sealed class ProbeCommand : Command {
