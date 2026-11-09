@@ -7,9 +7,11 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>basalt</ToolCommandName>
     <Version>1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Build and inspect Basalt plugins.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
     <ProjectReference Include="../BasaltBE.Plugins/BasaltBE.Plugins.csproj" />
   </ItemGroup>
 </Project>

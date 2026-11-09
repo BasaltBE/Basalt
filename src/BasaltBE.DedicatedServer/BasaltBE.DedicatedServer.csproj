@@ -1,6 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Include="../../LICENSE" Link="LICENSE" CopyToPublishDirectory="PreserveNewest" />
     <ProjectReference Include="../BasaltBE.Plugins/BasaltBE.Plugins.csproj" />
     <ProjectReference Include="..\BasaltBE.Basalt\BasaltBE.Basalt.csproj" />
     <ProjectReference Include="..\BasaltBE.NetherNet\BasaltBE.NetherNet.csproj" />

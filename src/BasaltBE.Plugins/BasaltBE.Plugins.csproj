@@ -4,18 +4,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Basalt plugin contracts, compilation, and loading.</Description>
     <NoWarn>$(NoWarn);NU5128;NU5131</NoWarn>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CollectPluginReferences</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
     <ProjectReference Include="../BasaltBE.Basalt/BasaltBE.Basalt.csproj" />
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.0" />
     <None Include="BasaltBE.Plugins.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
   <Target Name="CollectPluginReferences" DependsOnTargets="Build;ResolveReferences;FindReferenceAssembliesForReferences">
     <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
       <PluginReference Include="$(IntermediateOutputPath)ref/$(TargetFileName)" />
       <PluginReference Include="@(ReferencePathWithRefAssemblies)" Condition="'%(ReferencePathWithRefAssemblies.FrameworkReferenceName)' == ''" />
       <TfmSpecificPackageFile Include="@(PluginReference)" PackagePath="ref/net10.0/%(Filename)%(Extension)" />
