@@ -173,6 +173,8 @@ public sealed class FurnaceBlockActor : BlockActor {
     ) : BlockContainer(position, size, containerId, containerName, containerType, slotNames: slotNames) {
         public override bool CanContain(int slot, ItemStack item) {
             if (slot == InputSlot) return CookingPalette.Find(item, furnaceType) is not null;
+            // TODO: maybe get some data for this? but shouldn't be wrong in general? idk vanilla
+            if (slot == ResultSlot) return true;
             if (slot == FuelSlot) return CookingPalette.GetBurnTime(item) > 0;
             return false;
         }
