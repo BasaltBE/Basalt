@@ -12,7 +12,7 @@
   <a href="https://github.com/BasaltBE/Basalt/stargazers">
     <img src="https://img.shields.io/github/stars/BasaltBE/Basalt?style=flat&logo=github&label=Stars" alt="GitHub Stars">
   </a>
-  <a href="https://discord.gg/6pMJmeqphF">
+  <a href="https://discord.gg/q6GtKqwUM4">
     <img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white" alt="Join Discord">
   </a>
 </p>
