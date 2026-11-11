@@ -12,7 +12,7 @@
   <a href="https://github.com/BasaltBE/Basalt/stargazers">
     <img src="https://img.shields.io/github/stars/BasaltBE/Basalt?style=flat&logo=github&label=Stars" alt="GitHub Stars">
   </a>
-  <a href="https://discord.gg/saVhhPZQm3">
+  <a href="https://discord.gg/q6GtKqwUM4">
     <img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white" alt="Join Discord">
   </a>
 </p>
@@ -23,22 +23,22 @@
 <tr>
 <td width="50%" valign="top">
 
-* Custom items, blocks, and entities
-* Custom terrain generators and storage providers
-* Multiple worlds and dimensions with custom height limits
-* LevelDB world storage and entity persistence
-* Crafting, loot tables, and enchantments
-* Custom commands, selectors, and overloads
+- Custom items, blocks, and entities
+- Custom terrain generators and storage providers
+- Multiple worlds and dimensions with custom height limits
+- LevelDB world storage and entity persistence
+- Crafting, loot tables, and enchantments
+- Custom commands, selectors, and overloads
 
 </td>
 <td width="50%" valign="top">
 
-* Chests, shulker boxes, furnaces, hoppers, and dispensers
-* Farming, trees, structures, and world features
-* Redstone, pistons, TNT, water, and lava
-* Health, hunger, armor, durability, and experience
-* Plugins, gameplay events, and plugin CLI
-* World worker threads and optional Tracy profiling
+- Chests, shulker boxes, furnaces, hoppers, and dispensers
+- Farming, trees, structures, and world features
+- Redstone, pistons, TNT, water, and lava
+- Health, hunger, armor, durability, and experience
+- Plugins, gameplay events, and plugin CLI
+- World worker threads and optional Tracy profiling
 
 </td>
 </tr>
